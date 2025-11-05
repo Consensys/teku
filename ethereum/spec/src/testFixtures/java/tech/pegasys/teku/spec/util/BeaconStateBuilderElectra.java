@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BeaconStateBuilderElectra
     extends AbstractBeaconStateBuilder<
@@ -61,10 +62,11 @@ public class BeaconStateBuilderElectra
 
   protected BeaconStateBuilderElectra(
       final SpecVersion spec,
+      final SchemaRegistry schemaRegistry,
       final DataStructureUtil dataStructureUtil,
       final int defaultValidatorCount,
       final int defaultItemsInSSZLists) {
-    super(spec, dataStructureUtil, defaultValidatorCount, defaultItemsInSSZLists);
+    super(spec, schemaRegistry, dataStructureUtil, defaultValidatorCount, defaultItemsInSSZLists);
   }
 
   @Override
@@ -98,10 +100,12 @@ public class BeaconStateBuilderElectra
   public static BeaconStateBuilderElectra create(
       final DataStructureUtil dataStructureUtil,
       final Spec spec,
+      final SchemaRegistry schemaRegistry,
       final int defaultValidatorCount,
       final int defaultItemsInSSZLists) {
     return new BeaconStateBuilderElectra(
         spec.forMilestone(SpecMilestone.ELECTRA),
+        schemaRegistry,
         dataStructureUtil,
         defaultValidatorCount,
         defaultItemsInSSZLists);

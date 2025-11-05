@@ -27,7 +27,7 @@
     "attester_slashings" : {
       "type" : "array",
       "items" : {
-        "$ref" : "#/components/schemas/AttesterSlashingElectra"
+        "$ref" : "#/components/schemas/AttesterSlashingGloas"
       }
     },
     "attestations" : {

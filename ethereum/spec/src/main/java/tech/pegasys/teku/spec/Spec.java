@@ -86,6 +86,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -1106,9 +1107,12 @@ public class Spec {
       final BeaconState state,
       final BeaconBlockSummary block,
       final UInt64 committeeIndex) {
-    return atSlot(slot)
+    final SpecVersion specVersion = atSlot(slot);
+    final AttestationDataSchema<?> attestationDataSchema =
+        specVersion.getSchemaDefinitions().getAttestationDataSchema();
+    return specVersion
         .getAttestationUtil()
-        .getGenericAttestationData(slot, state, block, committeeIndex);
+        .getGenericAttestationData(slot, state, block, committeeIndex, attestationDataSchema);
   }
 
   public SafeFuture<AttestationProcessingResult> isValidIndexedAttestation(

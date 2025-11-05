@@ -58,7 +58,8 @@ public class BeaconStateSchemaBellatrix
                 () -> schemaRegistry.get(EXECUTION_PAYLOAD_HEADER_SCHEMA)));
 
     return Stream.concat(
-            BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(), newFields.stream())
+            BeaconStateSchemaAltair.getUniqueFields(specConfig, schemaRegistry).stream(),
+            newFields.stream())
         .toList();
   }
 

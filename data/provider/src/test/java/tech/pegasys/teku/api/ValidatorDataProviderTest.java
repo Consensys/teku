@@ -252,6 +252,7 @@ public class ValidatorDataProviderTest {
     assertThat(result).isCompleted();
     AttestationData data = safeJoin(result).orElseThrow();
     assertThat(data.getIndex()).isEqualTo(internalData.getIndex());
+    assertThat(data.getPayloadStatus()).isEqualTo(internalData.getPayloadStatus());
     assertThat(data.getSlot()).isEqualTo(internalData.getSlot());
     assertThat(data.getBeaconBlockRoot()).isEqualTo(internalData.getBeaconBlockRoot());
   }

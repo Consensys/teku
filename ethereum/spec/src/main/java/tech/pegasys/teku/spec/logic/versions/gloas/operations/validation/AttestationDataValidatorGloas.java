@@ -41,7 +41,7 @@ public class AttestationDataValidatorGloas extends AttestationDataValidatorElect
   protected Optional<OperationInvalidReason> checkCommitteeIndex(final AttestationData data) {
     return check(
         // signalling payload availability
-        data.getIndex().isLessThan(2),
+        data.getPayloadStatusRequired().isLessThan(2),
         AttestationInvalidReason.COMMITTEE_INDEX_MUST_BE_LESS_THAN_TWO);
   }
 }

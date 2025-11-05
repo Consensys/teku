@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
@@ -42,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.util.AttestationValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.AttestationUtilDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
@@ -101,8 +103,9 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
       final UInt64 slot,
       final BeaconState state,
       final BeaconBlockSummary block,
-      final UInt64 committeeIndex) {
-    return super.getGenericAttestationData(slot, state, block, UInt64.ZERO);
+      final UInt64 committeeIndex,
+      final AttestationDataSchema<?> attestationDataSchema) {
+    return super.getGenericAttestationData(slot, state, block, UInt64.ZERO, attestationDataSchema);
   }
 
   @Override
@@ -198,6 +201,19 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
             .getCommitteeBitsSchema()
             .orElseThrow()
             .ofBits(singleAttestation.getFirstCommitteeIndex().intValue()));
+  }
+
+  @Override
+  public AttestationValidationResult validateIndexValue(final AttestationData attestationData) {
+    // [REJECT] attestation.data.index == 0
+    if (attestationData.getIndex().isEmpty() || !attestationData.getIndexRequired().isZero()) {
+      return AttestationValidationResult.invalid(
+          () ->
+              String.format(
+                  "Attestation data index must be 0 for Electra, but was %s.",
+                  attestationData.getIndex().orElse(null)));
+    }
+    return AttestationValidationResult.VALID;
   }
 
   private SszBitlist getSingleAttestationAggregationBits(

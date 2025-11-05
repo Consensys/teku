@@ -62,7 +62,7 @@ public record SigningRequestBody(Bytes signingRoot, SignType type, Map<String, O
             FORK_INFO, ForkInfo.getJsonTypeDefinition(), SigningRequestBody::getForkInfo)
         .withOptionalField(
             SignType.ATTESTATION.getName(),
-            AttestationData.SSZ_SCHEMA.getJsonTypeDefinition(),
+            schemaDefinitions.getAttestationDataSchema().getJsonTypeDefinition(),
             SigningRequestBody::getAttestationData)
         .withOptionalField(
             SignType.SYNC_COMMITTEE_MESSAGE.getName(),

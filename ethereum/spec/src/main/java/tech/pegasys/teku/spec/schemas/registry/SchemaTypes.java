@@ -79,6 +79,8 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.Meta
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChangeSchema;
@@ -87,6 +89,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
+import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -110,6 +113,12 @@ public class SchemaTypes {
       create("ATTESTER_SLASHING_SCHEMA");
   public static final SchemaId<IndexedAttestationSchema> INDEXED_ATTESTATION_SCHEMA =
       create("INDEXED_ATTESTATION_SCHEMA");
+
+  public static final SchemaId<PendingAttestation.PendingAttestationSchema>
+      PENDING_ATTESTATION_SCHEMA = create("PENDING_ATTESTATION_SCHEMA");
+
+  public static final SchemaId<AttestationDataSchema<AttestationData>> ATTESTATION_DATA_SCHEMA =
+      create("ATTESTATION_DATA_SCHEMA");
 
   public static final SchemaId<AttestationSchema<Attestation>> ATTESTATION_SCHEMA =
       create("ATTESTATION_SCHEMA");

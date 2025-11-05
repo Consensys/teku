@@ -1,0 +1,13 @@
+{
+  "title" : "AttesterSlashingGloas",
+  "type" : "object",
+  "required" : [ "attestation_1", "attestation_2" ],
+  "properties" : {
+    "attestation_1" : {
+      "$ref" : "#/components/schemas/IndexedAttestationGloas"
+    },
+    "attestation_2" : {
+      "$ref" : "#/components/schemas/IndexedAttestationGloas"
+    }
+  }
+}

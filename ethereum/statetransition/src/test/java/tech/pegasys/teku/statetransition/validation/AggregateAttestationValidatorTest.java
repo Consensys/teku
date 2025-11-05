@@ -455,7 +455,8 @@ class AggregateAttestationValidatorTest {
       final Boolean... aggregationBitsPrefix) {
     final BeaconState state = storageSystem.getChainHead().getState();
     final int committeeSize =
-        spec.getBeaconCommittee(state, attestationData.getSlot(), attestationData.getIndex())
+        spec.getBeaconCommittee(
+                state, attestationData.getSlot(), attestationData.getIndexRequired())
             .size();
     // fill rest of the aggregation bits with 0b0
     final boolean[] aggregationBits = new boolean[committeeSize];
@@ -608,7 +609,7 @@ class AggregateAttestationValidatorTest {
     final CommitteeAssignment committeeAssignment =
         getCommitteeAssignment(
             chainHead, aggregatorIndex, spec.computeEpochAtSlot(chainHead.getSlot()));
-    if (committeeAssignment.committeeIndex().equals(attestationData.getIndex())
+    if (committeeAssignment.committeeIndex().equals(attestationData.getIndexRequired())
         && committeeAssignment.slot().equals(attestationData.getSlot())) {
       fail("Aggregator was in the committee");
     }

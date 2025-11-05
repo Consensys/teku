@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.operations.versions.electra;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_DATA_SCHEMA;
 
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class AttestationElectraSchema
     extends ContainerSchema4<
@@ -36,11 +38,13 @@ public class AttestationElectraSchema
     implements AttestationSchema<AttestationElectra> {
 
   public AttestationElectraSchema(
-      final long maxValidatorsPerAttestation, final long maxCommitteesPerSlot) {
+      final long maxValidatorsPerAttestation,
+      final long maxCommitteesPerSlot,
+      final SchemaRegistry schemaRegistry) {
     super(
         "AttestationElectra",
         namedSchema("aggregation_bits", SszBitlistSchema.create(maxValidatorsPerAttestation)),
-        namedSchema("data", AttestationData.SSZ_SCHEMA),
+        namedSchema("data", schemaRegistry.get(ATTESTATION_DATA_SCHEMA)),
         namedSchema("signature", SszSignatureSchema.INSTANCE),
         namedSchema("committee_bits", SszBitvectorSchema.create(maxCommitteesPerSlot)));
   }

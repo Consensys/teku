@@ -73,7 +73,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -118,6 +118,7 @@ class ForkChoiceTest {
       mock(AvailabilityChecker.class);
 
   private AttestationSchema<?> attestationSchema;
+  private AttestationDataSchema<?> attestationDataSchema;
   private StorageSystem storageSystem;
   private ChainBuilder chainBuilder;
   private SignedBlockAndState genesis;
@@ -151,6 +152,7 @@ class ForkChoiceTest {
     this.spec = spy(unmockedSpec);
     this.dataStructureUtil = new DataStructureUtil(spec);
     this.attestationSchema = spec.getGenesisSchemaDefinitions().getAttestationSchema();
+    this.attestationDataSchema = spec.getGenesisSchemaDefinitions().getAttestationDataSchema();
     this.storageSystem =
         InMemoryStorageSystemBuilder.create()
             .storageMode(StateStorageMode.PRUNE)
@@ -1239,7 +1241,7 @@ class ForkChoiceTest {
     final Attestation attestation =
         attestationSchema.create(
             attestationSchema.getAggregationBitsSchema().ofBits(5),
-            new AttestationData(
+            attestationDataSchema.create(
                 targetBlock.getSlot(),
                 spec.computeEpochAtSlot(targetBlock.getSlot()),
                 targetBlock.getRoot(),
@@ -1291,7 +1293,7 @@ class ForkChoiceTest {
             spec,
             attestationSchema.create(
                 attestationSchema.getAggregationBitsSchema().ofBits(16),
-                new AttestationData(
+                attestationDataSchema.create(
                     updatedAttestationSlot,
                     UInt64.ONE,
                     targetBlock.getRoot(),

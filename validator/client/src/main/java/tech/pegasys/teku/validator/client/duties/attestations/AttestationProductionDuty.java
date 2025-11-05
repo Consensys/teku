@@ -40,6 +40,8 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
+import tech.pegasys.teku.spec.logic.common.util.AttestationValidationResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
@@ -254,13 +256,12 @@ public class AttestationProductionDuty implements Duty {
         "Unsigned attestation slot (%s) does not match expected slot %s",
         attestationData.getSlot(),
         slot);
-
-    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
-      checkArgument(
-          attestationData.getIndex().equals(UInt64.ZERO),
-          "Unsigned attestation slot (%s) must have index 0",
-          slot);
-    }
+    final AttestationUtil attestationUtil =
+        spec.atSlot(attestationData.getSlot()).getAttestationUtil();
+    final AttestationValidationResult attestationIndexValidationResult =
+        attestationUtil.validateIndexValue(attestationData);
+    checkArgument(
+        attestationIndexValidationResult.isValid(), attestationIndexValidationResult.getReason());
   }
 
   private SafeFuture<ProductionResult<Attestation>> signAttestationForValidator(

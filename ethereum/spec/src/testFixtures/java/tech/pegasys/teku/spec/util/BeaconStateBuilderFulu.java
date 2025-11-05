@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.Mut
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BeaconStateBuilderFulu
     extends AbstractBeaconStateBuilder<
@@ -63,10 +64,11 @@ public class BeaconStateBuilderFulu
 
   protected BeaconStateBuilderFulu(
       final SpecVersion spec,
+      final SchemaRegistry schemaRegistry,
       final DataStructureUtil dataStructureUtil,
       final int defaultValidatorCount,
       final int defaultItemsInSSZLists) {
-    super(spec, dataStructureUtil, defaultValidatorCount, defaultItemsInSSZLists);
+    super(spec, schemaRegistry, dataStructureUtil, defaultValidatorCount, defaultItemsInSSZLists);
   }
 
   @Override
@@ -101,10 +103,12 @@ public class BeaconStateBuilderFulu
   public static BeaconStateBuilderFulu create(
       final DataStructureUtil dataStructureUtil,
       final Spec spec,
+      final SchemaRegistry schemaRegistry,
       final int defaultValidatorCount,
       final int defaultItemsInSSZLists) {
     return new BeaconStateBuilderFulu(
         spec.forMilestone(SpecMilestone.FULU),
+        schemaRegistry,
         dataStructureUtil,
         defaultValidatorCount,
         defaultItemsInSSZLists);

@@ -658,17 +658,17 @@ abstract class AggregatingAttestationPoolTest {
     // level
     final AttestationData attestationData1 = createAttestationData();
     final AttestationData attestationData2 =
-        new AttestationData(
-            attestationData1.getSlot(),
-            attestationData1.getIndex().plus(1),
-            attestationData1.getBeaconBlockRoot(),
-            attestationData1.getSource(),
-            attestationData1.getTarget());
+        spec.getGenesisSchemaDefinitions()
+            .getAttestationDataSchema()
+            .create(
+                attestationData1.getSlot(),
+                attestationData1.getIndexRequired().plus(1),
+                attestationData1.getBeaconBlockRoot(),
+                attestationData1.getSource(),
+                attestationData1.getTarget());
     final Attestation attestation1 = addAttestationFromValidators(attestationData1, 1, 2, 3);
     addAttestationFromValidators(attestationData2, 4, 5, 6);
-    assertThat(
-            aggregatingPool.getAttestations(
-                Optional.empty(), Optional.of(attestationData1.getIndex())))
+    assertThat(aggregatingPool.getAttestations(Optional.empty(), attestationData1.getIndex()))
         .containsExactly(attestation1);
   }
 
@@ -697,12 +697,14 @@ abstract class AggregatingAttestationPoolTest {
   public void getAttestations_shouldReturnAttestationsForGivenSlotOnly() {
     final AttestationData attestationData1 = createAttestationData();
     final AttestationData attestationData2 =
-        new AttestationData(
-            attestationData1.getSlot().plus(1),
-            attestationData1.getIndex(),
-            attestationData1.getBeaconBlockRoot(),
-            attestationData1.getSource(),
-            attestationData1.getTarget());
+        spec.getGenesisSchemaDefinitions()
+            .getAttestationDataSchema()
+            .create(
+                attestationData1.getSlot().plus(1),
+                attestationData1.getIndexRequired(),
+                attestationData1.getBeaconBlockRoot(),
+                attestationData1.getSource(),
+                attestationData1.getTarget());
     Attestation attestation1 = addAttestationFromValidators(attestationData1, 1, 2, 3);
     addAttestationFromValidators(attestationData2, 4, 5, 6);
     assertThat(

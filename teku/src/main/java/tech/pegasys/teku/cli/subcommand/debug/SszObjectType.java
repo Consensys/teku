@@ -22,7 +22,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader.BeaconBloc
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data.Eth1DataSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationData.AttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit.DepositSchema;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData.DepositDataSchema;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage.DepositMessageSchema;
@@ -34,7 +33,6 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint.CheckpointSchema;
 import tech.pegasys.teku.spec.datastructures.state.Fork.ForkSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkData.ForkDataSchema;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation.PendingAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.SigningData.SigningDataSchema;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.Validator.ValidatorSchema;
@@ -67,10 +65,10 @@ public enum SszObjectType {
   Eth1Data(new Eth1DataSchema()),
   Fork(new ForkSchema()),
   IndexedAttestation(schemas(SchemaDefinitions::getIndexedAttestationSchema)),
-  PendingAttestation(config(PendingAttestationSchema::new)),
+  PendingAttestation(schemas(SchemaDefinitions::getPendingAttestationSchema)),
   BeaconBlockHeader(new BeaconBlockHeaderSchema()),
   Deposit(new DepositSchema()),
-  AttestationData(new AttestationDataSchema()),
+  AttestationData(schemas(SchemaDefinitions::getAttestationDataSchema)),
   BeaconState(schemas(SchemaDefinitions::getBeaconStateSchema)),
   SingleAttestation(electraSchemas(SchemaDefinitionsElectra::getSingleAttestationSchema)),
   Attestation(schemas(SchemaDefinitions::getAttestationSchema)),

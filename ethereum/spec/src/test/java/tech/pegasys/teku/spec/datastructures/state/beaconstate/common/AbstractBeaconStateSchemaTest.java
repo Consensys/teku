@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public abstract class AbstractBeaconStateSchemaTest<
@@ -47,9 +48,12 @@ public abstract class AbstractBeaconStateSchemaTest<
 
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SpecConfig genesisConfig = spec.getGenesisSpecConfig();
-  private final BeaconStateSchema<T, TMutable> schema = getSchema(genesisConfig);
+  private final SchemaRegistry schemaRegistry =
+      spec.getGenesisSchemaDefinitions().getSchemaRegistry();
+  private final BeaconStateSchema<T, TMutable> schema = getSchema(genesisConfig, schemaRegistry);
 
-  protected abstract BeaconStateSchema<T, TMutable> getSchema(final SpecConfig specConfig);
+  protected abstract BeaconStateSchema<T, TMutable> getSchema(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry);
 
   protected abstract T randomState();
 
@@ -81,8 +85,8 @@ public abstract class AbstractBeaconStateSchemaTest<
                         .maxAttestations(123))
             .specConfig();
 
-    BeaconState s1 = getSchema(modifiedConfig).createEmpty();
-    BeaconState s2 = getSchema(standardSpec.getGenesisSpecConfig()).createEmpty();
+    BeaconState s1 = getSchema(modifiedConfig, schemaRegistry).createEmpty();
+    BeaconState s2 = getSchema(standardSpec.getGenesisSpecConfig(), schemaRegistry).createEmpty();
 
     assertThat(s1.getBlockRoots().getSchema()).isNotEqualTo(s2.getBlockRoots().getSchema());
     assertThat(s1.getStateRoots().getSchema()).isNotEqualTo(s2.getStateRoots().getSchema());
@@ -107,10 +111,12 @@ public abstract class AbstractBeaconStateSchemaTest<
   public void create_compareDifferentSpecs() {
     final BeaconStateSchema<T, TMutable> minimalState =
         getSchema(
-            TestSpecFactory.createMinimal(genesisConfig.getMilestone()).getGenesisSpecConfig());
+            TestSpecFactory.createMinimal(genesisConfig.getMilestone()).getGenesisSpecConfig(),
+            schemaRegistry);
     final BeaconStateSchema<T, TMutable> mainnetState =
         getSchema(
-            TestSpecFactory.createMainnet(genesisConfig.getMilestone()).getGenesisSpecConfig());
+            TestSpecFactory.createMainnet(genesisConfig.getMilestone()).getGenesisSpecConfig(),
+            schemaRegistry);
 
     assertThat(minimalState).isNotEqualTo(mainnetState);
   }

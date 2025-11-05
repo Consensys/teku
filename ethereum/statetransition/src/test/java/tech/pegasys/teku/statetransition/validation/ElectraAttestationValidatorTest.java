@@ -62,12 +62,14 @@ public class ElectraAttestationValidatorTest extends DenebAttestationValidatorTe
     final AttestationData correctAttestationData = attestation.getData();
 
     final AttestationData nonZeroIndexData =
-        new AttestationData(
-            correctAttestationData.getSlot(),
-            UInt64.ONE,
-            correctAttestationData.getBeaconBlockRoot(),
-            correctAttestationData.getSource(),
-            correctAttestationData.getTarget());
+        spec.getGenesisSchemaDefinitions()
+            .getAttestationDataSchema()
+            .create(
+                correctAttestationData.getSlot(),
+                UInt64.ONE,
+                correctAttestationData.getBeaconBlockRoot(),
+                correctAttestationData.getSource(),
+                correctAttestationData.getTarget());
 
     final Attestation wrongAttestation =
         spec.getGenesisSchemaDefinitions()
@@ -79,12 +81,13 @@ public class ElectraAttestationValidatorTest extends DenebAttestationValidatorTe
                 attestation::getCommitteeBitsRequired);
 
     // Sanity check
-    assertThat(wrongAttestation.getData().getIndex()).isNotEqualTo(UInt64.ZERO);
+    assertThat(wrongAttestation.getData().getIndexRequired()).isNotEqualTo(UInt64.ZERO);
 
     assertThat(validate(wrongAttestation))
         .isEqualTo(
             InternalValidationResult.reject(
-                "Rejecting attestation because attestation data index must be 0"));
+                "Attestation data index must be 0 for Electra, but was %s.",
+                wrongAttestation.getData().getIndexRequired()));
   }
 
   @Test
@@ -95,12 +98,14 @@ public class ElectraAttestationValidatorTest extends DenebAttestationValidatorTe
     final AttestationData correctAttestationData = attestation.getData();
 
     final AttestationData nonZeroIndexData =
-        new AttestationData(
-            correctAttestationData.getSlot(),
-            UInt64.ONE,
-            correctAttestationData.getBeaconBlockRoot(),
-            correctAttestationData.getSource(),
-            correctAttestationData.getTarget());
+        spec.getGenesisSchemaDefinitions()
+            .getAttestationDataSchema()
+            .create(
+                correctAttestationData.getSlot(),
+                UInt64.ONE,
+                correctAttestationData.getBeaconBlockRoot(),
+                correctAttestationData.getSource(),
+                correctAttestationData.getTarget());
 
     final Attestation wrongAttestation =
         spec.getGenesisSchemaDefinitions()
@@ -110,11 +115,12 @@ public class ElectraAttestationValidatorTest extends DenebAttestationValidatorTe
             .create(UInt64.ONE, UInt64.ONE, nonZeroIndexData, attestation.getAggregateSignature());
 
     // Sanity check
-    assertThat(wrongAttestation.getData().getIndex()).isNotEqualTo(UInt64.ZERO);
+    assertThat(wrongAttestation.getData().getIndexRequired()).isNotEqualTo(UInt64.ZERO);
 
     assertThat(validate(wrongAttestation))
         .isEqualTo(
             InternalValidationResult.reject(
-                "Rejecting attestation because attestation data index must be 0"));
+                "Attestation data index must be 0 for Electra, but was %s.",
+                wrongAttestation.getData().getIndexRequired()));
   }
 }

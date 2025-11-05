@@ -27,6 +27,8 @@ import tech.pegasys.teku.spec.datastructures.state.PendingAttestation.PendingAtt
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
+import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 
 public class BeaconStateSchemaPhase0
     extends AbstractBeaconStateSchema<BeaconStatePhase0, MutableBeaconStatePhase0> {
@@ -34,12 +36,13 @@ public class BeaconStateSchemaPhase0
   public static final int CURRENT_EPOCH_PARTICIPATION_FIELD_INDEX = 16;
 
   @VisibleForTesting
-  BeaconStateSchemaPhase0(final SpecConfig specConfig) {
-    super("BeaconStatePhase0", getUniqueFields(specConfig), specConfig);
+  BeaconStateSchemaPhase0(final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    super("BeaconStatePhase0", getUniqueFields(specConfig, schemaRegistry), specConfig);
   }
 
-  public static BeaconStateSchemaPhase0 create(final SpecConfig specConfig) {
-    return new BeaconStateSchemaPhase0(specConfig);
+  public static BeaconStateSchemaPhase0 create(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    return new BeaconStateSchemaPhase0(specConfig, schemaRegistry);
   }
 
   public static BeaconStateSchemaPhase0 required(final SszSchema<? extends BeaconState> schema) {
@@ -50,9 +53,10 @@ public class BeaconStateSchemaPhase0
     return (BeaconStateSchemaPhase0) schema;
   }
 
-  public static List<SszField> getUniqueFields(final SpecConfig specConfig) {
+  public static List<SszField> getUniqueFields(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
     final PendingAttestationSchema pendingAttestationSchema =
-        new PendingAttestationSchema(specConfig);
+        schemaRegistry.get(SchemaTypes.PENDING_ATTESTATION_SCHEMA);
 
     final SszField previousEpochAttestationsField =
         new SszField(

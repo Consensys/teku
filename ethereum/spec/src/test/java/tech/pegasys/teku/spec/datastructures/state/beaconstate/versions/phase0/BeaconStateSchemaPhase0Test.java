@@ -22,6 +22,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchemaTest;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BeaconStateSchemaPhase0Test
     extends AbstractBeaconStateSchemaTest<BeaconStatePhase0, MutableBeaconStatePhase0> {
@@ -33,8 +34,8 @@ public class BeaconStateSchemaPhase0Test
 
   @Override
   protected BeaconStateSchema<BeaconStatePhase0, MutableBeaconStatePhase0> getSchema(
-      final SpecConfig specConfig) {
-    return BeaconStateSchemaPhase0.create(specConfig);
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    return BeaconStateSchemaPhase0.create(specConfig, schemaRegistry);
   }
 
   @Override
@@ -45,11 +46,14 @@ public class BeaconStateSchemaPhase0Test
   @Test
   public void changeSpecConfigTest_checkPhase0Fields() {
     final Spec standardSpec = TestSpecFactory.createMinimalPhase0();
+    final SchemaRegistry schemaRegistry =
+        standardSpec.getGenesisSchemaDefinitions().getSchemaRegistry();
     final SpecConfig modifiedConfig =
         SpecConfigLoader.loadConfig("minimal", b -> b.maxAttestations(123)).specConfig();
 
-    BeaconStatePhase0 s1 = getSchema(modifiedConfig).createEmpty();
-    BeaconStatePhase0 s2 = getSchema(standardSpec.getGenesisSpecConfig()).createEmpty();
+    BeaconStatePhase0 s1 = getSchema(modifiedConfig, schemaRegistry).createEmpty();
+    BeaconStatePhase0 s2 =
+        getSchema(standardSpec.getGenesisSpecConfig(), schemaRegistry).createEmpty();
 
     assertThat(s1.getPreviousEpochAttestations().getSchema())
         .isNotEqualTo(s2.getPreviousEpochAttestations().getSchema());

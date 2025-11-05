@@ -37,6 +37,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationDataPhase0Schema;
 
 public class GetAttestationData extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/attestation_data";
@@ -50,7 +51,11 @@ public class GetAttestationData extends RestApiEndpoint {
       SerializableTypeDefinition.object(AttestationData.class)
           .name("ProduceAttestationDataResponse")
           .withField(
-              "data", AttestationData.SSZ_SCHEMA.getJsonTypeDefinition(), Function.identity())
+              "data",
+              new AttestationDataPhase0Schema()
+                  .castTypeToAttestationSchema()
+                  .getJsonTypeDefinition(),
+              Function.identity())
           .build();
 
   public GetAttestationData(final DataProvider provider, final Spec spec) {

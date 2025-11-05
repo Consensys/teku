@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BeaconStateSchemaAltair
     extends AbstractBeaconStateSchema<BeaconStateAltair, MutableBeaconStateAltair> {
@@ -43,15 +44,17 @@ public class BeaconStateSchemaAltair
   public static final int NEXT_SYNC_COMMITTEE_FIELD_INDEX = 23;
 
   @VisibleForTesting
-  BeaconStateSchemaAltair(final SpecConfig specConfig) {
-    super("BeaconStateAltair", getUniqueFields(specConfig), specConfig);
+  BeaconStateSchemaAltair(final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    super("BeaconStateAltair", getUniqueFields(specConfig, schemaRegistry), specConfig);
   }
 
-  public static BeaconStateSchemaAltair create(final SpecConfig specConfig) {
-    return new BeaconStateSchemaAltair(specConfig);
+  public static BeaconStateSchemaAltair create(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    return new BeaconStateSchemaAltair(specConfig, schemaRegistry);
   }
 
-  public static List<SszField> getUniqueFields(final SpecConfig specConfig) {
+  public static List<SszField> getUniqueFields(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
     final List<SszField> updatedFields =
         List.of(
             new SszField(
@@ -83,7 +86,8 @@ public class BeaconStateSchemaAltair
                 () -> new SyncCommitteeSchema(SpecConfigAltair.required(specConfig))));
 
     return Stream.concat(
-            BeaconStateSchemaPhase0.getUniqueFields(specConfig).stream(), newFields.stream())
+            BeaconStateSchemaPhase0.getUniqueFields(specConfig, schemaRegistry).stream(),
+            newFields.stream())
         .map(
             field ->
                 updatedFields.stream()

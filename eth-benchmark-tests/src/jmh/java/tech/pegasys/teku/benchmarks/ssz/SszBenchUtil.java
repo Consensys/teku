@@ -119,6 +119,7 @@ public class SszBenchUtil {
   public static void iterateData(AttestationData ad, Blackhole bh) {
     bh.consume(ad.getSlot());
     bh.consume(ad.getIndex());
+    bh.consume(ad.getPayloadStatus());
     bh.consume(ad.getEarliestSlotForForkChoice(SPEC));
     iterateData(ad.getSource(), bh);
     iterateData(ad.getTarget(), bh);

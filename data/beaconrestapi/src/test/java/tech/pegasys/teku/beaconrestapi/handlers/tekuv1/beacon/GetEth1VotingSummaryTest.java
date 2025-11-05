@@ -69,7 +69,12 @@ public class GetEth1VotingSummaryTest extends AbstractMigratedBeaconHandlerTest 
     setHandler(new GetEth1VotingSummary(dataProvider, eth1DataProvider));
     request.setPathParameter("state_id", "head");
     BeaconState beaconState =
-        BeaconStateBuilderPhase0.create(dataStructureUtil, spec, 16, 16)
+        BeaconStateBuilderPhase0.create(
+                dataStructureUtil,
+                spec,
+                spec.getGenesisSchemaDefinitions().getSchemaRegistry(),
+                16,
+                16)
             .eth1Data(ETH1_DATA)
             .build();
     when(chainDataProvider.getBeaconStateAndMetadata(any()))

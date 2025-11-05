@@ -250,7 +250,7 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
                     spec,
                     attestationSchema.create(
                         attestation.getAggregationBits(),
-                        new AttestationData(
+                        attestationDataSchema.create(
                             data.getSlot(),
                             spec.getCommitteeCountPerSlot(
                                 blockAndState.getState(), data.getTarget().getEpoch()),
@@ -275,9 +275,9 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
                     spec,
                     attestationSchema.create(
                         attestation.getAggregationBits(),
-                        new AttestationData(
+                        attestationDataSchema.create(
                             data.getSlot(),
-                            data.getIndex(),
+                            data.getIndexRequired(),
                             data.getBeaconBlockRoot(),
                             data.getSource(),
                             new Checkpoint(data.getTarget().getEpoch().plus(2), Bytes32.ZERO)),
@@ -310,9 +310,9 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
                     spec,
                     attestationSchema.create(
                         attestation.getAggregationBits(),
-                        new AttestationData(
+                        attestationDataSchema.create(
                             data.getSlot(),
-                            data.getIndex(),
+                            data.getIndexRequired(),
                             data.getBeaconBlockRoot(),
                             data.getSource(),
                             checkpoint),

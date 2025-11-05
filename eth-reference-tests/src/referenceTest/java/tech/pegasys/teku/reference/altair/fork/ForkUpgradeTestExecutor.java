@@ -52,9 +52,14 @@ public class ForkUpgradeTestExecutor implements TestExecutor {
         testDefinition.getSpec().forMilestone(previousMilestone);
     final BeaconStateSchema<?, ?> fromMilestoneSchema =
         switch (milestone) {
-          case ALTAIR -> BeaconStateSchemaPhase0.create(previousMilestoneSpecVersion.getConfig());
+          case ALTAIR ->
+              BeaconStateSchemaPhase0.create(
+                  previousMilestoneSpecVersion.getConfig(),
+                  previousMilestoneSpecVersion.getSchemaDefinitions().getSchemaRegistry());
           case BELLATRIX ->
-              BeaconStateSchemaAltair.create(previousMilestoneSpecVersion.getConfig());
+              BeaconStateSchemaAltair.create(
+                  previousMilestoneSpecVersion.getConfig(),
+                  previousMilestoneSpecVersion.getSchemaDefinitions().getSchemaRegistry());
           case CAPELLA ->
               BeaconStateSchemaBellatrix.create(
                   previousMilestoneSpecVersion.getConfig(),

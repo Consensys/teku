@@ -156,13 +156,13 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
       return false;
     }
     if (isAttestationSameSlot(state, data)) {
-      checkArgument(data.getIndex().isZero(), "Index must be set to zero");
+      checkArgument(data.getPayloadStatusRequired().isZero(), "Index must be set to zero");
       return true;
     } else {
       final int slotIndex = data.getSlot().mod(config.getSlotsPerHistoricalRoot()).intValue();
       final boolean payloadIndex =
           BeaconStateGloas.required(state).getExecutionPayloadAvailability().get(slotIndex).get();
-      return data.getIndex().intValue() == (payloadIndex ? 1 : 0);
+      return data.getPayloadStatusRequired().intValue() == (payloadIndex ? 1 : 0);
     }
   }
 

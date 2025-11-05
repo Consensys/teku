@@ -31,6 +31,8 @@ class AttestationDataTest {
   private final Spec spec =
       TestSpecFactory.createDefault(builder -> builder.minAttestationInclusionDelay(2));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final AttestationDataSchema<?> attestationDataSchema =
+      spec.getGenesisSchemaDefinitions().getAttestationDataSchema();
   private final UInt64 slot = dataStructureUtil.randomUInt64();
   private final UInt64 index = dataStructureUtil.randomUInt64();
   private final Bytes32 beaconBlockRoot = dataStructureUtil.randomBytes32();
@@ -42,12 +44,12 @@ class AttestationDataTest {
   private final Checkpoint target = new Checkpoint(targetEpoch, targetRoot);
 
   private final AttestationData attestationData =
-      new AttestationData(slot, index, beaconBlockRoot, source, target);
+      attestationDataSchema.create(slot, index, beaconBlockRoot, source, target);
 
   @Test
   void shouldNotBeProcessableBeforeSlotAfterCreationSlot() {
     final AttestationData data =
-        new AttestationData(
+        attestationDataSchema.create(
             UInt64.valueOf(60),
             UInt64.ZERO,
             Bytes32.ZERO,
@@ -61,7 +63,7 @@ class AttestationDataTest {
   void shouldNotBeProcessableBeforeFirstSlotOfTargetEpoch() {
     final Checkpoint target = new Checkpoint(UInt64.valueOf(10), Bytes32.ZERO);
     final AttestationData data =
-        new AttestationData(
+        attestationDataSchema.create(
             UInt64.valueOf(1),
             UInt64.ZERO,
             Bytes32.ZERO,
@@ -81,7 +83,7 @@ class AttestationDataTest {
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     AttestationData testAttestationData =
-        new AttestationData(slot, index, beaconBlockRoot, source, target);
+        attestationDataSchema.create(slot, index, beaconBlockRoot, source, target);
 
     assertEquals(attestationData, testAttestationData);
   }
@@ -89,7 +91,7 @@ class AttestationDataTest {
   @Test
   void equalsReturnsFalseWhenBlockRootsAreDifferent() {
     AttestationData testAttestationData =
-        new AttestationData(slot, index, Bytes32.random(), source, target);
+        attestationDataSchema.create(slot, index, Bytes32.random(), source, target);
 
     assertNotEquals(attestationData, testAttestationData);
   }
@@ -98,7 +100,7 @@ class AttestationDataTest {
   void equalsReturnsFalseWhenSourceEpochsAreDifferent() {
     Checkpoint newSource = new Checkpoint(dataStructureUtil.randomUInt64(), source.getRoot());
     AttestationData testAttestationData =
-        new AttestationData(slot, index, beaconBlockRoot, newSource, target);
+        attestationDataSchema.create(slot, index, beaconBlockRoot, newSource, target);
 
     assertNotEquals(attestationData, testAttestationData);
   }
@@ -107,7 +109,7 @@ class AttestationDataTest {
   void equalsReturnsFalseWhenSourceRootsAreDifferent() {
     Checkpoint newSource = new Checkpoint(source.getEpoch(), Bytes32.random());
     AttestationData testAttestationData =
-        new AttestationData(slot, index, beaconBlockRoot, newSource, target);
+        attestationDataSchema.create(slot, index, beaconBlockRoot, newSource, target);
 
     assertNotEquals(attestationData, testAttestationData);
   }
@@ -116,7 +118,7 @@ class AttestationDataTest {
   void equalsReturnsFalseWhenTargetEpochsAreDifferent() {
     Checkpoint newTarget = new Checkpoint(dataStructureUtil.randomUInt64(), target.getRoot());
     AttestationData testAttestationData =
-        new AttestationData(slot, index, beaconBlockRoot, source, newTarget);
+        attestationDataSchema.create(slot, index, beaconBlockRoot, source, newTarget);
 
     assertNotEquals(attestationData, testAttestationData);
   }
@@ -125,7 +127,7 @@ class AttestationDataTest {
   void equalsReturnsFalseWhenTargetRootsAreDifferent() {
     Checkpoint newTarget = new Checkpoint(target.getEpoch(), Bytes32.random());
     AttestationData testAttestationData =
-        new AttestationData(slot, index, beaconBlockRoot, source, newTarget);
+        attestationDataSchema.create(slot, index, beaconBlockRoot, source, newTarget);
 
     assertNotEquals(attestationData, testAttestationData);
   }
@@ -133,7 +135,7 @@ class AttestationDataTest {
   @Test
   void equalsReturnsFalseWhenSlotIsDifferent() {
     AttestationData testAttestationData =
-        new AttestationData(UInt64.valueOf(1234), index, beaconBlockRoot, source, target);
+        attestationDataSchema.create(UInt64.valueOf(1234), index, beaconBlockRoot, source, target);
 
     assertNotEquals(attestationData, testAttestationData);
   }
@@ -141,7 +143,7 @@ class AttestationDataTest {
   @Test
   void equalsReturnsFalseWhenIndexIsDifferent() {
     AttestationData testAttestationData =
-        new AttestationData(slot, UInt64.valueOf(1234), beaconBlockRoot, source, target);
+        attestationDataSchema.create(slot, UInt64.valueOf(1234), beaconBlockRoot, source, target);
 
     assertNotEquals(attestationData, testAttestationData);
   }
@@ -149,7 +151,6 @@ class AttestationDataTest {
   @Test
   void roundtripSSZ() {
     Bytes sszAttestationDataBytes = attestationData.sszSerialize();
-    assertEquals(
-        attestationData, AttestationData.SSZ_SCHEMA.sszDeserialize(sszAttestationDataBytes));
+    assertEquals(attestationData, attestationDataSchema.sszDeserialize(sszAttestationDataBytes));
   }
 }

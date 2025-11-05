@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.MutableBeaconStateDeneb;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BeaconStateBuilderDeneb
     extends AbstractBeaconStateBuilder<
@@ -43,10 +44,11 @@ public class BeaconStateBuilderDeneb
 
   protected BeaconStateBuilderDeneb(
       final SpecVersion spec,
+      final SchemaRegistry schemaRegistry,
       final DataStructureUtil dataStructureUtil,
       final int defaultValidatorCount,
       final int defaultItemsInSSZLists) {
-    super(spec, dataStructureUtil, defaultValidatorCount, defaultItemsInSSZLists);
+    super(spec, schemaRegistry, dataStructureUtil, defaultValidatorCount, defaultItemsInSSZLists);
   }
 
   @Override
@@ -71,10 +73,12 @@ public class BeaconStateBuilderDeneb
   public static BeaconStateBuilderDeneb create(
       final DataStructureUtil dataStructureUtil,
       final Spec spec,
+      final SchemaRegistry schemaRegistry,
       final int defaultValidatorCount,
       final int defaultItemsInSSZLists) {
     return new BeaconStateBuilderDeneb(
         spec.forMilestone(SpecMilestone.DENEB),
+        schemaRegistry,
         dataStructureUtil,
         defaultValidatorCount,
         defaultItemsInSSZLists);

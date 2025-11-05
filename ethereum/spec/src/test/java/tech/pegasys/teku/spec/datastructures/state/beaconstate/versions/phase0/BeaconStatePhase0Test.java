@@ -31,7 +31,7 @@ public class BeaconStatePhase0Test
   @Override
   protected BeaconStateSchema<BeaconStatePhase0, MutableBeaconStatePhase0> getSchema(
       final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
-    return BeaconStateSchemaPhase0.create(specConfig);
+    return BeaconStateSchemaPhase0.create(specConfig, schemaRegistry);
   }
 
   @Override

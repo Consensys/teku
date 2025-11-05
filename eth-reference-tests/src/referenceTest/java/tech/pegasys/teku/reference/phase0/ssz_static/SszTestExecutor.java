@@ -29,7 +29,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
@@ -58,6 +57,9 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
   public static final ImmutableMap<String, TestExecutor> SSZ_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           // SSZ Static
+          .put(
+              "ssz_static/AttestationData",
+              new SszTestExecutor<>(SchemaDefinitions::getAttestationDataSchema))
           .put(
               "ssz_static/AggregateAndProof",
               new SszTestExecutor<>(SchemaDefinitions::getAggregateAndProofSchema))
@@ -303,8 +305,6 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
           .put("ssz_static/ForkChoiceNode", IGNORE_TESTS)
 
           // Legacy Schemas (Not yet migrated to SchemaDefinitions)
-          .put(
-              "ssz_static/AttestationData", new SszTestExecutor<>(__ -> AttestationData.SSZ_SCHEMA))
           .put(
               "ssz_static/BeaconBlockHeader",
               new SszTestExecutor<>(__ -> BeaconBlockHeader.SSZ_SCHEMA))

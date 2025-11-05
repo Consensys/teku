@@ -866,27 +866,44 @@ public final class DataStructureUtil {
   }
 
   public AttestationData randomAttestationData(final UInt64 slot) {
-    final UInt64 index =
-        spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)
-            ? ZERO
-            : randomUInt64();
-    return new AttestationData(
-        slot, index, randomBytes32(), randomCheckpoint(), randomCheckpoint());
+    return spec.atSlot(slot)
+        .getSchemaDefinitions()
+        .getAttestationDataSchema()
+        .create(
+            slot,
+            randomAttestationDataIndex(slot),
+            randomBytes32(),
+            randomCheckpoint(),
+            randomCheckpoint());
+  }
+
+  public UInt64 randomAttestationDataIndex(final UInt64 slot) {
+    final SpecMilestone specMilestone = spec.atSlot(slot).getMilestone();
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      return randomUInt64(2);
+    } else if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      return ZERO;
+    } else {
+      return randomUInt64();
+    }
   }
 
   public AttestationData randomAttestationData(final UInt64 slot, final UInt64 committeeIndex) {
-    return new AttestationData(
-        slot, committeeIndex, randomBytes32(), randomCheckpoint(), randomCheckpoint());
+    return spec.getGenesisSchemaDefinitions()
+        .getAttestationDataSchema()
+        .create(slot, committeeIndex, randomBytes32(), randomCheckpoint(), randomCheckpoint());
   }
 
   public AttestationData randomAttestationData(final UInt64 slot, final Bytes32 blockRoot) {
-    return new AttestationData(
-        slot,
-        randomUInt64(),
-        blockRoot,
-        // Make checkpoint epochs realistic
-        randomCheckpoint(spec.computeEpochAtSlot(slot).minusMinZero(1)),
-        randomCheckpoint(spec.computeEpochAtSlot(slot)));
+    return spec.getGenesisSchemaDefinitions()
+        .getAttestationDataSchema()
+        .create(
+            slot,
+            randomUInt64(),
+            blockRoot,
+            // Make checkpoint epochs realistic
+            randomCheckpoint(spec.computeEpochAtSlot(slot).minusMinZero(1)),
+            randomCheckpoint(spec.computeEpochAtSlot(slot)));
   }
 
   public Attestation randomAttestation() {
@@ -2058,12 +2075,18 @@ public final class DataStructureUtil {
   }
 
   public BeaconStateBuilderPhase0 stateBuilderPhase0() {
-    return BeaconStateBuilderPhase0.create(this, spec, 10, 10);
+    return BeaconStateBuilderPhase0.create(
+        this, spec, spec.getGenesisSchemaDefinitions().getSchemaRegistry(), 10, 10);
   }
 
   public BeaconStateBuilderPhase0 stateBuilderPhase0(
       final int validatorCount, final int numItemsInSSZLists) {
-    return BeaconStateBuilderPhase0.create(this, spec, validatorCount, numItemsInSSZLists);
+    return BeaconStateBuilderPhase0.create(
+        this,
+        spec,
+        spec.getGenesisSchemaDefinitions().getSchemaRegistry(),
+        validatorCount,
+        numItemsInSSZLists);
   }
 
   public BeaconStateBuilderAltair stateBuilderAltair() {
@@ -2073,13 +2096,21 @@ public final class DataStructureUtil {
   public BeaconStateBuilderAltair stateBuilderAltair(
       final int defaultValidatorCount, final int defaultItemsInSSZLists) {
     return BeaconStateBuilderAltair.create(
-        this, spec, defaultValidatorCount, defaultItemsInSSZLists);
+        this,
+        spec,
+        spec.getGenesisSchemaDefinitions().getSchemaRegistry(),
+        defaultValidatorCount,
+        defaultItemsInSSZLists);
   }
 
   public BeaconStateBuilderBellatrix stateBuilderBellatrix(
       final int defaultValidatorCount, final int defaultItemsInSSZLists) {
     return BeaconStateBuilderBellatrix.create(
-        this, spec, defaultValidatorCount, defaultItemsInSSZLists);
+        this,
+        spec,
+        spec.getGenesisSchemaDefinitions().getSchemaRegistry(),
+        defaultValidatorCount,
+        defaultItemsInSSZLists);
   }
 
   public BeaconStateBuilderCapella stateBuilderCapella() {
@@ -2089,30 +2120,51 @@ public final class DataStructureUtil {
   public BeaconStateBuilderCapella stateBuilderCapella(
       final int defaultValidatorCount, final int defaultItemsInSSZLists) {
     return BeaconStateBuilderCapella.create(
-        this, spec, defaultValidatorCount, defaultItemsInSSZLists);
+        this,
+        spec,
+        spec.getGenesisSchemaDefinitions().getSchemaRegistry(),
+        defaultValidatorCount,
+        defaultItemsInSSZLists);
   }
 
   public BeaconStateBuilderDeneb stateBuilderDeneb(
       final int defaultValidatorCount, final int defaultItemsInSSZLists) {
     return BeaconStateBuilderDeneb.create(
-        this, spec, defaultValidatorCount, defaultItemsInSSZLists);
+        this,
+        spec,
+        spec.getGenesisSchemaDefinitions().getSchemaRegistry(),
+        defaultValidatorCount,
+        defaultItemsInSSZLists);
   }
 
   public BeaconStateBuilderElectra stateBuilderElectra(
       final int defaultValidatorCount, final int defaultItemsInSSZLists) {
     return BeaconStateBuilderElectra.create(
-        this, spec, defaultValidatorCount, defaultItemsInSSZLists);
+        this,
+        spec,
+        spec.getGenesisSchemaDefinitions().getSchemaRegistry(),
+        defaultValidatorCount,
+        defaultItemsInSSZLists);
   }
 
   public BeaconStateBuilderFulu stateBuilderFulu(
       final int defaultValidatorCount, final int defaultItemsInSSZLists) {
-    return BeaconStateBuilderFulu.create(this, spec, defaultValidatorCount, defaultItemsInSSZLists);
+    return BeaconStateBuilderFulu.create(
+        this,
+        spec,
+        spec.getGenesisSchemaDefinitions().getSchemaRegistry(),
+        defaultValidatorCount,
+        defaultItemsInSSZLists);
   }
 
   public BeaconStateBuilderGloas stateBuilderGloas(
       final int defaultValidatorCount, final int defaultItemsInSSZLists) {
     return BeaconStateBuilderGloas.create(
-        this, spec, defaultValidatorCount, defaultItemsInSSZLists);
+        this,
+        spec,
+        spec.getGenesisSchemaDefinitions().getSchemaRegistry(),
+        defaultValidatorCount,
+        defaultItemsInSSZLists);
   }
 
   public BeaconState randomBeaconState(final UInt64 slot) {

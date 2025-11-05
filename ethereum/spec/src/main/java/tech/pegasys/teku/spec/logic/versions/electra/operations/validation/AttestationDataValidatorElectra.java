@@ -80,6 +80,7 @@ public class AttestationDataValidatorElectra implements AttestationDataValidator
 
   protected Optional<OperationInvalidReason> checkCommitteeIndex(final AttestationData data) {
     return check(
-        data.getIndex().equals(UInt64.ZERO), AttestationInvalidReason.COMMITTEE_INDEX_MUST_BE_ZERO);
+        data.getIndexRequired().equals(UInt64.ZERO),
+        AttestationInvalidReason.COMMITTEE_INDEX_MUST_BE_ZERO);
   }
 }

@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.MutableBeaconStateCapella;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BeaconStateBuilderCapella
     extends AbstractBeaconStateBuilder<
@@ -46,10 +47,11 @@ public class BeaconStateBuilderCapella
 
   protected BeaconStateBuilderCapella(
       final SpecVersion spec,
+      final SchemaRegistry schemaRegistry,
       final DataStructureUtil dataStructureUtil,
       final int defaultValidatorCount,
       final int defaultItemsInSSZLists) {
-    super(spec, dataStructureUtil, defaultValidatorCount, defaultItemsInSSZLists);
+    super(spec, schemaRegistry, dataStructureUtil, defaultValidatorCount, defaultItemsInSSZLists);
   }
 
   @Override
@@ -75,10 +77,12 @@ public class BeaconStateBuilderCapella
   public static BeaconStateBuilderCapella create(
       final DataStructureUtil dataStructureUtil,
       final Spec spec,
+      final SchemaRegistry schemaRegistry,
       final int defaultValidatorCount,
       final int defaultItemsInSSZLists) {
     return new BeaconStateBuilderCapella(
         spec.forMilestone(SpecMilestone.CAPELLA),
+        schemaRegistry,
         dataStructureUtil,
         defaultValidatorCount,
         defaultItemsInSSZLists);

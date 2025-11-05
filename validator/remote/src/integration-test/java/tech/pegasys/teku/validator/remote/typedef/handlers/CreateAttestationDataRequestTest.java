@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase;
 
@@ -42,7 +43,9 @@ class CreateAttestationDataRequestTest extends AbstractTypeDefRequestTestBase {
 
   @BeforeEach
   void setupRequest() {
-    request = new CreateAttestationDataRequest(mockWebServer.url("/"), okHttpClient);
+    request =
+        new CreateAttestationDataRequest(
+            mockWebServer.url("/"), okHttpClient, new SchemaDefinitionCache(spec));
   }
 
   @TestTemplate

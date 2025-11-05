@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
@@ -132,7 +133,7 @@ public abstract class AttestationUtil {
   public IntStream streamAttestingIndices(
       final BeaconState state, final AttestationData data, final SszBitlist aggregationBits) {
     final IntList committee =
-        beaconStateAccessors.getBeaconCommittee(state, data.getSlot(), data.getIndex());
+        beaconStateAccessors.getBeaconCommittee(state, data.getSlot(), data.getIndexRequired());
     checkArgument(
         aggregationBits.size() == committee.size(),
         "Aggregation bitlist size (%s) does not match committee size (%s)",
@@ -306,7 +307,8 @@ public abstract class AttestationUtil {
       final UInt64 slot,
       final BeaconState state,
       final BeaconBlockSummary block,
-      final UInt64 committeeIndex) {
+      final UInt64 committeeIndex,
+      final AttestationDataSchema<?> attestationDataSchema) {
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
     // Get variables necessary that can be shared among Attestations of all validators
     final Bytes32 beaconBlockRoot = block.getRoot();
@@ -319,7 +321,7 @@ public abstract class AttestationUtil {
     final Checkpoint target = new Checkpoint(epoch, epochBoundaryBlockRoot);
 
     // Set attestation data
-    return new AttestationData(slot, committeeIndex, beaconBlockRoot, source, target);
+    return attestationDataSchema.create(slot, committeeIndex, beaconBlockRoot, source, target);
   }
 
   public abstract Optional<SlotInclusionGossipValidationResult>
@@ -328,6 +330,12 @@ public abstract class AttestationUtil {
 
   public abstract Attestation convertSingleAttestationToAggregated(
       final BeaconState state, final SingleAttestation singleAttestation);
+
+  public abstract AttestationValidationResult validateIndexValue(
+      final AttestationData attestationData);
+
+  public abstract AttestationValidationResult validatePayloadStatus(
+      final AttestationData attestationData, final Optional<UInt64> maybeBlockSlot);
 
   public enum SlotInclusionGossipValidationResult {
     IGNORE,

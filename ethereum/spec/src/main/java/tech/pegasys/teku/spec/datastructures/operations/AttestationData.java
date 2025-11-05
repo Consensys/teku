@@ -13,104 +13,54 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container5;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema5;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
-public class AttestationData
-    extends Container5<AttestationData, SszUInt64, SszUInt64, SszBytes32, Checkpoint, Checkpoint> {
+public interface AttestationData extends SszContainer {
 
-  public static class AttestationDataSchema
-      extends ContainerSchema5<
-          AttestationData, SszUInt64, SszUInt64, SszBytes32, Checkpoint, Checkpoint> {
-
-    public AttestationDataSchema() {
-      super(
-          "AttestationData",
-          namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
-          namedSchema("index", SszPrimitiveSchemas.UINT64_SCHEMA),
-          namedSchema("beacon_block_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
-          namedSchema("source", Checkpoint.SSZ_SCHEMA),
-          namedSchema("target", Checkpoint.SSZ_SCHEMA));
-    }
-
-    @Override
-    public AttestationData createFromBackingNode(final TreeNode node) {
-      return new AttestationData(this, node);
-    }
-  }
-
-  public static final AttestationDataSchema SSZ_SCHEMA = new AttestationDataSchema();
-
-  private AttestationData(final AttestationDataSchema type, final TreeNode backingNode) {
-    super(type, backingNode);
-  }
-
-  public AttestationData(
-      final UInt64 slot,
-      final UInt64 index,
-      final Bytes32 beaconBlockRoot,
-      final Checkpoint source,
-      final Checkpoint target) {
-    super(
-        SSZ_SCHEMA,
-        SszUInt64.of(slot),
-        SszUInt64.of(index),
-        SszBytes32.of(beaconBlockRoot),
-        source,
-        target);
-  }
-
-  public AttestationData(final UInt64 slot, final AttestationData data) {
-    this(slot, data.getIndex(), data.getBeaconBlockRoot(), data.getSource(), data.getTarget());
-  }
-
-  public UInt64 getEarliestSlotForForkChoice(final Spec spec) {
+  default UInt64 getEarliestSlotForForkChoice(final Spec spec) {
     final UInt64 targetEpochStartSlot = getTarget().getEpochStartSlot(spec);
     return getEarliestSlotForForkChoice(targetEpochStartSlot);
   }
 
-  public UInt64 getEarliestSlotForForkChoice(final MiscHelpers miscHelpers) {
+  default UInt64 getEarliestSlotForForkChoice(final MiscHelpers miscHelpers) {
     final UInt64 targetEpochStartSlot = miscHelpers.computeStartSlotAtEpoch(getTarget().getEpoch());
     return getEarliestSlotForForkChoice(targetEpochStartSlot);
   }
 
-  public UInt64 getEarliestSlotForForkChoice(final UInt64 targetEpochStartSlot) {
+  default UInt64 getEarliestSlotForForkChoice(final UInt64 targetEpochStartSlot) {
     // Attestations can't be processed by fork choice until their slot is in the past and until we
     // are in the same epoch as their target.
     return getSlot().plus(UInt64.ONE).max(targetEpochStartSlot);
   }
 
-  public UInt64 getSlot() {
-    return getField0().get();
+  UInt64 getSlot();
+
+  Optional<UInt64> getIndex();
+
+  default UInt64 getIndexRequired() {
+    return getIndex()
+        .orElseThrow(() -> new IllegalArgumentException("Missing attestation data index"));
   }
 
-  public UInt64 getIndex() {
-    return getField1().get();
+  Optional<UInt64> getPayloadStatus();
+
+  default UInt64 getPayloadStatusRequired() {
+    return getPayloadStatus()
+        .orElseThrow(() -> new IllegalArgumentException("Missing attestation data payload status"));
   }
 
-  public Bytes32 getBeaconBlockRoot() {
-    return getField2().get();
-  }
+  Bytes32 getBeaconBlockRoot();
 
-  public Checkpoint getSource() {
-    return getField3();
-  }
+  Checkpoint getSource();
 
-  public Checkpoint getTarget() {
-    return getField4();
-  }
+  Checkpoint getTarget();
 
   @Override
-  public AttestationDataSchema getSchema() {
-    return (AttestationDataSchema) super.getSchema();
-  }
+  AttestationDataSchema<? extends AttestationData> getSchema();
 }

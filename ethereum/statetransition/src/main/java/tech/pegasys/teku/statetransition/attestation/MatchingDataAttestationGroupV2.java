@@ -401,7 +401,7 @@ public class MatchingDataAttestationGroupV2 {
     // Assumes called under read lock
     return committeeIndex.isPresent()
         && !includedValidators.requiresCommitteeBits()
-        && !attestationData.getIndex().equals(committeeIndex.get());
+        && !attestationData.getIndexRequired().equals(committeeIndex.get());
   }
 
   private Supplier<Stream<PooledAttestation>>

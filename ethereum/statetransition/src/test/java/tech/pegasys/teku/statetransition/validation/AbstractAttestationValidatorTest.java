@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
@@ -76,6 +77,8 @@ abstract class AbstractAttestationValidatorTest {
       createSpec(builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
   protected final AttestationSchema<?> attestationSchema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
+  protected final AttestationDataSchema<?> attestationDataSchema =
+      spec.getGenesisSchemaDefinitions().getAttestationDataSchema();
   protected final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.create()
           .numberOfValidators(64)

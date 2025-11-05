@@ -304,7 +304,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
     IntList committee =
-        beaconStateAccessors.getBeaconCommittee(state, data.getSlot(), data.getIndex());
+        beaconStateAccessors.getBeaconCommittee(state, data.getSlot(), data.getIndexRequired());
     checkArgument(
         attestation.getAggregationBits().size() == committee.size(),
         "process_attestations: Attestation aggregation bits and committee don't have the same length - committee "

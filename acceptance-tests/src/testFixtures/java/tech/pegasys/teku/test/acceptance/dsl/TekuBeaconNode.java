@@ -71,6 +71,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
@@ -83,6 +84,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.generator.BlsToExecutionChangeGenerator;
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.signatures.SigningRootUtil;
 import tech.pegasys.teku.test.acceptance.dsl.Eth2EventHandler.PackedMessage;
@@ -283,8 +285,11 @@ public class TekuBeaconNode extends TekuNode {
       final BLSSecretKey secretKey,
       final SigningRootUtil signingRootUtil,
       final ForkInfo forkInfo) {
+    final SchemaDefinitions schemaDefinitions = spec.getGenesisSchemaDefinitions();
+    final AttestationDataSchema<?> attestationDataSchema =
+        spec.getGenesisSchemaDefinitions().getAttestationDataSchema();
     final AttestationData attestationData =
-        new AttestationData(
+        attestationDataSchema.create(
             slot,
             index,
             Bytes32.random(),
@@ -296,10 +301,11 @@ public class TekuBeaconNode extends TekuNode {
             secretKey,
             signingRootUtil.signingRootForSignAttestationData(attestationData, forkInfo));
 
-    final IndexedAttestationSchema schema =
-        spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
-    return schema.create(
-        Stream.of(index).collect(schema.getAttestingIndicesSchema().collectorUnboxed()),
+    final IndexedAttestationSchema indexedAttestationSchema =
+        schemaDefinitions.getIndexedAttestationSchema();
+    return indexedAttestationSchema.create(
+        Stream.of(index)
+            .collect(indexedAttestationSchema.getAttestingIndicesSchema().collectorUnboxed()),
         attestationData,
         blsSignature1);
   }

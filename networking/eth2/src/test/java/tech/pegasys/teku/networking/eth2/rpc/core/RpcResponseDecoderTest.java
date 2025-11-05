@@ -317,11 +317,15 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
       final SszSchema<BeaconState> phase0Schema =
           SszSchema.as(
               BeaconState.class,
-              BeaconStateSchemaPhase0.create(PHASE0_SPEC.getGenesisSpecConfig()));
+              BeaconStateSchemaPhase0.create(
+                  PHASE0_SPEC.getGenesisSpecConfig(),
+                  PHASE0_SPEC.getGenesisSchemaDefinitions().getSchemaRegistry()));
       final SszSchema<BeaconState> altairSchema =
           SszSchema.as(
               BeaconState.class,
-              BeaconStateSchemaAltair.create(ALTAIR_SPEC.getGenesisSpecConfig()));
+              BeaconStateSchemaAltair.create(
+                  ALTAIR_SPEC.getGenesisSpecConfig(),
+                  ALTAIR_SPEC.getGenesisSchemaDefinitions().getSchemaRegistry()));
       Optional<SszSchema<BeaconState>> schema = Optional.empty();
       if (forkDigest.equals(FORK_DIGEST_PHASE0)) {
         schema = Optional.of(phase0Schema);

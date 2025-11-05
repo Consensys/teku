@@ -75,13 +75,18 @@ public class AttesterSlashingGenerator {
             blockAndState.getBlock(),
             committeeIndex);
     AttestationData brokenAttestationData =
-        new AttestationData(
-            genericAttestationData.getSlot(),
-            genericAttestationData.getIndex(),
-            genericAttestationData.getBeaconBlockRoot(),
-            genericAttestationData.getSource(),
-            new Checkpoint(
-                genericAttestationData.getTarget().getEpoch(), dataStructureUtil.randomBytes32()));
+        genericAttestationData
+            .getSchema()
+            .create(
+                genericAttestationData.getSlot(),
+                genericAttestationData
+                    .getIndex()
+                    .orElseGet(genericAttestationData::getPayloadStatusRequired),
+                genericAttestationData.getBeaconBlockRoot(),
+                genericAttestationData.getSource(),
+                new Checkpoint(
+                    genericAttestationData.getTarget().getEpoch(),
+                    dataStructureUtil.randomBytes32()));
     BLSKeyPair validatorKeyPair = validatorKeys.get(validatorIndex);
     Attestation badAttestation =
         createAttestation(

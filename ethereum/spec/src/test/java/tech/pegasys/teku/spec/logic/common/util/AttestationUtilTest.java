@@ -57,6 +57,7 @@ import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra
 import tech.pegasys.teku.spec.logic.versions.phase0.util.AttestationUtilPhase0;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
+// TODO-GLOAS add GLOAS milestone
 @TestSpecContext(milestone = {PHASE0, DENEB, ELECTRA})
 class AttestationUtilTest {
 
@@ -269,7 +270,9 @@ class AttestationUtilTest {
     } else {
       verify(beaconStateAccessors)
           .getBeaconCommittee(
-              beaconState, attestation.getData().getSlot(), attestation.getData().getIndex());
+              beaconState,
+              attestation.getData().getSlot(),
+              attestation.getData().getIndexRequired());
     }
 
     assertThat(indexedAttestation.getData()).isEqualTo(attestation.getData());

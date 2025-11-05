@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchemaTest;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BeaconStateSchemaAltairTest
     extends AbstractBeaconStateSchemaTest<BeaconStateAltair, MutableBeaconStateAltair> {
@@ -39,7 +40,9 @@ public class BeaconStateSchemaAltairTest
   void shouldRoundTripViaJson() throws JsonProcessingException {
     final BeaconStateAltair state = randomState();
     final BeaconStateSchema<BeaconStateAltair, MutableBeaconStateAltair> schema =
-        getSchema(dataStructureUtil.getSpec().getGenesisSpecConfig());
+        getSchema(
+            dataStructureUtil.getSpec().getGenesisSpecConfig(),
+            dataStructureUtil.getSpec().getGenesisSchemaDefinitions().getSchemaRegistry());
     final DeserializableTypeDefinition<BeaconStateAltair> typeDefinition =
         schema.getJsonTypeDefinition();
     final String json = JsonUtil.serialize(state, typeDefinition);
@@ -49,8 +52,8 @@ public class BeaconStateSchemaAltairTest
 
   @Override
   protected BeaconStateSchema<BeaconStateAltair, MutableBeaconStateAltair> getSchema(
-      final SpecConfig specConfig) {
-    return BeaconStateSchemaAltair.create(specConfig);
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    return BeaconStateSchemaAltair.create(specConfig, schemaRegistry);
   }
 
   @Override
@@ -61,11 +64,13 @@ public class BeaconStateSchemaAltairTest
   @Test
   public void changeSpecConfigTest_checkAltairFields() {
     final Spec standardSpec = TestSpecFactory.createMinimalAltair();
+    final SchemaRegistry schemaRegistry =
+        standardSpec.getGenesisSchemaDefinitions().getSchemaRegistry();
     final SpecConfig modifiedConstants =
         SpecConfigLoader.loadConfig("minimal", b -> b.validatorRegistryLimit(123L)).specConfig();
-
-    BeaconStateAltair s1 = getSchema(modifiedConstants).createEmpty();
-    BeaconStateAltair s2 = getSchema(standardSpec.getGenesisSpecConfig()).createEmpty();
+    BeaconStateAltair s1 = getSchema(modifiedConstants, schemaRegistry).createEmpty();
+    BeaconStateAltair s2 =
+        getSchema(standardSpec.getGenesisSpecConfig(), schemaRegistry).createEmpty();
 
     assertThat(s1.getPreviousEpochParticipation().getSchema())
         .isNotEqualTo(s2.getPreviousEpochParticipation().getSchema());

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_DATA_SCHEMA;
+
 import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -27,16 +29,17 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SingleAttestationSchema
     extends ContainerSchema4<SingleAttestation, SszUInt64, SszUInt64, AttestationData, SszSignature>
     implements AttestationSchema<SingleAttestation> {
-  public SingleAttestationSchema() {
+  public SingleAttestationSchema(final SchemaRegistry schemaRegistry) {
     super(
         "SingleAttestation",
         namedSchema("committee_index", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("attester_index", SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema("data", AttestationData.SSZ_SCHEMA),
+        namedSchema("data", schemaRegistry.get(ATTESTATION_DATA_SCHEMA)),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
   }
 

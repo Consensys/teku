@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BeaconStateBuilderAltair
     extends AbstractBeaconStateBuilder<
@@ -38,15 +39,16 @@ public class BeaconStateBuilderAltair
 
   private BeaconStateBuilderAltair(
       final SpecVersion spec,
+      final SchemaRegistry schemaRegistry,
       final DataStructureUtil dataStructureUtil,
       final int defaultValidatorCount,
       final int defaultItemsInSSZLists) {
-    super(spec, dataStructureUtil, defaultValidatorCount, defaultItemsInSSZLists);
+    super(spec, schemaRegistry, dataStructureUtil, defaultValidatorCount, defaultItemsInSSZLists);
   }
 
   @Override
   protected BeaconStateAltair getEmptyState() {
-    return BeaconStateSchemaAltair.create(spec.getConfig()).createEmpty();
+    return BeaconStateSchemaAltair.create(spec.getConfig(), schemaRegistry).createEmpty();
   }
 
   @Override
@@ -61,10 +63,12 @@ public class BeaconStateBuilderAltair
   public static BeaconStateBuilderAltair create(
       final DataStructureUtil dataStructureUtil,
       final Spec spec,
+      final SchemaRegistry schemaRegistry,
       final int defaultValidatorCount,
       final int defaultItemsInSSZLists) {
     return new BeaconStateBuilderAltair(
         spec.forMilestone(SpecMilestone.ALTAIR),
+        schemaRegistry,
         dataStructureUtil,
         defaultValidatorCount,
         defaultItemsInSSZLists);

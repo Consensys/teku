@@ -24,6 +24,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.schemas.registry.BaseSchemaProvider.providerBuilder;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.AGGREGATE_AND_PROOF_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_DATA_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTER_SLASHING_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTNETS_ENR_FIELD_SCHEMA;
@@ -72,6 +73,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.METADATA_MESSA
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_DATA_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_CONSOLIDATIONS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_DEPOSITS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_PARTIAL_WITHDRAWALS_SCHEMA;
@@ -180,8 +182,11 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.gloas.AttestationDataGloasSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationDataPhase0Schema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
+import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella;
@@ -210,9 +215,11 @@ public class SchemaRegistryBuilder {
         .addProvider(createSyncnetsENRFieldSchemaProvider())
         .addProvider(createBeaconBlocksByRootRequestMessageSchemaProvider())
         .addProvider(createHistoricalBatchSchemaProvider())
+        .addProvider(createAttestationDataSchemaProvider())
         .addProvider(createIndexedAttestationSchemaProvider())
         .addProvider(createAttesterSlashingSchemaProvider())
         .addProvider(createAttestationSchemaProvider())
+        .addProvider(createPendingAttestationSchemaProvider())
         .addProvider(createAggregateAndProofSchemaProvider())
         .addProvider(createSignedAggregateAndProofSchemaProvider())
         .addProvider(createBeaconBlockBodySchemaProvider())
@@ -288,7 +295,8 @@ public class SchemaRegistryBuilder {
 
   private static SchemaProvider<?> createSingleAttestationSchemaProvider() {
     return providerBuilder(SINGLE_ATTESTATION_SCHEMA)
-        .withCreator(ELECTRA, (registry, specConfig, schemaName) -> new SingleAttestationSchema())
+        .withCreator(
+            ELECTRA, (registry, specConfig, schemaName) -> new SingleAttestationSchema(registry))
         .build();
   }
 
@@ -410,10 +418,12 @@ public class SchemaRegistryBuilder {
     return providerBuilder(BEACON_STATE_SCHEMA)
         .withCreator(
             PHASE0,
-            (registry, specConfig, schemaName) -> BeaconStateSchemaPhase0.create(specConfig))
+            (registry, specConfig, schemaName) ->
+                BeaconStateSchemaPhase0.create(specConfig, registry))
         .withCreator(
             ALTAIR,
-            (registry, specConfig, schemaName) -> BeaconStateSchemaAltair.create(specConfig))
+            (registry, specConfig, schemaName) ->
+                BeaconStateSchemaAltair.create(specConfig, registry))
         .withCreator(
             BELLATRIX,
             (registry, specConfig, schemaName) ->
@@ -731,12 +741,12 @@ public class SchemaRegistryBuilder {
             PHASE0,
             (registry, specConfig, schemaName) ->
                 new IndexedAttestationSchema(
-                    schemaName, getMaxValidatorsPerAttestationPhase0(specConfig)))
+                    schemaName, getMaxValidatorsPerAttestationPhase0(specConfig), registry))
         .withCreator(
             ELECTRA,
             (registry, specConfig, schemaName) ->
                 new IndexedAttestationSchema(
-                    schemaName, getMaxValidatorsPerAttestationElectra(specConfig)))
+                    schemaName, getMaxValidatorsPerAttestationElectra(specConfig), registry))
         .build();
   }
 
@@ -745,15 +755,39 @@ public class SchemaRegistryBuilder {
         .withCreator(
             PHASE0,
             (registry, specConfig, schemaName) ->
-                new AttestationPhase0Schema(getMaxValidatorsPerAttestationPhase0(specConfig))
+                new AttestationPhase0Schema(
+                        getMaxValidatorsPerAttestationPhase0(specConfig), registry)
                     .castTypeToAttestationSchema())
         .withCreator(
             ELECTRA,
             (registry, specConfig, schemaName) ->
                 new AttestationElectraSchema(
                         getMaxValidatorsPerAttestationElectra(specConfig),
-                        specConfig.getMaxCommitteesPerSlot())
+                        specConfig.getMaxCommitteesPerSlot(),
+                        registry)
                     .castTypeToAttestationSchema())
+        .build();
+  }
+
+  private static SchemaProvider<?> createAttestationDataSchemaProvider() {
+    return providerBuilder(ATTESTATION_DATA_SCHEMA)
+        .withCreator(
+            PHASE0,
+            (registry, specConfig, schemaName) ->
+                new AttestationDataPhase0Schema().castTypeToAttestationSchema())
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                new AttestationDataGloasSchema().castTypeToAttestationSchema())
+        .build();
+  }
+
+  private static SchemaProvider<?> createPendingAttestationSchemaProvider() {
+    return providerBuilder(PENDING_ATTESTATION_SCHEMA)
+        .withCreator(
+            PHASE0,
+            (registry, specConfig, schemaName) ->
+                new PendingAttestation.PendingAttestationSchema(specConfig, registry))
         .build();
   }
 

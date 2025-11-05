@@ -251,7 +251,7 @@ public class MatchingDataAttestationGroup implements Iterable<PooledAttestation>
   private boolean noMatchingPreElectraAttestations(final Optional<UInt64> committeeIndex) {
     return committeeIndex.isPresent()
         && !includedValidators.requiresCommitteeBits()
-        && !attestationData.getIndex().equals(committeeIndex.get());
+        && !attestationData.getIndexRequired().equals(committeeIndex.get());
   }
 
   private class AggregatingIterator implements Iterator<PooledAttestation> {

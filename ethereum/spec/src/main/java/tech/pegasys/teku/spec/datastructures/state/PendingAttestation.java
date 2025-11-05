@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.state;
 
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_DATA_SCHEMA;
+
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container4;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema4;
@@ -23,6 +25,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class PendingAttestation
     extends Container4<PendingAttestation, SszBitlist, AttestationData, SszUInt64, SszUInt64> {
@@ -31,12 +34,12 @@ public class PendingAttestation
       extends ContainerSchema4<
           PendingAttestation, SszBitlist, AttestationData, SszUInt64, SszUInt64> {
 
-    public PendingAttestationSchema(final SpecConfig config) {
+    public PendingAttestationSchema(final SpecConfig config, final SchemaRegistry schemaRegistry) {
       super(
           "PendingAttestation",
           namedSchema(
               "aggregation_bits", SszBitlistSchema.create(config.getMaxValidatorsPerCommittee())),
-          namedSchema("data", AttestationData.SSZ_SCHEMA),
+          namedSchema("data", schemaRegistry.get(ATTESTATION_DATA_SCHEMA)),
           namedSchema("inclusion_delay", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("proposer_index", SszPrimitiveSchemas.UINT64_SCHEMA));
     }

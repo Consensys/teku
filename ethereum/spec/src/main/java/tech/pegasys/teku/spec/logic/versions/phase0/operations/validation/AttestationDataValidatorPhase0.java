@@ -47,7 +47,7 @@ public class AttestationDataValidatorPhase0 implements AttestationDataValidator 
     return firstOf(
         () ->
             check(
-                data.getIndex()
+                data.getIndexRequired()
                         .compareTo(
                             beaconStateAccessors.getCommitteeCountPerSlot(
                                 state, data.getTarget().getEpoch()))

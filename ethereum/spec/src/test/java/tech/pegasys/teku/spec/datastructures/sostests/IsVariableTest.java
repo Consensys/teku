@@ -25,7 +25,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -58,7 +57,7 @@ public class IsVariableTest {
     return Stream.of(
         Arguments.of(BeaconBlockHeader.SSZ_SCHEMA),
         Arguments.of(Eth1Data.SSZ_SCHEMA),
-        Arguments.of(AttestationData.SSZ_SCHEMA),
+        Arguments.of(SCHEMA_DEFINITIONS.getAttestationDataSchema()),
         Arguments.of(DepositData.SSZ_SCHEMA),
         Arguments.of(Deposit.SSZ_SCHEMA),
         Arguments.of(ProposerSlashing.SSZ_SCHEMA),

@@ -93,7 +93,10 @@ public class CreateAggregateAttestationRequestElectraTest extends AbstractTypeDe
         specMilestone.isGreaterThanOrEqualTo(ELECTRA)
             ? UInt64.valueOf(
                 attestation.getCommitteeBitsRequired().streamAllSetBits().findFirst().orElseThrow())
-            : attestation.getData().getIndex();
+            : attestation
+                .getData()
+                .getIndex()
+                .orElseGet(() -> attestation.getData().getPayloadStatusRequired());
 
     createAggregateAttestationRequest =
         new CreateAggregateAttestationRequest(

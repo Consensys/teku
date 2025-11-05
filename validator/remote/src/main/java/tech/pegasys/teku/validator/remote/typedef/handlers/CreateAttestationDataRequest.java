@@ -24,22 +24,32 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationDataSchema;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class CreateAttestationDataRequest extends AbstractTypeDefRequest {
 
-  public CreateAttestationDataRequest(final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
+  private final SchemaDefinitionCache schemaDefinitionCache;
+
+  public CreateAttestationDataRequest(
+      final HttpUrl baseEndpoint,
+      final OkHttpClient okHttpClient,
+      final SchemaDefinitionCache schemaDefinitionCache) {
     super(baseEndpoint, okHttpClient);
+    this.schemaDefinitionCache = schemaDefinitionCache;
   }
 
   public Optional<AttestationData> submit(final UInt64 slot, final int committeeIndex) {
+    final AttestationDataSchema<AttestationData> attestationDataSchema =
+        schemaDefinitionCache.atSlot(slot).getAttestationDataSchema().castTypeToAttestationSchema();
     final Map<String, String> queryParams = new HashMap<>();
     queryParams.put(SLOT, slot.toString());
     queryParams.put(COMMITTEE_INDEX, Integer.toString(committeeIndex));
     return get(
         ValidatorApiMethod.GET_ATTESTATION_DATA,
         queryParams,
-        new ResponseHandler<>(withDataWrapper(AttestationData.SSZ_SCHEMA)));
+        new ResponseHandler<>(withDataWrapper(attestationDataSchema)));
   }
 }

@@ -45,7 +45,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationLis
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
@@ -68,6 +68,8 @@ class AttestationManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final AttestationSchema<?> attestationSchema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
+  private final AttestationDataSchema<?> attestationDataSchema =
+      spec.getGenesisSchemaDefinitions().getAttestationDataSchema();
   private final SignedAggregateAndProofSchema aggregateSchema =
       spec.getGenesisSchemaDefinitions().getSignedAggregateAndProofSchema();
 
@@ -316,7 +318,7 @@ class AttestationManagerTest {
   private Attestation attestationFromSlot(final long slot, final Bytes32 targetRoot) {
     return attestationSchema.create(
         attestationSchema.getAggregationBitsSchema().ofBits(1),
-        new AttestationData(
+        attestationDataSchema.create(
             UInt64.valueOf(slot),
             UInt64.ZERO,
             Bytes32.ZERO,

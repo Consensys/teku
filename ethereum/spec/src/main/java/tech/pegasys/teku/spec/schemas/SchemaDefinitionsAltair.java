@@ -43,6 +43,8 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.Meta
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
@@ -52,6 +54,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionDataSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessageSchema;
+import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -61,6 +64,8 @@ import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   private final IndexedAttestationSchema indexedAttestationSchema;
   private final AttesterSlashingSchema attesterSlashingSchema;
+  private final PendingAttestation.PendingAttestationSchema pendingAttestationSchema;
+  private final AttestationDataSchema<AttestationData> attestationDataSchema;
   private final AttestationSchema<Attestation> attestationSchema;
   private final SignedAggregateAndProofSchema signedAggregateAndProofSchema;
   private final AggregateAndProofSchema aggregateAndProofSchema;
@@ -84,6 +89,8 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
     final SpecConfigAltair specConfig = SpecConfigAltair.required(schemaRegistry.getSpecConfig());
     this.indexedAttestationSchema = schemaRegistry.get(SchemaTypes.INDEXED_ATTESTATION_SCHEMA);
     this.attesterSlashingSchema = schemaRegistry.get(SchemaTypes.ATTESTER_SLASHING_SCHEMA);
+    this.pendingAttestationSchema = schemaRegistry.get(SchemaTypes.PENDING_ATTESTATION_SCHEMA);
+    this.attestationDataSchema = schemaRegistry.get(SchemaTypes.ATTESTATION_DATA_SCHEMA);
     this.attestationSchema = schemaRegistry.get(SchemaTypes.ATTESTATION_SCHEMA);
     this.aggregateAndProofSchema = schemaRegistry.get(AGGREGATE_AND_PROOF_SCHEMA);
     this.signedAggregateAndProofSchema = schemaRegistry.get(SIGNED_AGGREGATE_AND_PROOF_SCHEMA);
@@ -124,6 +131,11 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   }
 
   @Override
+  public AttestationDataSchema<AttestationData> getAttestationDataSchema() {
+    return attestationDataSchema;
+  }
+
+  @Override
   public AttestationSchema<Attestation> getAttestationSchema() {
     return attestationSchema;
   }
@@ -131,6 +143,11 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   @Override
   public IndexedAttestationSchema getIndexedAttestationSchema() {
     return indexedAttestationSchema;
+  }
+
+  @Override
+  public PendingAttestation.PendingAttestationSchema getPendingAttestationSchema() {
+    return pendingAttestationSchema;
   }
 
   @Override

@@ -32,14 +32,16 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 class AttestationTest {
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final AttestationSchema<?> schema =
+  private final AttestationSchema<?> attestationSchema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
+  private final AttestationDataSchema<?> attestationDataSchema =
+      spec.getGenesisSchemaDefinitions().getAttestationDataSchema();
   private final SszBitlist aggregationBitfield = dataStructureUtil.randomBitlist();
   private final AttestationData data = dataStructureUtil.randomAttestationData();
   private final BLSSignature aggregateSignature = dataStructureUtil.randomSignature();
 
   private final Attestation attestation =
-      schema.create(aggregationBitfield, data, aggregateSignature);
+      attestationSchema.create(aggregationBitfield, data, aggregateSignature);
 
   @Test
   public void shouldBeDependentOnTargetBlockAndBeaconBlockRoot() {
@@ -47,9 +49,9 @@ class AttestationTest {
     final Bytes32 beaconBlockRoot = Bytes32.fromHexString("0x02");
 
     final Attestation attestation =
-        schema.create(
+        attestationSchema.create(
             aggregationBitfield,
-            new AttestationData(
+            attestationDataSchema.create(
                 UInt64.valueOf(1),
                 UInt64.ZERO,
                 beaconBlockRoot,
@@ -66,9 +68,9 @@ class AttestationTest {
     final Bytes32 root = Bytes32.fromHexString("0x01");
 
     final Attestation attestation =
-        schema.create(
+        attestationSchema.create(
             aggregationBitfield,
-            new AttestationData(
+            attestationDataSchema.create(
                 UInt64.valueOf(1),
                 UInt64.ZERO,
                 root,
@@ -88,7 +90,8 @@ class AttestationTest {
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    Attestation testAttestation = schema.create(aggregationBitfield, data, aggregateSignature);
+    Attestation testAttestation =
+        attestationSchema.create(aggregationBitfield, data, aggregateSignature);
 
     assertEquals(attestation, testAttestation);
   }
@@ -96,7 +99,7 @@ class AttestationTest {
   @Test
   void equalsReturnsFalseWhenAggregationBitfieldsAreDifferent() {
     Attestation testAttestation =
-        schema.create(dataStructureUtil.randomBitlist(), data, aggregateSignature);
+        attestationSchema.create(dataStructureUtil.randomBitlist(), data, aggregateSignature);
 
     assertNotEquals(attestation, testAttestation);
   }
@@ -110,7 +113,8 @@ class AttestationTest {
       otherData = dataStructureUtil.randomAttestationData();
     }
 
-    Attestation testAttestation = schema.create(aggregationBitfield, otherData, aggregateSignature);
+    Attestation testAttestation =
+        attestationSchema.create(aggregationBitfield, otherData, aggregateSignature);
 
     assertNotEquals(attestation, testAttestation);
   }
@@ -119,7 +123,7 @@ class AttestationTest {
   void equalsReturnsFalseWhenAggregateSignaturesAreDifferent() {
     BLSSignature differentAggregateSignature = BLSTestUtil.randomSignature(99);
     Attestation testAttestation =
-        schema.create(aggregationBitfield, data, differentAggregateSignature);
+        attestationSchema.create(aggregationBitfield, data, differentAggregateSignature);
 
     assertNotEquals(aggregateSignature, differentAggregateSignature);
     assertNotEquals(attestation, testAttestation);
@@ -128,7 +132,7 @@ class AttestationTest {
   @Test
   void roundtripViaSsz() {
     Attestation attestation = dataStructureUtil.randomAttestation();
-    Attestation newAttestation = schema.sszDeserialize(attestation.sszSerialize());
+    Attestation newAttestation = attestationSchema.sszDeserialize(attestation.sszSerialize());
     assertEquals(attestation, newAttestation);
   }
 }

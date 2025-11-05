@@ -31,7 +31,7 @@ public class BeaconStateAltairTest
   @Override
   protected BeaconStateSchema<BeaconStateAltair, MutableBeaconStateAltair> getSchema(
       final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
-    return BeaconStateSchemaAltair.create(specConfig);
+    return BeaconStateSchemaAltair.create(specConfig, schemaRegistry);
   }
 
   @Override

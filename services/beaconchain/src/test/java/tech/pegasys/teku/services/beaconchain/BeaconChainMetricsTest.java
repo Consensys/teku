@@ -37,7 +37,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -507,12 +506,14 @@ class BeaconChainMetricsTest {
                     .getPendingAttestationSchema()
                     .create(
                         bitlist1,
-                        new AttestationData(
-                            UInt64.valueOf(slot),
-                            UInt64.valueOf(index),
-                            dataStructureUtil.randomBytes32(),
-                            dataStructureUtil.randomCheckpoint(),
-                            dataStructureUtil.randomCheckpoint()),
+                        spec.getGenesisSchemaDefinitions()
+                            .getAttestationDataSchema()
+                            .create(
+                                UInt64.valueOf(slot),
+                                UInt64.valueOf(index),
+                                dataStructureUtil.randomBytes32(),
+                                dataStructureUtil.randomCheckpoint(),
+                                dataStructureUtil.randomCheckpoint()),
                         dataStructureUtil.randomUInt64(),
                         dataStructureUtil.randomUInt64()));
   }
@@ -527,12 +528,14 @@ class BeaconChainMetricsTest {
                     .getPendingAttestationSchema()
                     .create(
                         bitlist1,
-                        new AttestationData(
-                            UInt64.valueOf(slot),
-                            UInt64.valueOf(index),
-                            dataStructureUtil.randomBytes32(),
-                            dataStructureUtil.randomCheckpoint(),
-                            target),
+                        spec.getGenesisSchemaDefinitions()
+                            .getAttestationDataSchema()
+                            .create(
+                                UInt64.valueOf(slot),
+                                UInt64.valueOf(index),
+                                dataStructureUtil.randomBytes32(),
+                                dataStructureUtil.randomCheckpoint(),
+                                target),
                         dataStructureUtil.randomUInt64(),
                         dataStructureUtil.randomUInt64()));
   }

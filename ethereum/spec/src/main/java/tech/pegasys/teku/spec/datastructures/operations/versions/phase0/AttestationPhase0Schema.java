@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.operations.versions.phase0;
 
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_DATA_SCHEMA;
+
 import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -27,16 +29,18 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class AttestationPhase0Schema
     extends ContainerSchema3<AttestationPhase0, SszBitlist, AttestationData, SszSignature>
     implements AttestationSchema<AttestationPhase0> {
 
-  public AttestationPhase0Schema(final long maxValidatorsPerAttestation) {
+  public AttestationPhase0Schema(
+      final long maxValidatorsPerAttestation, final SchemaRegistry schemaRegistry) {
     super(
         "AttestationPhase0",
         namedSchema("aggregation_bits", SszBitlistSchema.create(maxValidatorsPerAttestation)),
-        namedSchema("data", AttestationData.SSZ_SCHEMA),
+        namedSchema("data", schemaRegistry.get(ATTESTATION_DATA_SCHEMA)),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
   }
 

@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 @SuppressWarnings("unchecked")
 public abstract class AbstractBeaconStateBuilder<
@@ -45,6 +46,7 @@ public abstract class AbstractBeaconStateBuilder<
   protected final int defaultValidatorCount;
   protected final int defaultItemsInSSZLists;
   protected final SpecVersion spec;
+  protected final SchemaRegistry schemaRegistry;
 
   private UInt64 genesisTime;
   private Bytes32 genesisValidatorsRoot;
@@ -68,10 +70,12 @@ public abstract class AbstractBeaconStateBuilder<
 
   protected AbstractBeaconStateBuilder(
       final SpecVersion spec,
+      final SchemaRegistry schemaRegistry,
       final DataStructureUtil dataStructureUtil,
       final int defaultValidatorCount,
       final int defaultItemsInSSZLists) {
     this.spec = spec;
+    this.schemaRegistry = schemaRegistry;
     this.dataStructureUtil = dataStructureUtil;
     this.defaultValidatorCount = defaultValidatorCount;
     this.defaultItemsInSSZLists = defaultItemsInSSZLists;
