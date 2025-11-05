@@ -49,9 +49,9 @@ public class PredicatesGloas extends PredicatesElectra {
   /**
    * is_parent_block_full
    *
-   * <p>This function returns true if the last committed payload bid was fulfilled with a payload,
-   * this can only happen when both beacon block and payload were present. This function must be
-   * called on a beacon state before processing the execution payload bid in the block.
+   * <p>*Note*: This function returns true if the last committed payload bid was fulfilled with a
+   * payload, which can only happen when both beacon block and payload were present. This function
+   * must be called on a beacon state before processing the execution payload bid in the block.
    */
   public boolean isParentBlockFull(final BeaconState state) {
     return BeaconStateGloas.required(state)
@@ -60,12 +60,12 @@ public class PredicatesGloas extends PredicatesElectra {
         .equals(BeaconStateGloas.required(state).getLatestBlockHash());
   }
 
-  public boolean hasBuilderWithdrawalCredential(final Validator validator) {
-    return isBuilderWithdrawalCredential(validator.getWithdrawalCredentials());
-  }
-
   public boolean isBuilderWithdrawalCredential(final Bytes32 withdrawalCredentials) {
     return withdrawalCredentials.get(0) == BUILDER_WITHDRAWAL_BYTE;
+  }
+
+  public boolean hasBuilderWithdrawalCredential(final Validator validator) {
+    return isBuilderWithdrawalCredential(validator.getWithdrawalCredentials());
   }
 
   @Override

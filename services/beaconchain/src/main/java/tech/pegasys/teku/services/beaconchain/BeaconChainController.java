@@ -24,6 +24,9 @@ import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_KZG_PR
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_KZG_PRECOMPUTE_SUPERNODE;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.DEFAULT_MAXIMUM_ATTESTATION_COUNT;
+import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS;
+import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_MIN_WAIT_MILLIS;
+import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_TARGET_WAIT_MILLIS;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Throwables;
@@ -223,6 +226,7 @@ import tech.pegasys.teku.statetransition.util.DebugDataFileDumper;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
+import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
@@ -332,7 +336,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ForkChoice forkChoice;
   protected volatile ForkChoiceTrigger forkChoiceTrigger;
   protected volatile BlockImporter blockImporter;
-
   protected volatile DataProvider dataProvider;
   protected volatile RecentChainData recentChainData;
   protected volatile Eth2P2PNetwork p2pNetwork;
@@ -998,10 +1001,22 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     final CurrentSlotProvider currentSlotProvider =
         CurrentSlotProvider.create(spec, recentChainData.getStore());
+    final RPCFetchDelayProvider rpcFetchDelayProvider =
+        RPCFetchDelayProvider.create(
+            spec,
+            timeProvider,
+            recentChainData,
+            currentSlotProvider,
+            DEFAULT_MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS,
+            DEFAULT_MIN_WAIT_MILLIS,
+            DEFAULT_TARGET_WAIT_MILLIS);
+
     final DasSamplerBasic dasSampler =
         new DasSamplerBasic(
             spec,
+            beaconAsyncRunner,
             currentSlotProvider,
+            rpcFetchDelayProvider,
             dataColumnSidecarRecoveringCustody,
             recoveringSidecarRetriever,
             custodyGroupCountManager,

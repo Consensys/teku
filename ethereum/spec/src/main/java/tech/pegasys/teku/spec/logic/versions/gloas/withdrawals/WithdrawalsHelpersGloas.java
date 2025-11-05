@@ -50,6 +50,7 @@ public class WithdrawalsHelpersGloas extends WithdrawalsHelpersElectra {
 
   @Override
   public void processWithdrawals(final MutableBeaconState state) {
+    // Return early if the parent block is empty
     if (!predicatesGloas.isParentBlockFull(state)) {
       return;
     }

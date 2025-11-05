@@ -7,8 +7,8 @@
 ## Unreleased Changes
 
 ### Breaking Changes
+- jdk 24 docker image build has been removed in favour of jdk 25 docker image build.
 
 ### Additions and Improvements
- - Implemented `/eth/v1/beacon/states/{state_id}/proposer_lookahead` which is accessible from fulu.
 
 ### Bug Fixes
