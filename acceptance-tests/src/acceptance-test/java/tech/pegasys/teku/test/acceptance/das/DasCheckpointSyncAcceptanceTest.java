@@ -22,6 +22,7 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
@@ -36,7 +37,6 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
             createConfigBuilder()
                 .withRealNetwork()
                 .withSubscribeAllCustodySubnetsEnabled()
-                // we don't want to make this test extreme, withhold once and don't repeat
                 .withInteropValidators(0, 64)
                 .build());
 
@@ -44,6 +44,14 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
     final UInt64 genesisTime = primaryNode.getGenesisTime();
     primaryNode.waitForNewFinalization();
     final SignedBeaconBlock checkpointFinalizedBlock = primaryNode.getFinalizedBlock();
+    // We expect at least 1 full epoch in Fulu, so it's greater without equal
+    final SpecConfigFulu specConfigFulu =
+        SpecConfigFulu.required(primaryNode.getSpec().forMilestone(SpecMilestone.FULU).getConfig());
+    assertThat(
+        primaryNode
+            .getSpec()
+            .computeEpochAtSlot(checkpointFinalizedBlock.getSlot())
+            .isGreaterThan(specConfigFulu.getFuluForkEpoch()));
 
     // late joining full node without validators
     final TekuBeaconNode secondaryNode =
@@ -60,26 +68,20 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
     secondaryNode.waitUntilInSyncWith(primaryNode);
 
     final UInt64 firstFuluSlot =
-        primaryNode
-            .getSpec()
-            .computeStartSlotAtEpoch(
-                primaryNode
-                    .getSpec()
-                    .forMilestone(SpecMilestone.FULU)
-                    .getConfig()
-                    .getFuluForkEpoch());
+        primaryNode.getSpec().computeStartSlotAtEpoch(specConfigFulu.getFuluForkEpoch());
     // Wait until block backfill is completed, it starts after forward sync
     secondaryNode.waitForBlockAtSlot(firstFuluSlot);
 
     final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
     final int checkpointSlot = checkpointFinalizedBlock.getSlot().intValue();
     final int endSlot = blockAtHead.getSlot().intValue();
+    final int expectedCustodyCount = specConfigFulu.getCustodyRequirement();
 
     // after checkpoint is synced with sidecars
     final int afterCheckpointSidecars =
         IntStream.range(checkpointSlot + 1, endSlot)
             .mapToObj(UInt64::valueOf)
-            .map(slot -> getAndAssertDasCustody(secondaryNode, slot))
+            .map(slot -> getAndAssertDasCustody(secondaryNode, slot, expectedCustodyCount))
             .mapToInt(i -> i)
             .sum();
     assertThat(afterCheckpointSidecars).isGreaterThan(0);
@@ -88,18 +90,19 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
     final int beforeCheckpointSidecars =
         IntStream.rangeClosed(firstFuluSlot.intValue(), checkpointSlot)
             .mapToObj(UInt64::valueOf)
-            .map(slot -> getAndAssertDasCustody(secondaryNode, slot))
+            .map(slot -> getAndAssertDasCustody(secondaryNode, slot, expectedCustodyCount))
             .mapToInt(i -> i)
             .sum();
     assertThat(beforeCheckpointSidecars).isGreaterThan(0);
   }
 
-  private int getAndAssertDasCustody(final TekuBeaconNode node, final UInt64 fuluSlot) {
+  private int getAndAssertDasCustody(
+      final TekuBeaconNode node, final UInt64 fuluSlot, final int expectedCustodyCount) {
     try {
-      Optional<SignedBeaconBlock> maybeBlock = node.getBlockAtSlot(fuluSlot);
+      final Optional<SignedBeaconBlock> maybeBlock = node.getBlockAtSlot(fuluSlot);
       if (maybeBlock.isPresent()) {
-        SignedBeaconBlock block = maybeBlock.get();
-        boolean hasBlobs =
+        final SignedBeaconBlock block = maybeBlock.get();
+        final boolean hasBlobs =
             !block
                 .getBeaconBlock()
                 .orElseThrow()
@@ -108,9 +111,9 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
                 .orElseThrow()
                 .getBlobKzgCommitments()
                 .isEmpty();
-        int columnCount = node.getDataColumnSidecarCount(block.getRoot().toHexString());
+        final int columnCount = node.getDataColumnSidecarCount(block.getRoot().toHexString());
         if (hasBlobs) {
-          assertThat(columnCount).isNotZero();
+          assertThat(columnCount).isEqualTo(expectedCustodyCount);
         } else {
           assertThat(columnCount).isZero();
         }
