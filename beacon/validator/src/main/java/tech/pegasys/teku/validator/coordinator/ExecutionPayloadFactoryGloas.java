@@ -50,6 +50,8 @@ public class ExecutionPayloadFactoryGloas implements ExecutionPayloadFactory {
   public SafeFuture<ExecutionPayloadEnvelope> createUnsignedExecutionPayload(
       final UInt64 builderIndex, final BeaconBlockAndState blockAndState) {
     final UInt64 proposalSlot = blockAndState.getSlot();
+    final SchemaDefinitionsGloas schemaDefinitions =
+        SchemaDefinitionsGloas.required(spec.atSlot(proposalSlot).getSchemaDefinitions());
     final SafeFuture<ExecutionPayloadProposalContext> executionPayloadProposalContextFuture =
         getCachedGetPayloadResponseFuture(proposalSlot)
             .thenApply(
@@ -57,8 +59,7 @@ public class ExecutionPayloadFactoryGloas implements ExecutionPayloadFactory {
                     new ExecutionPayloadProposalContext(
                         getPayloadResponse.getExecutionPayload(),
                         getPayloadResponse.getExecutionRequests().orElseThrow(),
-                        SchemaDefinitionsGloas.required(
-                                spec.atSlot(proposalSlot).getSchemaDefinitions())
+                        schemaDefinitions
                             .getBlobKzgCommitmentsSchema()
                             .createFromBlobsBundle(
                                 getPayloadResponse.getBlobsBundle().orElseThrow())));
