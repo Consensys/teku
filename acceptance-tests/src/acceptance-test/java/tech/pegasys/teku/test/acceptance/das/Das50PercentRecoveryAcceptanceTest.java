@@ -69,7 +69,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
     secondaryNode.waitForLogMessageContaining("Data column sidecars recovery finished for block");
     secondaryNode.waitForNewFinalization();
 
-    final SignedBeaconBlock blockAtHead = secondaryNode.getBlockAtHead();
+    final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
 
     final int endSlot = blockAtHead.getSlot().intValue();
     final int firstFuluSlot =
@@ -136,7 +136,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
     secondaryNode.waitForLogMessageContaining("Reconstruction completed for slot");
     secondaryNode.waitForNewFinalization();
 
-    final SignedBeaconBlock blockAtHead = secondaryNode.getBlockAtHead();
+    final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
 
     final int endSlot = blockAtHead.getSlot().intValue();
     final int firstFuluSlot =
@@ -206,7 +206,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
     secondaryNode.waitForLogMessageContaining("Rebuilding columns DONE");
     secondaryNode.waitForNewFinalization();
 
-    final SignedBeaconBlock blockAtHead = secondaryNode.getBlockAtHead();
+    final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
 
     final int endSlot = blockAtHead.getSlot().intValue();
     final int firstFuluSlot =
