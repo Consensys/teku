@@ -39,11 +39,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -87,10 +87,11 @@ public class BlockProposalTestUtil {
       final SszList<SignedVoluntaryExit> exits,
       final Optional<List<Bytes>> transactions,
       final Optional<Bytes32> terminalBlock,
-      final Optional<ExecutionPayload> executionPayload,
+      final Optional<ExecutionPayload> maybeExecutionPayload,
       final Optional<SyncAggregate> syncAggregate,
       final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
-      final Optional<SszList<SszKZGCommitment>> kzgCommitments)
+      final Optional<SszList<SszKZGCommitment>> kzgCommitments,
+      final Optional<SszList<PayloadAttestation>> payloadAttestations)
       throws EpochProcessingException, SlotProcessingException {
 
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
@@ -98,6 +99,9 @@ public class BlockProposalTestUtil {
     final BeaconState blockSlotState = spec.processSlots(state, newSlot);
     final BLSSignature randaoReveal =
         signer.createRandaoReveal(newEpoch, blockSlotState.getForkInfo()).join();
+    final ExecutionPayload executionPayload =
+        maybeExecutionPayload.orElseGet(
+            () -> createExecutionPayload(newSlot, blockSlotState, transactions, terminalBlock));
 
     final int proposerIndex = spec.getBeaconProposerIndex(blockSlotState, newSlot);
     return spec.createNewUnsignedBlock(
@@ -121,11 +125,7 @@ public class BlockProposalTestUtil {
                         dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState)));
               }
               if (builder.supportsExecutionPayload()) {
-                builder.executionPayload(
-                    executionPayload.orElseGet(
-                        () ->
-                            createExecutionPayload(
-                                newSlot, blockSlotState, transactions, terminalBlock)));
+                builder.executionPayload(executionPayload);
               }
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(
@@ -139,15 +139,14 @@ public class BlockProposalTestUtil {
               if (builder.supportsExecutionRequests()) {
                 builder.executionRequests(dataStructureUtil.randomExecutionRequests());
               }
-              // TODO-GLOAS: potentially better stubbing of bid and payload attestations
-              // https://github.com/Consensys/teku/issues/10071
               if (builder.supportsSignedExecutionPayloadBid()) {
                 builder.signedExecutionPayloadBid(
                     createSignedExecutionPayloadBid(
-                        newSlot, blockSlotState, proposerIndex, kzgCommitments));
+                        newSlot, executionPayload, blockSlotState, proposerIndex, kzgCommitments));
               }
               if (builder.supportsPayloadAttestations()) {
-                builder.payloadAttestations(createEmptyPayloadAttestations(newSlot));
+                builder.payloadAttestations(
+                    payloadAttestations.orElseGet(dataStructureUtil::emptyPayloadAttestations));
               }
               return SafeFuture.COMPLETE;
             },
@@ -178,14 +177,18 @@ public class BlockProposalTestUtil {
       final SszList<SignedVoluntaryExit> exits,
       final Optional<List<Bytes>> transactions,
       final Optional<Bytes32> terminalBlock,
-      final Optional<ExecutionPayload> executionPayload,
+      final Optional<ExecutionPayload> maybeExecutionPayload,
       final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
-      final Optional<SszList<SszKZGCommitment>> kzgCommitments)
+      final Optional<SszList<SszKZGCommitment>> kzgCommitments,
+      final Optional<SszList<PayloadAttestation>> payloadAttestations)
       throws EpochProcessingException, SlotProcessingException {
 
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
     final BLSSignature randaoReveal =
         signer.createRandaoReveal(newEpoch, state.getForkInfo()).join();
+    final ExecutionPayload executionPayload =
+        maybeExecutionPayload.orElseGet(
+            () -> createExecutionPayload(newSlot, state, transactions, terminalBlock));
 
     final BeaconState blockSlotState = spec.processSlots(state, newSlot);
 
@@ -210,9 +213,7 @@ public class BlockProposalTestUtil {
                     dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState));
               }
               if (builder.supportsExecutionPayload()) {
-                builder.executionPayload(
-                    executionPayload.orElseGet(
-                        () -> createExecutionPayload(newSlot, state, transactions, terminalBlock)));
+                builder.executionPayload(executionPayload);
               }
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(
@@ -226,15 +227,14 @@ public class BlockProposalTestUtil {
               if (builder.supportsExecutionRequests()) {
                 builder.executionRequests(dataStructureUtil.randomExecutionRequests());
               }
-              // TODO-GLOAS: potentially better stubbing of bid and payload attestations
-              // https://github.com/Consensys/teku/issues/10071
               if (builder.supportsSignedExecutionPayloadBid()) {
                 builder.signedExecutionPayloadBid(
                     createSignedExecutionPayloadBid(
-                        newSlot, blockSlotState, proposerIndex, kzgCommitments));
+                        newSlot, executionPayload, blockSlotState, proposerIndex, kzgCommitments));
               }
               if (builder.supportsPayloadAttestations()) {
-                builder.payloadAttestations(createEmptyPayloadAttestations(newSlot));
+                builder.payloadAttestations(
+                    payloadAttestations.orElseGet(dataStructureUtil::emptyPayloadAttestations));
               }
               return SafeFuture.COMPLETE;
             })
@@ -278,8 +278,10 @@ public class BlockProposalTestUtil {
 
     final Bytes32 currentExecutionPayloadBlockHash =
         BeaconStateBellatrix.required(state)
-            .getLatestExecutionPayloadHeaderRequired()
-            .getBlockHash();
+            .getLatestExecutionPayloadHeader()
+            .map(ExecutionPayloadHeader::getBlockHash)
+            .orElseGet(() -> BeaconStateGloas.required(state).getLatestBlockHash());
+
     if (!currentExecutionPayloadBlockHash.isZero() && terminalBlock.isPresent()) {
       throw new IllegalArgumentException("Merge already happened, cannot set terminal block hash");
     }
@@ -311,6 +313,7 @@ public class BlockProposalTestUtil {
 
   private SignedExecutionPayloadBid createSignedExecutionPayloadBid(
       final UInt64 newSlot,
+      final ExecutionPayload executionPayload,
       final BeaconState state,
       final int proposerIndex,
       final Optional<SszList<SszKZGCommitment>> kzgCommitments) {
@@ -322,11 +325,11 @@ public class BlockProposalTestUtil {
         schemaDefinitions
             .getExecutionPayloadBidSchema()
             .create(
-                BeaconStateGloas.required(state).getLatestBlockHash(),
+                executionPayload.getParentHash(),
                 state.getLatestBlockHeader().getRoot(),
-                dataStructureUtil.randomBytes32(),
-                Bytes20.ZERO,
-                UInt64.valueOf(30_000_000L),
+                executionPayload.getBlockHash(),
+                executionPayload.getFeeRecipient(),
+                executionPayload.getGasLimit(),
                 UInt64.valueOf(proposerIndex),
                 newSlot,
                 UInt64.ZERO,
@@ -336,13 +339,6 @@ public class BlockProposalTestUtil {
     return schemaDefinitions
         .getSignedExecutionPayloadBidSchema()
         .create(bid, BLSSignature.infinity());
-  }
-
-  private SszList<PayloadAttestation> createEmptyPayloadAttestations(final UInt64 newSlot) {
-    return BeaconBlockBodySchemaGloas.required(
-            spec.atSlot(newSlot).getSchemaDefinitions().getBeaconBlockBodySchema())
-        .getPayloadAttestationsSchema()
-        .of();
   }
 
   private Boolean isMergeTransitionComplete(final BeaconState state) {
@@ -366,6 +362,7 @@ public class BlockProposalTestUtil {
       final Optional<SyncAggregate> syncAggregate,
       final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
       final Optional<SszList<SszKZGCommitment>> kzgCommitments,
+      final Optional<SszList<PayloadAttestation>> payloadAttestations,
       final boolean skipStateTransition)
       throws EpochProcessingException, SlotProcessingException {
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
@@ -386,7 +383,8 @@ public class BlockProposalTestUtil {
           terminalBlock,
           executionPayload,
           blsToExecutionChange,
-          kzgCommitments);
+          kzgCommitments,
+          payloadAttestations);
     }
     return createNewBlock(
         signer,
@@ -404,7 +402,8 @@ public class BlockProposalTestUtil {
         executionPayload,
         syncAggregate,
         blsToExecutionChange,
-        kzgCommitments);
+        kzgCommitments,
+        payloadAttestations);
   }
 
   public SafeFuture<SignedBlockAndState> createBlockWithBlobs(
@@ -425,6 +424,7 @@ public class BlockProposalTestUtil {
       final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
       final BlobsUtil blobsUtil,
       final List<Blob> blobs,
+      final Optional<SszList<PayloadAttestation>> payloadAttestations,
       final boolean skipStateTransition)
       throws EpochProcessingException, SlotProcessingException {
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
@@ -456,7 +456,8 @@ public class BlockProposalTestUtil {
           terminalBlock,
           executionPayload,
           blsToExecutionChange,
-          Optional.of(kzgCommitments));
+          Optional.of(kzgCommitments),
+          payloadAttestations);
     } else {
       return createNewBlock(
           signer,
@@ -474,7 +475,8 @@ public class BlockProposalTestUtil {
           executionPayload,
           syncAggregate,
           blsToExecutionChange,
-          Optional.of(kzgCommitments));
+          Optional.of(kzgCommitments),
+          payloadAttestations);
     }
   }
 

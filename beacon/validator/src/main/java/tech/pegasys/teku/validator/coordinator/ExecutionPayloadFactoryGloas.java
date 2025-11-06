@@ -14,9 +14,7 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.IntStream;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -25,15 +23,14 @@ import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.ExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class ExecutionPayloadFactoryGloas implements ExecutionPayloadFactory {
 
@@ -50,43 +47,13 @@ public class ExecutionPayloadFactoryGloas implements ExecutionPayloadFactory {
   @Override
   public SafeFuture<ExecutionPayloadEnvelope> createUnsignedExecutionPayload(
       final UInt64 builderIndex, final BeaconBlockAndState blockAndState) {
-    final UInt64 slot = blockAndState.getSlot();
-    final SchemaDefinitionsGloas schemaDefinitions =
-        SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
-    final SafeFuture<ExecutionPayloadEnvelope> newExecutionPayload =
-        getCachedGetPayloadResponseFuture(slot)
-            .thenApply(
-                getPayloadResponse -> {
-                  final Bytes32 tmpStateRoot = Bytes32.ZERO;
-                  return schemaDefinitions
-                      .getExecutionPayloadEnvelopeSchema()
-                      .create(
-                          getPayloadResponse.getExecutionPayload(),
-                          getPayloadResponse.getExecutionRequests().orElseThrow(),
-                          builderIndex,
-                          blockAndState.getRoot(),
-                          slot,
-                          schemaDefinitions
-                              .getBlobKzgCommitmentsSchema()
-                              .createFromBlobsBundle(
-                                  getPayloadResponse.getBlobsBundle().orElseThrow()),
-                          tmpStateRoot);
-                });
-    return newExecutionPayload.thenApplyChecked(
-        executionPayload -> {
-          // Run state transition and set state root
-          final BeaconState newState =
-              blockAndState
-                  .getState()
-                  .updated(
-                      state ->
-                          spec.atSlot(slot)
-                              .getExecutionPayloadProcessor()
-                              .orElseThrow()
-                              .processUnsignedExecutionPayload(
-                                  state, executionPayload, Optional.empty()));
-          return executionPayload.copyWithNewStateRoot(newState.hashTreeRoot());
-        });
+    final UInt64 proposalSlot = blockAndState.getSlot();
+    return spec.createNewUnsignedExecutionPayload(
+            proposalSlot,
+            builderIndex,
+            blockAndState,
+            getCachedGetPayloadResponseFuture(proposalSlot))
+        .thenApply(ExecutionPayloadAndState::executionPayload);
   }
 
   @Override

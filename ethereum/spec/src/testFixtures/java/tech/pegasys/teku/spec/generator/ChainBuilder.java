@@ -56,6 +56,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -87,7 +89,10 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.signatures.LocalSigner;
 import tech.pegasys.teku.spec.signatures.Signer;
 
-/** A utility for building small, valid chains of blocks with states for testing */
+/**
+ * A utility for building small, valid chains of blocks with states (and execution payloads with
+ * states) for testing
+ */
 public class ChainBuilder {
   private static final List<BLSKeyPair> DEFAULT_VALIDATOR_KEYS =
       Collections.unmodifiableList(new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 3));
@@ -107,6 +112,12 @@ public class ChainBuilder {
   private final NavigableMap<SlotAndBlockRoot, List<DataColumnSidecar>> dataColumnSidecars =
       new TreeMap<>();
   private final Map<Bytes32, List<DataColumnSidecar>> dataColumnSidecarsByHash = new HashMap<>();
+  // Gloas
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/10071 create/store/query
+  private final NavigableMap<UInt64, SignedExecutionPayloadAndState> executionPayloads =
+      new TreeMap<>();
+  private final Map<Bytes32, SignedExecutionPayloadAndState> executionPayloadsByHash =
+      new HashMap<>();
   private final BlockProposalTestUtil blockProposalTestUtil;
   private final BlobsUtil blobsUtil;
 
@@ -116,7 +127,8 @@ public class ChainBuilder {
       final Map<UInt64, SignedBlockAndState> existingBlocks,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> existingBlobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot,
-      final Map<SlotAndBlockRoot, List<DataColumnSidecar>> existingDataColumnSidecars) {
+      final Map<SlotAndBlockRoot, List<DataColumnSidecar>> existingDataColumnSidecars,
+      final Map<UInt64, SignedExecutionPayloadAndState> existingExecutionPayloads) {
     this.spec = spec;
     this.validatorKeys = validatorKeys;
     this.blobsUtil = new BlobsUtil(spec);
@@ -145,6 +157,13 @@ public class ChainBuilder {
                 dataColumnSidecarsByHash.put(dc.getFirst().getBeaconBlockRoot(), dc);
               }
             });
+    executionPayloads.putAll(existingExecutionPayloads);
+    existingExecutionPayloads
+        .values()
+        .forEach(
+            e ->
+                executionPayloadsByHash.put(
+                    e.executionPayload().getMessage().getBeaconBlockRoot(), e));
   }
 
   public static ChainBuilder create(final Spec spec) {
@@ -158,6 +177,7 @@ public class ChainBuilder {
         Collections.emptyMap(),
         Collections.emptyMap(),
         Optional.empty(),
+        Collections.emptyMap(),
         Collections.emptyMap());
   }
 
@@ -205,7 +225,13 @@ public class ChainBuilder {
    */
   public ChainBuilder fork() {
     return new ChainBuilder(
-        spec, validatorKeys, blocks, blobSidecars, earliestBlobSidecarSlot, dataColumnSidecars);
+        spec,
+        validatorKeys,
+        blocks,
+        blobSidecars,
+        earliestBlobSidecarSlot,
+        dataColumnSidecars,
+        executionPayloads);
   }
 
   public List<BLSKeyPair> getValidatorKeys() {
@@ -708,6 +734,7 @@ public class ChainBuilder {
             options.getSyncAggregate(),
             options.getBlsToExecutionChange(),
             options.getKzgCommitments(),
+            options.getPayloadAttestations(),
             options.getSkipStateTransition()));
   }
 
@@ -770,6 +797,7 @@ public class ChainBuilder {
                   options.getBlsToExecutionChange(),
                   blobsUtil,
                   blobs,
+                  options.getPayloadAttestations(),
                   options.getSkipStateTransition()));
     } else {
       nextBlockAndState =
@@ -791,6 +819,7 @@ public class ChainBuilder {
                   options.getSyncAggregate(),
                   options.getBlsToExecutionChange(),
                   options.getKzgCommitments(),
+                  options.getPayloadAttestations(),
                   options.getSkipStateTransition()));
     }
 
@@ -878,6 +907,7 @@ public class ChainBuilder {
                   options.getBlsToExecutionChange(),
                   blobsUtil,
                   blobs,
+                  options.getPayloadAttestations(),
                   options.getSkipStateTransition()));
     } else {
       nextBlockAndState =
@@ -899,6 +929,7 @@ public class ChainBuilder {
                   options.getSyncAggregate(),
                   options.getBlsToExecutionChange(),
                   options.getKzgCommitments(),
+                  options.getPayloadAttestations(),
                   options.getSkipStateTransition()));
     }
 
@@ -1047,6 +1078,7 @@ public class ChainBuilder {
     private Optional<SyncAggregate> syncAggregate = Optional.empty();
     private Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange = Optional.empty();
     private Optional<SszList<SszKZGCommitment>> kzgCommitments = Optional.empty();
+    private Optional<SszList<PayloadAttestation>> payloadAttestations = Optional.empty();
     private Optional<List<Blob>> blobs = Optional.empty();
     private Optional<KZGProof> kzgProof = Optional.empty();
     private Optional<List<BlobSidecar>> blobSidecars = Optional.empty();
@@ -1130,6 +1162,12 @@ public class ChainBuilder {
       return this;
     }
 
+    public BlockOptions setPayloadAttestations(
+        final SszList<PayloadAttestation> payloadAttestations) {
+      this.payloadAttestations = Optional.of(payloadAttestations);
+      return this;
+    }
+
     public BlockOptions setGenerateRandomBlobs(final boolean generateRandomBlobs) {
       this.generateRandomBlobs = generateRandomBlobs;
       return this;
@@ -1201,6 +1239,10 @@ public class ChainBuilder {
 
     public Optional<SszList<SszKZGCommitment>> getKzgCommitments() {
       return kzgCommitments;
+    }
+
+    public Optional<SszList<PayloadAttestation>> getPayloadAttestations() {
+      return payloadAttestations;
     }
 
     public Optional<List<Blob>> getBlobs() {

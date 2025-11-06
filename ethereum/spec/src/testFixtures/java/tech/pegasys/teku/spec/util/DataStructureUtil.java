@@ -3054,11 +3054,11 @@ public final class DataStructureUtil {
             randomSszBitvector(getPtcSize()), randomPayloadAttestationData(), randomSignature());
   }
 
-  public SszList<PayloadAttestation> randomPayloadAttestations() {
-    final SszListSchema<PayloadAttestation, ?> schema =
-        BeaconBlockBodySchemaGloas.required(getGloasSchemaDefinitions().getBeaconBlockBodySchema())
-            .getPayloadAttestationsSchema();
-    return randomSszList(schema, this::randomPayloadAttestation, schema.getMaxLength());
+  public SszList<PayloadAttestation> emptyPayloadAttestations() {
+    return BeaconBlockBodySchemaGloas.required(
+            getGloasSchemaDefinitions().getBeaconBlockBodySchema())
+        .getPayloadAttestationsSchema()
+        .createFromElements(List.of());
   }
 
   public BuilderPendingWithdrawal randomBuilderPendingWithdrawal() {

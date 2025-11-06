@@ -78,7 +78,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.epbs.ExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -908,6 +910,22 @@ public class Spec {
             parentBlockSigningRoot,
             bodyBuilder,
             blockProductionPerformance);
+  }
+
+  // Execution Payload Proposal
+  public SafeFuture<ExecutionPayloadAndState> createNewUnsignedExecutionPayload(
+      final UInt64 proposalSlot,
+      final UInt64 builderIndex,
+      final BeaconBlockAndState blockAndState,
+      final SafeFuture<GetPayloadResponse> getPayloadResponseFuture) {
+    return atSlot(proposalSlot)
+        .getExecutionPayloadProposalUtil()
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Attempting to use execution payload proposal util when spec does not have execution payload proposal util"))
+        .createNewUnsignedExecutionPayload(
+            proposalSlot, builderIndex, blockAndState, getPayloadResponseFuture);
   }
 
   // Blind Block Utils
