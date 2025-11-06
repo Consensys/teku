@@ -22,6 +22,7 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
@@ -81,22 +82,165 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
                     .getConfig()
                     .getFuluForkEpoch())
             .intValue();
+    final SpecConfigFulu specConfigFulu =
+        SpecConfigFulu.required(primaryNode.getSpec().forMilestone(SpecMilestone.FULU).getConfig());
     final int allFuluColumns =
         IntStream.range(firstFuluSlot, endSlot)
             .mapToObj(UInt64::valueOf)
-            .map(slot -> getAndAssertDasCustody(secondaryNode, slot))
+            .map(
+                slot ->
+                    getAndAssertDasCustody(
+                        secondaryNode, slot, specConfigFulu.getNumberOfColumns()))
             .mapToInt(i -> i)
             .sum();
 
     assertThat(allFuluColumns).isGreaterThan(0);
   }
 
-  private int getAndAssertDasCustody(final TekuBeaconNode node, final UInt64 fuluSlot) {
+  @Test
+  public void shouldAbleToReconstructDataColumnSidecarsFrom50Percents_whenSyncing()
+      throws Exception {
+    final TekuBeaconNode primaryNode =
+        createTekuBeaconNode(
+            createConfigBuilder()
+                .withRealNetwork()
+                // interop validators are not count for validator custody
+                .withDasExtraCustodyGroupCount(subnetCount / 2)
+                // we don't want to make this test extreme, withhold once and don't repeat
+                .withDasPublishWithholdColumnsEverySlots(9999)
+                .withInteropValidators(0, 64)
+                .withDasDisableElRecovery()
+                .build());
+
+    primaryNode.start();
+    final UInt64 genesisTime = primaryNode.getGenesisTime();
+
+    final TekuBeaconNode secondaryNode =
+        createTekuBeaconNode(
+            createConfigBuilder()
+                .withRealNetwork()
+                .withGenesisTime(genesisTime.intValue())
+                .withPeers(primaryNode)
+                // supernode
+                .withSubscribeAllCustodySubnetsEnabled()
+                .withInteropValidators(0, 0)
+                .withDasDisableElRecovery()
+                .build());
+
+    // DataColumnSidecars are withheld on primaryNode
+    primaryNode.waitForLogMessageContaining("non-custodied sidecars at");
+
+    secondaryNode.start();
+    // DataColumnSidecars are reconstructed on secondaryNode
+    secondaryNode.waitLongForLogMessageContaining("Reconstruction started for slot");
+    secondaryNode.waitForLogMessageContaining("Reconstruction completed for slot");
+    secondaryNode.waitForNewFinalization();
+
+    final SignedBeaconBlock blockAtHead = secondaryNode.getBlockAtHead();
+
+    final int endSlot = blockAtHead.getSlot().intValue();
+    final int firstFuluSlot =
+        primaryNode
+            .getSpec()
+            .computeStartSlotAtEpoch(
+                primaryNode
+                    .getSpec()
+                    .forMilestone(SpecMilestone.FULU)
+                    .getConfig()
+                    .getFuluForkEpoch())
+            .intValue();
+    final SpecConfigFulu specConfigFulu =
+        SpecConfigFulu.required(primaryNode.getSpec().forMilestone(SpecMilestone.FULU).getConfig());
+    final int allFuluColumns =
+        IntStream.range(firstFuluSlot, endSlot)
+            .mapToObj(UInt64::valueOf)
+            .map(
+                slot ->
+                    getAndAssertDasCustody(
+                        secondaryNode, slot, specConfigFulu.getNumberOfColumns()))
+            .mapToInt(i -> i)
+            .sum();
+
+    assertThat(allFuluColumns).isGreaterThan(0);
+  }
+
+  @Test
+  public void
+      shouldAbleToReconstructDataColumnSidecarsFrom50Percents_whenSyncingWithReworkedRetriever()
+          throws Exception {
+    final TekuBeaconNode primaryNode =
+        createTekuBeaconNode(
+            createConfigBuilder()
+                .withRealNetwork()
+                // interop validators are not count for validator custody
+                .withDasExtraCustodyGroupCount(subnetCount / 2)
+                // we don't want to make this test extreme, withhold once and don't repeat
+                .withDasPublishWithholdColumnsEverySlots(9999)
+                .withInteropValidators(0, 64)
+                .withDasDisableElRecovery()
+                .build());
+
+    primaryNode.start();
+    final UInt64 genesisTime = primaryNode.getGenesisTime();
+
+    final TekuBeaconNode secondaryNode =
+        createTekuBeaconNode(
+            createConfigBuilder()
+                .withRealNetwork()
+                .withGenesisTime(genesisTime.intValue())
+                .withPeers(primaryNode)
+                // supernode
+                .withSubscribeAllCustodySubnetsEnabled()
+                .withInteropValidators(0, 0)
+                .withDasDisableElRecovery()
+                .withExperimentalReworkedRecovery()
+                .build());
+
+    // DataColumnSidecars are withheld on primaryNode
+    primaryNode.waitForLogMessageContaining("non-custodied sidecars at");
+
+    secondaryNode.start();
+    // DataColumnSidecars are reconstructed on secondaryNode
+    secondaryNode.waitForLogMessageContaining("Rebuilding columns for slot");
+    secondaryNode.waitForLogMessageContaining("Rebuilding columns at");
+    secondaryNode.waitForLogMessageContaining("Rebuilding columns DONE");
+    secondaryNode.waitForNewFinalization();
+
+    final SignedBeaconBlock blockAtHead = secondaryNode.getBlockAtHead();
+
+    final int endSlot = blockAtHead.getSlot().intValue();
+    final int firstFuluSlot =
+        primaryNode
+            .getSpec()
+            .computeStartSlotAtEpoch(
+                primaryNode
+                    .getSpec()
+                    .forMilestone(SpecMilestone.FULU)
+                    .getConfig()
+                    .getFuluForkEpoch())
+            .intValue();
+    final SpecConfigFulu specConfigFulu =
+        SpecConfigFulu.required(primaryNode.getSpec().forMilestone(SpecMilestone.FULU).getConfig());
+    final int allFuluColumns =
+        IntStream.range(firstFuluSlot, endSlot)
+            .mapToObj(UInt64::valueOf)
+            .map(
+                slot ->
+                    getAndAssertDasCustody(
+                        secondaryNode, slot, specConfigFulu.getNumberOfColumns()))
+            .mapToInt(i -> i)
+            .sum();
+
+    assertThat(allFuluColumns).isGreaterThan(0);
+  }
+
+  private int getAndAssertDasCustody(
+      final TekuBeaconNode node, final UInt64 fuluSlot, final int expectedCustodyCount) {
     try {
-      Optional<SignedBeaconBlock> maybeBlock = node.getBlockAtSlot(fuluSlot);
+      final Optional<SignedBeaconBlock> maybeBlock = node.getBlockAtSlot(fuluSlot);
       if (maybeBlock.isPresent()) {
-        SignedBeaconBlock block = maybeBlock.get();
-        boolean hasBlobs =
+        final SignedBeaconBlock block = maybeBlock.get();
+        final boolean hasBlobs =
             !block
                 .getBeaconBlock()
                 .orElseThrow()
@@ -105,9 +249,9 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
                 .orElseThrow()
                 .getBlobKzgCommitments()
                 .isEmpty();
-        int columnCount = node.getDataColumnSidecarCount(block.getRoot().toHexString());
+        final int columnCount = node.getDataColumnSidecarCount(block.getRoot().toHexString());
         if (hasBlobs) {
-          assertThat(columnCount).isNotZero();
+          assertThat(columnCount).isEqualTo(expectedCustodyCount);
         } else {
           assertThat(columnCount).isZero();
         }
