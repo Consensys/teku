@@ -105,6 +105,7 @@ public class DataColumnSidecarRecoveringCustodyTest {
   @BeforeEach
   public void setup() {
     when(delegate.onNewValidatedDataColumnSidecar(any(), any())).thenReturn(SafeFuture.COMPLETE);
+    custody.onSyncingStatusChanged(true); // default in sync
   }
 
   @Test
@@ -296,6 +297,35 @@ public class DataColumnSidecarRecoveringCustodyTest {
     // post reconstructed
     verify(delegate, times(64)).onNewValidatedDataColumnSidecar(any(), eq(RemoteOrigin.RECOVERED));
     verify(dataColumnSidecarPublisher, times(64)).accept(any(), eq(RemoteOrigin.RECOVERED));
+  }
+
+  @Test
+  void shouldNotPublishDataColumnSidecarWhileSyncing() {
+    custody.onSlot(slot);
+    custody.onSyncingStatusChanged(false);
+    assertThat(stubAsyncRunner.hasDelayedActions()).isTrue();
+
+    final Map<UInt64, DataColumnSidecar> sidecars =
+        columnIndices
+            .get()
+            .map(i -> dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock.asHeader(), i))
+            .collect(Collectors.toMap(DataColumnSidecar::getIndex, sidecar -> sidecar));
+    sidecars.values().stream()
+        .skip(30)
+        .limit(70)
+        .forEach(sidecar -> custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC));
+
+    when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection()))
+        .thenReturn(sidecars.values().stream().toList());
+    stubAsyncRunner.executeDueActionsRepeatedly();
+    stubTimeProvider.advanceTimeBySeconds(2);
+    stubAsyncRunner.executeDueActionsRepeatedly();
+
+    verify(miscHelpersFulu).reconstructAllDataColumnSidecars(anyCollection());
+
+    // post reconstructed
+    verify(delegate, times(58)).onNewValidatedDataColumnSidecar(any(), eq(RemoteOrigin.RECOVERED));
+    verify(dataColumnSidecarPublisher, never()).accept(any(), any());
   }
 
   @Test

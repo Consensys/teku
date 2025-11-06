@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.forktransition;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -92,10 +93,9 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                       .ofBits(IntStream.range(0, specConfig.getSlotsPerHistoricalRoot()).toArray());
               state.setExecutionPayloadAvailability(executionPayloadAvailability);
               final List<BuilderPendingPayment> builderPendingPayments =
-                  IntStream.range(0, 2 * specConfig.getSlotsPerEpoch())
-                      .mapToObj(
-                          __ -> schemaDefinitions.getBuilderPendingPaymentSchema().getDefault())
-                      .toList();
+                  Collections.nCopies(
+                      2 * specConfig.getSlotsPerEpoch(),
+                      schemaDefinitions.getBuilderPendingPaymentSchema().getDefault());
               state.setBuilderPendingPayments(
                   schemaDefinitions
                       .getBuilderPendingPaymentsSchema()

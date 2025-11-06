@@ -154,15 +154,15 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
             state, data, state.getSlot().minus(data.getSlot()));
 
     // Update epoch participation flags
-    final SszMutableList<SszByte> epochParticipation;
-    final boolean forCurrentEpoch =
+    final boolean currentEpochTarget =
         data.getTarget().getEpoch().equals(beaconStateAccessors.getCurrentEpoch(state));
-    if (forCurrentEpoch) {
+    final SszMutableList<SszByte> epochParticipation;
+    if (currentEpochTarget) {
       epochParticipation = state.getCurrentEpochParticipation();
     } else {
       epochParticipation = state.getPreviousEpochParticipation();
     }
-    final int builderPaymentIndex = getBuilderPaymentIndex(forCurrentEpoch, data);
+    final int builderPaymentIndex = getBuilderPaymentIndex(currentEpochTarget, data);
 
     // track the weight for pending builder payment
     UInt64 builderPaymentWeightDelta = UInt64.ZERO;
@@ -195,7 +195,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
             .getProgressiveTotalBalances()
             .onAttestation(
                 state.getValidators().get(index),
-                forCurrentEpoch,
+                currentEpochTarget,
                 miscHelpersAltair.hasFlag(newParticipationFlags, TIMELY_SOURCE_FLAG_INDEX),
                 miscHelpersAltair.hasFlag(newParticipationFlags, TIMELY_TARGET_FLAG_INDEX),
                 miscHelpersAltair.hasFlag(newParticipationFlags, TIMELY_HEAD_FLAG_INDEX));
@@ -221,7 +221,8 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
         proposerReward, builderPaymentIndex, builderPaymentWeightDelta);
   }
 
-  protected int getBuilderPaymentIndex(final boolean forCurrentEpoch, final AttestationData data) {
+  protected int getBuilderPaymentIndex(
+      final boolean currentEpochTarget, final AttestationData data) {
     // NO-OP
     return 0;
   }

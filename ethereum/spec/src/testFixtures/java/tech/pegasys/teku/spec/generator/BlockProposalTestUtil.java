@@ -140,7 +140,7 @@ public class BlockProposalTestUtil {
                 builder.executionRequests(dataStructureUtil.randomExecutionRequests());
               }
               // TODO-GLOAS: potentially better stubbing of bid and payload attestations
-              // https://github.com/Consensys/teku/issues/9959
+              // https://github.com/Consensys/teku/issues/10071
               if (builder.supportsSignedExecutionPayloadBid()) {
                 builder.signedExecutionPayloadBid(
                     createSignedExecutionPayloadBid(
@@ -227,7 +227,7 @@ public class BlockProposalTestUtil {
                 builder.executionRequests(dataStructureUtil.randomExecutionRequests());
               }
               // TODO-GLOAS: potentially better stubbing of bid and payload attestations
-              // https://github.com/Consensys/teku/issues/9959
+              // https://github.com/Consensys/teku/issues/10071
               if (builder.supportsSignedExecutionPayloadBid()) {
                 builder.signedExecutionPayloadBid(
                     createSignedExecutionPayloadBid(

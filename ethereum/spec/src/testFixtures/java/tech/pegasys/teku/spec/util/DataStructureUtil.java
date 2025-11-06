@@ -3103,6 +3103,11 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayloadBid randomExecutionPayloadBid() {
+    return randomExecutionPayloadBid(randomSlot(), randomBuilderIndex());
+  }
+
+  public ExecutionPayloadBid randomExecutionPayloadBid(
+      final UInt64 slot, final UInt64 builderIndex) {
     return getGloasSchemaDefinitions()
         .getExecutionPayloadBidSchema()
         .create(
@@ -3111,8 +3116,8 @@ public final class DataStructureUtil {
             randomBytes32(),
             randomEth1Address(),
             randomUInt64(),
-            randomBuilderIndex(),
-            randomSlot(),
+            builderIndex,
+            slot,
             randomUInt64(),
             randomBytes32());
   }

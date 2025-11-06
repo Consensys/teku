@@ -16,7 +16,7 @@ package tech.pegasys.teku.validator.coordinator;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.COMPLETE;
 import static tech.pegasys.teku.kzg.KZG.CELLS_PER_EXT_BLOB;
-import static tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELRecoveryManagerImpl.DATA_COLUMN_SIDECAR_COMPUTATION_HISTOGRAM;
+import static tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELManagerImpl.DATA_COLUMN_SIDECAR_COMPUTATION_HISTOGRAM;
 
 import java.util.Collections;
 import java.util.HashSet;

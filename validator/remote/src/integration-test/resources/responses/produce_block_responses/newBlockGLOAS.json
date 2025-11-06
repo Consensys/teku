@@ -1,5 +1,5 @@
 {
-  "version":"capella",
+  "version":"gloas",
   "execution_payload_blinded":false,
   "execution_payload_value":"12345",
   "consensus_block_value":"123000000000",
@@ -261,13 +261,13 @@
       } ],
       "signed_execution_payload_bid" : {
         "message" : {
-          "parent_block_hash" : "0x9a4e1443f05120d1c5ff9428f324f1eb6c313fc86e943fec09794b98025d0baa",
-          "parent_block_root" : "0xf9f3f64210cc7c298f4e990115d157ed8b403aa2fe7f0b8feefe9c814641a05f",
-          "block_hash" : "0x0c15f142b0175c6e8491002de9596cba91433934b44834491c80e04920a257ea",
-          "fee_recipient" : "0xd3b10243d034be9fa5c8caaa6ebf2e537e3a3c7e",
-          "gas_limit" : "4826964785459200112",
-          "builder_index" : "2970787",
-          "slot" : "12932064024",
+          "parent_block_hash" : "0x0c15f142b0175c6e8491002de9596cba91433934b44834491c80e04920a257ea",
+          "parent_block_root" : "0xd3b10243d034be9fa5c8caaa6ebf2e537e3a3c7e91eeb91a93fc15f1917f314a",
+          "block_hash" : "0xe6d2fc4270809de49a0b32d641484320853d3b1047b7e2d4c07d59b96ce0e8d4",
+          "fee_recipient" : "0x4678df4290faf93c645a36af63f4a921a44c36ea",
+          "gas_limit" : "4817049881864128048",
+          "builder_index" : "740284",
+          "slot" : "1310451960",
           "value" : "4822007335809147728",
           "blob_kzg_commitments_root" : "0x3357e542f0ae1af86f17cf83906b95549e49375821da85bd778267dad563c6ff"
         },

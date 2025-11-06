@@ -18,7 +18,12 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVAL
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -38,15 +43,30 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
   private static final Logger LOG = LogManager.getLogger();
 
   private final SpecConfigGloas config;
+  private final LabelledMetric<Counter> requestCounter;
+  private final Counter totalExecutionPayloadEnvelopesRequestedCounter;
 
-  public ExecutionPayloadEnvelopesByRangeMessageHandler(final SpecConfigGloas config) {
+  public ExecutionPayloadEnvelopesByRangeMessageHandler(
+      final SpecConfigGloas config, final MetricsSystem metricsSystem) {
     this.config = config;
+    requestCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.NETWORK,
+            "rpc_execution_payload_envelopes_by_range_requests_total",
+            "Total number of execution payload envelopes by range requests received",
+            "status");
+    totalExecutionPayloadEnvelopesRequestedCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.NETWORK,
+            "rpc_execution_payload_envelopes_by_range_requested_envelopes_total",
+            "Total number of execution payload envelopes requested in accepted execution payload envelopes by range requests from peers");
   }
 
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final ExecutionPayloadEnvelopesByRangeRequestMessage request) {
     if (request.getCount().isGreaterThan(config.getMaxRequestBlocksDeneb())) {
+      requestCounter.labels("count_too_big").inc();
       return Optional.of(
           new RpcException(
               INVALID_REQUEST_CODE,
@@ -68,6 +88,18 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
         peer.getId(),
         message.getCount(),
         message.getStartSlot());
+
+    final Optional<RequestKey> maybeRequestKey =
+        peer.approveExecutionPayloadEnvelopesRequest(callback, message.getCount().longValue());
+
+    if (!peer.approveRequest() || maybeRequestKey.isEmpty()) {
+      requestCounter.labels("rate_limited").inc();
+      return;
+    }
+
+    requestCounter.labels("ok").inc();
+    totalExecutionPayloadEnvelopesRequestedCounter.inc(message.getCount().longValue());
+
     throw new UnsupportedOperationException("Not yet implemented");
   }
 }
