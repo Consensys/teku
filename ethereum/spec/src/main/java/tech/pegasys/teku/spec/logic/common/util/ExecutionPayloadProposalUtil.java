@@ -40,7 +40,7 @@ public class ExecutionPayloadProposalUtil {
     this.executionPayloadProcessor = executionPayloadProcessor;
   }
 
-  public record ExecutionPayloadProposalContext(
+  public record ExecutionPayloadProposalData(
       ExecutionPayload executionPayload,
       ExecutionRequests executionRequests,
       SszList<SszKZGCommitment> kzgCommitments) {}
@@ -49,21 +49,21 @@ public class ExecutionPayloadProposalUtil {
       final UInt64 proposalSlot,
       final UInt64 builderIndex,
       final BeaconBlockAndState blockAndState,
-      final SafeFuture<ExecutionPayloadProposalContext> executionPayloadProposalContextFuture) {
+      final SafeFuture<ExecutionPayloadProposalData> executionPayloadProposalDataFuture) {
     final SafeFuture<ExecutionPayloadEnvelope> newExecutionPayload =
-        executionPayloadProposalContextFuture.thenApply(
-            executionPayloadProposalContext -> {
+        executionPayloadProposalDataFuture.thenApply(
+            executionPayloadProposalData -> {
               // Create initial execution payload with some stubs
               final Bytes32 tmpStateRoot = Bytes32.ZERO;
               return schemaDefinitions
                   .getExecutionPayloadEnvelopeSchema()
                   .create(
-                      executionPayloadProposalContext.executionPayload,
-                      executionPayloadProposalContext.executionRequests,
+                      executionPayloadProposalData.executionPayload,
+                      executionPayloadProposalData.executionRequests,
                       builderIndex,
                       blockAndState.getRoot(),
                       proposalSlot,
-                      executionPayloadProposalContext.kzgCommitments,
+                      executionPayloadProposalData.kzgCommitments,
                       tmpStateRoot);
             });
     return newExecutionPayload.thenApplyChecked(

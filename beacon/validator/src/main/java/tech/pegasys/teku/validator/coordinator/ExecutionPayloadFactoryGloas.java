@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
-import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil.ExecutionPayloadProposalContext;
+import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil.ExecutionPayloadProposalData;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
@@ -52,11 +52,11 @@ public class ExecutionPayloadFactoryGloas implements ExecutionPayloadFactory {
     final UInt64 proposalSlot = blockAndState.getSlot();
     final SchemaDefinitionsGloas schemaDefinitions =
         SchemaDefinitionsGloas.required(spec.atSlot(proposalSlot).getSchemaDefinitions());
-    final SafeFuture<ExecutionPayloadProposalContext> executionPayloadProposalContextFuture =
+    final SafeFuture<ExecutionPayloadProposalData> executionPayloadProposalDataFuture =
         getCachedGetPayloadResponseFuture(proposalSlot)
             .thenApply(
                 getPayloadResponse ->
-                    new ExecutionPayloadProposalContext(
+                    new ExecutionPayloadProposalData(
                         getPayloadResponse.getExecutionPayload(),
                         getPayloadResponse.getExecutionRequests().orElseThrow(),
                         schemaDefinitions
@@ -64,7 +64,7 @@ public class ExecutionPayloadFactoryGloas implements ExecutionPayloadFactory {
                             .createFromBlobsBundle(
                                 getPayloadResponse.getBlobsBundle().orElseThrow())));
     return spec.createNewUnsignedExecutionPayload(
-            proposalSlot, builderIndex, blockAndState, executionPayloadProposalContextFuture)
+            proposalSlot, builderIndex, blockAndState, executionPayloadProposalDataFuture)
         .thenApply(ExecutionPayloadAndState::executionPayload);
   }
 
