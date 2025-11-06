@@ -648,6 +648,12 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withCheckpointSyncUrl(final String checkpointSyncUrl) {
+    LOG.debug("checkpoint-sync-url: {}", checkpointSyncUrl);
+    configMap.put("checkpoint-sync-url", checkpointSyncUrl);
+    return this;
+  }
+
   public TekuNodeConfigBuilder withDasPublishWithholdColumnsEverySlots(
       final int dasPublishWithholdColumnsEverySlots) {
     LOG.debug("Xdas-publish-withhold-columns-every-slots: {}", dasPublishWithholdColumnsEverySlots);
