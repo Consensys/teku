@@ -124,7 +124,9 @@ public class BlockProposalTestUtil {
               if (builder.supportsExecutionPayload()) {
                 builder.executionPayload(
                     executionPayload.orElseGet(
-                        () -> createExecutionPayload(newSlot, state, transactions, terminalBlock)));
+                        () ->
+                            createExecutionPayload(
+                                newSlot, blockSlotState, transactions, terminalBlock)));
               }
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(
@@ -145,7 +147,7 @@ public class BlockProposalTestUtil {
                         executionPayload.orElseGet(
                             () ->
                                 createExecutionPayload(
-                                    newSlot, state, transactions, terminalBlock)),
+                                    newSlot, blockSlotState, transactions, terminalBlock)),
                         blockSlotState,
                         proposerIndex,
                         kzgCommitments));
@@ -218,7 +220,9 @@ public class BlockProposalTestUtil {
               if (builder.supportsExecutionPayload()) {
                 builder.executionPayload(
                     executionPayload.orElseGet(
-                        () -> createExecutionPayload(newSlot, state, transactions, terminalBlock)));
+                        () ->
+                            createExecutionPayload(
+                                newSlot, blockSlotState, transactions, terminalBlock)));
               }
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(
@@ -239,7 +243,7 @@ public class BlockProposalTestUtil {
                         executionPayload.orElseGet(
                             () ->
                                 createExecutionPayload(
-                                    newSlot, state, transactions, terminalBlock)),
+                                    newSlot, blockSlotState, transactions, terminalBlock)),
                         blockSlotState,
                         proposerIndex,
                         kzgCommitments));
