@@ -87,7 +87,7 @@ public class BlockProposalTestUtil {
       final SszList<SignedVoluntaryExit> exits,
       final Optional<List<Bytes>> transactions,
       final Optional<Bytes32> terminalBlock,
-      final Optional<ExecutionPayload> maybeExecutionPayload,
+      final Optional<ExecutionPayload> executionPayload,
       final Optional<SyncAggregate> syncAggregate,
       final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
       final Optional<SszList<SszKZGCommitment>> kzgCommitments,
@@ -99,9 +99,6 @@ public class BlockProposalTestUtil {
     final BeaconState blockSlotState = spec.processSlots(state, newSlot);
     final BLSSignature randaoReveal =
         signer.createRandaoReveal(newEpoch, blockSlotState.getForkInfo()).join();
-    final ExecutionPayload executionPayload =
-        maybeExecutionPayload.orElseGet(
-            () -> createExecutionPayload(newSlot, blockSlotState, transactions, terminalBlock));
 
     final int proposerIndex = spec.getBeaconProposerIndex(blockSlotState, newSlot);
     return spec.createNewUnsignedBlock(
@@ -125,7 +122,9 @@ public class BlockProposalTestUtil {
                         dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState)));
               }
               if (builder.supportsExecutionPayload()) {
-                builder.executionPayload(executionPayload);
+                builder.executionPayload(
+                    executionPayload.orElseGet(
+                        () -> createExecutionPayload(newSlot, state, transactions, terminalBlock)));
               }
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(
@@ -142,7 +141,14 @@ public class BlockProposalTestUtil {
               if (builder.supportsSignedExecutionPayloadBid()) {
                 builder.signedExecutionPayloadBid(
                     createSignedExecutionPayloadBid(
-                        newSlot, executionPayload, blockSlotState, proposerIndex, kzgCommitments));
+                        newSlot,
+                        executionPayload.orElseGet(
+                            () ->
+                                createExecutionPayload(
+                                    newSlot, state, transactions, terminalBlock)),
+                        blockSlotState,
+                        proposerIndex,
+                        kzgCommitments));
               }
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(
@@ -177,7 +183,7 @@ public class BlockProposalTestUtil {
       final SszList<SignedVoluntaryExit> exits,
       final Optional<List<Bytes>> transactions,
       final Optional<Bytes32> terminalBlock,
-      final Optional<ExecutionPayload> maybeExecutionPayload,
+      final Optional<ExecutionPayload> executionPayload,
       final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
       final Optional<SszList<SszKZGCommitment>> kzgCommitments,
       final Optional<SszList<PayloadAttestation>> payloadAttestations)
@@ -186,9 +192,6 @@ public class BlockProposalTestUtil {
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
     final BLSSignature randaoReveal =
         signer.createRandaoReveal(newEpoch, state.getForkInfo()).join();
-    final ExecutionPayload executionPayload =
-        maybeExecutionPayload.orElseGet(
-            () -> createExecutionPayload(newSlot, state, transactions, terminalBlock));
 
     final BeaconState blockSlotState = spec.processSlots(state, newSlot);
 
@@ -213,7 +216,9 @@ public class BlockProposalTestUtil {
                     dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState));
               }
               if (builder.supportsExecutionPayload()) {
-                builder.executionPayload(executionPayload);
+                builder.executionPayload(
+                    executionPayload.orElseGet(
+                        () -> createExecutionPayload(newSlot, state, transactions, terminalBlock)));
               }
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(
@@ -230,7 +235,14 @@ public class BlockProposalTestUtil {
               if (builder.supportsSignedExecutionPayloadBid()) {
                 builder.signedExecutionPayloadBid(
                     createSignedExecutionPayloadBid(
-                        newSlot, executionPayload, blockSlotState, proposerIndex, kzgCommitments));
+                        newSlot,
+                        executionPayload.orElseGet(
+                            () ->
+                                createExecutionPayload(
+                                    newSlot, state, transactions, terminalBlock)),
+                        blockSlotState,
+                        proposerIndex,
+                        kzgCommitments));
               }
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(
