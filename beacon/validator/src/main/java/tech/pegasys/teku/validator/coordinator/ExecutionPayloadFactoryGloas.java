@@ -30,7 +30,9 @@ import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
+import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil.ExecutionPayloadProposalContext;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class ExecutionPayloadFactoryGloas implements ExecutionPayloadFactory {
 
@@ -48,11 +50,20 @@ public class ExecutionPayloadFactoryGloas implements ExecutionPayloadFactory {
   public SafeFuture<ExecutionPayloadEnvelope> createUnsignedExecutionPayload(
       final UInt64 builderIndex, final BeaconBlockAndState blockAndState) {
     final UInt64 proposalSlot = blockAndState.getSlot();
+    final SafeFuture<ExecutionPayloadProposalContext> executionPayloadProposalContextFuture =
+        getCachedGetPayloadResponseFuture(proposalSlot)
+            .thenApply(
+                getPayloadResponse ->
+                    new ExecutionPayloadProposalContext(
+                        getPayloadResponse.getExecutionPayload(),
+                        getPayloadResponse.getExecutionRequests().orElseThrow(),
+                        SchemaDefinitionsGloas.required(
+                                spec.atSlot(proposalSlot).getSchemaDefinitions())
+                            .getBlobKzgCommitmentsSchema()
+                            .createFromBlobsBundle(
+                                getPayloadResponse.getBlobsBundle().orElseThrow())));
     return spec.createNewUnsignedExecutionPayload(
-            proposalSlot,
-            builderIndex,
-            blockAndState,
-            getCachedGetPayloadResponseFuture(proposalSlot))
+            proposalSlot, builderIndex, blockAndState, executionPayloadProposalContextFuture)
         .thenApply(ExecutionPayloadAndState::executionPayload);
   }
 

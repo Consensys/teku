@@ -80,7 +80,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.epbs.ExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -115,6 +114,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProces
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil.ExecutionPayloadProposalContext;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
@@ -917,7 +917,7 @@ public class Spec {
       final UInt64 proposalSlot,
       final UInt64 builderIndex,
       final BeaconBlockAndState blockAndState,
-      final SafeFuture<GetPayloadResponse> getPayloadResponseFuture) {
+      final SafeFuture<ExecutionPayloadProposalContext> executionPayloadProposalContextFuture) {
     return atSlot(proposalSlot)
         .getExecutionPayloadProposalUtil()
         .orElseThrow(
@@ -925,7 +925,7 @@ public class Spec {
                 new IllegalStateException(
                     "Attempting to use execution payload proposal util when spec does not have execution payload proposal util"))
         .createNewUnsignedExecutionPayload(
-            proposalSlot, builderIndex, blockAndState, getPayloadResponseFuture);
+            proposalSlot, builderIndex, blockAndState, executionPayloadProposalContextFuture);
   }
 
   // Blind Block Utils

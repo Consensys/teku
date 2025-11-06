@@ -59,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil.ExecutionPayloadProposalContext;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -141,16 +142,17 @@ public class BlockProposalTestUtil {
                 builder.executionRequests(dataStructureUtil.randomExecutionRequests());
               }
               if (builder.supportsSignedExecutionPayloadBid()) {
-                builder.signedExecutionPayloadBid(
-                    createSignedExecutionPayloadBid(
-                        newSlot,
+                final ExecutionPayloadProposalContext executionPayloadProposalContext =
+                    new ExecutionPayloadProposalContext(
                         executionPayload.orElseGet(
                             () ->
                                 createExecutionPayload(
                                     newSlot, blockSlotState, transactions, terminalBlock)),
-                        blockSlotState,
-                        proposerIndex,
-                        kzgCommitments));
+                        dataStructureUtil.randomExecutionRequests(),
+                        kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
+                builder.signedExecutionPayloadBid(
+                    createSignedExecutionPayloadBid(
+                        newSlot, blockSlotState, proposerIndex, executionPayloadProposalContext));
               }
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(
@@ -237,16 +239,17 @@ public class BlockProposalTestUtil {
                 builder.executionRequests(dataStructureUtil.randomExecutionRequests());
               }
               if (builder.supportsSignedExecutionPayloadBid()) {
-                builder.signedExecutionPayloadBid(
-                    createSignedExecutionPayloadBid(
-                        newSlot,
+                final ExecutionPayloadProposalContext executionPayloadProposalContext =
+                    new ExecutionPayloadProposalContext(
                         executionPayload.orElseGet(
                             () ->
                                 createExecutionPayload(
                                     newSlot, blockSlotState, transactions, terminalBlock)),
-                        blockSlotState,
-                        proposerIndex,
-                        kzgCommitments));
+                        dataStructureUtil.randomExecutionRequests(),
+                        kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
+                builder.signedExecutionPayloadBid(
+                    createSignedExecutionPayloadBid(
+                        newSlot, blockSlotState, proposerIndex, executionPayloadProposalContext));
               }
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(
@@ -329,13 +332,13 @@ public class BlockProposalTestUtil {
 
   private SignedExecutionPayloadBid createSignedExecutionPayloadBid(
       final UInt64 newSlot,
-      final ExecutionPayload executionPayload,
       final BeaconState state,
       final int proposerIndex,
-      final Optional<SszList<SszKZGCommitment>> kzgCommitments) {
+      final ExecutionPayloadProposalContext executionPayloadProposalContext) {
     final SpecVersion specVersion = spec.atSlot(newSlot);
     final SchemaDefinitionsGloas schemaDefinitions =
         SchemaDefinitionsGloas.required(specVersion.getSchemaDefinitions());
+    final ExecutionPayload executionPayload = executionPayloadProposalContext.executionPayload();
     // self-building bid
     final ExecutionPayloadBid bid =
         schemaDefinitions
@@ -349,9 +352,7 @@ public class BlockProposalTestUtil {
                 UInt64.valueOf(proposerIndex),
                 newSlot,
                 UInt64.ZERO,
-                kzgCommitments
-                    .orElse(schemaDefinitions.getBlobKzgCommitmentsSchema().of())
-                    .hashTreeRoot());
+                executionPayloadProposalContext.kzgCommitments().hashTreeRoot());
     return schemaDefinitions
         .getSignedExecutionPayloadBidSchema()
         .create(bid, BLSSignature.infinity());
