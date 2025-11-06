@@ -1051,6 +1051,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void completeDasClassesWiring() {
+    if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
+      return;
+    }
     final DataColumnSidecarRecoveringCustody dataColumnSidecarRecoveringCustody =
         dataColumnSidecarCustodyRef.get();
 
