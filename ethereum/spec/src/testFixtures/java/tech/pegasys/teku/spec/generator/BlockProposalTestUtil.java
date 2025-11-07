@@ -14,7 +14,9 @@
 package tech.pegasys.teku.spec.generator;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -67,15 +69,169 @@ import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlockProposalTestUtil {
+
   private final Spec spec;
   private final DataStructureUtil dataStructureUtil;
+
+  // used for ePBS to cache the data required for proposing the execution payload by the builder
+  private final Map<UInt64, ExecutionPayloadProposalData> executionPayloadProposalDataCache =
+      new HashMap<>();
 
   public BlockProposalTestUtil(final Spec spec) {
     this.spec = spec;
     this.dataStructureUtil = new DataStructureUtil(spec);
   }
 
-  public SafeFuture<SignedBlockAndState> createNewBlock(
+  public SafeFuture<SignedBlockAndState> createBlock(
+      final Signer signer,
+      final UInt64 newSlot,
+      final BeaconState previousState,
+      final Bytes32 parentBlockSigningRoot,
+      final Optional<SszList<Attestation>> attestations,
+      final Optional<SszList<Deposit>> deposits,
+      final Optional<SszList<AttesterSlashing>> attesterSlashings,
+      final Optional<SszList<ProposerSlashing>> proposerSlashings,
+      final Optional<SszList<SignedVoluntaryExit>> exits,
+      final Optional<Eth1Data> eth1Data,
+      final Optional<List<Bytes>> transactions,
+      final Optional<Bytes32> terminalBlock,
+      final Optional<ExecutionPayload> executionPayload,
+      final Optional<SyncAggregate> syncAggregate,
+      final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges,
+      final Optional<SszList<SszKZGCommitment>> kzgCommitments,
+      final Optional<SszList<PayloadAttestation>> payloadAttestations,
+      final boolean skipStateTransition)
+      throws EpochProcessingException, SlotProcessingException {
+    final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
+    final BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpecAtSlot(spec, newSlot);
+    if (skipStateTransition) {
+      return createNewBlockSkippingStateTransition(
+          signer,
+          newSlot,
+          previousState,
+          parentBlockSigningRoot,
+          eth1Data.orElse(getEth1DataStub(previousState, newEpoch)),
+          attestations.orElse(blockBodyLists.createAttestations()),
+          proposerSlashings.orElse(blockBodyLists.createProposerSlashings()),
+          attesterSlashings.orElse(blockBodyLists.createAttesterSlashings()),
+          deposits.orElse(blockBodyLists.createDeposits()),
+          exits.orElse(blockBodyLists.createVoluntaryExits()),
+          transactions,
+          terminalBlock,
+          executionPayload,
+          blsToExecutionChanges,
+          kzgCommitments,
+          payloadAttestations);
+    }
+    return createNewBlock(
+        signer,
+        newSlot,
+        previousState,
+        parentBlockSigningRoot,
+        eth1Data.orElse(getEth1DataStub(previousState, newEpoch)),
+        attestations.orElse(blockBodyLists.createAttestations()),
+        proposerSlashings.orElse(blockBodyLists.createProposerSlashings()),
+        attesterSlashings.orElse(blockBodyLists.createAttesterSlashings()),
+        deposits.orElse(blockBodyLists.createDeposits()),
+        exits.orElse(blockBodyLists.createVoluntaryExits()),
+        transactions,
+        terminalBlock,
+        executionPayload,
+        syncAggregate,
+        blsToExecutionChanges,
+        kzgCommitments,
+        payloadAttestations);
+  }
+
+  public SafeFuture<SignedBlockAndState> createBlockWithBlobs(
+      final Signer signer,
+      final UInt64 newSlot,
+      final BeaconState previousState,
+      final Bytes32 parentBlockSigningRoot,
+      final Optional<SszList<Attestation>> attestations,
+      final Optional<SszList<Deposit>> deposits,
+      final Optional<SszList<AttesterSlashing>> attesterSlashings,
+      final Optional<SszList<ProposerSlashing>> proposerSlashings,
+      final Optional<SszList<SignedVoluntaryExit>> exits,
+      final Optional<Eth1Data> eth1Data,
+      final Optional<List<Bytes>> transactions,
+      final Optional<Bytes32> terminalBlock,
+      final Optional<ExecutionPayload> executionPayload,
+      final Optional<SyncAggregate> syncAggregate,
+      final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges,
+      final BlobsUtil blobsUtil,
+      final List<Blob> blobs,
+      final Optional<SszList<PayloadAttestation>> payloadAttestations,
+      final boolean skipStateTransition)
+      throws EpochProcessingException, SlotProcessingException {
+    final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
+    final BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpecAtSlot(spec, newSlot);
+    final List<KZGCommitment> generatedBlobKzgCommitments = blobsUtil.blobsToKzgCommitments(blobs);
+
+    final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
+        SchemaDefinitionsDeneb.required(spec.atSlot(newSlot).getSchemaDefinitions())
+            .getBlobKzgCommitmentsSchema();
+
+    final SszList<SszKZGCommitment> kzgCommitments =
+        generatedBlobKzgCommitments.stream()
+            .map(SszKZGCommitment::new)
+            .collect(blobKzgCommitmentsSchema.collector());
+
+    if (skipStateTransition) {
+      return createNewBlockSkippingStateTransition(
+          signer,
+          newSlot,
+          previousState,
+          parentBlockSigningRoot,
+          eth1Data.orElse(getEth1DataStub(previousState, newEpoch)),
+          attestations.orElse(blockBodyLists.createAttestations()),
+          proposerSlashings.orElse(blockBodyLists.createProposerSlashings()),
+          attesterSlashings.orElse(blockBodyLists.createAttesterSlashings()),
+          deposits.orElse(blockBodyLists.createDeposits()),
+          exits.orElse(blockBodyLists.createVoluntaryExits()),
+          transactions,
+          terminalBlock,
+          executionPayload,
+          blsToExecutionChanges,
+          Optional.of(kzgCommitments),
+          payloadAttestations);
+    } else {
+      return createNewBlock(
+          signer,
+          newSlot,
+          previousState,
+          parentBlockSigningRoot,
+          eth1Data.orElse(getEth1DataStub(previousState, newEpoch)),
+          attestations.orElse(blockBodyLists.createAttestations()),
+          proposerSlashings.orElse(blockBodyLists.createProposerSlashings()),
+          attesterSlashings.orElse(blockBodyLists.createAttesterSlashings()),
+          deposits.orElse(blockBodyLists.createDeposits()),
+          exits.orElse(blockBodyLists.createVoluntaryExits()),
+          transactions,
+          terminalBlock,
+          executionPayload,
+          syncAggregate,
+          blsToExecutionChanges,
+          Optional.of(kzgCommitments),
+          payloadAttestations);
+    }
+  }
+
+  public int getProposerIndexForSlot(final BeaconState preState, final UInt64 slot) {
+    BeaconState state;
+    try {
+      state = spec.processSlots(preState, slot);
+    } catch (SlotProcessingException | EpochProcessingException e) {
+      throw new RuntimeException(e);
+    }
+    return spec.getBeaconProposerIndex(state, state.getSlot());
+  }
+
+  public Optional<ExecutionPayloadProposalData> getExecutionPayloadProposalData(final UInt64 slot) {
+    return Optional.ofNullable(executionPayloadProposalDataCache.remove(slot));
+  }
+
+  private SafeFuture<SignedBlockAndState> createNewBlock(
       final Signer signer,
       final UInt64 newSlot,
       final BeaconState state,
@@ -90,7 +246,7 @@ public class BlockProposalTestUtil {
       final Optional<Bytes32> terminalBlock,
       final Optional<ExecutionPayload> executionPayload,
       final Optional<SyncAggregate> syncAggregate,
-      final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
+      final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges,
       final Optional<SszList<SszKZGCommitment>> kzgCommitments,
       final Optional<SszList<PayloadAttestation>> payloadAttestations)
       throws EpochProcessingException, SlotProcessingException {
@@ -131,7 +287,7 @@ public class BlockProposalTestUtil {
               }
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(
-                    blsToExecutionChange.orElseGet(
+                    blsToExecutionChanges.orElseGet(
                         dataStructureUtil::emptySignedBlsToExecutionChangesList));
               }
               if (builder.supportsKzgCommitments()) {
@@ -150,6 +306,7 @@ public class BlockProposalTestUtil {
                                     newSlot, blockSlotState, transactions, terminalBlock)),
                         dataStructureUtil.randomExecutionRequests(),
                         kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
+                executionPayloadProposalDataCache.put(newSlot, executionPayloadProposalData);
                 builder.signedExecutionPayloadBid(
                     createSignedExecutionPayloadBid(
                         newSlot, blockSlotState, proposerIndex, executionPayloadProposalData));
@@ -174,7 +331,7 @@ public class BlockProposalTestUtil {
             });
   }
 
-  public SafeFuture<SignedBlockAndState> createNewBlockSkippingStateTransition(
+  private SafeFuture<SignedBlockAndState> createNewBlockSkippingStateTransition(
       final Signer signer,
       final UInt64 newSlot,
       final BeaconState state,
@@ -188,7 +345,7 @@ public class BlockProposalTestUtil {
       final Optional<List<Bytes>> transactions,
       final Optional<Bytes32> terminalBlock,
       final Optional<ExecutionPayload> executionPayload,
-      final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
+      final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges,
       final Optional<SszList<SszKZGCommitment>> kzgCommitments,
       final Optional<SszList<PayloadAttestation>> payloadAttestations)
       throws EpochProcessingException, SlotProcessingException {
@@ -228,7 +385,7 @@ public class BlockProposalTestUtil {
               }
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(
-                    blsToExecutionChange.orElseGet(
+                    blsToExecutionChanges.orElseGet(
                         dataStructureUtil::emptySignedBlsToExecutionChangesList));
               }
               if (builder.supportsKzgCommitments()) {
@@ -247,6 +404,7 @@ public class BlockProposalTestUtil {
                                     newSlot, blockSlotState, transactions, terminalBlock)),
                         dataStructureUtil.randomExecutionRequests(),
                         kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
+                executionPayloadProposalDataCache.put(newSlot, executionPayloadProposalData);
                 builder.signedExecutionPayloadBid(
                     createSignedExecutionPayloadBid(
                         newSlot, blockSlotState, proposerIndex, executionPayloadProposalData));
@@ -362,141 +520,6 @@ public class BlockProposalTestUtil {
     return spec.atSlot(state.getSlot()).miscHelpers().isMergeTransitionComplete(state);
   }
 
-  public SafeFuture<SignedBlockAndState> createBlock(
-      final Signer signer,
-      final UInt64 newSlot,
-      final BeaconState previousState,
-      final Bytes32 parentBlockSigningRoot,
-      final Optional<SszList<Attestation>> attestations,
-      final Optional<SszList<Deposit>> deposits,
-      final Optional<SszList<AttesterSlashing>> attesterSlashings,
-      final Optional<SszList<ProposerSlashing>> proposerSlashings,
-      final Optional<SszList<SignedVoluntaryExit>> exits,
-      final Optional<Eth1Data> eth1Data,
-      final Optional<List<Bytes>> transactions,
-      final Optional<Bytes32> terminalBlock,
-      final Optional<ExecutionPayload> executionPayload,
-      final Optional<SyncAggregate> syncAggregate,
-      final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
-      final Optional<SszList<SszKZGCommitment>> kzgCommitments,
-      final Optional<SszList<PayloadAttestation>> payloadAttestations,
-      final boolean skipStateTransition)
-      throws EpochProcessingException, SlotProcessingException {
-    final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
-    final BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpecAtSlot(spec, newSlot);
-    if (skipStateTransition) {
-      return createNewBlockSkippingStateTransition(
-          signer,
-          newSlot,
-          previousState,
-          parentBlockSigningRoot,
-          eth1Data.orElse(getEth1DataStub(previousState, newEpoch)),
-          attestations.orElse(blockBodyLists.createAttestations()),
-          proposerSlashings.orElse(blockBodyLists.createProposerSlashings()),
-          attesterSlashings.orElse(blockBodyLists.createAttesterSlashings()),
-          deposits.orElse(blockBodyLists.createDeposits()),
-          exits.orElse(blockBodyLists.createVoluntaryExits()),
-          transactions,
-          terminalBlock,
-          executionPayload,
-          blsToExecutionChange,
-          kzgCommitments,
-          payloadAttestations);
-    }
-    return createNewBlock(
-        signer,
-        newSlot,
-        previousState,
-        parentBlockSigningRoot,
-        eth1Data.orElse(getEth1DataStub(previousState, newEpoch)),
-        attestations.orElse(blockBodyLists.createAttestations()),
-        proposerSlashings.orElse(blockBodyLists.createProposerSlashings()),
-        attesterSlashings.orElse(blockBodyLists.createAttesterSlashings()),
-        deposits.orElse(blockBodyLists.createDeposits()),
-        exits.orElse(blockBodyLists.createVoluntaryExits()),
-        transactions,
-        terminalBlock,
-        executionPayload,
-        syncAggregate,
-        blsToExecutionChange,
-        kzgCommitments,
-        payloadAttestations);
-  }
-
-  public SafeFuture<SignedBlockAndState> createBlockWithBlobs(
-      final Signer signer,
-      final UInt64 newSlot,
-      final BeaconState previousState,
-      final Bytes32 parentBlockSigningRoot,
-      final Optional<SszList<Attestation>> attestations,
-      final Optional<SszList<Deposit>> deposits,
-      final Optional<SszList<AttesterSlashing>> attesterSlashings,
-      final Optional<SszList<ProposerSlashing>> proposerSlashings,
-      final Optional<SszList<SignedVoluntaryExit>> exits,
-      final Optional<Eth1Data> eth1Data,
-      final Optional<List<Bytes>> transactions,
-      final Optional<Bytes32> terminalBlock,
-      final Optional<ExecutionPayload> executionPayload,
-      final Optional<SyncAggregate> syncAggregate,
-      final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
-      final BlobsUtil blobsUtil,
-      final List<Blob> blobs,
-      final Optional<SszList<PayloadAttestation>> payloadAttestations,
-      final boolean skipStateTransition)
-      throws EpochProcessingException, SlotProcessingException {
-    final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
-    final BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpecAtSlot(spec, newSlot);
-    final List<KZGCommitment> generatedBlobKzgCommitments = blobsUtil.blobsToKzgCommitments(blobs);
-
-    final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
-        SchemaDefinitionsDeneb.required(spec.atSlot(newSlot).getSchemaDefinitions())
-            .getBlobKzgCommitmentsSchema();
-
-    final SszList<SszKZGCommitment> kzgCommitments =
-        generatedBlobKzgCommitments.stream()
-            .map(SszKZGCommitment::new)
-            .collect(blobKzgCommitmentsSchema.collector());
-
-    if (skipStateTransition) {
-      return createNewBlockSkippingStateTransition(
-          signer,
-          newSlot,
-          previousState,
-          parentBlockSigningRoot,
-          eth1Data.orElse(getEth1DataStub(previousState, newEpoch)),
-          attestations.orElse(blockBodyLists.createAttestations()),
-          proposerSlashings.orElse(blockBodyLists.createProposerSlashings()),
-          attesterSlashings.orElse(blockBodyLists.createAttesterSlashings()),
-          deposits.orElse(blockBodyLists.createDeposits()),
-          exits.orElse(blockBodyLists.createVoluntaryExits()),
-          transactions,
-          terminalBlock,
-          executionPayload,
-          blsToExecutionChange,
-          Optional.of(kzgCommitments),
-          payloadAttestations);
-    } else {
-      return createNewBlock(
-          signer,
-          newSlot,
-          previousState,
-          parentBlockSigningRoot,
-          eth1Data.orElse(getEth1DataStub(previousState, newEpoch)),
-          attestations.orElse(blockBodyLists.createAttestations()),
-          proposerSlashings.orElse(blockBodyLists.createProposerSlashings()),
-          attesterSlashings.orElse(blockBodyLists.createAttesterSlashings()),
-          deposits.orElse(blockBodyLists.createDeposits()),
-          exits.orElse(blockBodyLists.createVoluntaryExits()),
-          transactions,
-          terminalBlock,
-          executionPayload,
-          syncAggregate,
-          blsToExecutionChange,
-          Optional.of(kzgCommitments),
-          payloadAttestations);
-    }
-  }
-
   private Eth1Data getEth1DataStub(final BeaconState state, final UInt64 currentEpoch) {
     final SpecConfig specConfig = spec.atSlot(state.getSlot()).getConfig();
     final int epochsPerPeriod = specConfig.getEpochsPerEth1VotingPeriod();
@@ -505,15 +528,5 @@ public class BlockProposalTestUtil {
         Hash.sha256(SSZ.encodeUInt64(epochsPerPeriod)),
         state.getEth1DepositIndex(),
         Hash.sha256(Hash.sha256(SSZ.encodeUInt64(votingPeriod.longValue()))));
-  }
-
-  public int getProposerIndexForSlot(final BeaconState preState, final UInt64 slot) {
-    BeaconState state;
-    try {
-      state = spec.processSlots(preState, slot);
-    } catch (SlotProcessingException | EpochProcessingException e) {
-      throw new RuntimeException(e);
-    }
-    return spec.getBeaconProposerIndex(state, state.getSlot());
   }
 }
