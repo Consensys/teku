@@ -39,11 +39,11 @@ dependencies {
     testFixturesImplementation 'org.apache.logging.log4j:log4j-api'
     testFixturesImplementation 'io.consensys.tuweni:tuweni-units'
     testFixturesImplementation 'io.consensys.tuweni:tuweni-ssz'
-    testFixturesImplementation 'org.hyperledger.besu.internal:core'
-    testFixturesImplementation 'org.hyperledger.besu.internal:config'
+    testFixturesImplementation 'org.hyperledger.besu.internal:besu-ethereum-core'
+    testFixturesImplementation 'org.hyperledger.besu.internal:besu-config'
     testFixturesImplementation 'org.hyperledger.besu:besu-datatypes'
-    testFixturesImplementation 'org.hyperledger.besu:evm'
-    testFixturesImplementation 'org.hyperledger.besu:plugin-api'
+    testFixturesImplementation 'org.hyperledger.besu:besu-evm'
+    testFixturesImplementation 'org.hyperledger.besu:besu-plugin-api'
     testFixturesImplementation 'org.junit.jupiter:junit-jupiter-api'
     testFixturesImplementation project(':ethereum:performance-trackers')
     testFixturesImplementation project(':ethereum:execution-types')
@@ -77,5 +77,5 @@ dependencies {
     testImplementation testFixtures(project(':infrastructure:metrics'))
     testImplementation testFixtures(project(':infrastructure:time'))
 
-    testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
+    testFixturesImplementation 'org.hyperledger.besu.internal:besu-metrics-core'
 }
