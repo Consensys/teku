@@ -77,7 +77,8 @@ public class DasPreSampler {
         .thenAccept(
             columnsInCustody ->
                 columnsInCustody.forEach(
-                    columnId -> sampler.onAlreadyKnownDataColumn(columnId, RemoteOrigin.CUSTODY)))
+                    columnId ->
+                        sampler.onNewValidatedDataColumnSidecar(columnId, RemoteOrigin.CUSTODY)))
         .always(
             () ->
                 sampler

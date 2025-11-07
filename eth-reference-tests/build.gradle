@@ -22,7 +22,7 @@ dependencies {
   referenceTestImplementation project(':infrastructure:time')
   referenceTestImplementation project(':data:dataexchange')
 
-  referenceTestImplementation 'org.hyperledger.besu:plugin-api'
+  referenceTestImplementation 'org.hyperledger.besu:besu-plugin-api'
   referenceTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
   referenceTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   referenceTestImplementation 'io.consensys.tuweni:tuweni-bytes'
