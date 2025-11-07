@@ -265,7 +265,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   @Override
   public SafeFuture<List<SubmitDataError>> sendPayloadAttestationMessages(
       final List<PayloadAttestationMessage> payloadAttestationMessages) {
-    return countDataRequest(
+    return countSendRequest(
         delegate.sendPayloadAttestationMessages(payloadAttestationMessages),
         BeaconNodeRequestLabels.SEND_PAYLOAD_ATTESTATION_MESSAGES_METHOD);
   }
