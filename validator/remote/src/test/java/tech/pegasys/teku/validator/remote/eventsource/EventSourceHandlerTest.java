@@ -39,7 +39,7 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 class EventSourceHandlerTest {
 
-  final Spec spec = TestSpecFactory.createDefault();
+  final Spec spec = TestSpecFactory.createMinimalGloas();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ValidatorTimingChannel validatorTimingChannel = mock(ValidatorTimingChannel.class);
   final StubMetricsSystem metricsSystem = new StubMetricsSystem();

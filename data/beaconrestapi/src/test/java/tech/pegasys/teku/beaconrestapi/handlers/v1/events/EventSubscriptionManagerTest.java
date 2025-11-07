@@ -67,7 +67,7 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ReorgContext;
 
 public class EventSubscriptionManagerTest {
-  private final Spec spec = TestSpecFactory.createMinimalFulu();
+  private final Spec spec = TestSpecFactory.createMinimalGloas();
   private final SpecConfig specConfig = spec.getGenesisSpecConfig();
   private final DataStructureUtil data = new DataStructureUtil(spec);
   protected final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
@@ -126,7 +126,7 @@ public class EventSubscriptionManagerTest {
       data.randomPayloadBuildingAttributes(true);
   final PayloadAttributesData samplePayloadAttributesData =
       new PayloadAttributesData(
-          SpecMilestone.FULU,
+          SpecMilestone.GLOAS,
           new Data(
               samplePayloadAttributes.getProposalSlot(),
               samplePayloadAttributes.getParentBeaconBlockRoot(),
