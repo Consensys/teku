@@ -55,6 +55,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
@@ -289,12 +290,20 @@ public class RespondingEth2Peer implements Eth2Peer {
     return createPendingDataColumnSidecarRequest(handler);
   }
 
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9974
   @Override
   public SafeFuture<Void> requestExecutionPayloadEnvelopesByRoot(
       final List<Bytes32> beaconBlockRoots,
       final RpcResponseListener<SignedExecutionPayloadEnvelope> listener) {
-    throw new UnsupportedOperationException("Not yet implemented");
+    final PendingRequestHandler<Void, SignedExecutionPayloadEnvelope> handler =
+        PendingRequestHandler.createForBatchExecutionPayloadEnvelopeRequest(
+            listener,
+            () ->
+                beaconBlockRoots.stream()
+                    .map(this::findExecutionPayloadByRoot)
+                    .flatMap(Optional::stream)
+                    .collect(Collectors.toList()));
+
+    return createPendingExecutionPayloadEnvelopeRequest(handler);
   }
 
   @Override
@@ -316,13 +325,22 @@ public class RespondingEth2Peer implements Eth2Peer {
     return createPendingDataColumnSidecarRequest(handler);
   }
 
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9974
   @Override
   public SafeFuture<Void> requestExecutionPayloadEnvelopesByRange(
       final UInt64 startSlot,
       final UInt64 count,
       final RpcResponseListener<SignedExecutionPayloadEnvelope> listener) {
-    throw new UnsupportedOperationException("Not yet implemented");
+    final long lastSlotExclusive = startSlot.longValue() + count.longValue();
+
+    final PendingRequestHandler<Void, SignedExecutionPayloadEnvelope> handler =
+        PendingRequestHandler.createForBatchExecutionPayloadEnvelopeRequest(
+            listener,
+            () ->
+                chain
+                    .streamExecutionPayloadsAndStates(startSlot.longValue(), lastSlotExclusive + 1)
+                    .map(SignedExecutionPayloadAndState::executionPayload)
+                    .collect(Collectors.toList()));
+    return createPendingExecutionPayloadEnvelopeRequest(handler);
   }
 
   @Override
@@ -372,6 +390,13 @@ public class RespondingEth2Peer implements Eth2Peer {
   private <T> SafeFuture<T> createPendingDataColumnSidecarRequest(
       final PendingRequestHandler<T, DataColumnSidecar> handler) {
     final PendingRequest<T, DataColumnSidecar> request = new PendingRequest<>(handler);
+    pendingRequests.add(request);
+    return request.getFuture();
+  }
+
+  private <T> SafeFuture<T> createPendingExecutionPayloadEnvelopeRequest(
+      final PendingRequestHandler<T, SignedExecutionPayloadEnvelope> handler) {
+    final PendingRequest<T, SignedExecutionPayloadEnvelope> request = new PendingRequest<>(handler);
     pendingRequests.add(request);
     return request.getFuture();
   }
@@ -531,6 +556,11 @@ public class RespondingEth2Peer implements Eth2Peer {
         (chainBuilder, id) -> Optional.of(chainBuilder.getDataColumnSidecars(id)));
   }
 
+  private Optional<SignedExecutionPayloadEnvelope> findExecutionPayloadByRoot(
+      final Bytes32 beaconBlockRoot) {
+    return findObjectByKey(beaconBlockRoot, ChainBuilder::getExecutionPayload);
+  }
+
   public static class PendingRequest<ResponseT, HandlerT> {
 
     private final SafeFuture<ResponseT> future = new SafeFuture<>();
@@ -650,6 +680,14 @@ public class RespondingEth2Peer implements Eth2Peer {
         final RpcResponseListener<DataColumnSidecar> listener,
         final Supplier<List<DataColumnSidecar>> dataColumnSidecarsSupplier) {
       return createForBatchRequest(listener, dataColumnSidecarsSupplier);
+    }
+
+    static PendingRequestHandler<Void, SignedExecutionPayloadEnvelope>
+        createForBatchExecutionPayloadEnvelopeRequest(
+            final RpcResponseListener<SignedExecutionPayloadEnvelope> listener,
+            final Supplier<List<SignedExecutionPayloadEnvelope>>
+                executionPayloadEnvelopesSupplier) {
+      return createForBatchRequest(listener, executionPayloadEnvelopesSupplier);
     }
   }
 }

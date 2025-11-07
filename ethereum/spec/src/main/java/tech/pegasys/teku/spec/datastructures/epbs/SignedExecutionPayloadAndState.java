@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.epbs;
 
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -20,4 +21,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
  * Helper datastructure that holds a signed execution payload envelope with its corresponding state
  */
 public record SignedExecutionPayloadAndState(
-    SignedExecutionPayloadEnvelope executionPayload, BeaconState state) {}
+    SignedExecutionPayloadEnvelope executionPayload, BeaconState state) {
+  public UInt64 getSlot() {
+    return executionPayload.getMessage().getSlot();
+  }
+}

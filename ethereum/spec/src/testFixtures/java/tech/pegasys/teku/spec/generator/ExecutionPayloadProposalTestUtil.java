@@ -18,6 +18,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil.ExecutionPayloadProposalData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -36,7 +37,35 @@ public class ExecutionPayloadProposalTestUtil {
       final UInt64 newSlot,
       final UInt64 proposerIndex,
       final BeaconBlockAndState blockAndState,
-      final ExecutionPayloadProposalData executionPayloadProposalData) {
+      final ExecutionPayloadProposalData executionPayloadProposalData,
+      final boolean skipStateTransition) {
+    final SchemaDefinitionsGloas schemaDefinitions =
+        SchemaDefinitionsGloas.required(spec.atSlot(newSlot).getSchemaDefinitions());
+    if (skipStateTransition) {
+      final ExecutionPayloadEnvelope executionPayload =
+          schemaDefinitions
+              .getExecutionPayloadEnvelopeSchema()
+              .create(
+                  executionPayloadProposalData.executionPayload(),
+                  executionPayloadProposalData.executionRequests(),
+                  proposerIndex,
+                  blockAndState.getRoot(),
+                  newSlot,
+                  executionPayloadProposalData.kzgCommitments(),
+                  blockAndState.getState().hashTreeRoot());
+      // Sign execution payload and set signature
+      return signer
+          .signExecutionPayloadEnvelope(executionPayload, blockAndState.getState().getForkInfo())
+          .thenApply(
+              signature -> {
+                final SignedExecutionPayloadEnvelope signedExecutionPayload =
+                    schemaDefinitions
+                        .getSignedExecutionPayloadEnvelopeSchema()
+                        .create(executionPayload, signature);
+                return new SignedExecutionPayloadAndState(
+                    signedExecutionPayload, blockAndState.getState());
+              });
+    }
     return spec.createNewUnsignedExecutionPayload(
             newSlot,
             proposerIndex,
@@ -48,12 +77,11 @@ public class ExecutionPayloadProposalTestUtil {
               return signer
                   .signExecutionPayloadEnvelope(
                       executionPayloadAndState.executionPayload(),
-                      blockAndState.getState().getForkInfo())
+                      executionPayloadAndState.state().getForkInfo())
                   .thenApply(
                       signature -> {
                         final SignedExecutionPayloadEnvelope signedExecutionPayload =
-                            SchemaDefinitionsGloas.required(
-                                    spec.atSlot(newSlot).getSchemaDefinitions())
+                            schemaDefinitions
                                 .getSignedExecutionPayloadEnvelopeSchema()
                                 .create(executionPayloadAndState.executionPayload(), signature);
                         return new SignedExecutionPayloadAndState(

@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
+// TODO-GLOAS: https://github.com/Consensys/teku/issues/10071
 public class ChainUpdater {
 
   public final RecentChainData recentChainData;

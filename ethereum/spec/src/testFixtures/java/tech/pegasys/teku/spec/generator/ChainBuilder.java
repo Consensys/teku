@@ -58,6 +58,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -94,7 +95,6 @@ import tech.pegasys.teku.spec.signatures.Signer;
  * A utility for building small, valid chains of blocks with states (and execution payloads with
  * states) for testing
  */
-// TODO-GLOAS: https://github.com/Consensys/teku/issues/10071
 public class ChainBuilder {
   private static final List<BLSKeyPair> DEFAULT_VALIDATOR_KEYS =
       Collections.unmodifiableList(new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 3));
@@ -190,6 +190,11 @@ public class ChainBuilder {
 
   public Optional<SignedBlockAndState> getBlockAndState(final Bytes32 blockRoot) {
     return Optional.ofNullable(blocksByHash.get(blockRoot));
+  }
+
+  public Optional<SignedExecutionPayloadEnvelope> getExecutionPayload(final Bytes32 blockRoot) {
+    return Optional.ofNullable(executionPayloadsByHash.get(blockRoot))
+        .map(SignedExecutionPayloadAndState::executionPayload);
   }
 
   public List<BlobSidecar> getBlobSidecars(final Bytes32 blockRoot) {
@@ -298,6 +303,18 @@ public class ChainBuilder {
     return streamDataColumnSidecars(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot), columns);
   }
 
+  public Stream<SignedExecutionPayloadAndState> streamExecutionPayloadsAndStates(
+      final long fromSlot, final long toSlot) {
+    return streamExecutionPayloadsAndStates(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot));
+  }
+
+  public Stream<SignedExecutionPayloadAndState> streamExecutionPayloadsAndStates(
+      final UInt64 fromSlot, final UInt64 toSlot) {
+    return executionPayloads.values().stream()
+        .filter(b -> b.executionPayload().getMessage().getSlot().isGreaterThanOrEqualTo(fromSlot))
+        .filter(b -> b.executionPayload().getMessage().getSlot().isLessThanOrEqualTo(toSlot));
+  }
+
   public Stream<Map.Entry<SlotAndBlockRoot, List<DataColumnSidecar>>> streamDataColumnSidecars(
       final UInt64 fromSlot, final UInt64 toSlot, final List<UInt64> columns) {
     return dataColumnSidecars.entrySet().stream()
@@ -344,6 +361,14 @@ public class ChainBuilder {
 
   public BeaconState getStateAtSlot(final UInt64 slot) {
     return resultToState(getBlockAndStateAtSlot(slot));
+  }
+
+  public SignedExecutionPayloadAndState getExecutionPayloadAndStateAtSlot(final UInt64 slot) {
+    return executionPayloads.get(slot);
+  }
+
+  public BeaconState getExecutionPayloadStateAtSlot(final UInt64 slot) {
+    return resultToState(getExecutionPayloadAndStateAtSlot(slot));
   }
 
   public SignedBlockAndState getLatestBlockAndStateAtSlot(final long slot) {
@@ -653,7 +678,11 @@ public class ChainBuilder {
 
   private SignedBlockAndState appendNewBlockToChain(final UInt64 slot, final BlockOptions options) {
     final SignedBlockAndState latestBlockAndState = getLatestBlockAndState();
-    final BeaconState preState = latestBlockAndState.getState();
+    final BeaconState preState =
+        // use the execution payload state if it has been processed to allow for correct block
+        // appending
+        Optional.ofNullable(getExecutionPayloadStateAtSlot(latestBlockAndState.getSlot()))
+            .orElse(latestBlockAndState.getState());
     final Bytes32 parentRoot = latestBlockAndState.getBlock().getMessage().hashTreeRoot();
 
     int proposerIndex = blockProposalTestUtil.getProposerIndexForSlot(preState, slot);
@@ -723,7 +752,8 @@ public class ChainBuilder {
                     slot,
                     UInt64.valueOf(proposerIndex),
                     nextBlockAndState.toUnsigned(),
-                    executionPayloadProposalData.get()));
+                    executionPayloadProposalData.get(),
+                    options.isSkipStateTransitionEnabled()));
         trackExecutionPayload(nextExecutionPayloadAndState);
       }
 
@@ -988,6 +1018,10 @@ public class ChainBuilder {
     return Optional.ofNullable(result).map(SignedBlockAndState::getBlock).orElse(null);
   }
 
+  private BeaconState resultToState(final SignedExecutionPayloadAndState result) {
+    return Optional.ofNullable(result).map(SignedExecutionPayloadAndState::state).orElse(null);
+  }
+
   public SignedContributionAndProofTestBuilder createValidSignedContributionAndProofBuilder() {
     return createValidSignedContributionAndProofBuilder(getLatestSlot());
   }
@@ -1116,7 +1150,7 @@ public class ChainBuilder {
     private boolean skipStateTransition = false;
     private boolean wrongProposer = false;
     // TODO-GLOAS: https://github.com/Consensys/teku/issues/10071 temporarily not produce execution
-    // payloads until we have a sensible ChainBuilder design
+    // payloads until we have a fully working ChainBuilder + ChainUpdater design
     private boolean withholdExecutionPayload = true;
 
     private BlockOptions() {}
