@@ -15,7 +15,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.validator;
 
 import static tech.pegasys.teku.api.ValidatorDataProvider.PARTIAL_PUBLISH_FAILURE_MESSAGE;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ETH_CONSENSUS_VERSION_TYPE;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllSupportedMilestones;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.headerBasedSelector;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -32,6 +31,7 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.constants.ValidatorConstants;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
 public class PostAggregateAndProofsV2 extends RestApiEndpoint {
@@ -95,13 +96,18 @@ public class PostAggregateAndProofsV2 extends RestApiEndpoint {
                         signedAggregateAndProof.getMessage().getAggregate().getData().getSlot())
                     .equals(milestone);
 
+    final SerializableOneOfTypeDefinitionBuilder<SignedAggregateAndProof> builder =
+        new SerializableOneOfTypeDefinitionBuilder<SignedAggregateAndProof>()
+            .title("SignedAggregateAndProof");
+
+    builder.withType(
+        value -> signedAggregateAndProofSchemaPredicate.test(value, SpecMilestone.PHASE0),
+        getPhaseOSignedAggregateAndProofSchema(schemaDefinitionCache).getJsonTypeDefinition());
+    builder.withType(
+        value -> signedAggregateAndProofSchemaPredicate.test(value, SpecMilestone.ELECTRA),
+        getElectraSignedAggregateAndProofSchema(schemaDefinitionCache).getJsonTypeDefinition());
     final SerializableOneOfTypeDefinition<SignedAggregateAndProof>
-        signedAggregateAndProofSchemaDefinition =
-            getSchemaDefinitionForAllSupportedMilestones(
-                schemaDefinitionCache,
-                "SignedAggregateAndProof",
-                SchemaDefinitions::getSignedAggregateAndProofSchema,
-                signedAggregateAndProofSchemaPredicate);
+        signedAggregateAndProofSchemaDefinition = builder.build();
 
     final OneOfArrayJsonRequestContentTypeDefinition.BodyTypeSelector<SignedAggregateAndProof>
         aggregateAndProofBodySelector =
@@ -146,5 +152,19 @@ public class PostAggregateAndProofsV2 extends RestApiEndpoint {
         .withBadRequestResponse(Optional.of("Invalid request syntax."))
         .withChainDataResponses()
         .build();
+  }
+
+  private static SignedAggregateAndProof.SignedAggregateAndProofSchema
+      getPhaseOSignedAggregateAndProofSchema(final SchemaDefinitionCache schemaDefinitionCache) {
+    return schemaDefinitionCache
+        .getSchemaDefinition(SpecMilestone.PHASE0)
+        .getSignedAggregateAndProofSchema();
+  }
+
+  private static SignedAggregateAndProof.SignedAggregateAndProofSchema
+      getElectraSignedAggregateAndProofSchema(final SchemaDefinitionCache schemaDefinitionCache) {
+    return SchemaDefinitionsElectra.required(
+            schemaDefinitionCache.getSchemaDefinition(SpecMilestone.ELECTRA))
+        .getSignedAggregateAndProofSchema();
   }
 }

@@ -32,8 +32,6 @@
                 "$ref" : "#/components/schemas/SignedAggregateAndProofPhase0"
               }, {
                 "$ref" : "#/components/schemas/SignedAggregateAndProofElectra"
-              }, {
-                "$ref" : "#/components/schemas/SignedAggregateAndProofGloas"
               } ]
             }
           }
