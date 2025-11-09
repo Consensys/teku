@@ -23,8 +23,8 @@ dependencies {
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'io.prometheus:prometheus-metrics-bom'
   implementation 'io.consensys.tuweni:tuweni-ssz'
-  implementation 'org.hyperledger.besu.internal:metrics-core'
-  implementation 'org.hyperledger.besu:plugin-api'
+  implementation 'org.hyperledger.besu.internal:besu-metrics-core'
+  implementation 'org.hyperledger.besu:besu-plugin-api'
   implementation 'org.rocksdb:rocksdbjni'
   implementation 'org.fusesource.leveldbjni:leveldbjni-win64'
   implementation 'org.fusesource.leveldbjni:leveldbjni-win32'
@@ -65,8 +65,8 @@ dependencies {
   testFixturesImplementation 'org.junit.jupiter:junit-jupiter-params'
   testFixturesImplementation 'com.google.guava:guava'
   testFixturesImplementation 'io.consensys.tuweni:tuweni-bytes'
-  testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
-  testFixturesImplementation 'org.hyperledger.besu:plugin-api'
+  testFixturesImplementation 'org.hyperledger.besu.internal:besu-metrics-core'
+  testFixturesImplementation 'org.hyperledger.besu:besu-plugin-api'
 
 
   jmhImplementation testFixtures(project(':storage'))

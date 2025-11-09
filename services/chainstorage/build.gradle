@@ -11,7 +11,7 @@ dependencies {
   implementation project(':storage:api')
   implementation project(':infrastructure:events')
 
-  implementation 'org.hyperledger.besu:plugin-api'
+  implementation 'org.hyperledger.besu:besu-plugin-api'
 
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':ethereum:execution-types'))

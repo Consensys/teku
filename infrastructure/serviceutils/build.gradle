@@ -8,7 +8,7 @@ dependencies {
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:version')
 
-  implementation 'org.hyperledger.besu:plugin-api'
+  implementation 'org.hyperledger.besu:besu-plugin-api'
 
   testImplementation testFixtures(project(':infrastructure:async'))
 }

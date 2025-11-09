@@ -3,7 +3,7 @@ dependencies {
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:subscribers')
 
-  testImplementation 'org.hyperledger.besu.internal:metrics-core'
+  testImplementation 'org.hyperledger.besu.internal:besu-metrics-core'
   testImplementation testFixtures(project(':infrastructure:async'))
 }
 
