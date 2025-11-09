@@ -161,7 +161,7 @@ public class SimpleSidecarRetriever
 
     // here we make sure that if something goes wrong in the handle call we
     // log all the info to fix the bug
-    activeRpcRequest.finishStackTrace();
+    activeRpcRequest.ignoreCancelException().finishStackTrace();
 
     match.request.activeRpcRequest = new ActiveRequest(activeRpcRequest, match.peer);
     return true;
