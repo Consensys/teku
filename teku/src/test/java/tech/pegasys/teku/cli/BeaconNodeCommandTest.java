@@ -40,7 +40,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
@@ -55,9 +54,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -479,8 +476,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  // @Disabled("used for ad-hoc reconciliation between CLI and docs")
-  public void commandLineOptionsShouldBePresentInDocs() throws IOException {
+  @Disabled("used for ad-hoc reconciliation between CLI and docs")
+  public void verifyCliOptionsAndDocsConsistency() throws IOException {
     beaconNodeCommand.parse(new String[] {"--help"});
     beaconNodeCommand.parse(new String[] {"vc", "--help"});
     final String commandLineOutput = getCommandLineOutput();
