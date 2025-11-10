@@ -12,3 +12,4 @@
 ### Additions and Improvements
 
 ### Bug Fixes
+ - Fixed NPE in DasPreSampler (#10110).
