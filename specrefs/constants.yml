@@ -306,6 +306,27 @@
     PARTICIPATION_FLAG_WEIGHTS = [TIMELY_SOURCE_WEIGHT, TIMELY_TARGET_WEIGHT, TIMELY_HEAD_WEIGHT]
     </spec>
 
+- name: PAYLOAD_STATUS_EMPTY#gloas
+  sources: []
+  spec: |
+    <spec constant_var="PAYLOAD_STATUS_EMPTY" fork="gloas" hash="b78dfbcf">
+    PAYLOAD_STATUS_EMPTY: PayloadStatus = 1
+    </spec>
+
+- name: PAYLOAD_STATUS_FULL#gloas
+  sources: []
+  spec: |
+    <spec constant_var="PAYLOAD_STATUS_FULL" fork="gloas" hash="82f773dc">
+    PAYLOAD_STATUS_FULL: PayloadStatus = 2
+    </spec>
+
+- name: PAYLOAD_STATUS_PENDING#gloas
+  sources: []
+  spec: |
+    <spec constant_var="PAYLOAD_STATUS_PENDING" fork="gloas" hash="640761d7">
+    PAYLOAD_STATUS_PENDING: PayloadStatus = 0
+    </spec>
+
 - name: PROPOSER_WEIGHT
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/IncentivizationWeights.java
