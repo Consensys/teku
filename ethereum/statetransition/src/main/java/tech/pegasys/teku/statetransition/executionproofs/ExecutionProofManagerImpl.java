@@ -148,8 +148,8 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
               // sleep for a 1/4 of the slot time based
               Thread.sleep(spec.getSlotDurationMillis(block.getSlot()) / 4);
             } catch (InterruptedException e) {
-              Thread.currentThread().interrupt();
               LOG.debug("Interrupted while waiting for validation of proofs");
+              throw new RuntimeException(e);
             }
           }
           LOG.debug("Checking proofs for block {}", block.getRoot());
