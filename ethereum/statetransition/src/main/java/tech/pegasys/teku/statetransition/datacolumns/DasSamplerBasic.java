@@ -148,6 +148,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
                         tracker.samplingRequirement().size()));
               }
             })
+        .ignoreCancelException()
         .finishError(LOG);
   }
 
