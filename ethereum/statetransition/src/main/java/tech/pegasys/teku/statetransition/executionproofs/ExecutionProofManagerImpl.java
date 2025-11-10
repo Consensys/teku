@@ -134,6 +134,7 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
               LOG.debug(
                   "Found valid proofs for block {} on attempt {}", block.getRoot(), attempt + 1);
               validationResult = SafeFuture.completedFuture(result);
+              break;
             } else {
               if (attempt == attemptsToGetProof - 1) {
                 validationResult =
