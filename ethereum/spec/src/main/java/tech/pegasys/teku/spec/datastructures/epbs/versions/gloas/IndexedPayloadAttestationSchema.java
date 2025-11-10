@@ -31,10 +31,11 @@ public class IndexedPayloadAttestationSchema
 
   private static final SszFieldName ATTESTING_INDICES = () -> "attesting_indices";
 
-  public IndexedPayloadAttestationSchema(final long ptcSize, final SchemaRegistry schemaRegistry) {
+  public IndexedPayloadAttestationSchema(
+      final SpecConfigGloas specConfig, final SchemaRegistry schemaRegistry) {
     super(
         "IndexedPayloadAttestation",
-        namedSchema(ATTESTING_INDICES, SszUInt64ListSchema.create(ptcSize)),
+        namedSchema(ATTESTING_INDICES, SszUInt64ListSchema.create(specConfig.getPtcSize())),
         namedSchema("data", schemaRegistry.get(PAYLOAD_ATTESTATION_DATA_SCHEMA)),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
   }
