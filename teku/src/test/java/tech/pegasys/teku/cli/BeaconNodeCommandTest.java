@@ -479,7 +479,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  @Disabled("used for ad-hoc reconciliation between CLI and docs")
+  // @Disabled("used for ad-hoc reconciliation between CLI and docs")
   public void commandLineOptionsShouldBePresentInDocs() throws IOException {
     beaconNodeCommand.parse(new String[] {"--help"});
     beaconNodeCommand.parse(new String[] {"vc", "--help"});
@@ -514,7 +514,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
     if (!cliOnly.isEmpty() || !docsOnly.isEmpty()) {
       throw new AssertionError(
-          "Mismatch between CLI and Docs.\n"
+          "Mismatch between CLI and docs.\n"
               + "\uD83D\uDD0D CLI options missing from docs: "
               + cliOnly
               + "\n"
