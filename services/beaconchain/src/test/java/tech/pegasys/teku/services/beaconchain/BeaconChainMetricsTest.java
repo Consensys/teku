@@ -172,14 +172,16 @@ class BeaconChainMetricsTest {
   @Test
   void getPeerCount_shouldSupplyValueIncludingConnectionDirectionLabel() {
     final List<Eth2Peer> peers =
-        IntStream.range(0, 10)
+        IntStream.range(0, 9)
             .mapToObj(
                 i -> {
                   final Eth2Peer peer = mock(Eth2Peer.class);
                   if (i % 2 == 0) {
+                    // outbound
                     when(peer.connectionInitiatedLocally()).thenReturn(true);
                     when(peer.connectionInitiatedRemotely()).thenReturn(false);
                   } else {
+                    // inbound
                     when(peer.connectionInitiatedLocally()).thenReturn(false);
                     when(peer.connectionInitiatedRemotely()).thenReturn(true);
                   }
@@ -190,7 +192,7 @@ class BeaconChainMetricsTest {
     when(eth2P2PNetwork.streamPeers()).thenAnswer(__ -> peers.stream());
 
     assertThat(metricsSystem.getLabelledGauge(BEACON, "peer_count").getValue("inbound"))
-        .hasValue(5);
+        .hasValue(4);
     assertThat(metricsSystem.getLabelledGauge(BEACON, "peer_count").getValue("outbound"))
         .hasValue(5);
   }
