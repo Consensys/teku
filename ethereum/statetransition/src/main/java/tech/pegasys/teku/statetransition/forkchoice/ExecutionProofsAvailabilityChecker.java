@@ -34,10 +34,13 @@ public class ExecutionProofsAvailabilityChecker implements AvailabilityChecker<E
   private SignedBeaconBlock block;
   private AvailabilityChecker<?> delegate;
 
-  public ExecutionProofsAvailabilityChecker(final ExecutionProofManager executionProofManager,final SignedBeaconBlock block ,final AvailabilityChecker<?> delegate) {
+  public ExecutionProofsAvailabilityChecker(
+      final ExecutionProofManager executionProofManager,
+      final SignedBeaconBlock block,
+      final AvailabilityChecker<?> delegate) {
     this.executionProofManager = executionProofManager;
-      this.delegate = delegate;
-      this.block = block;
+    this.delegate = delegate;
+    this.block = block;
   }
 
   @Override
