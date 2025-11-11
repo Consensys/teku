@@ -12,3 +12,5 @@
 ### Additions and Improvements
 
 ### Bug Fixes
+ - Fixed NPE in DasPreSampler (#10110).
+ - Added connection direction to `beacon_peer_count` metric.

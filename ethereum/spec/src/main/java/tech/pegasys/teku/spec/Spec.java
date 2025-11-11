@@ -1112,6 +1112,17 @@ public class Spec {
         .getValidatorIndexToCommitteeAssignmentMap(state, epoch);
   }
 
+  // get_ptc_assignment
+  public Optional<UInt64> getPtcAssignment(
+      final BeaconState state, final UInt64 epoch, final int validatorIndex) {
+    return atEpoch(epoch).getValidatorsUtil().getPtcAssignment(state, epoch, validatorIndex);
+  }
+
+  public Int2ObjectMap<UInt64> getValidatorIndexToPtcAssignmentMap(
+      final BeaconState state, final UInt64 epoch) {
+    return atEpoch(epoch).getValidatorsUtil().getValidatorIndexToPtcAssignmentMap(state, epoch);
+  }
+
   // Attestation helpers
   public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
     return atSlot(attestation.getData().getSlot())

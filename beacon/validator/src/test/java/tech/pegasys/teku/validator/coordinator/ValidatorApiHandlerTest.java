@@ -67,6 +67,8 @@ import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuty;
+import tech.pegasys.teku.ethereum.json.types.validator.PtcDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.PtcDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionAndPublishingPerformanceFactory;
@@ -1337,6 +1339,47 @@ class ValidatorApiHandlerTest {
     assertThat(result).isCompleted();
 
     verify(executionPayloadPublisher).publishSignedExecutionPayload(signedExecutionPayload);
+  }
+
+  @Test
+  public void getPtcDuties_shouldFailWhenNodeIsSyncing() {
+    nodeIsSyncing();
+    final SafeFuture<Optional<PtcDuties>> duties =
+        validatorApiHandler.getPtcDuties(EPOCH, IntList.of(1));
+    assertThat(duties).isCompletedExceptionally();
+    assertThatThrownBy(duties::get).hasRootCauseInstanceOf(NodeSyncingException.class);
+  }
+
+  @Test
+  public void getPtcDuties_shouldFailForEpochTooFarAhead() {
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(3));
+
+    final SafeFuture<Optional<PtcDuties>> result =
+        validatorApiHandler.getPtcDuties(EPOCH, IntList.of(3, 8));
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get).hasRootCauseInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void getPtcDuties_shouldReturnDutiesAndSkipMissingValidators() {
+    final BeaconState state = createStateWithActiveValidators();
+    when(chainDataClient.getStateAtSlotExact(previousEpochStartSlot))
+        .thenReturn(completedFuture(Optional.of(state)));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
+
+    final SafeFuture<Optional<PtcDuties>> result =
+        validatorApiHandler.getPtcDuties(EPOCH, IntList.of(3, 8, 42));
+    final Optional<PtcDuties> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.orElseThrow().duties())
+        .containsExactly(
+            new PtcDuty(
+                state.getValidators().get(3).getPublicKey(),
+                UInt64.valueOf(3),
+                UInt64.valueOf(110)),
+            new PtcDuty(
+                state.getValidators().get(8).getPublicKey(),
+                UInt64.valueOf(8),
+                UInt64.valueOf(108)));
   }
 
   private boolean validatorIsLive(

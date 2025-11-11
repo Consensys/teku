@@ -963,8 +963,7 @@ public class SchemaRegistryBuilder {
         .withCreator(
             GLOAS,
             (registry, specConfig, schemaName) ->
-                new IndexedPayloadAttestationSchema(
-                    SpecConfigGloas.required(specConfig).getPtcSize(), registry))
+                new IndexedPayloadAttestationSchema(SpecConfigGloas.required(specConfig), registry))
         .build();
   }
 
