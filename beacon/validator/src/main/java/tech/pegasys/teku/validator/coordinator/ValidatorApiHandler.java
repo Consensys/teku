@@ -352,14 +352,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     final List<PtcDuty> duties = new ArrayList<>();
     final Int2ObjectMap<UInt64> validatorIndexToPtcAssignmentMap =
         spec.getValidatorIndexToPtcAssignmentMap(state, epoch);
-    for (final int validatorIndex : validatorIndices) {
-      final UInt64 ptcDutySlot = validatorIndexToPtcAssignmentMap.get(validatorIndex);
-      if (ptcDutySlot != null) {
-        spec.getValidatorPubKey(state, UInt64.valueOf(validatorIndex))
-            .ifPresent(
-                publicKey -> duties.add(new PtcDuty(publicKey, validatorIndex, ptcDutySlot)));
-      }
-    }
+    validatorIndices.forEach(
+        i -> {
+          final UInt64 ptcDutySlot = validatorIndexToPtcAssignmentMap.get(i);
+          final UInt64 validatorIndex = UInt64.valueOf(i);
+          if (ptcDutySlot != null) {
+            spec.getValidatorPubKey(state, validatorIndex)
+                .ifPresent(
+                    publicKey -> duties.add(new PtcDuty(publicKey, validatorIndex, ptcDutySlot)));
+          }
+        });
     return new PtcDuties(combinedChainDataClient.isChainHeadOptimistic(), dependentRoot, duties);
   }
 

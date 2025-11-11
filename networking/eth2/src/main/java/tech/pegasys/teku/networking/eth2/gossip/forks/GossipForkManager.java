@@ -266,7 +266,7 @@ public class GossipForkManager {
 
   public void publishPayloadAttestationMessage(final PayloadAttestationMessage message) {
     publishMessage(
-        spec.computeStartSlotAtEpoch(currentEpoch.orElseThrow()),
+        message.getData().getSlot(),
         message,
         "payload attestation message",
         GossipForkSubscriptions::publishPayloadAttestationMessage);

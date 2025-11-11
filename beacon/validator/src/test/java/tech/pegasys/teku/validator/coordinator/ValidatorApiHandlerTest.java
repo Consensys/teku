@@ -1372,8 +1372,14 @@ class ValidatorApiHandlerTest {
     final Optional<PtcDuties> duties = assertCompletedSuccessfully(result);
     assertThat(duties.orElseThrow().duties())
         .containsExactly(
-            new PtcDuty(state.getValidators().get(3).getPublicKey(), 3, UInt64.valueOf(110)),
-            new PtcDuty(state.getValidators().get(8).getPublicKey(), 8, UInt64.valueOf(108)));
+            new PtcDuty(
+                state.getValidators().get(3).getPublicKey(),
+                UInt64.valueOf(3),
+                UInt64.valueOf(110)),
+            new PtcDuty(
+                state.getValidators().get(8).getPublicKey(),
+                UInt64.valueOf(8),
+                UInt64.valueOf(108)));
   }
 
   private boolean validatorIsLive(

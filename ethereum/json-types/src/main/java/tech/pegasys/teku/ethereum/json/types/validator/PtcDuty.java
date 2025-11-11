@@ -14,14 +14,13 @@
 package tech.pegasys.teku.ethereum.json.types.validator;
 
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.PUBLIC_KEY_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public record PtcDuty(BLSPublicKey publicKey, int validatorIndex, UInt64 slot) {
+public record PtcDuty(BLSPublicKey publicKey, UInt64 validatorIndex, UInt64 slot) {
 
   public static final DeserializableTypeDefinition<PtcDuty> PTC_DUTY_TYPE_DEFINITION =
       DeserializableTypeDefinition.object(PtcDuty.class, PtcDuty.Builder.class)
@@ -31,7 +30,7 @@ public record PtcDuty(BLSPublicKey publicKey, int validatorIndex, UInt64 slot) {
           .withField("pubkey", PUBLIC_KEY_TYPE, PtcDuty::publicKey, PtcDuty.Builder::publicKey)
           .withField(
               "validator_index",
-              INTEGER_TYPE,
+              UINT64_TYPE,
               PtcDuty::validatorIndex,
               PtcDuty.Builder::validatorIndex)
           .withField("slot", UINT64_TYPE, PtcDuty::slot, PtcDuty.Builder::slot)
@@ -40,7 +39,7 @@ public record PtcDuty(BLSPublicKey publicKey, int validatorIndex, UInt64 slot) {
   public static class Builder {
 
     private BLSPublicKey publicKey;
-    private int validatorIndex;
+    private UInt64 validatorIndex;
     private UInt64 slot;
 
     public Builder publicKey(final BLSPublicKey publicKey) {
@@ -48,7 +47,7 @@ public record PtcDuty(BLSPublicKey publicKey, int validatorIndex, UInt64 slot) {
       return this;
     }
 
-    public Builder validatorIndex(final int validatorIndex) {
+    public Builder validatorIndex(final UInt64 validatorIndex) {
       this.validatorIndex = validatorIndex;
       return this;
     }
