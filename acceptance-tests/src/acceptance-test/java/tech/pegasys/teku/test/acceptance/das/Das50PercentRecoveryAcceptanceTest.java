@@ -33,7 +33,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
   private final int subnetCount = 128;
 
   @Test
-  public void shouldAbleToReconstructDataColumnSidecarsFrom50Percents_whenOnGossip()
+  public void shouldAbleToReconstructDataColumnSidecarsFrom50Percent_whenOnGossip()
       throws Exception {
     final TekuBeaconNode primaryNode =
         createTekuBeaconNode(
@@ -98,7 +98,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
   }
 
   @Test
-  public void shouldAbleToReconstructDataColumnSidecarsFrom50Percents_whenSyncing()
+  public void shouldAbleToReconstructDataColumnSidecarsFrom50Percent_whenSyncing()
       throws Exception {
     final TekuBeaconNode primaryNode =
         createTekuBeaconNode(
@@ -166,7 +166,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void
-      shouldAbleToReconstructDataColumnSidecarsFrom50Percents_whenSyncingWithReworkedRetriever()
+      shouldAbleToReconstructDataColumnSidecarsFrom50Percent_whenSyncingWithReworkedRetriever()
           throws Exception {
     final TekuBeaconNode primaryNode =
         createTekuBeaconNode(
