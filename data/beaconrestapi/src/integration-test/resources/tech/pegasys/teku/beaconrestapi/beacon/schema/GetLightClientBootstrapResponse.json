@@ -8,7 +8,11 @@
       "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu", "gloas" ]
     },
     "data" : {
-      "$ref" : "#/components/schemas/LightClientBootstrap"
+      "title" : "LightClientBootstrap",
+      "type" : "object",
+      "oneOf" : [ {
+        "$ref" : "#/components/schemas/LightClientBootstrap"
+      } ]
     }
   }
 }

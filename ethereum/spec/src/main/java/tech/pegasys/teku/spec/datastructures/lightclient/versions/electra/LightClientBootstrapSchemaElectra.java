@@ -11,12 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.constants;
+package tech.pegasys.teku.spec.datastructures.lightclient.versions.electra;
 
-public class LightClientConstants {
-  // Altair
-  public static final int FINALIZED_ROOT_GINDEX = 105;
-  public static final int CURRENT_SYNC_COMMITTEE_GINDEX = 54;
-  public static final int CURRENT_SYNC_COMMITTEE_GINDEX_ELECTRA = 86;
-  public static final int NEXT_SYNC_COMMITTEE_GINDEX = 55;
+import static tech.pegasys.teku.spec.constants.LightClientConstants.CURRENT_SYNC_COMMITTEE_GINDEX_ELECTRA;
+
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
+
+public class LightClientBootstrapSchemaElectra extends LightClientBootstrapSchema {
+  public LightClientBootstrapSchemaElectra(final SpecConfigElectra specConfigElectra) {
+    super(specConfigElectra, CURRENT_SYNC_COMMITTEE_GINDEX_ELECTRA);
+  }
 }

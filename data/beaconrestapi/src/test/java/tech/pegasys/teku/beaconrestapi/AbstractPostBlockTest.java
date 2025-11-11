@@ -35,8 +35,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandlerTest {
@@ -46,9 +44,7 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
   public abstract boolean isBlinded();
 
   protected void setupDeneb() {
-    spec = TestSpecFactory.createMinimalDeneb();
-    schemaDefinitionCache = new SchemaDefinitionCache(spec);
-    dataStructureUtil = new DataStructureUtil(spec);
+    setSpec(TestSpecFactory.createMinimalDeneb());
     setup();
   }
 
