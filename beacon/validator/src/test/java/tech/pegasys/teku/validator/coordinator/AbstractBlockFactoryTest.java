@@ -61,6 +61,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
@@ -97,6 +98,7 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -122,6 +124,8 @@ public abstract class AbstractBlockFactoryTest {
       mock(ExecutionPayloadBidManager.class);
   protected final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
+  protected final PayloadAttestationPool payloadAttestationPool =
+      mock(PayloadAttestationPool.class);
   protected final DepositProvider depositProvider = mock(DepositProvider.class);
   protected final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
   protected final StubMetricsSystem metricsSystem = new StubMetricsSystem();
@@ -175,6 +179,8 @@ public abstract class AbstractBlockFactoryTest {
     final SszList<SignedVoluntaryExit> voluntaryExits = blockBodyLists.createVoluntaryExits();
     final SszList<SignedBlsToExecutionChange> blsToExecutionChanges =
         blockBodyLists.createBlsToExecutionChanges();
+    final SszList<PayloadAttestation> payloadAttestations =
+        blockBodyLists.createPayloadAttestations();
 
     final SpecMilestone milestone = spec.atSlot(newSlot).getMilestone();
 
@@ -200,6 +206,8 @@ public abstract class AbstractBlockFactoryTest {
     when(proposerSlashingPool.getItemsForBlock(any(), any(), any())).thenReturn(proposerSlashings);
     when(voluntaryExitPool.getItemsForBlock(any(), any(), any())).thenReturn(voluntaryExits);
     when(blsToExecutionChangePool.getItemsForBlock(any())).thenReturn(blsToExecutionChanges);
+    when(payloadAttestationPool.getPayloadAttestationsForBlock(any(), any()))
+        .thenReturn(payloadAttestations);
     when(eth1DataCache.getEth1Vote(any())).thenReturn(ETH1_DATA);
     if (blinded) {
       when(forkChoiceNotifier.getPayloadId(any(), any()))
@@ -287,9 +295,7 @@ public abstract class AbstractBlockFactoryTest {
       assertThat(block.getBody().getOptionalSignedExecutionPayloadBid())
           .hasValueSatisfying(
               signedBid -> assertThat(signedBid.getMessage()).isEqualTo(executionPayloadBid));
-      // TODO-GLOAS: add assertions for payload attestations
-      // https://github.com/Consensys/teku/issues/9959
-      assertThat(block.getBody().getOptionalPayloadAttestations()).isPresent();
+      assertThat(block.getBody().getOptionalPayloadAttestations()).hasValue(payloadAttestations);
     } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
       assertThat(block.getBody().getOptionalBlobKzgCommitments())
           .hasValueSatisfying(

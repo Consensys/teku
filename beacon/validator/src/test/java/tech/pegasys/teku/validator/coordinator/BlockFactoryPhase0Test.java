@@ -214,6 +214,7 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
             voluntaryExitPool,
             blsToExecutionChangePool,
             syncCommitteeContributionPool,
+            payloadAttestationPool,
             depositProvider,
             eth1DataCache,
             graffitiBuilder,
