@@ -25,7 +25,8 @@ public class ExecutionProofsAvailabilityCheckerFactory
   private final ExecutionProofManager executionProofManager;
   private AvailabilityChecker<?> delegate;
 
-  public ExecutionProofsAvailabilityCheckerFactory(ExecutionProofManager executionProofManager) {
+  public ExecutionProofsAvailabilityCheckerFactory(
+      final ExecutionProofManager executionProofManager) {
     this.executionProofManager = executionProofManager;
   }
 

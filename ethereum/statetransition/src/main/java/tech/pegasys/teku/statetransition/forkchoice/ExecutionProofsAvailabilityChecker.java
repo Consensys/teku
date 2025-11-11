@@ -31,8 +31,8 @@ public class ExecutionProofsAvailabilityChecker implements AvailabilityChecker<E
   private final ExecutionProofManager executionProofManager;
   private final SafeFuture<DataAndValidationResult<ExecutionProof>> validationResult =
       new SafeFuture<>();
-  private SignedBeaconBlock block;
-  private AvailabilityChecker<?> delegate;
+  private final SignedBeaconBlock block;
+  private final AvailabilityChecker<?> delegate;
 
   public ExecutionProofsAvailabilityChecker(
       final ExecutionProofManager executionProofManager,
