@@ -780,7 +780,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
 
     final boolean isLocallyCreated = isLocallyCreatedBlock(maybeBlindedBlockContainer);
 
-    LOG.info("stating to publish block at slot {}", maybeBlindedBlockContainer.getSlot());
+    LOG.info("starting to publish block at slot {}", maybeBlindedBlockContainer.getSlot());
 
     return blockPublisher
         .sendSignedBlock(
