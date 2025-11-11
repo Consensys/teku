@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -66,6 +67,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -111,7 +113,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   private final DebugDataDumper debugDataDumper;
 
-  private final Optional<ExecutionProofsAvailabilityChecker> executionProofsAvailabilityChecker;
+  private final Optional<ExecutionProofsAvailabilityCheckerFactory> executionProofsAvailabilityCheckerFactory;
 
   public ForkChoice(
       final Spec spec,
@@ -124,7 +126,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final boolean forkChoiceLateBlockReorgEnabled,
       final DebugDataDumper debugDataDumper,
       final MetricsSystem metricsSystem,
-      final Optional<ExecutionProofsAvailabilityChecker> executionProofsAvailabilityChecker) {
+      final Optional<ExecutionProofsAvailabilityCheckerFactory> executionProofsAvailabilityCheckerFactory) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.forkChoiceStateProvider = forkChoiceStateProvider;
@@ -146,7 +148,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             "selected_source");
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
-    this.executionProofsAvailabilityChecker = executionProofsAvailabilityChecker;
+    this.executionProofsAvailabilityCheckerFactory = executionProofsAvailabilityCheckerFactory;
   }
 
   @VisibleForTesting
@@ -457,12 +459,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final AvailabilityChecker<?> originalAvailabilityChecker =
         forkChoiceUtil.createAvailabilityChecker(block);
 
-    final AvailabilityChecker<?> availabilityChecker;
-    if (executionProofsAvailabilityChecker.isPresent()) {
-      availabilityChecker = executionProofsAvailabilityChecker.get();
-      ((ExecutionProofsAvailabilityChecker) availabilityChecker)
-          .setDelegate(originalAvailabilityChecker);
-      ((ExecutionProofsAvailabilityChecker) availabilityChecker).setBlock(block);
+      final AvailabilityChecker<?> availabilityChecker;
+    if (executionProofsAvailabilityCheckerFactory.isPresent()) {
+
+        ExecutionProofsAvailabilityCheckerFactory availabilityCheckerFactory = executionProofsAvailabilityCheckerFactory.get();
+        availabilityCheckerFactory.setDelegate(originalAvailabilityChecker);
+
+        availabilityChecker = availabilityCheckerFactory.createAvailabilityChecker(block);
     } else {
       availabilityChecker = originalAvailabilityChecker;
     }
