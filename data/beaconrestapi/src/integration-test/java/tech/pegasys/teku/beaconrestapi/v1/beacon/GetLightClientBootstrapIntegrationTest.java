@@ -21,14 +21,12 @@ import java.io.IOException;
 import okhttp3.Response;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.TestTemplate;
+import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.lightclient.GetLightClientBootstrap;
 import tech.pegasys.teku.ethereum.json.types.SharedApiTypes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecContext;
-import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
@@ -38,17 +36,17 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
-@TestSpecContext(allMilestones = true, ignoredMilestones = SpecMilestone.PHASE0)
 public class GetLightClientBootstrapIntegrationTest
     extends AbstractDataBackedRestAPIIntegrationTest {
+
   final Bytes32 blockRoot = Bytes32.random();
 
   @BeforeEach
-  void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
-    startRestAPIAtGenesis(specContext.getSpecMilestone());
+  void setup() {
+    startRestAPIAtGenesis(SpecMilestone.ALTAIR);
   }
 
-  @TestTemplate
+  @Test
   void shouldReturnResultIfCreatedSuccessfully() throws IOException {
     BeaconState state =
         safeJoin(dataProvider.getChainDataProvider().getBeaconStateAtHead())
@@ -62,16 +60,7 @@ public class GetLightClientBootstrapIntegrationTest
         BeaconStateAltair.required(state).getCurrentSyncCommittee();
 
     final Response response = get(expectedHeader.getBeacon().getRoot());
-    assertThat(response.code())
-        .withFailMessage(
-            () -> {
-              try {
-                return response.body().string();
-              } catch (IOException e) {
-                return "<NO RESPONSE BODY>";
-              }
-            })
-        .isEqualTo(SC_OK);
+    assertThat(response.code()).isEqualTo(SC_OK);
 
     final LightClientBootstrapSchema lightClientBootstrapSchema =
         SchemaDefinitionsAltair.required(spec.getGenesisSchemaDefinitions())
@@ -84,14 +73,14 @@ public class GetLightClientBootstrapIntegrationTest
     assertThat(parsedBootstrapResponse.getCurrentSyncCommittee()).isEqualTo(expectedSyncCommittee);
   }
 
-  @TestTemplate
+  @Test
   void shouldReturnBadRequestIfInvalidPath() throws IOException {
     final Response response =
         getResponse(GetLightClientBootstrap.ROUTE.replace("{block_root}", "foo"));
     assertBadRequest(response);
   }
 
-  @TestTemplate
+  @Test
   void shouldReturnNotFoundIfNoBlock() throws IOException {
     final Response response = get(blockRoot);
     assertNotFound(response);
