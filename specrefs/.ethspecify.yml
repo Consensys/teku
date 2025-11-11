@@ -2,6 +2,9 @@ version: v1.6.0
 style: full
 
 specrefs:
+  auto_standardize_names: true
+  auto_add_missing_entries: true
+
   files:
     - configs.yml
     - constants.yml
