@@ -192,11 +192,6 @@ public class ExecutionPayloadHeaderCapellaImpl
   }
 
   @Override
-  public Bytes32 getPayloadHash() {
-    return hashTreeRoot();
-  }
-
-  @Override
   public Bytes32 getWithdrawalsRoot() {
     return getField14().get();
   }

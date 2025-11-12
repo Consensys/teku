@@ -115,7 +115,7 @@ public class DataColumnSidecarsByRangeMessageHandler
       final String protocolId,
       final Eth2Peer peer,
       final DataColumnSidecarsByRangeRequestMessage message,
-      final ResponseCallback<DataColumnSidecar> responseCallback) {
+      final ResponseCallback<DataColumnSidecar> callback) {
     final UInt64 startSlot = message.getStartSlot();
     final UInt64 endSlot = message.getMaxSlot();
     final List<UInt64> columns = message.getColumns();
@@ -128,13 +128,13 @@ public class DataColumnSidecarsByRangeMessageHandler
                     peer.getId().toBase58(), peer.getDiscoveryNodeId().orElseThrow()),
                 new DasReqRespLogger.ByRangeRequest(
                     message.getStartSlot(), message.getCount().intValue(), message.getColumns()));
-    final LoggingResponseCallback<DataColumnSidecar> responseCallbackWithLogging =
-        new LoggingResponseCallback<>(responseCallback, responseLogger);
+    final LoggingResponseCallback<DataColumnSidecar> callbackWithLogging =
+        new LoggingResponseCallback<>(callback, responseLogger);
 
     final int requestedCount = calculateRequestedCount(message);
 
     final Optional<RequestKey> maybeRequestKey =
-        peer.approveDataColumnSidecarsRequest(responseCallbackWithLogging, requestedCount);
+        peer.approveDataColumnSidecarsRequest(callbackWithLogging, requestedCount);
 
     if (!peer.approveRequest() || maybeRequestKey.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
@@ -163,7 +163,7 @@ public class DataColumnSidecarsByRangeMessageHandler
         () -> dataColumnSidecarArchiveReconstructor.onRequestCompleted(messageHash));
     final RequestState initialState =
         new RequestState(
-            responseCallbackWithLogging,
+            callbackWithLogging,
             specConfigFulu.getMaxRequestDataColumnSidecars(),
             startSlot,
             endSlot,
@@ -185,9 +185,9 @@ public class DataColumnSidecarsByRangeMessageHandler
           if (sentDataColumnSidecars != requestedCount) {
             peer.adjustDataColumnSidecarsRequest(maybeRequestKey.get(), sentDataColumnSidecars);
           }
-          responseCallbackWithLogging.completeSuccessfully();
+          callbackWithLogging.completeSuccessfully();
         },
-        error -> handleProcessingRequestError(error, responseCallbackWithLogging));
+        error -> handleProcessingRequestError(error, callbackWithLogging));
   }
 
   private int calculateRequestedCount(final DataColumnSidecarsByRangeRequestMessage message) {

@@ -55,25 +55,24 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
             state -> {
               BeaconStateFields.copyCommonFieldsFromSource(state, preState);
 
-              state.setCurrentEpochParticipation(preStateFulu.getCurrentEpochParticipation());
-              state.setPreviousEpochParticipation(preStateFulu.getPreviousEpochParticipation());
-              state.setCurrentSyncCommittee(preStateFulu.getCurrentSyncCommittee());
-              state.setNextSyncCommittee(preStateFulu.getNextSyncCommittee());
-              state.setInactivityScores(preStateFulu.getInactivityScores());
-
               state.setFork(
                   new Fork(
                       preState.getFork().getCurrentVersion(),
                       specConfig.getGloasForkVersion(),
                       epoch));
 
-              // Removed `latest_execution_payload_header` in favour of
-              // `latest_execution_payload_bid
+              state.setPreviousEpochParticipation(preStateFulu.getPreviousEpochParticipation());
+              state.setCurrentEpochParticipation(preStateFulu.getCurrentEpochParticipation());
+              state.setInactivityScores(preStateFulu.getInactivityScores());
+              state.setCurrentSyncCommittee(preStateFulu.getCurrentSyncCommittee());
+              state.setNextSyncCommittee(preStateFulu.getNextSyncCommittee());
+
+              // New in Gloas
               state.setLatestExecutionPayloadBid(
                   schemaDefinitions.getExecutionPayloadBidSchema().getDefault());
 
-              state.setNextWithdrawalValidatorIndex(preStateFulu.getNextWithdrawalValidatorIndex());
               state.setNextWithdrawalIndex(preStateFulu.getNextWithdrawalIndex());
+              state.setNextWithdrawalValidatorIndex(preStateFulu.getNextWithdrawalValidatorIndex());
               state.setHistoricalSummaries(preStateFulu.getHistoricalSummaries());
               state.setDepositRequestsStartIndex(preStateFulu.getDepositRequestsStartIndex());
               state.setDepositBalanceToConsume(preStateFulu.getDepositBalanceToConsume());
@@ -86,6 +85,7 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
               state.setPendingPartialWithdrawals(preStateFulu.getPendingPartialWithdrawals());
               state.setPendingConsolidations(preStateFulu.getPendingConsolidations());
               state.setProposerLookahead(preStateFulu.getProposerLookahead());
+
               // New in Gloas
               final SszBitvector executionPayloadAvailability =
                   schemaDefinitions

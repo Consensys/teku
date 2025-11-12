@@ -24,6 +24,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,6 +32,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -43,6 +46,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler.SamplingEligibilityStatus;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
+import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DasSamplerBasicTest {
@@ -50,8 +54,11 @@ public class DasSamplerBasicTest {
   private static final List<UInt64> SAMPLING_INDICES =
       List.of(UInt64.valueOf(5), UInt64.ZERO, UInt64.valueOf(2));
 
+  private final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(0);
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner(stubTimeProvider);
+  private final RPCFetchDelayProvider rpcFetchDelayProvider = mock(RPCFetchDelayProvider.class);
+
   private RecentChainData recentChainData;
-  private CustodyGroupCountManager custodyGroupCountManager;
   private DataColumnSidecarCustody custody;
   private DataColumnSidecarRetriever retriever;
   private CurrentSlotProvider currentSlotProvider;
@@ -61,7 +68,7 @@ public class DasSamplerBasicTest {
 
   @BeforeEach
   public void setUp() {
-    custodyGroupCountManager = mock(CustodyGroupCountManager.class);
+    final CustodyGroupCountManager custodyGroupCountManager = mock(CustodyGroupCountManager.class);
     when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(SAMPLING_INDICES);
     recentChainData = mock(RecentChainData.class);
     custody = mock(DataColumnSidecarCustody.class);
@@ -77,24 +84,13 @@ public class DasSamplerBasicTest {
     sampler =
         new DasSamplerBasic(
             SPEC,
+            asyncRunner,
             currentSlotProvider,
+            rpcFetchDelayProvider,
             custody,
             retriever,
             custodyGroupCountManager,
             recentChainData);
-  }
-
-  @Test
-  void onAlreadyKnownDataColumn_shouldAddToTracker() {
-    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
-
-    final DataColumnSlotAndIdentifier columnId =
-        new DataColumnSlotAndIdentifier(UInt64.ZERO, blockRoot, SAMPLING_INDICES.getFirst());
-    final List<UInt64> remainingColumns = SAMPLING_INDICES.subList(1, SAMPLING_INDICES.size());
-
-    sampler.onAlreadyKnownDataColumn(columnId, RemoteOrigin.CUSTODY);
-
-    assertSamplerTracker(blockRoot, UInt64.ZERO, remainingColumns);
   }
 
   @Test
@@ -108,6 +104,35 @@ public class DasSamplerBasicTest {
     sampler.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC);
 
     assertSamplerTracker(sidecar.getBeaconBlockRoot(), sidecar.getSlot(), remainingColumns);
+  }
+
+  @Test
+  void onNewValidatedDataColumnSidecar_shouldScheduleRPCFetchWhenDelayIsNonZero() {
+    final DataColumnSidecar sidecar =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(), SAMPLING_INDICES.getFirst());
+
+    final List<UInt64> remainingColumns = SAMPLING_INDICES.subList(1, SAMPLING_INDICES.size());
+
+    when(rpcFetchDelayProvider.calculate(sidecar.getSlot())).thenReturn(Duration.ofSeconds(1));
+
+    sampler.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC);
+
+    assertRPCFetchInMillis(
+        sidecar.getSlot(), sidecar.getBeaconBlockRoot(), remainingColumns, 1_000);
+  }
+
+  @Test
+  void onNewValidatedDataColumnSidecar_shouldScheduleRPCFetchWhenDelayIsZero() {
+    final DataColumnSidecar sidecar =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(), SAMPLING_INDICES.getFirst());
+
+    when(rpcFetchDelayProvider.calculate(sidecar.getSlot())).thenReturn(Duration.ZERO);
+
+    sampler.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC);
+
+    assertThat(asyncRunner.countDelayedActions()).isZero();
   }
 
   @Test
@@ -162,16 +187,14 @@ public class DasSamplerBasicTest {
         .when(retriever)
         .retrieve(any());
 
+    when(rpcFetchDelayProvider.calculate(slotAndBlockRoot.getSlot()))
+        .thenReturn(Duration.ofSeconds(1));
+
     // da check is requested
     sampler.checkDataAvailability(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
 
-    // verify we call retrieve for all missing columns
-    for (final UInt64 missingColumn : SAMPLING_INDICES) {
-      verify(retriever)
-          .retrieve(
-              new DataColumnSlotAndIdentifier(
-                  slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), missingColumn));
-    }
+    assertRPCFetchInMillis(
+        slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), SAMPLING_INDICES, 1_000);
 
     // we receive one sidecar late, while retriever is still working
     sampler.onNewValidatedDataColumnSidecar(lateArrivedSidecar, RemoteOrigin.GOSSIP);
@@ -196,6 +219,22 @@ public class DasSamplerBasicTest {
 
   @Test
   @SuppressWarnings("FutureReturnValueIgnored")
+  void checkDataAvailability_shouldRPCFetchImmediatelyIfNotPreviouslyScheduled() {
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
+
+    when(retriever.retrieve(any())).thenReturn(new SafeFuture<>());
+
+    when(rpcFetchDelayProvider.calculate(slotAndBlockRoot.getSlot())).thenReturn(Duration.ZERO);
+
+    sampler.checkDataAvailability(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
+
+    assertRPCFetchInMillis(
+        slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), SAMPLING_INDICES, 0);
+  }
+
+  @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
   void shouldHandleMultipleTrackersFromMultipleEntrypoints() {
     final DataColumnSlotAndIdentifier source1 =
         new DataColumnSlotAndIdentifier(
@@ -208,7 +247,7 @@ public class DasSamplerBasicTest {
     final SlotAndBlockRoot source3 =
         new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
 
-    sampler.onAlreadyKnownDataColumn(source1, RemoteOrigin.CUSTODY);
+    sampler.onNewValidatedDataColumnSidecar(source1, RemoteOrigin.CUSTODY);
     sampler.onNewValidatedDataColumnSidecar(source2, RemoteOrigin.RPC);
     sampler.checkDataAvailability(source3.getSlot(), source3.getBlockRoot());
 
@@ -329,5 +368,36 @@ public class DasSamplerBasicTest {
                                   new DataColumnSlotAndIdentifier(slot, blockRoot, columnIndex))
                           .toList());
             });
+  }
+
+  private void assertRPCFetchInMillis(
+      final UInt64 slot,
+      final Bytes32 blockRoot,
+      final List<UInt64> missingColumns,
+      final int millisFromNow) {
+
+    if (millisFromNow > 0) {
+      // advance up to one millis from the due
+      stubTimeProvider.advanceTimeByMillis(millisFromNow - 1);
+      // verify scheduled but not due for execution
+      assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
+      asyncRunner.executeDueActions();
+      assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
+
+      // than advance to the due
+      stubTimeProvider.advanceTimeByMillis(1);
+
+      // due time arrived
+      assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
+      asyncRunner.executeDueActions();
+    }
+
+    // no delayed actions, we expect fetch already triggered
+    assertThat(asyncRunner.countDelayedActions()).isEqualTo(0);
+
+    // verify we call retrieve for all missing columns
+    for (final UInt64 missingColumn : missingColumns) {
+      verify(retriever).retrieve(new DataColumnSlotAndIdentifier(slot, blockRoot, missingColumn));
+    }
   }
 }

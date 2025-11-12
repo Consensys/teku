@@ -33,6 +33,7 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
   private final ExecutionLayerChannel executionLayer;
   private final SignedBeaconBlock block;
   private final MergeTransitionBlockValidator transitionBlockValidator;
+
   private Optional<SafeFuture<PayloadValidationResult>> result = Optional.empty();
 
   ForkChoicePayloadExecutor(
@@ -60,7 +61,7 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
 
   @Override
   public boolean optimisticallyExecute(
-      final ExecutionPayloadHeader latestExecutionPayloadHeader,
+      final Optional<ExecutionPayloadHeader> latestExecutionPayloadHeader,
       final NewPayloadRequest payloadToExecute) {
     final ExecutionPayload executionPayload = payloadToExecute.getExecutionPayload();
     if (executionPayload.isDefault()) {
@@ -77,7 +78,8 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
                     result -> {
                       if (result.hasValidStatus()) {
                         return transitionBlockValidator.verifyTransitionBlock(
-                            latestExecutionPayloadHeader, block);
+                            // safe to use, it will always be present
+                            latestExecutionPayloadHeader.orElseThrow(), block);
                       } else {
                         return SafeFuture.completedFuture(new PayloadValidationResult(result));
                       }

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.RECOVERED;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.time.Duration;
@@ -36,6 +38,7 @@ import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -67,6 +70,11 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
 
   private final Counter totalDataAvailabilityReconstructedColumns;
   private final MetricsHistogram dataAvailabilityReconstructionTimeSeconds;
+
+  private final Subscribers<ValidDataColumnSidecarsListener> recoveredColumnSidecarSubscribers =
+      Subscribers.create(true);
+
+  private volatile boolean inSync;
 
   public DataColumnSidecarRecoveringCustodyImpl(
       final DataColumnSidecarByRootCustody delegate,
@@ -108,6 +116,11 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
               0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 5.0,
               7.5, 10.0
             });
+  }
+
+  @Override
+  public void onSyncingStatusChanged(final boolean inSync) {
+    this.inSync = inSync;
   }
 
   @Override
@@ -237,9 +250,13 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
         .forEach(
             dataColumnSidecar -> {
               delegate
-                  .onNewValidatedDataColumnSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED)
+                  .onNewValidatedDataColumnSidecar(dataColumnSidecar, RECOVERED)
                   .finishError(LOG);
-              dataColumnSidecarPublisher.accept(dataColumnSidecar, RemoteOrigin.RECOVERED);
+              if (inSync) {
+                dataColumnSidecarPublisher.accept(dataColumnSidecar, RECOVERED);
+              }
+              recoveredColumnSidecarSubscribers.forEach(
+                  subscriber -> subscriber.onNewValidSidecar(dataColumnSidecar, RECOVERED));
             });
     recoveryTask.existingSidecars.clear();
     LOG.debug(
@@ -297,5 +314,11 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   public SafeFuture<Boolean> hasCustodyDataColumnSidecar(
       final DataColumnSlotAndIdentifier columnId) {
     return delegate.hasCustodyDataColumnSidecar(columnId);
+  }
+
+  @Override
+  public void subscribeToRecoveredColumnSidecar(
+      final ValidDataColumnSidecarsListener sidecarListener) {
+    recoveredColumnSidecarSubscribers.subscribe(sidecarListener);
   }
 }

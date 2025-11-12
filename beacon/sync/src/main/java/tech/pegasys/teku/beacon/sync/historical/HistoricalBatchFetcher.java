@@ -404,6 +404,13 @@ public class HistoricalBatchFetcher {
   }
 
   private void validateBlobSidecars(final SignedBeaconBlock block) {
+    // while we know that start or end of batch fulfills requirement, other side of the batch could
+    // be outside
+    // the requirement bounds
+    if (!blobSidecarManager.isAvailabilityRequiredAtSlot(block.getSlot())) {
+      return;
+    }
+
     final List<BlobSidecar> blobSidecars =
         blobSidecarsBySlotToImport.getOrDefault(
             block.getSlotAndBlockRoot(), Collections.emptyList());
