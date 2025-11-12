@@ -68,6 +68,7 @@ import tech.pegasys.teku.validator.client.duties.attestations.AttestationDutyFac
 import tech.pegasys.teku.validator.client.duties.attestations.AttestationProductionDuty;
 import tech.pegasys.teku.validator.client.duties.execution.ExecutionPayloadBidEventsChannel;
 import tech.pegasys.teku.validator.client.duties.execution.ExecutionPayloadDuty;
+import tech.pegasys.teku.validator.client.duties.payloadattestations.PayloadAttestationDutyFactory;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.HttpClientExternalSignerFactory;
@@ -578,6 +579,24 @@ public class ValidatorClientService extends Service {
       final ExecutionPayloadDuty executionPayloadDuty =
           new ExecutionPayloadDuty(spec, asyncRunner, validatorApiChannel, VALIDATOR_LOGGER);
       eventChannels.subscribe(ExecutionPayloadBidEventsChannel.class, executionPayloadDuty);
+
+      final PayloadAttestationDutyFactory payloadAttestationDutyFactory =
+          new PayloadAttestationDutyFactory(
+              spec, forkProvider, validatorApiChannel, validatorDutyMetrics);
+      final DutyLoader<?> payloadDutyLoader =
+          new RetryingDutyLoader<>(
+              asyncRunner,
+              timeProvider,
+              new PtcDutyLoader(
+                  validatorApiChannel,
+                  dependentRoot ->
+                      new SlotBasedScheduledDuties<>(
+                          payloadAttestationDutyFactory,
+                          dependentRoot,
+                          validatorDutyMetrics::performDutyWithMetrics),
+                  validators,
+                  validatorIndexProvider));
+      validatorTimingChannels.add(new PtcDutyScheduler(metricsSystem, payloadDutyLoader, spec));
     }
 
     addValidatorCountMetric(metricsSystem, validators);
