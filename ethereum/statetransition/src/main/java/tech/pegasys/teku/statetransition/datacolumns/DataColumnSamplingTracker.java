@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.datacolumns;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -29,6 +30,7 @@ record DataColumnSamplingTracker(
     Bytes32 blockRoot,
     List<UInt64> samplingRequirement,
     Set<UInt64> missingColumns,
+    AtomicBoolean rpcFetchScheduled,
     SafeFuture<List<UInt64>> completionFuture) {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -40,7 +42,12 @@ record DataColumnSamplingTracker(
     final Set<UInt64> missingColumns = ConcurrentHashMap.newKeySet(samplingRequirement.size());
     missingColumns.addAll(samplingRequirement);
     return new DataColumnSamplingTracker(
-        slot, blockRoot, samplingRequirement, missingColumns, new SafeFuture<>());
+        slot,
+        blockRoot,
+        samplingRequirement,
+        missingColumns,
+        new AtomicBoolean(false),
+        new SafeFuture<>());
   }
 
   boolean add(final DataColumnSlotAndIdentifier columnIdentifier, final RemoteOrigin origin) {

@@ -16,7 +16,7 @@ package tech.pegasys.teku.validator.coordinator;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.COMPLETE;
 import static tech.pegasys.teku.kzg.KZG.CELLS_PER_EXT_BLOB;
-import static tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELRecoveryManagerImpl.DATA_COLUMN_SIDECAR_COMPUTATION_HISTOGRAM;
+import static tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELManagerImpl.DATA_COLUMN_SIDECAR_COMPUTATION_HISTOGRAM;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -50,7 +50,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
@@ -84,6 +83,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 
 public class BlockOperationSelectorFactory {
@@ -94,6 +94,7 @@ public class BlockOperationSelectorFactory {
   private final OperationPool<SignedVoluntaryExit> voluntaryExitPool;
   private final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
   private final SyncCommitteeContributionPool contributionPool;
+  private final PayloadAttestationPool payloadAttestationPool;
   private final DepositProvider depositProvider;
   private final Eth1DataCache eth1DataCache;
   private final GraffitiBuilder graffitiBuilder;
@@ -110,6 +111,7 @@ public class BlockOperationSelectorFactory {
       final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
       final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool,
       final SyncCommitteeContributionPool contributionPool,
+      final PayloadAttestationPool payloadAttestationPool,
       final DepositProvider depositProvider,
       final Eth1DataCache eth1DataCache,
       final GraffitiBuilder graffitiBuilder,
@@ -125,6 +127,7 @@ public class BlockOperationSelectorFactory {
     this.voluntaryExitPool = voluntaryExitPool;
     this.blsToExecutionChangePool = blsToExecutionChangePool;
     this.contributionPool = contributionPool;
+    this.payloadAttestationPool = payloadAttestationPool;
     this.depositProvider = depositProvider;
     this.eth1DataCache = eth1DataCache;
     this.graffitiBuilder = graffitiBuilder;
@@ -247,12 +250,8 @@ public class BlockOperationSelectorFactory {
 
       // Post-Gloas: Payload Attestations
       if (bodyBuilder.supportsPayloadAttestations()) {
-        // TODO-GLOAS: https://github.com/Consensys/teku/issues/9959
-        // no payload attestations used for local interop temporarily
         bodyBuilder.payloadAttestations(
-            BeaconBlockBodySchemaGloas.required(schemaDefinitions.getBeaconBlockBodySchema())
-                .getPayloadAttestationsSchema()
-                .of());
+            payloadAttestationPool.getPayloadAttestationsForBlock(blockSlotState, parentRoot));
       }
 
       return SafeFuture.allOfFailFast(setExecutionDataComplete, setExecutionPayloadBidComplete)

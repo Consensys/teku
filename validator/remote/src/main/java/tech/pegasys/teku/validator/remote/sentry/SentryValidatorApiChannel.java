@@ -28,6 +28,7 @@ import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.PtcDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
@@ -38,6 +39,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
@@ -106,6 +109,12 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Optional<PtcDuties>> getPtcDuties(
+      final UInt64 epoch, final IntCollection validatorIndices) {
+    return dutiesProviderChannel.getPtcDuties(epoch, validatorIndices);
+  }
+
+  @Override
   public SafeFuture<Optional<PeerCount>> getPeerCount() {
     return dutiesProviderChannel.getPeerCount();
   }
@@ -143,6 +152,14 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
     return attestationPublisherChannel
         .orElse(dutiesProviderChannel)
         .createSyncCommitteeContribution(slot, subcommitteeIndex, beaconBlockRoot);
+  }
+
+  @Override
+  public SafeFuture<Optional<PayloadAttestationData>> createPayloadAttestationData(
+      final UInt64 slot) {
+    return attestationPublisherChannel
+        .orElse(dutiesProviderChannel)
+        .createPayloadAttestationData(slot);
   }
 
   @Override
@@ -208,6 +225,14 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
     return attestationPublisherChannel
         .orElse(dutiesProviderChannel)
         .sendSignedContributionAndProofs(signedContributionAndProofs);
+  }
+
+  @Override
+  public SafeFuture<List<SubmitDataError>> sendPayloadAttestationMessages(
+      final List<PayloadAttestationMessage> payloadAttestationMessages) {
+    return attestationPublisherChannel
+        .orElse(dutiesProviderChannel)
+        .sendPayloadAttestationMessages(payloadAttestationMessages);
   }
 
   @Override

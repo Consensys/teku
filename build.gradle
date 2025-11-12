@@ -651,7 +651,7 @@ tasks.register("dockerDistUntar") {
   }
 }
 
-def dockerJdkVariants = [ "jdk21", "jdk24" ]
+def dockerJdkVariants = [ "jdk21", "jdk25" ]
 def dockerBuildDir = "build/docker-teku/"
 def localDockerImage = "local/teku"
 
@@ -987,21 +987,12 @@ subprojects {
     propertyTestRuntimeOnly.extendsFrom testRuntimeOnly
     referenceTestRuntimeOnly.extendsFrom testRuntimeOnly
 
-    // exclude until Besu dependencies start using io.consensys.protocols:jc-kzg-4844
-    implementation {
-      exclude(group: "tech.pegasys", module: "jc-kzg-4844")
-    }
-
     // Details at https://github.com/Hakky54/log-captor#using-log-captor-alongside-with-other-logging-libraries
     testImplementation {
       exclude(group: "org.apache.logging.log4j", module: "log4j-slf4j-impl")
       exclude(group: "org.apache.logging.log4j", module: "log4j-slf4j2-impl")
     }
 
-    // exclude until we update Besu dependencies (https://github.com/Consensys/teku/issues/10060)
-    configureEach {
-      exclude(group: "io.netty", module: "netty-codec-smtp")
-    }
   }
 
   def jarName = project.name

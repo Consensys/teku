@@ -734,7 +734,7 @@ public class BlockImporterTest {
             .generateBlockAtSlot(
                 currentSlot.minus(wsPeriodInSlots),
                 BlockOptions.create()
-                    .setBlsToExecutionChange(
+                    .setBlsToExecutionChanges(
                         blsToExecutionChangeGenerator.asSszList(
                             UInt64.ZERO, signedBlsToExecutionChange)));
 
