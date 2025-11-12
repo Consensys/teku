@@ -92,8 +92,11 @@ public class AggregatingPayloadAttestationPool implements PayloadAttestationPool
         .flatMap(Set::stream)
         .forEach(
             dataHash -> {
-              final int removed = payloadAttestationGroupByDataHash.remove(dataHash).size();
-              updateSize(-removed);
+              final MatchingDataPayloadAttestationGroup removed =
+                  payloadAttestationGroupByDataHash.remove(dataHash);
+              if (removed != null) {
+                updateSize(-removed.size());
+              }
             });
     dataHashesToRemove.clear();
   }
