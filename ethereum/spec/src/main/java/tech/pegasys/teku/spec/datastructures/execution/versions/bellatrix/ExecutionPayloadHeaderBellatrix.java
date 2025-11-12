@@ -190,11 +190,6 @@ public class ExecutionPayloadHeaderBellatrix
   }
 
   @Override
-  public Bytes32 getPayloadHash() {
-    return hashTreeRoot();
-  }
-
-  @Override
   public boolean isHeaderOfDefaultPayload() {
     return equals(getSchema().getHeaderOfDefaultPayload());
   }

@@ -77,6 +77,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
@@ -100,11 +101,14 @@ import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -156,6 +160,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final ProposersDataManager proposersDataManager;
   private final BlockPublisher blockPublisher;
+  private final PayloadAttestationPool payloadAttestationPool;
+  private final ExecutionPayloadManager executionPayloadManager;
   private final ExecutionPayloadFactory executionPayloadFactory;
   private final ExecutionPayloadPublisher executionPayloadPublisher;
 
@@ -184,6 +190,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final BlockProductionAndPublishingPerformanceFactory
           blockProductionAndPublishingPerformanceFactory,
       final BlockPublisher blockPublisher,
+      final PayloadAttestationPool payloadAttestationPool,
+      final ExecutionPayloadManager executionPayloadManager,
       final ExecutionPayloadFactory executionPayloadFactory,
       final ExecutionPayloadPublisher executionPayloadPublisher,
       final ExecutionProofManager executionProofManager) {
@@ -208,6 +216,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
     this.proposersDataManager = proposersDataManager;
     this.blockPublisher = blockPublisher;
+    this.payloadAttestationPool = payloadAttestationPool;
+    this.executionPayloadManager = executionPayloadManager;
     this.executionPayloadFactory = executionPayloadFactory;
     this.executionPayloadPublisher = executionPayloadPublisher;
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
@@ -625,11 +635,32 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
         syncCommitteeMessagePool.createContribution(slot, beaconBlockRoot, subcommitteeIndex));
   }
 
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/10041
   @Override
   public SafeFuture<Optional<PayloadAttestationData>> createPayloadAttestationData(
       final UInt64 slot) {
-    throw new UnsupportedOperationException("Not yet implemented");
+    if (isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
+    return combinedChainDataClient
+        .getBlockInEffectAtSlot(slot)
+        .thenApply(
+            maybeBlock -> {
+              if (maybeBlock.isEmpty()) {
+                return Optional.empty();
+              }
+              final SignedBeaconBlock block = maybeBlock.get();
+              final PayloadAttestationData payloadAttestationData =
+                  SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions())
+                      .getPayloadAttestationDataSchema()
+                      .create(
+                          block.getRoot(),
+                          slot,
+                          executionPayloadManager.isExecutionPayloadRecentlySeen(block.getRoot()),
+                          // TODO-GLOAS: `blob_data_available` field usage not spec yet, so
+                          // hardcoding it to false
+                          false);
+              return Optional.of(payloadAttestationData);
+            });
   }
 
   @Override
@@ -862,11 +893,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
             });
   }
 
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/10041
   @Override
   public SafeFuture<List<SubmitDataError>> sendPayloadAttestationMessages(
       final List<PayloadAttestationMessage> payloadAttestationMessages) {
-    throw new UnsupportedOperationException("Not yet implemented");
+    return SafeFuture.collectAll(
+            payloadAttestationMessages.stream().map(payloadAttestationPool::addLocal))
+        .thenApply(this::convertAttestationProcessingResultsToErrorList);
   }
 
   @Override

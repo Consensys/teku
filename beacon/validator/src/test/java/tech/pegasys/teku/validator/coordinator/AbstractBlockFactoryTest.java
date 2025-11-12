@@ -282,16 +282,6 @@ public abstract class AbstractBlockFactoryTest {
     }
 
     if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
-      // set the execution value to the value from the bid
-      blockExecutionValue =
-          GWEI_TO_WEI.multiply(
-              block
-                  .getBody()
-                  .getOptionalSignedExecutionPayloadBid()
-                  .orElseThrow()
-                  .getMessage()
-                  .getValue()
-                  .longValue());
       assertThat(block.getBody().getOptionalSignedExecutionPayloadBid())
           .hasValueSatisfying(
               signedBid -> assertThat(signedBid.getMessage()).isEqualTo(executionPayloadBid));

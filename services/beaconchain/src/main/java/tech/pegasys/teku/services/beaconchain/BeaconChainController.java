@@ -1189,7 +1189,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initGossipValidationHelper() {
     LOG.debug("BeaconChainController.initGossipValidationHelper()");
-    gossipValidationHelper = new GossipValidationHelper(spec, recentChainData);
+    gossipValidationHelper = new GossipValidationHelper(spec, recentChainData, metricsSystem);
   }
 
   protected void initPerformanceTracker() {
@@ -1300,8 +1300,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initPayloadAttestationPool()");
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
       final PayloadAttestationMessageValidator validator = new PayloadAttestationMessageValidator();
-      payloadAttestationPool = new AggregatingPayloadAttestationPool(spec, validator);
-      eventChannels.subscribe(SlotEventsChannel.class, payloadAttestationPool);
+      final AggregatingPayloadAttestationPool aggregatingPayloadAttestationPool =
+          new AggregatingPayloadAttestationPool(spec, validator, metricsSystem);
+      payloadAttestationPool = aggregatingPayloadAttestationPool;
+      eventChannels.subscribe(SlotEventsChannel.class, aggregatingPayloadAttestationPool);
     } else {
       payloadAttestationPool = PayloadAttestationPool.NOOP;
     }
@@ -1623,6 +1625,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeSubscriptionManager,
             blockProductionPerformanceFactory,
             blockPublisher,
+            payloadAttestationPool,
+            executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
             executionProofManager);
@@ -1681,8 +1685,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             futureItemsMetric,
             "attestations");
     AttestationValidator attestationValidator =
-        new AttestationValidator(
-            spec, recentChainData, signatureVerificationService, metricsSystem);
+        new AttestationValidator(spec, signatureVerificationService, gossipValidationHelper);
     AggregateAttestationValidator aggregateValidator =
         new AggregateAttestationValidator(spec, attestationValidator, signatureVerificationService);
     blockImporter.subscribeToVerifiedBlockAttestations(

@@ -22,11 +22,13 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
+import tech.pegasys.teku.spec.logic.common.util.AttestationValidationResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class AttestationUtilPhase0 extends AttestationUtil {
@@ -67,6 +69,19 @@ public class AttestationUtilPhase0 extends AttestationUtil {
   public Attestation convertSingleAttestationToAggregated(
       final BeaconState state, final SingleAttestation singleAttestation) {
     throw new UnsupportedOperationException("No Single Attestations before Electra");
+  }
+
+  @Override
+  public AttestationValidationResult validateIndexValue(final UInt64 index) {
+    // No index validation before Electra
+    return AttestationValidationResult.VALID;
+  }
+
+  @Override
+  public AttestationValidationResult validatePayloadStatus(
+      final AttestationData attestationData, final Optional<UInt64> maybeBlockSlot) {
+    // No payload status before Gloas
+    return AttestationValidationResult.VALID;
   }
 
   protected boolean isFromFarFuture(
