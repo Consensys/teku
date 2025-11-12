@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client;
 
 import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.FATAL_EXIT_CODE;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
 import java.net.http.HttpClient;
 import java.nio.file.Path;
@@ -39,7 +40,6 @@ import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.infrastructure.io.SystemSignalListener;
-import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -66,6 +66,8 @@ import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics;
 import tech.pegasys.teku.validator.client.duties.attestations.AggregationDuty;
 import tech.pegasys.teku.validator.client.duties.attestations.AttestationDutyFactory;
 import tech.pegasys.teku.validator.client.duties.attestations.AttestationProductionDuty;
+import tech.pegasys.teku.validator.client.duties.execution.ExecutionPayloadBidEventsChannel;
+import tech.pegasys.teku.validator.client.duties.execution.ExecutionPayloadDuty;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.HttpClientExternalSignerFactory;
@@ -430,7 +432,7 @@ public class ValidatorClientService extends Service {
                 SyncDataAccessor.create(slashingProtectionPath), slashingProtectionPath);
     final SlashingProtectionLogger slashingProtectionLogger =
         new SlashingProtectionLogger(
-            slashingProtector, config.getSpec(), asyncRunner, ValidatorLogger.VALIDATOR_LOGGER);
+            slashingProtector, config.getSpec(), asyncRunner, VALIDATOR_LOGGER);
     final Supplier<HttpClient> externalSignerHttpClientFactory =
         HttpClientExternalSignerFactory.create(config.getValidatorConfig());
     return ValidatorLoader.create(
@@ -469,7 +471,12 @@ public class ValidatorClientService extends Service {
     final ValidatorDutyMetrics validatorDutyMetrics = ValidatorDutyMetrics.create(metricsSystem);
     final BlockDutyFactory blockDutyFactory =
         new BlockDutyFactory(
-            forkProvider, validatorApiChannel, blockContainerSigner, spec, validatorDutyMetrics);
+            forkProvider,
+            validatorApiChannel,
+            blockContainerSigner,
+            spec,
+            validatorDutyMetrics,
+            eventChannels.getPublisher(ExecutionPayloadBidEventsChannel.class));
     final boolean dvtSelectionsEndpointEnabled =
         config.getValidatorConfig().isDvtSelectionsEndpointEnabled();
     final AttestationDutyFactory attestationDutyFactory =
@@ -566,6 +573,13 @@ public class ValidatorClientService extends Service {
           });
       validatorRegistrator.ifPresent(validatorTimingChannels::add);
     }
+
+    if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
+      final ExecutionPayloadDuty executionPayloadDuty =
+          new ExecutionPayloadDuty(spec, asyncRunner, validatorApiChannel, VALIDATOR_LOGGER);
+      eventChannels.subscribe(ExecutionPayloadBidEventsChannel.class, executionPayloadDuty);
+    }
+
     addValidatorCountMetric(metricsSystem, validators);
     final ValidatorStatusLogger validatorStatusLogger = new ValidatorStatusLogger(validators);
     validatorStatusProvider.subscribeValidatorStatusesUpdates(
