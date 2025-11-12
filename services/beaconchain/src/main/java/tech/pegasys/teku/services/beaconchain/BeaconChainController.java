@@ -1134,8 +1134,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
         DataColumnSidecarGossipChannel.class,
         (sidecar, origin) -> {
           if (origin != RemoteOrigin.LOCAL_PROPOSAL) {
-            // we explicitly subscribe to dataColumnSidecarELManager and
-            // dataColumnSidecarRecoveringCustody, so let's avoid duplication
+            // we explicitly subscribe to dataColumnSidecarELManager (LOCAL_EL)
+            // and dataColumnSidecarRecoveringCustody (RECOVERED),
+            // so let's distribute only for the LOCAL_PROPOSAL case.
             return;
           }
 
