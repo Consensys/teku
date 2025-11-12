@@ -59,7 +59,6 @@ public class AttestationUtilGloas extends AttestationUtilElectra {
     final List<BLSPublicKey> pubKeys =
         indices.stream()
             .map(index -> state.getValidators().get(index.intValue()).getPublicKey())
-            .distinct()
             .toList();
     final Bytes32 domain =
         beaconStateAccessors.getDomain(
