@@ -48,7 +48,7 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 public class AggregatingPayloadAttestationPool implements PayloadAttestationPool {
 
   /** The payload attestations are valid for 2 slots only */
-  @VisibleForTesting static final long PAYLOAD_ATTESTATION_RETENTION_SLOTS = 32;
+  @VisibleForTesting static final long PAYLOAD_ATTESTATION_RETENTION_SLOTS = 2;
 
   private final Subscribers<OperationAddedSubscriber<PayloadAttestationMessage>> subscribers =
       Subscribers.create(true);
