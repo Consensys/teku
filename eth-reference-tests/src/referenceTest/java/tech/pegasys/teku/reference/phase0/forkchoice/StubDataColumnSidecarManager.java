@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -91,13 +92,14 @@ public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<
           default -> {
             final MiscHelpersFulu helpers =
                 spec.forMilestone(SpecMilestone.FULU).miscHelpers().toVersionFulu().orElseThrow();
+            final MetricsSystem metricsSystem = new StubMetricsSystem();
             validator =
                 DataColumnSidecarGossipValidator.create(
                     spec,
                     new ConcurrentHashMap<>(),
-                    new GossipValidationHelper(spec, recentChainData),
+                    new GossipValidationHelper(spec, recentChainData, metricsSystem),
                     helpers,
-                    new StubMetricsSystem(),
+                    metricsSystem,
                     recentChainData.getStore());
             validationResult.complete(validateDataColumnSidecar());
           }
