@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.payloadattestation;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -29,7 +30,8 @@ import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 // TODO-GLOAS: https://github.com/Consensys/teku/issues/10041 implementation + test
-public class AggregatingPayloadAttestationPool implements PayloadAttestationPool {
+public class AggregatingPayloadAttestationPool
+    implements PayloadAttestationPool, SlotEventsChannel {
 
   private final Subscribers<OperationAddedSubscriber<PayloadAttestationMessage>> subscribers =
       Subscribers.create(true);

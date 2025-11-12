@@ -1300,8 +1300,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initPayloadAttestationPool()");
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
       final PayloadAttestationMessageValidator validator = new PayloadAttestationMessageValidator();
-      payloadAttestationPool = new AggregatingPayloadAttestationPool(spec, validator);
-      eventChannels.subscribe(SlotEventsChannel.class, payloadAttestationPool);
+      final AggregatingPayloadAttestationPool aggregatingPayloadAttestationPool =
+              new AggregatingPayloadAttestationPool(spec, validator);
+      payloadAttestationPool = aggregatingPayloadAttestationPool;
+      eventChannels.subscribe(SlotEventsChannel.class, aggregatingPayloadAttestationPool);
     } else {
       payloadAttestationPool = PayloadAttestationPool.NOOP;
     }
@@ -1623,6 +1625,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeSubscriptionManager,
             blockProductionPerformanceFactory,
             blockPublisher,
+            payloadAttestationPool,
+            executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
             executionProofManager);
