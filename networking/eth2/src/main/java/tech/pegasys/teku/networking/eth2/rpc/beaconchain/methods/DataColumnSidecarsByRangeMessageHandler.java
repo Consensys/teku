@@ -159,8 +159,7 @@ public class DataColumnSidecarsByRangeMessageHandler
     }
 
     final Bytes32 messageHash = message.hashTreeRoot();
-    responseCallback.alwaysRun(
-        () -> dataColumnSidecarArchiveReconstructor.onRequestCompleted(messageHash));
+    callback.alwaysRun(() -> dataColumnSidecarArchiveReconstructor.onRequestCompleted(messageHash));
     final RequestState initialState =
         new RequestState(
             callbackWithLogging,
