@@ -59,6 +59,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.SszVector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
@@ -298,6 +299,10 @@ public final class DataStructureUtil {
     final byte[] bytes = new byte[1];
     new Random(nextSeed()).nextBytes(bytes);
     return bytes[0];
+  }
+
+  private boolean randomBoolean() {
+    return new Random(nextSeed()).nextBoolean();
   }
 
   public UInt64 randomUInt64() {
@@ -2039,6 +2044,25 @@ public final class DataStructureUtil {
         .build();
   }
 
+  public BeaconState randomBeaconStateWithActiveValidators(
+      final int validatorCount, final UInt64 slot) {
+    return randomBeaconState(validatorCount, 100, slot)
+        .updated(
+            state -> {
+              final SszMutableList<Validator> validators = state.getValidators();
+              for (int i = 0; i < validators.size(); i++) {
+                validators.update(
+                    i,
+                    validator ->
+                        validator
+                            .withActivationEligibilityEpoch(ZERO)
+                            .withActivationEpoch(ZERO)
+                            .withExitEpoch(SpecConfig.FAR_FUTURE_EPOCH)
+                            .withWithdrawableEpoch(SpecConfig.FAR_FUTURE_EPOCH));
+              }
+            });
+  }
+
   public AbstractBeaconStateBuilder<
           ? extends BeaconState,
           ? extends MutableBeaconState,
@@ -3044,7 +3068,7 @@ public final class DataStructureUtil {
   public PayloadAttestationData randomPayloadAttestationData() {
     return getGloasSchemaDefinitions()
         .getPayloadAttestationDataSchema()
-        .create(randomBytes32(), randomSlot(), true, true);
+        .create(randomBytes32(), randomSlot(), randomBoolean(), randomBoolean());
   }
 
   public PayloadAttestationData randomPayloadAttestationData(final UInt64 slot) {
