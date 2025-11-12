@@ -3047,6 +3047,12 @@ public final class DataStructureUtil {
         .create(randomBytes32(), randomSlot(), true, true);
   }
 
+  public PayloadAttestationData randomPayloadAttestationData(final UInt64 slot) {
+    return getGloasSchemaDefinitions()
+        .getPayloadAttestationDataSchema()
+        .create(randomBytes32(), slot, true, true);
+  }
+
   public PayloadAttestation randomPayloadAttestation() {
     return getGloasSchemaDefinitions()
         .getPayloadAttestationSchema()

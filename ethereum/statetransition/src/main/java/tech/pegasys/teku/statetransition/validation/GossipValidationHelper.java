@@ -16,13 +16,16 @@ package tech.pegasys.teku.statetransition.validation;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -31,11 +34,15 @@ public class GossipValidationHelper {
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final int maxOffsetTimeInMillis;
+  private final AttestationStateSelector attestationStateSelector;
 
-  public GossipValidationHelper(final Spec spec, final RecentChainData recentChainData) {
+  public GossipValidationHelper(
+      final Spec spec, final RecentChainData recentChainData, final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.maxOffsetTimeInMillis = spec.getNetworkingConfig().getMaximumGossipClockDisparity();
+    this.attestationStateSelector =
+        new AttestationStateSelector(spec, recentChainData, metricsSystem);
   }
 
   public boolean isSlotFinalized(final UInt64 slot) {
@@ -102,5 +109,22 @@ public class GossipValidationHelper {
 
   int getMaxOffsetTimeInMillis() {
     return maxOffsetTimeInMillis;
+  }
+
+  public SafeFuture<Optional<BeaconState>> getStateForAttestationValidation(
+      final AttestationData attestationData) {
+    return attestationStateSelector.getStateToValidate(attestationData);
+  }
+
+  public UInt64 getGenesisTime() {
+    return recentChainData.getGenesisTime();
+  }
+
+  public UInt64 getCurrentTimeMillis() {
+    return recentChainData.getStore().getTimeInMillis();
+  }
+
+  public ReadOnlyForkChoiceStrategy getForkChoiceStrategy() {
+    return recentChainData.getForkChoiceStrategy().orElseThrow();
   }
 }

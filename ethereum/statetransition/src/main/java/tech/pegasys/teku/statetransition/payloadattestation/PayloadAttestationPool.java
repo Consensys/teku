@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.payloadattestation;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -25,16 +24,13 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public interface PayloadAttestationPool extends SlotEventsChannel {
+public interface PayloadAttestationPool {
 
   PayloadAttestationPool NOOP =
       new PayloadAttestationPool() {
         @Override
         public void subscribeOperationAdded(
             final OperationAddedSubscriber<PayloadAttestationMessage> subscriber) {}
-
-        @Override
-        public void onSlot(final UInt64 slot) {}
 
         @Override
         public SafeFuture<InternalValidationResult> addLocal(
