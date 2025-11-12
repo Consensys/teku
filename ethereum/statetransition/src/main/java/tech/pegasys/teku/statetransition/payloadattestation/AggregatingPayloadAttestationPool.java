@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -45,7 +46,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public class AggregatingPayloadAttestationPool implements PayloadAttestationPool {
+public class AggregatingPayloadAttestationPool
+    implements PayloadAttestationPool, SlotEventsChannel {
 
   /** The payload attestations are valid for 2 slots only */
   @VisibleForTesting static final long PAYLOAD_ATTESTATION_RETENTION_SLOTS = 2;
