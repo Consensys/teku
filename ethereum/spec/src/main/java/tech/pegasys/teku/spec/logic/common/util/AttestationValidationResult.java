@@ -16,6 +16,21 @@ package tech.pegasys.teku.spec.logic.common.util;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+/**
+ * An attestation gossip validation helper that represents the result of an attestation validation
+ * check, encapsulating whether the check passed or failed.
+ *
+ * <p>This class is designed to be immutable and efficient.
+ *
+ * <ul>
+ *   <li>For a successful validation, the static singleton {@link #VALID} should be used via the
+ *       {@link #valid()} factory method to avoid unnecessary object creation.
+ *   <li>For a failed validation, an invalid result is created using the {@link #invalid(String)} or
+ *       {@link #invalid(Supplier)} factory methods. The failure reason is wrapped in a {@link
+ *       Supplier} to enable lazy evaluation. This avoids the cost of constructing complex reason
+ *       strings unless the reason is actually requested via {@link #getReason()}.
+ * </ul>
+ */
 public class AttestationValidationResult {
 
   public static final AttestationValidationResult VALID =
