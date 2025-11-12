@@ -78,6 +78,7 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
                     result -> {
                       if (result.hasValidStatus()) {
                         return transitionBlockValidator.verifyTransitionBlock(
+                            // safe to use, it will always be present
                             latestExecutionPayloadHeader.orElseThrow(), block);
                       } else {
                         return SafeFuture.completedFuture(new PayloadValidationResult(result));

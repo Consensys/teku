@@ -476,7 +476,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             .thenPeek(
                 result -> {
                   LOG.debug(
-                      "Availability check for slot: {}, block_root: {} result: {}",
+                      "Data availability check for slot: {}, block_root: {} result: {}",
                       block.getSlot(),
                       block.getRoot(),
                       result.toLogString());
@@ -700,8 +700,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return result;
   }
 
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 it requires potentially more
-  // validations and more interactions with the store
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 it requires more validations and more
+  // interactions with the store (e.g. onExecutionPayloadResult)
   private ExecutionPayloadImportResult importExecutionPayloadAndState(
       final SignedExecutionPayloadEnvelope signedEnvelope,
       final ForkChoiceUtil forkChoiceUtil,
