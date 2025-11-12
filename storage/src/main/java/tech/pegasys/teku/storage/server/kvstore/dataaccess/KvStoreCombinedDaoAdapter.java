@@ -371,6 +371,16 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
+    return finalizedDao.getLastDataColumnSidecarsProofsSlot();
+  }
+
+  @Override
+  public Optional<Bytes> getDataColumnSidecarProofs(final UInt64 slot) {
+    return finalizedDao.getDataColumnSidecarProofs(slot);
+  }
+
+  @Override
   public void ingest(
       final KvStoreCombinedDao dao, final int batchSize, final Consumer<String> logger) {
     throw new UnsupportedOperationException("Cannot migrate to a split database format");
@@ -692,6 +702,16 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void removeNonCanonicalSidecar(final DataColumnSlotAndIdentifier identifier) {
       finalizedUpdater.removeNonCanonicalSidecar(identifier);
+    }
+
+    @Override
+    public void addDataColumnSidecarsKzgProofs(final UInt64 slot, final Bytes kzgProofs) {
+      finalizedUpdater.addDataColumnSidecarsKzgProofs(slot, kzgProofs);
+    }
+
+    @Override
+    public void removeDataColumnSidecarsKzgProofs(final UInt64 slot) {
+      finalizedUpdater.removeDataColumnSidecarsKzgProofs(slot);
     }
 
     @Override

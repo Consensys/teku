@@ -183,6 +183,10 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .toList();
   }
 
+  public List<List<KZGCell>> computeCells(final List<Blob> blobs) {
+    return blobs.parallelStream().map(blob -> getKzg().computeCells(blob.getBytes())).toList();
+  }
+
   private UInt64 computeCustodyGroupIndex(final UInt256 nodeId) {
     return bytesToUInt64(Hash.sha256(uint256ToBytes(nodeId)).slice(0, 8))
         .mod(specConfigFulu.getNumberOfCustodyGroups());

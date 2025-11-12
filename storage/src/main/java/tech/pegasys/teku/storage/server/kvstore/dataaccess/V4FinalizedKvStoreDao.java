@@ -250,6 +250,14 @@ public class V4FinalizedKvStoreDao {
         .map(DataColumnSlotAndIdentifier::slot);
   }
 
+  public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
+    return db.getLastKey(schema.getColumnDataColumnSidecarsProofsBySlot());
+  }
+
+  public Optional<Bytes> getDataColumnSidecarProofs(final UInt64 slot) {
+    return db.get(schema.getColumnDataColumnSidecarsProofsBySlot(), slot);
+  }
+
   public <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
     return db.getRaw(var);
   }
@@ -517,6 +525,16 @@ public class V4FinalizedKvStoreDao {
     public void removeNonCanonicalSidecar(final DataColumnSlotAndIdentifier identifier) {
       transaction.delete(
           schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(), identifier);
+    }
+
+    @Override
+    public void addDataColumnSidecarsKzgProofs(final UInt64 slot, final Bytes kzgProofs) {
+      transaction.put(schema.getColumnDataColumnSidecarsProofsBySlot(), slot, kzgProofs);
+    }
+
+    @Override
+    public void removeDataColumnSidecarsKzgProofs(final UInt64 slot) {
+      transaction.delete(schema.getColumnDataColumnSidecarsProofsBySlot(), slot);
     }
 
     @Override

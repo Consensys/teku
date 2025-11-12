@@ -29,6 +29,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
@@ -396,6 +397,16 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<List<List<KZGProof>>> getDataColumnSidecarProofs(final UInt64 slot) {
+    return Optional.empty();
+  }
+
+  @Override
   public void setFirstCustodyIncompleteSlot(final UInt64 slot) {}
 
   @Override
@@ -406,6 +417,10 @@ public class NoOpDatabase implements Database {
 
   @Override
   public void pruneAllSidecars(final UInt64 tillSlotInclusive, final int pruneLimit) {}
+
+  @Override
+  public void archiveSidecarProofs(
+      final UInt64 startSlot, final UInt64 tillSlotInclusive, final int pruneLimit) {}
 
   @Override
   public void close() {}

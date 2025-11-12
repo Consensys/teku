@@ -65,6 +65,7 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -130,6 +131,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
             combinedChainDataClient,
             custodySupplier,
             custodyGroupCountManagerSupplier,
+            DataColumnSidecarArchiveReconstructor.NOOP,
             DasReqRespLogger.NOOP);
 
     when(peer.getId()).thenReturn(nodeId);

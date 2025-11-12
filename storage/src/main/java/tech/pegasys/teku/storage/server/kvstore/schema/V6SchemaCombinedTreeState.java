@@ -54,6 +54,7 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   private final KvStoreColumn<DataColumnSlotAndIdentifier, Bytes> sidecarByColumnSlotAndIdentifier;
   private final KvStoreColumn<DataColumnSlotAndIdentifier, Bytes>
       nonCanonicalSidecarByColumnSlotAndIdentifier;
+  private final KvStoreColumn<UInt64, Bytes> dataColumnSidecarsProofsBySlot;
   private final List<Bytes> deletedColumnIds;
 
   public V6SchemaCombinedTreeState(final Spec spec) {
@@ -99,6 +100,8 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
     nonCanonicalSidecarByColumnSlotAndIdentifier =
         KvStoreColumn.create(
             finalizedOffset + 17, COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER, BYTES_SERIALIZER);
+    dataColumnSidecarsProofsBySlot =
+        KvStoreColumn.create(finalizedOffset + 19, UINT64_SERIALIZER, BYTES_SERIALIZER);
     deletedColumnIds =
         List.of(
             asColumnId(finalizedOffset + 9),
@@ -174,6 +177,11 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   }
 
   @Override
+  public KvStoreColumn<UInt64, Bytes> getColumnDataColumnSidecarsProofsBySlot() {
+    return dataColumnSidecarsProofsBySlot;
+  }
+
+  @Override
   public Map<String, KvStoreVariable<?>> getVariableMap() {
     return ImmutableMap.<String, KvStoreVariable<?>>builder()
         .put("GENESIS_TIME", getVariableGenesisTime())
@@ -222,6 +230,7 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
         .put(
             "NON_CANONICAL_SIDECAR_BY_COLUMN_SLOT_AND_IDENTIFIER",
             getColumnNonCanonicalSidecarByColumnSlotAndIdentifier())
+        .put("DATA_COLUMN_SIDECARS_PROOFS_BY_SLOT", getColumnDataColumnSidecarsProofsBySlot())
         .build();
   }
 

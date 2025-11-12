@@ -46,6 +46,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -1158,6 +1159,17 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
+    return dao.getLastDataColumnSidecarsProofsSlot();
+  }
+
+  @Override
+  public Optional<List<List<KZGProof>>> getDataColumnSidecarProofs(final UInt64 slot) {
+    final Optional<Bytes> maybeProofs = dao.getDataColumnSidecarProofs(slot);
+    return maybeProofs.map(payload -> spec.deserializeProofs(payload, slot));
+  }
+
+  @Override
   public void setFirstCustodyIncompleteSlot(final UInt64 slot) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.setFirstCustodyIncompleteSlot(slot);
@@ -1197,6 +1209,69 @@ public class KvStoreDatabase implements Database {
     }
   }
 
+  @Override
+  public void archiveSidecarProofs(
+      final UInt64 startSlot, final UInt64 tillSlotInclusive, final int archiveLimit) {
+    // TODO: inject halfColumns here
+    final int halfColumns = 64;
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnSidecars =
+        streamDataColumnIdentifiers(startSlot, tillSlotInclusive)) {
+
+      int archivedSlots = 0;
+
+      final Map<UInt64, List<DataColumnSlotAndIdentifier>> archiveMap = new HashMap<>();
+
+      dataColumnSidecars
+          // we need only extension
+          .filter(identifier -> identifier.columnIndex().isGreaterThanOrEqualTo(halfColumns))
+          .takeWhile(
+              item -> archiveMap.size() < archiveLimit || archiveMap.containsKey(item.slot()))
+          .forEach(
+              item -> archiveMap.computeIfAbsent(item.slot(), k -> new ArrayList<>()).add(item));
+
+      final List<UInt64> slots = archiveMap.keySet().stream().sorted().toList();
+
+      if (!slots.isEmpty()) {
+        LOG.debug(
+            "Archiving data column sidecar proofs from slots {} to {}",
+            slots.getFirst(),
+            slots.getLast());
+        try (final FinalizedUpdater updater = finalizedUpdater()) {
+          for (final UInt64 slot : slots) {
+            final List<DataColumnSlotAndIdentifier> keys =
+                archiveMap.get(slot).stream().sorted().toList();
+            final List<DataColumnSidecar> sidecars = new ArrayList<>();
+
+            for (final DataColumnSlotAndIdentifier key : keys) {
+              final Optional<Bytes> sidecar = dao.getSidecar(key);
+              // surprise, let's skip this slot
+              if (sidecar.isEmpty()) {
+                break;
+              }
+              sidecars.add(spec.deserializeSidecar(sidecar.get(), key.slot()));
+            }
+
+            // remove sidecars only if we have required 1/2
+            if (sidecars.size() == halfColumns) {
+              final Bytes proofs = spec.serializeProofs(sidecars);
+              updater.addDataColumnSidecarsKzgProofs(slot, proofs);
+              for (final DataColumnSlotAndIdentifier key : keys) {
+                updater.removeSidecar(key);
+              }
+              ++archivedSlots;
+            }
+          }
+          updater.commit();
+        }
+        LOG.debug("Archived data column sidecars in {} slots", archivedSlots);
+      }
+
+      if (archivedSlots >= archiveLimit) {
+        LOG.debug("Data column sidecars archivation reached the limit of {}", archiveLimit);
+      }
+    }
+  }
+
   boolean pruneDataColumnSidecars(
       final int pruneSlotLimit,
       final Stream<DataColumnSlotAndIdentifier> dataColumnSlotAndIdentifierStream,
@@ -1226,6 +1301,10 @@ public class KvStoreDatabase implements Database {
               updater.removeNonCanonicalSidecar(key);
             } else {
               updater.removeSidecar(key);
+            }
+
+            if (!nonCanonicalBlobSidecars) {
+              updater.removeDataColumnSidecarsKzgProofs(slot);
             }
           }
 

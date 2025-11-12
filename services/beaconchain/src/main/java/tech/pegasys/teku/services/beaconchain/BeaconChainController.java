@@ -167,6 +167,8 @@ import tech.pegasys.teku.statetransition.datacolumns.DasPreSampler;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructorImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustodyImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustodyImpl;
@@ -246,6 +248,7 @@ import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
+import tech.pegasys.teku.storage.api.SidecarArchivePrunableChannel;
 import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -1688,6 +1691,22 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   LateBlockReorgPreparationHandler.NOOP));
     }
 
+    final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor;
+    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+      dataColumnSidecarArchiveReconstructor =
+          new DataColumnSidecarArchiveReconstructorImpl(
+              throttlingCombinedChainDataClient.orElse(combinedChainDataClient),
+              asyncRunnerFactory.create("data_column_sidecar_archive_reconstruction", 2),
+              () -> custodyGroupCountManager,
+              spec,
+              beaconConfig.eth2NetworkConfig().getDataColumnSidecarExtensionRetentionEpochs(),
+              eventChannels.getPublisher(SidecarArchivePrunableChannel.class));
+      eventChannels.subscribe(
+          FinalizedCheckpointChannel.class, dataColumnSidecarArchiveReconstructor);
+    } else {
+      dataColumnSidecarArchiveReconstructor = DataColumnSidecarArchiveReconstructor.NOOP;
+    }
+
     this.p2pNetwork =
         createEth2P2PNetworkBuilder()
             .config(beaconConfig.p2pConfig())
@@ -1718,6 +1737,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 (signedBid, arrivalTimestamp) ->
                     executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.P2P))
             .gossipDasLogger(dasGossipLogger)
+            .dataColumnSidecarArchiveReconstructor(dataColumnSidecarArchiveReconstructor)
             .reqRespDasLogger(dasReqRespLogger)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)

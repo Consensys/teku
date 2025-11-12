@@ -27,6 +27,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -38,11 +39,14 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
+import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
@@ -52,6 +56,7 @@ import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
@@ -97,6 +102,7 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateInvariants;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
@@ -535,6 +541,33 @@ public class Spec {
             () -> new RuntimeException("Fulu milestone is required to deserialize column sidecar"))
         .getDataColumnSidecarSchema()
         .sszDeserialize(serializedSidecar);
+  }
+
+  public List<List<KZGProof>> deserializeProofs(final Bytes serializedProofs, final UInt64 slot) {
+    return SSZ.decode(
+        serializedProofs,
+        reader -> {
+          final List<List<KZGProof>> output = new ArrayList<>();
+          while (!reader.isComplete()) {
+            final List<Bytes> bytes = reader.readFixedBytesList(KZGProof.SIZE);
+            output.add(
+                bytes.stream()
+                    .map(proofBytes -> new KZGProof(Bytes48.wrap(proofBytes)))
+                    .collect(Collectors.toList()));
+          }
+          return output;
+        });
+  }
+
+  public Bytes serializeProofs(final List<DataColumnSidecar> dataColumnSidecars) {
+    return SSZ.encode(
+        writer ->
+            dataColumnSidecars.forEach(
+                dataColumnSidecar ->
+                    writer.writeFixedBytesList(
+                        dataColumnSidecar.getKzgProofs().stream()
+                            .map(SszKZGProof::getBytes)
+                            .toList())));
   }
 
   // BeaconState

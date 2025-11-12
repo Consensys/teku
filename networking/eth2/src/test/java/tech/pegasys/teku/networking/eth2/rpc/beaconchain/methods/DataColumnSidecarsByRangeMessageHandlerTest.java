@@ -65,6 +65,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSid
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -116,6 +117,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
             SpecConfigFulu.required(specVersionFulu.getConfig()),
             metricsSystem,
             combinedChainDataClient,
+            DataColumnSidecarArchiveReconstructor.NOOP,
             DasReqRespLogger.NOOP);
     final SchemaDefinitionsFulu schemaDefinitionsFulu =
         specVersionFulu.getSchemaDefinitions().toVersionFulu().orElseThrow();
