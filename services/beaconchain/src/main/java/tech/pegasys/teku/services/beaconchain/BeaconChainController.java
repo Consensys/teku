@@ -1337,7 +1337,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
       final PayloadAttestationMessageValidator validator = new PayloadAttestationMessageValidator();
       final AggregatingPayloadAttestationPool aggregatingPayloadAttestationPool =
-          new AggregatingPayloadAttestationPool(spec, validator);
+          new AggregatingPayloadAttestationPool(spec, validator, metricsSystem);
       payloadAttestationPool = aggregatingPayloadAttestationPool;
       eventChannels.subscribe(SlotEventsChannel.class, aggregatingPayloadAttestationPool);
     } else {

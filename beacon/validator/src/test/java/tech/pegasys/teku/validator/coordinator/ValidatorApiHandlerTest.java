@@ -78,7 +78,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
@@ -86,7 +85,6 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptio
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -108,7 +106,6 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -1457,23 +1454,7 @@ class ValidatorApiHandlerTest {
   }
 
   private BeaconState createStateWithActiveValidators(final UInt64 slot) {
-    return dataStructureUtil
-        .randomBeaconState(32)
-        .updated(
-            state -> {
-              state.setSlot(slot);
-              final SszMutableList<Validator> validators = state.getValidators();
-              for (int i = 0; i < validators.size(); i++) {
-                validators.update(
-                    i,
-                    validator ->
-                        validator
-                            .withActivationEligibilityEpoch(ZERO)
-                            .withActivationEpoch(ZERO)
-                            .withExitEpoch(SpecConfig.FAR_FUTURE_EPOCH)
-                            .withWithdrawableEpoch(SpecConfig.FAR_FUTURE_EPOCH));
-              }
-            });
+    return dataStructureUtil.randomBeaconStateWithActiveValidators(32, slot);
   }
 
   private void setupValidatorsState(
