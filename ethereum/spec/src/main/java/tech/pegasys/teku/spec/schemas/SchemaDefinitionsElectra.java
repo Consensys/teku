@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.CONSOLIDATION_
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DEPOSIT_REQUEST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQUESTS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_BOOTSTRAP_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_CONSOLIDATIONS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_DEPOSITS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_PARTIAL_WITHDRAWALS_SCHEMA;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Consolid
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation.PendingConsolidationSchema;
@@ -56,6 +58,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   private final PendingDepositSchema pendingDepositSchema;
   private final PendingPartialWithdrawalSchema pendingPartialWithdrawalSchema;
   private final PendingConsolidationSchema pendingConsolidationSchema;
+  private final LightClientBootstrapSchema lightClientBootstrapSchema;
 
   private final SingleAttestationSchema singleAttestationSchema;
 
@@ -81,6 +84,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.pendingConsolidationSchema =
         (PendingConsolidationSchema)
             schemaRegistry.get(PENDING_CONSOLIDATIONS_SCHEMA).getElementSchema();
+    this.lightClientBootstrapSchema = schemaRegistry.get(LIGHT_CLIENT_BOOTSTRAP_SCHEMA);
 
     this.executionProofSchema = schemaRegistry.get(EXECUTION_PROOF_SCHEMA);
   }
@@ -154,6 +158,11 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   @Override
   long getMaxValidatorsPerAttestation(final SpecConfig specConfig) {
     return (long) specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot();
+  }
+
+  @Override
+  public LightClientBootstrapSchema getLightClientBootstrapSchema() {
+    return lightClientBootstrapSchema;
   }
 
   public ExecutionProofSchema getExecutionProofSchema() {
