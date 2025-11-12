@@ -188,11 +188,6 @@ public class ExecutionPayloadBellatrix
   }
 
   @Override
-  public Bytes32 getPayloadHash() {
-    return hashTreeRoot();
-  }
-
-  @Override
   public SszList<Transaction> getTransactions() {
     return getField13();
   }
