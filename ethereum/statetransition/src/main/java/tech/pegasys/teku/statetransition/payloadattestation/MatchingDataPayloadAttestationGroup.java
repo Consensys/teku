@@ -21,6 +21,8 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -37,8 +39,8 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
  */
 class MatchingDataPayloadAttestationGroup {
 
-  private final Int2ObjectMap<PayloadAttestationMessage> payloadAttestationMessages =
-      new Int2ObjectOpenHashMap<>();
+  private final Map<Integer, PayloadAttestationMessage> payloadAttestationMessages =
+      new ConcurrentHashMap<>();
 
   private final Spec spec;
   private final PayloadAttestationData data;
@@ -60,16 +62,14 @@ class MatchingDataPayloadAttestationGroup {
    * Adds a payload attestation message to this group. This payload attestation message will
    * eventually be aggregated with others.
    */
-  synchronized boolean add(final PayloadAttestationMessage payloadAttestationMessage) {
+  boolean add(final PayloadAttestationMessage payloadAttestationMessage) {
     final int validatorIndex = payloadAttestationMessage.getValidatorIndex().intValue();
-    if (!payloadAttestationMessage.getData().equals(data)
-        || payloadAttestationMessages.containsKey(validatorIndex)) {
-      // ignore payload attestation messages with a different data or a validator index which has
-      // already been added
+    if (!payloadAttestationMessage.getData().equals(data)) {
+      // ignore payload attestation messages with a different data
       return false;
     }
-    payloadAttestationMessages.put(validatorIndex, payloadAttestationMessage);
-    return true;
+    return payloadAttestationMessages.putIfAbsent(validatorIndex, payloadAttestationMessage)
+        == null;
   }
 
   PayloadAttestation createAggregatedPayloadAttestation(final IntList ptc) {
