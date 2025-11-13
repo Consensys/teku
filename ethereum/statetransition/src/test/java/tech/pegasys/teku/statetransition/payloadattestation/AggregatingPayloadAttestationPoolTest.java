@@ -112,8 +112,8 @@ class AggregatingPayloadAttestationPoolTest {
     final PayloadAttestationData payloadAbsentData =
         createPayloadAttestationData(parentRoot, slot, false);
 
-    // 80% vote for payload to be present
-    // 20% vote for payload to be absent
+    // ~80% vote for payload to be present
+    // ~20% vote for payload to be absent
     final List<Integer> payloadPresentVoters = new ArrayList<>();
     final List<Integer> payloadAbsentVoters = new ArrayList<>();
     ptc.intStream()
@@ -136,7 +136,7 @@ class AggregatingPayloadAttestationPoolTest {
 
     // Not applicable votes
     final PayloadAttestationData differentSlotData =
-        createPayloadAttestationData(parentRoot, slot.plus(42), true);
+        createPayloadAttestationData(parentRoot, slot.minus(1), true);
     final PayloadAttestationData differentBeaconBlockRootData =
         createPayloadAttestationData(dataStructureUtil.randomBytes32(), slot, true);
     SafeFutureAssert.safeJoin(
