@@ -1164,9 +1164,9 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public Optional<List<List<KZGProof>>> getDataColumnSidecarProofs(final UInt64 slot) {
-    final Optional<Bytes> maybeProofs = dao.getDataColumnSidecarProofs(slot);
-    return maybeProofs.map(payload -> spec.deserializeProofs(payload, slot));
+  public Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(final UInt64 slot) {
+    final Optional<Bytes> maybeProofs = dao.getDataColumnSidecarsProofs(slot);
+    return maybeProofs.map(spec::deserializeDataColumnSidecarsProofs);
   }
 
   @Override
@@ -1304,7 +1304,7 @@ public class KvStoreDatabase implements Database {
             }
 
             if (!nonCanonicalBlobSidecars) {
-              updater.removeDataColumnSidecarsKzgProofs(slot);
+              updater.removeDataColumnSidecarsProofs(slot);
             }
           }
 

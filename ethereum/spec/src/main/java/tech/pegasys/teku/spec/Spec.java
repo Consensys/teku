@@ -546,7 +546,7 @@ public class Spec {
         .sszDeserialize(serializedSidecar);
   }
 
-  public List<List<KZGProof>> deserializeProofs(final Bytes serializedProofs, final UInt64 slot) {
+  public List<List<KZGProof>> deserializeDataColumnSidecarsProofs(final Bytes serializedProofs) {
     return SSZ.decode(
         serializedProofs,
         reader -> {
@@ -562,7 +562,7 @@ public class Spec {
         });
   }
 
-  public Bytes serializeProofs(final List<DataColumnSidecar> dataColumnSidecars) {
+  public Bytes serializeDataColumnSidecarsProofs(final List<DataColumnSidecar> dataColumnSidecars) {
     return SSZ.encode(
         writer ->
             dataColumnSidecars.forEach(

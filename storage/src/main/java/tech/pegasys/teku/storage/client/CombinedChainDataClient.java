@@ -822,7 +822,7 @@ public class CombinedChainDataClient {
 
   public SafeFuture<List<List<KZGProof>>> getDataColumnSidecarProofs(final UInt64 slot) {
     return historicalChainData
-        .getDataColumnSidecarProofs(slot)
+        .getDataColumnSidecarsProofs(slot)
         .thenApply(maybeProofs -> maybeProofs.orElseGet(List::of));
   }
 

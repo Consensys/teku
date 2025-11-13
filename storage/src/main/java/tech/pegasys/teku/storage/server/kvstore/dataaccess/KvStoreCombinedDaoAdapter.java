@@ -376,7 +376,7 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
-  public Optional<Bytes> getDataColumnSidecarProofs(final UInt64 slot) {
+  public Optional<Bytes> getDataColumnSidecarsProofs(final UInt64 slot) {
     return finalizedDao.getDataColumnSidecarProofs(slot);
   }
 
@@ -705,13 +705,13 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
-    public void addDataColumnSidecarsKzgProofs(final UInt64 slot, final Bytes kzgProofs) {
-      finalizedUpdater.addDataColumnSidecarsKzgProofs(slot, kzgProofs);
+    public void addDataColumnSidecarsProofs(final UInt64 slot, final Bytes kzgProofs) {
+      finalizedUpdater.addDataColumnSidecarsProofs(slot, kzgProofs);
     }
 
     @Override
-    public void removeDataColumnSidecarsKzgProofs(final UInt64 slot) {
-      finalizedUpdater.removeDataColumnSidecarsKzgProofs(slot);
+    public void removeDataColumnSidecarsProofs(final UInt64 slot) {
+      finalizedUpdater.removeDataColumnSidecarsProofs(slot);
     }
 
     @Override

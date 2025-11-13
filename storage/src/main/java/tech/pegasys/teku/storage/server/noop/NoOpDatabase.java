@@ -402,7 +402,7 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public Optional<List<List<KZGProof>>> getDataColumnSidecarProofs(final UInt64 slot) {
+  public Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(final UInt64 slot) {
     return Optional.empty();
   }
 

@@ -285,7 +285,7 @@ public interface Database extends AutoCloseable {
 
   Optional<UInt64> getLastDataColumnSidecarsProofsSlot();
 
-  Optional<List<List<KZGProof>>> getDataColumnSidecarProofs(final UInt64 slot);
+  Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(final UInt64 slot);
 
   void setFirstCustodyIncompleteSlot(UInt64 slot);
 

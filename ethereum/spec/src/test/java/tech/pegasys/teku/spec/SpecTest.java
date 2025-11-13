@@ -63,6 +63,7 @@ class SpecTest {
             .mapToObj(
                 index -> dataStructureUtil.randomDataColumnSidecar(header, UInt64.valueOf(index)))
             .toList();
+
     final List<List<KZGProof>> expectedProofs =
         dataColumnSidecars.stream()
             .map(
@@ -71,9 +72,10 @@ class SpecTest {
                         .map(SszKZGProof::getKZGProof)
                         .toList())
             .toList();
-    final Bytes serializedProofs = spec.serializeProofs(dataColumnSidecars);
+    final Bytes serializedProofs = spec.serializeDataColumnSidecarsProofs(dataColumnSidecars);
     final List<List<KZGProof>> kzgProofs =
-        spec.deserializeProofs(serializedProofs, header.getMessage().getSlot());
+        spec.deserializeDataColumnSidecarsProofs(serializedProofs);
+
     assertThat(expectedProofs).isEqualTo(kzgProofs);
   }
 }

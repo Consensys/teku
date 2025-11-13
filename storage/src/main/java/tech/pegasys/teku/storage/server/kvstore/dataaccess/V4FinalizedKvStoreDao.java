@@ -528,12 +528,12 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
-    public void addDataColumnSidecarsKzgProofs(final UInt64 slot, final Bytes kzgProofs) {
+    public void addDataColumnSidecarsProofs(final UInt64 slot, final Bytes kzgProofs) {
       transaction.put(schema.getColumnDataColumnSidecarsProofsBySlot(), slot, kzgProofs);
     }
 
     @Override
-    public void removeDataColumnSidecarsKzgProofs(final UInt64 slot) {
+    public void removeDataColumnSidecarsProofs(final UInt64 slot) {
       transaction.delete(schema.getColumnDataColumnSidecarsProofsBySlot(), slot);
     }
 
