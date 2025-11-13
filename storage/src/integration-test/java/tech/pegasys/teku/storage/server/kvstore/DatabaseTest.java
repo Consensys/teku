@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -63,6 +64,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -77,6 +79,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -2592,6 +2595,48 @@ public class DatabaseTest {
         database.streamNonCanonicalDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
     }
+  }
+
+  @TestTemplate
+  public void dataColumnSidecarsProofs_lifecycle(final DatabaseContext context) throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+
+    final SignedBeaconBlockHeader header = dataStructureUtil.randomSignedBeaconBlockHeader();
+    final List<DataColumnSidecar> dataColumnSidecars =
+        IntStream.range(64, 128)
+            .mapToObj(
+                index -> dataStructureUtil.randomDataColumnSidecar(header, UInt64.valueOf(index)))
+            .toList();
+    final List<List<KZGProof>> expectedKzgProofs =
+        dataColumnSidecars.stream()
+            .map(
+                dataColumnSidecar ->
+                    dataColumnSidecar.getKzgProofs().stream()
+                        .map(SszKZGProof::getKZGProof)
+                        .toList())
+            .toList();
+
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.addDataColumnSidecarsProofs(
+          header.getMessage().getSlot(),
+          spec.serializeDataColumnSidecarsProofs(dataColumnSidecars));
+      updater.commit();
+    }
+
+    assertThat(database.getLastDataColumnSidecarsProofsSlot())
+        .contains(header.getMessage().getSlot());
+    assertThat(database.getDataColumnSidecarsProofs(header.getMessage().getSlot()))
+        .contains(expectedKzgProofs);
+
+    // remove it
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.removeDataColumnSidecarsProofs(header.getMessage().getSlot());
+      updater.commit();
+    }
+
+    assertThat(database.getLastDataColumnSidecarsProofsSlot()).isEmpty();
+    assertThat(database.getDataColumnSidecarsProofs(header.getMessage().getSlot())).isEmpty();
   }
 
   private List<Map.Entry<Bytes32, UInt64>> getFinalizedStateRootsList() {
