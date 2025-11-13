@@ -34,10 +34,10 @@ public class ExecutionProofsAvailabilityCheckerFactory
     this.delegate = delegate;
   }
 
-    public AvailabilityChecker<ExecutionProof> createAvailabilityChecker(
-            final SignedBeaconBlock block, final AvailabilityChecker<?> delegate) {
-        return new ExecutionProofsAvailabilityChecker(executionProofManager, block, delegate);
-    }
+  public AvailabilityChecker<ExecutionProof> createAvailabilityChecker(
+      final SignedBeaconBlock block, final AvailabilityChecker<?> delegate) {
+    return new ExecutionProofsAvailabilityChecker(executionProofManager, block, delegate);
+  }
 
   @Override
   public AvailabilityChecker<ExecutionProof> createAvailabilityChecker(
