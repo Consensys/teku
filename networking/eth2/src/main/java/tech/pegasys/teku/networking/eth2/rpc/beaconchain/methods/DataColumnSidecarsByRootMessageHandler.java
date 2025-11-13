@@ -55,8 +55,6 @@ public class DataColumnSidecarsByRootMessageHandler
     extends PeerRequiredLocalMessageHandler<
         DataColumnSidecarsByRootRequestMessage, DataColumnSidecar> {
 
-  private static final Logger LOG = LogManager.getLogger();
-
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
   private final Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier;
@@ -196,7 +194,6 @@ public class DataColumnSidecarsByRootMessageHandler
    *   <li>The block root references a block greater than or equal to the minimum_request_epoch
    * </ul>
    */
-  @SuppressWarnings("unused")
   private SafeFuture<Void> validateMinimumRequestEpoch(
       final DataColumnIdentifier identifier, final Optional<DataColumnSidecar> maybeSidecar) {
     return maybeSidecar

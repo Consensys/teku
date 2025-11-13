@@ -55,8 +55,6 @@ public class DataColumnSidecarsByRangeMessageHandler
     extends PeerRequiredLocalMessageHandler<
         DataColumnSidecarsByRangeRequestMessage, DataColumnSidecar> {
 
-  private static final Logger LOG = LogManager.getLogger();
-
   private final SpecConfigFulu specConfigFulu;
   private final CombinedChainDataClient combinedChainDataClient;
   private final LabelledMetric<Counter> requestCounter;
