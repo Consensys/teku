@@ -133,7 +133,7 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
     if (lastDataColumnSidecarArchivePrunableSlot.get() > 0) {
       final Optional<UInt64> lastDataColumnSidecarsProofsSlot =
           database.getLastDataColumnSidecarsProofsSlot();
-      database.archiveSidecarProofs(
+      database.archiveSidecarsProofs(
           lastDataColumnSidecarsProofsSlot.orElse(UInt64.ZERO),
           UInt64.valueOf(lastDataColumnSidecarArchivePrunableSlot.get()),
           pruneLimit);

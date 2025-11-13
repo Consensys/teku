@@ -1210,7 +1210,7 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void archiveSidecarProofs(
+  public void archiveSidecarsProofs(
       final UInt64 startSlot, final UInt64 tillSlotInclusive, final int archiveLimit) {
     // TODO: inject halfColumns here
     final int halfColumns = 64;
@@ -1253,8 +1253,8 @@ public class KvStoreDatabase implements Database {
 
             // remove sidecars only if we have required 1/2
             if (sidecars.size() == halfColumns) {
-              final Bytes proofs = spec.serializeProofs(sidecars);
-              updater.addDataColumnSidecarsKzgProofs(slot, proofs);
+              final Bytes proofs = spec.serializeDataColumnSidecarsProofs(sidecars);
+              updater.addDataColumnSidecarsProofs(slot, proofs);
               for (final DataColumnSlotAndIdentifier key : keys) {
                 updater.removeSidecar(key);
               }
