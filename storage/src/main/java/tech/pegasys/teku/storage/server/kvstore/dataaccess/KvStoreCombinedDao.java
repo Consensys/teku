@@ -190,6 +190,10 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<UInt64> getEarliestDataSidecarColumnSlot();
 
+  Optional<UInt64> getLastDataColumnSidecarsProofsSlot();
+
+  Optional<Bytes> getDataColumnSidecarsProofs(UInt64 slot);
+
   interface CombinedUpdater extends HotUpdater, FinalizedUpdater {}
 
   interface HotUpdater extends AutoCloseable {
@@ -304,6 +308,10 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     void removeSidecar(DataColumnSlotAndIdentifier identifier);
 
     void removeNonCanonicalSidecar(DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier);
+
+    void addDataColumnSidecarsProofs(UInt64 slot, Bytes kzgProofs);
+
+    void removeDataColumnSidecarsProofs(UInt64 slot);
 
     void commit();
 

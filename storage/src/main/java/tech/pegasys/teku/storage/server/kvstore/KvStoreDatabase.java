@@ -46,6 +46,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -1155,6 +1156,17 @@ public class KvStoreDatabase implements Database {
   @Override
   public Optional<UInt64> getEarliestDataColumnSidecarSlot() {
     return dao.getEarliestDataSidecarColumnSlot();
+  }
+
+  @Override
+  public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
+    return dao.getLastDataColumnSidecarsProofsSlot();
+  }
+
+  @Override
+  public Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(final UInt64 slot) {
+    final Optional<Bytes> maybeProofs = dao.getDataColumnSidecarsProofs(slot);
+    return maybeProofs.map(spec::deserializeDataColumnSidecarsProofs);
   }
 
   @Override

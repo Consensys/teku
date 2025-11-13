@@ -26,6 +26,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
@@ -281,6 +282,10 @@ public interface Database extends AutoCloseable {
   }
 
   Optional<UInt64> getEarliestDataColumnSidecarSlot();
+
+  Optional<UInt64> getLastDataColumnSidecarsProofsSlot();
+
+  Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(final UInt64 slot);
 
   void setFirstCustodyIncompleteSlot(UInt64 slot);
 
