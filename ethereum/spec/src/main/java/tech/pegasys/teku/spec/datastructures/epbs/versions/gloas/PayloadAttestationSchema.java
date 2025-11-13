@@ -49,4 +49,8 @@ public class PayloadAttestationSchema
   public PayloadAttestation createFromBackingNode(final TreeNode node) {
     return new PayloadAttestation(this, node);
   }
+
+  public SszBitvectorSchema<?> getAggregationBitsSchema() {
+    return (SszBitvectorSchema<?>) getFieldSchema0();
+  }
 }

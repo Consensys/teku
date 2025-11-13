@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -70,6 +71,14 @@ public class BeaconBlockBodyLists {
     return blockBodySchema
         .toVersionCapella()
         .map(schema -> schema.getBlsToExecutionChangesSchema().of(blsToExecutionChanges))
+        .orElse(null);
+  }
+
+  public SszList<PayloadAttestation> createPayloadAttestations(
+      final PayloadAttestation... payloadAttestations) {
+    return blockBodySchema
+        .toVersionGloas()
+        .map(schema -> schema.getPayloadAttestationsSchema().of(payloadAttestations))
         .orElse(null);
   }
 }

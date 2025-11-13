@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.RECOVERED;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.time.Duration;
@@ -25,7 +27,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -56,7 +58,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   private final MiscHelpersFulu miscHelpers;
   private final Spec spec;
   private final BiConsumer<DataColumnSidecar, RemoteOrigin> dataColumnSidecarPublisher;
-  private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
+  private final CustodyGroupCountManager custodyGroupCountManager;
 
   private final long columnCount;
   private final int recoverColumnCount;
@@ -69,13 +71,18 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   private final Counter totalDataAvailabilityReconstructedColumns;
   private final MetricsHistogram dataAvailabilityReconstructionTimeSeconds;
 
+  private final Subscribers<ValidDataColumnSidecarsListener> recoveredColumnSidecarSubscribers =
+      Subscribers.create(true);
+
+  private volatile boolean inSync;
+
   public DataColumnSidecarRecoveringCustodyImpl(
       final DataColumnSidecarByRootCustody delegate,
       final AsyncRunner asyncRunner,
       final Spec spec,
       final MiscHelpersFulu miscHelpers,
       final BiConsumer<DataColumnSidecar, RemoteOrigin> dataColumnSidecarPublisher,
-      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
+      final CustodyGroupCountManager custodyGroupCountManager,
       final int columnCount,
       final int groupCount,
       final Function<UInt64, Duration> slotToRecoveryDelay,
@@ -86,7 +93,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     this.miscHelpers = miscHelpers;
     this.spec = spec;
     this.dataColumnSidecarPublisher = dataColumnSidecarPublisher;
-    this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
+    this.custodyGroupCountManager = custodyGroupCountManager;
     this.recoveryTasks =
         LimitedMap.createSynchronizedNatural(spec.getGenesisSpec().getSlotsPerEpoch());
     this.slotToRecoveryDelay = slotToRecoveryDelay;
@@ -109,6 +116,11 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
               0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 5.0,
               7.5, 10.0
             });
+  }
+
+  @Override
+  public void onSyncingStatusChanged(final boolean inSync) {
+    this.inSync = inSync;
   }
 
   @Override
@@ -139,7 +151,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     if (isActiveSuperNode(slot)) {
       return false;
     }
-    if (custodyGroupCountManagerSupplier.get().getCustodyGroupCount() == groupCount) {
+    if (custodyGroupCountManager.getCustodyGroupCount() == groupCount) {
       if (!isSuperNode.get()) {
         LOG.debug(
             "Number of required custody groups reached maximum. Activating super node reconstruction.");
@@ -238,9 +250,13 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
         .forEach(
             dataColumnSidecar -> {
               delegate
-                  .onNewValidatedDataColumnSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED)
+                  .onNewValidatedDataColumnSidecar(dataColumnSidecar, RECOVERED)
                   .finishError(LOG);
-              dataColumnSidecarPublisher.accept(dataColumnSidecar, RemoteOrigin.RECOVERED);
+              if (inSync) {
+                dataColumnSidecarPublisher.accept(dataColumnSidecar, RECOVERED);
+              }
+              recoveredColumnSidecarSubscribers.forEach(
+                  subscriber -> subscriber.onNewValidSidecar(dataColumnSidecar, RECOVERED));
             });
     recoveryTask.existingSidecars.clear();
     LOG.debug(
@@ -298,5 +314,11 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   public SafeFuture<Boolean> hasCustodyDataColumnSidecar(
       final DataColumnSlotAndIdentifier columnId) {
     return delegate.hasCustodyDataColumnSidecar(columnId);
+  }
+
+  @Override
+  public void subscribeToRecoveredColumnSidecar(
+      final ValidDataColumnSidecarsListener sidecarListener) {
+    recoveredColumnSidecarSubscribers.subscribe(sidecarListener);
   }
 }

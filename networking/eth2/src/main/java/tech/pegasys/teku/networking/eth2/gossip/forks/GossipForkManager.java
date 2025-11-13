@@ -38,6 +38,8 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -182,7 +184,7 @@ public class GossipForkManager {
         GossipForkSubscriptions::publishBlobSidecar);
   }
 
-  public synchronized void publishDataColumnSidecar(final DataColumnSidecar dataColumnSidecar) {
+  public void publishDataColumnSidecar(final DataColumnSidecar dataColumnSidecar) {
     publishMessage(
         dataColumnSidecar.getSlot(),
         dataColumnSidecar,
@@ -197,6 +199,15 @@ public class GossipForkManager {
     UInt64 slot = spec.computeStartSlotAtEpoch(spec.getCurrentEpoch(recentChainData.getStore()));
     publishMessage(
         slot, executionProof, "execution proof", GossipForkSubscriptions::publishExecutionProof);
+  }
+
+  public SafeFuture<Void> publishExecutionPayload(
+      final SignedExecutionPayloadEnvelope executionPayload) {
+    return publishMessageWithFeedback(
+        executionPayload.getMessage().getSlot(),
+        executionPayload,
+        "execution payload",
+        GossipForkSubscriptions::publishExecutionPayload);
   }
 
   public void publishSyncCommitteeMessage(final ValidatableSyncCommitteeMessage message) {
@@ -251,6 +262,14 @@ public class GossipForkManager {
         message,
         "signed bls to execution change",
         GossipForkSubscriptions::publishSignedBlsToExecutionChangeMessage);
+  }
+
+  public void publishPayloadAttestationMessage(final PayloadAttestationMessage message) {
+    publishMessage(
+        message.getData().getSlot(),
+        message,
+        "payload attestation message",
+        GossipForkSubscriptions::publishPayloadAttestationMessage);
   }
 
   private synchronized <T> void publishMessage(

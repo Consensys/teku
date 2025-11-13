@@ -77,12 +77,6 @@ public class DataColumnSidecarManagerImpl implements DataColumnSidecarManager {
   }
 
   @Override
-  public void onDataColumnSidecarPublish(
-      final DataColumnSidecar sidecar, final RemoteOrigin origin) {
-    validDataColumnSidecarsSubscribers.forEach(l -> l.onNewValidSidecar(sidecar, origin));
-  }
-
-  @Override
   public void subscribeToValidDataColumnSidecars(
       final ValidDataColumnSidecarsListener sidecarsListener) {
     validDataColumnSidecarsSubscribers.subscribe(sidecarsListener);

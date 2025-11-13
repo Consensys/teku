@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolver;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 
@@ -178,8 +179,9 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   }
 
   @Override
-  public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {
-    delegate.onNewValidatedSidecar(sidecar);
+  public void onNewValidatedSidecar(
+      final DataColumnSidecar sidecar, final RemoteOrigin remoteOrigin) {
+    delegate.onNewValidatedSidecar(sidecar, remoteOrigin);
   }
 
   @VisibleForTesting

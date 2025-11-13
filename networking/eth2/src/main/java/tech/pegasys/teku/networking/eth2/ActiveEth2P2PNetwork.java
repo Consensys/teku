@@ -30,6 +30,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.ExecutionProofGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.config.Eth2Context;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
@@ -45,6 +46,7 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -147,6 +149,8 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
         (sidecar, __) -> gossipForkManager.publishDataColumnSidecar(sidecar));
     eventChannels.subscribe(
         ExecutionProofGossipChannel.class, gossipForkManager::publishExecutionProof);
+    eventChannels.subscribe(
+        ExecutionPayloadGossipChannel.class, gossipForkManager::publishExecutionPayload);
 
     if (recentChainData.isCloseToInSync()) {
       startGossip();
@@ -410,6 +414,12 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   public void publishSignedBlsToExecutionChange(
       final SignedBlsToExecutionChange signedBlsToExecutionChange) {
     gossipForkManager.publishSignedBlsToExecutionChanges(signedBlsToExecutionChange);
+  }
+
+  @Override
+  public void publishPayloadAttestationMessage(
+      final PayloadAttestationMessage payloadAttestationMessage) {
+    gossipForkManager.publishPayloadAttestationMessage(payloadAttestationMessage);
   }
 
   @VisibleForTesting

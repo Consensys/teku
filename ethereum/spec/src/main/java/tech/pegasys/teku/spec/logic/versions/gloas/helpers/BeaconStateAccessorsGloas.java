@@ -125,51 +125,45 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
    * <p>Calculate the quorum threshold for builder payments.
    */
   public UInt64 getBuilderPaymentQuorumThreshold(final BeaconState state) {
-    final UInt64 quorum =
-        getTotalActiveBalance(state)
-            .dividedBy(config.getSlotsPerEpoch())
-            .times(SpecConfigGloas.BUILDER_PAYMENT_THRESHOLD_NUMERATOR);
+    final UInt64 perSlotBalance = getTotalActiveBalance(state).dividedBy(config.getSlotsPerEpoch());
+    final UInt64 quorum = perSlotBalance.times(SpecConfigGloas.BUILDER_PAYMENT_THRESHOLD_NUMERATOR);
     return quorum.dividedBy(SpecConfigGloas.BUILDER_PAYMENT_THRESHOLD_DENOMINATOR);
   }
 
   /**
    * is_attestation_same_slot
    *
-   * <p>Checks if the attestation was for the block proposed at the attestation slot
+   * <p>Check if the attestation is for the block proposed at the attestation slot.
    */
   public boolean isAttestationSameSlot(final BeaconState state, final AttestationData data) {
     if (data.getSlot().isZero()) {
       return true;
     }
-    final boolean isMatchingBlockRoot =
-        data.getBeaconBlockRoot().equals(getBlockRootAtSlot(state, data.getSlot()));
-    final boolean isCurrentBlockRoot =
-        !data.getBeaconBlockRoot()
-            .equals(getBlockRootAtSlot(state, data.getSlot().minusMinZero(1)));
-    return isMatchingBlockRoot && isCurrentBlockRoot;
+    final Bytes32 blockRoot = data.getBeaconBlockRoot();
+    final Bytes32 slotBlockRoot = getBlockRootAtSlot(state, data.getSlot());
+    final Bytes32 prevBlockRoot = getBlockRootAtSlot(state, data.getSlot().minusMinZero(1));
+
+    return blockRoot.equals(slotBlockRoot) && !blockRoot.equals(prevBlockRoot);
   }
 
   @Override
   protected boolean computeIsMatchingHead(
-      final boolean isMatchingTarget, final AttestationData data, final BeaconState state) {
-    final boolean isMatchingBlockRoot =
-        isMatchingTarget
-            && data.getBeaconBlockRoot().equals(getBlockRootAtSlot(state, data.getSlot()));
-    final boolean isMatchingPayload;
+      final boolean isMatchingTarget,
+      final boolean headRootMatches,
+      final AttestationData data,
+      final BeaconState state) {
+    if (!isMatchingTarget || !headRootMatches) {
+      return false;
+    }
     if (isAttestationSameSlot(state, data)) {
       checkArgument(data.getIndex().isZero(), "Index must be set to zero");
-      isMatchingPayload = true;
+      return true;
     } else {
-      isMatchingPayload =
-          data.getIndex().intValue()
-              == (BeaconStateGloas.required(state)
-                      .getExecutionPayloadAvailability()
-                      .get(data.getSlot().mod(config.getSlotsPerHistoricalRoot()).intValue())
-                      .get()
-                  ? 1
-                  : 0);
+      final int slotIndex = data.getSlot().mod(config.getSlotsPerHistoricalRoot()).intValue();
+      final boolean payloadIndex =
+          BeaconStateGloas.required(state).getExecutionPayloadAvailability().get(slotIndex).get();
+      return data.getIndex().intValue() == (payloadIndex ? 1 : 0);
     }
-    return isMatchingBlockRoot && isMatchingPayload;
   }
 
   /** get_pending_balance_to_withdraw is modified to account for pending builder payments. */

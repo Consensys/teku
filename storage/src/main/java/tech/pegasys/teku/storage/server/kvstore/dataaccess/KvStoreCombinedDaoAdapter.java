@@ -336,11 +336,6 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
-  public Optional<UInt64> getFirstSamplerIncompleteSlot() {
-    return finalizedDao.getFirstSamplerIncompleteSlot();
-  }
-
-  @Override
   public Optional<Bytes> getSidecar(final DataColumnSlotAndIdentifier identifier) {
     return finalizedDao.getSidecar(identifier);
   }
@@ -405,7 +400,6 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
 
   @Override
   public void close() throws Exception {
-    hotDao.close();
     hotDao.close();
     finalizedDao.close();
   }
@@ -678,11 +672,6 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void setFirstCustodyIncompleteSlot(final UInt64 slot) {
       finalizedUpdater.setFirstCustodyIncompleteSlot(slot);
-    }
-
-    @Override
-    public void setFirstSamplerIncompleteSlot(final UInt64 slot) {
-      finalizedUpdater.setFirstSamplerIncompleteSlot(slot);
     }
 
     @Override

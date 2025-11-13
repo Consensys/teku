@@ -136,16 +136,14 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final IndexedAttestationProvider indexedAttestationProvider) {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
     final AttestationProcessingResult result =
-        calculateAttestationProcessingResult(state, attestation, indexedAttestationProvider);
+        processAttestation(state, attestation, indexedAttestationProvider);
     consumeAttestationProcessingResult(attestation.getData(), result, genericState);
   }
 
   public record AttestationProcessingResult(
-      Optional<UInt64> proposerReward,
-      boolean currentEpochTarget,
-      UInt64 builderPaymentWeightDelta) {}
+      Optional<UInt64> proposerReward, int builderPaymentIndex, UInt64 builderPaymentWeightDelta) {}
 
-  public AttestationProcessingResult calculateAttestationProcessingResult(
+  public AttestationProcessingResult processAttestation(
       final MutableBeaconStateAltair state,
       final Attestation attestation,
       final IndexedAttestationProvider indexedAttestationProvider) {
@@ -156,14 +154,16 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
             state, data, state.getSlot().minus(data.getSlot()));
 
     // Update epoch participation flags
-    final SszMutableList<SszByte> epochParticipation;
-    final boolean forCurrentEpoch =
+    final boolean currentEpochTarget =
         data.getTarget().getEpoch().equals(beaconStateAccessors.getCurrentEpoch(state));
-    if (forCurrentEpoch) {
+    final SszMutableList<SszByte> epochParticipation;
+    if (currentEpochTarget) {
       epochParticipation = state.getCurrentEpochParticipation();
     } else {
       epochParticipation = state.getPreviousEpochParticipation();
     }
+    final int builderPaymentIndex = getBuilderPaymentIndex(currentEpochTarget, data);
+
     // track the weight for pending builder payment
     UInt64 builderPaymentWeightDelta = UInt64.ZERO;
 
@@ -195,13 +195,14 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
             .getProgressiveTotalBalances()
             .onAttestation(
                 state.getValidators().get(index),
-                forCurrentEpoch,
+                currentEpochTarget,
                 miscHelpersAltair.hasFlag(newParticipationFlags, TIMELY_SOURCE_FLAG_INDEX),
                 miscHelpersAltair.hasFlag(newParticipationFlags, TIMELY_TARGET_FLAG_INDEX),
                 miscHelpersAltair.hasFlag(newParticipationFlags, TIMELY_HEAD_FLAG_INDEX));
 
         builderPaymentWeightDelta =
-            updateBuilderPaymentWeight(builderPaymentWeightDelta, data, index, state);
+            updateBuilderPaymentWeight(
+                builderPaymentIndex, builderPaymentWeightDelta, data, index, state);
       }
     }
 
@@ -217,10 +218,17 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     }
 
     return new AttestationProcessingResult(
-        proposerReward, forCurrentEpoch, builderPaymentWeightDelta);
+        proposerReward, builderPaymentIndex, builderPaymentWeightDelta);
+  }
+
+  protected int getBuilderPaymentIndex(
+      final boolean currentEpochTarget, final AttestationData data) {
+    // NO-OP
+    return 0;
   }
 
   protected UInt64 updateBuilderPaymentWeight(
+      final int builderPaymentIndex,
       final UInt64 builderPaymentWeightDelta,
       final AttestationData data,
       final int attestingIndex,

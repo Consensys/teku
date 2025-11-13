@@ -30,7 +30,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -292,7 +291,7 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final AsyncBLSSignatureVerifier signatureVerifier = mock(AsyncBLSSignatureVerifier.class);
     final AttestationValidator validator =
-        new AttestationValidator(spec, recentChainData, signatureVerifier, new StubMetricsSystem());
+        new AttestationValidator(spec, signatureVerifier, gossipValidationHelper);
     final AttestationData data = attestation.getData();
     final Checkpoint checkpoint =
         new Checkpoint(

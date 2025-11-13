@@ -450,8 +450,11 @@ jobs:
       - run:
           name: Install Python3
           command: |
-            sudo apt update
-            sudo apt install python3 python3-pip python3-venv
+            # Refer to issue https://github.com/git-lfs/git-lfs/issues/6129
+            sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
+            sudo apt-get clean
+            sudo apt-get update
+            sudo apt-get install -y python3 python3-pip python3-venv
       - attach_workspace:
           at: ~/project
       - run:
@@ -478,6 +481,17 @@ jobs:
       - attach_workspace:
           at: ~/project
       - docker_publish_images
+      - notify
+
+  manifestDocker:
+    executor: medium_executor
+    steps:
+      - prepare
+      - run:
+          name: Create and publish docker manifest
+          command: |
+            docker login --username "${DOCKER_USER_RW}" --password "${DOCKER_PASSWORD_RW}"
+            ./gradlew --no-daemon --parallel -PincludeCommitHashInDockerTag=<< pipeline.parameters.include_commit_hash_in_docker_tag >> manifestDocker
       - notify
 
   extractAPISpec:
@@ -673,6 +687,19 @@ workflows:
             - moduleChecks
             - spotless
             - windowsBuild
+          context:
+            - protocols-dockerhub
+      - manifestDocker:
+          filters:
+            branches:
+              only:
+                - master
+                - /^release-.*/
+            tags:
+              <<: *filters-release-tags
+          requires:
+            - publishDockerArm64
+            - publishDockerAmd64
           context:
             - protocols-dockerhub
 

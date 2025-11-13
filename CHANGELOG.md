@@ -7,15 +7,10 @@
 ## Unreleased Changes
 
 ### Breaking Changes
-- `GOSSIP_MAX_SIZE`, `MAX_CHUNK_SIZE`, `TTFB_TIMEOUT` and `RESP_TIMEOUT` configuration variables are no longer exported as they were removed from spec. 
-  Any release compliant with fulu (fusaka) will not require these to be present, but earlier releases may no longer be able to consume this configuration.
+- jdk 24 docker image build has been removed in favour of jdk 25 docker image build.
 
 ### Additions and Improvements
 
-- Add User-Agent header to requests initiated from the Validator Client with the client identifier and version.
-- Increase Default validator registration Gas Limit 60M for all networks.
-- Rename Fulu metric for data_column_sidecar_by_root RPC request to `network_rpc_data_column_sidecars_by_root_requested_sidecars_total`.
-- Add peer count per topic metric for data_column_sidecar subnet.
-- Add [Get Blobs](https://ethereum.github.io/beacon-APIs/#/Beacon/getBlobs) (`/eth/v1/beacon/blobs/{block_id}`) Beacon API method.
-
 ### Bug Fixes
+ - Fixed NPE in DasPreSampler (#10110).
+ - Added connection direction to `beacon_peer_count` metric.

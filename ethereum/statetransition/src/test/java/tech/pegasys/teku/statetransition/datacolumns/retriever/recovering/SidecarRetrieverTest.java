@@ -23,7 +23,6 @@ import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering
 
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolverStub;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarDBStub;
@@ -88,7 +88,7 @@ public class SidecarRetrieverTest {
           CHECK_INTERVAL,
           timeProvider,
           columnCount,
-          new AtomicReference<>(custodyManager),
+          custodyManager,
           metricsSystem);
 
   @BeforeEach
@@ -145,7 +145,7 @@ public class SidecarRetrieverTest {
   @Test
   void onNewValidatedSidecar_callsDelegateRetriever() {
     final DataColumnSidecar sidecar = dataStructureUtil.randomDataColumnSidecar();
-    retriever.onNewValidatedSidecar(sidecar);
+    retriever.onNewValidatedSidecar(sidecar, RemoteOrigin.GOSSIP);
     assertThat(delegateRetriever.validatedSidecars).containsExactly(sidecar);
   }
 

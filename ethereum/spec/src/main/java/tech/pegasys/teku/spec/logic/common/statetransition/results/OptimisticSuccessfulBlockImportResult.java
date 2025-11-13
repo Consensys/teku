@@ -15,9 +15,9 @@ package tech.pegasys.teku.spec.logic.common.statetransition.results;
 
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public class OptimisticSuccessfulBlockImportResult extends SuccessfulBlockImportResult {
+class OptimisticSuccessfulBlockImportResult extends SuccessfulBlockImportResult {
 
-  public OptimisticSuccessfulBlockImportResult(final SignedBeaconBlock block) {
+  OptimisticSuccessfulBlockImportResult(final SignedBeaconBlock block) {
     super(block);
   }
 

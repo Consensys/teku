@@ -49,6 +49,7 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool.NewBlobSidecarSubscriber;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
+import tech.pegasys.teku.statetransition.datacolumns.ValidDataColumnSidecarsListener;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
@@ -264,8 +265,7 @@ public class NodeDataProvider {
     blockBlobSidecarsTrackersPool.subscribeNewBlobSidecar(listener);
   }
 
-  public void subscribeToValidDataColumnSidecars(
-      final DataColumnSidecarManager.ValidDataColumnSidecarsListener listener) {
+  public void subscribeToValidDataColumnSidecars(final ValidDataColumnSidecarsListener listener) {
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(listener);
   }
 

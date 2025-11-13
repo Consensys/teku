@@ -23,9 +23,9 @@ public class SignedExecutionPayloadBid
 
   SignedExecutionPayloadBid(
       final SignedExecutionPayloadBidSchema schema,
-      final ExecutionPayloadBid executionPayloadBid,
+      final ExecutionPayloadBid message,
       final BLSSignature signature) {
-    super(schema, executionPayloadBid, new SszSignature(signature));
+    super(schema, message, new SszSignature(signature));
   }
 
   SignedExecutionPayloadBid(

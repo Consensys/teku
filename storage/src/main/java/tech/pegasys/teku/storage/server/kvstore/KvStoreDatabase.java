@@ -1126,11 +1126,6 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public Optional<UInt64> getFirstSamplerIncompleteSlot() {
-    return dao.getFirstSamplerIncompleteSlot();
-  }
-
-  @Override
   public Optional<DataColumnSidecar> getSidecar(final DataColumnSlotAndIdentifier identifier) {
     final Optional<Bytes> maybePayload = dao.getSidecar(identifier);
     return maybePayload.map(payload -> spec.deserializeSidecar(payload, identifier.slot()));
@@ -1171,14 +1166,6 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void setFirstSamplerIncompleteSlot(final UInt64 slot) {
-    try (final FinalizedUpdater updater = finalizedUpdater()) {
-      updater.setFirstSamplerIncompleteSlot(slot);
-      updater.commit();
-    }
-  }
-
-  @Override
   public void addSidecar(final DataColumnSidecar sidecar) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.addSidecar(sidecar);
@@ -1202,10 +1189,10 @@ public class KvStoreDatabase implements Database {
             streamNonCanonicalDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive)) {
 
       if (pruneDataColumnSidecars(pruneLimit, prunableIdentifiers, false)) {
-        LOG.debug("Pruned reached the limit of {} data column sidecars", pruneLimit);
+        LOG.debug("Data column sidecars pruning reached the limit of {}", pruneLimit);
       }
       if (pruneDataColumnSidecars(pruneLimit, prunableNonCanonicalIdentifiers, true)) {
-        LOG.debug("Pruned reached the limit of {} non canonical data column sidecars", pruneLimit);
+        LOG.debug("Non-canonical data column sidecars pruning reached the limit of {}", pruneLimit);
       }
     }
   }

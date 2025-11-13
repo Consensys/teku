@@ -50,6 +50,7 @@ public class WithdrawalsHelpersGloas extends WithdrawalsHelpersElectra {
 
   @Override
   public void processWithdrawals(final MutableBeaconState state) {
+    // Return early if the parent block is empty
     if (!predicatesGloas.isParentBlockFull(state)) {
       return;
     }
@@ -105,15 +106,17 @@ public class WithdrawalsHelpersGloas extends WithdrawalsHelpersElectra {
         } else {
           withdrawableBalance = UInt64.ZERO;
         }
-        withdrawals.add(
-            schemaDefinitions
-                .getWithdrawalSchema()
-                .create(
-                    withdrawalIndex,
-                    builderIndex,
-                    withdrawal.getFeeRecipient(),
-                    withdrawableBalance));
-        withdrawalIndex = withdrawalIndex.increment();
+        if (withdrawableBalance.isGreaterThan(UInt64.ZERO)) {
+          withdrawals.add(
+              schemaDefinitions
+                  .getWithdrawalSchema()
+                  .create(
+                      withdrawalIndex,
+                      builderIndex,
+                      withdrawal.getFeeRecipient(),
+                      withdrawableBalance));
+          withdrawalIndex = withdrawalIndex.increment();
+        }
       }
       processedBuilderWithdrawalsCount++;
     }

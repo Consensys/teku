@@ -42,6 +42,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -63,12 +64,13 @@ import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELRecoveryManager;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELManager;
+import tech.pegasys.teku.statetransition.datacolumns.ValidDataColumnSidecarsListener;
 import tech.pegasys.teku.statetransition.util.AbstractIgnoringFutureHistoricalSlot;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutureHistoricalSlot
-    implements DataColumnSidecarELRecoveryManager {
+public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistoricalSlot
+    implements DataColumnSidecarELManager {
   private static final Logger LOG = LogManager.getLogger();
   public static final BiFunction<MetricsSystem, TimeProvider, MetricsHistogram>
       DATA_COLUMN_SIDECAR_COMPUTATION_HISTOGRAM =
@@ -92,7 +94,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   private final ExecutionLayerChannel executionLayer;
   private final int maxTrackers;
   private final BiConsumer<List<DataColumnSidecar>, RemoteOrigin> dataColumnSidecarPublisher;
-  private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
+  private final CustodyGroupCountManager custodyGroupCountManager;
 
   private final MetricsHistogram dataColumnSidecarComputationTimeSeconds;
   private final Counter getBlobsV2RequestsCounter;
@@ -106,13 +108,18 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   static final Set<RemoteOrigin> LOCAL_OR_RECOVERED_ORIGINS =
       Set.of(LOCAL_PROPOSAL, LOCAL_EL, RECOVERED);
 
+  private final Subscribers<ValidDataColumnSidecarsListener> recoveredColumnSidecarSubscribers =
+      Subscribers.create(true);
+
+  private volatile boolean inSync;
+
   private static boolean isLocalBlockProductionOrRecovered(
       final Optional<RemoteOrigin> remoteOrigin) {
     return remoteOrigin.map(LOCAL_OR_RECOVERED_ORIGINS::contains).orElse(false);
   }
 
   @VisibleForTesting
-  public DataColumnSidecarELRecoveryManagerImpl(
+  public DataColumnSidecarELManagerImpl(
       final Spec spec,
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
@@ -121,7 +128,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
       final UInt64 futureSlotTolerance,
       final int maxTrackers,
       final BiConsumer<List<DataColumnSidecar>, RemoteOrigin> dataColumnSidecarPublisher,
-      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
+      final CustodyGroupCountManager custodyGroupCountManager,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider,
       final Duration localElBlobsFetchingRetryDelay,
@@ -133,7 +140,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     this.executionLayer = executionLayer;
     this.maxTrackers = maxTrackers;
     this.dataColumnSidecarPublisher = dataColumnSidecarPublisher;
-    this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
+    this.custodyGroupCountManager = custodyGroupCountManager;
     this.localElBlobsFetchingRetryDelay = localElBlobsFetchingRetryDelay;
     this.localElBlobsFetchingMaxRetries = localElBlobsFetchingMaxRetries;
     this.dataColumnSidecarComputationTimeSeconds =
@@ -262,29 +269,35 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     } catch (final Throwable t) {
       throw new RuntimeException(t);
     }
-    final int samplingGroupCount = custodyGroupCountManagerSupplier.get().getSamplingGroupCount();
+    final int samplingGroupCount = custodyGroupCountManager.getSamplingGroupCount();
     final int maxCustodyGroups =
         SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
             .getNumberOfCustodyGroups();
-    final List<DataColumnSidecar> myCustodySidecars;
+    final List<DataColumnSidecar> localCustodySidecars;
     if (samplingGroupCount == maxCustodyGroups) {
-      myCustodySidecars = dataColumnSidecars;
+      localCustodySidecars = dataColumnSidecars;
     } else {
-      final Set<UInt64> myCustodyIndices =
-          new HashSet<>(custodyGroupCountManagerSupplier.get().getSamplingColumnIndices());
-      myCustodySidecars =
+      final Set<UInt64> localCustodyIndices =
+          new HashSet<>(custodyGroupCountManager.getSamplingColumnIndices());
+      localCustodySidecars =
           dataColumnSidecars.stream()
-              .filter(sidecar -> myCustodyIndices.contains(sidecar.getIndex()))
+              .filter(sidecar -> localCustodyIndices.contains(sidecar.getIndex()))
               .toList();
     }
     recoveryTask
         .recoveredColumnIndices()
-        .addAll(myCustodySidecars.stream().map(DataColumnSidecar::getIndex).toList());
+        .addAll(localCustodySidecars.stream().map(DataColumnSidecar::getIndex).toList());
     LOG.debug(
         "Publishing {} data column sidecars for {}",
-        myCustodySidecars::size,
+        localCustodySidecars::size,
         recoveryTask::getSlotAndBlockRoot);
-    dataColumnSidecarPublisher.accept(myCustodySidecars, LOCAL_EL);
+    if (inSync) {
+      dataColumnSidecarPublisher.accept(localCustodySidecars, LOCAL_EL);
+    }
+    localCustodySidecars.forEach(
+        sidecar ->
+            recoveredColumnSidecarSubscribers.forEach(
+                subscriber -> subscriber.onNewValidSidecar(sidecar, LOCAL_EL)));
   }
 
   @Override
@@ -333,9 +346,20 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   }
 
   @Override
+  public void onSyncingStatusChanged(final boolean inSync) {
+    this.inSync = inSync;
+  }
+
+  @Override
   public void onSlot(final UInt64 slot) {
     super.onSlot(slot);
     LOG.trace("Recovery tasks: {}", () -> new HashMap<>(recoveryTasks));
+  }
+
+  @Override
+  public void subscribeToRecoveredColumnSidecar(
+      final ValidDataColumnSidecarsListener sidecarListener) {
+    recoveredColumnSidecarSubscribers.subscribe(sidecarListener);
   }
 
   @VisibleForTesting
@@ -379,7 +403,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
 
     if (recoveryTask
         .recoveredColumnIndices()
-        .containsAll(custodyGroupCountManagerSupplier.get().getSamplingColumnIndices())) {
+        .containsAll(custodyGroupCountManager.getSamplingColumnIndices())) {
       return SafeFuture.COMPLETE;
     }
 

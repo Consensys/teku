@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
+import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
@@ -46,6 +47,7 @@ import tech.pegasys.teku.spec.logic.versions.gloas.operations.validation.Attesta
 import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.AttestationUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.util.ValidatorsUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelpersGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
@@ -55,6 +57,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
   private final Optional<WithdrawalsHelpers> withdrawalsHelpers;
   private final Optional<ExecutionRequestsProcessor> executionRequestsProcessor;
   private final Optional<ExecutionPayloadProcessor> executionPayloadProcessor;
+  private final Optional<ExecutionPayloadProposalUtil> executionPayloadProposalUtil;
 
   private SpecLogicGloas(
       final PredicatesGloas predicates,
@@ -77,6 +80,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
       final BlindBlockUtilFulu blindBlockUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
       final LightClientUtil lightClientUtil,
+      final ExecutionPayloadProposalUtil executionPayloadProposalUtil,
       final GloasStateUpgrade stateUpgrade) {
     super(
         predicates,
@@ -100,6 +104,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
     this.executionRequestsProcessor = Optional.of(executionRequestsProcessor);
     this.withdrawalsHelpers = Optional.of(withdrawalsHelpers);
     this.executionPayloadProcessor = Optional.of(executionPayloadProcessor);
+    this.executionPayloadProposalUtil = Optional.of(executionPayloadProposalUtil);
   }
 
   public static SpecLogicGloas create(
@@ -121,8 +126,8 @@ public class SpecLogicGloas extends AbstractSpecLogic {
         new OperationSignatureVerifier(miscHelpers, beaconStateAccessors);
 
     // Util
-    final ValidatorsUtil validatorsUtil =
-        new ValidatorsUtil(config, miscHelpers, beaconStateAccessors);
+    final ValidatorsUtilGloas validatorsUtil =
+        new ValidatorsUtilGloas(config, miscHelpers, beaconStateAccessors);
     final BeaconStateUtil beaconStateUtil =
         new BeaconStateUtil(
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
@@ -211,6 +216,9 @@ public class SpecLogicGloas extends AbstractSpecLogic {
 
     final BlindBlockUtilFulu blindBlockUtil = new BlindBlockUtilFulu(schemaDefinitions);
 
+    final ExecutionPayloadProposalUtil executionPayloadProposalUtil =
+        new ExecutionPayloadProposalUtil(schemaDefinitions, executionPayloadProcessor);
+
     // State upgrade
     final GloasStateUpgrade stateUpgrade =
         new GloasStateUpgrade(config, schemaDefinitions, beaconStateAccessors);
@@ -236,6 +244,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
         blindBlockUtil,
         syncCommitteeUtil,
         lightClientUtil,
+        executionPayloadProposalUtil,
         stateUpgrade);
   }
 
@@ -267,5 +276,10 @@ public class SpecLogicGloas extends AbstractSpecLogic {
   @Override
   public Optional<ExecutionPayloadProcessor> getExecutionPayloadProcessor() {
     return executionPayloadProcessor;
+  }
+
+  @Override
+  public Optional<ExecutionPayloadProposalUtil> getExecutionPayloadProposalUtil() {
+    return executionPayloadProposalUtil;
   }
 }

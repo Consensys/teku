@@ -26,7 +26,7 @@ dependencies {
   implementation project(':storage:api')
 
   implementation 'io.consensys.tuweni:tuweni-units'
-  implementation 'org.hyperledger.besu.internal:metrics-core'
+  implementation 'org.hyperledger.besu.internal:besu-metrics-core'
   implementation 'io.libp2p:jvm-libp2p'
 
   testImplementation testFixtures(project(':ethereum:spec'))

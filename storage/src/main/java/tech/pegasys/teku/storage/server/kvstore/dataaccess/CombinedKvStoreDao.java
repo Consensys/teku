@@ -470,8 +470,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
             "EARLIEST_BLOCK_SLOT_AVAILABLE", getEarliestFinalizedBlockSlot().map(Objects::toString))
         .put(
             "FIRST_CUSTODY_INCOMPLETE_SLOT", getFirstCustodyIncompleteSlot().map(Objects::toString))
-        .put(
-            "FIRST_SAMPLER_INCOMPLETE_SLOT", getFirstSamplerIncompleteSlot().map(Objects::toString))
         .put("MIN_GENESIS_TIME_BLOCK", getMinGenesisTimeBlock().map(Objects::toString))
         .put(
             "OPTIMISTIC_TRANSITION_BLOCK_SLOT",
@@ -608,11 +606,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   public Optional<UInt64> getFirstCustodyIncompleteSlot() {
     return db.get(schema.getVariableFirstCustodyIncompleteSlot());
-  }
-
-  @Override
-  public Optional<UInt64> getFirstSamplerIncompleteSlot() {
-    return db.get(schema.getVariableFirstSamplerIncompleteSlot());
   }
 
   @Override
@@ -960,11 +953,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     @Override
     public void setFirstCustodyIncompleteSlot(final UInt64 slot) {
       transaction.put(schema.getVariableFirstCustodyIncompleteSlot(), slot);
-    }
-
-    @Override
-    public void setFirstSamplerIncompleteSlot(final UInt64 slot) {
-      transaction.put(schema.getVariableFirstSamplerIncompleteSlot(), slot);
     }
 
     @Override

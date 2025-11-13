@@ -642,6 +642,18 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withSubscribeAllCustodySubnetsEnabled() {
+    LOG.debug("p2p-subscribe-all-custody-subnets-enabled: {}", true);
+    configMap.put("p2p-subscribe-all-custody-subnets-enabled", true);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withCheckpointSyncUrl(final String checkpointSyncUrl) {
+    LOG.debug("checkpoint-sync-url: {}", checkpointSyncUrl);
+    configMap.put("checkpoint-sync-url", checkpointSyncUrl);
+    return this;
+  }
+
   private TekuNodeConfigBuilder withPrivateKey(final PrivKey privKey) throws IOException {
     mustBe(NodeType.BEACON_NODE, NodeType.BOOTNODE);
     this.maybePrivKey = Optional.ofNullable(privKey);
