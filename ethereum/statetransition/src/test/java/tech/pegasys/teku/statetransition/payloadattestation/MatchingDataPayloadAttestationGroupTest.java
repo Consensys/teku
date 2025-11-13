@@ -50,6 +50,18 @@ class MatchingDataPayloadAttestationGroupTest {
   }
 
   @Test
+  public void doesNotAddPayloadAttestationMessageIfValidatorIndexHasAlreadyBeenAdded() {
+    final PayloadAttestationMessage message =
+        payloadAttestationMessageSchema.create(
+            UInt64.ONE, data, dataStructureUtil.randomSignature());
+
+    assertThat(payloadAttestationGroup.add(message)).isTrue();
+    assertThat(payloadAttestationGroup.size()).isOne();
+    assertThat(payloadAttestationGroup.add(message)).isFalse();
+    assertThat(payloadAttestationGroup.size()).isOne();
+  }
+
+  @Test
   public void failsIfCreatingAggregatedPayloadAttestationWhenNoAttestationsAdded() {
     assertThatThrownBy(
             () -> payloadAttestationGroup.createAggregatedPayloadAttestation(IntList.of(1, 2, 3)))
@@ -82,5 +94,26 @@ class MatchingDataPayloadAttestationGroupTest {
     assertThat(aggregatedPayloadAttestation.getAggregationBits().streamAllSetBits())
         .containsExactly(1, 3, 5);
     assertThat(aggregatedPayloadAttestation.getData()).isEqualTo(data);
+  }
+
+  @Test
+  public void createsAggregatedPayloadAttestationWhenPtcHasSameValidatorMultipleTimes() {
+    final IntList ptc = IntList.of(42, 1, 42, 42, 3);
+
+    final PayloadAttestationMessage message1 =
+        payloadAttestationMessageSchema.create(
+            UInt64.valueOf(42), data, dataStructureUtil.randomSignature());
+    final PayloadAttestationMessage message2 =
+        payloadAttestationMessageSchema.create(
+            UInt64.valueOf(3), data, dataStructureUtil.randomSignature());
+
+    payloadAttestationGroup.add(message1);
+    payloadAttestationGroup.add(message2);
+
+    final PayloadAttestation aggregatedPayloadAttestation =
+        payloadAttestationGroup.createAggregatedPayloadAttestation(ptc);
+
+    assertThat(aggregatedPayloadAttestation.getAggregationBits().streamAllSetBits())
+        .containsExactly(0, 2, 3, 4);
   }
 }
