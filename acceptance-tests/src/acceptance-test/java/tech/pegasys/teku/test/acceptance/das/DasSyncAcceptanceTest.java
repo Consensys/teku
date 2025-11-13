@@ -30,7 +30,6 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 public class DasSyncAcceptanceTest extends AcceptanceTestBase {
 
   private final int subnetCount = 128;
-  private final int defaultCustodySubnetCount = 4;
   private final int fuluEpoch = 1;
 
   @Test
@@ -41,7 +40,7 @@ public class DasSyncAcceptanceTest extends AcceptanceTestBase {
         createTekuBeaconNode(
             createConfigBuilder()
                 .withRealNetwork()
-                .withDasExtraCustodyGroupCount(subnetCount - defaultCustodySubnetCount)
+                .withCustodyGroupCountOverride(subnetCount)
                 .build());
 
     primaryNode.start();
