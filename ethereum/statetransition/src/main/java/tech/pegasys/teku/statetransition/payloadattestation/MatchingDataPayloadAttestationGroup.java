@@ -15,8 +15,6 @@ package tech.pegasys.teku.statetransition.payloadattestation;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
@@ -74,17 +72,17 @@ class MatchingDataPayloadAttestationGroup {
 
   PayloadAttestation createAggregatedPayloadAttestation(final IntList ptc) {
     checkArgument(!payloadAttestationMessages.isEmpty(), "Nothing to aggregate");
-    // use a snapshot to avoid any concurrent additions
-    final Int2ObjectMap<PayloadAttestationMessage> payloadAttestationMessagesSnapshot =
-        new Int2ObjectOpenHashMap<>(payloadAttestationMessages);
     // relative positions of the validator indices with respect to the PTC
     final IntList setBitIndices = new IntArrayList();
     final List<BLSSignature> signatures = new ArrayList<>();
     for (int ptcPosition = 0; ptcPosition < ptc.size(); ptcPosition++) {
       final int validatorIndex = ptc.getInt(ptcPosition);
-      if (payloadAttestationMessagesSnapshot.containsKey(validatorIndex)) {
+      // check if we have received a payload attestation message for the validator in the PTC
+      final PayloadAttestationMessage payloadAttestationMessage =
+          payloadAttestationMessages.get(validatorIndex);
+      if (payloadAttestationMessage != null) {
         setBitIndices.add(ptcPosition);
-        signatures.add(payloadAttestationMessagesSnapshot.get(validatorIndex).getSignature());
+        signatures.add(payloadAttestationMessage.getSignature());
       }
     }
     final PayloadAttestationSchema payloadAttestationSchema =
