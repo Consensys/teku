@@ -464,9 +464,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
       ExecutionProofsAvailabilityCheckerFactory availabilityCheckerFactory =
           executionProofsAvailabilityCheckerFactory.get();
-      availabilityCheckerFactory.setDelegate(originalAvailabilityChecker);
-
-      availabilityChecker = availabilityCheckerFactory.createAvailabilityChecker(block);
+      availabilityChecker = availabilityCheckerFactory.createAvailabilityChecker(block,originalAvailabilityChecker);
     } else {
       availabilityChecker = originalAvailabilityChecker;
     }
