@@ -372,12 +372,26 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getProposerDuties_shouldFailForEpochTooFarAhead() {
-    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(2));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(3));
 
     final SafeFuture<Optional<ProposerDuties>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void getProposerDuties_shouldReturnDutiesForNextEpoch() {
+    final BeaconState state = createStateWithActiveValidators(epochStartSlot);
+    when(chainDataClient.getStateAtSlotExact(epochStartSlot))
+        .thenReturn(completedFuture(Optional.of(state)));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
+
+    final SafeFuture<Optional<ProposerDuties>> result =
+        validatorApiHandler.getProposerDuties(EPOCH.increment());
+    final ProposerDuties duties = assertCompletedSuccessfully(result).orElseThrow();
+    assertThat(duties.getDuties().size()).isEqualTo(spec.slotsPerEpoch(EPOCH.increment()));
+    assertThat(duties.getDependentRoot()).isEqualTo(spec.getCurrentDutyDependentRoot(state));
   }
 
   @Test
@@ -395,24 +409,11 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void getProposerDuties_shouldAllowOneEpochTolerance() {
-    final BeaconState state = createStateWithActiveValidators(epochStartSlot);
-    when(chainDataClient.getStateAtSlotExact(epochStartSlot))
-        .thenReturn(completedFuture(Optional.of(state)));
-    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(1));
-
-    final SafeFuture<Optional<ProposerDuties>> result =
-        validatorApiHandler.getProposerDuties(EPOCH);
-    final Optional<ProposerDuties> duties = assertCompletedSuccessfully(result);
-    assertThat(duties.orElseThrow().getDuties().size()).isEqualTo(spec.slotsPerEpoch(EPOCH));
-  }
-
-  @Test
   void getProposerDuties_shouldReturnDutiesInOrder() {
     final BeaconState state = createStateWithActiveValidators(epochStartSlot);
     when(chainDataClient.getStateAtSlotExact(epochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
-    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(1));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
 
     final SafeFuture<Optional<ProposerDuties>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
