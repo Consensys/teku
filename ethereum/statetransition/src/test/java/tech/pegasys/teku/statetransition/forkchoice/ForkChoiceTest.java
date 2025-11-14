@@ -172,7 +172,8 @@ class ForkChoiceTest {
             transitionBlockValidator,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             debugDataDumper,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     // Starting and mocks
     when(transitionBlockValidator.verifyAncestorTransitionBlock(any()))
@@ -422,7 +423,8 @@ class ForkChoiceTest {
             transitionBlockValidator,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             DebugDataDumper.NOOP,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
     final UInt64 lateBlockSlot = currentSlot.minus(1);

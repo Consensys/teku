@@ -204,6 +204,7 @@ import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofGenerator
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofGeneratorImpl;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManagerImpl;
+import tech.pegasys.teku.statetransition.forkchoice.ExecutionProofsAvailabilityCheckerFactory;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
@@ -378,6 +379,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ExecutionPayloadBidManager executionPayloadBidManager;
   protected volatile ExecutionPayloadManager executionPayloadManager;
   protected volatile ExecutionProofManager executionProofManager;
+  protected volatile Optional<ExecutionProofsAvailabilityCheckerFactory>
+      executionProofsAvailabilityCheckerFactory;
   protected volatile Optional<DasCustodySync> dasCustodySync = Optional.empty();
   protected volatile Optional<DataColumnSidecarRetriever> recoveringSidecarRetriever =
       Optional.empty();
@@ -727,10 +730,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
               zkConfig.generateExecutionProofsEnabled(),
               zkConfig.statelessMinProofsRequired(),
               zkConfig.proofDelayDurationInMs(),
-              executionProofAsyncRunner.get());
-
+              executionProofAsyncRunner.get(),
+              spec);
+      executionProofsAvailabilityCheckerFactory =
+          Optional.of(new ExecutionProofsAvailabilityCheckerFactory(executionProofManager));
     } else {
       executionProofManager = ExecutionProofManager.NOOP;
+      executionProofsAvailabilityCheckerFactory = Optional.empty();
     }
   }
 
@@ -1373,7 +1379,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             new MergeTransitionBlockValidator(spec, recentChainData),
             beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
             debugDataDumper,
-            metricsSystem);
+            metricsSystem,
+            executionProofsAvailabilityCheckerFactory);
     forkChoiceTrigger =
         new ForkChoiceTrigger(
             forkChoice,

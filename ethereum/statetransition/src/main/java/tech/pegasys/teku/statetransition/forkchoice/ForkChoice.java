@@ -111,6 +111,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   private final DebugDataDumper debugDataDumper;
 
+  private final Optional<ExecutionProofsAvailabilityCheckerFactory>
+      executionProofsAvailabilityCheckerFactory;
+
   public ForkChoice(
       final Spec spec,
       final EventThread forkChoiceExecutor,
@@ -121,7 +124,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final MergeTransitionBlockValidator transitionBlockValidator,
       final boolean forkChoiceLateBlockReorgEnabled,
       final DebugDataDumper debugDataDumper,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final Optional<ExecutionProofsAvailabilityCheckerFactory>
+          executionProofsAvailabilityCheckerFactory) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.forkChoiceStateProvider = forkChoiceStateProvider;
@@ -143,6 +148,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             "selected_source");
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
+    this.executionProofsAvailabilityCheckerFactory = executionProofsAvailabilityCheckerFactory;
   }
 
   @VisibleForTesting
@@ -163,7 +169,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         transitionBlockValidator,
         false,
         DebugDataDumper.NOOP,
-        metricsSystem);
+        metricsSystem,
+        Optional.empty());
   }
 
   @Override
@@ -449,8 +456,19 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final CapturingIndexedAttestationCache indexedAttestationCache =
         IndexedAttestationCache.capturing();
 
-    final AvailabilityChecker<?> availabilityChecker =
+    final AvailabilityChecker<?> originalAvailabilityChecker =
         forkChoiceUtil.createAvailabilityChecker(block);
+
+    final AvailabilityChecker<?> availabilityChecker;
+    if (executionProofsAvailabilityCheckerFactory.isPresent()) {
+
+      ExecutionProofsAvailabilityCheckerFactory availabilityCheckerFactory =
+          executionProofsAvailabilityCheckerFactory.get();
+      availabilityChecker =
+          availabilityCheckerFactory.createAvailabilityChecker(block, originalAvailabilityChecker);
+    } else {
+      availabilityChecker = originalAvailabilityChecker;
+    }
 
     availabilityChecker.initiateDataAvailabilityCheck();
 

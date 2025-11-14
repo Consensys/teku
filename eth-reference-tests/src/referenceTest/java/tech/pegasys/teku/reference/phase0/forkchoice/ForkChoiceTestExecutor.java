@@ -187,7 +187,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             transitionBlockValidator,
             true,
             DebugDataDumper.NOOP,
-            storageSystem.getMetricsSystem());
+            storageSystem.getMetricsSystem(),
+            Optional.empty());
     final ExecutionLayerChannelStub executionLayer = new ExecutionLayerChannelStub(spec, false);
 
     try {

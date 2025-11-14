@@ -30,13 +30,12 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
-import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
-import tech.pegasys.teku.statetransition.forkchoice.ExecutionProofsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.validation.ExecutionProofGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
@@ -58,6 +57,7 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
   private final AsyncRunner asyncRunner;
   private final boolean isProofGenerationEnabled;
   private final int minProofsRequired;
+  private final Spec spec;
 
   public ExecutionProofManagerImpl(
       final ExecutionProofGossipValidator executionProofGossipValidator,
@@ -66,7 +66,8 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
       final boolean isProofGenerationEnabled,
       final int minProofsRequired,
       final Duration proofGenerationDelay,
-      final AsyncRunner asyncRunner) {
+      final AsyncRunner asyncRunner,
+      final Spec spec) {
     this.executionProofGossipValidator = executionProofGossipValidator;
     this.onCreatedProof = onCreatedProof;
     this.isProofGenerationEnabled = isProofGenerationEnabled;
@@ -74,6 +75,7 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
     this.executionProofGenerator = executionProofGenerator;
     this.proofGenerationDelay = proofGenerationDelay;
     this.asyncRunner = asyncRunner;
+    this.spec = spec;
   }
 
   @Override
@@ -119,23 +121,41 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
   }
 
   @Override
-  public AvailabilityChecker<ExecutionProof> createAvailabilityChecker(
-      final SignedBeaconBlock block) {
-    return new ExecutionProofsAvailabilityChecker(this, block);
-  }
-
-  @Override
   public SafeFuture<DataAndValidationResult<ExecutionProof>> validateBlockWithExecutionProofs(
       final SignedBeaconBlock block) {
-    for (int attempt = 0; attempt < attemptsToGetProof; attempt++) {
-      final DataAndValidationResult<ExecutionProof> result = checkForValidProofs(block);
-      if (result.isValid()) {
-        return SafeFuture.completedFuture(result);
-      }
-    }
-    LOG.debug("Checking proofs for block {}", block.getRoot());
 
-    return SafeFuture.completedFuture(DataAndValidationResult.notAvailable());
+    return asyncRunner.runAsync(
+        () -> {
+          SafeFuture<DataAndValidationResult<ExecutionProof>> validationResult = new SafeFuture<>();
+          LOG.debug("starting validation of execution proofs for block {}", block.getRoot());
+          for (int attempt = 0; attempt < attemptsToGetProof; attempt++) {
+            final DataAndValidationResult<ExecutionProof> result = checkForValidProofs(block);
+            if (result.isValid()) {
+              LOG.debug(
+                  "Found valid proofs for block {} on attempt {}", block.getRoot(), attempt + 1);
+              validationResult = SafeFuture.completedFuture(result);
+              break;
+            } else {
+              if (attempt == attemptsToGetProof - 1) {
+                validationResult =
+                    SafeFuture.completedFuture(
+                        DataAndValidationResult.notAvailable(
+                            new RuntimeException(
+                                "No valid execution proofs found for block " + block.getRoot())));
+              }
+            }
+            try {
+              // sleep for a 1/4 of the slot time based
+              Thread.sleep(spec.getSlotDurationMillis(block.getSlot()) / 4);
+            } catch (InterruptedException e) {
+              LOG.debug("Interrupted while waiting for validation of proofs");
+              throw new RuntimeException(e);
+            }
+          }
+          LOG.debug("Checking proofs for block {}", block.getRoot());
+
+          return validationResult;
+        });
   }
 
   private DataAndValidationResult<ExecutionProof> checkForValidProofs(
