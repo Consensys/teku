@@ -13,14 +13,12 @@
 
 package tech.pegasys.teku.kzg;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_PROOF;
 
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
-import org.apache.tuweni.ssz.SSZ;
 
 public final class KZGProof {
   public static final int SIZE = BYTES_PER_PROOF;
@@ -28,15 +26,6 @@ public final class KZGProof {
 
   public static KZGProof fromHexString(final String hexString) {
     return KZGProof.fromBytesCompressed(Bytes48.fromHexString(hexString));
-  }
-
-  public static KZGProof fromSSZBytes(final Bytes bytes) {
-    checkArgument(
-        bytes.size() == BYTES_PER_PROOF,
-        "Expected " + BYTES_PER_PROOF + " bytes but received %s.",
-        bytes.size());
-    return SSZ.decode(
-        bytes, reader -> new KZGProof(Bytes48.wrap(reader.readFixedBytes(BYTES_PER_PROOF))));
   }
 
   public static KZGProof fromBytesCompressed(final Bytes48 bytes) throws IllegalArgumentException {
@@ -57,15 +46,6 @@ public final class KZGProof {
 
   public KZGProof(final Bytes48 bytesCompressed) {
     this.bytesCompressed = bytesCompressed;
-  }
-
-  /**
-   * Returns the SSZ serialization of the <em>compressed</em> form of the proof
-   *
-   * @return the serialization of the compressed form of the proof.
-   */
-  public Bytes toSSZBytes() {
-    return SSZ.encode(writer -> writer.writeFixedBytes(getBytesCompressed()));
   }
 
   public Bytes48 getBytesCompressed() {

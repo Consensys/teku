@@ -26,6 +26,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
@@ -192,7 +193,7 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<UInt64> getLastDataColumnSidecarsProofsSlot();
 
-  Optional<Bytes> getDataColumnSidecarsProofs(UInt64 slot);
+  Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(UInt64 slot);
 
   interface CombinedUpdater extends HotUpdater, FinalizedUpdater {}
 
@@ -309,7 +310,7 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void removeNonCanonicalSidecar(DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier);
 
-    void addDataColumnSidecarsProofs(UInt64 slot, Bytes kzgProofs);
+    void addDataColumnSidecarsProofs(UInt64 slot, List<List<KZGProof>> kzgProofs);
 
     void removeDataColumnSidecarsProofs(UInt64 slot);
 

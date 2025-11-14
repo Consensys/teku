@@ -28,6 +28,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
@@ -376,7 +377,7 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
-  public Optional<Bytes> getDataColumnSidecarsProofs(final UInt64 slot) {
+  public Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(final UInt64 slot) {
     return finalizedDao.getDataColumnSidecarProofs(slot);
   }
 
@@ -705,7 +706,8 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
-    public void addDataColumnSidecarsProofs(final UInt64 slot, final Bytes kzgProofs) {
+    public void addDataColumnSidecarsProofs(
+        final UInt64 slot, final List<List<KZGProof>> kzgProofs) {
       finalizedUpdater.addDataColumnSidecarsProofs(slot, kzgProofs);
     }
 

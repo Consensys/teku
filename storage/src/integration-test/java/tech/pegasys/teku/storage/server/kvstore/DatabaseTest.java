@@ -45,7 +45,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -63,9 +62,12 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -79,6 +81,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
@@ -86,6 +89,7 @@ import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.generator.ChainProperties;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
@@ -2603,13 +2607,22 @@ public class DatabaseTest {
     initialize(context);
 
     final SignedBeaconBlockHeader header = dataStructureUtil.randomSignedBeaconBlockHeader();
-    final List<DataColumnSidecar> dataColumnSidecars =
-        IntStream.range(64, 128)
-            .mapToObj(
-                index -> dataStructureUtil.randomDataColumnSidecar(header, UInt64.valueOf(index)))
+    // we need to build sidecars with the same number of cells in each
+    final List<KZGCommitment> kzgCommitments = dataStructureUtil.randomKZGCommitments(14);
+    final SszList<SszKZGCommitment> sszKZGCommitments =
+        SchemaDefinitionsFulu.required(spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions())
+            .getDataColumnSidecarSchema()
+            .getKzgCommitmentsSchema()
+            .createFromElements(kzgCommitments.stream().map(SszKZGCommitment::new).toList());
+    final List<DataColumnSidecar> dataColumnSidecarsExtension =
+        Stream.iterate(UInt64.valueOf(64), UInt64::increment)
+            .limit(64)
+            .map(
+                index ->
+                    dataStructureUtil.randomDataColumnSidecar(header, sszKZGCommitments, index))
             .toList();
-    final List<List<KZGProof>> expectedKzgProofs =
-        dataColumnSidecars.stream()
+    final List<List<KZGProof>> expectedProofs =
+        dataColumnSidecarsExtension.stream()
             .map(
                 dataColumnSidecar ->
                     dataColumnSidecar.getKzgProofs().stream()
@@ -2620,14 +2633,17 @@ public class DatabaseTest {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.addDataColumnSidecarsProofs(
           header.getMessage().getSlot(),
-          spec.serializeDataColumnSidecarsProofs(dataColumnSidecars));
+          dataColumnSidecarsExtension.stream()
+              .map(
+                  sidecar -> sidecar.getKzgProofs().stream().map(SszKZGProof::getKZGProof).toList())
+              .toList());
       updater.commit();
     }
 
     assertThat(database.getLastDataColumnSidecarsProofsSlot())
         .contains(header.getMessage().getSlot());
     assertThat(database.getDataColumnSidecarsProofs(header.getMessage().getSlot()))
-        .contains(expectedKzgProofs);
+        .contains(expectedProofs);
 
     // remove it
     try (final FinalizedUpdater updater = finalizedUpdater()) {
