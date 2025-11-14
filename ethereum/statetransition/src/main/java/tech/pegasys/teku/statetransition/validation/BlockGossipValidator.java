@@ -221,12 +221,13 @@ public class BlockGossipValidator {
     /*
      * [REJECT] The length of KZG commitments is less than or equal to the limitation defined in Consensus Layer
      */
-    final Optional<SszList<SszKZGCommitment>> blobKzgCommitmentsCount =
+    final Optional<SszList<SszKZGCommitment>> blobKzgCommitments =
         block.getMessage().getBody().getOptionalBlobKzgCommitments();
-    if (blobKzgCommitmentsCount.isPresent()) {
+    if (blobKzgCommitments.isPresent()) {
       final Integer maxBlobsPerBlock =
           spec.getMaxBlobsPerBlockAtSlot(block.getSlot()).orElseThrow();
-      if (blobKzgCommitmentsCount.get().size() > maxBlobsPerBlock) {
+      final int blobKzgCommitmentsCount = blobKzgCommitments.get().size();
+      if (blobKzgCommitmentsCount > maxBlobsPerBlock) {
         LOG.trace(
             "BlockValidator: Block has {} kzg commitments, max allowed {}",
             blobKzgCommitmentsCount,
@@ -234,7 +235,7 @@ public class BlockGossipValidator {
         return Optional.of(
             reject(
                 "Block has %d kzg commitments, max allowed %d",
-                blobKzgCommitmentsCount.get().size(), maxBlobsPerBlock));
+                blobKzgCommitmentsCount, maxBlobsPerBlock));
       }
     }
     return Optional.empty();
@@ -258,46 +259,34 @@ public class BlockGossipValidator {
   }
 
   private Optional<InternalValidationResult> validatePayload(
-      final SignedBeaconBlock block, final BeaconState state) {
-    final MiscHelpers miscHelpers = spec.atSlot(block.getSlot()).miscHelpers();
+      final SignedBeaconBlock block, final BeaconState parentState) {
     final Optional<SignedExecutionPayloadBid> maybeSignedExecutionPayloadBid =
         block.getMessage().getBody().getOptionalSignedExecutionPayloadBid();
-
     if (maybeSignedExecutionPayloadBid.isPresent()) {
-      final ExecutionPayloadBid executionPayloadBid =
-          maybeSignedExecutionPayloadBid.get().getMessage();
-      final BeaconStateGloas parentStateGloas = BeaconStateGloas.required(state);
-      /*
-       * [REJECT] The block's execution payload parent (defined by bid.parent_block_hash) passes all validation
-       */
-      if (!executionPayloadBid.getParentBlockHash().equals(parentStateGloas.getLatestBlockHash())) {
-        return Optional.of(
-            reject(
-                "Execution payload bid has invalid parent block hash %s, expecting %s",
-                executionPayloadBid.getParentBlockHash().toHexString(),
-                parentStateGloas.getLatestBlockHash().toHexString()));
-      }
-      /*
-       * [REJECT] The bid's parent (defined by bid.parent_block_root) equals the block's parent (defined by block.parent_root)
-       */
-      if (!executionPayloadBid.getParentBlockRoot().equals(block.getParentRoot())) {
-        return Optional.of(
-            reject(
-                "Execution payload has invalid parent block root %s, expecting %s",
-                executionPayloadBid.getParentBlockRoot().toHexString(),
-                block.getParentRoot().toHexString()));
-      }
-    } else if (miscHelpers.isMergeTransitionComplete(state)) {
-      final Optional<ExecutionPayload> payload =
+      return validateExecutionPayloadBid(
+          block.getParentRoot(), parentState, maybeSignedExecutionPayloadBid.get());
+    } else {
+      return validateExecutionPayload(block, parentState);
+    }
+  }
+
+  private Optional<InternalValidationResult> validateExecutionPayload(
+      final SignedBeaconBlock block, final BeaconState parentState) {
+    final MiscHelpers miscHelpers = spec.atSlot(block.getSlot()).miscHelpers();
+    if (miscHelpers.isMergeTransitionComplete(parentState)) {
+      final Optional<ExecutionPayload> executionPayload =
           block.getMessage().getBody().getOptionalExecutionPayload();
-      if (payload.isEmpty()) {
+      if (executionPayload.isEmpty()) {
         return Optional.of(reject("Missing execution payload"));
       }
       /*
        * [REJECT] The block's execution payload timestamp is correct with respect to the slot
        * -- i.e. execution_payload.timestamp == compute_time_at_slot(state, block.slot)
        */
-      if (payload.get().getTimestamp().compareTo(spec.computeTimeAtSlot(state, block.getSlot()))
+      if (executionPayload
+              .get()
+              .getTimestamp()
+              .compareTo(spec.computeTimeAtSlot(parentState, block.getSlot()))
           != 0) {
         return Optional.of(
             reject("Execution Payload timestamp is not consistent with block slot time"));
@@ -306,12 +295,41 @@ public class BlockGossipValidator {
     return Optional.empty();
   }
 
+  private Optional<InternalValidationResult> validateExecutionPayloadBid(
+      final Bytes32 blockParentRoot,
+      final BeaconState parentState,
+      final SignedExecutionPayloadBid signedExecutionPayloadBid) {
+    final ExecutionPayloadBid executionPayloadBid = signedExecutionPayloadBid.getMessage();
+    final BeaconStateGloas parentStateGloas = BeaconStateGloas.required(parentState);
+    /*
+     * [REJECT] The block's execution payload parent (defined by bid.parent_block_hash) passes all validation
+     */
+    if (!executionPayloadBid.getParentBlockHash().equals(parentStateGloas.getLatestBlockHash())) {
+      return Optional.of(
+          reject(
+              "Execution payload bid has invalid parent block hash %s, expecting %s",
+              executionPayloadBid.getParentBlockHash().toHexString(),
+              parentStateGloas.getLatestBlockHash().toHexString()));
+    }
+    /*
+     * [REJECT] The bid's parent (defined by bid.parent_block_root) equals the block's parent (defined by block.parent_root)
+     */
+    if (!executionPayloadBid.getParentBlockRoot().equals(blockParentRoot)) {
+      return Optional.of(
+          reject(
+              "Execution payload has invalid parent block root %s, expecting %s",
+              executionPayloadBid.getParentBlockRoot().toHexString(),
+              blockParentRoot.toHexString()));
+    }
+    return Optional.empty();
+  }
+
   private Optional<InternalValidationResult> validateSignature(
-      final SignedBeaconBlock block, final BeaconState state) {
+      final SignedBeaconBlock block, final BeaconState parentState) {
     /*
      * [REJECT] The proposer signature, signed_beacon_block.signature, is valid with respect to the proposer_index pubkey.
      */
-    if (!blockSignatureIsValidWithRespectToProposerIndex(block, state)) {
+    if (!blockSignatureIsValidWithRespectToProposerIndex(block, parentState)) {
       return Optional.of(reject("Block signature is invalid"));
     }
     return Optional.empty();
