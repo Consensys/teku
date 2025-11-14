@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.kvstore.serialization;
 
+import java.util.List;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -21,6 +22,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranchInfo;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -59,6 +61,8 @@ public interface KvStoreSerializer<T> {
           new SlotAndBlockRootAndBlobIndexKeySerializer();
   KvStoreSerializer<DataColumnSlotAndIdentifier> COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER =
       new ColumnSlotAndIdentifierKeySerializer();
+  KvStoreSerializer<List<List<KZGProof>>> DATA_COLUMN_SIDECARS_PROOFS_SERIALIZER =
+      new DataColumnSidecarsProofsSerializer();
 
   static KvStoreSerializer<BeaconState> createStateSerializer(final Spec spec) {
     return new BeaconStateSerializer(spec);
