@@ -47,11 +47,9 @@ import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 
 public class BlockGossipValidator {
   private static final Logger LOG = LogManager.getLogger();
-
   private final Spec spec;
   private final GossipValidationHelper gossipValidationHelper;
   private final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher;
-
   private final Map<SlotAndProposer, Bytes32> receivedValidBlockRoots =
       LimitedMap.createNonSynchronized(VALID_BLOCK_SET_SIZE);
 
@@ -85,6 +83,60 @@ public class BlockGossipValidator {
   private SafeFuture<InternalValidationResult> internalValidate(
       final SignedBeaconBlock block, final boolean markAsReceived) {
 
+    // Phase 1: Perform cheap, stateless checks
+    final Optional<InternalValidationResult> statelessValidationResult =
+        performStatelessValidation(block);
+    if (statelessValidationResult.isPresent()) {
+      return completedFuture(statelessValidationResult.get());
+    }
+
+    // Phase 2: Load parent state and perform stateful checks
+    final UInt64 parentSlot =
+        gossipValidationHelper.getSlotForBlockRoot(block.getParentRoot()).orElseThrow();
+    return gossipValidationHelper
+        .getParentStateInBlockEpoch(parentSlot, block.getParentRoot(), block.getSlot())
+        .thenApply(
+            maybeParentState -> performStatefulValidation(block, maybeParentState, markAsReceived));
+  }
+
+  private Optional<InternalValidationResult> performStatelessValidation(
+      final SignedBeaconBlock block) {
+    return validateSlotIsAfterFinalized(block)
+        .or(
+            () ->
+                convertEquivocationResultToValidationResult(
+                    performBlockEquivocationCheck(false, block)))
+        .or(() -> validateSlotIsNotFromFuture(block))
+        .or(() -> validateBlockIsNew(block))
+        .or(() -> validateParentIsAvailable(block))
+        .or(() -> validateFinalizedCheckpointIsAncestor(block))
+        .or(() -> validateParentSlot(block))
+        .or(() -> validateKzgCommitments(block));
+  }
+
+  private InternalValidationResult performStatefulValidation(
+      final SignedBeaconBlock block,
+      final Optional<BeaconState> maybeParentState,
+      final boolean markAsReceived) {
+
+    if (maybeParentState.isEmpty()) {
+      LOG.trace("Block was available but state wasn't. Must have been pruned by finalized.");
+      return InternalValidationResult.IGNORE;
+    }
+    final BeaconState parentState = maybeParentState.get();
+
+    return validateProposer(block, parentState)
+        .or(() -> validatePayload(block, parentState))
+        .or(() -> validateSignature(block, parentState))
+        .or(
+            () ->
+                convertEquivocationResultToValidationResult(
+                    performBlockEquivocationCheck(markAsReceived, block)))
+        .orElse(InternalValidationResult.ACCEPT);
+  }
+
+  private Optional<InternalValidationResult> validateSlotIsAfterFinalized(
+      final SignedBeaconBlock block) {
     /*
      * [IGNORE] The block is from a slot greater than the latest finalized slot -- i.e. validate that
      * signed_beacon_block.message.slot > compute_start_slot_at_epoch(store.finalized_checkpoint.epoch)
@@ -92,50 +144,60 @@ public class BlockGossipValidator {
      * -- e.g. slashing detection, archive nodes, etc).
      */
     if (gossipValidationHelper.isSlotFinalized(block.getSlot())) {
-      LOG.trace("BlockValidator: Block is too old. It will be dropped");
-      return completedFuture(InternalValidationResult.IGNORE);
+      LOG.trace("BlockValidator: Block slot {} is finalized. Dropping.", block.getSlot());
+      return Optional.of(InternalValidationResult.IGNORE);
     }
+    return Optional.empty();
+  }
 
-    final InternalValidationResult intermediateValidationResult =
-        equivocationCheckResultToInternalValidationResult(
-            performBlockEquivocationCheck(false, block));
-
-    if (!intermediateValidationResult.isAccept()) {
-      return completedFuture(intermediateValidationResult);
-    }
-
+  private Optional<InternalValidationResult> validateSlotIsNotFromFuture(
+      final SignedBeaconBlock block) {
     /*
      * [IGNORE] The block is not from a future slot (with a MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance)
      * -- i.e. validate that signed_beacon_block.message.slot <= current_slot
      * (a client MAY queue future blocks for processing at the appropriate slot).
      */
     if (gossipValidationHelper.isSlotFromFuture(block.getSlot())) {
-      LOG.trace("BlockValidator: Block is from the future. It will be saved for future processing");
-      return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+      LOG.trace("BlockValidator: Block is from the future. Saving for future processing.");
+      return Optional.of(InternalValidationResult.SAVE_FOR_FUTURE);
     }
+    return Optional.empty();
+  }
 
+  private Optional<InternalValidationResult> validateBlockIsNew(final SignedBeaconBlock block) {
     if (gossipValidationHelper.isBlockAvailable(block.getRoot())) {
-      LOG.trace("Block is already imported");
-      return completedFuture(InternalValidationResult.IGNORE);
+      LOG.trace("Block is already imported.");
+      return Optional.of(InternalValidationResult.IGNORE);
     }
+    return Optional.empty();
+  }
 
+  private Optional<InternalValidationResult> validateParentIsAvailable(
+      final SignedBeaconBlock block) {
     /*
      * [REJECT] The block's parent (defined by block.parent_root) passes validation.
      */
     if (!gossipValidationHelper.isBlockAvailable(block.getParentRoot())) {
-      LOG.trace("Block parent is not available. It will be saved for future processing");
-      return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+      LOG.trace("Block parent is not available. Saving for future processing.");
+      return Optional.of(InternalValidationResult.SAVE_FOR_FUTURE);
     }
+    return Optional.empty();
+  }
 
+  private Optional<InternalValidationResult> validateFinalizedCheckpointIsAncestor(
+      final SignedBeaconBlock block) {
     /*
      * [REJECT] The current finalized_checkpoint is an ancestor of block
      * -- i.e. get_checkpoint_block(store, block.parent_root, store.finalized_checkpoint.epoch) == store.finalized_checkpoint.root
      */
     if (!gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
         block.getSlot(), block.getParentRoot())) {
-      return completedFuture(reject("Block does not descend from finalized checkpoint"));
+      return Optional.of(reject("Block does not descend from finalized checkpoint"));
     }
+    return Optional.empty();
+  }
 
+  private Optional<InternalValidationResult> validateParentSlot(final SignedBeaconBlock block) {
     /*
      * [IGNORE] The block's parent (defined by block.parent_root) has been seen (via gossip or non-gossip sources)
      * (a client MAY queue blocks for processing once the parent block is retrieved).
@@ -143,129 +205,123 @@ public class BlockGossipValidator {
     final Optional<UInt64> maybeParentBlockSlot =
         gossipValidationHelper.getSlotForBlockRoot(block.getParentRoot());
     if (maybeParentBlockSlot.isEmpty()) {
-      LOG.trace(
-          "BlockValidator: Parent block does not exist. It will be saved for future processing");
-      return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+      LOG.trace("BlockValidator: Parent block does not exist. Saving for future processing.");
+      return Optional.of(InternalValidationResult.SAVE_FOR_FUTURE);
     }
-
     /*
      * [REJECT] The block is from a higher slot than its parent.
      */
-    final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
-    if (parentBlockSlot.isGreaterThanOrEqualTo(block.getSlot())) {
-      return completedFuture(reject("Parent block is after child block."));
+    if (maybeParentBlockSlot.get().isGreaterThanOrEqualTo(block.getSlot())) {
+      return Optional.of(reject("Parent block is after child block."));
     }
+    return Optional.empty();
+  }
 
-    final Optional<SignedExecutionPayloadBid> maybeSignedExecutionPayloadBid =
-        block.getMessage().getBody().getOptionalSignedExecutionPayloadBid();
-    if (maybeSignedExecutionPayloadBid.isEmpty()) {
-      /*
-       * [REJECT] The length of KZG commitments is less than or equal to the limitation defined in Consensus Layer
-       */
-      final Optional<SszList<SszKZGCommitment>> blobKzgCommitments =
-          block.getMessage().getBody().getOptionalBlobKzgCommitments();
-      if (blobKzgCommitments.isPresent()) {
-        final Integer maxBlobsPerBlock =
-            spec.getMaxBlobsPerBlockAtSlot(block.getSlot()).orElseThrow();
-        final int blobKzgCommitmentsCount = blobKzgCommitments.get().size();
-        if (blobKzgCommitmentsCount > maxBlobsPerBlock) {
-          LOG.trace(
-              "BlockValidator: Block has {} kzg commitments, max allowed {}",
-              blobKzgCommitmentsCount,
-              maxBlobsPerBlock);
-          return completedFuture(
-              reject(
-                  "Block has %d kzg commitments, max allowed %d",
-                  blobKzgCommitmentsCount, maxBlobsPerBlock));
-        }
+  private Optional<InternalValidationResult> validateKzgCommitments(final SignedBeaconBlock block) {
+    /*
+     * [REJECT] The length of KZG commitments is less than or equal to the limitation defined in Consensus Layer
+     */
+    final Optional<SszList<SszKZGCommitment>> blobKzgCommitmentsCount =
+        block.getMessage().getBody().getOptionalBlobKzgCommitments();
+    if (blobKzgCommitmentsCount.isPresent()) {
+      final Integer maxBlobsPerBlock =
+          spec.getMaxBlobsPerBlockAtSlot(block.getSlot()).orElseThrow();
+      if (blobKzgCommitmentsCount.get().size() > maxBlobsPerBlock) {
+        LOG.trace(
+            "BlockValidator: Block has {} kzg commitments, max allowed {}",
+            blobKzgCommitmentsCount,
+            maxBlobsPerBlock);
+        return Optional.of(
+            reject(
+                "Block has %d kzg commitments, max allowed %d",
+                blobKzgCommitmentsCount.get().size(), maxBlobsPerBlock));
       }
     }
+    return Optional.empty();
+  }
 
-    return gossipValidationHelper
-        .getParentStateInBlockEpoch(parentBlockSlot, block.getParentRoot(), block.getSlot())
-        .thenApply(
-            maybePostState -> {
-              if (maybePostState.isEmpty()) {
-                LOG.trace(
-                    "Block was available but state wasn't. Must have been pruned by finalized.");
-                return InternalValidationResult.IGNORE;
-              }
-              final BeaconState postState = maybePostState.get();
+  private Optional<InternalValidationResult> validateProposer(
+      final SignedBeaconBlock block, final BeaconState state) {
+    /*
+     * [REJECT] The block is proposed by the expected proposer_index for the block's slot in the context
+     * of the current shuffling (defined by parent_root/slot).
+     * If the proposer_index cannot immediately be verified against the expected shuffling,
+     * the block MAY be queued for later processing while proposers for the block's branch are calculated
+     * -- in such a case do not REJECT, instead IGNORE this message.
+     */
+    if (!gossipValidationHelper.isProposerTheExpectedProposer(
+        block.getProposerIndex(), block.getSlot(), state)) {
+      return Optional.of(
+          reject("Block proposed by incorrect proposer (%s)", block.getProposerIndex()));
+    }
+    return Optional.empty();
+  }
 
-              /*
-               * [REJECT] The block is proposed by the expected proposer_index for the block's slot in the context
-               * of the current shuffling (defined by parent_root/slot).
-               * If the proposer_index cannot immediately be verified against the expected shuffling,
-               * the block MAY be queued for later processing while proposers for the block's branch are calculated
-               * -- in such a case do not REJECT, instead IGNORE this message.
-               */
-              if (!gossipValidationHelper.isProposerTheExpectedProposer(
-                  block.getProposerIndex(), block.getSlot(), postState)) {
-                return reject(
-                    "Block proposed by incorrect proposer (%s)", block.getProposerIndex());
-              }
-              final MiscHelpers miscHelpers = spec.atSlot(block.getSlot()).miscHelpers();
-              if (maybeSignedExecutionPayloadBid.isPresent()) {
-                final ExecutionPayloadBid executionPayloadBid =
-                    maybeSignedExecutionPayloadBid.get().getMessage();
-                final BeaconStateGloas parentStateGloas = BeaconStateGloas.required(postState);
-                /*
-                 * [REJECT] The block's execution payload parent (defined by bid.parent_block_hash) passes all validation
-                 */
-                if (!executionPayloadBid
-                    .getParentBlockHash()
-                    .equals(parentStateGloas.getLatestBlockHash())) {
-                  return reject(
-                      "Execution payload bid has invalid parent block hash %s, expecting %s",
-                      executionPayloadBid.getParentBlockHash().toHexString(),
-                      parentStateGloas.getLatestBlockHash().toHexString());
-                }
-                /*
-                 * [REJECT] The bid's parent (defined by bid.parent_block_root) equals the block's parent (defined by block.parent_root)
-                 */
-                final Bytes32 executionPayloadBidParentRoot =
-                    executionPayloadBid.getParentBlockRoot();
-                if (!executionPayloadBidParentRoot.equals(block.getParentRoot())) {
-                  return reject(
-                      "Execution payload has invalid parent block root %s, expecting %s",
-                      executionPayloadBidParentRoot.toHexString(),
-                      block.getParentRoot().toHexString());
-                }
-              } else if (miscHelpers.isMergeTransitionComplete(postState)) {
-                Optional<ExecutionPayload> executionPayload =
-                    block.getMessage().getBody().getOptionalExecutionPayload();
+  private Optional<InternalValidationResult> validatePayload(
+      final SignedBeaconBlock block, final BeaconState state) {
+    final MiscHelpers miscHelpers = spec.atSlot(block.getSlot()).miscHelpers();
+    final Optional<SignedExecutionPayloadBid> maybeSignedExecutionPayloadBid =
+        block.getMessage().getBody().getOptionalSignedExecutionPayloadBid();
 
-                if (executionPayload.isEmpty()) {
-                  return reject("Missing execution payload");
-                }
+    if (maybeSignedExecutionPayloadBid.isPresent()) {
+      final ExecutionPayloadBid executionPayloadBid =
+          maybeSignedExecutionPayloadBid.get().getMessage();
+      final BeaconStateGloas parentStateGloas = BeaconStateGloas.required(state);
+      /*
+       * [REJECT] The block's execution payload parent (defined by bid.parent_block_hash) passes all validation
+       */
+      if (!executionPayloadBid.getParentBlockHash().equals(parentStateGloas.getLatestBlockHash())) {
+        return Optional.of(
+            reject(
+                "Execution payload bid has invalid parent block hash %s, expecting %s",
+                executionPayloadBid.getParentBlockHash().toHexString(),
+                parentStateGloas.getLatestBlockHash().toHexString()));
+      }
+      /*
+       * [REJECT] The bid's parent (defined by bid.parent_block_root) equals the block's parent (defined by block.parent_root)
+       */
+      if (!executionPayloadBid.getParentBlockRoot().equals(block.getParentRoot())) {
+        return Optional.of(
+            reject(
+                "Execution payload has invalid parent block root %s, expecting %s",
+                executionPayloadBid.getParentBlockRoot().toHexString(),
+                block.getParentRoot().toHexString()));
+      }
+    } else if (miscHelpers.isMergeTransitionComplete(state)) {
+      final Optional<ExecutionPayload> payload =
+          block.getMessage().getBody().getOptionalExecutionPayload();
+      if (payload.isEmpty()) {
+        return Optional.of(reject("Missing execution payload"));
+      }
+      /*
+       * [REJECT] The block's execution payload timestamp is correct with respect to the slot
+       * -- i.e. execution_payload.timestamp == compute_time_at_slot(state, block.slot)
+       */
+      if (payload.get().getTimestamp().compareTo(spec.computeTimeAtSlot(state, block.getSlot()))
+          != 0) {
+        return Optional.of(
+            reject("Execution Payload timestamp is not consistent with block slot time"));
+      }
+    }
+    return Optional.empty();
+  }
 
-                /*
-                 * [REJECT] The block's execution payload timestamp is correct with respect to the slot
-                 * -- i.e. execution_payload.timestamp == compute_time_at_slot(state, block.slot)
-                 */
-                if (executionPayload
-                        .get()
-                        .getTimestamp()
-                        .compareTo(spec.computeTimeAtSlot(postState, block.getSlot()))
-                    != 0) {
-                  return reject(
-                      "Execution Payload timestamp is not consistence with and block slot time");
-                }
-              }
+  private Optional<InternalValidationResult> validateSignature(
+      final SignedBeaconBlock block, final BeaconState state) {
+    /*
+     * [REJECT] The proposer signature, signed_beacon_block.signature, is valid with respect to the proposer_index pubkey.
+     */
+    if (!blockSignatureIsValidWithRespectToProposerIndex(block, state)) {
+      return Optional.of(reject("Block signature is invalid"));
+    }
+    return Optional.empty();
+  }
 
-              /*
-               * [REJECT] The proposer signature, signed_beacon_block.signature, is valid with respect to the proposer_index pubkey.
-               */
-              if (!blockSignatureIsValidWithRespectToProposerIndex(block, postState)) {
-                return reject("Block signature is invalid");
-              }
-
-              final EquivocationCheckResult secondEquivocationCheckResult =
-                  performBlockEquivocationCheck(markAsReceived, block);
-
-              return equivocationCheckResultToInternalValidationResult(
-                  secondEquivocationCheckResult);
-            });
+  private Optional<InternalValidationResult> convertEquivocationResultToValidationResult(
+      final EquivocationCheckResult equivocationCheckResult) {
+    final InternalValidationResult result =
+        equivocationCheckResultToInternalValidationResult(equivocationCheckResult);
+    return result.isAccept() ? Optional.empty() : Optional.of(result);
   }
 
   private InternalValidationResult equivocationCheckResultToInternalValidationResult(
@@ -320,7 +376,6 @@ public class BlockGossipValidator {
             postState.getFork(),
             postState.getGenesisValidatorsRoot());
     final Bytes signingRoot = spec.computeSigningRoot(block.getMessage(), domain);
-
     return gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
         signingRoot, block.getProposerIndex(), block.getSignature(), postState);
   }
