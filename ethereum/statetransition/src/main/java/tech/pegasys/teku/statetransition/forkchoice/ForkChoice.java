@@ -225,13 +225,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                     executionLayer));
   }
 
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878
   /** Import an execution payload to the store. */
   public SafeFuture<ExecutionPayloadImportResult> onExecutionPayload(
       final SignedExecutionPayloadEnvelope signedEnvelope,
       final ExecutionLayerChannel executionLayer) {
-    // just for local interop temporarily return successful import
-    return SafeFuture.completedFuture(ExecutionPayloadImportResult.successful(signedEnvelope));
+    return recentChainData
+        .retrieveStateAtSlot(signedEnvelope.getSlotAndBlockRoot())
+        .thenCompose(blockState -> onExecutionPayload(signedEnvelope, blockState, executionLayer));
   }
 
   public SafeFuture<AttestationProcessingResult> onAttestation(
@@ -476,7 +476,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             .thenPeek(
                 result -> {
                   LOG.debug(
-                      "Availability check for slot: {}, block_root: {} result: {}",
+                      "Data availability check for slot: {}, block_root: {} result: {}",
                       block.getSlot(),
                       block.getRoot(),
                       result.toLogString());
@@ -517,6 +517,70 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                           dataAndValidationResult),
                   forkChoiceExecutor);
             });
+  }
+
+  /**
+   * Import an execution payload to the store. The supplied {@code blockState} must be the
+   * post-state after processing the block whose root is the beacon block root of the execution
+   * payload
+   */
+  private SafeFuture<ExecutionPayloadImportResult> onExecutionPayload(
+      final SignedExecutionPayloadEnvelope signedEnvelope,
+      final Optional<BeaconState> blockState,
+      final ExecutionLayerChannel executionLayer) {
+    if (blockState.isEmpty()) {
+      return SafeFuture.completedFuture(
+          ExecutionPayloadImportResult.FAILED_UNKNOWN_BEACON_BLOCK_ROOT);
+    }
+
+    final ForkChoiceUtil forkChoiceUtil = spec.atSlot(signedEnvelope.getSlot()).getForkChoiceUtil();
+
+    // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 add a real data availability check
+    // (not required for devnet-0)
+    final AvailabilityChecker<?> availabilityChecker = AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR;
+
+    availabilityChecker.initiateDataAvailabilityCheck();
+
+    final ForkChoicePayloadExecutorGloas payloadExecutor =
+        ForkChoicePayloadExecutorGloas.create(signedEnvelope, executionLayer);
+
+    final BeaconState postState;
+    try {
+      postState =
+          spec.getExecutionPayloadProcessor(signedEnvelope.getSlot())
+              .processAndVerifyExecutionPayload(
+                  signedEnvelope, blockState.get(), Optional.of(payloadExecutor));
+    } catch (final StateTransitionException ex) {
+      final ExecutionPayloadImportResult result =
+          ExecutionPayloadImportResult.failedStateTransition(ex);
+      reportInvalidExecutionPayload(signedEnvelope, result);
+      return SafeFuture.completedFuture(result);
+    }
+
+    final SafeFuture<? extends DataAndValidationResult<?>> dataAndValidationResultFuture =
+        availabilityChecker
+            .getAvailabilityCheckResult()
+            .thenPeek(
+                result ->
+                    LOG.debug(
+                        "Data availability check for slot: {}, builder: {}, block_root: {} result: {}",
+                        signedEnvelope.getSlot(),
+                        signedEnvelope.getMessage().getBuilderIndex(),
+                        signedEnvelope.getMessage().getBeaconBlockRoot(),
+                        result.toLogString()));
+
+    return payloadExecutor
+        .getExecutionResult()
+        .thenCombineAsync(
+            dataAndValidationResultFuture,
+            (payloadResult, dataAndValidationResult) ->
+                importExecutionPayloadAndState(
+                    signedEnvelope,
+                    forkChoiceUtil,
+                    postState,
+                    payloadResult,
+                    dataAndValidationResult),
+            forkChoiceExecutor);
   }
 
   private BlockImportResult importBlockAndState(
@@ -562,15 +626,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
 
     switch (dataAndValidationResult.validationResult()) {
-      case VALID, NOT_REQUIRED ->
-          LOG.debug("Sidecars validation result: {}", dataAndValidationResult::toLogString);
       case NOT_AVAILABLE -> {
-        LOG.debug("Sidecars validation result: {}", dataAndValidationResult::toLogString);
         return BlockImportResult.failedDataAvailabilityCheckNotAvailable(
             dataAndValidationResult.cause());
       }
       case INVALID -> {
-        LOG.debug("Sidecars validation result: {}", dataAndValidationResult::toLogString);
         debugDataDumper.saveInvalidSidecars(dataAndValidationResult.data(), block);
         return BlockImportResult.failedDataAvailabilityCheckInvalid(
             dataAndValidationResult.cause());
@@ -638,6 +698,53 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     updateForkChoiceForImportedBlock(block, shouldApplyProposerBoost, result, forkChoiceStrategy);
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
     return result;
+  }
+
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 it requires more validations and more
+  // interactions with the store (e.g. onExecutionPayloadResult)
+  private ExecutionPayloadImportResult importExecutionPayloadAndState(
+      final SignedExecutionPayloadEnvelope signedEnvelope,
+      final ForkChoiceUtil forkChoiceUtil,
+      final BeaconState postState,
+      final PayloadValidationResult payloadResult,
+      final DataAndValidationResult<?> dataAndValidationResult) {
+    final PayloadStatus payloadStatus = payloadResult.getStatus();
+
+    if (payloadStatus.hasInvalidStatus()) {
+      final ExecutionPayloadImportResult result =
+          ExecutionPayloadImportResult.failedStateTransition(
+              new IllegalStateException(
+                  "Invalid ExecutionPayload: "
+                      + payloadStatus.getValidationError().orElse("No reason provided")));
+      reportInvalidExecutionPayload(signedEnvelope, result);
+      return result;
+    }
+
+    if (payloadStatus.hasFailedExecution()) {
+      return ExecutionPayloadImportResult.failedExecution(
+          payloadStatus.getFailureCause().orElseThrow());
+    }
+
+    switch (dataAndValidationResult.validationResult()) {
+      case NOT_AVAILABLE -> {
+        return ExecutionPayloadImportResult.failedDataAvailabilityCheckNotAvailable(
+            dataAndValidationResult.cause());
+      }
+      case INVALID -> {
+        return ExecutionPayloadImportResult.failedDataAvailabilityCheckInvalid(
+            dataAndValidationResult.cause());
+      }
+      default -> {}
+    }
+
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+
+    forkChoiceUtil.applyExecutionPayloadToStore(transaction, signedEnvelope, postState);
+
+    // Note: not using thenRun here because we want to ensure each step is on the event thread
+    transaction.commit().join();
+
+    return ExecutionPayloadImportResult.successful(signedEnvelope);
   }
 
   // from consensus-specs/fork-choice:
@@ -802,6 +909,20 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         block.getSlot(),
         block.getRoot(),
         block.sszSerialize(),
+        result.getFailureReason().name(),
+        result.getFailureCause());
+  }
+
+  private void reportInvalidExecutionPayload(
+      final SignedExecutionPayloadEnvelope signedEnvelope,
+      final ExecutionPayloadImportResult result) {
+    debugDataDumper.saveInvalidExecutionPayload(
+        signedEnvelope, result.getFailureReason().name(), result.getFailureCause());
+    P2P_LOG.onInvalidExecutionPayload(
+        signedEnvelope.getSlot(),
+        signedEnvelope.getMessage().getBuilderIndex(),
+        signedEnvelope.getMessage().getBeaconBlockRoot(),
+        signedEnvelope.sszSerialize(),
         result.getFailureReason().name(),
         result.getFailureCause());
   }

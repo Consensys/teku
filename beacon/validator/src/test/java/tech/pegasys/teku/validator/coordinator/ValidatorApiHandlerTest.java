@@ -74,10 +74,10 @@ import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscr
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionAndPublishingPerformanceFactory;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
@@ -85,7 +85,6 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptio
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -94,6 +93,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
@@ -105,15 +106,16 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -150,6 +152,9 @@ class ValidatorApiHandlerTest {
   private final DutyMetrics dutyMetrics = mock(DutyMetrics.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
   private final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
+  private final PayloadAttestationPool payloadAttestationPool = mock(PayloadAttestationPool.class);
+  private final ExecutionPayloadManager executionPayloadManager =
+      mock(ExecutionPayloadManager.class);
   private final ExecutionPayloadFactory executionPayloadFactory =
       mock(ExecutionPayloadFactory.class);
   private final ExecutionPayloadPublisher executionPayloadPublisher =
@@ -203,6 +208,8 @@ class ValidatorApiHandlerTest {
             syncCommitteeSubscriptionManager,
             blockProductionPerformanceFactory,
             blockPublisher,
+            payloadAttestationPool,
+            executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
             executionProofManager);
@@ -458,6 +465,8 @@ class ValidatorApiHandlerTest {
             syncCommitteeSubscriptionManager,
             blockProductionPerformanceFactory,
             blockPublisher,
+            payloadAttestationPool,
+            executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
             executionProofManager);
@@ -1382,6 +1391,50 @@ class ValidatorApiHandlerTest {
                 UInt64.valueOf(108)));
   }
 
+  @Test
+  public void createPayloadAttestationData_shouldFailWhenNodeIsSyncing() {
+    nodeIsSyncing();
+    final SafeFuture<Optional<PayloadAttestationData>> result =
+        validatorApiHandler.createPayloadAttestationData(ONE);
+
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
+  }
+
+  @Test
+  public void createPayloadAttestationData_shouldCreatePayloadAttestationData() {
+    final UInt64 newSlot = UInt64.valueOf(25);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(newSlot);
+
+    when(chainDataClient.getBlockInEffectAtSlot(eq(newSlot)))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
+    when(executionPayloadManager.isExecutionPayloadRecentlySeen(block.getRoot())).thenReturn(true);
+
+    final Optional<PayloadAttestationData> result =
+        SafeFutureAssert.safeJoin(validatorApiHandler.createPayloadAttestationData(newSlot));
+
+    assertThat(result)
+        .hasValueSatisfying(
+            payloadAttestationData -> {
+              assertThat(payloadAttestationData.getBeaconBlockRoot()).isEqualTo(block.getRoot());
+              assertThat(payloadAttestationData.getSlot()).isEqualTo(newSlot);
+              assertThat(payloadAttestationData.isPayloadPresent()).isTrue();
+              assertThat(payloadAttestationData.isBlobDataAvailable()).isFalse();
+            });
+  }
+
+  @Test
+  void sendPayloadAttestationMessages_shouldAddPayloadAttestationsToPool() {
+    final PayloadAttestationMessage payloadAttestationMessage =
+        dataStructureUtil.randomPayloadAttestationMessage();
+    when(payloadAttestationPool.addLocal(any()))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+
+    final SafeFuture<List<SubmitDataError>> result =
+        validatorApiHandler.sendPayloadAttestationMessages(List.of(payloadAttestationMessage));
+    assertThat(result).isCompletedWithValue(List.of());
+  }
+
   private boolean validatorIsLive(
       final List<ValidatorLivenessAtEpoch> validatorLivenessAtEpochs, final UInt64 validatorIndex) {
     return validatorLivenessAtEpochs.stream()
@@ -1401,23 +1454,7 @@ class ValidatorApiHandlerTest {
   }
 
   private BeaconState createStateWithActiveValidators(final UInt64 slot) {
-    return dataStructureUtil
-        .randomBeaconState(32)
-        .updated(
-            state -> {
-              state.setSlot(slot);
-              final SszMutableList<Validator> validators = state.getValidators();
-              for (int i = 0; i < validators.size(); i++) {
-                validators.update(
-                    i,
-                    validator ->
-                        validator
-                            .withActivationEligibilityEpoch(ZERO)
-                            .withActivationEpoch(ZERO)
-                            .withExitEpoch(SpecConfig.FAR_FUTURE_EPOCH)
-                            .withWithdrawableEpoch(SpecConfig.FAR_FUTURE_EPOCH));
-              }
-            });
+    return dataStructureUtil.randomBeaconStateWithActiveValidators(32, slot);
   }
 
   private void setupValidatorsState(

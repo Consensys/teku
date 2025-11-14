@@ -60,7 +60,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
-import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -461,26 +460,30 @@ public class BlockOperationSelectorFactory {
         executionPayloadContext.isPresent(),
         "ExecutionPayloadContext is not provided for production of post-merge block at slot "
             + blockSlotState.getSlot());
-    final SafeFuture<GetPayloadResponse> getPayloadResponseFuture =
-        executionLayerBlockProductionManager
-            .initiateBlockProduction(
-                executionPayloadContext.get(),
+    final ExecutionPayloadResult executionPayloadResult =
+        executionLayerBlockProductionManager.initiateBlockProduction(
+            executionPayloadContext.get(),
+            blockSlotState,
+            // builder flow (mev-boost) is not used in Gloas
+            false,
+            Optional.empty(),
+            blockProductionPerformance);
+    final SafeFuture<Void> setExecutionPayloadBid =
+        executionPayloadBidManager
+            .getBidForBlock(
                 blockSlotState,
-                // builder flow (mev-boost) is disabled for local self-built bids
-                false,
-                Optional.empty(),
+                executionPayloadResult.getPayloadResponseFutureFromLocalFlowRequired(),
                 blockProductionPerformance)
-            .getPayloadResponseFutureFromLocalFlowRequired();
-    return executionPayloadBidManager
-        .getBidForBlock(blockSlotState, getPayloadResponseFuture, blockProductionPerformance)
-        .thenAccept(
-            signedBid -> {
-              checkState(
-                  signedBid.isPresent(),
-                  "No execution payload bid has been prepared for production of block at slot "
-                      + blockSlotState.getSlot());
-              bodyBuilder.signedExecutionPayloadBid(signedBid.get());
-            });
+            .thenAccept(
+                signedBid -> {
+                  checkState(
+                      signedBid.isPresent(),
+                      "No execution payload bid has been prepared for production of block at slot "
+                          + blockSlotState.getSlot());
+                  bodyBuilder.signedExecutionPayloadBid(signedBid.get());
+                });
+    return SafeFuture.allOf(
+        cacheExecutionPayloadValue(executionPayloadResult, blockSlotState), setExecutionPayloadBid);
   }
 
   public Consumer<SignedBeaconBlockUnblinder> createBlockUnblinderSelector(

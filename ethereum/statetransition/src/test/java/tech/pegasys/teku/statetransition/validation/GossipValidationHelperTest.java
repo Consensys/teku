@@ -68,7 +68,8 @@ public class GossipValidationHelperTest {
     storageSystem.chainUpdater().initializeGenesis(false);
     recentChainData = storageSystem.recentChainData();
 
-    gossipValidationHelper = new GossipValidationHelper(spec, recentChainData);
+    gossipValidationHelper =
+        new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem());
   }
 
   @TestTemplate
@@ -279,7 +280,7 @@ public class GossipValidationHelperTest {
     final ChainUpdater chainUpdater = new ChainUpdater(localRecentChainData, chainBuilder, spec);
 
     final GossipValidationHelper gossipValidationHelper =
-        new GossipValidationHelper(spec, localRecentChainData);
+        new GossipValidationHelper(spec, localRecentChainData, storageSystem.getMetricsSystem());
     chainUpdater.initializeGenesis();
 
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(1));

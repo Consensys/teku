@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
 public class DataColumnSidecarRetrieverStub implements DataColumnSidecarRetriever {
   private static final Logger LOG = LogManager.getLogger();
@@ -62,7 +63,8 @@ public class DataColumnSidecarRetrieverStub implements DataColumnSidecarRetrieve
   }
 
   @Override
-  public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {
+  public void onNewValidatedSidecar(
+      final DataColumnSidecar sidecar, final RemoteOrigin remoteOrigin) {
     final DataColumnSlotAndIdentifier columnId =
         DataColumnSlotAndIdentifier.fromDataColumn(sidecar);
     LOG.debug("onNewValidatedSidecar {}", columnId);
