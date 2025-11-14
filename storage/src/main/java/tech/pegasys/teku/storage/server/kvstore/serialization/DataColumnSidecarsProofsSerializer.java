@@ -29,6 +29,7 @@ public class DataColumnSidecarsProofsSerializer implements KvStoreSerializer<Lis
           final List<List<KZGProof>> output = new ArrayList<>();
           final List<KZGProof> currentProofs = new ArrayList<>();
           final int blobSize = reader.readInt32();
+
           while (!reader.isComplete()) {
             final KZGProof kzgProof =
                 KZGProof.fromBytesCompressed(Bytes48.wrap(reader.readFixedBytes(KZGProof.SIZE)));
@@ -37,6 +38,13 @@ public class DataColumnSidecarsProofsSerializer implements KvStoreSerializer<Lis
               output.add(new ArrayList<>(currentProofs));
               currentProofs.clear();
             }
+          }
+
+          if (!currentProofs.isEmpty()) {
+            throw new RuntimeException(
+                String.format(
+                    "Unexpected proofs found in database. Expecting %d blobs, deserialized %s columns",
+                    blobSize, output.size()));
           }
           return output;
         });
