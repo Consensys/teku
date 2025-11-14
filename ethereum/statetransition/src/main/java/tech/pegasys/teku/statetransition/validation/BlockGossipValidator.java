@@ -36,8 +36,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
@@ -153,24 +156,28 @@ public class BlockGossipValidator {
       return completedFuture(reject("Parent block is after child block."));
     }
 
-    /*
-     * [REJECT] The length of KZG commitments is less than or equal to the limitation defined in Consensus Layer
-     */
-    final Optional<SszList<SszKZGCommitment>> blobKzgCommitments =
-        block.getMessage().getBody().getOptionalBlobKzgCommitments();
-    if (blobKzgCommitments.isPresent()) {
-      final Integer maxBlobsPerBlock =
-          spec.getMaxBlobsPerBlockAtSlot(block.getSlot()).orElseThrow();
-      final int blobKzgCommitmentsCount = blobKzgCommitments.get().size();
-      if (blobKzgCommitmentsCount > maxBlobsPerBlock) {
-        LOG.trace(
-            "BlockValidator: Block has {} kzg commitments, max allowed {}",
-            blobKzgCommitmentsCount,
-            maxBlobsPerBlock);
-        return completedFuture(
-            reject(
-                "Block has %d kzg commitments, max allowed %d",
-                blobKzgCommitmentsCount, maxBlobsPerBlock));
+    final Optional<SignedExecutionPayloadBid> maybeSignedExecutionPayloadBid =
+        block.getMessage().getBody().getOptionalSignedExecutionPayloadBid();
+    if (maybeSignedExecutionPayloadBid.isEmpty()) {
+      /*
+       * [REJECT] The length of KZG commitments is less than or equal to the limitation defined in Consensus Layer
+       */
+      final Optional<SszList<SszKZGCommitment>> blobKzgCommitments =
+          block.getMessage().getBody().getOptionalBlobKzgCommitments();
+      if (blobKzgCommitments.isPresent()) {
+        final Integer maxBlobsPerBlock =
+            spec.getMaxBlobsPerBlockAtSlot(block.getSlot()).orElseThrow();
+        final int blobKzgCommitmentsCount = blobKzgCommitments.get().size();
+        if (blobKzgCommitmentsCount > maxBlobsPerBlock) {
+          LOG.trace(
+              "BlockValidator: Block has {} kzg commitments, max allowed {}",
+              blobKzgCommitmentsCount,
+              maxBlobsPerBlock);
+          return completedFuture(
+              reject(
+                  "Block has %d kzg commitments, max allowed %d",
+                  blobKzgCommitmentsCount, maxBlobsPerBlock));
+        }
       }
     }
 
@@ -198,8 +205,33 @@ public class BlockGossipValidator {
                     "Block proposed by incorrect proposer (%s)", block.getProposerIndex());
               }
               final MiscHelpers miscHelpers = spec.atSlot(block.getSlot()).miscHelpers();
-
-              if (miscHelpers.isMergeTransitionComplete(postState)) {
+              if (maybeSignedExecutionPayloadBid.isPresent()) {
+                final ExecutionPayloadBid executionPayloadBid =
+                    maybeSignedExecutionPayloadBid.get().getMessage();
+                final BeaconStateGloas parentStateGloas = BeaconStateGloas.required(postState);
+                /*
+                 * [REJECT] The block's execution payload parent (defined by bid.parent_block_hash) passes all validation
+                 */
+                if (!executionPayloadBid
+                    .getParentBlockHash()
+                    .equals(parentStateGloas.getLatestBlockHash())) {
+                  return reject(
+                      "Execution payload bid has invalid parent block hash %s, expecting %s",
+                      executionPayloadBid.getParentBlockHash().toHexString(),
+                      parentStateGloas.getLatestBlockHash().toHexString());
+                }
+                /*
+                 * [REJECT] The bid's parent (defined by bid.parent_block_root) equals the block's parent (defined by block.parent_root)
+                 */
+                final Bytes32 executionPayloadBidParentRoot =
+                    executionPayloadBid.getParentBlockRoot();
+                if (!executionPayloadBidParentRoot.equals(block.getParentRoot())) {
+                  return reject(
+                      "Execution payload has invalid parent block root %s, expecting %s",
+                      executionPayloadBidParentRoot.toHexString(),
+                      block.getParentRoot().toHexString());
+                }
+              } else if (miscHelpers.isMergeTransitionComplete(postState)) {
                 Optional<ExecutionPayload> executionPayload =
                     block.getMessage().getBody().getOptionalExecutionPayload();
 

@@ -186,6 +186,14 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
       Assumptions.assumeTrue(specMilestone.isGreaterThanOrEqualTo(milestone), "Milestone skipped");
     }
 
+    public void assumeMilestonesActive(final SpecMilestone from, final SpecMilestone to) {
+      Assumptions.assumeTrue(specMilestone.isBetween(from, to));
+    }
+
+    public void assumeGloasActive() {
+      assumeMilestoneActive(SpecMilestone.GLOAS);
+    }
+
     public void assumeFuluActive() {
       assumeMilestoneActive(SpecMilestone.FULU);
     }
