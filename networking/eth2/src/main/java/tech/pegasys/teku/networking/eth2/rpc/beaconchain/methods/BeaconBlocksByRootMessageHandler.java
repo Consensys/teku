@@ -16,8 +16,6 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Throwables;
-import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
@@ -37,7 +35,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandle
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.InvalidRpcMethodVersion;
-import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -137,7 +134,7 @@ public class BeaconBlocksByRootMessageHandler
           }
           callback.completeSuccessfully();
         },
-        err -> handleError(callback, err));
+        err -> handleError(err, callback, "blocks by root"));
   }
 
   private SafeFuture<Optional<SignedBeaconBlock>> retrieveBlock(final Bytes32 blockRoot) {
@@ -153,23 +150,6 @@ public class BeaconBlocksByRootMessageHandler
     final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElse(UInt64.ZERO);
     final SpecMilestone milestone = spec.getForkSchedule().getSpecMilestoneAtEpoch(currentEpoch);
     return spec.forMilestone(milestone).miscHelpers().getMaxRequestBlocks();
-  }
-
-  private void handleError(
-      final ResponseCallback<SignedBeaconBlock> callback, final Throwable error) {
-    final Throwable rootCause = Throwables.getRootCause(error);
-    if (rootCause instanceof RpcException) {
-      LOG.trace("Rejecting beacon blocks by root request", error); // Keep full context
-      callback.completeWithErrorResponse((RpcException) rootCause);
-    } else {
-      if (rootCause instanceof StreamClosedException
-          || rootCause instanceof ClosedChannelException) {
-        LOG.trace("Stream closed while sending requested blocks", error);
-      } else {
-        LOG.error("Failed to process blocks by root request", error);
-      }
-      callback.completeWithUnexpectedError(error);
-    }
   }
 
   @VisibleForTesting
