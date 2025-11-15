@@ -17,17 +17,19 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOB_KZG_COMMITMENTS_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BUILDER_INDEX;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXECUTION_PAYMENT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.GAS_LIMIT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.PARENT_BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.PARENT_BLOCK_ROOT;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.PREV_RANDAO;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.SLOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.VALUE;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema9;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema11;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
@@ -39,12 +41,14 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 
 public class ExecutionPayloadBidSchema
-    extends ContainerSchema9<
+    extends ContainerSchema11<
         ExecutionPayloadBid,
         SszBytes32,
         SszBytes32,
         SszBytes32,
+        SszBytes32,
         SszByteVector,
+        SszUInt64,
         SszUInt64,
         SszUInt64,
         SszUInt64,
@@ -57,11 +61,13 @@ public class ExecutionPayloadBidSchema
         namedSchema(PARENT_BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(PARENT_BLOCK_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
+        namedSchema(PREV_RANDAO, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(FEE_RECIPIENT, SszByteVectorSchema.create(Bytes20.SIZE)),
         namedSchema(GAS_LIMIT, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(BUILDER_INDEX, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(SLOT, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(VALUE, SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema(EXECUTION_PAYMENT, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(BLOB_KZG_COMMITMENTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA));
   }
 
@@ -69,22 +75,26 @@ public class ExecutionPayloadBidSchema
       final Bytes32 parentBlockHash,
       final Bytes32 parentBlockRoot,
       final Bytes32 blockHash,
+      final Bytes32 prevRandao,
       final Bytes20 feeRecipient,
       final UInt64 gasLimit,
       final UInt64 builderIndex,
       final UInt64 slot,
       final UInt64 value,
+      final UInt64 executionPayment,
       final Bytes32 blobKzgCommitmentsRoot) {
     return new ExecutionPayloadBid(
         this,
         parentBlockHash,
         parentBlockRoot,
         blockHash,
+        prevRandao,
         feeRecipient,
         gasLimit,
         builderIndex,
         slot,
         value,
+        executionPayment,
         blobKzgCommitmentsRoot);
   }
 
@@ -104,11 +114,13 @@ public class ExecutionPayloadBidSchema
         BeaconStateGloas.required(state).getLatestBlockHash(),
         state.getLatestBlockHeader().getRoot(),
         executionPayload.getBlockHash(),
+        executionPayload.getPrevRandao(),
         executionPayload.getFeeRecipient(),
         executionPayload.getGasLimit(),
         builderIndex,
         slot,
-        // amount must be zero for self-build blocks
+        // amount and execution_payment must be zero for self-build blocks
+        ZERO,
         ZERO,
         blobKzgCommitmentsRoot);
   }
