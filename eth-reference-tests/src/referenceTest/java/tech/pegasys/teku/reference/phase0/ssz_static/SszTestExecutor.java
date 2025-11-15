@@ -300,7 +300,6 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                   schemas ->
                       SchemaDefinitionsGloas.required(schemas)
                           .getSignedExecutionPayloadEnvelopeSchema()))
-          .put("ssz_static/ForkChoiceNode", IGNORE_TESTS)
 
           // Legacy Schemas (Not yet migrated to SchemaDefinitions)
           .put(
