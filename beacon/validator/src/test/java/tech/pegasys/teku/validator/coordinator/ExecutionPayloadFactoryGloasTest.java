@@ -156,7 +156,6 @@ class ExecutionPayloadFactoryGloasTest {
     final BeaconState state = blockAndState.getState();
     final SpecVersion specVersion = spec.atSlot(state.getSlot());
     final MiscHelpers miscHelpers = specVersion.miscHelpers();
-    final BeaconStateAccessors beaconStateAccessors = specVersion.beaconStateAccessors();
     final ExecutionPayloadBid bid = getBidFromBlock(blockAndState.getBlock());
     final ExecutionPayload executionPayload =
         dataStructureUtil.randomExecutionPayload(
@@ -166,9 +165,7 @@ class ExecutionPayloadFactoryGloasTest {
                     .parentHash(BeaconStateGloas.required(state).getLatestBlockHash())
                     .gasLimit(bid.getGasLimit())
                     .blockHash(bid.getBlockHash())
-                    .prevRandao(
-                        beaconStateAccessors.getRandaoMix(
-                            state, beaconStateAccessors.getCurrentEpoch(state)))
+                    .prevRandao(bid.getPrevRandao())
                     .timestamp(
                         miscHelpers.computeTimeAtSlot(state.getGenesisTime(), state.getSlot()))
                     .withdrawals(Collections::emptyList));
