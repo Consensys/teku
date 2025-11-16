@@ -134,6 +134,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     }
 
     processPendingConsolidations(state);
+    processBuilderPendingPayments(state);
     processEffectiveBalanceUpdates(state, validatorStatuses.getStatuses());
     processSlashingsReset(state);
     processRandaoMixesReset(state);
@@ -142,7 +143,6 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     processParticipationUpdates(state);
     processSyncCommitteeUpdates(state);
     processProposerLookahead(state);
-    processBuilderPendingPayments(state);
 
     if (beaconStateAccessors.isInactivityLeak(state)) {
       loggerThrottler.invoke(
