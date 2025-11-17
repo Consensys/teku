@@ -315,11 +315,6 @@ public class ChainBuilder {
   }
 
   public Stream<SignedExecutionPayloadAndState> streamExecutionPayloadsAndStates(
-      final UInt64 fromSlot) {
-    return streamExecutionPayloadsAndStates(fromSlot, getLatestSlot());
-  }
-
-  public Stream<SignedExecutionPayloadAndState> streamExecutionPayloadsAndStates(
       final long fromSlot, final long toSlot) {
     return streamExecutionPayloadsAndStates(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot));
   }
@@ -1025,10 +1020,6 @@ public class ChainBuilder {
 
   private SignedBeaconBlock resultToBlock(final SignedBlockAndState result) {
     return Optional.ofNullable(result).map(SignedBlockAndState::getBlock).orElse(null);
-  }
-
-  private BeaconState resultToState(final SignedExecutionPayloadAndState result) {
-    return Optional.ofNullable(result).map(SignedExecutionPayloadAndState::state).orElse(null);
   }
 
   public SignedContributionAndProofTestBuilder createValidSignedContributionAndProofBuilder() {
