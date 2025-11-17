@@ -953,16 +953,18 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ExecutionPayloadBid.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ExecutionPayloadBidSchema.java
   spec: |
-    <spec container="ExecutionPayloadBid" fork="gloas" hash="175bc24b">
+    <spec container="ExecutionPayloadBid" fork="gloas" hash="aa04e425">
     class ExecutionPayloadBid(Container):
         parent_block_hash: Hash32
         parent_block_root: Root
         block_hash: Hash32
+        prev_randao: Bytes32
         fee_recipient: ExecutionAddress
         gas_limit: uint64
         builder_index: ValidatorIndex
         slot: Slot
         value: Gwei
+        execution_payment: Gwei
         blob_kzg_commitments_root: Root
     </spec>
 

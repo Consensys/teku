@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
@@ -68,8 +69,23 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
               state.setNextSyncCommittee(preStateFulu.getNextSyncCommittee());
 
               // New in Gloas
+              final Bytes32 latestBlockHash =
+                  preStateFulu.getLatestExecutionPayloadHeaderRequired().getBlockHash();
               state.setLatestExecutionPayloadBid(
-                  schemaDefinitions.getExecutionPayloadBidSchema().getDefault());
+                  schemaDefinitions
+                      .getExecutionPayloadBidSchema()
+                      .create(
+                          Bytes32.ZERO,
+                          Bytes32.ZERO,
+                          latestBlockHash,
+                          Bytes32.ZERO,
+                          Bytes20.ZERO,
+                          UInt64.ZERO,
+                          UInt64.ZERO,
+                          UInt64.ZERO,
+                          UInt64.ZERO,
+                          UInt64.ZERO,
+                          Bytes32.ZERO));
 
               state.setNextWithdrawalIndex(preStateFulu.getNextWithdrawalIndex());
               state.setNextWithdrawalValidatorIndex(preStateFulu.getNextWithdrawalValidatorIndex());
@@ -102,8 +118,7 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                       .createFromElements(builderPendingPayments));
               state.setBuilderPendingWithdrawals(
                   schemaDefinitions.getBuilderPendingWithdrawalsSchema().getDefault());
-              state.setLatestBlockHash(
-                  preStateFulu.getLatestExecutionPayloadHeaderRequired().getBlockHash());
+              state.setLatestBlockHash(latestBlockHash);
               state.setLatestWithdrawalsRoot(Bytes32.ZERO);
             });
   }
