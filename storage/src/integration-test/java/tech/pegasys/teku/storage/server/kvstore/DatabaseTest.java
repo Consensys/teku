@@ -2344,25 +2344,6 @@ public class DatabaseTest {
   }
 
   @TestTemplate
-  public void shouldGetHotExecutionPayloadByBeaconBlockRoot(final DatabaseContext context)
-      throws IOException {
-    setupWithSpec(TestSpecFactory.createMinimalGloas());
-    initialize(context);
-
-    final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(12);
-
-    assertThat(database.getHotExecutionPayload(block.getRoot())).isEmpty();
-
-    final SignedExecutionPayloadAndState executionPayloadAndState =
-        chainBuilder.getExecutionPayloadAndStateAtSlot(block.getSlot());
-
-    addExecutionPayloads(executionPayloadAndState);
-
-    assertThat(database.getHotExecutionPayload(block.getRoot()))
-        .hasValue(executionPayloadAndState.executionPayload());
-  }
-
-  @TestTemplate
   public void setFirstCustodyIncompleteSlot_isOperational(final DatabaseContext context)
       throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalFulu());
@@ -2679,6 +2660,25 @@ public class DatabaseTest {
 
     assertThat(database.getLastDataColumnSidecarsProofsSlot()).isEmpty();
     assertThat(database.getDataColumnSidecarsProofs(header.getMessage().getSlot())).isEmpty();
+  }
+
+  @TestTemplate
+  public void shouldGetHotExecutionPayloadByBeaconBlockRoot(final DatabaseContext context)
+      throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalGloas());
+    initialize(context);
+
+    final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(12);
+
+    assertThat(database.getHotExecutionPayload(block.getRoot())).isEmpty();
+
+    final SignedExecutionPayloadAndState executionPayloadAndState =
+        chainBuilder.getExecutionPayloadAndStateAtSlot(block.getSlot());
+
+    addExecutionPayloads(executionPayloadAndState);
+
+    assertThat(database.getHotExecutionPayload(block.getRoot()))
+        .hasValue(executionPayloadAndState.executionPayload());
   }
 
   private List<Map.Entry<Bytes32, UInt64>> getFinalizedStateRootsList() {

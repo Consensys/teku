@@ -706,14 +706,8 @@ class StoreTest extends AbstractStoreTest {
     chainBuilder.generateBlocksUpToSlot(startSlot);
 
     // Add blocks
-    final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
-    chainBuilder
-        .streamBlocksAndStates()
-        .forEach(
-            blockAndState ->
-                tx.putBlockAndState(
-                    blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState())));
-    safeJoin(tx.commit());
+    addBlocks(store, chainBuilder.streamBlocksAndStates().toList());
+
     final List<SignedBlockAndState> last32 =
         chainBuilder
             .streamBlocksAndStates()
@@ -727,6 +721,7 @@ class StoreTest extends AbstractStoreTest {
                                 .getSlot()
                                 .minus(defaultStoreConfig.getBlockCacheSize())))
             .toList();
+    assertThat(last32).hasSize(32);
     for (final SignedBlockAndState signedBlockAndState : last32) {
       assertThat(store.getBlockIfAvailable(signedBlockAndState.getRoot())).isPresent();
     }
@@ -742,14 +737,8 @@ class StoreTest extends AbstractStoreTest {
     chainBuilder.generateBlocksUpToSlot(startSlot);
 
     // Add execution payloads
-    final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
-    chainBuilder
-        .streamExecutionPayloadsAndStates()
-        .forEach(
-            executionPayloadAndState ->
-                tx.putExecutionPayloadAndState(
-                    executionPayloadAndState.executionPayload(), executionPayloadAndState.state()));
-    safeJoin(tx.commit());
+    addExecutionPayloads(store, chainBuilder.streamExecutionPayloadsAndStates().toList());
+
     final List<SignedExecutionPayloadAndState> last32 =
         chainBuilder
             .streamExecutionPayloadsAndStates()
