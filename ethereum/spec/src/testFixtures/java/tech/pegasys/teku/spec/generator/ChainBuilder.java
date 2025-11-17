@@ -194,6 +194,10 @@ public class ChainBuilder {
     return Optional.ofNullable(executionPayloadsByHash.get(beaconBlockRoot));
   }
 
+  public Optional<BeaconState> getExecutionPayloadState(final Bytes32 beaconBlockRoot) {
+    return getExecutionPayloadAndState(beaconBlockRoot).map(SignedExecutionPayloadAndState::state);
+  }
+
   public Optional<SignedExecutionPayloadEnvelope> getExecutionPayload(
       final Bytes32 beaconBlockRoot) {
     return getExecutionPayloadAndState(beaconBlockRoot)
@@ -377,10 +381,6 @@ public class ChainBuilder {
 
   public SignedExecutionPayloadAndState getExecutionPayloadAndStateAtSlot(final UInt64 slot) {
     return executionPayloads.get(slot);
-  }
-
-  public BeaconState getExecutionPayloadStateAtSlot(final UInt64 slot) {
-    return resultToState(getExecutionPayloadAndStateAtSlot(slot));
   }
 
   public SignedBlockAndState getLatestBlockAndStateAtSlot(final long slot) {
@@ -692,8 +692,7 @@ public class ChainBuilder {
     final Bytes32 parentRoot = latestBlockAndState.getBlock().getRoot();
     final BeaconState preState =
         // build on top of the execution payload state if an execution payload has been processed
-        Optional.ofNullable(getExecutionPayloadStateAtSlot(latestBlockAndState.getSlot()))
-            .orElse(latestBlockAndState.getState());
+        getExecutionPayloadState(parentRoot).orElse(latestBlockAndState.getState());
 
     int proposerIndex = blockProposalTestUtil.getProposerIndexForSlot(preState, slot);
     if (options.isWrongProposerEnabled()) {
