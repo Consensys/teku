@@ -108,9 +108,9 @@ public class BlockGossipValidator {
                     performBlockEquivocationCheck(false, block)))
         .or(() -> validateSlotIsNotFromFuture(block))
         .or(() -> validateBlockIsNew(block))
-        .or(() -> validateParentIsAvailable(block))
+        .or(() -> validateParentBlockPassesValidation(block))
         .or(() -> validateFinalizedCheckpointIsAncestor(block))
-        .or(() -> validateParentSlot(block))
+        .or(() -> validateParentBlockSeen(block))
         .or(() -> validateKzgCommitments(block));
   }
 
@@ -172,7 +172,7 @@ public class BlockGossipValidator {
     return Optional.empty();
   }
 
-  private Optional<InternalValidationResult> validateParentIsAvailable(
+  private Optional<InternalValidationResult> validateParentBlockPassesValidation(
       final SignedBeaconBlock block) {
     /*
      * [REJECT] The block's parent (defined by block.parent_root) passes validation.
@@ -197,7 +197,8 @@ public class BlockGossipValidator {
     return Optional.empty();
   }
 
-  private Optional<InternalValidationResult> validateParentSlot(final SignedBeaconBlock block) {
+  private Optional<InternalValidationResult> validateParentBlockSeen(
+      final SignedBeaconBlock block) {
     /*
      * [IGNORE] The block's parent (defined by block.parent_root) has been seen (via gossip or non-gossip sources)
      * (a client MAY queue blocks for processing once the parent block is retrieved).
