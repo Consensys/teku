@@ -122,20 +122,20 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
 
   @VisibleForTesting
   public DataColumnSidecarELManagerImpl(
-          final Spec spec,
-          final AsyncRunner asyncRunner,
-          final RecentChainData recentChainData,
-          final ExecutionLayerChannel executionLayer,
-          final UInt64 historicalSlotTolerance,
-          final UInt64 futureSlotTolerance,
-          final int maxTrackers,
-          final BiConsumer<List<DataColumnSidecar>, RemoteOrigin> dataColumnSidecarPublisher,
-          final CustodyGroupCountManager custodyGroupCountManager,
-          final MetricsSystem metricsSystem,
-          final TimeProvider timeProvider,
-          final Duration localElBlobsFetchingRetryDelay,
-          final int localElBlobsFetchingMaxRetries,
-          final DataColumnSidecarGossipValidator dataColumnSidecarGossipValidator) {
+      final Spec spec,
+      final AsyncRunner asyncRunner,
+      final RecentChainData recentChainData,
+      final ExecutionLayerChannel executionLayer,
+      final UInt64 historicalSlotTolerance,
+      final UInt64 futureSlotTolerance,
+      final int maxTrackers,
+      final BiConsumer<List<DataColumnSidecar>, RemoteOrigin> dataColumnSidecarPublisher,
+      final CustodyGroupCountManager custodyGroupCountManager,
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider,
+      final Duration localElBlobsFetchingRetryDelay,
+      final int localElBlobsFetchingMaxRetries,
+      final DataColumnSidecarGossipValidator dataColumnSidecarGossipValidator) {
     super(spec, futureSlotTolerance, historicalSlotTolerance);
     this.spec = spec;
     this.asyncRunner = asyncRunner;
@@ -301,10 +301,12 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
     }
     localCustodySidecars.forEach(
         sidecar -> {
-            dataColumnSidecarGossipValidator.markForEquivocation(recoveryTask.signedBeaconBlockHeader(), sidecar);
-            LOG.trace("Added recovered data column sidecar {} to gossip tracker", sidecar::toLogString);
-            recoveredColumnSidecarSubscribers.forEach(
-                subscriber -> subscriber.onNewValidSidecar(sidecar, LOCAL_EL));
+          dataColumnSidecarGossipValidator.markForEquivocation(
+              recoveryTask.signedBeaconBlockHeader(), sidecar);
+          LOG.trace(
+              "Added recovered data column sidecar {} to gossip tracker", sidecar::toLogString);
+          recoveredColumnSidecarSubscribers.forEach(
+              subscriber -> subscriber.onNewValidSidecar(sidecar, LOCAL_EL));
         });
   }
 
