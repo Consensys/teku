@@ -442,11 +442,11 @@ public class DataColumnSidecarGossipValidator {
         state);
   }
 
-    public boolean markForEquivocation(final DataColumnSidecar sidecar) {
+    public boolean markForEquivocation(final SignedBeaconBlockHeader beaconBlockHeader ,final DataColumnSidecar sidecar) {
         return receivedValidDataColumnSidecarInfoSet.add(
                 new SlotProposerIndexAndColumnIndex(
                         sidecar.getSlot(),
-                        sidecar.getMaybeSignedBlockHeader().get().getMessage().getProposerIndex(),
+                        beaconBlockHeader.getMessage().getProposerIndex(),
                         sidecar.getIndex()));
     }
 

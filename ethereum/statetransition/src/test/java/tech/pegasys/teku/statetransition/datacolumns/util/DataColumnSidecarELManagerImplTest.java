@@ -110,7 +110,8 @@ public class DataColumnSidecarELManagerImplTest {
               recentChainData,
               executionLayer,
               dataColumnSidecarPublisher,
-                  dataColumnSidecarGossipValidator, custodyGroupCountManager,
+              dataColumnSidecarGossipValidator,
+              custodyGroupCountManager,
               metricsSystem,
               timeProvider);
 
@@ -288,6 +289,32 @@ public class DataColumnSidecarELManagerImplTest {
 
     verifyRecovery(true);
   }
+
+    @Test
+    public void shouldMarkForEquivocation_AllColumnsRebuiltFromRetrievedFromEL() {
+        final SignedBeaconBlock block =
+                dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+        dataColumnSidecarELManager.onSlot(currentSlot);
+        final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
+        final List<BlobAndCellProofs> blobAndCellProofs =
+                blobSidecars.stream()
+                        .map(
+                                blobSidecar ->
+                                        new BlobAndCellProofs(
+                                                blobSidecar.getBlob(),
+                                                IntStream.range(0, 128)
+                                                        .mapToObj(__ -> dataStructureUtil.randomKZGProof())
+                                                        .toList()))
+                        .toList();
+        when(executionLayer.engineGetBlobAndCellProofsList(any(), any()))
+                .thenReturn(SafeFuture.completedFuture(blobAndCellProofs));
+        dataColumnSidecarELManager.onNewBlock(block, Optional.empty());
+
+        assertThat(asyncRunner.hasDelayedActions()).isFalse();
+
+        verifyRecovery(true);
+        verify(dataColumnSidecarGossipValidator,times(sampleGroupCount)).markForEquivocation(any(),any());
+    }
 
   @Test
   public void shouldRetry_whenElBlobsFetchingFails() {

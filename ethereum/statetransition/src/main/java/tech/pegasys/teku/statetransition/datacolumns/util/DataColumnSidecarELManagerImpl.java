@@ -301,7 +301,8 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
     }
     localCustodySidecars.forEach(
         sidecar -> {
-            dataColumnSidecarGossipValidator.markForEquivocation(sidecar);
+            dataColumnSidecarGossipValidator.markForEquivocation(recoveryTask.signedBeaconBlockHeader(), sidecar);
+            LOG.trace("Added recovered data column sidecar {} to gossip tracker", sidecar::toLogString);
             recoveredColumnSidecarSubscribers.forEach(
                 subscriber -> subscriber.onNewValidSidecar(sidecar, LOCAL_EL));
         });
