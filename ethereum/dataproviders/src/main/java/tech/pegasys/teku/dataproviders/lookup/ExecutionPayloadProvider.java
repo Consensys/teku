@@ -24,4 +24,19 @@ public interface ExecutionPayloadProvider {
   ExecutionPayloadProvider NOOP = beaconBlockRoot -> SafeFuture.completedFuture(Optional.empty());
 
   SafeFuture<Optional<SignedExecutionPayloadEnvelope>> getExecutionPayload(Bytes32 beaconBlockRoot);
+
+  static ExecutionPayloadProvider combined(
+      final ExecutionPayloadProvider primaryProvider,
+      final ExecutionPayloadProvider secondaryProvider) {
+    return beaconBlockRoot ->
+        primaryProvider
+            .getExecutionPayload(beaconBlockRoot)
+            .thenCompose(
+                executionPayload -> {
+                  if (executionPayload.isPresent()) {
+                    return SafeFuture.completedFuture(executionPayload);
+                  }
+                  return secondaryProvider.getExecutionPayload(beaconBlockRoot);
+                });
+  }
 }

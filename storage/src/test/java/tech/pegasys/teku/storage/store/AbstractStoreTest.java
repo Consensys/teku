@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
@@ -46,12 +47,17 @@ import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 
 public abstract class AbstractStoreTest {
-  protected final Spec spec = TestSpecFactory.createMinimalDeneb();
+  protected Spec spec = TestSpecFactory.createMinimalDeneb();
   protected final StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
-  protected final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+  protected ChainBuilder chainBuilder = ChainBuilder.create(spec);
   protected final StoreConfig defaultStoreConfig = StoreConfig.createDefault();
 
   protected final ForkChoiceStrategy dummyForkChoiceStrategy = mock(ForkChoiceStrategy.class);
+
+  protected void reinitializeSpec(final Spec spec) {
+    this.spec = spec;
+    chainBuilder = ChainBuilder.create(spec);
+  }
 
   protected void processChainWithLimitedCache(
       final BiConsumer<UpdatableStore, SignedBlockAndState> chainProcessor) {
@@ -144,6 +150,16 @@ public abstract class AbstractStoreTest {
         blockAndState ->
             tx.putBlockAndState(
                 blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState())));
+    assertThat(tx.commit()).isCompletedWithValue(null);
+  }
+
+  protected void addExecutionPayloads(
+      final UpdatableStore store, final List<SignedExecutionPayloadAndState> executionPayloads) {
+    final UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
+    executionPayloads.forEach(
+        executionPayloadAndState ->
+            tx.putExecutionPayloadAndState(
+                executionPayloadAndState.executionPayload(), executionPayloadAndState.state()));
     assertThat(tx.commit()).isCompletedWithValue(null);
   }
 

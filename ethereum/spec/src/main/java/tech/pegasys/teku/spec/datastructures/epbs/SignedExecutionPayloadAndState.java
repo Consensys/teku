@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.epbs;
 
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -24,5 +25,9 @@ public record SignedExecutionPayloadAndState(
     SignedExecutionPayloadEnvelope executionPayload, BeaconState state) {
   public UInt64 getSlot() {
     return executionPayload.getMessage().getSlot();
+  }
+
+  public Bytes32 getBeaconBlockRoot() {
+    return executionPayload.getMessage().getBeaconBlockRoot();
   }
 }

@@ -33,6 +33,7 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
@@ -40,6 +41,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
@@ -407,6 +410,26 @@ class StoreTest extends AbstractStoreTest {
                     && maybeEarliestBlobSidecarSlot.get().equals(UInt64.valueOf(4)));
   }
 
+  @Test
+  public void shouldRetrieveSignedExecutionPayloadEnvelopeByBeaconBlockRoot() {
+    reinitializeSpec(TestSpecFactory.createMinimalGloas());
+
+    final UpdatableStore store = createGenesisStore();
+    final List<SignedBlockAndState> blocks = chainBuilder.generateBlocksUpToSlot(12);
+
+    addExecutionPayloads(store, chainBuilder.streamExecutionPayloadsAndStates(0, 12).toList());
+
+    assertThat(blocks).hasSize(12);
+    blocks.forEach(
+        block -> {
+          final Optional<SignedExecutionPayloadEnvelope> retrievedExecutionPayload =
+              safeJoin(store.retrieveSignedExecutionPayloadEnvelope(block.getRoot()));
+          assertThat(retrievedExecutionPayload)
+              .isPresent()
+              .isEqualTo(chainBuilder.getExecutionPayload(block.getRoot()));
+        });
+  }
+
   private void setProtoNodeDataForBlock(
       final SignedBlockAndState blockAndState,
       final BlockCheckpoints headCheckpoint,
@@ -706,6 +729,45 @@ class StoreTest extends AbstractStoreTest {
             .toList();
     for (final SignedBlockAndState signedBlockAndState : last32) {
       assertThat(store.getBlockIfAvailable(signedBlockAndState.getRoot())).isPresent();
+    }
+  }
+
+  @Test
+  public void shouldKeepOnlyMostRecentExecutionPayloadsInExecutionPayloadsCache() {
+    reinitializeSpec(TestSpecFactory.createMinimalGloas());
+
+    final UpdatableStore store = createGenesisStore();
+    final UInt64 epoch = UInt64.valueOf(5);
+    final UInt64 startSlot = spec.computeStartSlotAtEpoch(epoch);
+    chainBuilder.generateBlocksUpToSlot(startSlot);
+
+    // Add execution payloads
+    final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
+    chainBuilder
+        .streamExecutionPayloadsAndStates()
+        .forEach(
+            executionPayloadAndState ->
+                tx.putExecutionPayloadAndState(
+                    executionPayloadAndState.executionPayload(), executionPayloadAndState.state()));
+    safeJoin(tx.commit());
+    final List<SignedExecutionPayloadAndState> last32 =
+        chainBuilder
+            .streamExecutionPayloadsAndStates()
+            .dropWhile(
+                executionPayloadAndState ->
+                    executionPayloadAndState
+                        .getSlot()
+                        .isLessThanOrEqualTo(
+                            chainBuilder
+                                .getLatestBlockAndState()
+                                .getSlot()
+                                .minus(defaultStoreConfig.getBlockCacheSize())))
+            .toList();
+    assertThat(last32).hasSize(32);
+    for (final SignedExecutionPayloadAndState executionPayloadAndState : last32) {
+      assertThat(
+              store.getExecutionPayloadIfAvailable(executionPayloadAndState.getBeaconBlockRoot()))
+          .isPresent();
     }
   }
 

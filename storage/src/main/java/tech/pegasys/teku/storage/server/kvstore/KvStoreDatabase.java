@@ -599,6 +599,7 @@ public class KvStoreDatabase implements Database {
     deletedHotBlockRoots.forEach(updater::deleteHotBlock);
   }
 
+  @SuppressWarnings("unused")
   protected void updateHotExecutionPayloads(
       final HotUpdater updater,
       final Map<Bytes32, SignedExecutionPayloadEnvelope> addedExecutionPayloads,

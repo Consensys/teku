@@ -114,7 +114,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   public void putExecutionPayloadAndState(
       final SignedExecutionPayloadEnvelope executionPayload, final BeaconState state) {
     executionPayloads.put(
-        executionPayload.getMessage().getBeaconBlockRoot(),
+        executionPayload.getBeaconBlockRoot(),
         new SignedExecutionPayloadAndState(executionPayload, state));
   }
 

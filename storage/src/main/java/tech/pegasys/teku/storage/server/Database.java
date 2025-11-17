@@ -166,7 +166,7 @@ public interface Database extends AutoCloseable {
    * Returns latest finalized block or any known blocks that descend from the latest finalized block
    *
    * @param blockRoots The roots of blocks to look up
-   * @return A map from root too block of any found blocks
+   * @return A map from root to block of any found blocks
    */
   Map<Bytes32, SignedBeaconBlock> getHotBlocks(Set<Bytes32> blockRoots);
 

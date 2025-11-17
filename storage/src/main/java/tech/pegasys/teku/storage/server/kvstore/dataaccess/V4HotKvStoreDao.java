@@ -313,7 +313,7 @@ public class V4HotKvStoreDao {
 
     @Override
     public void addHotExecutionPayload(final SignedExecutionPayloadEnvelope executionPayload) {
-      final Bytes32 blockRoot = executionPayload.getMessage().getBeaconBlockRoot();
+      final Bytes32 blockRoot = executionPayload.getBeaconBlockRoot();
       transaction.put(schema.getColumnHotExecutionPayloadsByRoot(), blockRoot, executionPayload);
     }
 

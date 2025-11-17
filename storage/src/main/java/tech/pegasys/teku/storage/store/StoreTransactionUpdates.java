@@ -160,9 +160,7 @@ class StoreTransactionUpdates {
             prunedHotBlockRoots,
             store.getFinalizedCheckpoint());
 
-    store.cacheExecutionPayloads(
-        Maps.transformValues(
-            hotExecutionPayloadAndStates, SignedExecutionPayloadAndState::executionPayload));
+    store.cacheExecutionPayloads(hotExecutionPayloadAndStates.values());
   }
 
   private StateAndBlockSummary blockAndStateAsSummary(final SignedBlockAndState blockAndState) {

@@ -60,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
@@ -200,19 +201,36 @@ class Store extends CacheableStore {
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
     this.custodyGroupCount = custodyGroupCount;
 
-    this.executionPayloadProvider = executionPayloadProvider;
     this.executionPayloads = executionPayloads;
+    // Set up execution payload provider to draw from in-memory blocks
+    this.executionPayloadProvider =
+        ExecutionPayloadProvider.combined(
+            createExecutionPayloadProviderFromMapWhileLocked(this.executionPayloads),
+            executionPayloadProvider);
   }
 
   private BlockProvider createBlockProviderFromMapWhileLocked(
-      final Map<Bytes32, SignedBeaconBlock> blockMap) {
+      final Map<Bytes32, SignedBeaconBlock> blocks) {
     return (roots) -> {
       readLock.lock();
       try {
         return SafeFuture.completedFuture(
             roots.stream()
-                .filter(blockMap::containsKey)
-                .collect(Collectors.toMap(Function.identity(), blockMap::get)));
+                .filter(blocks::containsKey)
+                .collect(Collectors.toMap(Function.identity(), blocks::get)));
+      } finally {
+        readLock.unlock();
+      }
+    };
+  }
+
+  private ExecutionPayloadProvider createExecutionPayloadProviderFromMapWhileLocked(
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads) {
+    return beaconBlockRoot -> {
+      readLock.lock();
+      try {
+        return SafeFuture.completedFuture(
+            Optional.ofNullable(executionPayloads.get(beaconBlockRoot)));
       } finally {
         readLock.unlock();
       }
@@ -445,6 +463,7 @@ class Store extends CacheableStore {
     states.clear();
     checkpointStates.clear();
     blocks.clear();
+    executionPayloads.clear();
   }
 
   @Override
@@ -692,9 +711,8 @@ class Store extends CacheableStore {
   @Override
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>>
       retrieveSignedExecutionPayloadEnvelope(final Bytes32 beaconBlockRoot) {
-    if (!containsBlock(beaconBlockRoot)) {
-      return EmptyStoreResults.EMPTY_SIGNED_EXECUTION_PAYLOAD_ENVELOPE_FUTURE;
-    }
+    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 add similar check as
+    // !containsBlock(blockRoot) in retrieveSignedBlock
     return executionPayloadProvider.getExecutionPayload(beaconBlockRoot);
   }
 
@@ -808,9 +826,14 @@ class Store extends CacheableStore {
   }
 
   @Override
-  void cacheExecutionPayloads(
-      final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads) {
-    this.executionPayloads.putAll(executionPayloads);
+  void cacheExecutionPayloads(final Collection<SignedExecutionPayloadAndState> executionPayloads) {
+    executionPayloads.stream()
+        .sorted(Comparator.comparing(SignedExecutionPayloadAndState::getSlot))
+        .map(SignedExecutionPayloadAndState::executionPayload)
+        .forEach(
+            executionPayload ->
+                this.executionPayloads.put(
+                    executionPayload.getBeaconBlockRoot(), executionPayload));
   }
 
   /** Non-synchronized, no lock, unsafe if Store is not locked externally */

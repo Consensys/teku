@@ -163,10 +163,7 @@ public class ChainBuilder {
     executionPayloads.putAll(existingExecutionPayloads);
     existingExecutionPayloads
         .values()
-        .forEach(
-            e ->
-                executionPayloadsByHash.put(
-                    e.executionPayload().getMessage().getBeaconBlockRoot(), e));
+        .forEach(e -> executionPayloadsByHash.put(e.executionPayload().getBeaconBlockRoot(), e));
   }
 
   public static ChainBuilder create(final Spec spec) {
@@ -307,6 +304,10 @@ public class ChainBuilder {
   public Stream<Map.Entry<SlotAndBlockRoot, List<DataColumnSidecar>>> streamDataColumnSidecars(
       final long fromSlot, final long toSlot, final List<UInt64> columns) {
     return streamDataColumnSidecars(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot), columns);
+  }
+
+  public Stream<SignedExecutionPayloadAndState> streamExecutionPayloadsAndStates() {
+    return executionPayloads.values().stream();
   }
 
   public Stream<SignedExecutionPayloadAndState> streamExecutionPayloadsAndStates(
@@ -681,10 +682,9 @@ public class ChainBuilder {
   }
 
   private void trackExecutionPayload(final SignedExecutionPayloadAndState executionPayload) {
-    executionPayloads.put(
-        executionPayload.executionPayload().getMessage().getSlot(), executionPayload);
+    executionPayloads.put(executionPayload.executionPayload().getSlot(), executionPayload);
     executionPayloadsByHash.put(
-        executionPayload.executionPayload().getMessage().getBeaconBlockRoot(), executionPayload);
+        executionPayload.executionPayload().getBeaconBlockRoot(), executionPayload);
   }
 
   private SignedBlockAndState appendNewBlockToChain(final UInt64 slot, final BlockOptions options) {

@@ -76,6 +76,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -2343,20 +2344,26 @@ public class DatabaseTest {
   }
 
   @TestTemplate
-  public void addSidecar_isOperative(final DatabaseContext context) throws IOException {
-    setupWithSpec(TestSpecFactory.createMinimalFulu());
+  public void shouldGetHotExecutionPayloadByBeaconBlockRoot(final DatabaseContext context)
+      throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalGloas());
     initialize(context);
-    final DataColumnSidecar dataColumnSidecar = dataStructureUtil.randomDataColumnSidecar();
-    final DataColumnSlotAndIdentifier columnSlotAndIdentifier =
-        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar);
-    assertThat(database.getSidecar(columnSlotAndIdentifier).isEmpty()).isTrue();
 
-    database.addSidecar(dataColumnSidecar);
-    assertThat(database.getSidecar(columnSlotAndIdentifier)).contains(dataColumnSidecar);
+    final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(12);
+
+    assertThat(database.getHotExecutionPayload(block.getRoot())).isEmpty();
+
+    final SignedExecutionPayloadAndState executionPayloadAndState =
+        chainBuilder.getExecutionPayloadAndStateAtSlot(block.getSlot());
+
+    addExecutionPayloads(executionPayloadAndState);
+
+    assertThat(database.getHotExecutionPayload(block.getRoot()))
+        .hasValue(executionPayloadAndState.executionPayload());
   }
 
   @TestTemplate
-  public void setFirstCustodyIncompleteSlot_isOperative(final DatabaseContext context)
+  public void setFirstCustodyIncompleteSlot_isOperational(final DatabaseContext context)
       throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalFulu());
     initialize(context);
@@ -2368,7 +2375,7 @@ public class DatabaseTest {
   }
 
   @TestTemplate
-  public void streamDataColumnIdentifiers_isOperative(final DatabaseContext context)
+  public void streamDataColumnIdentifiers_isOperational(final DatabaseContext context)
       throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalFulu());
     initialize(context);
@@ -2414,7 +2421,7 @@ public class DatabaseTest {
   }
 
   @TestTemplate
-  public void pruneAllSidecars_isOperative(final DatabaseContext context) throws IOException {
+  public void pruneAllSidecars_isOperational(final DatabaseContext context) throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalFulu());
     initialize(context);
 
@@ -2605,6 +2612,19 @@ public class DatabaseTest {
         database.streamNonCanonicalDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
     }
+  }
+
+  @TestTemplate
+  public void addSidecar_isOperational(final DatabaseContext context) throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+    final DataColumnSidecar dataColumnSidecar = dataStructureUtil.randomDataColumnSidecar();
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar);
+    assertThat(database.getSidecar(columnSlotAndIdentifier).isEmpty()).isTrue();
+
+    database.addSidecar(dataColumnSidecar);
+    assertThat(database.getSidecar(columnSlotAndIdentifier)).contains(dataColumnSidecar);
   }
 
   @TestTemplate
@@ -2982,6 +3002,19 @@ public class DatabaseTest {
               .filter(blobSidecar -> blobSidecar.getBlockRoot().equals(block.getRoot()))
               .toList(),
           spec.calculateBlockCheckpoints(block.getState()));
+    }
+    commit(transaction);
+  }
+
+  private void addExecutionPayloads(final SignedExecutionPayloadAndState... executionPayloads) {
+    addExecutionPayloads(Arrays.asList(executionPayloads));
+  }
+
+  private void addExecutionPayloads(final List<SignedExecutionPayloadAndState> executionPayloads) {
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    for (final SignedExecutionPayloadAndState executionPayload : executionPayloads) {
+      transaction.putExecutionPayloadAndState(
+          executionPayload.executionPayload(), executionPayload.state());
     }
     commit(transaction);
   }
