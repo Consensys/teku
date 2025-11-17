@@ -442,6 +442,14 @@ public class DataColumnSidecarGossipValidator {
         state);
   }
 
+    public boolean markForEquivocation(final DataColumnSidecar sidecar) {
+        return receivedValidDataColumnSidecarInfoSet.add(
+                new SlotProposerIndexAndColumnIndex(
+                        sidecar.getSlot(),
+                        sidecar.getMaybeSignedBlockHeader().get().getMessage().getProposerIndex(),
+                        sidecar.getIndex()));
+    }
+
   private boolean isFirstValidForSlotProposerIndexAndColumnIndex(
       final DataColumnSidecar dataColumnSidecar, final BeaconBlockHeader blockHeader) {
     return !receivedValidDataColumnSidecarInfoSet.contains(
