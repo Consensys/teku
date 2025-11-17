@@ -13,11 +13,15 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
+import com.google.common.base.Throwables;
+import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue.QueueIsFullException;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
+import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 
 public abstract class PeerRequiredLocalMessageHandler<I, O> implements LocalMessageHandler<I, O> {
   private static final Logger LOG = LogManager.getLogger();
@@ -42,4 +46,30 @@ public abstract class PeerRequiredLocalMessageHandler<I, O> implements LocalMess
       final Eth2Peer peer,
       final I message,
       final ResponseCallback<O> callback);
+
+  protected void handleError(
+      final Throwable error, final ResponseCallback<O> callback, final String type) {
+    final Throwable rootCause = Throwables.getRootCause(error);
+
+    if (rootCause instanceof RpcException rpcException) {
+      LOG.trace("Rejecting {} request", type, error);
+      callback.completeWithErrorResponse(rpcException);
+      return;
+    }
+
+    if (rootCause instanceof QueueIsFullException) {
+      LOG.trace("Storage queue full while processing {} request", type, error);
+      callback.completeWithUnexpectedError(error);
+      return;
+    }
+
+    if (rootCause instanceof StreamClosedException || rootCause instanceof ClosedChannelException) {
+      LOG.trace("Stream closed while sending requested {}", type, error);
+      callback.completeWithUnexpectedError(error);
+      return;
+    }
+
+    LOG.error("Failed to process {} request", type, error);
+    callback.completeWithUnexpectedError(error);
+  }
 }
