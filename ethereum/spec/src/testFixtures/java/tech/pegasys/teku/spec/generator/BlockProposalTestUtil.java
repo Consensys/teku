@@ -505,10 +505,12 @@ public class BlockProposalTestUtil {
                 executionPayload.getParentHash(),
                 state.getLatestBlockHeader().getRoot(),
                 executionPayload.getBlockHash(),
+                executionPayload.getPrevRandao(),
                 executionPayload.getFeeRecipient(),
                 executionPayload.getGasLimit(),
                 UInt64.valueOf(proposerIndex),
                 newSlot,
+                UInt64.ZERO,
                 UInt64.ZERO,
                 executionPayloadProposalData.kzgCommitments().hashTreeRoot());
     return schemaDefinitions

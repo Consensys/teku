@@ -80,11 +80,6 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
         .toList();
   }
 
-  public byte removeFlag(final byte participationFlags, final int flagIndex) {
-    final byte flag = (byte) (1 << flagIndex);
-    return (byte) (participationFlags & ~flag);
-  }
-
   /**
    * compute_balance_weighted_selection
    *
