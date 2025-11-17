@@ -202,7 +202,7 @@ class Store extends CacheableStore {
     this.custodyGroupCount = custodyGroupCount;
 
     this.executionPayloads = executionPayloads;
-    // Set up execution payload provider to draw from in-memory blocks
+    // Set up execution payload provider to draw from in-memory execution payloads
     this.executionPayloadProvider =
         ExecutionPayloadProvider.combined(
             createExecutionPayloadProviderFromMapWhileLocked(this.executionPayloads),
