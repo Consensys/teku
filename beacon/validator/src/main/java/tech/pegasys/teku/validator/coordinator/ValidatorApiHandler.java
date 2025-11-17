@@ -324,7 +324,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
           new IllegalArgumentException(
               String.format(
                   "Proposer duties were requested %s epochs ahead, only 1 epoch in future is supported.",
-                  combinedChainDataClient.getCurrentEpoch().toString())));
+                  epoch.minus(combinedChainDataClient.getCurrentEpoch()).toString())));
     }
     final UInt64 queryEpoch = epoch.isGreaterThan(currentEpoch) ? currentEpoch : epoch;
     LOG.trace("Retrieving proposer duties from epoch {}, queryEpoch {}", epoch, queryEpoch);
