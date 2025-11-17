@@ -67,6 +67,7 @@ import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELManager;
 import tech.pegasys.teku.statetransition.datacolumns.ValidDataColumnSidecarsListener;
 import tech.pegasys.teku.statetransition.util.AbstractIgnoringFutureHistoricalSlot;
+import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistoricalSlot
@@ -104,6 +105,7 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
   private final Supplier<MiscHelpersFulu> miscHelpersFuluSupplier;
   private final Duration localElBlobsFetchingRetryDelay;
   private final int localElBlobsFetchingMaxRetries;
+  private final DataColumnSidecarGossipValidator dataColumnSidecarGossipValidator;
 
   static final Set<RemoteOrigin> LOCAL_OR_RECOVERED_ORIGINS =
       Set.of(LOCAL_PROPOSAL, LOCAL_EL, RECOVERED);
@@ -120,19 +122,20 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
 
   @VisibleForTesting
   public DataColumnSidecarELManagerImpl(
-      final Spec spec,
-      final AsyncRunner asyncRunner,
-      final RecentChainData recentChainData,
-      final ExecutionLayerChannel executionLayer,
-      final UInt64 historicalSlotTolerance,
-      final UInt64 futureSlotTolerance,
-      final int maxTrackers,
-      final BiConsumer<List<DataColumnSidecar>, RemoteOrigin> dataColumnSidecarPublisher,
-      final CustodyGroupCountManager custodyGroupCountManager,
-      final MetricsSystem metricsSystem,
-      final TimeProvider timeProvider,
-      final Duration localElBlobsFetchingRetryDelay,
-      final int localElBlobsFetchingMaxRetries) {
+          final Spec spec,
+          final AsyncRunner asyncRunner,
+          final RecentChainData recentChainData,
+          final ExecutionLayerChannel executionLayer,
+          final UInt64 historicalSlotTolerance,
+          final UInt64 futureSlotTolerance,
+          final int maxTrackers,
+          final BiConsumer<List<DataColumnSidecar>, RemoteOrigin> dataColumnSidecarPublisher,
+          final CustodyGroupCountManager custodyGroupCountManager,
+          final MetricsSystem metricsSystem,
+          final TimeProvider timeProvider,
+          final Duration localElBlobsFetchingRetryDelay,
+          final int localElBlobsFetchingMaxRetries,
+          final DataColumnSidecarGossipValidator dataColumnSidecarGossipValidator) {
     super(spec, futureSlotTolerance, historicalSlotTolerance);
     this.spec = spec;
     this.asyncRunner = asyncRunner;
@@ -143,6 +146,7 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
     this.custodyGroupCountManager = custodyGroupCountManager;
     this.localElBlobsFetchingRetryDelay = localElBlobsFetchingRetryDelay;
     this.localElBlobsFetchingMaxRetries = localElBlobsFetchingMaxRetries;
+    this.dataColumnSidecarGossipValidator = dataColumnSidecarGossipValidator;
     this.dataColumnSidecarComputationTimeSeconds =
         DATA_COLUMN_SIDECAR_COMPUTATION_HISTOGRAM.apply(metricsSystem, timeProvider);
     this.getBlobsV2RequestsCounter =
@@ -287,6 +291,7 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
     recoveryTask
         .recoveredColumnIndices()
         .addAll(localCustodySidecars.stream().map(DataColumnSidecar::getIndex).toList());
+
     LOG.debug(
         "Publishing {} data column sidecars for {}",
         localCustodySidecars::size,
@@ -295,9 +300,11 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
       dataColumnSidecarPublisher.accept(localCustodySidecars, LOCAL_EL);
     }
     localCustodySidecars.forEach(
-        sidecar ->
+        sidecar -> {
+            dataColumnSidecarGossipValidator.markForEquivocation(sidecar);
             recoveredColumnSidecarSubscribers.forEach(
-                subscriber -> subscriber.onNewValidSidecar(sidecar, LOCAL_EL)));
+                subscriber -> subscriber.onNewValidSidecar(sidecar, LOCAL_EL));
+        });
   }
 
   @Override

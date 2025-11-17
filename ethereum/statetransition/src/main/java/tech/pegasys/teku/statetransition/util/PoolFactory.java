@@ -47,6 +47,7 @@ import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELManager;
 import tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELManagerImpl;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
+import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class PoolFactory {
@@ -152,14 +153,15 @@ public class PoolFactory {
   }
 
   public DataColumnSidecarELManager createDataColumnSidecarELManager(
-      final Spec spec,
-      final AsyncRunner asyncRunner,
-      final RecentChainData recentChainData,
-      final ExecutionLayerChannel executionLayer,
-      final BiConsumer<List<DataColumnSidecar>, RemoteOrigin> dataColumnSidecarPublisher,
-      final CustodyGroupCountManager custodyGroupCountManager,
-      final MetricsSystem metricsSystem,
-      final TimeProvider timeProvider) {
+          final Spec spec,
+          final AsyncRunner asyncRunner,
+          final RecentChainData recentChainData,
+          final ExecutionLayerChannel executionLayer,
+          final BiConsumer<List<DataColumnSidecar>, RemoteOrigin> dataColumnSidecarPublisher,
+          final DataColumnSidecarGossipValidator dataColumnSidecarGossipValidator,
+          final CustodyGroupCountManager custodyGroupCountManager,
+          final MetricsSystem metricsSystem,
+          final TimeProvider timeProvider) {
     return new DataColumnSidecarELManagerImpl(
         spec,
         asyncRunner,
@@ -173,7 +175,8 @@ public class PoolFactory {
         metricsSystem,
         timeProvider,
         EL_BLOBS_FETCHING_DELAY,
-        EL_BLOBS_FETCHING_MAX_RETRIES);
+        EL_BLOBS_FETCHING_MAX_RETRIES,
+            dataColumnSidecarGossipValidator);
   }
 
   public BlockBlobSidecarsTrackersPoolImpl createPoolForBlockBlobSidecarsTrackers(
