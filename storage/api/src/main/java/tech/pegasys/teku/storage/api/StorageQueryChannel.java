@@ -63,7 +63,8 @@ public interface StorageQueryChannel extends ChannelInterface {
       Bytes32 blockRoot);
 
   /**
-   * Returns "hot" blocks - the latest block or blocks that descend from the latest finalized block
+   * Returns "hot" blocks - the latest finalized block or blocks that descend from the latest
+   * finalized block
    *
    * @param blockRoots The roots of blocks to look up
    * @return A map from root to block of any found blocks
