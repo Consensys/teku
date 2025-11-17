@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -167,9 +168,11 @@ public interface Database extends AutoCloseable {
    * @param blockRoots The roots of blocks to look up
    * @return A map from root too block of any found blocks
    */
-  Map<Bytes32, SignedBeaconBlock> getHotBlocks(final Set<Bytes32> blockRoots);
+  Map<Bytes32, SignedBeaconBlock> getHotBlocks(Set<Bytes32> blockRoots);
 
-  Optional<SignedBeaconBlock> getHotBlock(final Bytes32 blockRoot);
+  Optional<SignedBeaconBlock> getHotBlock(Bytes32 blockRoot);
+
+  Optional<SignedExecutionPayloadEnvelope> getHotExecutionPayload(Bytes32 beaconBlockRoot);
 
   @MustBeClosed
   Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz();

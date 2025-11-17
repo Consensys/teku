@@ -38,6 +38,7 @@ import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -299,6 +300,7 @@ public class DebugDbCommand implements Runnable {
                           .specProvider(eth2NetworkOptions.getNetworkConfiguration().getSpec())
                           .blockProvider(BlockProvider.NOOP)
                           .stateProvider(StateAndBlockSummaryProvider.NOOP)
+                          .executionPayloadProvider(ExecutionPayloadProvider.NOOP)
                           .build())
               .map(UpdatableStore::getLatestFinalized);
       int result = writeState(outputFile, finalizedAnchor.map(AnchorPoint::getState));

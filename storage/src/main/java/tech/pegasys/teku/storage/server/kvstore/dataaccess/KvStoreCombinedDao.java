@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -61,6 +62,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   Stream<SignedBeaconBlock> streamHotBlocks();
 
   Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz();
+
+  Optional<SignedExecutionPayloadEnvelope> getHotExecutionPayload(Bytes32 blockRoot);
 
   Optional<SignedBeaconBlock> getFinalizedBlock(final Bytes32 root);
 
@@ -207,6 +210,13 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     void deleteHotBlock(Bytes32 blockRoot);
 
     void deleteHotBlockOnly(Bytes32 blockRoot);
+
+    void addHotExecutionPayload(SignedExecutionPayloadEnvelope executionPayload);
+
+    default void addHotExecutionPayloads(
+        final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads) {
+      executionPayloads.values().forEach(this::addHotExecutionPayload);
+    }
 
     void setGenesisTime(UInt64 genesisTime);
 

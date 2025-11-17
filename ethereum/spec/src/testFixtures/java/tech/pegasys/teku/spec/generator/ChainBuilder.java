@@ -192,8 +192,14 @@ public class ChainBuilder {
     return Optional.ofNullable(blocksByHash.get(blockRoot));
   }
 
-  public Optional<SignedExecutionPayloadEnvelope> getExecutionPayload(final Bytes32 blockRoot) {
-    return Optional.ofNullable(executionPayloadsByHash.get(blockRoot))
+  public Optional<SignedExecutionPayloadAndState> getExecutionPayloadAndState(
+      final Bytes32 beaconBlockRoot) {
+    return Optional.ofNullable(executionPayloadsByHash.get(beaconBlockRoot));
+  }
+
+  public Optional<SignedExecutionPayloadEnvelope> getExecutionPayload(
+      final Bytes32 beaconBlockRoot) {
+    return getExecutionPayloadAndState(beaconBlockRoot)
         .map(SignedExecutionPayloadAndState::executionPayload);
   }
 
@@ -301,6 +307,11 @@ public class ChainBuilder {
   public Stream<Map.Entry<SlotAndBlockRoot, List<DataColumnSidecar>>> streamDataColumnSidecars(
       final long fromSlot, final long toSlot, final List<UInt64> columns) {
     return streamDataColumnSidecars(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot), columns);
+  }
+
+  public Stream<SignedExecutionPayloadAndState> streamExecutionPayloadsAndStates(
+      final UInt64 fromSlot) {
+    return streamExecutionPayloadsAndStates(fromSlot, getLatestSlot());
   }
 
   public Stream<SignedExecutionPayloadAndState> streamExecutionPayloadsAndStates(
@@ -678,11 +689,11 @@ public class ChainBuilder {
 
   private SignedBlockAndState appendNewBlockToChain(final UInt64 slot, final BlockOptions options) {
     final SignedBlockAndState latestBlockAndState = getLatestBlockAndState();
+    final Bytes32 parentRoot = latestBlockAndState.getBlock().getRoot();
     final BeaconState preState =
         // build on top of the execution payload state if an execution payload has been processed
         Optional.ofNullable(getExecutionPayloadStateAtSlot(latestBlockAndState.getSlot()))
             .orElse(latestBlockAndState.getState());
-    final Bytes32 parentRoot = latestBlockAndState.getBlock().getMessage().hashTreeRoot();
 
     int proposerIndex = blockProposalTestUtil.getProposerIndexForSlot(preState, slot);
     if (options.isWrongProposerEnabled()) {

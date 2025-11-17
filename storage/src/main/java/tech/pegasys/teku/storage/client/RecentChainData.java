@@ -31,6 +31,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
@@ -109,6 +110,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
 
   private final SingleBlockProvider validatedBlockProvider;
   private final SingleBlobSidecarProvider validatedBlobSidecarProvider;
+  private final ExecutionPayloadProvider executionPayloadProvider;
 
   private final LateBlockReorgLogic lateBlockReorgLogic;
 
@@ -123,6 +125,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
       final StateAndBlockSummaryProvider stateProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
+      final ExecutionPayloadProvider executionPayloadProvider,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
@@ -137,6 +140,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
     this.validatedBlockProvider = validatedBlockProvider;
     this.validatedBlobSidecarProvider = validatedBlobSidecarProvider;
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
+    this.executionPayloadProvider = executionPayloadProvider;
     this.voteUpdateChannel = voteUpdateChannel;
     this.chainHeadChannel = chainHeadChannel;
     this.storageUpdateChannel = storageUpdateChannel;
@@ -174,6 +178,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
             .blockProvider(blockProvider)
             .stateProvider(stateProvider)
             .earliestBlobSidecarSlotProvider(earliestBlobSidecarSlotProvider)
+            .executionPayloadProvider(executionPayloadProvider)
             .storeConfig(storeConfig)
             .build();
 
@@ -393,11 +398,6 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
           optionalReorgContext);
     }
     bestBlockInitialized.complete(null);
-  }
-
-  public Optional<SlotAndBlockRoot> findCommonAncestor(
-      final Bytes32 blockRoot1, final Bytes32 blockRoot2) {
-    return store.getForkChoiceStrategy().findCommonAncestor(blockRoot1, blockRoot2);
   }
 
   private Optional<ReorgContext> computeReorgContext(

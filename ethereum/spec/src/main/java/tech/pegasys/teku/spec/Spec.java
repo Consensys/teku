@@ -79,6 +79,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.epbs.ExecutionPayloadAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -125,6 +126,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
 public class Spec {
@@ -470,6 +472,17 @@ public class Spec {
     return schemaDefinition
         .getSignedBlindedBlockContainerSchema()
         .sszDeserialize(serializedSignedBlindedBlockContainer);
+  }
+
+  /**
+   * TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 this works for devnet-0 but we need
+   * a generic solution similar to {@link BeaconBlockInvariants}
+   */
+  public SignedExecutionPayloadEnvelope deserializeSignedExecutionPayload(
+      final Bytes serializedSignedExecutionPayload) {
+    return SchemaDefinitionsGloas.required(forMilestone(GLOAS).getSchemaDefinitions())
+        .getSignedExecutionPayloadEnvelopeSchema()
+        .sszDeserialize(serializedSignedExecutionPayload);
   }
 
   private Optional<SchemaDefinitions> getSchemaDefinitionsForMilestone(

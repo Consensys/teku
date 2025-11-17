@@ -44,6 +44,7 @@ import tech.pegasys.teku.dataproviders.generators.StateGenerationTask;
 import tech.pegasys.teku.dataproviders.generators.StateRegenerationBaseSelector;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -59,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -106,6 +108,9 @@ class Store extends CacheableStore {
   private final Map<Bytes32, SignedBeaconBlock> blocks;
   private final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
   private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
+  private final ExecutionPayloadProvider executionPayloadProvider;
+  private final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads;
+
   private UInt64 timeMillis;
   private UInt64 genesisTime;
   private AnchorPoint finalizedAnchor;
@@ -141,7 +146,9 @@ class Store extends CacheableStore {
       final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates,
       final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
-      final Optional<UInt64> custodyGroupCount) {
+      final Optional<UInt64> custodyGroupCount,
+      final ExecutionPayloadProvider executionPayloadProvider,
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads) {
     checkArgument(
         time.isGreaterThanOrEqualTo(genesisTime),
         "Time must be greater than or equal to genesisTime");
@@ -192,6 +199,9 @@ class Store extends CacheableStore {
 
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
     this.custodyGroupCount = custodyGroupCount;
+
+    this.executionPayloadProvider = executionPayloadProvider;
+    this.executionPayloads = executionPayloads;
   }
 
   private BlockProvider createBlockProviderFromMapWhileLocked(
@@ -223,11 +233,11 @@ class Store extends CacheableStore {
       final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload,
       final Checkpoint justifiedCheckpoint,
       final Checkpoint bestJustifiedCheckpoint,
-      final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot,
       final Map<UInt64, VoteTracker> votes,
       final StoreConfig config,
       final ForkChoiceStrategy forkChoiceStrategy,
-      final Optional<UInt64> custodyGroupCount) {
+      final Optional<UInt64> custodyGroupCount,
+      final ExecutionPayloadProvider executionPayloadProvider) {
     final Map<Bytes32, SignedBeaconBlock> blocks =
         LimitedMap.createSynchronizedNatural(config.getBlockCacheSize());
     final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStateTaskQueue =
@@ -244,6 +254,8 @@ class Store extends CacheableStore {
             ? Optional.of(LimitedMap.createSynchronizedLRU(config.getEpochStateCacheSize()))
             : Optional.empty();
     final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars =
+        LimitedMap.createSynchronizedNatural(config.getBlockCacheSize());
+    final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads =
         LimitedMap.createSynchronizedNatural(config.getBlockCacheSize());
 
     return new Store(
@@ -267,7 +279,9 @@ class Store extends CacheableStore {
         checkpointStateTaskQueue,
         maybeEpochStates,
         blobSidecars,
-        custodyGroupCount);
+        custodyGroupCount,
+        executionPayloadProvider,
+        executionPayloads);
   }
 
   static UpdatableStore create(
@@ -288,7 +302,8 @@ class Store extends CacheableStore {
       final Optional<Bytes32> initialCanonicalBlockRoot,
       final Map<UInt64, VoteTracker> votes,
       final StoreConfig config,
-      final Optional<UInt64> custodyGroupCount) {
+      final Optional<UInt64> custodyGroupCount,
+      final ExecutionPayloadProvider executionPayloadProvider) {
     final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(time, genesisTime));
 
     final ForkChoiceStrategy forkChoiceStrategy =
@@ -316,11 +331,11 @@ class Store extends CacheableStore {
         finalizedOptimisticTransitionPayload,
         justifiedCheckpoint,
         bestJustifiedCheckpoint,
-        blockInfoByRoot,
         votes,
         config,
         forkChoiceStrategy,
-        custodyGroupCount);
+        custodyGroupCount,
+        executionPayloadProvider);
   }
 
   private static Optional<Bytes32> getInitialCanonicalBlockRoot(
@@ -663,6 +678,26 @@ class Store extends CacheableStore {
         headUnrealizedJustifiedCheckpoint.equals(parentUnrealizedJustifiedCheckpoint));
   }
 
+  @Override
+  public Optional<SignedExecutionPayloadEnvelope> getExecutionPayloadIfAvailable(
+      final Bytes32 beaconBlockRoot) {
+    readLock.lock();
+    try {
+      return Optional.ofNullable(executionPayloads.get(beaconBlockRoot));
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>>
+      retrieveSignedExecutionPayloadEnvelope(final Bytes32 beaconBlockRoot) {
+    if (!containsBlock(beaconBlockRoot)) {
+      return EmptyStoreResults.EMPTY_SIGNED_EXECUTION_PAYLOAD_ENVELOPE_FUTURE;
+    }
+    return executionPayloadProvider.getExecutionPayload(beaconBlockRoot);
+  }
+
   private Optional<ProtoNodeData> getBlockDataFromForkChoiceStrategy(final Bytes32 root) {
     readLock.lock();
     try {
@@ -770,6 +805,12 @@ class Store extends CacheableStore {
         .map(BlockAndCheckpoints::getBlock)
         .forEach(block -> blocks.put(block.getRoot(), block));
     blockCountGauge.ifPresent(gauge -> gauge.set(blocks.size()));
+  }
+
+  @Override
+  void cacheExecutionPayloads(
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads) {
+    this.executionPayloads.putAll(executionPayloads);
   }
 
   /** Non-synchronized, no lock, unsafe if Store is not locked externally */

@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 
@@ -37,6 +38,9 @@ public abstract class CacheableStore implements UpdatableStore {
   abstract void cacheProposerBoostRoot(Optional<Bytes32> proposerBoostRoot);
 
   abstract void cacheBlocks(Collection<BlockAndCheckpoints> blockAndCheckpoints);
+
+  abstract void cacheExecutionPayloads(
+      Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads);
 
   abstract void cacheStates(Map<Bytes32, StateAndBlockSummary> stateAndBlockSummaries);
 

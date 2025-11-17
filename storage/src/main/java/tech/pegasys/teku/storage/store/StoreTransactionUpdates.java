@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.FinalizedChainData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
@@ -47,6 +48,8 @@ class StoreTransactionUpdates {
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
   private final Optional<Bytes32> latestCanonicalBlockRoot;
   private final Optional<UInt64> custodyGroupCount;
+  private final Map<Bytes32, SignedExecutionPayloadAndState> hotExecutionPayloadAndStates;
+
   private final boolean blobSidecarsEnabled;
   private final boolean dataColumnSidecarsEnabled;
 
@@ -64,6 +67,7 @@ class StoreTransactionUpdates {
       final Optional<Bytes32> optimisticTransitionBlockRoot,
       final Optional<Bytes32> latestCanonicalBlockRoot,
       final Optional<UInt64> custodyGroupCount,
+      final Map<Bytes32, SignedExecutionPayloadAndState> hotExecutionPayloadAndStates,
       final boolean blobSidecarsEnabled,
       final boolean dataColumnSidecarsEnabled) {
     checkNotNull(tx, "Transaction is required");
@@ -78,6 +82,7 @@ class StoreTransactionUpdates {
     checkNotNull(optimisticTransitionBlockRoot, "Optimistic transition block root is required");
     checkNotNull(latestCanonicalBlockRoot, "Latest canonical block root is required");
     checkNotNull(custodyGroupCount, "Current custody group count is required");
+    checkNotNull(hotExecutionPayloadAndStates, "Hot execution payload and states are required");
 
     this.tx = tx;
     this.finalizedChainData = finalizedChainData;
@@ -92,6 +97,7 @@ class StoreTransactionUpdates {
     this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
     this.latestCanonicalBlockRoot = latestCanonicalBlockRoot;
     this.custodyGroupCount = custodyGroupCount;
+    this.hotExecutionPayloadAndStates = hotExecutionPayloadAndStates;
     this.blobSidecarsEnabled = blobSidecarsEnabled;
     this.dataColumnSidecarsEnabled = dataColumnSidecarsEnabled;
   }
@@ -112,6 +118,7 @@ class StoreTransactionUpdates {
         optimisticTransitionBlockRoot,
         latestCanonicalBlockRoot,
         custodyGroupCount,
+        hotExecutionPayloadAndStates,
         blobSidecarsEnabled,
         dataColumnSidecarsEnabled);
   }
@@ -152,6 +159,10 @@ class StoreTransactionUpdates {
             tx.pulledUpBlockCheckpoints,
             prunedHotBlockRoots,
             store.getFinalizedCheckpoint());
+
+    store.cacheExecutionPayloads(
+        Maps.transformValues(
+            hotExecutionPayloadAndStates, SignedExecutionPayloadAndState::executionPayload));
   }
 
   private StateAndBlockSummary blockAndStateAsSummary(final SignedBlockAndState blockAndState) {

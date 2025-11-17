@@ -28,6 +28,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -218,7 +219,8 @@ public abstract class AbstractStoreTest {
                     Optional.of(spec.calculateBlockCheckpoints(genesis.getState())))))
         .storeConfig(pruningOptions)
         .votes(emptyMap())
-        .latestCanonicalBlockRoot(Optional.empty());
+        .latestCanonicalBlockRoot(Optional.empty())
+        .executionPayloadProvider(executionPayloadProviderFromChainBuilder());
   }
 
   protected UpdatableStore createGenesisStoreWithMockForkChoiceStrategy(
@@ -237,5 +239,10 @@ public abstract class AbstractStoreTest {
 
   protected EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProviderFromChainBuilder() {
     return () -> SafeFuture.completedFuture(chainBuilder.getEarliestBlobSidecarSlot());
+  }
+
+  protected ExecutionPayloadProvider executionPayloadProviderFromChainBuilder() {
+    return beaconBlockRoot ->
+        SafeFuture.completedFuture(chainBuilder.getExecutionPayload(beaconBlockRoot));
   }
 }

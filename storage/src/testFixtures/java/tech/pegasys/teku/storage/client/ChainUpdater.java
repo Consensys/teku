@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -33,7 +34,6 @@ import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
-// TODO-GLOAS: https://github.com/Consensys/teku/issues/10071
 public class ChainUpdater {
 
   public final RecentChainData recentChainData;
@@ -255,6 +255,7 @@ public class ChainUpdater {
     } else {
       saveBlock(block, blobSidecars);
     }
+    chainBuilder.getExecutionPayloadAndState(block.getRoot()).ifPresent(this::saveExecutionPayload);
     return block;
   }
 
@@ -310,6 +311,12 @@ public class ChainUpdater {
         .orElseThrow()
         .onExecutionPayloadResult(block.getRoot(), PayloadStatus.VALID, true);
     saveBlockTime(block);
+  }
+
+  public void saveExecutionPayload(final SignedExecutionPayloadAndState executionPayload) {
+    final StoreTransaction tx = recentChainData.startStoreTransaction();
+    tx.putExecutionPayloadAndState(executionPayload.executionPayload(), executionPayload.state());
+    assertThat(tx.commit()).isCompleted();
   }
 
   public void saveBlockTime(final SignedBlockAndState block) {

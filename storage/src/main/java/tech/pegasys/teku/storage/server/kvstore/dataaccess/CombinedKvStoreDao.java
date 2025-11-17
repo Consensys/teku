@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -125,6 +126,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @MustBeClosed
   public Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz() {
     return db.streamRaw(schema.getColumnHotBlocksByRoot()).map(entry -> entry);
+  }
+
+  @Override
+  public Optional<SignedExecutionPayloadEnvelope> getHotExecutionPayload(final Bytes32 blockRoot) {
+    return db.get(schema.getColumnHotExecutionPayloadsByRoot(), blockRoot);
   }
 
   @Override
@@ -786,6 +792,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     @Override
     public void deleteHotBlockOnly(final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnHotBlocksByRoot(), blockRoot);
+    }
+
+    @Override
+    public void addHotExecutionPayload(final SignedExecutionPayloadEnvelope executionPayload) {
+      final Bytes32 blockRoot = executionPayload.getMessage().getBeaconBlockRoot();
+      transaction.put(schema.getColumnHotExecutionPayloadsByRoot(), blockRoot, executionPayload);
     }
 
     @Override

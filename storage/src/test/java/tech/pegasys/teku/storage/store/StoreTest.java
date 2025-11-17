@@ -83,7 +83,8 @@ class StoreTest extends AbstractStoreTest {
                     Optional.empty(),
                     Collections.emptyMap(),
                     defaultStoreConfig,
-                    Optional.empty()))
+                    Optional.empty(),
+                    executionPayloadProviderFromChainBuilder()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Time must be greater than or equal to genesisTime");
   }

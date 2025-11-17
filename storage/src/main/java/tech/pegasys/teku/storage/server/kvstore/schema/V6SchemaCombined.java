@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -53,6 +54,7 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   protected final int finalizedOffset;
 
   private final KvStoreColumn<Bytes32, SignedBeaconBlock> hotBlocksByRoot;
+  private final KvStoreColumn<Bytes32, SignedExecutionPayloadEnvelope> hotExecutionPayloadsByRoot;
 
   // Checkpoint states are no longer stored, keeping only for backwards compatibility.
   private final KvStoreColumn<Checkpoint, BeaconState> checkpointStates;
@@ -116,6 +118,11 @@ public abstract class V6SchemaCombined implements SchemaCombined {
     firstCustodyIncompleteSlot = KvStoreVariable.create(finalizedOffset + 4, UINT64_SERIALIZER);
 
     deletedVariableIds = List.of(asVariableId(finalizedOffset + 5));
+
+    final KvStoreSerializer<SignedExecutionPayloadEnvelope> signedExecutionPayloadSerializer =
+        KvStoreSerializer.createSignedExecutionPayloadSerializer(spec);
+    hotExecutionPayloadsByRoot =
+        KvStoreColumn.create(8, BYTES32_SERIALIZER, signedExecutionPayloadSerializer);
   }
 
   @Override
@@ -151,6 +158,12 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   @Override
   public KvStoreColumn<Bytes32, BeaconState> getColumnHotStatesByRoot() {
     return hotStatesByRoot;
+  }
+
+  @Override
+  public KvStoreColumn<Bytes32, SignedExecutionPayloadEnvelope>
+      getColumnHotExecutionPayloadsByRoot() {
+    return hotExecutionPayloadsByRoot;
   }
 
   @Override
@@ -246,6 +259,7 @@ public abstract class V6SchemaCombined implements SchemaCombined {
         .put(
             "BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX",
             getColumnBlobSidecarBySlotRootBlobIndex())
+        .put("HOT_EXECUTION_PAYLOADS_BY_ROOT", getColumnHotExecutionPayloadsByRoot())
         .build();
   }
 

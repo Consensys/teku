@@ -41,6 +41,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -75,6 +77,8 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Optional<UInt64> maybeEarliestBlobSidecarTransactionSlot = Optional.empty();
   Optional<Bytes32> maybeLatestCanonicalBlockRoot = Optional.empty();
   Optional<UInt64> maybeCustodyGroupCount = Optional.empty();
+  Map<Bytes32, SignedExecutionPayloadAndState> executionPayloads = new HashMap<>();
+
   private final UpdatableStore.StoreUpdateHandler updateHandler;
 
   StoreTransaction(
@@ -104,6 +108,14 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       this.maybeEarliestBlobSidecarTransactionSlot = maybeEarliestBlobSidecarSlot;
     }
     putStateRoot(state.hashTreeRoot(), block.getSlotAndBlockRoot());
+  }
+
+  @Override
+  public void putExecutionPayloadAndState(
+      final SignedExecutionPayloadEnvelope executionPayload, final BeaconState state) {
+    executionPayloads.put(
+        executionPayload.getMessage().getBeaconBlockRoot(),
+        new SignedExecutionPayloadAndState(executionPayload, state));
   }
 
   private boolean needToUpdateEarliestBlobSidecarSlot(
@@ -487,6 +499,25 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public Optional<Boolean> isFfgCompetitive(final Bytes32 headRoot, final Bytes32 parentRoot) {
     return store.isFfgCompetitive(headRoot, parentRoot);
+  }
+
+  @Override
+  public Optional<SignedExecutionPayloadEnvelope> getExecutionPayloadIfAvailable(
+      final Bytes32 beaconBlockRoot) {
+    return Optional.ofNullable(executionPayloads.get(beaconBlockRoot))
+        .map(SignedExecutionPayloadAndState::executionPayload)
+        .or(() -> store.getExecutionPayloadIfAvailable(beaconBlockRoot));
+  }
+
+  @Override
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>>
+      retrieveSignedExecutionPayloadEnvelope(final Bytes32 beaconBlockRoot) {
+    if (executionPayloads.containsKey(beaconBlockRoot)) {
+      return SafeFuture.completedFuture(
+          Optional.of(executionPayloads.get(beaconBlockRoot))
+              .map(SignedExecutionPayloadAndState::executionPayload));
+    }
+    return store.retrieveSignedExecutionPayloadEnvelope(beaconBlockRoot);
   }
 
   @Override

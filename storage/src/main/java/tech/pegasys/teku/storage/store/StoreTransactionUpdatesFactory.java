@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -54,6 +55,7 @@ class StoreTransactionUpdatesFactory {
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final AnchorPoint latestFinalized;
   private final Map<Bytes32, UInt64> prunedHotBlockRoots = new ConcurrentHashMap<>();
+  private final Map<Bytes32, SignedExecutionPayloadAndState> hotExecutionPayloadAndStates;
 
   public StoreTransactionUpdatesFactory(
       final Spec spec,
@@ -76,6 +78,7 @@ class StoreTransactionUpdatesFactory {
     maybeEarliestBlobSidecarSlot = tx.maybeEarliestBlobSidecarTransactionSlot;
     maybeLatestCanonicalBlockRoot = tx.maybeLatestCanonicalBlockRoot;
     maybeCustodyGroupCount = tx.maybeCustodyGroupCount;
+    hotExecutionPayloadAndStates = new ConcurrentHashMap<>(tx.executionPayloads);
   }
 
   public static StoreTransactionUpdates create(
@@ -263,6 +266,7 @@ class StoreTransactionUpdatesFactory {
         optimisticTransitionBlockRoot,
         maybeLatestCanonicalBlockRoot,
         maybeCustodyGroupCount,
+        hotExecutionPayloadAndStates,
         spec.isMilestoneSupported(SpecMilestone.DENEB),
         spec.isMilestoneSupported(SpecMilestone.FULU));
   }

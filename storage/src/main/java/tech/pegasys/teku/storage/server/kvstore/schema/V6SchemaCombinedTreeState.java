@@ -234,6 +234,7 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
             "NON_CANONICAL_SIDECAR_BY_COLUMN_SLOT_AND_IDENTIFIER",
             getColumnNonCanonicalSidecarByColumnSlotAndIdentifier())
         .put("DATA_COLUMN_SIDECARS_PROOFS_BY_SLOT", getColumnDataColumnSidecarsProofsBySlot())
+        .put("HOT_EXECUTION_PAYLOADS_BY_ROOT", getColumnHotExecutionPayloadsByRoot())
         .build();
   }
 

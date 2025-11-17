@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Maps;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -59,6 +60,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -261,6 +264,12 @@ public class KvStoreDatabase implements Database {
   @Override
   public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 blockRoot) {
     return dao.getHotBlock(blockRoot);
+  }
+
+  @Override
+  public Optional<SignedExecutionPayloadEnvelope> getHotExecutionPayload(
+      final Bytes32 beaconBlockRoot) {
+    return dao.getHotExecutionPayload(beaconBlockRoot);
   }
 
   @Override
@@ -588,6 +597,14 @@ public class KvStoreDatabase implements Database {
       final Set<Bytes32> deletedHotBlockRoots) {
     updater.addHotBlocks(addedBlocks);
     deletedHotBlockRoots.forEach(updater::deleteHotBlock);
+  }
+
+  protected void updateHotExecutionPayloads(
+      final HotUpdater updater,
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> addedExecutionPayloads,
+      final Set<Bytes32> deletedHotBlockRoots) {
+    updater.addHotExecutionPayloads(addedExecutionPayloads);
+    //  TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 delete hot execution payloads
   }
 
   protected void addFinalizedBlock(final SignedBeaconBlock block, final FinalizedUpdater updater) {
@@ -1309,12 +1326,20 @@ public class KvStoreDatabase implements Database {
       update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
       latestFinalizedStateUpdateEndTime = System.currentTimeMillis();
 
-      updateHotBlocks(updater, update.getHotBlocks(), update.getDeletedHotBlocks().keySet());
+      final Set<Bytes32> deletedHotBlockRoots = update.getDeletedHotBlocks().keySet();
+      updateHotBlocks(updater, update.getHotBlocks(), deletedHotBlockRoots);
       updater.addHotStates(update.getHotStates());
 
       if (update.getStateRoots().size() > 0) {
         updater.addHotStateRoots(update.getStateRoots());
       }
+
+      updateHotExecutionPayloads(
+          updater,
+          Maps.transformValues(
+              update.getHotExecutionPayloadAndStates(),
+              SignedExecutionPayloadAndState::executionPayload),
+          deletedHotBlockRoots);
 
       // Delete finalized data from hot db
 

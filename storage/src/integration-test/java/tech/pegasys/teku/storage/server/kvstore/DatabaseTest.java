@@ -58,6 +58,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -258,6 +259,7 @@ public class DatabaseTest {
             Optional.empty(),
             Optional.empty(),
             Optional.empty(),
+            Map.of(),
             true,
             false));
     database.update(
@@ -276,6 +278,7 @@ public class DatabaseTest {
             Optional.empty(),
             Optional.empty(),
             Optional.empty(),
+            Map.of(),
             true,
             false));
     // Will not be overridden from Database interface, only initial set
@@ -424,6 +427,7 @@ public class DatabaseTest {
             Optional.empty(),
             Optional.empty(),
             Optional.empty(),
+            Map.of(),
             true,
             false));
     database.update(
@@ -442,6 +446,7 @@ public class DatabaseTest {
             Optional.empty(),
             Optional.empty(),
             Optional.empty(),
+            Map.of(),
             true,
             false));
 
@@ -1656,6 +1661,7 @@ public class DatabaseTest {
             .blockProvider(mock(BlockProvider.class))
             .stateProvider(mock(StateAndBlockSummaryProvider.class))
             .latestCanonicalBlockRoot(Optional.empty())
+            .executionPayloadProvider(mock(ExecutionPayloadProvider.class))
             .build();
 
     assertThat(store.getTimeSeconds()).isEqualTo(genesisTime);
