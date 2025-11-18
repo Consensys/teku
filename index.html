@@ -7,31 +7,29 @@
     <title>ConsenSys Teku REST API documentation</title>
 
     <!-- Bootstrap core CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+      integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+      crossorigin="anonymous">
 
     <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700" rel="stylesheet">
 
     <meta name="theme-color" content="#59d29f">
 
     <style>
-
       .mb-4, .my-4 {
-          margin-bottom: 0!important;
+        margin-bottom: 0!important;
       }
 
       .container {
-          padding-top: 0;
-          padding-right: 0;
-          padding-left: 0;
-          max-width: max-content
+        padding-top: 0;
+        padding-right: 0;
+        padding-left: 0;
+        max-width: max-content;
       }
 
       .bd-placeholder-img {
         font-size: 1.125rem;
         text-anchor: middle;
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
         user-select: none;
       }
 
@@ -41,18 +39,23 @@
         }
       }
     </style>
-
   </head>
+
   <body>
     <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-4">
       <a class="navbar-brand" href="#">ConsenSys Teku REST API</a>
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+      <button class="navbar-toggler" type="button" data-toggle="collapse"
+        data-target="#navbarCollapse" aria-controls="navbarCollapse"
+        aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
+
       <div class="collapse navbar-collapse" id="navbarsExampleDefault">
         <ul class="navbar-nav mr-auto">
           <li class="nav-item dropdown">
-            <button class="nav-btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">latest (master)</button>
+            <button class="nav-btn btn-secondary dropdown-toggle" type="button"
+              id="dropdownMenuButton" data-toggle="dropdown"
+              aria-haspopup="true" aria-expanded="false">latest (master)</button>
             <div class="dropdown-menu" aria-labelledby="versionDropDown" id="versionsList">
               <a class="version-number-item dropdown-item active" href="#latest">latest</a>
             </div>
@@ -62,91 +65,112 @@
     </nav>
 
     <main role="main" class="container">
-      <!-- <redoc spec-url='../0.10.0/api.json'></redoc> -->
-      <script src="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js"> </script>
-    </main><!-- /.container -->
+      <div id="loadingMsg" class="p-4 text-muted">Loading Teku API documentation...</div>
+    </main>
 
-    <script src="https://code.jquery.com/jquery-3.5.0.min.js" integrity="sha384-LVoNJ6yst/aLxKvxwp6s2GAabqPczfWh6xzm38S/YtjUyZ+3aTKOnD/OJVGYLZDl" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <!-- ✅ Reliable Redoc CDN (not blocked by Edge tracking prevention) -->
+    <script src="./redoc.standalone.js"></script>
+
+    <!-- Dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.0.min.js"
+      integrity="sha384-LVoNJ6yst/aLxKvxwp6s2GAabqPczfWh6xzm38S/YtjUyZ+3aTKOnD/OJVGYLZDl"
+      crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+      integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+      crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+      integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+      crossorigin="anonymous"></script>
+
+    <!-- ✅ Custom Teku Docs Logic -->
     <script>
-
-      // default version list in case of JSON loading issue
-      let versions = {'latest':{'spec':'latest','source':'master'}};
+      // Default fallback
+      let versions = { 'latest': { 'spec': 'latest', 'source': 'master' } };
       let defaultVersion = Object.keys(versions)[0];
 
-      // return the json OPENAPI spec path to load for a version
-      // or a default version (first one in list) if no matching version.
-      function getSpecPath(version){
-        let spec = (version in versions) ? versions[version].spec : versions[defaultVersion].spec;
-        return `teku-${spec}.json`;
+      // Build path for OpenAPI spec
+      function getSpecPath(version) {
+        const v = versions[version] ? versions[version].spec : versions[defaultVersion].spec;
+
+        // Use full URL if specified
+        if (v.startsWith('http')) return v;
+
+        // Relative JSON or YAML fallback
+        const jsonPath = `teku-${v}.json`;
+        const yamlPath = `teku-${v}.yaml`;
+        return jsonPath; // we’ll rely on Redoc to handle missing one
       }
 
-      // is the version passed as param the one displayed accoring to the url
-      function isDisplayedVersion(version,displayedVersion){
-         return displayedVersion === version || (displayedVersion === '' && version === defaultVersion);
+      function isDisplayedVersion(version, displayedVersion) {
+        return displayedVersion === version || (displayedVersion === '' && version === defaultVersion);
       }
 
-      // Update the redoc element and run the redoc display
-      function updateSpec(version){
-        const element = $( `<redoc spec-url="${getSpecPath(version)}"></redoc>` );
-        element.appendTo( "main.container" );
-        Redoc.init(`${element.attr('spec-url')}?ts=${Date.now()}`, {hideHostname: true});
+      // ✅ Wait for Redoc safely
+      function safeRedocInit(specUrl) {
+        const container = $("main.container");
+        if (typeof Redoc !== "undefined") {
+          container.empty();
+          const element = $(`<redoc spec-url="${specUrl}"></redoc>`);
+          container.append(element);
+          Redoc.init(`${specUrl}?ts=${Date.now()}`, { hideHostname: true });
+        } else {
+          console.error("Redoc not yet available, retrying...");
+          setTimeout(() => safeRedocInit(specUrl), 300);
+        }
+      }
+
+      function updateSpec(version) {
+        const specUrl = getSpecPath(version);
+        $("#loadingMsg").text(`Loading documentation for ${version}...`);
+        safeRedocInit(specUrl);
         updateVersionsDropDown(version);
       }
 
-      // Update the drop down list and set active version
-      function updateVersionsDropDown(versionFromUrl){
+      function updateVersionsDropDown(versionFromUrl) {
         $("#versionsList").empty();
-        $.each( versions, function( version, infos ) {
-          var sourceText = (version === infos.source) ? '' : ` (${infos.source})`;
+        $.each(versions, function (version, infos) {
+          const sourceText = (version === infos.source) ? '' : ` (${infos.source})`;
+          const item = $(`<a class="version-number-item dropdown-item" href="?version=${version}">${version}${sourceText}</a>`);
 
-          var item = $( `<a class="version-number-item dropdown-item" href="?version=${version}">${version}${sourceText}</a>" `);
-
-          if(isDisplayedVersion(version,versionFromUrl)){
+          if (isDisplayedVersion(version, versionFromUrl)) {
             item.addClass("active");
             $('#dropdownMenuButton').text(`${version}${sourceText}`);
             document.title = `ConsenSys Teku REST API documentation - ${version}`;
           }
 
-          item.appendTo("#versionsList");
+          $("#versionsList").append(item);
         });
       }
 
-      // get the version in the URL from the search query or hash part (for retro compatibility)
-      // removes the and # at the beginning of the hash part
-      // returns empty string if no version present at all
-      function getVersionFromURL(){
-        let params = new URLSearchParams($(location).attr('search').substring(1));
+      function getVersionFromURL() {
+        const params = new URLSearchParams(window.location.search.substring(1));
         const version = params.get("version");
-        return version != null ? version : $(location).attr('hash').replace(/^[#]/, '');
+        return version != null ? version : window.location.hash.replace(/^[#]/, '');
       }
 
-      // set the global versions value from the Json file,
-      // update spec page on completions
-      function getVersionsFromJsonFile(){
+      function getVersionsFromJsonFile() {
         $.ajaxSetup({ cache: false });
-        $.getJSON( 'versions.json', function( data ) {
-          if(!jQuery.isEmptyObject(data)){
+        $.getJSON('versions.json', function (data) {
+          if (!jQuery.isEmptyObject(data)) {
             versions = data;
-            // Makes stable the default version if available
             if ('stable' in versions) {
               defaultVersion = 'stable';
             }
           }
-        })
-        .always(function() { updateSpec(getVersionFromURL()); });
+        }).always(function () {
+          updateSpec(getVersionFromURL());
+        });
       }
 
-      // event trigger functions
-      $(window).on( 'hashchange', function( e ) {
+      // React to hash changes
+      $(window).on('hashchange', function () {
         updateSpec(getVersionFromURL());
       });
 
-      $(function() {
+      // Initialize once everything is ready
+      $(function () {
         getVersionsFromJsonFile();
       });
-
     </script>
   </body>
 </html>
