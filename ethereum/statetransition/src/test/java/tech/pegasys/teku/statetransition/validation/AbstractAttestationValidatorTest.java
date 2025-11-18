@@ -89,9 +89,10 @@ abstract class AbstractAttestationValidatorTest {
       new AttestationGenerator(spec, chainBuilder.getValidatorKeys());
   protected final AsyncBLSSignatureVerifier signatureVerifier =
       AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE);
-
+  protected final GossipValidationHelper gossipValidationHelper =
+      new GossipValidationHelper(spec, recentChainData, new StubMetricsSystem());
   protected final AttestationValidator validator =
-      new AttestationValidator(spec, recentChainData, signatureVerifier, new StubMetricsSystem());
+      new AttestationValidator(spec, signatureVerifier, gossipValidationHelper);
 
   @BeforeEach
   public void setUp() {

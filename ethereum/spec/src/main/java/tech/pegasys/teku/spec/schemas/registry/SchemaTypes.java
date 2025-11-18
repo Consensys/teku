@@ -69,6 +69,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Consolid
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
@@ -205,6 +206,8 @@ public class SchemaTypes {
   // Move this when we decide which fork this schema should be under
   public static final SchemaId<ExecutionProofSchema> EXECUTION_PROOF_SCHEMA =
       create("EXECUTION_PROOF_SCHEMA");
+  public static final SchemaId<LightClientBootstrapSchema> LIGHT_CLIENT_BOOTSTRAP_SCHEMA =
+      create("LIGHT_CLIENT_BOOTSTRAP_SCHEMA");
 
   // Fulu
   public static final SchemaId<CellSchema> CELL_SCHEMA = create("CELL_SCHEMA");

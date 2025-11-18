@@ -30,8 +30,9 @@ public class ValidatorLogger {
   private static final int VALIDATOR_KEY_LIMIT = 20;
   public static final ValidatorLogger VALIDATOR_LOGGER =
       new ValidatorLogger(LoggingConfigurator.VALIDATOR_LOGGER_NAME);
-  public static final int LONGEST_TYPE_LENGTH = "sync_contribution".length();
+  public static final int LONGEST_TYPE_LENGTH = "payload_attestation".length();
   private static final String PREFIX = "Validator   *** ";
+  private static final String BUILDER_PREFIX = "Builder     *** ";
 
   @SuppressWarnings("PrivateStaticFinalLoggers")
   private final Logger log;
@@ -311,5 +312,30 @@ public class ValidatorLogger {
             "%sSlashing protection last updated more than %s epochs ago for validators: %s",
             PREFIX, deltaEpochs, formatValidators(maybeKey));
     log.warn(ColorConsolePrinter.print(infoString, Color.YELLOW));
+  }
+
+  public void logExecutionPayloadDuty(
+      final UInt64 slot, final UInt64 builderIndex, final Bytes32 blockRoot, final String suffix) {
+    final String paddedType = Strings.padEnd("execution_payload", LONGEST_TYPE_LENGTH, ' ');
+    log.info(
+        ColorConsolePrinter.print(
+            String.format(
+                "%sPublished %s  Slot: %s, Builder: %s, Block Root: %s, %s",
+                BUILDER_PREFIX,
+                paddedType,
+                slot,
+                builderIndex,
+                LogFormatter.formatHashRoot(blockRoot),
+                suffix),
+            ColorConsolePrinter.Color.PURPLE));
+  }
+
+  public void executionPayloadDutyFailed(
+      final UInt64 slot, final UInt64 builderIndex, final Throwable error) {
+    final String errorString =
+        String.format(
+            "%sFailed to produce execution_payload  Slot: %s Builder: %s",
+            BUILDER_PREFIX, slot, builderIndex);
+    log.error(ColorConsolePrinter.print(errorString, ColorConsolePrinter.Color.RED), error);
   }
 }

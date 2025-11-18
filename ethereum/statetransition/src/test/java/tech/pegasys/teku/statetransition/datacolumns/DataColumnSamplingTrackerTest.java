@@ -47,12 +47,13 @@ class DataColumnSamplingTrackerTest {
   }
 
   @Test
-  void create_shouldInitializeWithAllColumnsMissing() {
+  void create_shouldInitializeWithAllColumnsMissingAndRPCNotFetched() {
     assertThat(tracker.slot()).isEqualTo(SLOT);
     assertThat(tracker.blockRoot()).isEqualTo(BLOCK_ROOT);
     assertThat(tracker.samplingRequirement()).isEqualTo(SAMPLING_REQUIREMENT);
     assertThat(tracker.missingColumns()).containsExactlyInAnyOrderElementsOf(SAMPLING_REQUIREMENT);
     assertThat(tracker.completionFuture()).isNotDone();
+    assertThat(tracker.rpcFetchScheduled().get()).isFalse();
   }
 
   @Test

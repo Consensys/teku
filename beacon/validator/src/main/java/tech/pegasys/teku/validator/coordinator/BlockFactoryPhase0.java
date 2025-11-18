@@ -79,10 +79,10 @@ public class BlockFactoryPhase0 implements BlockFactory {
                 requestedBuilderBoostFactor,
                 blockProductionPerformance),
             blockProductionPerformance)
-        .thenApply(this::beaconBlockAndStateToBlockContainerAndMetaData);
+        .thenApply(this::blockAndStateToBlockContainerAndMetaData);
   }
 
-  protected BlockContainerAndMetaData beaconBlockAndStateToBlockContainerAndMetaData(
+  private BlockContainerAndMetaData blockAndStateToBlockContainerAndMetaData(
       final BeaconBlockAndState blockAndState) {
     final SlotCaches slotCaches = BeaconStateCache.getSlotCaches(blockAndState.getState());
     return new BlockContainerAndMetaData(

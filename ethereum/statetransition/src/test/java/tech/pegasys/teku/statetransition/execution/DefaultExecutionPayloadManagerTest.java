@@ -67,6 +67,12 @@ class DefaultExecutionPayloadManagerTest {
     asyncRunner.executeDueActions();
 
     assertThat(resultFuture).isCompletedWithValue(successfulImportResult);
+
+    // verify the `beacon_block_root` is cached
+    assertThat(
+            executionPayloadManager.isExecutionPayloadRecentlySeen(
+                signedExecutionPayload.getMessage().getBeaconBlockRoot()))
+        .isTrue();
   }
 
   @Test
@@ -105,5 +111,11 @@ class DefaultExecutionPayloadManagerTest {
     assertThat(resultFuture).isCompletedWithValue(InternalValidationResult.ACCEPT);
 
     verify(forkChoice).onExecutionPayload(signedExecutionPayload, executionLayer);
+
+    // verify the `beacon_block_root` is cached
+    assertThat(
+            executionPayloadManager.isExecutionPayloadRecentlySeen(
+                signedExecutionPayload.getMessage().getBeaconBlockRoot()))
+        .isTrue();
   }
 }

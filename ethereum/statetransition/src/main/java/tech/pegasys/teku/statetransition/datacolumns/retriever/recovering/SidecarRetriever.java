@@ -32,6 +32,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
@@ -157,10 +158,11 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
   }
 
   @Override
-  public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {
+  public void onNewValidatedSidecar(
+      final DataColumnSidecar sidecar, final RemoteOrigin remoteOrigin) {
     LOG.trace(
         "new validated sidecar ({}), index {}", sidecar.getSlotAndBlockRoot(), sidecar.getIndex());
-    delegate.onNewValidatedSidecar(sidecar);
+    delegate.onNewValidatedSidecar(sidecar, remoteOrigin);
   }
 
   @VisibleForTesting

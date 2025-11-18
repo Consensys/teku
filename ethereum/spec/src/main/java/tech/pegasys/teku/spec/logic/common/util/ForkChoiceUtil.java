@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -395,6 +396,13 @@ public class ForkChoiceUtil {
     // Add new block to store
     store.putBlockAndState(
         signedBlock, postState, blockCheckpoints, blobSidecars, earliestBlobSidecarsSlot);
+  }
+
+  public void applyExecutionPayloadToStore(
+      final MutableStore store,
+      final SignedExecutionPayloadEnvelope signedEnvelope,
+      final BeaconState postState) {
+    // NO-OP until Gloas
   }
 
   private UInt64 getFinalizedCheckpointStartSlot(final ReadOnlyStore store) {

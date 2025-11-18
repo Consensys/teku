@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -43,6 +44,7 @@ import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
 public class SimpleSidecarRetriever
     implements DataColumnSidecarRetriever, DataColumnPeerManager.PeerListener {
@@ -104,7 +106,8 @@ public class SimpleSidecarRetriever
   }
 
   @Override
-  public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {
+  public void onNewValidatedSidecar(
+      final DataColumnSidecar sidecar, final RemoteOrigin remoteOrigin) {
     final DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier =
         DataColumnSlotAndIdentifier.fromDataColumn(sidecar);
 
@@ -142,10 +145,27 @@ public class SimpleSidecarRetriever
     final SafeFuture<DataColumnSidecar> reqRespPromise =
         reqResp.requestDataColumnSidecar(match.peer.nodeId, match.request.columnId);
     match.request.onPeerRequest(match.peer().nodeId);
-    match.request.activeRpcRequest =
-        new ActiveRequest(
-            reqRespPromise.whenComplete((sidecar, err) -> reqRespCompleted(match.request, sidecar)),
-            match.peer);
+
+    final SafeFuture<Void> activeRpcRequest =
+        reqRespPromise.handle(
+            (sidecar, err) -> {
+              reqRespCompleted(match.request, sidecar);
+
+              if (err != null) {
+                LOG.debug(
+                    "SimpleSidecarRetriever.Request failed for {} due to: {}",
+                    () -> sidecar != null ? sidecar.toLogString() : "N/A",
+                    () -> ExceptionUtil.getMessageOrSimpleName(err));
+              }
+
+              return null;
+            });
+
+    // here we make sure that if something goes wrong in the handle call we
+    // log all the info to fix the bug
+    activeRpcRequest.ignoreCancelException().finishStackTrace();
+
+    match.request.activeRpcRequest = new ActiveRequest(activeRpcRequest, match.peer);
     return true;
   }
 
@@ -250,19 +270,19 @@ public class SimpleSidecarRetriever
   @Override
   public void peerConnected(final UInt256 nodeId) {
     LOG.trace(
-        "SimpleSidecarRetriever.peerConnected: {}", "0x..." + nodeId.toHexString().substring(58));
+        "SimpleSidecarRetriever.peerConnected: 0x...{}", () -> nodeId.toHexString().substring(58));
     connectedPeers.computeIfAbsent(nodeId, __ -> new ConnectedPeer(nodeId));
   }
 
   @Override
   public void peerDisconnected(final UInt256 nodeId) {
     LOG.trace(
-        "SimpleSidecarRetriever.peerDisconnected: {}",
-        "0x..." + nodeId.toHexString().substring(58));
+        "SimpleSidecarRetriever.peerDisconnected: 0x...{}",
+        () -> nodeId.toHexString().substring(58));
     connectedPeers.remove(nodeId);
   }
 
-  private record ActiveRequest(SafeFuture<DataColumnSidecar> promise, ConnectedPeer peer) {}
+  private record ActiveRequest(SafeFuture<Void> promise, ConnectedPeer peer) {}
 
   private static class RetrieveRequest {
     final DataColumnSlotAndIdentifier columnId;

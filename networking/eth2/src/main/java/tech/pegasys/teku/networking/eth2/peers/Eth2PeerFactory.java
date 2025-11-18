@@ -78,12 +78,14 @@ public class Eth2PeerFactory {
         PeerChainValidator.create(spec, metricsSystem, chainDataClient, requiredCheckpoint),
         dataColumnSidecarSignatureValidator,
         RateTracker.create(peerBlocksRateLimit, TIME_OUT, timeProvider, "blocks"),
-        RateTracker.create(peerBlobSidecarsRateLimit, TIME_OUT, timeProvider, "blobSidecars"),
+        RateTracker.create(peerBlobSidecarsRateLimit, TIME_OUT, timeProvider, "blob_sidecars"),
         RateTracker.create(
             peerBlocksRateLimit * spec.getNumberOfDataColumns().orElse(1),
             TIME_OUT,
             timeProvider,
-            "dataColumns"),
+            "data_column_sidecars"),
+        RateTracker.create(
+            peerBlocksRateLimit, TIME_OUT, timeProvider, "execution_payload_envelopes"),
         RateTracker.create(peerRequestLimit, TIME_OUT, timeProvider, "requestTracker"),
         metricsSystem,
         timeProvider);

@@ -150,6 +150,10 @@ public class ExecutionPayloadProcessorGloas extends AbstractExecutionPayloadProc
       throw new ExecutionPayloadProcessingException(
           "The hash tree root of the blob kzg commitments in the envelope are not consistent with the blob kzg commitments root of the committed bid");
     }
+    if (!envelope.getPayload().getPrevRandao().equals(committedBid.getPrevRandao())) {
+      throw new ExecutionPayloadProcessingException(
+          "Prev randao of the envelope is not consistent with the prev randao of the committed bid");
+    }
     // Verify the withdrawals root
     if (!ExecutionPayloadCapella.required(payload)
         .getWithdrawals()
@@ -173,12 +177,6 @@ public class ExecutionPayloadProcessorGloas extends AbstractExecutionPayloadProc
       throw new ExecutionPayloadProcessingException(
           "Parent hash of the payload is not consistent with the previous execution payload");
     }
-    // Verify prev_randao
-    final UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(state);
-    if (!payload.getPrevRandao().equals(beaconStateAccessors.getRandaoMix(state, currentEpoch))) {
-      throw new ExecutionPayloadProcessingException(
-          "Prev randao of the payload is not as expected");
-    }
     // Verify timestamp
     if (!payload
         .getTimestamp()
@@ -187,7 +185,9 @@ public class ExecutionPayloadProcessorGloas extends AbstractExecutionPayloadProc
     }
     // Verify commitments are under limit
     if (envelope.getBlobKzgCommitments().size()
-        > miscHelpers.getBlobParameters(currentEpoch).maxBlobsPerBlock()) {
+        > miscHelpers
+            .getBlobParameters(beaconStateAccessors.getCurrentEpoch(state))
+            .maxBlobsPerBlock()) {
       throw new ExecutionPayloadProcessingException(
           "Number of kzg commitments in the envelope exceeds max blobs per block");
     }
@@ -195,8 +195,7 @@ public class ExecutionPayloadProcessorGloas extends AbstractExecutionPayloadProc
     if (payloadExecutor.isPresent()) {
       final NewPayloadRequest payloadToExecute = computeNewPayloadRequest(state, envelope);
       final boolean optimisticallyAccept =
-          // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878
-          payloadExecutor.get().optimisticallyExecute(null, payloadToExecute);
+          payloadExecutor.get().optimisticallyExecute(Optional.empty(), payloadToExecute);
       if (!optimisticallyAccept) {
         throw new ExecutionPayloadProcessingException(
             "Execution payload was not optimistically accepted");

@@ -84,6 +84,7 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
           millisPerSlot,
           this::onContributionCreationDue);
     }
+    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10018
     if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
       taskScheduler.scheduleRepeatingEventInMillis(
           nextSlotStartTimeMillis.plus(spec.getPayloadAttestationDueMillis(nextSlot)),

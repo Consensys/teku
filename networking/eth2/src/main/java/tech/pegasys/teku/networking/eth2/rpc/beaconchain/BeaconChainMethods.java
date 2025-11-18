@@ -222,9 +222,9 @@ public class BeaconChainMethods {
             recentChainData,
             dasLogger),
         createExecutionPayloadEnvelopesByRoot(
-            spec, asyncRunner, peerLookup, rpcEncoding, recentChainData),
+            spec, asyncRunner, peerLookup, rpcEncoding, recentChainData, metricsSystem),
         createExecutionPayloadEnvelopesByRange(
-            spec, asyncRunner, peerLookup, rpcEncoding, recentChainData),
+            spec, asyncRunner, peerLookup, rpcEncoding, recentChainData, metricsSystem),
         createMetadata(spec, asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding),
         createPing(asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding));
   }
@@ -554,7 +554,8 @@ public class BeaconChainMethods {
           final AsyncRunner asyncRunner,
           final PeerLookup peerLookup,
           final RpcEncoding rpcEncoding,
-          final RecentChainData recentChainData) {
+          final RecentChainData recentChainData,
+          final MetricsSystem metricsSystem) {
 
     if (!spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
       return Optional.empty();
@@ -571,7 +572,8 @@ public class BeaconChainMethods {
 
     final ExecutionPayloadEnvelopesByRootMessageHandler
         executionPayloadEnvelopesByRootMessageHandler =
-            new ExecutionPayloadEnvelopesByRootMessageHandler();
+            new ExecutionPayloadEnvelopesByRootMessageHandler(
+                getSpecConfigGloas(spec), metricsSystem);
 
     return Optional.of(
         new SingleProtocolEth2RpcMethod<>(
@@ -594,7 +596,8 @@ public class BeaconChainMethods {
           final AsyncRunner asyncRunner,
           final PeerLookup peerLookup,
           final RpcEncoding rpcEncoding,
-          final RecentChainData recentChainData) {
+          final RecentChainData recentChainData,
+          final MetricsSystem metricsSystem) {
 
     if (!spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
       return Optional.empty();
@@ -610,7 +613,8 @@ public class BeaconChainMethods {
 
     final ExecutionPayloadEnvelopesByRangeMessageHandler
         executionPayloadEnvelopesByRangeMessageHandler =
-            new ExecutionPayloadEnvelopesByRangeMessageHandler(getSpecConfigGloas(spec));
+            new ExecutionPayloadEnvelopesByRangeMessageHandler(
+                getSpecConfigGloas(spec), metricsSystem);
 
     return Optional.of(
         new SingleProtocolEth2RpcMethod<>(
