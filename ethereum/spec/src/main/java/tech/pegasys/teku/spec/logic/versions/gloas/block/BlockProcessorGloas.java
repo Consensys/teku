@@ -211,6 +211,12 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
         || !bid.getParentBlockRoot().equals(beaconBlock.getParentRoot())) {
       throw new BlockProcessingException("Bid is not for the right parent block");
     }
+    if (!bid.getPrevRandao()
+        .equals(
+            beaconStateAccessors.getRandaoMix(
+                state, beaconStateAccessors.getCurrentEpoch(state)))) {
+      throw new BlockProcessingException("Prev randao of the bid is not as expected");
+    }
 
     // Record the pending payment if there is some payment
     if (amount.isGreaterThan(UInt64.ZERO)) {
