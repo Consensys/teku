@@ -73,7 +73,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -102,7 +101,6 @@ import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -1103,25 +1101,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     final UInt64 startSlot = epochStartSlot.max(GENESIS_SLOT.increment());
     final UInt64 endSlot = epochStartSlot.plus(spec.slotsPerEpoch(epoch));
     final List<ProposerDuty> proposerSlots = new ArrayList<>();
-    if (spec.atEpoch(epoch).getMilestone().isLessThan(SpecMilestone.FULU)) {
-      for (UInt64 slot = startSlot; slot.compareTo(endSlot) < 0; slot = slot.plus(UInt64.ONE)) {
-        final int proposerIndex = spec.getBeaconProposerIndex(state, slot);
-        final BLSPublicKey publicKey =
-            spec.getValidatorPubKey(state, UInt64.valueOf(proposerIndex)).orElseThrow();
-        proposerSlots.add(new ProposerDuty(publicKey, proposerIndex, slot));
-      }
-    } else {
-      final BeaconStateAccessorsFulu beaconStateAccessorsFulu =
-          BeaconStateAccessorsFulu.required(spec.atEpoch(epoch).beaconStateAccessors());
-      final List<Integer> proposerIndices =
-          beaconStateAccessorsFulu.getBeaconProposerIndices(state, epoch);
-      for (int i = 0; i < proposerIndices.size(); ++i) {
-        final int proposerIndex = proposerIndices.get(i);
-        final UInt64 slot = startSlot.plus(i);
-        final BLSPublicKey publicKey =
-            spec.getValidatorPubKey(state, UInt64.valueOf(proposerIndex)).orElseThrow();
-        proposerSlots.add(new ProposerDuty(publicKey, proposerIndex, slot));
-      }
+    for (UInt64 slot = startSlot; slot.compareTo(endSlot) < 0; slot = slot.increment()) {
+      final int proposerIndex = spec.getBeaconProposerIndex(state, slot);
+      final BLSPublicKey publicKey =
+          spec.getValidatorPubKey(state, UInt64.valueOf(proposerIndex)).orElseThrow();
+      proposerSlots.add(new ProposerDuty(publicKey, proposerIndex, slot));
     }
     return proposerSlots;
   }
