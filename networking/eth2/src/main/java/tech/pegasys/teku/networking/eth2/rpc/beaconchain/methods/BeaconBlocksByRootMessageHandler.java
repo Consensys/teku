@@ -112,20 +112,18 @@ public class BeaconBlocksByRootMessageHandler
               __ ->
                   retrieveBlock(blockRoot.get())
                       .thenCompose(
-                          block -> {
-                            final Optional<RpcException> validationResult =
-                                block.flatMap(b -> validateResponse(protocolId, b));
-                            if (validationResult.isPresent()) {
-                              return SafeFuture.failedFuture(validationResult.get());
-                            }
-                            return block
-                                .map(
-                                    signedBeaconBlock ->
-                                        callback
-                                            .respond(signedBeaconBlock)
-                                            .thenRun(sentBlocks::incrementAndGet))
-                                .orElse(SafeFuture.COMPLETE);
-                          }));
+                          maybeBlock ->
+                              maybeBlock
+                                  .flatMap(response -> validateResponse(protocolId, response))
+                                  .<SafeFuture<Void>>map(SafeFuture::failedFuture)
+                                  .or(
+                                      () ->
+                                          maybeBlock.map(
+                                              block ->
+                                                  callback
+                                                      .respond(block)
+                                                      .thenRun(sentBlocks::incrementAndGet)))
+                                  .orElse(SafeFuture.COMPLETE)));
     }
     future.finish(
         () -> {
