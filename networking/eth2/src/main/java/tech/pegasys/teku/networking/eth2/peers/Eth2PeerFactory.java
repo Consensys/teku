@@ -86,7 +86,7 @@ public class Eth2PeerFactory {
             "data_column_sidecars"),
         RateTracker.create(
             peerBlocksRateLimit, TIME_OUT, timeProvider, "execution_payload_envelopes"),
-        RateTracker.create(peerRequestLimit, TIME_OUT, timeProvider, "requestTracker"),
+        RateTracker.create(peerRequestLimit, TIME_OUT, timeProvider, "request_tracker"),
         metricsSystem,
         timeProvider);
   }
