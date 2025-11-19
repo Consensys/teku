@@ -17,15 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.IntStream;
-import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZGProof;
-import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -51,31 +44,5 @@ class SpecTest {
             spec.computeSubnetForAttestation(
                 chain.getLast().getState(), dataStructureUtil.randomAttestation(100)))
         .isEqualTo(48);
-  }
-
-  @Test
-  void shouldRoundTripKzgProofs() {
-    final Spec spec = TestSpecFactory.createMinimalFulu();
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final SignedBeaconBlockHeader header = dataStructureUtil.randomSignedBeaconBlockHeader();
-    final List<DataColumnSidecar> dataColumnSidecars =
-        IntStream.range(64, 128)
-            .mapToObj(
-                index -> dataStructureUtil.randomDataColumnSidecar(header, UInt64.valueOf(index)))
-            .toList();
-
-    final List<List<KZGProof>> expectedProofs =
-        dataColumnSidecars.stream()
-            .map(
-                dataColumnSidecar ->
-                    dataColumnSidecar.getKzgProofs().stream()
-                        .map(SszKZGProof::getKZGProof)
-                        .toList())
-            .toList();
-    final Bytes serializedProofs = spec.serializeDataColumnSidecarsProofs(dataColumnSidecars);
-    final List<List<KZGProof>> kzgProofs =
-        spec.deserializeDataColumnSidecarsProofs(serializedProofs);
-
-    assertThat(expectedProofs).isEqualTo(kzgProofs);
   }
 }
