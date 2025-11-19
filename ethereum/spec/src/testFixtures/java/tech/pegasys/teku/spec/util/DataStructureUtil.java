@@ -3130,10 +3130,12 @@ public final class DataStructureUtil {
             randomBytes32(),
             randomBytes32(),
             randomBytes32(),
+            randomBytes32(),
             randomEth1Address(),
             randomUInt64(),
             builderIndex,
             slot,
+            randomUInt64(),
             randomUInt64(),
             randomBytes32());
   }

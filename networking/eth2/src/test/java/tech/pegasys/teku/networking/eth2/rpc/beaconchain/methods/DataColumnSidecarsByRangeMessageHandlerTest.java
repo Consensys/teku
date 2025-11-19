@@ -158,7 +158,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
                     "Only a maximum of %s data column sidecars can be requested per request",
                     maxRequestDataColumnSidecars)));
     final long countTooBigCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK,
             "rpc_data_column_sidecars_by_range_requests_total",
             "count_too_big");
@@ -180,7 +180,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
                     "Only a maximum of %s data column sidecars can be requested per request",
                     maxRequestDataColumnSidecars)));
     final long countTooBigCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK,
             "rpc_data_column_sidecars_by_range_requests_total",
             "count_too_big");
@@ -206,7 +206,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
                     "Only a maximum of %s data column sidecars can be requested per request",
                     maxRequestDataColumnSidecars)));
     final long countTooBigCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK,
             "rpc_data_column_sidecars_by_range_requests_total",
             "count_too_big");
@@ -228,7 +228,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     // No adjustment
     verify(peer, never()).adjustDataColumnSidecarsRequest(any(), anyLong());
     final long rateLimitedCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK,
             "rpc_data_column_sidecars_by_range_requests_total",
             "rate_limited");

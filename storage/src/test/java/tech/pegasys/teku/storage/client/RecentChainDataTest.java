@@ -1240,6 +1240,6 @@ class RecentChainDataTest {
   private long getReorgCountMetric(final StorageSystem storageSystem) {
     return storageSystem
         .getMetricsSystem()
-        .getCounterValue(TekuMetricCategory.BEACON, "reorgs_total");
+        .getLabelledCounterValue(TekuMetricCategory.BEACON, "reorgs_total");
   }
 }

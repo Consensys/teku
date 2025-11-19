@@ -53,7 +53,6 @@ import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class BeaconBlocksByRootMessageHandlerTest {
   private static final RpcEncoding RPC_ENCODING =
@@ -68,7 +67,6 @@ public class BeaconBlocksByRootMessageHandlerTest {
   private final UInt64 altairForkSlot = spec.computeStartSlotAtEpoch(altairForkEpoch);
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
   private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
-  final UpdatableStore store = mock(UpdatableStore.class);
   final RecentChainData recentChainData = mock(RecentChainData.class);
   final BeaconBlocksByRootMessageHandler handler =
       new BeaconBlocksByRootMessageHandler(spec, storageSystem.getMetricsSystem(), recentChainData);

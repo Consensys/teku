@@ -598,11 +598,13 @@ public abstract class AbstractBlockFactoryTest {
                           executionPayload.getParentHash(),
                           state.getLatestBlockHeader().getRoot(),
                           executionPayload.getBlockHash(),
+                          executionPayload.getPrevRandao(),
                           executionPayload.getFeeRecipient(),
                           executionPayload.getGasLimit(),
                           // self-built for simplification
                           UInt64.valueOf(spec.getBeaconProposerIndex(state, slot)),
                           slot,
+                          ZERO,
                           ZERO,
                           blobsBundle
                               .map(blobKzgCommitmentsSchema::createFromBlobsBundle)
