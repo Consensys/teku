@@ -31,9 +31,8 @@ import com.google.common.collect.ImmutableSortedMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.TreeMap;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 import org.assertj.core.api.AssertionsForInterfaceTypes;
 import org.junit.jupiter.api.BeforeEach;
@@ -273,15 +272,13 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     verify(peer)
         .approveDataColumnSidecarsRequest(any(), eq(count.times(columnIndices.size()).longValue()));
     // Sending expectedSent data column sidecars
-    verify(peer)
-        .adjustDataColumnSidecarsRequest(
-            eq(allowedObjectsRequest.orElseThrow()), eq(Long.valueOf(expectedSent.size())));
+    verify(peer, never()).adjustDataColumnSidecarsRequest(any(), anyLong());
     final ArgumentCaptor<DataColumnSidecar> argumentCaptor =
         ArgumentCaptor.forClass(DataColumnSidecar.class);
     verify(listener, times(expectedSent.size())).respond(argumentCaptor.capture());
     final List<DataColumnSidecar> actualSent = argumentCaptor.getAllValues();
     verify(listener).completeSuccessfully();
-    AssertionsForInterfaceTypes.assertThat(actualSent).containsExactlyElementsOf(expectedSent);
+    AssertionsForInterfaceTypes.assertThat(actualSent).hasSameElementsAs(expectedSent);
   }
 
   @TestTemplate
@@ -348,22 +345,19 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     final DataColumnSidecarsByRangeRequestMessage request =
         dataColumnSidecarsByRangeRequestMessageSchema.create(startSlot, ONE, columnIndices);
     final List<DataColumnSidecar> expectedSent =
-        setUpDataColumnSidecarsData(startSlot, request.getMaxSlot(), columnIndices);
+        setUpDataColumnSidecarsData(startSlot, startSlot, columnIndices);
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
     // Requesting 2 data column sidecars
     verify(peer).approveDataColumnSidecarsRequest(any(), eq(Long.valueOf(columnIndices.size())));
     // Sending expectedSent data column sidecars
-    verify(peer)
-        .adjustDataColumnSidecarsRequest(
-            eq(allowedObjectsRequest.orElseThrow()), eq(Long.valueOf(expectedSent.size())));
+    verify(peer, never()).adjustDataColumnSidecarsRequest(any(), anyLong());
     final ArgumentCaptor<DataColumnSidecar> argumentCaptor =
         ArgumentCaptor.forClass(DataColumnSidecar.class);
     verify(listener, times(expectedSent.size())).respond(argumentCaptor.capture());
     final List<DataColumnSidecar> actualSent = argumentCaptor.getAllValues();
     verify(listener).completeSuccessfully();
-    assertThat(actualSent.size()).isOne();
-    AssertionsForInterfaceTypes.assertThat(actualSent).containsExactlyElementsOf(expectedSent);
+    AssertionsForInterfaceTypes.assertThat(actualSent).hasSameElementsAs(expectedSent);
   }
 
   @TestTemplate
@@ -520,7 +514,9 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
                         .stream()
                         .map(Pair::getValue)
                         .toList()));
-    return setupDataColumnSidecars(headersAndDataColumnSlotAndIdentifiers);
+    return headersAndDataColumnSlotAndIdentifiers.stream()
+        .map(this::setUpDataColumnSidecarDataForKey)
+        .collect(Collectors.toList());
   }
 
   private List<Pair<SignedBeaconBlockHeader, DataColumnSlotAndIdentifier>>
@@ -543,30 +539,15 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     return headersAndDataColumnSlotAndIdentifiers;
   }
 
-  private List<DataColumnSidecar> setupDataColumnSidecars(
-      final List<Pair<SignedBeaconBlockHeader, DataColumnSlotAndIdentifier>>
-          headersAndDataColumnSlotAndIdentifiers) {
-    final NavigableMap<DataColumnSlotAndIdentifier, DataColumnSidecar> dataColumnSidecars =
-        new TreeMap<>();
-    for (Pair<SignedBeaconBlockHeader, DataColumnSlotAndIdentifier> pair :
-        headersAndDataColumnSlotAndIdentifiers) {
-      final DataColumnSidecar dataColumnSidecar =
-          dataStructureUtil.randomDataColumnSidecar(pair.getKey(), pair.getValue().columnIndex());
-      dataColumnSidecars.put(pair.getValue(), dataColumnSidecar);
-    }
-
-    when(combinedChainDataClient.getSidecar(any()))
-        .thenAnswer(
-            args -> {
-              final DataColumnSlotAndIdentifier identifier =
-                  args.getArgument(0, DataColumnSlotAndIdentifier.class);
-              if (dataColumnSidecars.containsKey(identifier)) {
-                return SafeFuture.completedFuture(Optional.of(dataColumnSidecars.get(identifier)));
-              } else {
-                return SafeFuture.completedFuture(Optional.empty());
-              }
-            });
-
-    return dataColumnSidecars.navigableKeySet().stream().map(dataColumnSidecars::get).toList();
+  private DataColumnSidecar setUpDataColumnSidecarDataForKey(
+      final Pair<SignedBeaconBlockHeader, DataColumnSlotAndIdentifier>
+          headerAndSataColumnSlotAndIdentifier) {
+    final DataColumnSidecar dataColumnSidecar =
+        dataStructureUtil.randomDataColumnSidecar(
+            headerAndSataColumnSlotAndIdentifier.getKey(),
+            headerAndSataColumnSlotAndIdentifier.getValue().columnIndex());
+    when(combinedChainDataClient.getSidecar(headerAndSataColumnSlotAndIdentifier.getValue()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(dataColumnSidecar)));
+    return dataColumnSidecar;
   }
 }
