@@ -14,3 +14,5 @@
 ### Bug Fixes
  - Fixed NPE in DasPreSampler (#10110).
  - Added connection direction to `beacon_peer_count` metric.
+ - Added metrics for outgoing LibP2P RPC requests (`rpc_requests_total`, `rpc_requests_sent` and
+  `rpc_requests_failed`)
