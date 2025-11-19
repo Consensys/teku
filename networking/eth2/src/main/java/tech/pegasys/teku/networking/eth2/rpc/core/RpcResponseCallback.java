@@ -14,6 +14,8 @@
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import java.nio.channels.ClosedChannelException;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.RootCauseExceptionHandler;
@@ -28,6 +30,7 @@ class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback
   private static final Logger LOG = LogManager.getLogger();
   private final RpcResponseEncoder<TResponse, ?> responseEncoder;
   private final RpcStream rpcStream;
+  private final List<Runnable> finishedRunnables = new ArrayList<>();
 
   public RpcResponseCallback(
       final RpcStream rpcStream, final RpcResponseEncoder<TResponse, ?> responseEncoder) {
@@ -48,13 +51,21 @@ class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback
             RootCauseExceptionHandler.builder()
                 .addCatch(
                     ClosedChannelException.class,
-                    err -> LOG.trace("Failed to write because channel was closed", err))
-                .defaultCatch(err -> LOG.error("Failed to write req/resp response", err)));
+                    err -> {
+                      LOG.trace("Failed to write because channel was closed", err);
+                      runFinishedRunnables();
+                    })
+                .defaultCatch(
+                    err -> {
+                      LOG.error("Failed to write req/resp response", err);
+                      runFinishedRunnables();
+                    }));
   }
 
   @Override
   public void completeSuccessfully() {
     rpcStream.closeWriteStream().finishStackTrace();
+    runFinishedRunnables();
   }
 
   @Override
@@ -69,6 +80,7 @@ class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback
           rpcStream);
     }
     rpcStream.closeWriteStream().finishDebug(LOG);
+    runFinishedRunnables();
   }
 
   @Override
@@ -77,8 +89,23 @@ class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback
       LOG.trace("Not sending RPC response as peer has already disconnected");
       // But close the stream just to be completely sure we don't leak any resources.
       rpcStream.closeAbruptly().finishTrace(LOG);
+      runFinishedRunnables();
     } else {
       completeWithErrorResponse(new ServerErrorException());
+    }
+  }
+
+  // TODO: test me
+  @Override
+  public void alwaysRun(final Runnable runnable) {
+    finishedRunnables.add(runnable);
+  }
+
+  private void runFinishedRunnables() {
+    try {
+      finishedRunnables.forEach(Runnable::run);
+    } catch (final Throwable t) {
+      LOG.debug("Failed to run finishedRunnables", t);
     }
   }
 }
