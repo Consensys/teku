@@ -679,8 +679,7 @@ public class ChainBuilder {
   private SignedBlockAndState appendNewBlockToChain(final UInt64 slot, final BlockOptions options) {
     final SignedBlockAndState latestBlockAndState = getLatestBlockAndState();
     final BeaconState preState =
-        // use the execution payload state if it has been processed to allow for correct block
-        // appending
+        // build on top of the execution payload state if an execution payload has been processed
         Optional.ofNullable(getExecutionPayloadStateAtSlot(latestBlockAndState.getSlot()))
             .orElse(latestBlockAndState.getState());
     final Bytes32 parentRoot = latestBlockAndState.getBlock().getMessage().hashTreeRoot();
@@ -1149,9 +1148,7 @@ public class ChainBuilder {
     private boolean storeDataColumnSidecars = true;
     private boolean skipStateTransition = false;
     private boolean wrongProposer = false;
-    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10071 temporarily not produce execution
-    // payloads until we have a fully working ChainBuilder + ChainUpdater design
-    private boolean withholdExecutionPayload = true;
+    private boolean withholdExecutionPayload = false;
 
     private BlockOptions() {}
 

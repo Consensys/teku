@@ -247,15 +247,15 @@ public class SidecarRetrieverTest {
   private void verifyMetrics(
       final int cancelledCount, final int downloadedCount, final int recoveredCount) {
     assertThat(
-            metricsSystem.getCounterValue(
+            metricsSystem.getLabelledCounterValue(
                 TekuMetricCategory.BEACON, RECOVERY_METRIC_NAME, CANCELLED))
         .isEqualTo(cancelledCount);
     assertThat(
-            metricsSystem.getCounterValue(
+            metricsSystem.getLabelledCounterValue(
                 TekuMetricCategory.BEACON, RECOVERY_METRIC_NAME, DOWNLOADED))
         .isEqualTo(downloadedCount);
     assertThat(
-            metricsSystem.getCounterValue(
+            metricsSystem.getLabelledCounterValue(
                 TekuMetricCategory.BEACON, RECOVERY_METRIC_NAME, RECOVERED))
         .isEqualTo(recoveredCount);
   }

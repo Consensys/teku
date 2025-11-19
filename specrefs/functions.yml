@@ -4522,13 +4522,14 @@
 - name: get_ptc_assignment#gloas
   sources: []
   spec: |
-    <spec fn="get_ptc_assignment" fork="gloas" hash="6db8c274">
+    <spec fn="get_ptc_assignment" fork="gloas" hash="817acb90">
     def get_ptc_assignment(
         state: BeaconState, epoch: Epoch, validator_index: ValidatorIndex
     ) -> Optional[Slot]:
         """
-        Returns the slot during the requested epoch in which the validator with index `validator_index`
-        is a member of the PTC. Returns None if no assignment is found.
+        Returns the slot during the requested epoch in which the validator with
+        index `validator_index` is a member of the PTC. Returns None if no
+        assignment is found.
         """
         next_epoch = Epoch(get_current_epoch(state) + 1)
         assert epoch <= next_epoch
@@ -5730,13 +5731,9 @@
 - name: is_merge_transition_complete#gloas
   sources: []
   spec: |
-    <spec fn="is_merge_transition_complete" fork="gloas" hash="38872f35">
+    <spec fn="is_merge_transition_complete" fork="gloas" hash="b13c98c6">
     def is_merge_transition_complete(state: BeaconState) -> bool:
-        bid = ExecutionPayloadBid()
-        kzgs = List[KZGCommitment, MAX_BLOB_COMMITMENTS_PER_BLOCK]()
-        bid.blob_kzg_commitments_root = kzgs.hash_tree_root()
-
-        return state.latest_execution_payload_bid != bid
+        return state.latest_execution_payload_header != ExecutionPayloadHeader()
     </spec>
 
 - name: is_next_sync_committee_known#altair
@@ -7963,7 +7960,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
       search: public BeaconState processEpoch(
   spec: |
-    <spec fn="process_epoch" fork="gloas" hash="32184972">
+    <spec fn="process_epoch" fork="gloas" hash="393b69ef">
     def process_epoch(state: BeaconState) -> None:
         process_justification_and_finalization(state)
         process_inactivity_updates(state)
@@ -7973,6 +7970,8 @@
         process_eth1_data_reset(state)
         process_pending_deposits(state)
         process_pending_consolidations(state)
+        # [New in Gloas:EIP7732]
+        process_builder_pending_payments(state)
         process_effective_balance_updates(state)
         process_slashings_reset(state)
         process_randao_mixes_reset(state)
@@ -7980,8 +7979,6 @@
         process_participation_flag_updates(state)
         process_sync_committee_updates(state)
         process_proposer_lookahead(state)
-        # [New in Gloas:EIP7732]
-        process_builder_pending_payments(state)
     </spec>
 
 - name: process_eth1_data#phase0
@@ -8230,7 +8227,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/execution/ExecutionPayloadProcessorGloas.java
       search: public void processUnsignedExecutionPayload(
   spec: |
-    <spec fn="process_execution_payload" fork="gloas" hash="200702e3">
+    <spec fn="process_execution_payload" fork="gloas" hash="b1cc7efc">
     def process_execution_payload(
         state: BeaconState,
         # [Modified in Gloas:EIP7732]
@@ -8261,6 +8258,7 @@
         committed_bid = state.latest_execution_payload_bid
         assert envelope.builder_index == committed_bid.builder_index
         assert committed_bid.blob_kzg_commitments_root == hash_tree_root(envelope.blob_kzg_commitments)
+        assert committed_bid.prev_randao == payload.prev_randao
 
         # Verify the withdrawals root
         assert hash_tree_root(payload.withdrawals) == state.latest_withdrawals_root
@@ -8271,8 +8269,6 @@
         assert committed_bid.block_hash == payload.block_hash
         # Verify consistency of the parent hash with respect to the previous execution payload
         assert payload.parent_hash == state.latest_block_hash
-        # Verify prev_randao
-        assert payload.prev_randao == get_randao_mix(state, get_current_epoch(state))
         # Verify timestamp
         assert payload.timestamp == compute_time_at_slot(state, state.slot)
         # Verify commitments are under limit
@@ -8329,7 +8325,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/block/BlockProcessorGloas.java
       search: public void processExecutionPayloadBid(
   spec: |
-    <spec fn="process_execution_payload_bid" fork="gloas" hash="bfc45bf8">
+    <spec fn="process_execution_payload_bid" fork="gloas" hash="d8bba25d">
     def process_execution_payload_bid(state: BeaconState, block: BeaconBlock) -> None:
         signed_bid = block.body.signed_execution_payload_bid
         bid = signed_bid.message
@@ -8371,6 +8367,7 @@
         # Verify that the bid is for the right parent block
         assert bid.parent_block_hash == state.latest_block_hash
         assert bid.parent_block_root == block.parent_root
+        assert bid.prev_randao == get_randao_mix(state, get_current_epoch(state))
 
         # Record the pending payment if there is some payment
         if amount > 0:
@@ -9825,17 +9822,6 @@
         return PolynomialCoeff(reconstructed_poly_coeff[:FIELD_ELEMENTS_PER_BLOB])
     </spec>
 
-- name: remove_flag#gloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/helpers/MiscHelpersGloas.java
-      search: public byte removeFlag(
-  spec: |
-    <spec fn="remove_flag" fork="gloas" hash="2566cb90">
-    def remove_flag(flags: ParticipationFlags, flag_index: int) -> ParticipationFlags:
-        flag = ParticipationFlags(2**flag_index)
-        return flags & ~flag
-    </spec>
-
 - name: reverse_bits#deneb
   sources: []
   spec: |
@@ -10963,7 +10949,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/forktransition/GloasStateUpgrade.java
       search: public BeaconStateGloas upgrade(
   spec: |
-    <spec fn="upgrade_to_gloas" fork="gloas" hash="e147526b">
+    <spec fn="upgrade_to_gloas" fork="gloas" hash="d2c34d52">
     def upgrade_to_gloas(pre: fulu.BeaconState) -> BeaconState:
         epoch = fulu.get_current_epoch(pre)
 
@@ -11000,7 +10986,9 @@
             # [Modified in Gloas:EIP7732]
             # Removed `latest_execution_payload_header`
             # [New in Gloas:EIP7732]
-            latest_execution_payload_bid=ExecutionPayloadBid(),
+            latest_execution_payload_bid=ExecutionPayloadBid(
+                block_hash=pre.latest_execution_payload_header.block_hash,
+            ),
             next_withdrawal_index=pre.next_withdrawal_index,
             next_withdrawal_validator_index=pre.next_withdrawal_validator_index,
             historical_summaries=pre.historical_summaries,

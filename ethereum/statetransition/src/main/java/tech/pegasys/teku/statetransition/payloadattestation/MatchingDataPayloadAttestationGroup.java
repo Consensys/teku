@@ -15,15 +15,15 @@ package tech.pegasys.teku.statetransition.payloadattestation;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.IntStream;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
@@ -37,8 +37,8 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
  */
 class MatchingDataPayloadAttestationGroup {
 
-  private final Set<PayloadAttestationMessage> payloadAttestationMessages =
-      ConcurrentHashMap.newKeySet();
+  private final Map<Integer, PayloadAttestationMessage> payloadAttestationMessages =
+      new ConcurrentHashMap<>();
 
   private final Spec spec;
   private final PayloadAttestationData data;
@@ -61,37 +61,35 @@ class MatchingDataPayloadAttestationGroup {
    * eventually be aggregated with others.
    */
   boolean add(final PayloadAttestationMessage payloadAttestationMessage) {
+    final int validatorIndex = payloadAttestationMessage.getValidatorIndex().intValue();
     if (!payloadAttestationMessage.getData().equals(data)) {
       // ignore payload attestation messages with a different data
       return false;
     }
-    return payloadAttestationMessages.add(payloadAttestationMessage);
+    return payloadAttestationMessages.putIfAbsent(validatorIndex, payloadAttestationMessage)
+        == null;
   }
 
   PayloadAttestation createAggregatedPayloadAttestation(final IntList ptc) {
     checkArgument(!payloadAttestationMessages.isEmpty(), "Nothing to aggregate");
-    // use a snapshot to avoid any concurrent additions
-    final Set<PayloadAttestationMessage> payloadAttestationMessagesSnapshot =
-        new HashSet<>(payloadAttestationMessages);
-    final UInt64 slot = data.getSlot();
-    final int[] setBitIndices =
-        payloadAttestationMessagesSnapshot.stream()
-            .flatMapToInt(
-                message ->
-                    // relative position(s) of the validator index with respect to the PTC
-                    IntStream.range(0, ptc.size())
-                        .filter(i -> ptc.getInt(i) == message.getValidatorIndex().intValue()))
-            .toArray();
+    // relative positions of the validator indices with respect to the PTC
+    final IntList setBitIndices = new IntArrayList();
+    final List<BLSSignature> signatures = new ArrayList<>();
+    for (int ptcPosition = 0; ptcPosition < ptc.size(); ptcPosition++) {
+      final int validatorIndex = ptc.getInt(ptcPosition);
+      // check if we have received a payload attestation message for the validator in the PTC
+      final PayloadAttestationMessage payloadAttestationMessage =
+          payloadAttestationMessages.get(validatorIndex);
+      if (payloadAttestationMessage != null) {
+        setBitIndices.add(ptcPosition);
+        signatures.add(payloadAttestationMessage.getSignature());
+      }
+    }
     final PayloadAttestationSchema payloadAttestationSchema =
-        SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions())
+        SchemaDefinitionsGloas.required(spec.atSlot(data.getSlot()).getSchemaDefinitions())
             .getPayloadAttestationSchema();
     final SszBitvector aggregationBits =
         payloadAttestationSchema.getAggregationBitsSchema().ofBits(setBitIndices);
-    final BLSSignature signature =
-        BLS.aggregate(
-            payloadAttestationMessagesSnapshot.stream()
-                .map(PayloadAttestationMessage::getSignature)
-                .toList());
-    return payloadAttestationSchema.create(aggregationBits, data, signature);
+    return payloadAttestationSchema.create(aggregationBits, data, BLS.aggregate(signatures));
   }
 }

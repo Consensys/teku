@@ -19,6 +19,7 @@ import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSeri
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BYTES_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.COMPRESSED_BRANCH_INFO_KV_STORE_SERIALIZER;
+import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.DATA_COLUMN_SIDECARS_PROOFS_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX_KEY_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.UINT64_SERIALIZER;
 
@@ -31,6 +32,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranchInfo;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
@@ -54,7 +56,7 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   private final KvStoreColumn<DataColumnSlotAndIdentifier, Bytes> sidecarByColumnSlotAndIdentifier;
   private final KvStoreColumn<DataColumnSlotAndIdentifier, Bytes>
       nonCanonicalSidecarByColumnSlotAndIdentifier;
-  private final KvStoreColumn<UInt64, Bytes> dataColumnSidecarsProofsBySlot;
+  private final KvStoreColumn<UInt64, List<List<KZGProof>>> dataColumnSidecarsProofsBySlot;
   private final List<Bytes> deletedColumnIds;
 
   public V6SchemaCombinedTreeState(final Spec spec) {
@@ -101,7 +103,8 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
         KvStoreColumn.create(
             finalizedOffset + 17, COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER, BYTES_SERIALIZER);
     dataColumnSidecarsProofsBySlot =
-        KvStoreColumn.create(finalizedOffset + 19, UINT64_SERIALIZER, BYTES_SERIALIZER);
+        KvStoreColumn.create(
+            finalizedOffset + 19, UINT64_SERIALIZER, DATA_COLUMN_SIDECARS_PROOFS_SERIALIZER);
     deletedColumnIds =
         List.of(
             asColumnId(finalizedOffset + 9),
@@ -177,7 +180,7 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   }
 
   @Override
-  public KvStoreColumn<UInt64, Bytes> getColumnDataColumnSidecarsProofsBySlot() {
+  public KvStoreColumn<UInt64, List<List<KZGProof>>> getColumnDataColumnSidecarsProofsBySlot() {
     return dataColumnSidecarsProofsBySlot;
   }
 

@@ -34,6 +34,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
@@ -665,7 +666,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public Optional<Bytes> getDataColumnSidecarsProofs(final UInt64 slot) {
+  public Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(final UInt64 slot) {
     return db.get(schema.getColumnDataColumnSidecarsProofsBySlot(), slot);
   }
 
@@ -995,7 +996,8 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void addDataColumnSidecarsProofs(final UInt64 slot, final Bytes kzgProofs) {
+    public void addDataColumnSidecarsProofs(
+        final UInt64 slot, final List<List<KZGProof>> kzgProofs) {
       transaction.put(schema.getColumnDataColumnSidecarsProofsBySlot(), slot, kzgProofs);
     }
 

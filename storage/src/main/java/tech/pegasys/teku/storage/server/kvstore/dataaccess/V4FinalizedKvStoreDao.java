@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -254,7 +255,7 @@ public class V4FinalizedKvStoreDao {
     return db.getLastKey(schema.getColumnDataColumnSidecarsProofsBySlot());
   }
 
-  public Optional<Bytes> getDataColumnSidecarProofs(final UInt64 slot) {
+  public Optional<List<List<KZGProof>>> getDataColumnSidecarProofs(final UInt64 slot) {
     return db.get(schema.getColumnDataColumnSidecarsProofsBySlot(), slot);
   }
 
@@ -528,7 +529,8 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
-    public void addDataColumnSidecarsProofs(final UInt64 slot, final Bytes kzgProofs) {
+    public void addDataColumnSidecarsProofs(
+        final UInt64 slot, final List<List<KZGProof>> kzgProofs) {
       transaction.put(schema.getColumnDataColumnSidecarsProofsBySlot(), slot, kzgProofs);
     }
 

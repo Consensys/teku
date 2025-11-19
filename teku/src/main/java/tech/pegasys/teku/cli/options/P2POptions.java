@@ -516,12 +516,15 @@ public class P2POptions {
       GossipConfig.DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
 
   @Option(
-      names = {"--Xdas-extra-custody-group-count"},
+      names = {"--Xcustody-group-count-override"},
       paramLabel = "<NUMBER>",
-      description = "Number of extra custody groups",
+      description =
+          "Override the number of custody groups. If it's lower than node configuration requirement, "
+              + "the value is ignored. If it's higher than maximum number of custody groups, the value is set to "
+              + "allowed maximum.",
       arity = "1",
       hidden = true)
-  private int dasExtraCustodyGroupCount = P2PConfig.DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT;
+  private int custodyGroupCountOverride = P2PConfig.DEFAULT_CUSTODY_GROUP_COUNT_OVERRIDE;
 
   @Option(
       names = {"--Xp2p-historical-data-max-concurrent-queries"},
@@ -630,7 +633,7 @@ public class P2POptions {
                   .peerRequestLimit(peerRequestLimit)
                   .floodPublishMaxMessageSizeThreshold(floodPublishMaxMessageSizeThreshold)
                   .gossipBlobsAfterBlockEnabled(gossipBlobsAfterBlockEnabled)
-                  .dasExtraCustodyGroupCount(dasExtraCustodyGroupCount)
+                  .custodyGroupCountOverride(custodyGroupCountOverride)
                   .historicalDataMaxConcurrentQueries(historicalDataMaxConcurrentQueries)
                   .historicalDataMaxQueryQueueSize(historicalDataMaxQueryQueueSize)
                   .executionProofTopicEnabled(executionProofTopicEnabled)

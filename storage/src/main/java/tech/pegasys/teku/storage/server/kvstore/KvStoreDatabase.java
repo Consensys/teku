@@ -1165,8 +1165,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(final UInt64 slot) {
-    final Optional<Bytes> maybeProofs = dao.getDataColumnSidecarsProofs(slot);
-    return maybeProofs.map(spec::deserializeDataColumnSidecarsProofs);
+    return dao.getDataColumnSidecarsProofs(slot);
   }
 
   @Override
