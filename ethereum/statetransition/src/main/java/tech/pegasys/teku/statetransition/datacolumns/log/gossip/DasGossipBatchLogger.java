@@ -204,13 +204,13 @@ public class DasGossipBatchLogger implements DasGossipLogger {
   @Override
   public synchronized void onReceive(
       final DataColumnSidecar sidecar, final InternalValidationResult validationResult) {
+    LOG.trace(
+        "DataColumnSidecar rejected: {}, commitments: {}, proofs: {}, reason: {}",
+        sidecar::toLogString,
+        sidecar::getKzgCommitments,
+        sidecar::getKzgProofs,
+        () -> validationResult.getDescription().orElse("<no reason>"));
     if (needToLogEvent()) {
-      LOG.trace(
-          "DataColumnSidecar rejected: {}, commitments: {}, proofs: {}, reason: {}",
-          sidecar.toLogString(),
-          sidecar.getKzgCommitments(),
-          sidecar.getKzgProofs(),
-          validationResult.getDescription().orElse("<no reason>"));
       events.add(
           new ReceiveEvent(timeProvider.getTimeInMillis().longValue(), sidecar, validationResult));
     }
