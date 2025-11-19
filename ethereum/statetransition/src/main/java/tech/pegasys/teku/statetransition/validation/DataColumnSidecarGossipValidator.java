@@ -333,11 +333,7 @@ public class DataColumnSidecarGossipValidator {
                *
                * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, sidecar.index) with valid header signature, sidecar inclusion proof, and kzg proof.
                */
-              if (!receivedValidDataColumnSidecarInfoSet.add(
-                  new SlotProposerIndexAndColumnIndex(
-                      blockHeader.getSlot(),
-                      blockHeader.getProposerIndex(),
-                      dataColumnSidecar.getIndex()))) {
+              if (!markForEquivocation(blockHeader, dataColumnSidecar)) {
                 return ignore(
                     "DataColumnSidecar is not the first valid for its slot and index. It will be dropped.");
               }
@@ -394,9 +390,7 @@ public class DataColumnSidecarGossipValidator {
     /*
      * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, sidecar.index) with valid header signature, sidecar inclusion proof, and kzg proof.
      */
-    if (!receivedValidDataColumnSidecarInfoSet.add(
-        new SlotProposerIndexAndColumnIndex(
-            blockHeader.getSlot(), blockHeader.getProposerIndex(), dataColumnSidecar.getIndex()))) {
+    if (!markForEquivocation(blockHeader, dataColumnSidecar)) {
       return SafeFuture.completedFuture(
           ignore(
               "DataColumnSidecar is not the first valid for its slot and index. It will be dropped."));
@@ -443,11 +437,11 @@ public class DataColumnSidecarGossipValidator {
   }
 
   public boolean markForEquivocation(
-      final SignedBeaconBlockHeader beaconBlockHeader, final DataColumnSidecar sidecar) {
+      final BeaconBlockHeader beaconBlockHeader, final DataColumnSidecar sidecar) {
     return receivedValidDataColumnSidecarInfoSet.add(
         new SlotProposerIndexAndColumnIndex(
             sidecar.getSlot(),
-            beaconBlockHeader.getMessage().getProposerIndex(),
+            beaconBlockHeader.getProposerIndex(),
             sidecar.getIndex()));
   }
 
