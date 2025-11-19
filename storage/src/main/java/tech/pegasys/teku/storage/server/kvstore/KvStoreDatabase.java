@@ -66,6 +66,7 @@ import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
@@ -1252,7 +1253,14 @@ public class KvStoreDatabase implements Database {
 
             // remove sidecars only if we have required 1/2
             if (sidecars.size() == halfColumns) {
-              final Bytes proofs = spec.serializeDataColumnSidecarsProofs(sidecars);
+              final List<List<KZGProof>> proofs =
+                  sidecars.stream()
+                      .map(
+                          sidecar ->
+                              sidecar.getKzgProofs().stream()
+                                  .map(SszKZGProof::getKZGProof)
+                                  .toList())
+                      .toList();
               updater.addDataColumnSidecarsProofs(slot, proofs);
               for (final DataColumnSlotAndIdentifier key : keys) {
                 updater.removeSidecar(key);
