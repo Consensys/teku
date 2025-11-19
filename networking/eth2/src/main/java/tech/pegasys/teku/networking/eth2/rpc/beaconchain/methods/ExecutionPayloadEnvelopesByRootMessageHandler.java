@@ -13,28 +13,30 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
-import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
-// TODO-GLOAS: https://github.com/Consensys/teku/issues/9974
 /**
  * <a
  * href="https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/p2p-interface.md#executionpayloadenvelopesbyroot-v1">ExecutionPayloadEnvelopesByRoot</a>
+ *
+ * <p>Count validation is done as part of {@link ExecutionPayloadEnvelopesByRootRequestMessage}
+ * schema limits
  */
 public class ExecutionPayloadEnvelopesByRootMessageHandler
     extends PeerRequiredLocalMessageHandler<
@@ -42,13 +44,13 @@ public class ExecutionPayloadEnvelopesByRootMessageHandler
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final SpecConfigGloas config;
+  private final RecentChainData recentChainData;
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalExecutionPayloadEnvelopesRequestedCounter;
 
   public ExecutionPayloadEnvelopesByRootMessageHandler(
-      final SpecConfigGloas config, final MetricsSystem metricsSystem) {
-    this.config = config;
+      final RecentChainData recentChainData, final MetricsSystem metricsSystem) {
+    this.recentChainData = recentChainData;
     requestCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.NETWORK,
@@ -60,21 +62,6 @@ public class ExecutionPayloadEnvelopesByRootMessageHandler
             TekuMetricCategory.NETWORK,
             "rpc_execution_payload_envelopes_by_root_requested_envelopes_total",
             "Total number of execution payload envelopes requested in accepted execution payload envelopes by root requests from peers");
-  }
-
-  @Override
-  public Optional<RpcException> validateRequest(
-      final String protocolId, final ExecutionPayloadEnvelopesByRootRequestMessage request) {
-    if (request.size() > config.getMaxRequestPayloads()) {
-      requestCounter.labels("count_too_big").inc();
-      return Optional.of(
-          new RpcException(
-              INVALID_REQUEST_CODE,
-              String.format(
-                  "Only a maximum of %s execution payload envelopes can be requested per request",
-                  config.getMaxRequestPayloads())));
-    }
-    return Optional.empty();
   }
 
   @Override
@@ -100,6 +87,36 @@ public class ExecutionPayloadEnvelopesByRootMessageHandler
     requestCounter.labels("ok").inc();
     totalExecutionPayloadEnvelopesRequestedCounter.inc(message.size());
 
-    throw new UnsupportedOperationException("Not yet implemented");
+    final AtomicInteger sentExecutionPayloadEnvelopes = new AtomicInteger(0);
+
+    SafeFuture<Void> future = SafeFuture.COMPLETE;
+
+    for (final SszBytes32 beaconBlockRoot : message) {
+      future =
+          future.thenCompose(
+              __ ->
+                  recentChainData
+                      .retrieveSignedExecutionPayloadEnvelopeByBlockRoot(beaconBlockRoot.get())
+                      .thenCompose(
+                          maybeExecutionPayloadEnvelope ->
+                              maybeExecutionPayloadEnvelope
+                                  .map(
+                                      executionPayloadEnvelope ->
+                                          callback
+                                              .respond(executionPayloadEnvelope)
+                                              .thenRun(
+                                                  sentExecutionPayloadEnvelopes::incrementAndGet))
+                                  .orElse(SafeFuture.COMPLETE)));
+    }
+
+    future.finish(
+        () -> {
+          if (sentExecutionPayloadEnvelopes.get() != message.size()) {
+            peer.adjustExecutionPayloadEnvelopesRequest(
+                maybeRequestKey.get(), sentExecutionPayloadEnvelopes.get());
+          }
+          callback.completeSuccessfully();
+        },
+        err -> handleError(err, callback, "execution payload envelopes by root"));
   }
 }
