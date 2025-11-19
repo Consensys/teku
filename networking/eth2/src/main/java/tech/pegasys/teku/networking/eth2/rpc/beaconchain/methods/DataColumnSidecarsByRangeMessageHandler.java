@@ -248,7 +248,8 @@ public class DataColumnSidecarsByRangeMessageHandler
       this.finalizedSlot = finalizedSlot;
       this.canonicalHotRoots = canonicalHotRoots;
       this.messageHash = messageHash;
-      final UInt64 highestIndex = columns.stream().max(Comparator.naturalOrder()).orElseThrow();
+      final UInt64 highestIndex =
+          columns.stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
       this.maybeSuperNodePruned =
           dataColumnSidecarArchiveReconstructor.isSidecarPruned(startSlot, highestIndex)
               || dataColumnSidecarArchiveReconstructor.isSidecarPruned(endSlot, highestIndex);
