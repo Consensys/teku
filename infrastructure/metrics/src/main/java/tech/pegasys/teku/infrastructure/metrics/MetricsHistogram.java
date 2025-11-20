@@ -76,7 +76,7 @@ public class MetricsHistogram {
     @Override
     public void close() throws IOException {
       if (closed.compareAndSet(false, true)) {
-        histogram.observe(timeProvider.getTimeInMillis().minus(start).doubleValue() / 1000);
+        histogram.observe(timeProvider.getTimeInMillis().minusMinZero(start).doubleValue() / 1000);
       }
     }
 
