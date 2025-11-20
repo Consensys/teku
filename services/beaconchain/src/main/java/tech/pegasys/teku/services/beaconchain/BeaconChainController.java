@@ -1042,7 +1042,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final DasCustodyBackfiller s =
         new DasCustodyBackfiller(
             combinedChainDataClient,
-            Duration.ofSeconds(30),
+            Duration.ofSeconds(5),
             dataColumnSidecarRecoveringCustody,
             custodyGroupCountManager,
             recoveringSidecarRetriever,

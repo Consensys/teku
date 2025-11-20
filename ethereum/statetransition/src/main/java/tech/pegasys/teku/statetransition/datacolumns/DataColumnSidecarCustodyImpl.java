@@ -183,14 +183,15 @@ public class DataColumnSidecarCustodyImpl
   @Override
   public void onNewFinalizedCheckpoint(
       final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
-    advanceFirstIncompleteSlot(checkpoint.getEpoch())
-        .finish(
-            error ->
-                LOG.error(
-                    "Unexpected error while advancing first custody incomplete slot for checkpoint {}{}",
-                    checkpoint,
-                    fromOptimisticBlock ? " (from optimistic block)" : "",
-                    error));
+    //    advanceFirstIncompleteSlot(checkpoint.getEpoch())
+    //        .finish(
+    //            error ->
+    //                LOG.error(
+    //                    "Unexpected error while advancing first custody incomplete slot for
+    // checkpoint {}{}",
+    //                    checkpoint,
+    //                    fromOptimisticBlock ? " (from optimistic block)" : "",
+    //                    error));
   }
 
   @VisibleForTesting
