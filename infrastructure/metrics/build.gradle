@@ -6,8 +6,6 @@ dependencies {
     implementation project(':infrastructure:time')
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
-    implementation 'io.vertx:vertx-core'
-    implementation 'io.vertx:vertx-web'
     implementation 'io.consensys.tuweni:tuweni-units'
     implementation 'org.hdrhistogram:HdrHistogram'
     implementation 'org.hyperledger.besu.internal:besu-metrics-core'
