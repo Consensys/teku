@@ -260,6 +260,13 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withDiscoveryNetwork() {
+    mustBe(NodeType.BEACON_NODE);
+    LOG.debug("p2p-discovery-enabled: {}", true);
+    configMap.put("p2p-discovery-enabled", true);
+    return this;
+  }
+
   public TekuNodeConfigBuilder genesisTime(final int genesisTime) {
     mustBe(NodeType.BEACON_NODE);
     LOG.debug("Genesis time: {}", genesisTime);

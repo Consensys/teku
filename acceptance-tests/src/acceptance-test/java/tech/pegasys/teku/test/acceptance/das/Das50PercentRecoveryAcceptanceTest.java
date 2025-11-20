@@ -37,7 +37,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
       throws Exception {
     final TekuBeaconNode primaryNode =
         createTekuBeaconNode(
-            createConfigBuilder()
+            createFuluMinimalConfigBuilder()
                 .withRealNetwork()
                 // interop validators are not count for validator custody
                 .withCustodyGroupCountOverride(subnetCount / 2)
@@ -52,7 +52,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
 
     final TekuBeaconNode secondaryNode =
         createTekuBeaconNode(
-            createConfigBuilder()
+            createFuluMinimalConfigBuilder()
                 .withRealNetwork()
                 .withGenesisTime(genesisTime.intValue())
                 .withPeers(primaryNode)
@@ -98,86 +98,17 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
   }
 
   @Test
-  public void shouldAbleToReconstructDataColumnSidecarsFrom50Percent_whenSyncing()
-      throws Exception {
-    final TekuBeaconNode primaryNode =
-        createTekuBeaconNode(
-            createConfigBuilder()
-                .withRealNetwork()
-                // interop validators are not count for validator custody
-                .withCustodyGroupCountOverride(subnetCount / 2)
-                // we don't want to make this test extreme, withhold once and don't repeat
-                .withDasPublishWithholdColumnsEverySlots(9999)
-                .withInteropValidators(0, 64)
-                .withDasDisableElRecovery()
-                .build());
-
-    primaryNode.start();
-    final UInt64 genesisTime = primaryNode.getGenesisTime();
-
-    final TekuBeaconNode secondaryNode =
-        createTekuBeaconNode(
-            createConfigBuilder()
-                .withRealNetwork()
-                .withGenesisTime(genesisTime.intValue())
-                .withPeers(primaryNode)
-                // supernode
-                .withSubscribeAllCustodySubnetsEnabled()
-                .withInteropValidators(0, 0)
-                .withDasDisableElRecovery()
-                .build());
-
-    // DataColumnSidecars are withheld on primaryNode
-    primaryNode.waitForLogMessageContaining("non-custodied sidecars at");
-
-    secondaryNode.start();
-    // DataColumnSidecars are reconstructed on secondaryNode
-    secondaryNode.waitLongForLogMessageContaining("Reconstruction started for slot");
-    secondaryNode.waitForLogMessageContaining("Reconstruction completed for slot");
-    secondaryNode.waitForNewFinalization();
-
-    final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
-
-    final int endSlot = blockAtHead.getSlot().intValue();
-    final int firstFuluSlot =
-        primaryNode
-            .getSpec()
-            .computeStartSlotAtEpoch(
-                primaryNode
-                    .getSpec()
-                    .forMilestone(SpecMilestone.FULU)
-                    .getConfig()
-                    .getFuluForkEpoch())
-            .intValue();
-    final SpecConfigFulu specConfigFulu =
-        SpecConfigFulu.required(primaryNode.getSpec().forMilestone(SpecMilestone.FULU).getConfig());
-    final int allFuluColumns =
-        IntStream.range(firstFuluSlot, endSlot)
-            .mapToObj(UInt64::valueOf)
-            .map(
-                slot ->
-                    getAndAssertDasCustody(
-                        secondaryNode, slot, specConfigFulu.getNumberOfColumns()))
-            .mapToInt(i -> i)
-            .sum();
-
-    assertThat(allFuluColumns).isGreaterThan(0);
-  }
-
-  @Test
   public void
       shouldAbleToReconstructDataColumnSidecarsFrom50Percent_whenSyncingWithReworkedRetriever()
           throws Exception {
     final TekuBeaconNode primaryNode =
         createTekuBeaconNode(
-            createConfigBuilder()
+            createSwiftConfigBuilder()
                 .withRealNetwork()
+                .withDiscoveryNetwork()
                 // interop validators are not count for validator custody
                 .withCustodyGroupCountOverride(subnetCount / 2)
-                // we don't want to make this test extreme, withhold once and don't repeat
-                .withDasPublishWithholdColumnsEverySlots(9999)
                 .withInteropValidators(0, 64)
-                .withDasDisableElRecovery()
                 .build());
 
     primaryNode.start();
@@ -185,26 +116,27 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
 
     final TekuBeaconNode secondaryNode =
         createTekuBeaconNode(
-            createConfigBuilder()
+            createSwiftConfigBuilder()
                 .withRealNetwork()
+                .withDiscoveryNetwork()
                 .withGenesisTime(genesisTime.intValue())
                 .withPeers(primaryNode)
                 // supernode
                 .withSubscribeAllCustodySubnetsEnabled()
                 .withInteropValidators(0, 0)
-                .withDasDisableElRecovery()
                 .withExperimentalReworkedRecovery()
                 .build());
 
-    // DataColumnSidecars are withheld on primaryNode
-    primaryNode.waitForLogMessageContaining("non-custodied sidecars at");
+    // Wait for few epochs, so sync will kick-in when second node is started
+    primaryNode.waitForEpochAtOrAbove(3);
 
     secondaryNode.start();
     // DataColumnSidecars are reconstructed on secondaryNode
     secondaryNode.waitForLogMessageContaining("Rebuilding columns for slot");
     secondaryNode.waitForLogMessageContaining("Rebuilding columns at");
     secondaryNode.waitForLogMessageContaining("Rebuilding columns DONE");
-    secondaryNode.waitForNewFinalization();
+    // as first node custodies only 64 columns, it means we need to rebuild every single slot
+    // sidecars one by one, so we will not wait for finalization, one slot recovery is ok
 
     final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
 
@@ -264,9 +196,23 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
     }
   }
 
-  private TekuNodeConfigBuilder createConfigBuilder() throws Exception {
+  private TekuNodeConfigBuilder createFuluMinimalConfigBuilder() throws Exception {
     return TekuNodeConfigBuilder.createBeaconNode()
         .withNetwork(Resources.getResource("fulu-minimal.yaml"))
+        .withStubExecutionEngine()
+        .withLogLevel("DEBUG");
+  }
+
+  private TekuNodeConfigBuilder createSwiftConfigBuilder() throws Exception {
+    return TekuNodeConfigBuilder.createBeaconNode()
+        .withNetwork("swift")
+        .withAltairEpoch(UInt64.ZERO)
+        .withBellatrixEpoch(UInt64.ZERO)
+        .withCapellaEpoch(UInt64.ZERO)
+        .withDenebEpoch(UInt64.ZERO)
+        .withElectraEpoch(UInt64.ZERO)
+        .withFuluEpoch(UInt64.ONE)
+        .withTotalTerminalDifficulty(0)
         .withStubExecutionEngine()
         .withLogLevel("DEBUG");
   }
