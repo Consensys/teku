@@ -40,7 +40,7 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
 
   public AttestationDutyScheduler(
       final MetricsSystem metricsSystem, final DutyLoader<?> dutyLoader, final Spec spec) {
-    super(metricsSystem, "attestation", dutyLoader, spec);
+    super(metricsSystem, "attestation", dutyLoader, LOOKAHEAD_EPOCHS, spec);
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,
         "scheduled_attestation_duties_current",
@@ -111,11 +111,6 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
           "headBlockRoot returned - dutyEpoch {}, headEpoch {}", () -> dutyEpoch, () -> headEpoch);
       return headBlockRoot;
     }
-  }
-
-  @Override
-  int getLookAheadEpochs(final UInt64 epoch) {
-    return LOOKAHEAD_EPOCHS;
   }
 
   @VisibleForTesting

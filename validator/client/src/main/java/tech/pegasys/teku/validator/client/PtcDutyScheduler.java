@@ -31,10 +31,11 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 public class PtcDutyScheduler extends AbstractDutyScheduler {
 
   private static final Logger LOG = LogManager.getLogger();
+  static final int LOOKAHEAD_EPOCHS = 1;
 
   public PtcDutyScheduler(
       final MetricsSystem metricsSystem, final DutyLoader<?> dutyLoader, final Spec spec) {
-    super(metricsSystem, "payload_attestation", dutyLoader, spec);
+    super(metricsSystem, "payload_attestation", dutyLoader, LOOKAHEAD_EPOCHS, spec);
 
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,
@@ -88,10 +89,5 @@ public class PtcDutyScheduler extends AbstractDutyScheduler {
           "headBlockRoot returned - dutyEpoch {}, headEpoch {}", () -> dutyEpoch, () -> headEpoch);
       return headBlockRoot;
     }
-  }
-
-  @Override
-  int getLookAheadEpochs(final UInt64 epoch) {
-    return 1;
   }
 }

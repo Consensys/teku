@@ -29,8 +29,9 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final MetricsSystem metricsSystem;
   private final String dutyType;
-  protected final Spec spec;
+  private final Spec spec;
   private final DutyLoader<?> epochDutiesScheduler;
+  private final int lookAheadEpochs;
 
   private UInt64 lastProductionSlot;
 
@@ -41,10 +42,12 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
       final MetricsSystem metricsSystem,
       final String dutyType,
       final DutyLoader<?> epochDutiesScheduler,
+      final int lookAheadEpochs,
       final Spec spec) {
     this.metricsSystem = metricsSystem;
     this.dutyType = dutyType;
     this.epochDutiesScheduler = epochDutiesScheduler;
+    this.lookAheadEpochs = lookAheadEpochs;
     this.spec = spec;
   }
 
@@ -97,8 +100,6 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
     invalidateEpochs(dutiesByEpoch);
   }
 
-  abstract int getLookAheadEpochs(UInt64 epoch);
-
   @Override
   public void onValidatorsAdded() {
     invalidateEpochs(dutiesByEpoch);
@@ -106,8 +107,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
 
   private void calculateDuties(final UInt64 epochNumber) {
     dutiesByEpoch.computeIfAbsent(epochNumber, this::createEpochDuties);
-    int lookaheadEpochs = getLookAheadEpochs(epochNumber);
-    for (int i = 1; i <= lookaheadEpochs; i++) {
+    for (int i = 1; i <= lookAheadEpochs; i++) {
       dutiesByEpoch.computeIfAbsent(epochNumber.plus(i), this::createEpochDuties);
     }
   }
@@ -136,7 +136,6 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
     }
     final UInt64 signingEpoch = spec.computeEpochAtSlot(slot);
     final UInt64 epoch = currentEpoch.get();
-    final int lookAheadEpochs = getLookAheadEpochs(epoch);
     return !signingEpoch.isGreaterThan(epoch.plus(lookAheadEpochs + 1));
   }
 

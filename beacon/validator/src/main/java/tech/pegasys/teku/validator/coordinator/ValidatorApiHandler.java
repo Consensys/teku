@@ -314,20 +314,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
-    final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
-    if (epoch.isGreaterThan(
-        currentEpoch.plus(
-            spec.getSpecConfig(epoch).getMinSeedLookahead() + DUTY_EPOCH_TOLERANCE))) {
+    if (epoch.isGreaterThan(combinedChainDataClient.getCurrentEpoch().plus(DUTY_EPOCH_TOLERANCE))) {
       return SafeFuture.failedFuture(
           new IllegalArgumentException(
               String.format(
-                  "Proposer duties were requested %s epochs ahead, only 1 epoch in future is supported.",
-                  epoch.minus(combinedChainDataClient.getCurrentEpoch()).toString())));
+                  "Proposer duties were requested for a future epoch (current: %s, requested: %s).",
+                  combinedChainDataClient.getCurrentEpoch().toString(), epoch)));
     }
-    final UInt64 queryEpoch = epoch.isGreaterThan(currentEpoch) ? currentEpoch : epoch;
-    LOG.trace("Retrieving proposer duties from epoch {}, queryEpoch {}", epoch, queryEpoch);
+    LOG.trace("Retrieving proposer duties from epoch {}", epoch);
     return combinedChainDataClient
-        .getStateAtSlotExact(spec.computeStartSlotAtEpoch(queryEpoch))
+        .getStateAtSlotExact(spec.computeStartSlotAtEpoch(epoch))
         .thenApply(maybeState -> maybeState.map(state -> getProposerDutiesFromState(state, epoch)));
   }
 
@@ -1101,7 +1097,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     final UInt64 startSlot = epochStartSlot.max(GENESIS_SLOT.increment());
     final UInt64 endSlot = epochStartSlot.plus(spec.slotsPerEpoch(epoch));
     final List<ProposerDuty> proposerSlots = new ArrayList<>();
-    for (UInt64 slot = startSlot; slot.compareTo(endSlot) < 0; slot = slot.increment()) {
+    for (UInt64 slot = startSlot; slot.compareTo(endSlot) < 0; slot = slot.plus(UInt64.ONE)) {
       final int proposerIndex = spec.getBeaconProposerIndex(state, slot);
       final BLSPublicKey publicKey =
           spec.getValidatorPubKey(state, UInt64.valueOf(proposerIndex)).orElseThrow();
