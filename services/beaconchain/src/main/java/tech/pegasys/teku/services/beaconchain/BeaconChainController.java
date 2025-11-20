@@ -24,6 +24,7 @@ import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_KZG_PR
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_KZG_PRECOMPUTE_SUPERNODE;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.DEFAULT_MAXIMUM_ATTESTATION_COUNT;
+import static tech.pegasys.teku.statetransition.datacolumns.DasCustodyBackfiller.BATCH_SIZE_IN_SLOTS;
 import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS;
 import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_MIN_WAIT_MILLIS;
 import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_TARGET_WAIT_MILLIS;
@@ -164,6 +165,7 @@ import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolver;
 import tech.pegasys.teku.statetransition.datacolumns.CurrentSlotProvider;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManagerImpl;
+import tech.pegasys.teku.statetransition.datacolumns.DasCustodyBackfiller;
 import tech.pegasys.teku.statetransition.datacolumns.DasCustodySync;
 import tech.pegasys.teku.statetransition.datacolumns.DasPreSampler;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
@@ -380,6 +382,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ExecutionPayloadBidManager executionPayloadBidManager;
   protected volatile ExecutionPayloadManager executionPayloadManager;
   protected volatile ExecutionProofManager executionProofManager;
+  protected volatile Optional<DasCustodyBackfiller> dasCustodyBackfiller = Optional.empty();
   protected volatile Optional<DasCustodySync> dasCustodySync = Optional.empty();
   protected volatile Optional<DataColumnSidecarRetriever> recoveringSidecarRetriever =
       Optional.empty();
@@ -505,6 +508,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             p2pNetwork.start(),
             blockManager.start(),
             syncService.start(),
+            dasCustodyBackfiller.isPresent()
+                ? dasCustodyBackfiller.get().start()
+                : SafeFuture.COMPLETE,
             SafeFuture.fromRunnable(
                 () -> {
                   terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start);
@@ -542,6 +548,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             p2pNetwork.stop(),
             timerService.stop(),
             ephemerySlotValidationService.doStop(),
+            dasCustodyBackfiller.isPresent()
+                ? dasCustodyBackfiller.get().stop()
+                : SafeFuture.COMPLETE,
             SafeFuture.fromRunnable(
                 () -> {
                   terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop);
@@ -978,13 +987,28 @@ public class BeaconChainController extends Service implements BeaconChainControl
               timeProvider,
               specConfigFulu.getNumberOfColumns());
     }
-    final DasCustodySync svc =
-        new DasCustodySync(
+    //    final DasCustodySync svc =
+    //        new DasCustodySync(
+    //            dataColumnSidecarRecoveringCustody,
+    //            recoveringSidecarRetriever,
+    //            minCustodyPeriodSlotCalculator);
+    //    dasCustodySync = Optional.of(svc);
+    //    eventChannels.subscribe(SlotEventsChannel.class, svc);
+
+    final DasCustodyBackfiller s =
+        new DasCustodyBackfiller(
+            combinedChainDataClient,
+            Duration.ofSeconds(30),
             dataColumnSidecarRecoveringCustody,
+            custodyGroupCountManager,
             recoveringSidecarRetriever,
-            minCustodyPeriodSlotCalculator);
-    dasCustodySync = Optional.of(svc);
-    eventChannels.subscribe(SlotEventsChannel.class, svc);
+            minCustodyPeriodSlotCalculator,
+            dasAsyncRunner,
+            sidecarDB::getFirstCustodyIncompleteSlot,
+            sidecarDB::setFirstCustodyIncompleteSlot,
+            BATCH_SIZE_IN_SLOTS);
+    eventChannels.subscribe(CustodyGroupCountChannel.class, s);
+    dasCustodyBackfiller = Optional.of(s);
 
     final CurrentSlotProvider currentSlotProvider =
         CurrentSlotProvider.create(spec, recentChainData.getStore());
