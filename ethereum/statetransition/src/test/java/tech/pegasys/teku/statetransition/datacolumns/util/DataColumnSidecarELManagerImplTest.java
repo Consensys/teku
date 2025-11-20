@@ -314,8 +314,7 @@ public class DataColumnSidecarELManagerImplTest {
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
 
     verifyRecovery(true);
-    verify(dataColumnSidecarGossipValidator, times(1))
-        .markForEquivocation(any(), any());
+    verify(dataColumnSidecarGossipValidator, times(1)).markForEquivocation(any(), any());
   }
 
   @Test
