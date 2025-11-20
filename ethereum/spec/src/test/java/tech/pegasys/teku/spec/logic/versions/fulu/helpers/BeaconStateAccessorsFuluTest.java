@@ -92,18 +92,9 @@ public class BeaconStateAccessorsFuluTest {
         .isEqualTo(0);
   }
 
-  @Test
-  void getBeaconProposerIndex_nextEpoch() {
-    storageSystem.chainUpdater().initializeGenesis();
-    final SignedBlockAndState blockAndState = storageSystem.chainUpdater().advanceChain(16);
-    assertThat(
-            stateAccessorsFulu.getBeaconProposerIndex(blockAndState.getState(), UInt64.valueOf(24)))
-        .isEqualTo(0);
-  }
-
   @ParameterizedTest
-  @ValueSource(ints = {8, 33})
-  void getBeaconProposerIndex_shouldThrowIfNotCurrentOrNextEpoch(final int slot) {
+  @ValueSource(ints = {8, 25, 33})
+  void getBeaconProposerIndex_shouldThrowIfNotCurrentEpoch(final int slot) {
     storageSystem.chainUpdater().initializeGenesis();
     final SignedBlockAndState blockAndState = storageSystem.chainUpdater().advanceChain(16);
     assertThatThrownBy(
@@ -111,7 +102,7 @@ public class BeaconStateAccessorsFuluTest {
                 stateAccessorsFulu.getBeaconProposerIndex(
                     blockAndState.getState(), UInt64.valueOf(slot)))
         .hasMessageContaining(
-            "get_beacon_proposer_index is only used for requesting a slot in the current or next epoch");
+            "get_beacon_proposer_index is only used for requesting a slot in the current epoch");
   }
 
   private List<Integer> getProposerLookaheadFromState(final BeaconStateFulu beaconStateFulu) {
