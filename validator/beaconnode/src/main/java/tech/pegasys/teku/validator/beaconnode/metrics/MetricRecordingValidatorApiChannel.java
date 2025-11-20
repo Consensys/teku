@@ -36,6 +36,7 @@ import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.PtcDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
@@ -48,6 +49,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
@@ -133,6 +136,14 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Optional<PtcDuties>> getPtcDuties(
+      final UInt64 epoch, final IntCollection validatorIndices) {
+    return countOptionalDataRequest(
+        delegate.getPtcDuties(epoch, validatorIndices),
+        BeaconNodeRequestLabels.GET_PTC_DUTIES_METHOD);
+  }
+
+  @Override
   public SafeFuture<Optional<PeerCount>> getPeerCount() {
     return countOptionalDataRequest(
         delegate.getPeerCount(), BeaconNodeRequestLabels.GET_PEER_COUNT_METHOD);
@@ -173,6 +184,14 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
     return countOptionalDataRequest(
         delegate.createSyncCommitteeContribution(slot, subcommitteeIndex, beaconBlockRoot),
         BeaconNodeRequestLabels.CREATE_SYNC_COMMITTEE_CONTRIBUTION_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Optional<PayloadAttestationData>> createPayloadAttestationData(
+      final UInt64 slot) {
+    return countOptionalDataRequest(
+        delegate.createPayloadAttestationData(slot),
+        BeaconNodeRequestLabels.CREATE_PAYLOAD_ATTESTATION_METHOD);
   }
 
   @Override
@@ -241,6 +260,14 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
     return countDataRequest(
         delegate.sendSignedContributionAndProofs(signedContributionAndProofs),
         BeaconNodeRequestLabels.SEND_CONTRIBUTIONS_AND_PROOFS_METHOD);
+  }
+
+  @Override
+  public SafeFuture<List<SubmitDataError>> sendPayloadAttestationMessages(
+      final List<PayloadAttestationMessage> payloadAttestationMessages) {
+    return countSendRequest(
+        delegate.sendPayloadAttestationMessages(payloadAttestationMessages),
+        BeaconNodeRequestLabels.SEND_PAYLOAD_ATTESTATION_MESSAGES_METHOD);
   }
 
   @Override

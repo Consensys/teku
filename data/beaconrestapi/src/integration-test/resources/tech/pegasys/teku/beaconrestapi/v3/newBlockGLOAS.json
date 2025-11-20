@@ -1,13 +1,13 @@
 {
   "version": "gloas",
   "execution_payload_blinded": false,
-  "execution_payload_value": "7495532986413849817267215758148158394038672421876771029699707700121804844683",
-  "consensus_block_value": "16147741642076749126162712127389114255573229005697131290860120949861914404374",
+  "execution_payload_value": "59408791875951349144595766734490198143801819883755800247510973018900591999947",
+  "consensus_block_value": "68061000558468473059772155448695499422945973210558489479576378279868340613718",
   "data": {
     "slot": "1",
-    "proposer_index": "4784000204645543599",
-    "parent_root": "0x9ecb7542cf4bad14a20f79bc45931b8d1483242ea9bf8c8edd186ab70a94624b",
-    "state_root": "0xb1ec6f426f978c599752e0e7181c305a1b8623c06088b5480b9aad7fe5f419d6",
+    "proposer_index": "4774085296755504239",
+    "parent_root": "0xa99a23428f6ee3d80bb91e1cd80e3bc46cad162aa2b9c7bc5e291babfcdf69e1",
+    "state_root": "0xbcbb1d422fbac21d01fc8547ab974f9172b015bc5882f0768caa5e73d640216c",
     "body": {
       "randao_reveal": "0x896972a61590fa3df074e8b86d9229c800e16b2c69c92b424c42947efb2c5c9badf3dea0289f088c86cf45ef8add162d1764bfe82b05fa69da6969f8a5ef4a5d70422b2d6568164b0f34de00e4592a05ab90c757c76b2edfc512fef7937c5a5a",
       "eth1_data": {
@@ -335,33 +335,25 @@
           "parent_block_hash": "0x0c15f142b0175c6e8491002de9596cba91433934b44834491c80e04920a257ea",
           "parent_block_root": "0xd3b10243d034be9fa5c8caaa6ebf2e537e3a3c7e91eeb91a93fc15f1917f314a",
           "block_hash": "0xe6d2fc4270809de49a0b32d641484320853d3b1047b7e2d4c07d59b96ce0e8d4",
-          "fee_recipient": "0x4678df4290faf93c645a36af63f4a921a44c36ea",
-          "gas_limit": "4817049881864128048",
+          "prev_randao": "0x4678df4290faf93c645a36af63f4a921a44c36ead7a2ae77a503aba2afc47d8a",
+          "fee_recipient": "0x5999d9423046d981599d9dda377dbeeeaa4f357c",
+          "gas_limit": "4822007335809147728",
           "builder_index": "740284",
           "slot": "1310451960",
-          "value": "4822007335809147728",
-          "blob_kzg_commitments_root": "0x3357e542f0ae1af86f17cf83906b95549e49375821da85bd778267dad563c6ff"
+          "value": "4820354852592463600",
+          "execution_payment": "4759212943510379790",
+          "blob_kzg_commitments_root": "0x08400642aee83f31d60723f5fabaa1c58bbc110432a5935f43af6c943fc4fe96"
         },
-        "signature": "0x9590d1d0c5216aeacaa19bb58a4a66a6430e554a0b020e2977be2421bcd089fb47bccbe10f2baac88dee33fc625dd5441217042918ac793c0aa2aba45a379decdb018b7bdd277f2a66b122a95aa1974cb05208e00801ed52f7f86b671c372e2f"
+        "signature": "0xb58eaaba3ba51d7098d65fbec3829ace78576a2276fd9c97c293aabdb634a2c50f52611f48088da5d4a5b5fa2c5f4c0513d8dd91c8534b50a7b8ae0072583612610ada0c81a261641c66ac542428cedf20f1b954ad03505fc058b40ce0bf4182"
       },
       "payload_attestations": [
         {
-          "aggregation_bits": "0x00",
+          "aggregation_bits": "0x02",
           "data": {
-            "beacon_block_root": "0xcfdc1742cf05a262f63eed727f20645e78b3144e0f4b1931b92ba23bb0a1d8f6",
-            "slot": "9363531959",
-            "payload_present": true,
-            "blob_data_available": true
-          },
-          "signature": "0xb33229dc7bb509bee6290ece9d436db0477fc49ec3cc26e1e298eb72d62d0b4d28e72b271c0c3a9b9f86c44c883086680dc51747dd535a7b0b693302eadd8bf44f802fac281dc91025509a5c6df8bbe7455a3f30d32b2cc27c2322c7f00212d0"
-        },
-        {
-          "aggregation_bits": "0x00",
-          "data": {
-            "beacon_block_root": "0x1c6100424e341f76cb4a8a20cd43b69291bf1096e86dbc197030b05c1a25b621",
-            "slot": "2930163703",
-            "payload_present": true,
-            "blob_data_available": true
+            "beacon_block_root": "0x42a3f4418ecbddffb5d058777555df2c9ec50eba55ff0d8ecc3237edcfe62437",
+            "slot": "31713479575",
+            "payload_present": false,
+            "blob_data_available": false
           },
           "signature": "0xb851b39a32955a7f05acd7707c6859df4ee2b1472996d6a805a61e14415db550a92a7eaaff14a67e858a9d3633306efb12a62ed84f76387a84deefe726afcf2fb744f616f67d144411689343e6e0dea7a88b57449b2cdecb43cf0b5a80887550"
         },
@@ -370,20 +362,30 @@
           "data": {
             "beacon_block_root": "0x68e5e841ce629c89a05627ce1c6708c7aacb0cdec1905f022835be7d83a8934c",
             "slot": "26349311799",
-            "payload_present": true,
-            "blob_data_available": true
+            "payload_present": false,
+            "blob_data_available": false
           },
-          "signature": "0xa31249a2500d0428a2b38100b6db1191f1014087af8e58cdc025e28fc9e2aa5f08c74036c1c99b5e6b9f96c250700e2505201e2d4657bff1de53e01ac3c28f2f6624da4e953c9d08b0011e547902197fc5317daa051526f68684f16e1608ff33"
+          "signature": "0xb99cdab802f2f2683fabc52c8ea095386730c43694a9a5f7a42033e6dea53f4896092b207f56b1402c5c69937a3e2fb41958e001895bb43c2ee1e360da601e1ac56ffa8bd5371b1dcfe85518f297f94c02cd4981a5961201d2c2fb4d2a15c888"
         },
         {
-          "aggregation_bits": "0x00",
+          "aggregation_bits": "0x02",
           "data": {
-            "beacon_block_root": "0xb469d1414e91199d7562c47b6a8a5afbc3d708269bb302ebdf39cc9eed2b7177",
-            "slot": "17768459895",
-            "payload_present": true,
-            "blob_data_available": true
+            "beacon_block_root": "0xc40d6a420fe36b9e8d954713eca44427218922521651de02391bf147bf55d160",
+            "slot": "6322771799",
+            "payload_present": false,
+            "blob_data_available": false
           },
-          "signature": "0x98ffde69b4d92a4510b5d42ae9bcc05315ed0a20fab2ff6fc8e416678f150d7bfb961da6774e86213ee711a2b065c3d300a13fcf630d7f303c59d848ec47905d2b439e7bb4f3348b6ddc448aa00f7c6eb6f64513182a3d335e2753f66cbec83e"
+          "signature": "0x917311e1a5f7a689ceee1af61f06519a3e4c6d68a4af6f4d24da0f57a2246c963c964d0e576607222856258c0e34b0b1014b68dfe481454ceaf521bc6f87c15e6a21f6db1c303b2042d5857ad4506f00dcfdfc5e65bbaf1b4ee9fe7ddf7b738e"
+        },
+        {
+          "aggregation_bits": "0x02",
+          "data": {
+            "beacon_block_root": "0xea4f5e424f7a2a28771b166a93b66dc12d8f207683e22f77941d78d874174076",
+            "slot": "3106087671",
+            "payload_present": false,
+            "blob_data_available": false
+          },
+          "signature": "0xb875609f4aa01bb03c08b4f13459fa7696b969fc5e8440c89f690478820b8b5b4ad75e7fbf03c4b0e919cdc80b07857604bd81f75128f2bbc61861d0b5a7744e21eb4ad008f05b46be2c2780900a7913abc2cd3591390f29e05e2d5b2dba570b"
         }
       ]
     }

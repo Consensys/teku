@@ -72,6 +72,11 @@ public class BeaconChainMethodIds {
     return getMethodId(DATA_COLUMN_SIDECARS_BY_RANGE, version, encoding);
   }
 
+  public static String getExecutionPayloadEnvelopesByRootMethodId(
+      final int version, final RpcEncoding encoding) {
+    return getMethodId(EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT, version, encoding);
+  }
+
   public static String getStatusMethodId(final int version, final RpcEncoding encoding) {
     return getMethodId(STATUS, version, encoding);
   }

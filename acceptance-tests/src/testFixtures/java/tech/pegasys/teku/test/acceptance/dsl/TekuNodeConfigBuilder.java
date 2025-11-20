@@ -636,9 +636,9 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
-  public TekuNodeConfigBuilder withDasExtraCustodyGroupCount(final int extraCustodySubnetCount) {
-    LOG.debug("Xdas-extra-custody-group-count: {}", extraCustodySubnetCount);
-    configMap.put("Xdas-extra-custody-group-count", extraCustodySubnetCount);
+  public TekuNodeConfigBuilder withCustodyGroupCountOverride(final int custodyGroupCount) {
+    LOG.debug("Xcustody-group-count-override: {}", custodyGroupCount);
+    configMap.put("Xcustody-group-count-override", custodyGroupCount);
     return this;
   }
 

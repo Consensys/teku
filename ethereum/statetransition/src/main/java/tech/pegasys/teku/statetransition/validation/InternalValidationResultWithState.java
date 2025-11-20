@@ -51,6 +51,11 @@ public class InternalValidationResultWithState {
         InternalValidationResult.IGNORE, Optional.of(state));
   }
 
+  public static InternalValidationResultWithState reject(final String reason) {
+    return new InternalValidationResultWithState(
+        InternalValidationResult.create(ValidationResultCode.REJECT, reason), Optional.empty());
+  }
+
   @FormatMethod
   public static InternalValidationResultWithState reject(
       final String descriptionTemplate, final Object... args) {

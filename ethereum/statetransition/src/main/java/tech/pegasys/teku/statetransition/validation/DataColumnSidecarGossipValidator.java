@@ -21,6 +21,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -333,11 +334,7 @@ public class DataColumnSidecarGossipValidator {
                *
                * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, sidecar.index) with valid header signature, sidecar inclusion proof, and kzg proof.
                */
-              if (!receivedValidDataColumnSidecarInfoSet.add(
-                  new SlotProposerIndexAndColumnIndex(
-                      blockHeader.getSlot(),
-                      blockHeader.getProposerIndex(),
-                      dataColumnSidecar.getIndex()))) {
+              if (!markForEquivocation(blockHeader, dataColumnSidecar)) {
                 return ignore(
                     "DataColumnSidecar is not the first valid for its slot and index. It will be dropped.");
               }
@@ -394,9 +391,7 @@ public class DataColumnSidecarGossipValidator {
     /*
      * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, sidecar.index) with valid header signature, sidecar inclusion proof, and kzg proof.
      */
-    if (!receivedValidDataColumnSidecarInfoSet.add(
-        new SlotProposerIndexAndColumnIndex(
-            blockHeader.getSlot(), blockHeader.getProposerIndex(), dataColumnSidecar.getIndex()))) {
+    if (!markForEquivocation(blockHeader, dataColumnSidecar)) {
       return SafeFuture.completedFuture(
           ignore(
               "DataColumnSidecar is not the first valid for its slot and index. It will be dropped."));
@@ -440,6 +435,22 @@ public class DataColumnSidecarGossipValidator {
         signedBlockHeader.getMessage().getProposerIndex(),
         signedBlockHeader.getSignature(),
         state);
+  }
+
+  public void markForEquivocation(
+      final BeaconBlockHeader beaconBlockHeader, final List<DataColumnSidecar> sidecars) {
+    LOG.debug(
+        "Added recovered {} data column sidecars from block {} to gossip tracker",
+        sidecars.size(),
+        beaconBlockHeader.getRoot());
+    sidecars.forEach(sidecar -> markForEquivocation(beaconBlockHeader, sidecar));
+  }
+
+  private boolean markForEquivocation(
+      final BeaconBlockHeader beaconBlockHeader, final DataColumnSidecar sidecar) {
+    return receivedValidDataColumnSidecarInfoSet.add(
+        new SlotProposerIndexAndColumnIndex(
+            beaconBlockHeader.getSlot(), beaconBlockHeader.getProposerIndex(), sidecar.getIndex()));
   }
 
   private boolean isFirstValidForSlotProposerIndexAndColumnIndex(

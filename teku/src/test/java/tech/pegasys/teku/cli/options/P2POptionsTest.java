@@ -57,6 +57,11 @@ import tech.pegasys.teku.networking.p2p.network.config.GeneratingFilePrivateKeyS
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.config.PrivateKeySource;
 import tech.pegasys.teku.networking.p2p.network.config.TypedFilePrivateKeySource;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 
 public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
@@ -741,6 +746,74 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     } catch (Exception e) {
       fail("Test setup failed: " + e.getMessage(), e);
     }
+  }
+
+  @Test
+  public void allCustodySubnetsIsDisabled() {
+    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+
+    final Spec mainnetFulu = TestSpecFactory.createMainnetFulu();
+    final SpecVersion specVersionFulu = mainnetFulu.forMilestone(SpecMilestone.FULU);
+
+    assertThat(tekuConfiguration.p2p().getTotalCustodyGroupCount(specVersionFulu))
+        .isEqualTo(SpecConfigFulu.required(specVersionFulu.getConfig()).getCustodyRequirement());
+  }
+
+  @Test
+  public void allCustodySubnetsEnabled() {
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--p2p-subscribe-all-custody-subnets-enabled", "true");
+
+    final Spec mainnetFulu = TestSpecFactory.createMainnetFulu();
+    final SpecVersion specVersionFulu = mainnetFulu.forMilestone(SpecMilestone.FULU);
+
+    assertThat(tekuConfiguration.p2p().getTotalCustodyGroupCount(specVersionFulu))
+        .isEqualTo(SpecConfigFulu.required(specVersionFulu.getConfig()).getNumberOfCustodyGroups());
+  }
+
+  @Test
+  public void custodyGroupCountOverrideCorrectly() {
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xcustody-group-count-override", "20");
+
+    final Spec mainnetFulu = TestSpecFactory.createMainnetFulu();
+    final SpecVersion specVersionFulu = mainnetFulu.forMilestone(SpecMilestone.FULU);
+
+    assertThat(tekuConfiguration.p2p().getTotalCustodyGroupCount(specVersionFulu)).isEqualTo(20);
+  }
+
+  @Test
+  public void custodyGroupCountOverrideMin() {
+    final int overrideMin = 2;
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
+            "--Xcustody-group-count-override", String.valueOf(overrideMin));
+
+    final Spec mainnetFulu = TestSpecFactory.createMainnetFulu();
+    final SpecVersion specVersionFulu = mainnetFulu.forMilestone(SpecMilestone.FULU);
+    final int expectedCustodyRequirement =
+        SpecConfigFulu.required(specVersionFulu.getConfig()).getCustodyRequirement();
+
+    assertThat(overrideMin).isLessThan(expectedCustodyRequirement);
+    assertThat(tekuConfiguration.p2p().getTotalCustodyGroupCount(specVersionFulu))
+        .isEqualTo(expectedCustodyRequirement);
+  }
+
+  @Test
+  public void custodyGroupCountOverrideMax() {
+    final int overrideMax = 256;
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
+            "--Xcustody-group-count-override", String.valueOf(overrideMax));
+
+    final Spec mainnetFulu = TestSpecFactory.createMainnetFulu();
+    final SpecVersion specVersionFulu = mainnetFulu.forMilestone(SpecMilestone.FULU);
+    final int expectedCustodyRequirement =
+        SpecConfigFulu.required(specVersionFulu.getConfig()).getNumberOfCustodyGroups();
+
+    assertThat(overrideMax).isGreaterThan(expectedCustodyRequirement);
+    assertThat(tekuConfiguration.p2p().getTotalCustodyGroupCount(specVersionFulu))
+        .isEqualTo(expectedCustodyRequirement);
   }
 
   @Test

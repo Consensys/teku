@@ -48,6 +48,10 @@ public class DasPreSampler {
   }
 
   private boolean isSamplingRequired(final SignedBeaconBlock block) {
+    if (block == null) {
+      LOG.debug("SignedBeaconBlock was unexpectedly null");
+      return false;
+    }
     return sampler.checkSamplingEligibility(block.getMessage()) == REQUIRED;
   }
 

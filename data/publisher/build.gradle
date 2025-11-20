@@ -9,7 +9,7 @@ dependencies {
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-    implementation 'org.hyperledger.besu.internal:metrics-core'
+    implementation 'org.hyperledger.besu.internal:besu-metrics-core'
     implementation 'com.squareup.okhttp3:okhttp'
     compileOnly 'com.github.oshi:oshi-core-java11'
 

@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.CompletionException;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
@@ -52,7 +53,10 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -168,18 +172,13 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     final String[] args = {"--help"};
 
     beaconNodeCommand.parse(args);
-    String str = getCommandLineOutput();
+    final String commandLineOutput = getCommandLineOutput();
 
-    final Pattern p = Pattern.compile("--[X][^ ]+");
-    final Matcher matcher = p.matcher(str);
-    final List<String> errors = new ArrayList<>();
-    while (matcher.find()) {
-      MatchResult current = matcher.toMatchResult();
-      LOG.debug("found {} at position {}", current.group().trim(), current.start());
-      errors.add(current.group().trim());
-    }
-
-    assertThat(errors).describedAs("Found --X command arguments not marked as hidden").isEmpty();
+    assertThat(
+            getCommandLineOptionsFromCommandLineOutput(
+                commandLineOutput, Pattern.compile("--X[^ ]+")))
+        .describedAs("Found --X command arguments not marked as hidden")
+        .isEmpty();
   }
 
   @Test
@@ -189,16 +188,11 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     final String[] args = {"-X"};
 
     beaconNodeCommand.parse(args);
+    final String commandLineOutput = getCommandLineOutput();
 
-    final Pattern p = Pattern.compile("--[^X][^ ]+=");
-    final Matcher matcher = p.matcher(getCommandLineOutput());
-    final List<String> errors = new ArrayList<>();
-    while (matcher.find()) {
-      final MatchResult current = matcher.toMatchResult();
-      LOG.debug("found {} at position {}", current.group().trim(), current.start());
-      errors.add(current.group().trim());
-    }
-    assertThat(errors)
+    assertThat(
+            getCommandLineOptionsFromCommandLineOutput(
+                commandLineOutput, Pattern.compile("--[^X][^ ]+=")))
         .describedAs("Found hidden command arguments not prefixed with --X")
         .isEmpty();
   }
@@ -481,6 +475,51 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     assertThat(trustedSetup).isPresent();
   }
 
+  @Test
+  @Disabled("used for ad-hoc reconciliation between CLI and docs")
+  public void verifyCliOptionsAndDocsConsistency() throws IOException {
+    beaconNodeCommand.parse(new String[] {"--help"});
+    beaconNodeCommand.parse(new String[] {"vc", "--help"});
+    final String commandLineOutput = getCommandLineOutput();
+
+    final List<String> allCliOptionsWithoutHyphens =
+        getCommandLineOptionsFromCommandLineOutput(commandLineOutput, Pattern.compile("--[\\w-]+"))
+            .stream()
+            .map(option -> option.replaceFirst("--", ""))
+            .distinct()
+            .toList();
+
+    final List<String> docsCliOptions =
+        Stream.of(
+                Jsoup.connect("https://docs.teku.consensys.io/reference/cli").get(),
+                Jsoup.connect(
+                        "https://docs.teku.consensys.io/reference/cli/subcommands/validator-client")
+                    .get())
+            .flatMap(doc -> doc.selectStream("h2.anchor, h3.anchor"))
+            .flatMap(anchor -> anchor.selectStream("code"))
+            .map(Element::text)
+            .map(String::trim)
+            .toList();
+
+    final Set<String> cliOnly = new TreeSet<>(allCliOptionsWithoutHyphens);
+    docsCliOptions.forEach(cliOnly::remove);
+
+    final Set<String> docsOnly = new TreeSet<>(docsCliOptions);
+    allCliOptionsWithoutHyphens.forEach(docsOnly::remove);
+    // this option doesn't show in `teku vc --help` but it's available (see ValidatorClientOptions)
+    docsOnly.remove("sentry-config-file");
+
+    if (!cliOnly.isEmpty() || !docsOnly.isEmpty()) {
+      throw new AssertionError(
+          "Mismatch between CLI and docs.\n"
+              + "\uD83D\uDD0D CLI options missing from docs: "
+              + cliOnly
+              + "\n"
+              + "\uD83D\uDCDA Docs options missing from CLI: "
+              + docsOnly);
+    }
+  }
+
   private Path createConfigFile() throws IOException {
     final URL configFile = BeaconNodeCommandTest.class.getResource("/complete_config.yaml");
     final String updatedConfig =
@@ -747,6 +786,18 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     Files.write(file, contents);
     file.toFile().deleteOnExit();
     return file;
+  }
+
+  private List<String> getCommandLineOptionsFromCommandLineOutput(
+      final String commandLineOutput, final Pattern pattern) {
+    final Matcher matcher = pattern.matcher(commandLineOutput);
+    final List<String> commandLineOptions = new ArrayList<>();
+    while (matcher.find()) {
+      final MatchResult current = matcher.toMatchResult();
+      LOG.debug("found {} at position {}", current.group().trim(), current.start());
+      commandLineOptions.add(current.group().trim());
+    }
+    return commandLineOptions;
   }
 
   @ParameterizedTest

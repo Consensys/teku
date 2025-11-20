@@ -50,6 +50,7 @@ import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
+import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.statetransition.validation.signatures.SimpleSignatureVerificationService;
@@ -100,9 +101,10 @@ class AttestationManagerIntegrationTest {
           "attestations");
   private final SignatureVerificationService signatureVerificationService =
       new SimpleSignatureVerificationService();
+  private final GossipValidationHelper gossipValidationHelper =
+      new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem());
   private final AttestationValidator attestationValidator =
-      new AttestationValidator(
-          spec, recentChainData, signatureVerificationService, storageSystem.getMetricsSystem());
+      new AttestationValidator(spec, signatureVerificationService, gossipValidationHelper);
   private final ActiveValidatorChannel activeValidatorChannel = mock(ActiveValidatorChannel.class);
 
   private final AttestationManager attestationManager =

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.execution;
 
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
@@ -24,6 +25,11 @@ public interface ExecutionPayloadManager {
 
   ExecutionPayloadManager NOOP =
       new ExecutionPayloadManager() {
+        @Override
+        public boolean isExecutionPayloadRecentlySeen(Bytes32 beaconBlockRoot) {
+          return false;
+        }
+
         @Override
         public SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
             final SignedExecutionPayloadEnvelope signedExecutionPayload,
@@ -38,6 +44,12 @@ public interface ExecutionPayloadManager {
               ExecutionPayloadImportResult.successful(signedExecutionPayload));
         }
       };
+
+  /**
+   * {@link SignedExecutionPayloadEnvelope} has been recently seen referencing the block. This
+   * method is used for the `payload_present` vote.
+   */
+  boolean isExecutionPayloadRecentlySeen(final Bytes32 beaconBlockRoot);
 
   SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
       SignedExecutionPayloadEnvelope signedExecutionPayload, Optional<UInt64> arrivalTimestamp);

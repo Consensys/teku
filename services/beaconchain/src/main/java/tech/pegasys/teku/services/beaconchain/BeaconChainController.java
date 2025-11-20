@@ -96,7 +96,6 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetB
 import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeBasedStableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
-import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.mock.NoOpEth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.peers.DataColumnPeerManagerImpl;
 import tech.pegasys.teku.networking.eth2.peers.MetadataDasPeerCustodyTracker;
@@ -215,6 +214,9 @@ import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
+import tech.pegasys.teku.statetransition.payloadattestation.AggregatingPayloadAttestationPool;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationMessageValidator;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
@@ -355,6 +357,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile MappedOperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
   protected volatile SyncCommitteeContributionPool syncCommitteeContributionPool;
   protected volatile SyncCommitteeMessagePool syncCommitteeMessagePool;
+  protected volatile PayloadAttestationPool payloadAttestationPool;
   protected volatile WeakSubjectivityValidator weakSubjectivityValidator;
   protected volatile PerformanceTracker performanceTracker;
   protected volatile PendingPool<SignedBeaconBlock> pendingBlocks;
@@ -374,6 +377,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile KZG kzg;
   protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile BlobSidecarGossipValidator blobSidecarValidator;
+  protected volatile DataColumnSidecarGossipValidator dataColumnSidecarGossipValidator;
   protected volatile DataColumnSidecarManager dataColumnSidecarManager;
   protected volatile ExecutionPayloadBidManager executionPayloadBidManager;
   protected volatile ExecutionPayloadManager executionPayloadManager;
@@ -660,6 +664,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initProposerSlashingPool();
     initVoluntaryExitPool();
     initSignedBlsToExecutionChangePool();
+    initPayloadAttestationPool();
     initEth1DataCache();
     initDepositProvider();
     initGenesisHandler();
@@ -812,7 +817,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initDataColumnSidecarManager() {
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      final DataColumnSidecarGossipValidator dataColumnSidecarGossipValidator =
+      dataColumnSidecarGossipValidator =
           DataColumnSidecarGossipValidator.create(
               spec,
               invalidBlockRoots,
@@ -1056,54 +1061,91 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
     final DataColumnSidecarRecoveringCustody dataColumnSidecarRecoveringCustody =
         dataColumnSidecarCustodyRef.get();
+    final DataColumnSidecarRetriever dataColumnSidecarRetriever =
+        recoveringSidecarRetriever.orElseThrow();
 
-    // GOSSIP -> RecoveringCustody
+    // *************************************
+    // ****** BLOCK pre-import source ******
+    // *************************************
+
+    // EL Recovery
+    blockManager.subscribePreImportBlocks(dataColumnSidecarELManager::onNewBlock);
+
+    // ***************************
+    // ****** GOSSIP source ******
+    // ***************************
+
+    // RecoveringCustody
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         (dataColumnSidecar, remoteOrigin) ->
             dataColumnSidecarRecoveringCustody
                 .onNewValidatedDataColumnSidecar(dataColumnSidecar, remoteOrigin)
                 .finishError(LOG));
 
-    // EL Recovery -> RecoveringCustody
-    dataColumnSidecarELManager.subscribeToRecoveredColumnSidecar(
-        (dataColumnSidecar, remoteOrigin) ->
-            dataColumnSidecarRecoveringCustody
-                .onNewValidatedDataColumnSidecar(dataColumnSidecar, remoteOrigin)
-                .finishError(LOG));
-
-    // GOSSIP -> EL Recovery
+    // EL Recovery
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         dataColumnSidecarELManager::onNewDataColumnSidecar);
 
-    recoveringSidecarRetriever.ifPresent(
-        retriever -> {
-          // GOSSIP -> SidecarRetriever
-          dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
-              (sidecar, remoteOrigin) -> retriever.onNewValidatedSidecar(sidecar));
+    // SidecarRetriever
+    dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
+        dataColumnSidecarRetriever::onNewValidatedSidecar);
 
-          // EL Recovery -> SidecarRetriever
-          dataColumnSidecarELManager.subscribeToRecoveredColumnSidecar(
-              (sidecar, remoteOrigin) -> retriever.onNewValidatedSidecar(sidecar));
-
-          // RecoveringCustody -> SidecarRetriever
-          dataColumnSidecarRecoveringCustody.subscribeToRecoveredColumnSidecar(
-              (sidecar, remoteOrigin) -> retriever.onNewValidatedSidecar(sidecar));
-        });
-
-    // GOSSIP -> sampler
+    // sampler
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         dataAvailabilitySampler::onNewValidatedDataColumnSidecar);
 
-    // Sidecar Publisher (locally produced sidecars) ->
+    // ********************************
+    // ****** EL Recovery source ******
+    // ********************************
+
+    // SidecarRetriever
+    dataColumnSidecarELManager.subscribeToRecoveredColumnSidecar(
+        dataColumnSidecarRetriever::onNewValidatedSidecar);
+
+    // sampler
+    dataColumnSidecarELManager.subscribeToRecoveredColumnSidecar(
+        dataAvailabilitySampler::onNewValidatedDataColumnSidecar);
+
+    // custody
+    dataColumnSidecarELManager.subscribeToRecoveredColumnSidecar(
+        (sidecar, origin) ->
+            dataColumnSidecarRecoveringCustody
+                .onNewValidatedDataColumnSidecar(sidecar, origin)
+                .finishError(LOG));
+
+    // *******************************************
+    // ********* RecoveringCustody source ********
+    // **** (reconstruction on 50%+ columns) ****
+    // *******************************************
+
+    // SidecarRetriever
+    dataColumnSidecarRecoveringCustody.subscribeToRecoveredColumnSidecar(
+        dataColumnSidecarRetriever::onNewValidatedSidecar);
+
+    // sampler
+    dataColumnSidecarRecoveringCustody.subscribeToRecoveredColumnSidecar(
+        dataAvailabilitySampler::onNewValidatedDataColumnSidecar);
+
+    // *******************************************
+    // ********* Sidecar Publisher source ********
+    // *******************************************
+    // (possible origins: LOCAL_EL, LOCAL_PROPOSAL, RECOVERED)
+
     eventChannels.subscribe(
         DataColumnSidecarGossipChannel.class,
         (sidecar, origin) -> {
+          if (origin != RemoteOrigin.LOCAL_PROPOSAL) {
+            // we explicitly subscribe to dataColumnSidecarELManager (LOCAL_EL)
+            // and dataColumnSidecarRecoveringCustody (RECOVERED),
+            // so let's distribute only for the LOCAL_PROPOSAL case.
+            return;
+          }
+
           // sampler
           dataAvailabilitySampler.onNewValidatedDataColumnSidecar(sidecar, origin);
 
           // retriever
-          recoveringSidecarRetriever.ifPresent(
-              retriever -> retriever.onNewValidatedSidecar(sidecar));
+          dataColumnSidecarRetriever.onNewValidatedSidecar(sidecar, origin);
 
           // custody
           dataColumnSidecarRecoveringCustody
@@ -1177,11 +1219,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
               recentChainData,
               executionLayer,
               dataColumnSidecarGossipChannel::publishDataColumnSidecars,
+              dataColumnSidecarGossipValidator,
               custodyGroupCountManager,
               metricsSystem,
               timeProvider);
       eventChannels.subscribe(SlotEventsChannel.class, recoveryManager);
-      blockManager.subscribePreImportBlocks(recoveryManager::onNewBlock);
       dataColumnSidecarELManager = recoveryManager;
     } else {
       dataColumnSidecarELManager = DataColumnSidecarELManager.NOOP;
@@ -1190,7 +1232,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initGossipValidationHelper() {
     LOG.debug("BeaconChainController.initGossipValidationHelper()");
-    gossipValidationHelper = new GossipValidationHelper(spec, recentChainData);
+    gossipValidationHelper = new GossipValidationHelper(spec, recentChainData, metricsSystem);
   }
 
   protected void initPerformanceTracker() {
@@ -1295,6 +1337,19 @@ public class BeaconChainController extends Service implements BeaconChainControl
             timeProvider);
     blockImporter.subscribeToVerifiedBlockBlsToExecutionChanges(
         blsToExecutionChangePool::removeAll);
+  }
+
+  protected void initPayloadAttestationPool() {
+    LOG.debug("BeaconChainController.initPayloadAttestationPool()");
+    if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
+      final PayloadAttestationMessageValidator validator = new PayloadAttestationMessageValidator();
+      final AggregatingPayloadAttestationPool aggregatingPayloadAttestationPool =
+          new AggregatingPayloadAttestationPool(spec, validator, metricsSystem);
+      payloadAttestationPool = aggregatingPayloadAttestationPool;
+      eventChannels.subscribe(SlotEventsChannel.class, aggregatingPayloadAttestationPool);
+    } else {
+      payloadAttestationPool = PayloadAttestationPool.NOOP;
+    }
   }
 
   protected void initBlobSidecarReconstructionProvider() {
@@ -1497,24 +1552,26 @@ public class BeaconChainController extends Service implements BeaconChainControl
             executionLayer,
             eventChannels.getPublisher(ExecutionClientVersionChannel.class),
             graffitiBuilder.getConsensusClientVersion());
-    final BlockOperationSelectorFactory operationSelector =
-        new BlockOperationSelectorFactory(
+    final BlockFactory blockFactory =
+        new MilestoneBasedBlockFactory(
             spec,
-            attestationPool,
-            attesterSlashingPool,
-            proposerSlashingPool,
-            voluntaryExitPool,
-            blsToExecutionChangePool,
-            syncCommitteeContributionPool,
-            depositProvider,
-            eth1DataCache,
-            graffitiBuilder,
-            forkChoiceNotifier,
-            executionLayerBlockProductionManager,
-            executionPayloadBidManager,
-            metricsSystem,
-            timeProvider);
-    final BlockFactory blockFactory = new MilestoneBasedBlockFactory(spec, operationSelector);
+            new BlockOperationSelectorFactory(
+                spec,
+                attestationPool,
+                attesterSlashingPool,
+                proposerSlashingPool,
+                voluntaryExitPool,
+                blsToExecutionChangePool,
+                syncCommitteeContributionPool,
+                payloadAttestationPool,
+                depositProvider,
+                eth1DataCache,
+                graffitiBuilder,
+                forkChoiceNotifier,
+                executionLayerBlockProductionManager,
+                executionPayloadBidManager,
+                metricsSystem,
+                timeProvider));
     SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? new AllSyncCommitteeSubscriptions(p2pNetwork, spec)
@@ -1613,6 +1670,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeSubscriptionManager,
             blockProductionPerformanceFactory,
             blockPublisher,
+            payloadAttestationPool,
+            executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
             executionProofManager);
@@ -1671,8 +1730,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             futureItemsMetric,
             "attestations");
     AttestationValidator attestationValidator =
-        new AttestationValidator(
-            spec, recentChainData, signatureVerificationService, metricsSystem);
+        new AttestationValidator(spec, signatureVerificationService, gossipValidationHelper);
     AggregateAttestationValidator aggregateValidator =
         new AggregateAttestationValidator(spec, attestationValidator, signatureVerificationService);
     blockImporter.subscribeToVerifiedBlockAttestations(
@@ -1784,8 +1842,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedSignedBlsToExecutionChangeProcessor(blsToExecutionChangePool::addRemote)
             .gossipedExecutionPayloadProcessor(
                 executionPayloadManager::validateAndImportExecutionPayload)
-            // TODO-GLOAS: https://github.com/Consensys/teku/issues/9960
-            .gossipedPayloadAttestationMessageProcessor(OperationProcessor.noop())
+            .gossipedPayloadAttestationMessageProcessor(payloadAttestationPool::addRemote)
             .gossipedExecutionPayloadBidProcessor(
                 (signedBid, arrivalTimestamp) ->
                     executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.P2P))
@@ -1815,6 +1872,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishVoluntaryExit));
     blsToExecutionChangePool.subscribeOperationAdded(
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishSignedBlsToExecutionChange));
+    payloadAttestationPool.subscribeOperationAdded(
+        new LocalOperationAcceptedFilter<>(p2pNetwork::publishPayloadAttestationMessage));
+
     eventChannels.subscribe(
         CustodyGroupCountChannel.class,
         CustodyGroupCountChannel.createCustodyGroupCountSyncedSubscriber(

@@ -33,7 +33,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class GetBlsToExecutionChangesTest extends AbstractMigratedBeaconHandlerTest {
 
@@ -41,8 +40,7 @@ class GetBlsToExecutionChangesTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   void setUp() {
-    spec = TestSpecFactory.createMinimalCapella();
-    dataStructureUtil = new DataStructureUtil(spec);
+    setSpec(TestSpecFactory.createMinimalCapella());
     setHandler(new GetBlsToExecutionChanges(nodeDataProvider, schemaDefinitionCache));
 
     responseData =

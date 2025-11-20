@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -24,6 +25,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler.SamplingEligibilityStatus.NOT_REQUIRED_OLD_EPOCH;
 import static tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler.SamplingEligibilityStatus.REQUIRED;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -60,6 +62,13 @@ public class DasPreSamplerTest {
     verify(sampler).flush();
     verifyNoMoreInteractions(sampler);
     verifyNoInteractions(custody, custodyGroupCountManager);
+  }
+
+  @Test
+  void onNewPreImportedBlocks_shouldFilterNull() {
+    final List<SignedBeaconBlock> blocks = new ArrayList<>();
+    blocks.add(null);
+    assertDoesNotThrow(() -> dasPreSampler.onNewPreImportBlocks(blocks));
   }
 
   @Test

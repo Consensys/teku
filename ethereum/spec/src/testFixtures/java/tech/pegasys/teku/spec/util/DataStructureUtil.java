@@ -59,6 +59,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.SszVector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
@@ -298,6 +299,10 @@ public final class DataStructureUtil {
     final byte[] bytes = new byte[1];
     new Random(nextSeed()).nextBytes(bytes);
     return bytes[0];
+  }
+
+  private boolean randomBoolean() {
+    return new Random(nextSeed()).nextBoolean();
   }
 
   public UInt64 randomUInt64() {
@@ -1248,9 +1253,9 @@ public final class DataStructureUtil {
   }
 
   public BlockContainerAndMetaData randomBlockContainerAndMetaData(
-      final BlockContainer blockContents, final UInt64 slotNum) {
+      final BlockContainer blockContainer, final UInt64 slotNum) {
     return new BlockContainerAndMetaData(
-        blockContents, spec.atSlot(slotNum).getMilestone(), randomUInt256(), randomUInt256());
+        blockContainer, spec.atSlot(slotNum).getMilestone(), randomUInt256(), randomUInt256());
   }
 
   public BeaconBlock randomBlindedBeaconBlock(final UInt64 slot) {
@@ -2037,6 +2042,25 @@ public final class DataStructureUtil {
     return stateBuilder(spec.getGenesisSpec().getMilestone(), validatorCount, numItemsInSSZLists)
         .slot(slot)
         .build();
+  }
+
+  public BeaconState randomBeaconStateWithActiveValidators(
+      final int validatorCount, final UInt64 slot) {
+    return randomBeaconState(validatorCount, 100, slot)
+        .updated(
+            state -> {
+              final SszMutableList<Validator> validators = state.getValidators();
+              for (int i = 0; i < validators.size(); i++) {
+                validators.update(
+                    i,
+                    validator ->
+                        validator
+                            .withActivationEligibilityEpoch(ZERO)
+                            .withActivationEpoch(ZERO)
+                            .withExitEpoch(SpecConfig.FAR_FUTURE_EPOCH)
+                            .withWithdrawableEpoch(SpecConfig.FAR_FUTURE_EPOCH));
+              }
+            });
   }
 
   public AbstractBeaconStateBuilder<
@@ -3058,7 +3082,13 @@ public final class DataStructureUtil {
   public PayloadAttestationData randomPayloadAttestationData() {
     return getGloasSchemaDefinitions()
         .getPayloadAttestationDataSchema()
-        .create(randomBytes32(), randomSlot(), true, true);
+        .create(randomBytes32(), randomSlot(), randomBoolean(), randomBoolean());
+  }
+
+  public PayloadAttestationData randomPayloadAttestationData(final UInt64 slot) {
+    return getGloasSchemaDefinitions()
+        .getPayloadAttestationDataSchema()
+        .create(randomBytes32(), slot, true, true);
   }
 
   public PayloadAttestation randomPayloadAttestation() {
@@ -3068,11 +3098,11 @@ public final class DataStructureUtil {
             randomSszBitvector(getPtcSize()), randomPayloadAttestationData(), randomSignature());
   }
 
-  public SszList<PayloadAttestation> randomPayloadAttestations() {
-    final SszListSchema<PayloadAttestation, ?> schema =
-        BeaconBlockBodySchemaGloas.required(getGloasSchemaDefinitions().getBeaconBlockBodySchema())
-            .getPayloadAttestationsSchema();
-    return randomSszList(schema, this::randomPayloadAttestation, schema.getMaxLength());
+  public SszList<PayloadAttestation> emptyPayloadAttestations() {
+    return BeaconBlockBodySchemaGloas.required(
+            getGloasSchemaDefinitions().getBeaconBlockBodySchema())
+        .getPayloadAttestationsSchema()
+        .createFromElements(List.of());
   }
 
   public BuilderPendingWithdrawal randomBuilderPendingWithdrawal() {
@@ -3114,10 +3144,12 @@ public final class DataStructureUtil {
             randomBytes32(),
             randomBytes32(),
             randomBytes32(),
+            randomBytes32(),
             randomEth1Address(),
             randomUInt64(),
             builderIndex,
             slot,
+            randomUInt64(),
             randomUInt64(),
             randomBytes32());
   }

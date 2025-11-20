@@ -47,7 +47,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectra;
 import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
 @TestSpecContext(milestone = {PHASE0, ELECTRA})
@@ -57,8 +56,7 @@ public class PostAggregateAndProofsV2Test extends AbstractMigratedBeaconHandlerT
 
   @BeforeEach
   public void beforeEach(final TestSpecInvocationContextProvider.SpecContext specContext) {
-    spec = specContext.getSpec();
-    dataStructureUtil = new DataStructureUtil(spec);
+    setSpec(specContext.getSpec());
     specMilestone = specContext.getSpecMilestone();
     setHandler(
         new PostAggregateAndProofsV2(validatorDataProvider, spec, new SchemaDefinitionCache(spec)));

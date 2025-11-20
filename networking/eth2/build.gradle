@@ -35,7 +35,7 @@ dependencies {
   testImplementation testFixtures(project(':networking:p2p'))
   testImplementation testFixtures(project(':storage'))
 
-  testImplementation 'org.hyperledger.besu.internal:metrics-core'
+  testImplementation 'org.hyperledger.besu.internal:besu-metrics-core'
 
   integrationTestImplementation testFixtures(project(':ethereum:spec'))
   integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
@@ -59,8 +59,8 @@ dependencies {
 
   testFixturesImplementation 'io.libp2p:jvm-libp2p'
   testFixturesImplementation 'org.mockito:mockito-core'
-  testFixturesImplementation 'org.hyperledger.besu:plugin-api'
-  testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
+  testFixturesImplementation 'org.hyperledger.besu:besu-plugin-api'
+  testFixturesImplementation 'org.hyperledger.besu.internal:besu-metrics-core'
   testFixturesImplementation 'org.apache.commons:commons-lang3'
   testFixturesImplementation 'org.apache.logging.log4j:log4j-core'
 }

@@ -236,12 +236,12 @@ public class AttestationGossipManagerTest {
   }
 
   private long getPublishSuccessCounterValue() {
-    return metricsSystem.getCounterValue(
+    return metricsSystem.getLabelledCounterValue(
         TekuMetricCategory.BEACON, "published_attestation_total", "success");
   }
 
   private long getPublishFailureCounterValue() {
-    return metricsSystem.getCounterValue(
+    return metricsSystem.getLabelledCounterValue(
         TekuMetricCategory.BEACON, "published_attestation_total", "failure");
   }
 
