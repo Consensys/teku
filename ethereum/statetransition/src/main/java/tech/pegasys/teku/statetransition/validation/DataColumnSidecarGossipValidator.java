@@ -439,7 +439,7 @@ public class DataColumnSidecarGossipValidator {
 
   public void markForEquivocation(
       final BeaconBlockHeader beaconBlockHeader, final List<DataColumnSidecar> sidecars) {
-    LOG.trace("Added recovered data column sidecars {} to gossip tracker", sidecars);
+    LOG.debug("Added recovered {} data column sidecars from block {} to gossip tracker", sidecars.size(), beaconBlockHeader.getRoot());
     sidecars.forEach(sidecar -> markForEquivocation(beaconBlockHeader, sidecar));
   }
 
