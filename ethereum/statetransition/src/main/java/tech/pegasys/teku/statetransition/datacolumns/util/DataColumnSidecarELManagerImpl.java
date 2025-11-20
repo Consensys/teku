@@ -297,14 +297,12 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
         localCustodySidecars::size,
         recoveryTask::getSlotAndBlockRoot);
     if (inSync) {
+      dataColumnSidecarGossipValidator.markForEquivocation(
+                recoveryTask.signedBeaconBlockHeader().getMessage(), localCustodySidecars);
       dataColumnSidecarPublisher.accept(localCustodySidecars, LOCAL_EL);
     }
     localCustodySidecars.forEach(
         sidecar -> {
-          dataColumnSidecarGossipValidator.markForEquivocation(
-              recoveryTask.signedBeaconBlockHeader().getMessage(), sidecar);
-          LOG.trace(
-              "Added recovered data column sidecar {} to gossip tracker", sidecar::toLogString);
           recoveredColumnSidecarSubscribers.forEach(
               subscriber -> subscriber.onNewValidSidecar(sidecar, LOCAL_EL));
         });
