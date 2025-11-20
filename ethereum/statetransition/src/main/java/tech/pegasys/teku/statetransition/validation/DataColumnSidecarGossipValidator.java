@@ -440,9 +440,7 @@ public class DataColumnSidecarGossipValidator {
       final BeaconBlockHeader beaconBlockHeader, final DataColumnSidecar sidecar) {
     return receivedValidDataColumnSidecarInfoSet.add(
         new SlotProposerIndexAndColumnIndex(
-            sidecar.getSlot(),
-            beaconBlockHeader.getProposerIndex(),
-            sidecar.getIndex()));
+            sidecar.getSlot(), beaconBlockHeader.getProposerIndex(), sidecar.getIndex()));
   }
 
   private boolean isFirstValidForSlotProposerIndexAndColumnIndex(
