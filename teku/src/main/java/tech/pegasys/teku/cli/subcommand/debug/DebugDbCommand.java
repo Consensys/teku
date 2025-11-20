@@ -46,6 +46,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
+import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -972,14 +973,15 @@ public class DebugDbCommand implements Runnable {
     final Eth2NetworkConfiguration networkConfiguration =
         eth2NetworkOptions.getNetworkConfiguration();
     final Spec spec = networkConfiguration.getSpec();
+    final DataConfig dataConfig = beaconNodeDataOptions.getDataConfig();
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),
-            DataDirLayout.createFrom(beaconNodeDataOptions.getDataConfig())
-                .getBeaconDataDirectory(),
+            DataDirLayout.createFrom(dataConfig).getBeaconDataDirectory(),
             StorageConfiguration.builder()
                 .eth1DepositContract(networkConfiguration.getEth1DepositContractAddress())
                 .specProvider(spec)
+                .dataConfig(dataConfig)
                 .build(),
             Optional.empty());
     return databaseFactory.createDatabase();
