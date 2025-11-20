@@ -314,6 +314,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
+    final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
+    final int minSeedLookahead = spec.atEpoch(currentEpoch).getConfig().getMinSeedLookahead();
+    LOG.trace(
+        "Retrieving proposer duties for epoch {}, current epoch {}, minSeedLookahead {}",
+        epoch,
+        currentEpoch,
+        minSeedLookahead);
     if (epoch.isGreaterThan(combinedChainDataClient.getCurrentEpoch().plus(DUTY_EPOCH_TOLERANCE))) {
       return SafeFuture.failedFuture(
           new IllegalArgumentException(
@@ -321,9 +328,14 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                   "Proposer duties were requested for a future epoch (current: %s, requested: %s).",
                   combinedChainDataClient.getCurrentEpoch().toString(), epoch)));
     }
-    LOG.trace("Retrieving proposer duties from epoch {}", epoch);
+    final UInt64 slot = spec.computeStartSlotAtEpoch(epoch);
+    LOG.debug(
+        "Retrieving proposer duties from epoch {}, current epoch {}, query slot {}",
+        epoch,
+        currentEpoch,
+        slot);
     return combinedChainDataClient
-        .getStateAtSlotExact(spec.computeStartSlotAtEpoch(epoch))
+        .getStateAtSlotExact(slot)
         .thenApply(maybeState -> maybeState.map(state -> getProposerDutiesFromState(state, epoch)));
   }
 
