@@ -298,7 +298,7 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
         recoveryTask::getSlotAndBlockRoot);
     if (inSync) {
       dataColumnSidecarGossipValidator.markForEquivocation(
-                recoveryTask.signedBeaconBlockHeader().getMessage(), localCustodySidecars);
+          recoveryTask.signedBeaconBlockHeader().getMessage(), localCustodySidecars);
       dataColumnSidecarPublisher.accept(localCustodySidecars, LOCAL_EL);
     }
     localCustodySidecars.forEach(

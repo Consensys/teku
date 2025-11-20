@@ -21,7 +21,6 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import com.google.common.annotations.VisibleForTesting;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -438,12 +437,11 @@ public class DataColumnSidecarGossipValidator {
         state);
   }
 
-    public void markForEquivocation(
-        final BeaconBlockHeader beaconBlockHeader, final List<DataColumnSidecar> sidecars) {
-        LOG.trace(
-                "Added recovered data column sidecars {} to gossip tracker", sidecars);
-        sidecars.forEach(sidecar -> markForEquivocation(beaconBlockHeader, sidecar));
-    }
+  public void markForEquivocation(
+      final BeaconBlockHeader beaconBlockHeader, final List<DataColumnSidecar> sidecars) {
+    LOG.trace("Added recovered data column sidecars {} to gossip tracker", sidecars);
+    sidecars.forEach(sidecar -> markForEquivocation(beaconBlockHeader, sidecar));
+  }
 
   private boolean markForEquivocation(
       final BeaconBlockHeader beaconBlockHeader, final DataColumnSidecar sidecar) {
