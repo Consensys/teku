@@ -90,15 +90,16 @@ public class DefaultExecutionPayloadManager implements ExecutionPayloadManager {
         .runAsync(() -> forkChoice.onExecutionPayload(signedExecutionPayload, executionLayer))
         .thenPeek(
             result -> {
-              if (!result.isSuccessful()) {
+              if (result.isSuccessful()) {
+                LOG.debug(
+                    "Successfully imported execution payload {}",
+                    signedExecutionPayload::toLogString);
+              } else {
                 LOG.debug(
                     "Failed to import execution payload for reason {}: {}",
                     result::getFailureReason,
                     signedExecutionPayload::toLogString);
               }
-              LOG.debug(
-                  "Successfully imported execution payload {}",
-                  signedExecutionPayload::toLogString);
             })
         .exceptionally(
             ex -> {
