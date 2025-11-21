@@ -67,7 +67,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
     primaryNode.waitForLogMessageContaining("non-custodied sidecars at");
     // DataColumnSidecars are reconstructed on secondaryNode
     secondaryNode.waitForLogMessageContaining("Data column sidecars recovery finished for block");
-    secondaryNode.waitForNewBlock();
+    secondaryNode.waitForNonOptimisticBlock();
 
     final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
 
@@ -139,7 +139,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
     // sidecars one by one, so we will not wait for finalization, one slot recovery is ok
 
     // delay to commit block
-    secondaryNode.waitForNewBlock();
+    secondaryNode.waitForNonOptimisticBlock();
     final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
 
     final int endSlot = blockAtHead.getSlot().intValue();
