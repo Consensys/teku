@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.coordinator.publisher;
 import com.google.common.base.Suppliers;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.function.Supplier;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
@@ -49,6 +51,8 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
       final BlobSidecarGossipChannel blobSidecarGossipChannel,
       final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel,
       final DutyMetrics dutyMetrics,
+      final CustodyGroupCountManager custodyGroupCountManager,
+      final OptionalInt dasPublishWithholdColumnsEverySlots,
       final boolean gossipBlobsAfterBlock) {
     this.spec = spec;
     final BlockPublisherPhase0 blockPublisherPhase0 =
@@ -83,6 +87,8 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
                     blockGossipChannel,
                     dataColumnSidecarGossipChannel,
                     dutyMetrics,
+                    custodyGroupCountManager,
+                    dasPublishWithholdColumnsEverySlots,
                     gossipBlobsAfterBlock));
 
     // Populate forks publishers

@@ -815,4 +815,18 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(tekuConfiguration.p2p().getTotalCustodyGroupCount(specVersionFulu))
         .isEqualTo(expectedCustodyRequirement);
   }
+
+  @Test
+  public void dasDisableElRecovery_isFalseByDefault() throws Exception {
+    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+
+    assertThat(tekuConfiguration.p2p().isDasDisableElRecovery()).isFalse();
+  }
+
+  @Test
+  public void dasPublishWithholdColumnsEverySlots_isEmptyByDefault() throws Exception {
+    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+
+    assertThat(tekuConfiguration.p2p().getDasPublishWithholdColumnsEverySlots()).isEmpty();
+  }
 }
