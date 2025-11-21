@@ -187,7 +187,7 @@ class DebugDataFileDumperTest {
         String.format(
             "%s_%s_%s.ssz",
             executionPayload.getSlot(),
-            executionPayload.getMessage().getBeaconBlockRoot().toUnprefixedHexString(),
+            executionPayload.getBeaconBlockRoot().toUnprefixedHexString(),
             executionPayload.getMessage().getBuilderIndex());
     final Path expectedFile = tempDir.resolve("invalid_execution_payloads").resolve(fileName);
     checkBytesSavedToFile(expectedFile, executionPayload.sszSerialize());

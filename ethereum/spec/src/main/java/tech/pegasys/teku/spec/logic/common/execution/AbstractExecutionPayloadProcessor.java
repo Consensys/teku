@@ -47,7 +47,7 @@ public abstract class AbstractExecutionPayloadProcessor implements ExecutionPayl
               "State transition error while importing execution payload (builder index: %s, slot: %s, block root: %s)",
               signedEnvelope.getMessage().getBuilderIndex(),
               signedEnvelope.getMessage().getSlot(),
-              signedEnvelope.getMessage().getBeaconBlockRoot()),
+              signedEnvelope.getBeaconBlockRoot()),
           ex);
       throw new StateTransitionException(ex);
     }

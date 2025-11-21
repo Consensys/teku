@@ -97,7 +97,7 @@ class ExecutionPayloadDutyTest {
         .logExecutionPayloadDuty(
             eq(signedExecutionPayload.getMessage().getSlot()),
             eq(signedExecutionPayload.getMessage().getBuilderIndex()),
-            eq(signedExecutionPayload.getMessage().getBeaconBlockRoot()),
+            eq(signedExecutionPayload.getBeaconBlockRoot()),
             any());
   }
 
