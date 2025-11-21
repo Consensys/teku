@@ -128,7 +128,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
                 .build());
 
     // Wait for few epochs, so sync will kick-in when second node is started
-    primaryNode.waitForEpochAtOrAbove(3);
+    primaryNode.waitForEpochAtOrAbove(4);
 
     secondaryNode.start();
     // DataColumnSidecars are reconstructed on secondaryNode
