@@ -1052,6 +1052,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             sidecarDB::setFirstCustodyIncompleteSlot,
             BATCH_SIZE_IN_SLOTS);
     eventChannels.subscribe(CustodyGroupCountChannel.class, s);
+    eventChannels.subscribe(FinalizedCheckpointChannel.class, s);
     dasCustodyBackfiller = Optional.of(s);
 
     final CurrentSlotProvider currentSlotProvider =
