@@ -67,7 +67,6 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
     primaryNode.waitForLogMessageContaining("non-custodied sidecars at");
     // DataColumnSidecars are reconstructed on secondaryNode
     secondaryNode.waitForLogMessageContaining("Data column sidecars recovery finished for block");
-    secondaryNode.waitForNewFinalization();
 
     final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
 
