@@ -112,14 +112,23 @@ public class ExecutionPayloadDuty implements ExecutionPayloadBidEventsChannel {
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
     return validatorApiChannel
         .publishSignedExecutionPayload(signedExecutionPayload)
-        .thenRun(
-            () -> {
+        .thenAccept(
+            result -> {
               final ExecutionPayloadEnvelope executionPayload = signedExecutionPayload.getMessage();
-              validatorLogger.logExecutionPayloadDuty(
-                  executionPayload.getSlot(),
-                  executionPayload.getBuilderIndex(),
-                  executionPayload.getBeaconBlockRoot(),
-                  getExecutionSummary(executionPayload));
+              if (result.isPublished()) {
+                validatorLogger.logExecutionPayloadDuty(
+                    executionPayload.getSlot(),
+                    executionPayload.getBuilderIndex(),
+                    executionPayload.getBeaconBlockRoot(),
+                    getExecutionSummary(executionPayload));
+              } else {
+                final Throwable error =
+                    new IllegalArgumentException(
+                        "Execution payload was rejected by the beacon node: "
+                            + result.getRejectionReason().orElse("<reason unknown>"));
+                validatorLogger.executionPayloadDutyFailed(
+                    executionPayload.getSlot(), executionPayload.getBuilderIndex(), error);
+              }
             });
   }
 

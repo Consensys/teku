@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.coordinator.publisher;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
@@ -23,6 +24,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactory;
 
 public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher {
@@ -46,13 +48,26 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
   }
 
   @Override
-  public SafeFuture<Void> publishSignedExecutionPayload(
+  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
-    // we publish the execution payload (and data column sidecars) immediately and then import
-    publishExecutionPayloadAndDataColumnSidecars(
-        signedExecutionPayload,
-        executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload));
-    return executionPayloadManager.importExecutionPayload(signedExecutionPayload).toVoid();
+    return executionPayloadManager
+        .validateAndImportExecutionPayload(signedExecutionPayload)
+        .thenApply(
+            result -> {
+              final Bytes32 beaconBlockRoot = signedExecutionPayload.getBeaconBlockRoot();
+              if (result.isAccept()) {
+                // we publish the execution payload (and data column sidecars) after passing gossip
+                // validation
+                publishExecutionPayloadAndDataColumnSidecars(
+                    signedExecutionPayload,
+                    executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload));
+                return PublishSignedExecutionPayloadResult.success(beaconBlockRoot);
+              }
+              return PublishSignedExecutionPayloadResult.rejected(
+                  beaconBlockRoot,
+                  "Failed gossip validation"
+                      + result.getDescription().map(description -> ": " + description).orElse(""));
+            });
   }
 
   private void publishExecutionPayloadAndDataColumnSidecars(

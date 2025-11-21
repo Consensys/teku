@@ -37,6 +37,6 @@ public interface BuilderApiChannel {
   SafeFuture<Optional<ExecutionPayloadEnvelope>> createUnsignedExecutionPayload(
       UInt64 slot, UInt64 builderIndex);
 
-  SafeFuture<Void> publishSignedExecutionPayload(
+  SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
       SignedExecutionPayloadEnvelope signedExecutionPayload);
 }

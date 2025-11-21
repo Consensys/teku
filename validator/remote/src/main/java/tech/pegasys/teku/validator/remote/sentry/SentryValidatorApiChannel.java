@@ -55,6 +55,7 @@ import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
+import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -294,7 +295,7 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Void> publishSignedExecutionPayload(
+  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
     return blockHandlerChannel
         .orElse(dutiesProviderChannel)
