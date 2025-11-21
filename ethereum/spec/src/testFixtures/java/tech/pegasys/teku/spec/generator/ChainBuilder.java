@@ -163,10 +163,7 @@ public class ChainBuilder {
     executionPayloads.putAll(existingExecutionPayloads);
     existingExecutionPayloads
         .values()
-        .forEach(
-            e ->
-                executionPayloadsByHash.put(
-                    e.executionPayload().getMessage().getBeaconBlockRoot(), e));
+        .forEach(e -> executionPayloadsByHash.put(e.executionPayload().getBeaconBlockRoot(), e));
   }
 
   public static ChainBuilder create(final Spec spec) {
@@ -678,7 +675,7 @@ public class ChainBuilder {
     executionPayloads.put(
         executionPayload.executionPayload().getMessage().getSlot(), executionPayload);
     executionPayloadsByHash.put(
-        executionPayload.executionPayload().getMessage().getBeaconBlockRoot(), executionPayload);
+        executionPayload.executionPayload().getBeaconBlockRoot(), executionPayload);
   }
 
   private SignedBlockAndState appendNewBlockToChain(final UInt64 slot, final BlockOptions options) {

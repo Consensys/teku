@@ -82,22 +82,10 @@ public class DefaultExecutionPayloadManager implements ExecutionPayloadManager {
     return validationResult;
   }
 
-  @Override
-  public SafeFuture<ExecutionPayloadImportResult> importExecutionPayload(
-      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
-    return doImportExecutionPayload(signedExecutionPayload)
-        .thenPeek(
-            result -> {
-              if (result.isSuccessful()) {
-                LOG.trace("Imported execution payload: {}", signedExecutionPayload);
-              }
-            });
-  }
-
   private SafeFuture<ExecutionPayloadImportResult> doImportExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
     // cache the seen `beacon_block_root`
-    recentSeenExecutionPayloads.add(signedExecutionPayload.getMessage().getBeaconBlockRoot());
+    recentSeenExecutionPayloads.add(signedExecutionPayload.getBeaconBlockRoot());
     return asyncRunner
         .runAsync(() -> forkChoice.onExecutionPayload(signedExecutionPayload, executionLayer))
         .thenPeek(
