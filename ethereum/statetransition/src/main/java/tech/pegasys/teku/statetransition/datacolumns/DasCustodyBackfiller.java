@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +24,8 @@ import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -43,9 +47,8 @@ import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 public class DasCustodyBackfiller extends Service
     implements CustodyGroupCountChannel, FinalizedCheckpointChannel {
@@ -68,11 +71,12 @@ public class DasCustodyBackfiller extends Service
 
   private final int batchSizeInSlots;
 
-  // private final AtomicBoolean backfilling = new AtomicBoolean(false);
+  private final AtomicBoolean backfilling = new AtomicBoolean(false);
 
   private volatile int currentSyncCustodyGroupCount;
   private volatile boolean requiresResyncDueToCustodyGroupCountChange;
 
+  private final AtomicReference<BatchData> currentBatch = new AtomicReference<>(null);
   private final Map<DataColumnSlotAndIdentifier, PendingRequest> pendingRequests =
       new ConcurrentHashMap<>();
 
@@ -129,12 +133,25 @@ public class DasCustodyBackfiller extends Service
   @Override
   public void onCustodyGroupCountSynced(final int groupCount) {}
 
-  private record BatchData(UInt64 fromSlot, UInt64 toSlot, List<DataColumnSlotAndIdentifier> columnsInCustody, List<SlotAndBlockRootWithBlobsPresence> blocksInfo) {}
+  private record BatchData(
+      UInt64 fromSlot,
+      UInt64 toSlot,
+      List<UInt64> requiredColumnsInCustody,
+      List<DataColumnSlotAndIdentifier> columnsInCustody,
+      List<SlotAndBlockRootWithBlobsPresence> blocksInfo) {
+
+    Optional<UInt64> oldestExistingBlockInBatch() {
+      return blocksInfo.stream()
+              .filter(s -> s.blockRoot.isPresent())
+              .map(SlotAndBlockRootWithBlobsPresence::slot)
+              .min(UInt64::compareTo);
+    }
+
+  }
 
   @Override
   public void onNewFinalizedCheckpoint(
       final Checkpoint checkpoint, final boolean fromOptimisticBlock) {}
-
 
   /*
    * TODO:
@@ -164,7 +181,6 @@ public class DasCustodyBackfiller extends Service
    * -
    */
 
-
   //                      combinedChainDataClient.getBlockByBlockRoot()
   //
   //      combinedChainDataClient.getRecentChainData().getAllBlockRootsAtSlot()
@@ -178,16 +194,19 @@ public class DasCustodyBackfiller extends Service
   // backfilling them)
   //                      combinedChainDataClient.getBlockInEffectAtSlot()
 
+  private SafeFuture<Void> eventuallyResetEarliestAvailableCustodySlot(final Optional<UInt64> maybeSlot) {
+    return maybeSlot
+            .map(
+                    earliestAvailableCustodySlotWriter).orElse(SafeFuture.COMPLETE);
+  }
 
   void fillUp() {
     LOG.info("Starting data column backfill. current pending requests: {}", pendingRequests.size());
-    if (!pendingRequests.isEmpty()) {
-      return;
-    }
-    //    if (!backfilling.compareAndSet(false, true)) {
-    //      //
-    //      return;
-    //    }
+
+        if (!backfilling.compareAndSet(false, true)) {
+          //
+          return;
+        }
 
     //    recentChainData.retrieveBlockByRoot()
     //    recentChainData.getAllBlockRootsAtSlot()
@@ -197,12 +216,12 @@ public class DasCustodyBackfiller extends Service
     if (requiresResyncDueToCustodyGroupCountChange) {
       // move EarliestAvailableCustodySlot to current head to trigger a full backfill to do a fillup
       // of additional columns to custody
-      combinedChainDataClient
-          .getChainHead()
-          .ifPresent(
-              chainHead ->
-                  earliestAvailableCustodySlotWriter.apply(chainHead.getSlot()).finishError(LOG));
+      eventuallyResetEarliestAvailableCustodySlot(Optional.of(combinedChainDataClient.getCurrentSlot())).always(this::checkBatchCompletion);
       requiresResyncDueToCustodyGroupCountChange = false;
+      return;
+    } else if(currentBatch.get() != null) {
+      eventuallyResetEarliestAvailableCustodySlot(currentBatch.get().oldestExistingBlockInBatch()).always(this::checkBatchCompletion);;
+      return;
     }
 
     earliestAvailableCustodySlotProvider
@@ -212,9 +231,8 @@ public class DasCustodyBackfiller extends Service
               LOG.info("Earliest available checkpoint for {} slot", earliestSlot);
 
               if (earliestSlot.isEmpty()) {
-                return earliestAvailableCustodySlotWriter
-                        .apply(combinedChainDataClient.getCurrentSlot())
-                        .thenApply(__ -> Optional.<BatchData>empty());
+                eventuallyResetEarliestAvailableCustodySlot(combinedChainDataClient.getChainHead().map(ChainHead::getSlot));
+                return SafeFuture.completedFuture(Optional.<BatchData>empty());
               }
 
               if (earliestSlot
@@ -237,31 +255,38 @@ public class DasCustodyBackfiller extends Service
               var earliestSlotInBatch =
                   latestSlotInBatch.minusMinZero(batchSizeInSlots).max(oldestCustodySlot);
 
-
-
-
-              return combinedChainDataClient.getDataColumnIdentifiers(
+              return combinedChainDataClient
+                  .getDataColumnIdentifiers(
                       earliestSlotInBatch, latestSlotInBatch, UInt64.valueOf(100_000))
-                      .thenCombine(retrieveBlocksWithBlobsInRange(earliestSlotInBatch, latestSlotInBatch),
+                  .thenCombine(
+                      retrieveBlocksWithBlobsInRange(earliestSlotInBatch, latestSlotInBatch),
                       (dataColumnSlotAndIdentifiers, slotAndBlockRootWithBlobsPresences) ->
-                              Optional.of(new BatchData(earliestSlotInBatch, latestSlotInBatch, dataColumnSlotAndIdentifiers, slotAndBlockRootWithBlobsPresences)));
-
-
-
+                          Optional.of(
+                              new BatchData(
+                                  earliestSlotInBatch,
+                                  latestSlotInBatch,
+                                      custodyGroupCountManager.getCustodyColumnIndices(),
+                                  dataColumnSlotAndIdentifiers,
+                                  slotAndBlockRootWithBlobsPresences)));
             })
         .thenAccept(
             maybeBatchData -> {
-              if(maybeBatchData.isEmpty()) {
+              if (maybeBatchData.isEmpty()) {
                 return;
               }
-              var custodyRequirement = custodyGroupCountManager.getCustodyColumnIndices();
-
-              // dataColumnSlotAndIdentifiers.stream().filter(c ->
-              // custodyRequirement.contains(c.columnIndex()))
+              final BatchData batchData = maybeBatchData.get();
+              currentBatch.set(batchData);
 
               Map<SlotAndBlockRoot, List<UInt64>> missingCustodyForKnownSlotAndRoot =
-                      maybeBatchData.get().columnsInCustody.stream()
-                              .filter(dataColumnSlotAndIdentifier -> maybeBatchData.get().blocksInfo.stream().anyMatch(blocksInfo -> dataColumnSlotAndIdentifier.slot().equals(blocksInfo.slot) && dataColumnSlotAndIdentifier.blockRoot().equals(blocksInfo.blockRoot())))
+                      batchData.columnsInCustody.stream()
+                          // only include columns related to block we have imported
+                      .filter(
+                          dataColumnSlotAndIdentifier ->
+                                  batchData.blocksInfo.stream()
+                                  .anyMatch(
+                                      blocksInfo ->
+                                          dataColumnSlotAndIdentifier.slot().equals(blocksInfo.slot)
+                                              && blocksInfo.blockRoot().map(b -> b.equals(dataColumnSlotAndIdentifier.blockRoot())).orElse(false)))
                       .collect(
                           Collectors.groupingBy(DataColumnSlotAndIdentifier::getSlotAndBlockRoot))
                       .entrySet()
@@ -270,9 +295,10 @@ public class DasCustodyBackfiller extends Service
                           entry -> {
                             var columnsInCustody = entry.getValue();
 
+                            // remove columns we already custody
                             return Map.entry(
                                 entry.getKey(),
-                                custodyRequirement.stream()
+                                    batchData.requiredColumnsInCustody.stream()
                                     .filter(
                                         id ->
                                             columnsInCustody.stream()
@@ -281,10 +307,16 @@ public class DasCustodyBackfiller extends Service
                           })
                       .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
 
-              maybeBatchData.get().blocksInfo.stream()
-                      .filter(SlotAndBlockRootWithBlobsPresence::hasBlobs)
-                              .forEach(bi -> missingCustodyForKnownSlotAndRoot.putIfAbsent(new SlotAndBlockRoot(bi.slot,bi.blockRoot.orElseThrow()), custodyRequirement));
+              // add columns for block which has blobs, but we have no columns for
+              batchData.blocksInfo.stream()
+                  .filter(SlotAndBlockRootWithBlobsPresence::hasBlobs)
+                  .forEach(
+                      bi ->
+                          missingCustodyForKnownSlotAndRoot.putIfAbsent(
+                              new SlotAndBlockRoot(bi.slot, bi.blockRoot.orElseThrow()),
+                                  batchData.requiredColumnsInCustody));
 
+              // prepare the columns to request
               final Set<DataColumnSlotAndIdentifier> missingColumnsToRequest =
                   missingCustodyForKnownSlotAndRoot.entrySet().stream()
                       .flatMap(
@@ -299,21 +331,7 @@ public class DasCustodyBackfiller extends Service
                       .filter(columnSlotId -> !pendingRequests.containsKey(columnSlotId))
                       .collect(Collectors.toSet());
 
-              var oldestExistingBlockInBatch = maybeBatchData.get().blocksInfo.stream().filter(s -> s.blockRoot.isPresent())
-                      .map(SlotAndBlockRootWithBlobsPresence::slot).min(UInt64::compareTo);
-
-              if (missingColumnsToRequest.isEmpty() && oldestExistingBlockInBatch.isPresent()) {
-                combinedChainDataClient
-                    .getBlockInEffectAtSlot(
-                            oldestExistingBlockInBatch.get().minusMinZero(1))
-                    .thenAccept(
-                        maybeBlockInEffect ->
-                            maybeBlockInEffect.ifPresent(
-                                blockInEffect ->
-                                    earliestAvailableCustodySlotWriter
-                                        .apply(blockInEffect.getSlot())
-                                        .finishError(LOG)));
-              }
+              updateEarliestAvailableCustodySlot(missingColumnsToRequest);
 
               for (final DataColumnSlotAndIdentifier missingColumn : missingColumnsToRequest) {
                 if (missingColumn
@@ -330,35 +348,101 @@ public class DasCustodyBackfiller extends Service
                 }
               }
             })
+            .alwaysRun(this::checkBatchCompletion)
             .finishStackTrace();
-
-    //            .always(() -> backfilling.set(false));
 
   }
 
-  record SlotAndBlockRootWithBlobsPresence(UInt64 slot, Optional<Bytes32> blockRoot, boolean hasBlobs){
-    static SlotAndBlockRootWithBlobsPresence fromBlockAtSlot(final Optional<SignedBeaconBlock> block, final UInt64 slot) {
-      if(block.isEmpty()) {
+  private void updateEarliestAvailableCustodySlot(final Set<DataColumnSlotAndIdentifier> missingColumnsToRequest) {
+    // Check if we are done with the current batch (no columns left to request)
+    if (missingColumnsToRequest.isEmpty()) {
+
+      var oldestExistingBlockInBatch = currentBatch.get().oldestExistingBlockInBatch();
+
+      if (oldestExistingBlockInBatch.isPresent()) {
+        // OPTIMIZATION: The batch contained blocks.
+        // We can simply move the cursor to the slot immediately prior to the oldest block found.
+        // No database lookup (getBlockInEffectAtSlot) is required here.
+        UInt64 nextSlot = oldestExistingBlockInBatch.get().minusMinZero(1);
+        earliestAvailableCustodySlotWriter.apply(nextSlot).finishError(LOG);
+
+      } else {
+        // The batch was empty (gap).
+        // Use getBlockInEffectAtSlot to efficiently skip the empty slots and find the
+        // previous actual block, preventing a step-by-step walk through a long empty epoch.
+        combinedChainDataClient
+                .getBlockInEffectAtSlot(currentBatch.get().fromSlot().minusMinZero(1))
+                .thenAccept(
+                        maybeBlockInEffect ->
+                                maybeBlockInEffect.ifPresent(
+                                        blockInEffect ->
+                                                earliestAvailableCustodySlotWriter
+                                                        .apply(blockInEffect.getSlot())
+                                                        .finishError(LOG)))
+                .finishError(LOG);
+      }
+    }
+  }
+
+  private boolean checkBatchCompletion() {
+    if(pendingRequests.isEmpty()) {
+      final BatchData localBatch = currentBatch.getAndSet(null);
+      if(localBatch!=null) {
+        if(localBatch.fromSlot.isLessThanOrEqualTo(
+                minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(
+                        combinedChainDataClient.getCurrentSlot()))) {
+          custodyGroupCountManager.setCustodyGroupSyncedCount(localBatch.requiredColumnsInCustody().size());
+        }
+      }
+      return backfilling.compareAndSet(true, false);
+    }
+    return false;
+  }
+
+  record SlotAndBlockRootWithBlobsPresence(
+      UInt64 slot, Optional<Bytes32> blockRoot, boolean hasBlobs) {
+    static SlotAndBlockRootWithBlobsPresence fromBlockAtSlot(
+        final Optional<SignedBeaconBlock> block, final UInt64 slot) {
+      if (block.isEmpty()) {
         return new SlotAndBlockRootWithBlobsPresence(slot, Optional.empty(), false);
       }
       checkArgument(block.get().getSlot().equals(slot), "Inconsistent block slot");
-      return new SlotAndBlockRootWithBlobsPresence(slot, block.map(SignedBeaconBlock::getRoot), block.get().getMessage().getBody().getOptionalBlobKzgCommitments().map(commitments -> !commitments.isEmpty())
+      return new SlotAndBlockRootWithBlobsPresence(
+          slot,
+          block.map(SignedBeaconBlock::getRoot),
+          block
+              .get()
+              .getMessage()
+              .getBody()
+              .getOptionalBlobKzgCommitments()
+              .map(commitments -> !commitments.isEmpty())
               .orElse(false));
     }
   }
 
-  private SafeFuture<List<SlotAndBlockRootWithBlobsPresence>> retrieveBlocksWithBlobsInRange(final UInt64 fromSlot, final UInt64 toSlot) {
-    return  AsyncStream.createUnsafe(UInt64.rangeClosed(fromSlot, toSlot).iterator()).flatMap(slot -> {
+  private SafeFuture<List<SlotAndBlockRootWithBlobsPresence>> retrieveBlocksWithBlobsInRange(
+      final UInt64 fromSlot, final UInt64 toSlot) {
+    return AsyncStream.createUnsafe(UInt64.rangeClosed(fromSlot, toSlot).iterator())
+        .flatMap(
+            slot -> {
               if (combinedChainDataClient.isFinalized(slot)) {
-                return AsyncStream.create(combinedChainDataClient.getFinalizedBlockAtSlotExact(slot)).
-                map(block -> SlotAndBlockRootWithBlobsPresence.fromBlockAtSlot(block, slot));
+                return AsyncStream.create(
+                        combinedChainDataClient.getFinalizedBlockAtSlotExact(slot))
+                    .map(block -> SlotAndBlockRootWithBlobsPresence.fromBlockAtSlot(block, slot));
               }
-      return AsyncStream.createUnsafe(combinedChainDataClient.getRecentChainData().getAllBlockRootsAtSlot(slot).iterator())
-              .mapAsync(blockRoot ->
-        combinedChainDataClient.getRecentChainData().retrieveSignedBlockByRoot(blockRoot)
-      ).map(block -> SlotAndBlockRootWithBlobsPresence.fromBlockAtSlot(block, slot));
-            }
-    ).toList();
+              return AsyncStream.createUnsafe(
+                      combinedChainDataClient
+                          .getRecentChainData()
+                          .getAllBlockRootsAtSlot(slot)
+                          .iterator())
+                  .mapAsync(
+                      blockRoot ->
+                          combinedChainDataClient
+                              .getRecentChainData()
+                              .retrieveSignedBlockByRoot(blockRoot))
+                  .map(block -> SlotAndBlockRootWithBlobsPresence.fromBlockAtSlot(block, slot));
+            })
+        .toList();
   }
 
   private synchronized void addPendingRequest(final DataColumnSlotAndIdentifier missingColumn) {
@@ -377,11 +461,8 @@ public class DasCustodyBackfiller extends Service
         .onNewValidatedDataColumnSidecar(response, RemoteOrigin.RPC)
         .thenRun(
             () -> {
-              synchronized (this) {
-                pendingRequests.remove(request.columnId);
+              removePendingRequest(request.columnId);
                 // syncedColumnCount.incrementAndGet();
-                fillUp();
-              }
             })
         .finishStackTrace();
   }
@@ -392,10 +473,18 @@ public class DasCustodyBackfiller extends Service
             && exception.getCause() instanceof CancellationException);
   }
 
+  private void removePendingRequest(final DataColumnSlotAndIdentifier missingColumn) {
+    pendingRequests.remove(missingColumn);
+    if(checkBatchCompletion()) {
+      fillUp();
+    }
+  }
+
   private synchronized void onRequestException(
       final PendingRequest request, final Throwable exception) {
     if (wasCancelledImplicitly(exception)) {
       // request was cancelled explicitly here
+      removePendingRequest(request.columnId);
     } else {
       LOG.warn("Unexpected exception for request " + request, exception);
     }

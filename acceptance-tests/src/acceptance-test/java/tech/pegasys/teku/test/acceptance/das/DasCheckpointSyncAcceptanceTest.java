@@ -75,6 +75,11 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
     // Wait until block backfill is completed, it starts after forward sync
     secondaryNode.waitForBlockAtSlot(firstFuluSlot);
 
+    primaryNode.waitForBlockAtSlot(primaryNode.getHeadBlock().getSlot().plus(3));
+    primaryNode.waitForBlockAtSlot(primaryNode.getHeadBlock().getSlot().plus(3));
+    primaryNode.waitForBlockAtSlot(primaryNode.getHeadBlock().getSlot().plus(3));
+    primaryNode.waitForBlockAtSlot(primaryNode.getHeadBlock().getSlot().plus(3));
+
     final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
     final int checkpointSlot = checkpointFinalizedBlock.getSlot().intValue();
     final int endSlot = blockAtHead.getSlot().intValue();
