@@ -981,8 +981,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
               canonicalBlockResolver,
               dbAccessor,
               dasAsyncRunner,
+              Duration.ofMinutes(5),
               Duration.ofSeconds(30),
-              Duration.ofSeconds(12),
               timeProvider,
               specConfigFulu.getNumberOfColumns());
     }
