@@ -138,6 +138,8 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
     // as first node custodies only 64 columns, it means we need to rebuild every single slot
     // sidecars one by one, so we will not wait for finalization, one slot recovery is ok
 
+    // delay to commit block
+    secondaryNode.waitForNewBlock();
     final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
 
     final int endSlot = blockAtHead.getSlot().intValue();
