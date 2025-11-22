@@ -28,6 +28,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
@@ -45,12 +47,17 @@ import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 
 public abstract class AbstractStoreTest {
-  protected final Spec spec = TestSpecFactory.createMinimalDeneb();
+  protected Spec spec = TestSpecFactory.createMinimalDeneb();
   protected final StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
-  protected final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+  protected ChainBuilder chainBuilder = ChainBuilder.create(spec);
   protected final StoreConfig defaultStoreConfig = StoreConfig.createDefault();
 
   protected final ForkChoiceStrategy dummyForkChoiceStrategy = mock(ForkChoiceStrategy.class);
+
+  protected void reinitializeSpec(final Spec spec) {
+    this.spec = spec;
+    chainBuilder = ChainBuilder.create(spec);
+  }
 
   protected void processChainWithLimitedCache(
       final BiConsumer<UpdatableStore, SignedBlockAndState> chainProcessor) {
@@ -146,6 +153,16 @@ public abstract class AbstractStoreTest {
     assertThat(tx.commit()).isCompletedWithValue(null);
   }
 
+  protected void addExecutionPayloads(
+      final UpdatableStore store, final List<SignedExecutionPayloadAndState> executionPayloads) {
+    final UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
+    executionPayloads.forEach(
+        executionPayloadAndState ->
+            tx.putExecutionPayloadAndState(
+                executionPayloadAndState.executionPayload(), executionPayloadAndState.state()));
+    assertThat(tx.commit()).isCompletedWithValue(null);
+  }
+
   protected UpdatableStore createGenesisStore() {
     return createGenesisStore(defaultStoreConfig);
   }
@@ -218,7 +235,8 @@ public abstract class AbstractStoreTest {
                     Optional.of(spec.calculateBlockCheckpoints(genesis.getState())))))
         .storeConfig(pruningOptions)
         .votes(emptyMap())
-        .latestCanonicalBlockRoot(Optional.empty());
+        .latestCanonicalBlockRoot(Optional.empty())
+        .executionPayloadProvider(executionPayloadProviderFromChainBuilder());
   }
 
   protected UpdatableStore createGenesisStoreWithMockForkChoiceStrategy(
@@ -237,5 +255,10 @@ public abstract class AbstractStoreTest {
 
   protected EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProviderFromChainBuilder() {
     return () -> SafeFuture.completedFuture(chainBuilder.getEarliestBlobSidecarSlot());
+  }
+
+  protected ExecutionPayloadProvider executionPayloadProviderFromChainBuilder() {
+    return beaconBlockRoot ->
+        SafeFuture.completedFuture(chainBuilder.getExecutionPayload(beaconBlockRoot));
   }
 }

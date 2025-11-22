@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -58,6 +59,7 @@ public class StoreBuilder {
       Optional.empty();
   private ForkChoiceStrategy forkChoiceStrategy = null;
   private Optional<UInt64> custodyGroupCount = Optional.empty();
+  private ExecutionPayloadProvider executionPayloadProvider;
 
   private StoreBuilder() {}
 
@@ -129,11 +131,11 @@ public class StoreBuilder {
           finalizedOptimisticTransitionPayload,
           justifiedCheckpoint,
           bestJustifiedCheckpoint,
-          blockInfoByRoot,
           votes,
           storeConfig,
           forkChoiceStrategy,
-          custodyGroupCount);
+          custodyGroupCount,
+          executionPayloadProvider);
     }
     return Store.create(
         asyncRunner,
@@ -153,7 +155,8 @@ public class StoreBuilder {
         latestCanonicalBlockRoot,
         votes,
         storeConfig,
-        custodyGroupCount);
+        custodyGroupCount,
+        executionPayloadProvider);
   }
 
   private void assertValid() {
@@ -169,6 +172,7 @@ public class StoreBuilder {
     checkState(latestFinalized != null, "Latest finalized anchor must be defined");
     checkState(votes != null, "Votes must be defined");
     checkState(!blockInfoByRoot.isEmpty(), "Block data must be supplied");
+    checkState(executionPayloadProvider != null, "Execution payload provider must be defined");
   }
 
   public StoreBuilder asyncRunner(final AsyncRunner asyncRunner) {
@@ -287,6 +291,13 @@ public class StoreBuilder {
   public StoreBuilder votes(final Map<UInt64, VoteTracker> votes) {
     checkNotNull(votes);
     this.votes = votes;
+    return this;
+  }
+
+  public StoreBuilder executionPayloadProvider(
+      final ExecutionPayloadProvider executionPayloadProvider) {
+    checkNotNull(executionPayloadProvider);
+    this.executionPayloadProvider = executionPayloadProvider;
     return this;
   }
 }

@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -139,6 +140,17 @@ public interface ReadOnlyStore extends TimeProvider {
 
   void computeBalanceThresholds(BeaconState justifiedState);
 
-  // implements is_ffg_competitive from Consensus Spec
+  // implements is_ffg_competitive from consensus-specs
   Optional<Boolean> isFfgCompetitive(Bytes32 headRoot, Bytes32 parentRoot);
+
+  /**
+   * Returns an execution payload only if it is immediately available (not pruned).
+   *
+   * @param beaconBlockRoot The beacon block root of the execution payload to retrieve
+   * @return The execution payload if available.
+   */
+  Optional<SignedExecutionPayloadEnvelope> getExecutionPayloadIfAvailable(Bytes32 beaconBlockRoot);
+
+  SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveSignedExecutionPayloadEnvelope(
+      Bytes32 beaconBlockRoot);
 }

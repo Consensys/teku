@@ -23,6 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
@@ -44,6 +45,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
   private static final Logger LOG = LogManager.getLogger();
   private final BlockProvider blockProvider;
   private final StateAndBlockSummaryProvider stateProvider;
+  private final ExecutionPayloadProvider executionPayloadProvider;
   private final StorageQueryChannel storageQueryChannel;
   private final StoreConfig storeConfig;
 
@@ -69,6 +71,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
         validatedBlobSidecarProvider,
         storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot,
         storageQueryChannel::getEarliestAvailableBlobSidecarSlot,
+        storageQueryChannel::getHotExecutionPayloadByRoot,
         storageUpdateChannel,
         voteUpdateChannel,
         finalizedCheckpointChannel,
@@ -79,6 +82,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
     this.storageQueryChannel = storageQueryChannel;
     this.blockProvider = storageQueryChannel::getHotBlocksByRoot;
     this.stateProvider = storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot;
+    this.executionPayloadProvider = storageQueryChannel::getHotExecutionPayloadByRoot;
   }
 
   public static SafeFuture<RecentChainData> create(
@@ -174,6 +178,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
                   .asyncRunner(asyncRunner)
                   .blockProvider(blockProvider)
                   .stateProvider(stateProvider)
+                  .executionPayloadProvider(executionPayloadProvider)
                   .storeConfig(storeConfig)
                   .build();
           setStore(store);

@@ -163,10 +163,7 @@ public class ChainBuilder {
     executionPayloads.putAll(existingExecutionPayloads);
     existingExecutionPayloads
         .values()
-        .forEach(
-            e ->
-                executionPayloadsByHash.put(
-                    e.executionPayload().getMessage().getBeaconBlockRoot(), e));
+        .forEach(e -> executionPayloadsByHash.put(e.executionPayload().getBeaconBlockRoot(), e));
   }
 
   public static ChainBuilder create(final Spec spec) {
@@ -192,8 +189,18 @@ public class ChainBuilder {
     return Optional.ofNullable(blocksByHash.get(blockRoot));
   }
 
-  public Optional<SignedExecutionPayloadEnvelope> getExecutionPayload(final Bytes32 blockRoot) {
-    return Optional.ofNullable(executionPayloadsByHash.get(blockRoot))
+  public Optional<SignedExecutionPayloadAndState> getExecutionPayloadAndState(
+      final Bytes32 beaconBlockRoot) {
+    return Optional.ofNullable(executionPayloadsByHash.get(beaconBlockRoot));
+  }
+
+  public Optional<BeaconState> getExecutionPayloadState(final Bytes32 beaconBlockRoot) {
+    return getExecutionPayloadAndState(beaconBlockRoot).map(SignedExecutionPayloadAndState::state);
+  }
+
+  public Optional<SignedExecutionPayloadEnvelope> getExecutionPayload(
+      final Bytes32 beaconBlockRoot) {
+    return getExecutionPayloadAndState(beaconBlockRoot)
         .map(SignedExecutionPayloadAndState::executionPayload);
   }
 
@@ -303,6 +310,10 @@ public class ChainBuilder {
     return streamDataColumnSidecars(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot), columns);
   }
 
+  public Stream<SignedExecutionPayloadAndState> streamExecutionPayloadsAndStates() {
+    return executionPayloads.values().stream();
+  }
+
   public Stream<SignedExecutionPayloadAndState> streamExecutionPayloadsAndStates(
       final UInt64 fromSlot) {
     return streamExecutionPayloadsAndStates(fromSlot, getLatestSlot());
@@ -370,10 +381,6 @@ public class ChainBuilder {
 
   public SignedExecutionPayloadAndState getExecutionPayloadAndStateAtSlot(final UInt64 slot) {
     return executionPayloads.get(slot);
-  }
-
-  public BeaconState getExecutionPayloadStateAtSlot(final UInt64 slot) {
-    return resultToState(getExecutionPayloadAndStateAtSlot(slot));
   }
 
   public SignedBlockAndState getLatestBlockAndStateAtSlot(final long slot) {
@@ -675,19 +682,17 @@ public class ChainBuilder {
   }
 
   private void trackExecutionPayload(final SignedExecutionPayloadAndState executionPayload) {
-    executionPayloads.put(
-        executionPayload.executionPayload().getMessage().getSlot(), executionPayload);
+    executionPayloads.put(executionPayload.executionPayload().getSlot(), executionPayload);
     executionPayloadsByHash.put(
-        executionPayload.executionPayload().getMessage().getBeaconBlockRoot(), executionPayload);
+        executionPayload.executionPayload().getBeaconBlockRoot(), executionPayload);
   }
 
   private SignedBlockAndState appendNewBlockToChain(final UInt64 slot, final BlockOptions options) {
     final SignedBlockAndState latestBlockAndState = getLatestBlockAndState();
+    final Bytes32 parentRoot = latestBlockAndState.getBlock().getRoot();
     final BeaconState preState =
         // build on top of the execution payload state if an execution payload has been processed
-        Optional.ofNullable(getExecutionPayloadStateAtSlot(latestBlockAndState.getSlot()))
-            .orElse(latestBlockAndState.getState());
-    final Bytes32 parentRoot = latestBlockAndState.getBlock().getMessage().hashTreeRoot();
+        getExecutionPayloadState(parentRoot).orElse(latestBlockAndState.getState());
 
     int proposerIndex = blockProposalTestUtil.getProposerIndexForSlot(preState, slot);
     if (options.isWrongProposerEnabled()) {
@@ -1020,10 +1025,6 @@ public class ChainBuilder {
 
   private SignedBeaconBlock resultToBlock(final SignedBlockAndState result) {
     return Optional.ofNullable(result).map(SignedBlockAndState::getBlock).orElse(null);
-  }
-
-  private BeaconState resultToState(final SignedExecutionPayloadAndState result) {
-    return Optional.ofNullable(result).map(SignedExecutionPayloadAndState::state).orElse(null);
   }
 
   public SignedContributionAndProofTestBuilder createValidSignedContributionAndProofBuilder() {
