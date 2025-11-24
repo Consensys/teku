@@ -2652,7 +2652,7 @@
 - name: get_beacon_proposer_index#fulu
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/BeaconStateAccessorsFulu.java
-      search: public int getBeaconProposerIndex(
+      search: public int getBeaconProposerIndex(final BeaconState state)
   spec: |
     <spec fn="get_beacon_proposer_index" fork="fulu" hash="8e1ef77d">
     def get_beacon_proposer_index(state: BeaconState) -> ValidatorIndex:
