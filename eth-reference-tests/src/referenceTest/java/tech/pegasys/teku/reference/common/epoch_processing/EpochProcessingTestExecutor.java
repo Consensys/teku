@@ -87,6 +87,9 @@ public class EpochProcessingTestExecutor implements TestExecutor {
           .put(
               "epoch_processing/proposer_lookahead",
               new EpochProcessingTestExecutor(EpochOperation.PROPOSER_LOOKAHEAD))
+          .put(
+              "epoch_processing/builder_pending_payments",
+              new EpochProcessingTestExecutor(EpochOperation.BUILDER_PENDING_PAYMENTS))
           .build();
 
   private final EpochOperation operation;
@@ -109,6 +112,7 @@ public class EpochProcessingTestExecutor implements TestExecutor {
     if (testDefinition.getTestDirectory().resolve(postStateFileName).toFile().exists()) {
       final BeaconState expectedPostState = loadStateFromSsz(testDefinition, postStateFileName);
       final BeaconState result = executeOperation(preState, processor);
+
       assertThat(result).isEqualTo(expectedPostState);
     } else {
       assertThatThrownBy(() -> executeOperation(preState, processor))

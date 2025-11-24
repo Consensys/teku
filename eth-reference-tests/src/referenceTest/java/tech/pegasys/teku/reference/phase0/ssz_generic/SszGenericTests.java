@@ -28,6 +28,8 @@ public class SszGenericTests {
           .put("ssz_generic/boolean", new SszGenericBooleanTestExecutor())
           .put("ssz_generic/containers", new SszGenericContainerTestExecutor())
           .put("ssz_generic/progressive_bitlist", TestExecutor.IGNORE_TESTS)
+          .put("ssz_generic/progressive_containers", TestExecutor.IGNORE_TESTS)
+          .put("ssz_generic/compatible_unions", TestExecutor.IGNORE_TESTS)
           .put("ssz_generic/uints", new SszGenericUIntTestExecutor())
           .build();
 }

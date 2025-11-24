@@ -20,7 +20,6 @@ import java.util.concurrent.TimeoutException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -38,7 +37,6 @@ public class BlobSidecarsAvailabilityChecker implements AvailabilityChecker<Blob
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final BlockBlobSidecarsTracker blockBlobSidecarsTracker;
-  private final KZG kzg;
 
   private final SafeFuture<DataAndValidationResult<BlobSidecar>> validationResult =
       new SafeFuture<>();
@@ -48,12 +46,10 @@ public class BlobSidecarsAvailabilityChecker implements AvailabilityChecker<Blob
   public BlobSidecarsAvailabilityChecker(
       final Spec spec,
       final RecentChainData recentChainData,
-      final BlockBlobSidecarsTracker blockBlobSidecarsTracker,
-      final KZG kzg) {
+      final BlockBlobSidecarsTracker blockBlobSidecarsTracker) {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.blockBlobSidecarsTracker = blockBlobSidecarsTracker;
-    this.kzg = kzg;
     this.waitForTrackerCompletionTimeout =
         calculateCompletionTimeout(spec, blockBlobSidecarsTracker.getSlotAndBlockRoot().getSlot());
   }
@@ -63,12 +59,10 @@ public class BlobSidecarsAvailabilityChecker implements AvailabilityChecker<Blob
       final Spec spec,
       final RecentChainData recentChainData,
       final BlockBlobSidecarsTracker blockBlobSidecarsTracker,
-      final KZG kzg,
       final Duration waitForTrackerCompletionTimeout) {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.blockBlobSidecarsTracker = blockBlobSidecarsTracker;
-    this.kzg = kzg;
     this.waitForTrackerCompletionTimeout = waitForTrackerCompletionTimeout;
   }
 
@@ -110,7 +104,7 @@ public class BlobSidecarsAvailabilityChecker implements AvailabilityChecker<Blob
     final SignedBeaconBlock block = blockBlobSidecarsTracker.getBlock().orElseThrow();
 
     try {
-      if (!miscHelpers.verifyBlobKzgProofBatch(kzg, blobSidecars)) {
+      if (!miscHelpers.verifyBlobKzgProofBatch(blobSidecars)) {
         return DataAndValidationResult.invalidResult(blobSidecars);
       }
 

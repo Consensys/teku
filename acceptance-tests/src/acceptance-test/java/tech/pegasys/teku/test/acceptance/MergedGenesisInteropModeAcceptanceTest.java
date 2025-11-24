@@ -27,7 +27,8 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 public class MergedGenesisInteropModeAcceptanceTest extends AcceptanceTestBase {
 
   @ParameterizedTest
-  @EnumSource(SpecMilestone.class)
+  // TODO-GLOAS Fix test https://github.com/Consensys/teku/issues/9833
+  @EnumSource(value = SpecMilestone.class, names = "GLOAS", mode = EnumSource.Mode.EXCLUDE)
   public void startFromMergedStatePerMilestoneUsingTerminalBlockHash(
       final SpecMilestone specMilestone) throws Exception {
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
@@ -47,7 +48,8 @@ public class MergedGenesisInteropModeAcceptanceTest extends AcceptanceTestBase {
   }
 
   @ParameterizedTest
-  @EnumSource(SpecMilestone.class)
+  // TODO-GLOAS Fix test https://github.com/Consensys/teku/issues/9833
+  @EnumSource(value = SpecMilestone.class, names = "GLOAS", mode = EnumSource.Mode.EXCLUDE)
   public void startFromMergedStatePerMilestoneUsingTotalDifficultySimulation(
       final SpecMilestone specMilestone) throws Exception {
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {

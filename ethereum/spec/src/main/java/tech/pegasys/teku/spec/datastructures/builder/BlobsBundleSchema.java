@@ -13,15 +13,18 @@
 
 package tech.pegasys.teku.spec.datastructures.builder;
 
-import tech.pegasys.teku.infrastructure.ssz.SszContainer;
+import java.util.List;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
-public interface BlobsBundleSchema<T extends SszContainer> extends SszContainerSchema<T> {
+public interface BlobsBundleSchema<T extends BlobsBundle> extends SszContainerSchema<T> {
 
   @Override
   T createFromBackingNode(TreeNode node);
@@ -31,4 +34,9 @@ public interface BlobsBundleSchema<T extends SszContainer> extends SszContainerS
   SszListSchema<SszKZGProof, ?> getProofsSchema();
 
   SszListSchema<Blob, ?> getBlobsSchema();
+
+  BlobsBundle create(List<KZGCommitment> commitments, List<KZGProof> proofs, List<Blob> blobs);
+
+  BlobsBundle create(
+      SszList<SszKZGCommitment> commitments, SszList<SszKZGProof> proofs, SszList<Blob> blobs);
 }

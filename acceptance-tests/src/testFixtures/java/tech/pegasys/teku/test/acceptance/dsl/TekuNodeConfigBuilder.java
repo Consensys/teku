@@ -636,9 +636,21 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
-  public TekuNodeConfigBuilder withDasExtraCustodyGroupCount(final int extraCustodySubnetCount) {
-    LOG.debug("Xdas-extra-custody-group-count: {}", extraCustodySubnetCount);
-    configMap.put("Xdas-extra-custody-group-count", extraCustodySubnetCount);
+  public TekuNodeConfigBuilder withCustodyGroupCountOverride(final int custodyGroupCount) {
+    LOG.debug("Xcustody-group-count-override: {}", custodyGroupCount);
+    configMap.put("Xcustody-group-count-override", custodyGroupCount);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withSubscribeAllCustodySubnetsEnabled() {
+    LOG.debug("p2p-subscribe-all-custody-subnets-enabled: {}", true);
+    configMap.put("p2p-subscribe-all-custody-subnets-enabled", true);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withCheckpointSyncUrl(final String checkpointSyncUrl) {
+    LOG.debug("checkpoint-sync-url: {}", checkpointSyncUrl);
+    configMap.put("checkpoint-sync-url", checkpointSyncUrl);
     return this;
   }
 

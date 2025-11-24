@@ -28,8 +28,9 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -140,6 +141,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   @Override
   public Optional<Bytes32> getLatestCanonicalBlockRoot() {
     return hotDao.getLatestCanonicalBlockRoot();
+  }
+
+  @Override
+  public Optional<UInt64> getCustodyGroupCount() {
+    return hotDao.getCustodyGroupCount();
   }
 
   @Override
@@ -331,11 +337,6 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
-  public Optional<UInt64> getFirstSamplerIncompleteSlot() {
-    return finalizedDao.getFirstSamplerIncompleteSlot();
-  }
-
-  @Override
   public Optional<Bytes> getSidecar(final DataColumnSlotAndIdentifier identifier) {
     return finalizedDao.getSidecar(identifier);
   }
@@ -371,6 +372,16 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
+    return finalizedDao.getLastDataColumnSidecarsProofsSlot();
+  }
+
+  @Override
+  public Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(final UInt64 slot) {
+    return finalizedDao.getDataColumnSidecarProofs(slot);
+  }
+
+  @Override
   public void ingest(
       final KvStoreCombinedDao dao, final int batchSize, final Consumer<String> logger) {
     throw new UnsupportedOperationException("Cannot migrate to a split database format");
@@ -400,7 +411,6 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
 
   @Override
   public void close() throws Exception {
-    hotDao.close();
     hotDao.close();
     finalizedDao.close();
   }
@@ -495,6 +505,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void setLatestCanonicalBlockRoot(final Bytes32 canonicalBlockRoot) {
       hotUpdater.setLatestCanonicalBlockRoot(canonicalBlockRoot);
+    }
+
+    @Override
+    public void setCustodyGroupCount(final UInt64 custodyGroupCount) {
+      hotUpdater.setCustodyGroupCount(custodyGroupCount);
     }
 
     @Override
@@ -671,11 +686,6 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
-    public void setFirstSamplerIncompleteSlot(final UInt64 slot) {
-      finalizedUpdater.setFirstSamplerIncompleteSlot(slot);
-    }
-
-    @Override
     public void addSidecar(final DataColumnSidecar sidecar) {
       finalizedUpdater.addSidecar(sidecar);
     }
@@ -693,6 +703,17 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void removeNonCanonicalSidecar(final DataColumnSlotAndIdentifier identifier) {
       finalizedUpdater.removeNonCanonicalSidecar(identifier);
+    }
+
+    @Override
+    public void addDataColumnSidecarsProofs(
+        final UInt64 slot, final List<List<KZGProof>> kzgProofs) {
+      finalizedUpdater.addDataColumnSidecarsProofs(slot, kzgProofs);
+    }
+
+    @Override
+    public void removeDataColumnSidecarsProofs(final UInt64 slot) {
+      finalizedUpdater.removeDataColumnSidecarsProofs(slot);
     }
 
     @Override

@@ -26,8 +26,8 @@ import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformanc
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
@@ -79,10 +79,10 @@ public class BlockFactoryPhase0 implements BlockFactory {
                 requestedBuilderBoostFactor,
                 blockProductionPerformance),
             blockProductionPerformance)
-        .thenApply(this::beaconBlockAndStateToBlockContainerAndMetaData);
+        .thenApply(this::blockAndStateToBlockContainerAndMetaData);
   }
 
-  private BlockContainerAndMetaData beaconBlockAndStateToBlockContainerAndMetaData(
+  private BlockContainerAndMetaData blockAndStateToBlockContainerAndMetaData(
       final BeaconBlockAndState blockAndState) {
     final SlotCaches slotCaches = BeaconStateCache.getSlotCaches(blockAndState.getState());
     return new BlockContainerAndMetaData(

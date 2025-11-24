@@ -84,6 +84,8 @@ public class BeaconChainMethodIdsTest {
         Arguments.of(BeaconChainMethodIds.BLOB_SIDECARS_BY_RANGE),
         Arguments.of(BeaconChainMethodIds.DATA_COLUMN_SIDECARS_BY_ROOT),
         Arguments.of(BeaconChainMethodIds.DATA_COLUMN_SIDECARS_BY_RANGE),
+        Arguments.of(BeaconChainMethodIds.EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT),
+        Arguments.of(BeaconChainMethodIds.EXECUTION_PAYLOAD_ENVELOPES_BY_RANGE),
         Arguments.of(BeaconChainMethodIds.GET_METADATA),
         Arguments.of(BeaconChainMethodIds.PING));
   }

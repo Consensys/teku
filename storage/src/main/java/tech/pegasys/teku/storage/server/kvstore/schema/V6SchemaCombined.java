@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.kvstore.schema;
 
+import static tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable.asVariableId;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BYTES32_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.CHECKPOINT_EPOCHS_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.CHECKPOINT_SERIALIZER;
@@ -24,7 +25,10 @@ import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSeri
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.VOTE_TRACKER_SERIALIZER;
 
 import com.google.common.collect.ImmutableMap;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
@@ -83,12 +87,15 @@ public abstract class V6SchemaCombined implements SchemaCombined {
       KvStoreVariable.create(10, DEPOSIT_SNAPSHOT_SERIALIZER);
   private static final KvStoreVariable<Bytes32> LATEST_CANONICAL_BLOCK_ROOT =
       KvStoreVariable.create(11, BYTES32_SERIALIZER);
+  private static final KvStoreVariable<UInt64> CUSTODY_GROUP_COUNT =
+      KvStoreVariable.create(12, UINT64_SERIALIZER);
 
   private final KvStoreVariable<UInt64> optimisticTransitionBlockSlot;
   private final KvStoreVariable<UInt64> earliestBlobSidecarSlot;
   private final KvStoreVariable<UInt64> earliestBlockSlot;
   private final KvStoreVariable<UInt64> firstCustodyIncompleteSlot;
-  private final KvStoreVariable<UInt64> firstSamplerIncompleteSlot;
+
+  private final List<Bytes> deletedVariableIds;
 
   protected V6SchemaCombined(final Spec spec, final int finalizedOffset) {
     this.finalizedOffset = finalizedOffset;
@@ -107,7 +114,8 @@ public abstract class V6SchemaCombined implements SchemaCombined {
     earliestBlobSidecarSlot = KvStoreVariable.create(finalizedOffset + 2, UINT64_SERIALIZER);
     earliestBlockSlot = KvStoreVariable.create(finalizedOffset + 3, UINT64_SERIALIZER);
     firstCustodyIncompleteSlot = KvStoreVariable.create(finalizedOffset + 4, UINT64_SERIALIZER);
-    firstSamplerIncompleteSlot = KvStoreVariable.create(finalizedOffset + 5, UINT64_SERIALIZER);
+
+    deletedVariableIds = List.of(asVariableId(finalizedOffset + 5));
   }
 
   @Override
@@ -206,6 +214,11 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   }
 
   @Override
+  public KvStoreVariable<UInt64> getVariableCustodyGroupCount() {
+    return CUSTODY_GROUP_COUNT;
+  }
+
+  @Override
   public KvStoreVariable<UInt64> getVariableEarliestBlockSlot() {
     return earliestBlockSlot;
   }
@@ -213,11 +226,6 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   @Override
   public KvStoreVariable<UInt64> getVariableFirstCustodyIncompleteSlot() {
     return firstCustodyIncompleteSlot;
-  }
-
-  @Override
-  public KvStoreVariable<UInt64> getVariableFirstSamplerIncompleteSlot() {
-    return firstSamplerIncompleteSlot;
   }
 
   @Override
@@ -257,8 +265,13 @@ public abstract class V6SchemaCombined implements SchemaCombined {
         .put("EARLIEST_BLOB_SIDECAR_SLOT", getVariableEarliestBlobSidecarSlot())
         .put("EARLIEST_BLOCK_SLOT_AVAILABLE", getVariableEarliestBlockSlot())
         .put("LATEST_CANONICAL_BLOCK_ROOT", getVariableLatestCanonicalBlockRoot())
+        .put("CUSTODY_GROUP_COUNT", getVariableCustodyGroupCount())
         .put("FIRST_CUSTODY_INCOMPLETE_SLOT", getVariableFirstCustodyIncompleteSlot())
-        .put("FIRST_SAMPLER_INCOMPLETE_SLOT", getVariableFirstSamplerIncompleteSlot())
         .build();
+  }
+
+  @Override
+  public Collection<Bytes> getDeletedVariableIds() {
+    return deletedVariableIds;
   }
 }

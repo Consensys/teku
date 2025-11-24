@@ -18,7 +18,6 @@ import static java.util.Arrays.asList;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -90,7 +89,11 @@ public class StubMetricsSystem implements MetricsSystem {
         .computeIfAbsent(name, __ -> new StubLabelledGauge(category, name, help));
   }
 
-  public long getCounterValue(
+  public long getCounterValue(final MetricCategory category, final String name) {
+    return getLabelledCounterValue(category, name);
+  }
+
+  public long getLabelledCounterValue(
       final MetricCategory category, final String name, final String... labels) {
     final Map<String, StubLabelledCounter> counters = this.counters.get(category);
     final StubLabelledCounter labelledCounter = counters.get(name);
@@ -292,7 +295,7 @@ public class StubMetricsSystem implements MetricsSystem {
   }
 
   public static class StubLabelledCounter implements LabelledMetric<Counter> {
-    private final Map<List<String>, StubCounter> metrics = new HashMap<>();
+    private final Map<List<String>, StubCounter> metrics = new ConcurrentHashMap<>();
 
     @Override
     public Counter labels(final String... labels) {

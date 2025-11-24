@@ -29,7 +29,6 @@ import tech.pegasys.teku.kzg.KZGCellWithColumnId;
 import tech.pegasys.teku.kzg.KZGProof;
 
 public class KzgRecoverCellsAndKzgProofsTestExecutor extends KzgTestExecutor {
-
   @Override
   public void runTest(final TestDefinition testDefinition, final KZG kzg) throws Throwable {
     final Data data = loadDataFile(testDefinition, Data.class);

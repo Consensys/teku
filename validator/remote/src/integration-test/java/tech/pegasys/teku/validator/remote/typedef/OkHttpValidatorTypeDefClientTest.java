@@ -40,6 +40,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
@@ -174,12 +175,13 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
     assertThat(recordedRequest.getBody().readByteArray())
         .isEqualTo(signedBeaconBlock.sszSerialize().toArrayUnsafe());
-    if (specMilestone.isLessThanOrEqualTo(ALTAIR)) {
-      assertThat(recordedRequest.getPath())
-          .contains(ValidatorApiMethod.SEND_SIGNED_BLOCK_V2.getPath(emptyMap()));
-    } else {
+
+    if (specMilestone.isBetween(BELLATRIX, FULU)) {
       assertThat(recordedRequest.getPath())
           .contains(ValidatorApiMethod.SEND_SIGNED_BLINDED_BLOCK_V2.getPath(emptyMap()));
+    } else {
+      assertThat(recordedRequest.getPath())
+          .contains(ValidatorApiMethod.SEND_SIGNED_BLOCK_V2.getPath(emptyMap()));
     }
     assertThat(recordedRequest.getRequestUrl().queryParameter(PARAM_BROADCAST_VALIDATION))
         .isEqualTo("gossip");
@@ -208,12 +210,12 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
                 .getSignedBlindedBlockContainerSchema()
                 .getJsonTypeDefinition());
 
-    if (specMilestone.isLessThanOrEqualTo(ALTAIR)) {
-      assertThat(recordedRequest.getPath())
-          .contains(ValidatorApiMethod.SEND_SIGNED_BLOCK_V2.getPath(emptyMap()));
-    } else {
+    if (specMilestone.isBetween(BELLATRIX, FULU)) {
       assertThat(recordedRequest.getPath())
           .contains(ValidatorApiMethod.SEND_SIGNED_BLINDED_BLOCK_V2.getPath(emptyMap()));
+    } else {
+      assertThat(recordedRequest.getPath())
+          .contains(ValidatorApiMethod.SEND_SIGNED_BLOCK_V2.getPath(emptyMap()));
     }
 
     final String actualRequest = recordedRequest.getBody().readUtf8();

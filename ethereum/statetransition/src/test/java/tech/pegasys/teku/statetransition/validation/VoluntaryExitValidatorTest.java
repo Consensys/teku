@@ -54,6 +54,7 @@ import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class VoluntaryExitValidatorTest {
+
   private static final List<BLSKeyPair> VALIDATOR_KEYS =
       new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 25);
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
@@ -100,7 +101,7 @@ public class VoluntaryExitValidatorTest {
   }
 
   @ParameterizedTest
-  @EnumSource(SpecMilestone.class)
+  @EnumSource(value = SpecMilestone.class)
   public void shouldAcceptOwnSignedVoluntaryExitNoMocks(final SpecMilestone specMilestone)
       throws Exception {
     final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);

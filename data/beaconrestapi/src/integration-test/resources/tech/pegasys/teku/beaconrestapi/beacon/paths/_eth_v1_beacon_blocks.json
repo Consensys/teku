@@ -40,6 +40,8 @@
               "$ref" : "#/components/schemas/SignedBlockContentsElectra"
             }, {
               "$ref" : "#/components/schemas/SignedBlockContentsFulu"
+            }, {
+              "$ref" : "#/components/schemas/SignedBeaconBlockGloas"
             } ]
           }
         }

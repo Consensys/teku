@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p;
 
+import static tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue.DEFAULT_MAXIMUM_QUEUE_SIZE;
+
 import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
@@ -264,7 +266,8 @@ public class LibP2PPeer implements Peer {
     private final RpcHandler<TOutgoingHandler, TRequest, TRespHandler> delegate;
 
     private final ThrottlingTaskQueue requestsQueue =
-        ThrottlingTaskQueue.create(NetworkConstants.MAX_CONCURRENT_REQUESTS);
+        ThrottlingTaskQueue.create(
+            NetworkConstants.MAX_CONCURRENT_REQUESTS, DEFAULT_MAXIMUM_QUEUE_SIZE);
 
     private ThrottlingRpcHandler(
         final RpcHandler<TOutgoingHandler, TRequest, TRespHandler> delegate) {

@@ -90,7 +90,10 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
         .forEach(
             forkAndSpecMilestone -> {
               final SpecMilestone milestone = forkAndSpecMilestone.getSpecMilestone();
-              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+                // in Gloas, phase0 can be reused
+                registeredPublishers.put(milestone, blockPublisherPhase0);
+              } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
                 registeredPublishers.put(
                     milestone, blockAndDataColumnSidecarsPublisherSupplier.get());
               } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {

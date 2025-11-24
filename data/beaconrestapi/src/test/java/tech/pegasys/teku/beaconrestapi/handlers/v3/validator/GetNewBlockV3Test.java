@@ -31,6 +31,8 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.SpecMilestone.FULU;
+import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
@@ -47,7 +49,6 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @TestSpecContext(allMilestones = true)
 public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
@@ -57,8 +58,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   public void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
-    spec = specContext.getSpec();
-    dataStructureUtil = new DataStructureUtil(spec);
+    setSpec(specContext.getSpec());
     specMilestone = specContext.getSpecMilestone();
     setHandler(new GetNewBlockV3(validatorDataProvider, schemaDefinitionCache));
     request.setPathParameter(SLOT, "1");
@@ -68,7 +68,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
 
   @TestTemplate
   void shouldHandleBlindedBeaconBlocks() throws Exception {
-    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
+    assumeThat(specMilestone).isBetween(BELLATRIX, FULU);
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlindedBlockContainerAndMetaData(ONE);
 
@@ -92,7 +92,8 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
 
   @TestTemplate
   void shouldHandleUnBlindedBeaconBlocks() throws Exception {
-    assumeThat(specMilestone).isLessThan(DENEB);
+    assumeThat(specMilestone.isLessThan(DENEB) || specMilestone.isGreaterThanOrEqualTo(GLOAS))
+        .isTrue();
     BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(ONE);
     doReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)))
@@ -115,7 +116,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
 
   @TestTemplate
   void shouldHandleUnBlindedBlockContentsPostDeneb() throws Exception {
-    assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
+    assumeThat(specMilestone).isBetween(DENEB, FULU);
     final BlockContainer blockContents = dataStructureUtil.randomBlockContents(ONE);
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(blockContents, ONE);

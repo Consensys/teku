@@ -17,8 +17,10 @@ import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
+import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -37,6 +39,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.CheckReturnValue;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -47,19 +51,22 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfigGloas;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -71,6 +78,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.epbs.ExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -95,27 +103,37 @@ import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
 import tech.pegasys.teku.spec.logic.StateTransition;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadProcessor;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil.ExecutionPayloadProposalData;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
+import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
 public class Spec {
+  private static final Logger LOG = LogManager.getLogger();
   private final Map<SpecMilestone, SpecVersion> specVersions;
   private final ForkSchedule forkSchedule;
   private final StateTransition stateTransition;
   private final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent;
+  private volatile boolean initialized = false;
 
   private Spec(
       final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent,
@@ -129,6 +147,56 @@ public class Spec {
 
     // Setup state transition
     this.stateTransition = new StateTransition(this::atSlot);
+  }
+
+  // This method must be called once after constructing the Spec to initialize any additional
+  // dependencies lazily created during initialization in BeaconChainController
+  public synchronized void initialize(
+      final AvailabilityCheckerFactory<BlobSidecar> blobSidecarAvailabilityCheckerFactory,
+      final AvailabilityCheckerFactory<UInt64> dataColumnSidecarAvailabilityCheckerFactory,
+      final KZG kzg) {
+    if (initialized) {
+      throw new IllegalStateException("Spec already initialized");
+    }
+    initializeInternal(
+        blobSidecarAvailabilityCheckerFactory, dataColumnSidecarAvailabilityCheckerFactory, kzg);
+  }
+
+  @VisibleForTesting
+  public synchronized void reinitializeForTesting(
+      final AvailabilityCheckerFactory<BlobSidecar> blobSidecarAvailabilityCheckerFactory,
+      final AvailabilityCheckerFactory<UInt64> dataColumnSidecarAvailabilityCheckerFactory,
+      final KZG kzg) {
+    initializeInternal(
+        blobSidecarAvailabilityCheckerFactory, dataColumnSidecarAvailabilityCheckerFactory, kzg);
+  }
+
+  private void initializeInternal(
+      final AvailabilityCheckerFactory<BlobSidecar> blobSidecarAvailabilityCheckerFactory,
+      final AvailabilityCheckerFactory<UInt64> dataColumnSidecarAvailabilityCheckerFactory,
+      final KZG kzg) {
+    initialized = true;
+
+    specVersions
+        .values()
+        .forEach(
+            specVersion -> {
+              // inject ForkChoiceUtil dependencies
+              switch (specVersion.getForkChoiceUtil()) {
+                case ForkChoiceUtilFulu forkChoiceUtilFulu ->
+                    forkChoiceUtilFulu.setDataColumnSidecarAvailabilityCheckerFactory(
+                        dataColumnSidecarAvailabilityCheckerFactory);
+                case ForkChoiceUtilDeneb forkChoiceUtilDeneb ->
+                    forkChoiceUtilDeneb.setBlobSidecarAvailabilityCheckerFactory(
+                        blobSidecarAvailabilityCheckerFactory);
+                default -> {}
+              }
+
+              // inject KZG instance
+              if (specVersion.miscHelpers() instanceof MiscHelpersDeneb miscHelpersDeneb) {
+                miscHelpersDeneb.setKzg(kzg);
+              }
+            });
   }
 
   static Spec create(
@@ -151,6 +219,16 @@ public class Spec {
     final ForkSchedule forkSchedule = forkScheduleBuilder.build();
 
     return new Spec(specConfigAndParent, specVersions, forkSchedule);
+  }
+
+  public Optional<KZG> getKzg() {
+    if (!initialized) {
+      throw new IllegalStateException("Spec must be initialized to access KZG");
+    }
+    return Optional.ofNullable(forMilestone(DENEB))
+        .map(SpecVersion::miscHelpers)
+        .flatMap(MiscHelpers::toVersionDeneb)
+        .map(MiscHelpersDeneb::getKzg);
   }
 
   public SpecVersion forMilestone(final SpecMilestone milestone) {
@@ -236,6 +314,16 @@ public class Spec {
     return Optional.ofNullable(forMilestone(DENEB))
         .map(SpecVersion::getConfig)
         .map(specConfig -> (NetworkingSpecConfigDeneb) specConfig.getNetworkingConfig());
+  }
+
+  /**
+   * Networking config with Gloas constants. Use {@link SpecConfigGloas#required(SpecConfig)} when
+   * you are sure that Gloas is available, otherwise use this method
+   */
+  public Optional<NetworkingSpecConfigGloas> getNetworkingConfigGloas() {
+    return Optional.ofNullable(forMilestone(GLOAS))
+        .map(SpecVersion::getConfig)
+        .map(specConfig -> (NetworkingSpecConfigGloas) specConfig.getNetworkingConfig());
   }
 
   public SchemaDefinitions getGenesisSchemaDefinitions() {
@@ -563,6 +651,10 @@ public class Spec {
     return atSlot(slot).getForkChoiceUtil().getContributionDueMillis();
   }
 
+  public int getPayloadAttestationDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getPayloadAttestationDueMillis();
+  }
+
   public Bytes32 getBlockRoot(final BeaconState state, final UInt64 epoch) {
     return atState(state).beaconStateAccessors().getBlockRoot(state, epoch);
   }
@@ -626,6 +718,28 @@ public class Spec {
   }
 
   public int computeSubnetForAttestation(final BeaconState state, final Attestation attestation) {
+    final UInt64 stateEpoch = getCurrentEpoch(state);
+    final UInt64 attestationEpoch =
+        atEpoch(stateEpoch).miscHelpers().computeEpochAtSlot(attestation.getData().getSlot());
+    final UInt64 earliestEpochInRange =
+        attestationEpoch.minusMinZero(atEpoch(attestationEpoch).getConfig().getMaxSeedLookahead());
+    if (stateEpoch.isLessThan(earliestEpochInRange)) {
+      final UInt64 earliestSlot =
+          atEpoch(stateEpoch).miscHelpers().computeStartSlotAtEpoch(earliestEpochInRange);
+      LOG.debug(
+          "Processing empty slots for state at slot {}, target slot {}",
+          state.getSlot(),
+          earliestSlot);
+      try {
+        final BeaconState advancedState = processSlots(state, earliestSlot);
+        return atState(advancedState)
+            .getBeaconStateUtil()
+            .computeSubnetForAttestation(advancedState, attestation);
+      } catch (SlotProcessingException | EpochProcessingException e) {
+        LOG.debug("Couldn't wind state at slot {} forward", state.getSlot(), e);
+      }
+    }
+
     return atState(state).getBeaconStateUtil().computeSubnetForAttestation(state, attestation);
   }
 
@@ -799,6 +913,22 @@ public class Spec {
             blockProductionPerformance);
   }
 
+  // Execution Payload Proposal
+  public SafeFuture<ExecutionPayloadAndState> createNewUnsignedExecutionPayload(
+      final UInt64 proposalSlot,
+      final UInt64 builderIndex,
+      final BeaconBlockAndState blockAndState,
+      final SafeFuture<ExecutionPayloadProposalData> executionPayloadProposalDataFuture) {
+    return atSlot(proposalSlot)
+        .getExecutionPayloadProposalUtil()
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Attempting to use execution payload proposal util when spec does not have execution payload proposal util"))
+        .createNewUnsignedExecutionPayload(
+            proposalSlot, builderIndex, blockAndState, executionPayloadProposalDataFuture);
+  }
+
   // Blind Block Utils
 
   public SafeFuture<Optional<SignedBeaconBlock>> unblindSignedBeaconBlock(
@@ -836,11 +966,9 @@ public class Spec {
   }
 
   public Optional<List<Withdrawal>> getExpectedWithdrawals(final BeaconState state) {
-    if (!atState(state).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
-      return Optional.empty();
-    }
-    return Optional.of(
-        atState(state).getBlockProcessor().getExpectedWithdrawals(state).getWithdrawalList());
+    return atState(state)
+        .getWithdrawalsHelpers()
+        .map(withdrawalsHelpers -> withdrawalsHelpers.getExpectedWithdrawals(state).withdrawals());
   }
 
   // Block Processor Utils
@@ -941,6 +1069,28 @@ public class Spec {
     return atState(state).beaconStateAccessors().getValidatorPubKey(state, validatorIndex);
   }
 
+  // Execution Requests Processor Utils
+
+  public ExecutionRequestsProcessor getExecutionRequestsProcessor(final UInt64 slot) {
+    return atSlot(slot)
+        .getExecutionRequestsProcessor()
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Attempting to use execution requests processor when spec does not have execution requests processor"));
+  }
+
+  // Execution Payload Processor Utils
+
+  public ExecutionPayloadProcessor getExecutionPayloadProcessor(final UInt64 slot) {
+    return atSlot(slot)
+        .getExecutionPayloadProcessor()
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Attempting to use execution payload processor when spec does not have execution payload processor"));
+  }
+
   // Validator Utils
   public int countActiveValidators(final BeaconState state, final UInt64 epoch) {
     return getActiveValidatorIndices(state, epoch).size();
@@ -961,6 +1111,23 @@ public class Spec {
     return atEpoch(epoch)
         .getValidatorsUtil()
         .getValidatorIndexToCommitteeAssignmentMap(state, epoch);
+  }
+
+  // get_ptc_assignment
+  public Optional<UInt64> getPtcAssignment(
+      final BeaconState state, final UInt64 epoch, final int validatorIndex) {
+    return atEpoch(epoch).getValidatorsUtil().getPtcAssignment(state, epoch, validatorIndex);
+  }
+
+  public Int2ObjectMap<UInt64> getValidatorIndexToPtcAssignmentMap(
+      final BeaconState state, final UInt64 epoch) {
+    return atEpoch(epoch).getValidatorsUtil().getValidatorIndexToPtcAssignmentMap(state, epoch);
+  }
+
+  // get_ptc
+  public IntList getPtc(final BeaconState state, final UInt64 slot) {
+    return BeaconStateAccessorsGloas.required(atSlot(slot).beaconStateAccessors())
+        .getPtc(state, slot);
   }
 
   // Attestation helpers

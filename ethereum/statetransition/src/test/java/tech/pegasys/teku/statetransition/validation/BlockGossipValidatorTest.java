@@ -70,7 +70,7 @@ public class BlockGossipValidatorTest {
     blockGossipValidator =
         new BlockGossipValidator(
             spec,
-            new GossipValidationHelper(spec, recentChainData),
+            new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem()),
             receivedBlockEventsChannelPublisher);
   }
 
@@ -226,7 +226,8 @@ public class BlockGossipValidatorTest {
     final BlockGossipValidator blockValidator =
         new BlockGossipValidator(
             spec,
-            new GossipValidationHelper(spec, localRecentChainData),
+            new GossipValidationHelper(
+                spec, localRecentChainData, storageSystem.getMetricsSystem()),
             receivedBlockEventsChannelPublisher);
     chainUpdater.initializeGenesis();
 
@@ -263,7 +264,7 @@ public class BlockGossipValidatorTest {
     blockGossipValidator =
         new BlockGossipValidator(
             spec,
-            new GossipValidationHelper(spec, recentChainData),
+            new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem()),
             receivedBlockEventsChannelPublisher);
 
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
@@ -287,7 +288,7 @@ public class BlockGossipValidatorTest {
     blockGossipValidator =
         new BlockGossipValidator(
             spec,
-            new GossipValidationHelper(spec, recentChainData),
+            new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem()),
             receivedBlockEventsChannelPublisher);
 
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
@@ -347,7 +348,7 @@ public class BlockGossipValidatorTest {
     blockGossipValidator =
         new BlockGossipValidator(
             spec,
-            new GossipValidationHelper(spec, recentChainData),
+            new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem()),
             receivedBlockEventsChannelPublisher);
 
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);

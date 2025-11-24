@@ -25,7 +25,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 class ColumnIdCachingDasDb implements DataColumnSidecarDB {
@@ -119,11 +119,6 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot() {
-    return delegateDb.getFirstSamplerIncompleteSlot();
-  }
-
-  @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
       final DataColumnSlotAndIdentifier identifier) {
     return delegateDb.getSidecar(identifier);
@@ -132,10 +127,5 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
   @Override
   public SafeFuture<Void> setFirstCustodyIncompleteSlot(final UInt64 slot) {
     return delegateDb.setFirstCustodyIncompleteSlot(slot);
-  }
-
-  @Override
-  public SafeFuture<Void> setFirstSamplerIncompleteSlot(final UInt64 slot) {
-    return delegateDb.setFirstSamplerIncompleteSlot(slot);
   }
 }

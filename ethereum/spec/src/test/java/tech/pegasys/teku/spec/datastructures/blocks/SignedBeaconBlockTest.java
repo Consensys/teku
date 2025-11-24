@@ -15,6 +15,8 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
+import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
+import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,10 +59,11 @@ class SignedBeaconBlockTest {
     assertThat(blinded.hashTreeRoot()).isEqualTo(original.hashTreeRoot());
 
     if (!blinded.getMessage().getBody().isBlinded()) {
-      // Didn't blind the block so we must have a spec prior to bellatrix that doesn't have payloads
-      assertThat(
-              spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX))
-          .isFalse();
+      // Didn't blind the block so we must have a spec prior to bellatrix or post-gloas that
+      // doesn't have payloads
+      final SpecMilestone milestone = spec.getGenesisSpec().getMilestone();
+      assertThat(milestone.isLessThan(BELLATRIX) || milestone.isGreaterThanOrEqualTo(GLOAS))
+          .isTrue();
     } else {
       // Check the blinded block actually matches the schema by serializing it
       assertThatNoException().isThrownBy(blinded::sszSerialize);

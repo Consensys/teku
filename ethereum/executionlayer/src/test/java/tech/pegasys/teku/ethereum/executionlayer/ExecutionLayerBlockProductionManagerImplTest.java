@@ -45,8 +45,8 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
+import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.ExecutionPayloadAndBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
@@ -638,7 +638,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
   private void verifySourceCounter(final Source source, final FallbackReason reason) {
     final long actualCount =
-        stubMetricsSystem.getCounterValue(
+        stubMetricsSystem.getLabelledCounterValue(
             TekuMetricCategory.BEACON,
             "execution_payload_source_total",
             source.toString(),

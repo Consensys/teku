@@ -57,6 +57,7 @@ public class StoreBuilder {
   private Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload =
       Optional.empty();
   private ForkChoiceStrategy forkChoiceStrategy = null;
+  private Optional<UInt64> custodyGroupCount = Optional.empty();
 
   private StoreBuilder() {}
 
@@ -92,6 +93,7 @@ public class StoreBuilder {
         anchor.getCheckpoint(),
         blockInfo,
         new HashMap<>(),
+        Optional.empty(),
         Optional.empty());
   }
 
@@ -99,6 +101,7 @@ public class StoreBuilder {
     return time(data.time())
         .anchor(data.anchor())
         .genesisTime(data.genesisTime())
+        .custodyGroupCount(data.custodyGroupCount())
         .latestFinalized(data.latestFinalized())
         .finalizedOptimisticTransitionPayload(data.finalizedOptimisticTransitionPayload())
         .justifiedCheckpoint(data.justifiedCheckpoint())
@@ -129,7 +132,8 @@ public class StoreBuilder {
           blockInfoByRoot,
           votes,
           storeConfig,
-          forkChoiceStrategy);
+          forkChoiceStrategy,
+          custodyGroupCount);
     }
     return Store.create(
         asyncRunner,
@@ -148,7 +152,8 @@ public class StoreBuilder {
         blockInfoByRoot,
         latestCanonicalBlockRoot,
         votes,
-        storeConfig);
+        storeConfig,
+        custodyGroupCount);
   }
 
   private void assertValid() {
@@ -234,6 +239,12 @@ public class StoreBuilder {
   public StoreBuilder genesisTime(final UInt64 genesisTime) {
     checkNotNull(genesisTime);
     this.genesisTime = genesisTime;
+    return this;
+  }
+
+  public StoreBuilder custodyGroupCount(final Optional<UInt64> custodyGroupCount) {
+    checkNotNull(custodyGroupCount);
+    this.custodyGroupCount = custodyGroupCount;
     return this;
   }
 

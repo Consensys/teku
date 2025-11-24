@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix;
 
 import com.google.common.base.MoreObjects;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -31,10 +32,18 @@ public interface BeaconStateBellatrix extends BeaconStateAltair {
                     "Expected a bellatrix state but got: " + state.getClass().getSimpleName()));
   }
 
-  default ExecutionPayloadHeader getLatestExecutionPayloadHeader() {
+  default ExecutionPayloadHeader getLatestExecutionPayloadHeaderRequired() {
+    return getLatestExecutionPayloadHeader()
+        .orElseThrow(
+            () ->
+                new NoSuchElementException(
+                    "latest_execution_payload_header was expected to be present in the state"));
+  }
+
+  default Optional<ExecutionPayloadHeader> getLatestExecutionPayloadHeader() {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER);
-    return getAny(fieldIndex);
+    return Optional.of(getAny(fieldIndex));
   }
 
   @Override
@@ -55,6 +64,6 @@ public interface BeaconStateBellatrix extends BeaconStateAltair {
 
   static void describeCustomBellatrixFields(
       final MoreObjects.ToStringHelper stringBuilder, final BeaconStateBellatrix state) {
-    stringBuilder.add("execution_payload_header", state.getLatestExecutionPayloadHeader());
+    stringBuilder.add("latest_execution_payload_header", state.getLatestExecutionPayloadHeader());
   }
 }

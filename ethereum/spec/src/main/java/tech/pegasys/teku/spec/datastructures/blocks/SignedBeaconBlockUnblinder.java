@@ -19,20 +19,14 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
 /**
- * Classes implementing this interface MUST:
+ * Implementations of this interface MUST:
  *
- * <p>- provide via {@link #getSignedBlindedBeaconBlock()} the blinded {@link SignedBeaconBlock} on
- * which we are about to apply the unblinding process
+ * <p>- Provide the blinded {@link SignedBeaconBlock} via {@link #getSignedBlindedBeaconBlock()},
+ * which serves as the input for the unblinding process.
  *
- * <p>- expect {@link #setExecutionPayloadSupplier( Supplier)} to be called, which provides a future
- * retrieving an ExecutionPayload consistent with the ExecutionPayloadHeader included in the Blinded
- * Block
- *
- * <p>- expect the {@link #unblind()} method to be called after {@link #setExecutionPayloadSupplier(
- * Supplier)}.
- *
- * <p>- {@link #unblind()} now has all the information (Blinded Block + ExecutionPayload) to
- * construct the unblinded version of the {@link SignedBeaconBlock}
+ * <p>- Expect {@link #unblind()} to be invoked after either {@link
+ * #setExecutionPayloadSupplier(Supplier)} (in Pre-Fulu mode) or {@link
+ * #setCompletionSupplier(Supplier)} (in Post-Fulu mode).
  */
 public interface SignedBeaconBlockUnblinder {
 
@@ -45,8 +39,17 @@ public interface SignedBeaconBlockUnblinder {
   SignedBeaconBlock getSignedBlindedBeaconBlock();
 
   /**
-   * For pre-Fulu blocks returns full block. After Fulu if block is built via Builder, sends signed
-   * blinded block to the Builder and if no errors occurs returns `Optional.empty()`
+   * Pre-Fulu: Returns the fully unblinded {@link SignedBeaconBlock} by combining the blinded block
+   * with the corresponding {@link ExecutionPayload} provided via {@link
+   * #setExecutionPayloadSupplier(Supplier)}.
+   *
+   * <p>Post-Fulu: If the block was successfully submitted to the Builder via {@link
+   * #setCompletionSupplier(Supplier)}, the Builder is responsible for publishing the block. In this
+   * case, no unblinding is required and the method returns {@code Optional.empty()}.
    */
   SafeFuture<Optional<SignedBeaconBlock>> unblind();
+
+  default boolean isVersionFulu() {
+    return false;
+  }
 }

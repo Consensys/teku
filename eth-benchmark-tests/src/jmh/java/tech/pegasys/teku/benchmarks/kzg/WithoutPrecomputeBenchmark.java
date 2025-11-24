@@ -37,20 +37,19 @@ public class WithoutPrecomputeBenchmark {
 
     @Setup(Level.Invocation)
     public void setup() {
-      config = new SidecarBenchmarkConfig(false);
+      config = new SidecarBenchmarkConfig(false, isRustEnabled);
     }
   }
 
   @Benchmark
   public void verifyDataColumnSidecarKzgProofsBatch(final ExecutionPlan plan) {
     plan.config.miscHelpersFulu.verifyDataColumnSidecarKzgProofsBatch(
-        plan.config.getKzg(plan.isRustEnabled), plan.config.dataColumnSidecars);
+        plan.config.dataColumnSidecars);
   }
 
   @Benchmark
   public void verifyDataColumnSidecarKzgProofs(final ExecutionPlan plan) {
     plan.config.miscHelpersFulu.verifyDataColumnSidecarKzgProofs(
-        plan.config.getKzg(plan.isRustEnabled),
         plan.config.dataColumnSidecars.stream().findAny().orElseThrow());
   }
 }

@@ -22,6 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.spec.Spec;
@@ -33,11 +34,16 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
+  private final P2PConfig p2pConfig;
   private final Supplier<Set<String>> relevantTopics;
 
   public Eth2GossipTopicFilter(
-      final RecentChainData recentChainData, final GossipEncoding gossipEncoding, final Spec spec) {
+      final RecentChainData recentChainData,
+      final GossipEncoding gossipEncoding,
+      final Spec spec,
+      final P2PConfig p2pConfig) {
     this.spec = spec;
+    this.p2pConfig = p2pConfig;
     relevantTopics =
         Suppliers.memoize(() -> computeRelevantTopics(recentChainData, gossipEncoding));
   }
@@ -56,7 +62,7 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
     final Bytes4 forkDigest = recentChainData.getCurrentForkDigest().orElseThrow();
     final SpecMilestone milestone =
         recentChainData.getMilestoneByForkDigest(forkDigest).orElseThrow();
-    final Set<String> topics = getAllTopics(gossipEncoding, forkDigest, spec, milestone);
+    final Set<String> topics = getAllTopics(gossipEncoding, forkDigest, spec, milestone, p2pConfig);
     final UInt64 forkEpoch =
         recentChainData
             .getBpoForkByForkDigest(forkDigest)
@@ -70,7 +76,8 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
                   spec.getForkSchedule().getSpecMilestoneAtEpoch(futureFork.getEpoch());
               final Bytes4 futureForkDigest =
                   recentChainData.getForkDigestByMilestone(futureMilestone).orElseThrow();
-              topics.addAll(getAllTopics(gossipEncoding, futureForkDigest, spec, futureMilestone));
+              topics.addAll(
+                  getAllTopics(gossipEncoding, futureForkDigest, spec, futureMilestone, p2pConfig));
             });
     // BPO
     spec.getBpoForks().stream()
@@ -81,7 +88,8 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
                   spec.getForkSchedule().getSpecMilestoneAtEpoch(futureBpoFork.epoch());
               final Bytes4 futureForkDigest =
                   recentChainData.getForkDigestByBpoFork(futureBpoFork).orElseThrow();
-              topics.addAll(getAllTopics(gossipEncoding, futureForkDigest, spec, futureMilestone));
+              topics.addAll(
+                  getAllTopics(gossipEncoding, futureForkDigest, spec, futureMilestone, p2pConfig));
             });
     return topics;
   }

@@ -117,7 +117,7 @@ public class DataColumnSidecarPruner extends Service {
     pruningActiveLabelledGauge.set(1, pruningMetricsType);
     final long start = System.currentTimeMillis();
     final UInt64 minCustodySlot = calculatePruneSlot();
-    LOG.info("Pruning data column sidecars before slot {}", minCustodySlot);
+    LOG.debug("Pruning data column sidecars before slot {}", minCustodySlot);
     database.pruneAllSidecars(minCustodySlot.minusMinZero(1), pruneLimit);
 
     pruningTimingsLabelledGauge.set(System.currentTimeMillis() - start, pruningMetricsType);

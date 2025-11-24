@@ -17,9 +17,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+import static tech.pegasys.teku.reference.BlsSetting.IGNORED;
+import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -35,30 +40,37 @@ import org.assertj.core.api.Condition;
 import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
+import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.reference.BlsSetting;
 import tech.pegasys.teku.reference.KzgRetriever;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -67,8 +79,6 @@ import tech.pegasys.teku.statetransition.datacolumns.CurrentSlotProvider;
 import tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecoveringCustody;
-import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
-import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetrieverStub;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
@@ -76,6 +86,7 @@ import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidato
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
+import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -99,6 +110,13 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put("fork_choice/should_override_forkchoice_update", new ForkChoiceTestExecutor())
           .put("fork_choice/get_proposer_head", new ForkChoiceTestExecutor("basic_is_parent_root"))
           .put("fork_choice/deposit_with_reorg", new ForkChoiceTestExecutor())
+          // Fork choice generated test types
+          .put("fork_choice_compliance/block_weight_test", new ForkChoiceTestExecutor())
+          .put("fork_choice_compliance/block_tree_test", new ForkChoiceTestExecutor())
+          .put("fork_choice_compliance/attester_slashing_test", new ForkChoiceTestExecutor())
+          .put("fork_choice_compliance/invalid_message_test", new ForkChoiceTestExecutor())
+          .put("fork_choice_compliance/block_cover_test", new ForkChoiceTestExecutor())
+          .put("fork_choice_compliance/shuffling_test", new ForkChoiceTestExecutor())
           .build();
 
   private final List<?> testsToSkip;
@@ -114,9 +132,14 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           "Test " + testDefinition.getDisplayName() + " has been ignored");
     }
 
-    // Note: The fork choice spec says there may be settings in a meta.yaml file but currently no
-    // tests actually have one, so we currently don't bother trying to load it.
-    final Spec spec = testDefinition.getSpec();
+    final AsyncRunnerFactory asyncRunnerFactory =
+        AsyncRunnerFactory.createDefault(
+            new MetricTrackingExecutorFactory(new StubMetricsSystem()));
+
+    // Load `meta.yaml` and read the BLS setting
+    final ForkChoiceMetaData metaData = getMetaData(testDefinition);
+    final boolean blsDisabled = metaData.getBlsSetting() == IGNORED;
+    final Spec spec = testDefinition.getSpec(!blsDisabled);
     final BeaconState anchorState =
         TestDataUtils.loadStateFromSsz(testDefinition, "anchor_state" + SSZ_SNAPPY_EXTENSION);
     final SignedBeaconBlock anchorBlock = loadAnchorBlock(testDefinition);
@@ -136,32 +159,28 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final StubBlobSidecarManager blobSidecarManager = new StubBlobSidecarManager(kzg);
     final CurrentSlotProvider currentSlotProvider =
         CurrentSlotProvider.create(spec, recentChainData.getStore());
-    final DataColumnSidecarDB sidecarDB =
-        DataColumnSidecarDB.create(
-            storageSystem.combinedChainDataClient(), storageSystem.chainStorage());
-    final DataColumnSidecarDbAccessor dbAccessor =
-        DataColumnSidecarDbAccessor.builder(sidecarDB).spec(spec).build();
     final DasSamplerBasic dasSampler =
         new DasSamplerBasic(
             spec,
+            asyncRunnerFactory.create("das", 1),
             currentSlotProvider,
-            dbAccessor,
+            RPCFetchDelayProvider.NO_DELAY,
             DataColumnSidecarRecoveringCustody.NOOP,
             new DataColumnSidecarRetrieverStub(),
             // using a const for the custody group count here, the test doesn't care
             // and fetching from the config would break when not in fulu
-            () -> DasCustodyStand.createCustodyGroupCountManager(4, 8));
+            DasCustodyStand.createCustodyGroupCountManager(4, 8),
+            recentChainData);
     final StubDataColumnSidecarManager dataColumnSidecarManager =
-        new StubDataColumnSidecarManager(spec, recentChainData, kzg, dasSampler);
+        new StubDataColumnSidecarManager(spec, recentChainData, dasSampler);
     // forkChoiceLateBlockReorgEnabled is true here always because this is the reference test
     // executor
+    spec.reinitializeForTesting(blobSidecarManager, dataColumnSidecarManager, kzg);
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,
             eventThread,
             recentChainData,
-            blobSidecarManager,
-            dataColumnSidecarManager,
             new NoopForkChoiceNotifier(),
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
@@ -308,14 +327,20 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final ForkChoice forkChoice,
       final Map<String, Object> step) {
     final String attestationName = get(step, "attestation");
+    final boolean valid = !step.containsKey("valid") || (boolean) step.get("valid");
     final Attestation attestation =
         TestDataUtils.loadSsz(
             testDefinition,
             attestationName + SSZ_SNAPPY_EXTENSION,
             testDefinition.getSpec().getGenesisSchemaDefinitions().getAttestationSchema());
     final Spec spec = testDefinition.getSpec();
-    assertThat(forkChoice.onAttestation(ValidatableAttestation.from(spec, attestation)))
-        .isCompleted();
+    final SafeFuture<AttestationProcessingResult> result =
+        forkChoice.onAttestation(ValidatableAttestation.from(spec, attestation));
+    assertThat(result).isCompleted();
+    AttestationProcessingResult processingResult = safeJoin(result);
+    assertThat(processingResult.isSuccessful())
+        .withFailMessage(processingResult.getInvalidReason())
+        .isEqualTo(valid);
   }
 
   private void applyAttesterSlashing(
@@ -538,6 +563,32 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             assertThat(expectedValidatorIsConnected).isTrue();
           }
 
+          case "viable_for_head_roots_and_weights" -> {
+            final List<Map<String, Object>> viableHeadRootsAndWeightsData = get(checks, checkType);
+            final Map<Bytes32, UInt64> viableHeadRootsAndWeights =
+                viableHeadRootsAndWeightsData.stream()
+                    .collect(
+                        Collectors.toMap(
+                            entry -> Bytes32.fromHexString((String) entry.get("root")),
+                            entry -> UInt64.valueOf(entry.get("weight").toString())));
+            final Map<Bytes32, UInt64> chainHeadRootsAndWeights =
+                recentChainData
+                    .getForkChoiceStrategy()
+                    .map(ReadOnlyForkChoiceStrategy::getChainHeads)
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .collect(Collectors.toMap(ProtoNodeData::getRoot, ProtoNodeData::getWeight));
+
+            assertThat(chainHeadRootsAndWeights.keySet())
+                .containsAll(viableHeadRootsAndWeights.keySet());
+
+            for (Bytes32 root : viableHeadRootsAndWeights.keySet()) {
+              UInt64 weight = viableHeadRootsAndWeights.get(root);
+              UInt64 actualWeight = chainHeadRootsAndWeights.get(root);
+              assertThat(actualWeight).describedAs("block %s's weight", root).isEqualTo(weight);
+            }
+          }
+
           default ->
               throw new UnsupportedOperationException("Unsupported check type: " + checkType);
         }
@@ -588,5 +639,35 @@ public class ForkChoiceTestExecutor implements TestExecutor {
   private static Optional<Bytes32> getOptionallyBytes32(
       final Map<String, Object> yamlData, final String key) {
     return ForkChoiceTestExecutor.<String>getOptionally(yamlData, key).map(Bytes32::fromHexString);
+  }
+
+  private static ForkChoiceMetaData getMetaData(final TestDefinition testDefinition)
+      throws IOException {
+    final ForkChoiceMetaData metaData;
+    final Path metaPath = testDefinition.getTestDirectory().resolve("meta.yaml");
+    if (metaPath.toFile().exists()) {
+      metaData = loadYaml(testDefinition, "meta.yaml", ForkChoiceMetaData.class);
+    } else {
+      metaData = ForkChoiceMetaData.DEFAULT;
+    }
+
+    return metaData;
+  }
+
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  private static class ForkChoiceMetaData {
+    static final ForkChoiceMetaData DEFAULT = new ForkChoiceMetaData(0);
+
+    private ForkChoiceMetaData(
+        @JsonProperty(value = "bls_setting", required = false, defaultValue = "0")
+            final int blsSetting) {
+      this.blsSetting = blsSetting;
+    }
+
+    private final int blsSetting;
+
+    public BlsSetting getBlsSetting() {
+      return BlsSetting.forCode(blsSetting);
+    }
   }
 }

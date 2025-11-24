@@ -15,44 +15,37 @@ package tech.pegasys.teku.spec.logic.common.statetransition.availability;
 
 import static tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult.notRequiredResultFuture;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 
 public interface AvailabilityChecker<Data> {
+  class NOOP<Data> implements AvailabilityChecker<Data> {
+    private NOOP() {}
 
-  AvailabilityChecker<BlobSidecar> NOOP_BLOBSIDECAR =
-      new AvailabilityChecker<>() {
-        @Override
-        public boolean initiateDataAvailabilityCheck() {
-          return true;
-        }
+    @Override
+    public boolean initiateDataAvailabilityCheck() {
+      return true;
+    }
 
-        @Override
-        public SafeFuture<DataAndValidationResult<BlobSidecar>> getAvailabilityCheckResult() {
-          return notRequiredResultFuture();
-        }
-      };
+    @Override
+    public SafeFuture<DataAndValidationResult<Data>> getAvailabilityCheckResult() {
+      return notRequiredResultFuture();
+    }
+  }
 
-  AvailabilityChecker<UInt64> NOOP_DATACOLUMN_SIDECAR =
-      new AvailabilityChecker<>() {
-        @Override
-        public boolean initiateDataAvailabilityCheck() {
-          return true;
-        }
-
-        @Override
-        public SafeFuture<DataAndValidationResult<UInt64>> getAvailabilityCheckResult() {
-          return notRequiredResultFuture();
-        }
-      };
+  AvailabilityChecker<?> NOOP = new NOOP<>();
+  AvailabilityChecker<BlobSidecar> NOOP_BLOB_SIDECAR = new NOOP<>();
+  AvailabilityChecker<UInt64> NOOP_DATACOLUMN_SIDECAR = new NOOP<>();
+  AvailabilityChecker<ExecutionProof> NOOP_EXECUTION_PROOF = new NOOP<>();
 
   /**
-   * Similar to {@link OptimisticExecutionPayloadExecutor#optimisticallyExecute(
-   * ExecutionPayloadHeader, NewPayloadRequest)}
+   * Similar to {@link OptimisticExecutionPayloadExecutor#optimisticallyExecute(Optional,
+   * NewPayloadRequest)}
    *
    * @return true if data availability check is initiated or false to immediately fail the
    *     validation

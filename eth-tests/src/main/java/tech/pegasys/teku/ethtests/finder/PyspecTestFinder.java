@@ -19,12 +19,36 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 
 @SuppressWarnings("MustBeClosedChecker")
 public class PyspecTestFinder implements TestFinder {
 
   public static final String PYSPEC_TEST_DIRECTORY_NAME = "pyspec_tests";
+
+  private final List<String> onlyTestTypesToRun = new ArrayList<>();
+  private final List<String> testTypesToIgnore = new ArrayList<>();
+
+  /** Used when we want to run ALL pyspec tests. */
+  public PyspecTestFinder() {}
+
+  /**
+   * Used when we want to limit the spec test for specific test types. This is particularly useful
+   * when we are implementing a new fork and can't support all test types yet.
+   *
+   * @param onlyTestTypesToRun Only tests matching these types are going to run. The match is a
+   *     partial match (if type starts with the filter value). If empty, all type of tests would be
+   *     run.
+   * @param testTypesToIgnore Tests matching these types will not be run. The match is a partial
+   *     match (if type starts with the filter value). If empty, all type of tests would be run.
+   */
+  public PyspecTestFinder(
+      final List<String> onlyTestTypesToRun, final List<String> testTypesToIgnore) {
+    this.onlyTestTypesToRun.addAll(onlyTestTypesToRun);
+    this.testTypesToIgnore.addAll(testTypesToIgnore);
+  }
 
   @Override
   @MustBeClosed
@@ -38,7 +62,7 @@ public class PyspecTestFinder implements TestFinder {
   }
 
   @MustBeClosed
-  private static Stream<TestDefinition> findPyspecTestCases(
+  private Stream<TestDefinition> findPyspecTestCases(
       final String fork, final String config, final Path testRoot, final Path testCategoryDir)
       throws IOException {
     final String testType = testRoot.relativize(testCategoryDir).toString();
@@ -50,6 +74,15 @@ public class PyspecTestFinder implements TestFinder {
               final String testName = pyspecDir.relativize(testDir).toString();
               return new TestDefinition(
                   fork, config, testType, testName, testRoot.relativize(testDir));
-            });
+            })
+        .filter(
+            testDefinition ->
+                onlyTestTypesToRun.isEmpty()
+                    || onlyTestTypesToRun.stream()
+                        .anyMatch(type -> testDefinition.getTestType().startsWith(type)))
+        .filter(
+            testDefinition ->
+                testTypesToIgnore.stream()
+                    .noneMatch(type -> testDefinition.getTestType().startsWith(type)));
   }
 }

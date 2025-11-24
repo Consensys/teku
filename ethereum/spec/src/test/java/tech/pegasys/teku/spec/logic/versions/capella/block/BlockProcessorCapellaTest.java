@@ -27,7 +27,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -90,9 +90,9 @@ public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
 
     final BeaconState preState = createBeaconStateWithValidatorsAndBalances(validators, balances);
 
-    final ExpectedWithdrawals withdrawals =
-        spec.getBlockProcessor(preState.getSlot()).getExpectedWithdrawals(preState);
-    assertThat(withdrawals.getWithdrawalList()).hasSize(1);
+    final List<Withdrawal> expectedWithdrawals =
+        spec.getExpectedWithdrawals(preState).orElseThrow();
+    assertThat(expectedWithdrawals).hasSize(1);
   }
 
   @Test
@@ -104,10 +104,10 @@ public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
     BeaconState preState =
         createBeaconState(
             true, spec.getGenesisSpecConfig().getMaxEffectiveBalance().plus(1024000), validator);
-    final ExpectedWithdrawals withdrawals =
-        spec.getBlockProcessor(preState.getSlot()).getExpectedWithdrawals(preState);
-    assertThat(withdrawals.getWithdrawalList().get(0).getAmount())
-        .isEqualTo(UInt64.valueOf(1024000));
+    final List<Withdrawal> expectedWithdrawals =
+        spec.getExpectedWithdrawals(preState).orElseThrow();
+    assertThat(expectedWithdrawals).hasSize(1);
+    assertThat(expectedWithdrawals.getFirst().getAmount()).isEqualTo(UInt64.valueOf(1024000));
   }
 
   @Test
@@ -120,9 +120,9 @@ public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
             UInt64.ZERO);
     final UInt64 balance = spec.getGenesisSpecConfig().getMaxEffectiveBalance().plus(1024000);
     BeaconState preState = createBeaconState(true, balance, validator);
-    final ExpectedWithdrawals withdrawals =
-        spec.getBlockProcessor(preState.getSlot()).getExpectedWithdrawals(preState);
-    assertThat(withdrawals.getWithdrawalList().get(0).getAmount()).isEqualTo(balance);
+    final List<Withdrawal> expectedWithdrawals =
+        spec.getExpectedWithdrawals(preState).orElseThrow();
+    assertThat(expectedWithdrawals.getFirst().getAmount()).isEqualTo(balance);
   }
 
   @Test

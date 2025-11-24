@@ -32,7 +32,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsDeneb;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
@@ -152,7 +151,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     executionPayload = dataStructureUtil.randomExecutionPayload();
 
     final int blobsCount = 3;
-    final BlobsBundleDeneb blobsBundle =
+    final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
         prepareBuilderPayload(spec, blobsCount).getOptionalBlobsBundle().orElseThrow();
 
     final BlockAndBlobSidecars blockAndBlobSidecars = createBlockAndBlobSidecars(true, spec);
@@ -192,11 +191,13 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
             voluntaryExitPool,
             blsToExecutionChangePool,
             syncCommitteeContributionPool,
+            payloadAttestationPool,
             depositProvider,
             eth1DataCache,
             graffitiBuilder,
             forkChoiceNotifier,
             executionLayer,
+            executionPayloadBidManager,
             metricsSystem,
             timeProvider));
   }

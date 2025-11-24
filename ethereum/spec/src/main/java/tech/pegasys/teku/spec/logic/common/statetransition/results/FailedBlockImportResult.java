@@ -13,18 +13,15 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.results;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public class FailedBlockImportResult implements BlockImportResult {
+class FailedBlockImportResult implements BlockImportResult {
   private final FailureReason failureReason;
   private final Optional<Throwable> cause;
 
-  @VisibleForTesting
-  public FailedBlockImportResult(
-      final FailureReason failureReason, final Optional<Throwable> cause) {
+  FailedBlockImportResult(final FailureReason failureReason, final Optional<Throwable> cause) {
     this.failureReason = failureReason;
     this.cause = cause;
   }

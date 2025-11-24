@@ -20,14 +20,14 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -44,7 +44,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<UInt64> {
   private final Spec spec;
   private final RecentChainData recentChainData;
-  private final KZG kzg;
   private DataColumnSidecarGossipValidator validator;
   private final Map<UInt64, List<DataColumnSidecar>> dataColumnSidecarBySlot =
       new ConcurrentHashMap<>();
@@ -60,11 +59,9 @@ public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<
   public StubDataColumnSidecarManager(
       final Spec spec,
       final RecentChainData recentChainData,
-      final KZG kzg,
       final DataAvailabilitySampler dataAvailabilitySampler) {
     this.spec = spec;
     this.recentChainData = recentChainData;
-    this.kzg = kzg;
     this.dataAvailabilitySampler = dataAvailabilitySampler;
   }
 
@@ -95,14 +92,14 @@ public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<
           default -> {
             final MiscHelpersFulu helpers =
                 spec.forMilestone(SpecMilestone.FULU).miscHelpers().toVersionFulu().orElseThrow();
+            final MetricsSystem metricsSystem = new StubMetricsSystem();
             validator =
                 DataColumnSidecarGossipValidator.create(
                     spec,
                     new ConcurrentHashMap<>(),
-                    new GossipValidationHelper(spec, recentChainData),
+                    new GossipValidationHelper(spec, recentChainData, metricsSystem),
                     helpers,
-                    kzg,
-                    new StubMetricsSystem(),
+                    metricsSystem,
                     recentChainData.getStore());
             validationResult.complete(validateDataColumnSidecar());
           }

@@ -24,12 +24,15 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -141,8 +144,28 @@ public class OperationSignatureVerifier {
   private Bytes calculateBlsToExecutionChangeSigningRoot(
       final BeaconState state, final BlsToExecutionChange addressChange) {
     final Bytes32 domain =
-        miscHelpers.computeDomain(
-            Domain.DOMAIN_BLS_TO_EXECUTION_CHANGE, state.getGenesisValidatorsRoot());
+        miscHelpers.computeDomain(Domain.BLS_TO_EXECUTION_CHANGE, state.getGenesisValidatorsRoot());
     return miscHelpers.computeSigningRoot(addressChange, domain);
+  }
+
+  public boolean verifyExecutionPayloadBidSignature(
+      final BeaconState state,
+      final SignedExecutionPayloadBid signedBid,
+      final BLSSignatureVerifier signatureVerifier) {
+    final Validator builder =
+        state.getValidators().get(signedBid.getMessage().getBuilderIndex().intValue());
+    final Bytes signingRoot =
+        calculateExecutionPayloadBidSigningRoot(state, signedBid.getMessage());
+    return signatureVerifier.verify(builder.getPublicKey(), signingRoot, signedBid.getSignature());
+  }
+
+  private Bytes calculateExecutionPayloadBidSigningRoot(
+      final BeaconState state, final ExecutionPayloadBid bid) {
+    final Bytes32 domain =
+        beaconStateAccessors.getDomain(
+            state.getForkInfo(),
+            Domain.BEACON_BUILDER,
+            miscHelpers.computeEpochAtSlot(state.getSlot()));
+    return miscHelpers.computeSigningRoot(bid, domain);
   }
 }

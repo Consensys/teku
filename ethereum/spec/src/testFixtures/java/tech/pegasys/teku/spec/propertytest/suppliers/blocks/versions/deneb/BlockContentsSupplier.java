@@ -21,6 +21,6 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class BlockContentsSupplier extends DataStructureUtilSupplier<BlockContainer> {
 
   public BlockContentsSupplier() {
-    super(DataStructureUtil::randomBlockContents, SpecMilestone.DENEB);
+    super(DataStructureUtil::randomBlockContents, SpecMilestone.DENEB, SpecMilestone.FULU);
   }
 }

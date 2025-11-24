@@ -17,168 +17,387 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
-import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
+import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler.SamplingEligibilityStatus;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
-import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
-import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
-import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DasSamplerBasicTest {
+  private static final Spec SPEC = TestSpecFactory.createMinimalFulu();
+  private static final List<UInt64> SAMPLING_INDICES =
+      List.of(UInt64.valueOf(5), UInt64.ZERO, UInt64.valueOf(2));
 
-  static final Spec SPEC = TestSpecFactory.createMinimalFulu();
+  private final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(0);
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner(stubTimeProvider);
+  private final RPCFetchDelayProvider rpcFetchDelayProvider = mock(RPCFetchDelayProvider.class);
 
+  private RecentChainData recentChainData;
   private DataColumnSidecarCustody custody;
   private DataColumnSidecarRetriever retriever;
   private CurrentSlotProvider currentSlotProvider;
-  private DataColumnSidecarDbAccessor db;
-  static final SpecConfigFulu SPEC_CONFIG_FULU =
-      SpecConfigFulu.required(SPEC.forMilestone(SpecMilestone.FULU).getConfig());
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, SPEC);
 
-  private ProposersDataManager proposersDataManager;
-  private CustodyGroupCountChannel custodyGroupCountChannel;
-  private CombinedChainDataClient combinedChainDataClient;
-  private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
+  private DasSamplerBasic sampler;
 
   @BeforeEach
   public void setUp() {
+    final CustodyGroupCountManager custodyGroupCountManager = mock(CustodyGroupCountManager.class);
+    when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(SAMPLING_INDICES);
+    recentChainData = mock(RecentChainData.class);
     custody = mock(DataColumnSidecarCustody.class);
     retriever = mock(DataColumnSidecarRetriever.class);
     currentSlotProvider = mock(CurrentSlotProvider.class);
-    db = mock(DataColumnSidecarDbAccessor.class);
-    proposersDataManager = mock(ProposersDataManager.class);
-    custodyGroupCountChannel = mock(CustodyGroupCountChannel.class);
-    combinedChainDataClient = mock(CombinedChainDataClient.class);
-  }
 
-  @ParameterizedTest
-  @MethodSource("testCheckDataAvailabilityArguments")
-  public void testCheckDataAvailability_custodyRequirementNotValidating(
-      final int configuredCustodyCount,
-      final int validatorCount,
-      final int expectedSampingRequests) {
-    testCheckDataAvailability(configuredCustodyCount, validatorCount, expectedSampingRequests);
-  }
+    when(retriever.retrieve(any()))
+        .thenReturn(SafeFuture.completedFuture(mock(DataColumnSidecar.class)));
 
-  private static Object[][] testCheckDataAvailabilityArguments() {
-    return new Object[][] {
-      // With the default custody requirement and no validators active, we should sample max those
-      // columns that are not in custody
-      {
-        SPEC_CONFIG_FULU.getCustodyRequirement(),
-        0,
-        SPEC_CONFIG_FULU.getSamplesPerSlot() - SPEC_CONFIG_FULU.getCustodyRequirement()
-      },
-      // For supernodes, no extra columns should be sampled
-      {SPEC_CONFIG_FULU.getNumberOfCustodyGroups(), 0, 0},
-      // For validating nodes, no extra columns should be sampled
-      {SPEC_CONFIG_FULU.getCustodyRequirement(), 1, 0},
-      {SPEC_CONFIG_FULU.getCustodyRequirement(), 2, 0},
-      // For non validating nodes, where the user configures to custody one less that sample
-      // requirement, it should retrieve that one column
-      {SPEC_CONFIG_FULU.getSamplesPerSlot() - 1, 0, 1}
-    };
-  }
+    when(currentSlotProvider.getCurrentSlot()).thenReturn(UInt64.ZERO);
+    when(custody.onNewValidatedDataColumnSidecar(any(), any())).thenReturn(SafeFuture.COMPLETE);
 
-  public void testCheckDataAvailability(
-      final int configuredCustodyCount,
-      final int validatorCount,
-      final int expectedSamplingRequests) {
-    final CustodyGroupCountManagerImpl custodyGroupCountManager =
-        new CustodyGroupCountManagerImpl(
-            SPEC,
-            proposersDataManager,
-            custodyGroupCountChannel,
-            combinedChainDataClient,
-            configuredCustodyCount,
-            dataStructureUtil.randomUInt256(),
-            metricsSystem);
-    final DasSamplerBasic sampler =
+    sampler =
         new DasSamplerBasic(
-            SPEC, currentSlotProvider, db, custody, retriever, () -> custodyGroupCountManager);
+            SPEC,
+            asyncRunner,
+            currentSlotProvider,
+            rpcFetchDelayProvider,
+            custody,
+            retriever,
+            custodyGroupCountManager,
+            recentChainData);
+  }
 
-    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+  @Test
+  void onNewValidatedDataColumnSidecar_shouldAddToTracker() {
+    final DataColumnSidecar sidecar =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(), SAMPLING_INDICES.getFirst());
 
-    final Map<UInt64, PreparedProposerInfo> preparedProposerInfoMap =
-        new HashMap<UInt64, PreparedProposerInfo>();
-    final BeaconState beaconState = dataStructureUtil.randomBeaconState(validatorCount);
-    for (int i = 0; i < validatorCount; i++) {
-      preparedProposerInfoMap.put(
-          UInt64.valueOf(i),
-          new PreparedProposerInfo(UInt64.valueOf(1000), dataStructureUtil.randomEth1Address()));
+    final List<UInt64> remainingColumns = SAMPLING_INDICES.subList(1, SAMPLING_INDICES.size());
+
+    sampler.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC);
+
+    assertSamplerTracker(sidecar.getBeaconBlockRoot(), sidecar.getSlot(), remainingColumns);
+  }
+
+  @Test
+  void onNewValidatedDataColumnSidecar_shouldScheduleRPCFetchWhenDelayIsNonZero() {
+    final DataColumnSidecar sidecar =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(), SAMPLING_INDICES.getFirst());
+
+    final List<UInt64> remainingColumns = SAMPLING_INDICES.subList(1, SAMPLING_INDICES.size());
+
+    when(rpcFetchDelayProvider.calculate(sidecar.getSlot())).thenReturn(Duration.ofSeconds(1));
+
+    sampler.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC);
+
+    assertRPCFetchInMillis(
+        sidecar.getSlot(), sidecar.getBeaconBlockRoot(), remainingColumns, 1_000);
+  }
+
+  @Test
+  void onNewValidatedDataColumnSidecar_shouldScheduleRPCFetchWhenDelayIsZero() {
+    final DataColumnSidecar sidecar =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(), SAMPLING_INDICES.getFirst());
+
+    when(rpcFetchDelayProvider.calculate(sidecar.getSlot())).thenReturn(Duration.ZERO);
+
+    sampler.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC);
+
+    assertThat(asyncRunner.countDelayedActions()).isZero();
+  }
+
+  @Test
+  void checkDataAvailability_shouldAddToTrackerAndReturnCompletionFuture() {
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
+
+    when(retriever.retrieve(any())).thenReturn(new SafeFuture<>());
+
+    final SafeFuture<List<UInt64>> completionFuture =
+        sampler.checkDataAvailability(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
+
+    assertSamplerTracker(
+        slotAndBlockRoot.getBlockRoot(), slotAndBlockRoot.getSlot(), SAMPLING_INDICES);
+
+    assertThat(
+            sampler
+                .getRecentlySampledColumnsByRoot()
+                .get(slotAndBlockRoot.getBlockRoot())
+                .completionFuture())
+        .isSameAs(completionFuture);
+  }
+
+  @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
+  void checkDataAvailability_shouldCallRetrieverForMissingColumnsAndCallCustodyOnRetrieval() {
+    final SignedBeaconBlockHeader block = dataStructureUtil.randomSignedBeaconBlockHeader();
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(block.getMessage().getSlot(), block.getMessage().getRoot());
+
+    final Map<UInt64, DataColumnSidecar> missingColumnSidecars =
+        SAMPLING_INDICES.stream()
+            .map(index -> Map.entry(index, dataStructureUtil.randomDataColumnSidecar(block, index)))
+            .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+    final Map<UInt64, SafeFuture<DataColumnSidecar>> futureSidecarsByIndex =
+        missingColumnSidecars.values().stream()
+            .map(DataColumnSidecar::getIndex)
+            .map(index -> Map.entry(index, new SafeFuture<DataColumnSidecar>()))
+            .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+
+    final DataColumnSidecar lateArrivedSidecar =
+        missingColumnSidecars.get(SAMPLING_INDICES.getFirst());
+    final List<UInt64> remainingColumnsIndices =
+        SAMPLING_INDICES.subList(1, SAMPLING_INDICES.size());
+
+    // prepare retriever mock to return futures when called
+    doAnswer(
+            invocation -> {
+              final DataColumnSlotAndIdentifier id = invocation.getArgument(0);
+              return futureSidecarsByIndex.get(id.columnIndex());
+            })
+        .when(retriever)
+        .retrieve(any());
+
+    when(rpcFetchDelayProvider.calculate(slotAndBlockRoot.getSlot()))
+        .thenReturn(Duration.ofSeconds(1));
+
+    // da check is requested
+    sampler.checkDataAvailability(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
+
+    assertRPCFetchInMillis(
+        slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), SAMPLING_INDICES, 1_000);
+
+    // we receive one sidecar late, while retriever is still working
+    sampler.onNewValidatedDataColumnSidecar(lateArrivedSidecar, RemoteOrigin.GOSSIP);
+
+    // let the retriever complete all the futures
+    futureSidecarsByIndex.forEach(
+        (index, future) -> future.complete(missingColumnSidecars.get(index)));
+
+    // verify we never called custody for the late arrived sidecar
+    verify(custody, never()).onNewValidatedDataColumnSidecar(eq(lateArrivedSidecar), any());
+
+    // verify we call custody for all the retrieved sidecars
+    for (final UInt64 missingColumn : remainingColumnsIndices) {
+      verify(custody)
+          .onNewValidatedDataColumnSidecar(
+              missingColumnSidecars.get(missingColumn), RemoteOrigin.RPC);
     }
-    when(combinedChainDataClient.getBestFinalizedState())
-        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
-    when(proposersDataManager.getPreparedProposerInfo()).thenReturn(preparedProposerInfoMap);
-    custodyGroupCountManager.onSlot(UInt64.ZERO); // initialize custody manager
 
-    final List<UInt64> custodyColumnIndices = custodyGroupCountManager.getCustodyColumnIndices();
-    for (UInt64 columnIndex : custodyColumnIndices) {
-      when(custody.hasCustodyDataColumnSidecar(
-              eq(new DataColumnSlotAndIdentifier(UInt64.ZERO, blockRoot, columnIndex))))
-          .thenReturn(SafeFuture.completedFuture(true));
+    verifyNoMoreInteractions(retriever);
+    verifyNoMoreInteractions(custody);
+  }
+
+  @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
+  void checkDataAvailability_shouldRPCFetchImmediatelyIfNotPreviouslyScheduled() {
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
+
+    when(retriever.retrieve(any())).thenReturn(new SafeFuture<>());
+
+    when(rpcFetchDelayProvider.calculate(slotAndBlockRoot.getSlot())).thenReturn(Duration.ZERO);
+
+    sampler.checkDataAvailability(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
+
+    assertRPCFetchInMillis(
+        slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), SAMPLING_INDICES, 0);
+  }
+
+  @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
+  void shouldHandleMultipleTrackersFromMultipleEntrypoints() {
+    final DataColumnSlotAndIdentifier source1 =
+        new DataColumnSlotAndIdentifier(
+            dataStructureUtil.randomSlot(),
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomUInt64());
+    final DataColumnSidecar source2 =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(), dataStructureUtil.randomUInt64());
+    final SlotAndBlockRoot source3 =
+        new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
+
+    sampler.onNewValidatedDataColumnSidecar(source1, RemoteOrigin.CUSTODY);
+    sampler.onNewValidatedDataColumnSidecar(source2, RemoteOrigin.RPC);
+    sampler.checkDataAvailability(source3.getSlot(), source3.getBlockRoot());
+
+    assertThat(sampler.getRecentlySampledColumnsByRoot())
+        .containsKey(source1.blockRoot())
+        .containsKey(source2.getBeaconBlockRoot())
+        .containsKey(source3.getBlockRoot());
+  }
+
+  @Test
+  void flush_shouldForwardToRetriever() {
+    sampler.flush();
+    verify(retriever).flush();
+  }
+
+  @Test
+  void checkSamplingEligibility_shouldReturnRequired() {
+
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ZERO, 1);
+
+    final SamplingEligibilityStatus result =
+        sampler.checkSamplingEligibility(block.getBeaconBlock().orElseThrow());
+
+    assertEquals(SamplingEligibilityStatus.REQUIRED, result);
+  }
+
+  @Test
+  void checkSamplingEligibility_shouldReturnNoBlobs() {
+
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ZERO, 0);
+
+    final SamplingEligibilityStatus result =
+        sampler.checkSamplingEligibility(block.getBeaconBlock().orElseThrow());
+
+    assertEquals(SamplingEligibilityStatus.NOT_REQUIRED_NO_BLOBS, result);
+  }
+
+  @Test
+  void checkSamplingEligibility_shouldReturnOldEpoch() {
+
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ZERO, 0);
+
+    when(currentSlotProvider.getCurrentSlot()).thenReturn(UInt64.MAX_VALUE);
+
+    final SamplingEligibilityStatus result =
+        sampler.checkSamplingEligibility(block.getBeaconBlock().orElseThrow());
+
+    assertEquals(SamplingEligibilityStatus.NOT_REQUIRED_OLD_EPOCH, result);
+  }
+
+  @Test
+  void onSlot_shouldPruneTrackers() {
+    final UInt64 finalizedEpoch = UInt64.valueOf(1);
+    final Bytes32 importedBlockRoot = dataStructureUtil.randomBytes32();
+    final UInt64 lastFinalizedSlot = UInt64.valueOf(8);
+    final UInt64 firstNonFinalizedSlot = UInt64.valueOf(9);
+
+    when(recentChainData.getFinalizedEpoch()).thenReturn(finalizedEpoch);
+    when(recentChainData.containsBlock(any())).thenReturn(false);
+    when(recentChainData.containsBlock(importedBlockRoot)).thenReturn(true);
+
+    final DataColumnSamplingTracker completedTracker = mock(DataColumnSamplingTracker.class);
+    when(completedTracker.completionFuture()).thenReturn(SafeFuture.completedFuture(null));
+
+    final SafeFuture<List<UInt64>> trackerForFinalizedSlotFuture = new SafeFuture<>();
+    final DataColumnSamplingTracker trackerForFinalizedSlot = mock(DataColumnSamplingTracker.class);
+    when(trackerForFinalizedSlot.completionFuture()).thenReturn(trackerForFinalizedSlotFuture);
+    when(trackerForFinalizedSlot.slot()).thenReturn(lastFinalizedSlot);
+
+    final SafeFuture<List<UInt64>> trackerForImportedBlockFuture = new SafeFuture<>();
+    final DataColumnSamplingTracker trackerForImportedBlock = mock(DataColumnSamplingTracker.class);
+    when(trackerForImportedBlock.completionFuture()).thenReturn(trackerForImportedBlockFuture);
+    when(trackerForImportedBlock.slot()).thenReturn(firstNonFinalizedSlot);
+    when(trackerForImportedBlock.blockRoot()).thenReturn(importedBlockRoot);
+
+    final DataColumnSamplingTracker expectedToRemainTracker = mock(DataColumnSamplingTracker.class);
+    when(expectedToRemainTracker.completionFuture()).thenReturn(new SafeFuture<>());
+    when(expectedToRemainTracker.slot()).thenReturn(firstNonFinalizedSlot);
+    when(expectedToRemainTracker.blockRoot()).thenReturn(dataStructureUtil.randomBytes32());
+
+    sampler
+        .getRecentlySampledColumnsByRoot()
+        .put(dataStructureUtil.randomBytes32(), completedTracker);
+    sampler
+        .getRecentlySampledColumnsByRoot()
+        .put(dataStructureUtil.randomBytes32(), trackerForFinalizedSlot);
+    sampler
+        .getRecentlySampledColumnsByRoot()
+        .put(dataStructureUtil.randomBytes32(), trackerForImportedBlock);
+    sampler
+        .getRecentlySampledColumnsByRoot()
+        .put(dataStructureUtil.randomBytes32(), expectedToRemainTracker);
+
+    sampler.onSlot(UInt64.valueOf(20));
+
+    assertThat(sampler.getRecentlySampledColumnsByRoot()).containsValue(expectedToRemainTracker);
+    assertThat(trackerForImportedBlockFuture).isCompletedExceptionally();
+    assertThat(trackerForFinalizedSlotFuture).isCompletedExceptionally();
+  }
+
+  private void assertSamplerTracker(
+      final Bytes32 blockRoot, final UInt64 slot, final List<UInt64> missingColumns) {
+    assertThat(sampler.getRecentlySampledColumnsByRoot())
+        .hasEntrySatisfying(
+            blockRoot,
+            tracker -> {
+              assertThat(tracker.missingColumns())
+                  .containsExactlyInAnyOrderElementsOf(missingColumns);
+
+              assertThat(tracker.getMissingColumnIdentifiers())
+                  .containsExactlyInAnyOrderElementsOf(
+                      missingColumns.stream()
+                          .map(
+                              columnIndex ->
+                                  new DataColumnSlotAndIdentifier(slot, blockRoot, columnIndex))
+                          .toList());
+            });
+  }
+
+  private void assertRPCFetchInMillis(
+      final UInt64 slot,
+      final Bytes32 blockRoot,
+      final List<UInt64> missingColumns,
+      final int millisFromNow) {
+
+    if (millisFromNow > 0) {
+      // advance up to one millis from the due
+      stubTimeProvider.advanceTimeByMillis(millisFromNow - 1);
+      // verify scheduled but not due for execution
+      assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
+      asyncRunner.executeDueActions();
+      assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
+
+      // than advance to the due
+      stubTimeProvider.advanceTimeByMillis(1);
+
+      // due time arrived
+      assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
+      asyncRunner.executeDueActions();
     }
-    final List<UInt64> samplingNonCustodyColumns = new ArrayList<>();
-    for (UInt64 columnIndex : custodyGroupCountManager.getSamplingColumnIndices()) {
-      if (!custodyColumnIndices.contains(columnIndex)) {
-        samplingNonCustodyColumns.add(columnIndex);
-        when(custody.hasCustodyDataColumnSidecar(
-                eq(new DataColumnSlotAndIdentifier(UInt64.ZERO, blockRoot, columnIndex))))
-            .thenReturn(SafeFuture.completedFuture(false));
-      }
+
+    // no delayed actions, we expect fetch already triggered
+    assertThat(asyncRunner.countDelayedActions()).isEqualTo(0);
+
+    // verify we call retrieve for all missing columns
+    for (final UInt64 missingColumn : missingColumns) {
+      verify(retriever).retrieve(new DataColumnSlotAndIdentifier(slot, blockRoot, missingColumn));
     }
-
-    for (UInt64 missingColumn : samplingNonCustodyColumns) {
-      when(retriever.retrieve(
-              new DataColumnSlotAndIdentifier(UInt64.ZERO, blockRoot, missingColumn)))
-          .thenReturn(
-              SafeFuture.completedFuture(
-                  dataStructureUtil.randomDataColumnSidecar(
-                      dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.ZERO),
-                      missingColumn)));
-      when(custody.onNewValidatedDataColumnSidecar(any())).thenReturn(SafeFuture.COMPLETE);
-    }
-
-    final SafeFuture<List<UInt64>> result = sampler.checkDataAvailability(UInt64.ZERO, blockRoot);
-    final List<UInt64> availableColumns = result.join();
-
-    // Add assertions
-    assertThat(availableColumns).containsAll(custodyGroupCountManager.getCustodyColumnIndices());
-    assertThat(availableColumns)
-        .containsExactlyInAnyOrderElementsOf(custodyGroupCountManager.getSamplingColumnIndices());
-
-    // Don't retrieve Datacolumn sidecars that were already in custody.
-    for (UInt64 custodyColumn : custodyColumnIndices) {
-      verify(retriever, never())
-          .retrieve(eq(new DataColumnSlotAndIdentifier(UInt64.ZERO, blockRoot, custodyColumn)));
-    }
-
-    assertEquals(expectedSamplingRequests, samplingNonCustodyColumns.size());
   }
 }

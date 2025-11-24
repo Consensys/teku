@@ -226,6 +226,19 @@ public abstract class BeaconStateAccessors {
             });
   }
 
+  protected void validateStateCanCalculateProposerIndexAtSlot(
+      final BeaconState state, final UInt64 requestedSlot) {
+    final UInt64 epoch = miscHelpers.computeEpochAtSlot(requestedSlot);
+    final UInt64 stateEpoch = getCurrentEpoch(state);
+    checkArgument(
+        epoch.equals(stateEpoch),
+        "get_beacon_proposer_index is only used for requesting a slot in the current epoch. Requested slot %s (in epoch %s), state slot %s (in epoch %s)",
+        requestedSlot,
+        epoch,
+        state.getSlot(),
+        stateEpoch);
+  }
+
   public UInt64 getFinalityDelay(final BeaconState state) {
     return getPreviousEpoch(state).minus(state.getFinalizedCheckpoint().getEpoch());
   }
@@ -236,19 +249,6 @@ public abstract class BeaconStateAccessors {
 
   public boolean isInactivityLeak(final BeaconState state) {
     return isInactivityLeak(getFinalityDelay(state));
-  }
-
-  protected void validateStateCanCalculateProposerIndexAtSlot(
-      final BeaconState state, final UInt64 requestedSlot) {
-    final UInt64 epoch = miscHelpers.computeEpochAtSlot(requestedSlot);
-    final UInt64 stateEpoch = getCurrentEpoch(state);
-    checkArgument(
-        epoch.equals(stateEpoch),
-        "Cannot calculate proposer index for a slot outside the current epoch. Requested slot %s (in epoch %s), state slot %s (in epoch %s)",
-        requestedSlot,
-        epoch,
-        state.getSlot(),
-        stateEpoch);
   }
 
   public Bytes32 getBlockRootAtSlot(final BeaconState state, final UInt64 slot)

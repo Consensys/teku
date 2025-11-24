@@ -76,7 +76,7 @@ public class BlsToExecutionChangeGenerator {
     final Bytes32 domain =
         spec.atEpoch(epoch)
             .miscHelpers()
-            .computeDomain(Domain.DOMAIN_BLS_TO_EXECUTION_CHANGE, genesisValidatorRoot);
+            .computeDomain(Domain.BLS_TO_EXECUTION_CHANGE, genesisValidatorRoot);
     final SpecVersion specVersion = spec.atEpoch(epoch);
     return specVersion.miscHelpers().computeSigningRoot(blsToExecutionChange, domain);
   }

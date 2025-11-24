@@ -30,7 +30,6 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 
 public class P2PConfig {
 
@@ -50,13 +49,18 @@ public class P2PConfig {
   public static final int DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY = 30_000;
   public static final int DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE = 250;
   public static final boolean DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED = false;
-  public static final int DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT = 0;
+  // it's not allowed to set less than requirement which is > 0, so it's safe value
+  public static final int DEFAULT_CUSTODY_GROUP_COUNT_OVERRIDE = 0;
+  public static final int DEFAULT_RECOVERY_TIMEOUT_MS = 180_000;
+  public static final int DEFAULT_DOWNLOAD_TIMEOUT_MS = 40_000;
   // RocksDB is configured with 6 background jobs and threads (DEFAULT_MAX_BACKGROUND_JOBS and
   // DEFAULT_BACKGROUND_THREAD_COUNT)
   // The storage query channel allows up to 10 parallel queries (STORAGE_QUERY_CHANNEL_PARALLELISM)
   // To avoid resource saturation and ensure capacity for other tasks, we limit historical data
-  // queries to 5
-  public static final int DEFAULT_HISTORICAL_DATA_MAX_CONCURRENT_QUERIES = 5;
+  // queries to 3
+  public static final int DEFAULT_HISTORICAL_DATA_MAX_CONCURRENT_QUERIES = 3;
+  public static final int DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE = 500;
+  public static final boolean DEFAULT_EXECUTION_PROOF_GOSSIP_ENABLED = false;
 
   private final Spec spec;
   private final NetworkConfig networkConfig;
@@ -67,8 +71,9 @@ public class P2PConfig {
   private final GossipEncoding gossipEncoding;
   private final int targetSubnetSubscriberCount;
   private final boolean subscribeAllSubnetsEnabled;
-  private final int dasExtraCustodyGroupCount;
+  private final int custodyGroupCountOverride;
   private final int historicalDataMaxConcurrentQueries;
+  private final int historicalDataMaxQueryQueueSize;
   private final int peerBlocksRateLimit;
   private final int peerBlobSidecarsRateLimit;
   private final int peerRequestLimit;
@@ -78,6 +83,10 @@ public class P2PConfig {
   private final boolean batchVerifyStrictThreadLimitEnabled;
   private final boolean isGossipBlobsAfterBlockEnabled;
   private final boolean allTopicsFilterEnabled;
+  private final int reworkedSidecarRecoveryTimeout;
+  private final int reworkedSidecarDownloadTimeout;
+  private final boolean reworkedSidecarRecoveryEnabled;
+  private final boolean executionProofTopicEnabled;
 
   private P2PConfig(
       final Spec spec,
@@ -87,8 +96,9 @@ public class P2PConfig {
       final GossipEncoding gossipEncoding,
       final int targetSubnetSubscriberCount,
       final boolean subscribeAllSubnetsEnabled,
-      final int dasExtraCustodyGroupCount,
+      final int custodyGroupCountOverride,
       final int historicalDataMaxConcurrentQueries,
+      final int historicalDataMaxQueryQueueSize,
       final int peerBlocksRateLimit,
       final int peerBlobSidecarsRateLimit,
       final int peerRequestLimit,
@@ -97,7 +107,11 @@ public class P2PConfig {
       final int batchVerifyMaxBatchSize,
       final boolean batchVerifyStrictThreadLimitEnabled,
       final boolean allTopicsFilterEnabled,
-      final boolean isGossipBlobsAfterBlockEnabled) {
+      final boolean isGossipBlobsAfterBlockEnabled,
+      final boolean reworkedSidecarRecoveryEnabled,
+      final int reworkedSidecarRecoveryTimeout,
+      final int reworkedSidecarDownloadTimeout,
+      final boolean executionProofTopicEnabled) {
     this.spec = spec;
     this.networkConfig = networkConfig;
     this.discoveryConfig = discoveryConfig;
@@ -105,8 +119,9 @@ public class P2PConfig {
     this.gossipEncoding = gossipEncoding;
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
-    this.dasExtraCustodyGroupCount = dasExtraCustodyGroupCount;
+    this.custodyGroupCountOverride = custodyGroupCountOverride;
     this.historicalDataMaxConcurrentQueries = historicalDataMaxConcurrentQueries;
+    this.historicalDataMaxQueryQueueSize = historicalDataMaxQueryQueueSize;
     this.peerBlocksRateLimit = peerBlocksRateLimit;
     this.peerBlobSidecarsRateLimit = peerBlobSidecarsRateLimit;
     this.peerRequestLimit = peerRequestLimit;
@@ -117,6 +132,10 @@ public class P2PConfig {
     this.networkingSpecConfig = spec.getNetworkingConfig();
     this.allTopicsFilterEnabled = allTopicsFilterEnabled;
     this.isGossipBlobsAfterBlockEnabled = isGossipBlobsAfterBlockEnabled;
+    this.reworkedSidecarRecoveryEnabled = reworkedSidecarRecoveryEnabled;
+    this.reworkedSidecarDownloadTimeout = reworkedSidecarDownloadTimeout;
+    this.reworkedSidecarRecoveryTimeout = reworkedSidecarRecoveryTimeout;
+    this.executionProofTopicEnabled = executionProofTopicEnabled;
   }
 
   public static Builder builder() {
@@ -156,12 +175,15 @@ public class P2PConfig {
     final int minCustodyGroupRequirement = specConfig.getCustodyRequirement();
     final int maxGroups = specConfig.getNumberOfCustodyGroups();
     return Integer.min(
-        maxGroups,
-        MathHelpers.intPlusMaxIntCapped(minCustodyGroupRequirement, dasExtraCustodyGroupCount));
+        maxGroups, Integer.max(minCustodyGroupRequirement, custodyGroupCountOverride));
   }
 
   public int getHistoricalDataMaxConcurrentQueries() {
     return historicalDataMaxConcurrentQueries;
+  }
+
+  public int getHistoricalDataMaxQueryQueueSize() {
+    return historicalDataMaxQueryQueueSize;
   }
 
   public int getPeerBlocksRateLimit() {
@@ -200,8 +222,24 @@ public class P2PConfig {
     return allTopicsFilterEnabled;
   }
 
+  public boolean isExecutionProofTopicEnabled() {
+    return executionProofTopicEnabled;
+  }
+
   public boolean isGossipBlobsAfterBlockEnabled() {
     return isGossipBlobsAfterBlockEnabled;
+  }
+
+  public boolean isReworkedSidecarRecoveryEnabled() {
+    return reworkedSidecarRecoveryEnabled;
+  }
+
+  public int getReworkedSidecarRecoveryTimeout() {
+    return reworkedSidecarRecoveryTimeout;
+  }
+
+  public int getReworkedSidecarDownloadTimeout() {
+    return reworkedSidecarDownloadTimeout;
   }
 
   public static class Builder {
@@ -214,8 +252,9 @@ public class P2PConfig {
     private Integer targetSubnetSubscriberCount = DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
     private Boolean subscribeAllSubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
     private Boolean subscribeAllCustodySubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
-    private int dasExtraCustodyGroupCount = DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT;
+    private int custodyGroupCountOverride = DEFAULT_CUSTODY_GROUP_COUNT_OVERRIDE;
     private int historicalDataMaxConcurrentQueries = DEFAULT_HISTORICAL_DATA_MAX_CONCURRENT_QUERIES;
+    private int historicalDataMaxQueryQueueSize = DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE;
     private Integer peerBlocksRateLimit = DEFAULT_PEER_BLOCKS_RATE_LIMIT;
     private Integer peerBlobSidecarsRateLimit = DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT;
     private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
@@ -228,6 +267,10 @@ public class P2PConfig {
     private int floodPublishMaxMessageSizeThreshold =
         DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
     private boolean gossipBlobsAfterBlockEnabled = DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED;
+    private boolean executionProofTopicEnabled = DEFAULT_EXECUTION_PROOF_GOSSIP_ENABLED;
+    private boolean reworkedSidecarRecoveryEnabled = false;
+    private Integer reworkedSidecarRecoveryTimeout = DEFAULT_RECOVERY_TIMEOUT_MS;
+    private Integer reworkedSidecarDownloadTimeout = DEFAULT_DOWNLOAD_TIMEOUT_MS;
 
     private Builder() {}
 
@@ -261,7 +304,7 @@ public class P2PConfig {
           OptionalInt.of(networkConfig.getAdvertisedPortIpv6()));
 
       if (subscribeAllCustodySubnetsEnabled) {
-        dasExtraCustodyGroupCount = Integer.MAX_VALUE;
+        custodyGroupCountOverride = Integer.MAX_VALUE;
       }
 
       return new P2PConfig(
@@ -272,8 +315,9 @@ public class P2PConfig {
           gossipEncoding,
           targetSubnetSubscriberCount,
           subscribeAllSubnetsEnabled,
-          dasExtraCustodyGroupCount,
+          custodyGroupCountOverride,
           historicalDataMaxConcurrentQueries,
+          historicalDataMaxQueryQueueSize,
           peerBlocksRateLimit,
           peerBlobSidecarsRateLimit,
           peerRequestLimit,
@@ -282,7 +326,11 @@ public class P2PConfig {
           batchVerifyMaxBatchSize,
           batchVerifyStrictThreadLimitEnabled,
           allTopicsFilterEnabled,
-          gossipBlobsAfterBlockEnabled);
+          gossipBlobsAfterBlockEnabled,
+          reworkedSidecarRecoveryEnabled,
+          reworkedSidecarRecoveryTimeout,
+          reworkedSidecarDownloadTimeout,
+          executionProofTopicEnabled);
     }
 
     private void validate() {
@@ -327,14 +375,19 @@ public class P2PConfig {
       return this;
     }
 
-    public Builder dasExtraCustodyGroupCount(final int dasExtraCustodyGroupCount) {
-      this.dasExtraCustodyGroupCount = dasExtraCustodyGroupCount;
+    public Builder custodyGroupCountOverride(final int custodyGroupCountOverride) {
+      this.custodyGroupCountOverride = custodyGroupCountOverride;
       return this;
     }
 
     public Builder historicalDataMaxConcurrentQueries(
         final int historicalDataMaxConcurrentQueries) {
       this.historicalDataMaxConcurrentQueries = historicalDataMaxConcurrentQueries;
+      return this;
+    }
+
+    public Builder historicalDataMaxQueryQueueSize(final int historicalDataMaxQueryQueueSize) {
+      this.historicalDataMaxQueryQueueSize = historicalDataMaxQueryQueueSize;
       return this;
     }
 
@@ -428,6 +481,26 @@ public class P2PConfig {
 
     public Builder allTopicsFilterEnabled(final boolean allTopicsFilterEnabled) {
       this.allTopicsFilterEnabled = allTopicsFilterEnabled;
+      return this;
+    }
+
+    public Builder executionProofTopicEnabled(final boolean executionProofTopicEnabled) {
+      this.executionProofTopicEnabled = executionProofTopicEnabled;
+      return this;
+    }
+
+    public Builder reworkedSidecarRecoveryTimeout(final Integer reworkedSidecarRecoveryTimeout) {
+      this.reworkedSidecarRecoveryTimeout = reworkedSidecarRecoveryTimeout;
+      return this;
+    }
+
+    public Builder reworkedSidecarDownloadTimeout(final Integer reworkedSidecarDownloadTimeout) {
+      this.reworkedSidecarDownloadTimeout = reworkedSidecarDownloadTimeout;
+      return this;
+    }
+
+    public Builder reworkedSidecarRecoveryEnabled(final boolean reworkedSidecarRecoveryEnabled) {
+      this.reworkedSidecarRecoveryEnabled = reworkedSidecarRecoveryEnabled;
       return this;
     }
   }

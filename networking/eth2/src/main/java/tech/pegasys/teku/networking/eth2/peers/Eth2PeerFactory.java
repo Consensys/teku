@@ -16,7 +16,6 @@ package tech.pegasys.teku.networking.eth2.peers;
 import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -38,8 +37,8 @@ public class Eth2PeerFactory {
   private final int peerBlocksRateLimit;
   private final int peerBlobSidecarsRateLimit;
   private final int peerRequestLimit;
-  private final KZG kzg;
   private final DiscoveryNodeIdExtractor discoveryNodeIdExtractor;
+  private final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator;
 
   public Eth2PeerFactory(
       final Spec spec,
@@ -52,7 +51,6 @@ public class Eth2PeerFactory {
       final int peerBlocksRateLimit,
       final int peerBlobSidecarsRateLimit,
       final int peerRequestLimit,
-      final KZG kzg,
       final DiscoveryNodeIdExtractor discoveryNodeIdExtractor) {
     this.spec = spec;
     this.metricsSystem = metricsSystem;
@@ -64,8 +62,9 @@ public class Eth2PeerFactory {
     this.peerBlocksRateLimit = peerBlocksRateLimit;
     this.peerBlobSidecarsRateLimit = peerBlobSidecarsRateLimit;
     this.peerRequestLimit = peerRequestLimit;
-    this.kzg = kzg;
     this.discoveryNodeIdExtractor = discoveryNodeIdExtractor;
+    this.dataColumnSidecarSignatureValidator =
+        new DataColumnSidecarSignatureValidator(spec, chainDataClient);
   }
 
   public Eth2Peer create(final Peer peer, final BeaconChainMethods rpcMethods) {
@@ -77,15 +76,17 @@ public class Eth2PeerFactory {
         statusMessageFactory,
         metadataMessagesFactory,
         PeerChainValidator.create(spec, metricsSystem, chainDataClient, requiredCheckpoint),
+        dataColumnSidecarSignatureValidator,
         RateTracker.create(peerBlocksRateLimit, TIME_OUT, timeProvider, "blocks"),
-        RateTracker.create(peerBlobSidecarsRateLimit, TIME_OUT, timeProvider, "blobSidecars"),
+        RateTracker.create(peerBlobSidecarsRateLimit, TIME_OUT, timeProvider, "blob_sidecars"),
         RateTracker.create(
             peerBlocksRateLimit * spec.getNumberOfDataColumns().orElse(1),
             TIME_OUT,
             timeProvider,
-            "dataColumns"),
-        RateTracker.create(peerRequestLimit, TIME_OUT, timeProvider, "requestTracker"),
-        kzg,
+            "data_column_sidecars"),
+        RateTracker.create(
+            peerBlocksRateLimit, TIME_OUT, timeProvider, "execution_payload_envelopes"),
+        RateTracker.create(peerRequestLimit, TIME_OUT, timeProvider, "request_tracker"),
         metricsSystem,
         timeProvider);
   }

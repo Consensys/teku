@@ -18,6 +18,8 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
@@ -80,9 +82,18 @@ public interface BeaconBlockBodyBuilder {
 
   BeaconBlockBodyBuilder executionRequests(ExecutionRequests executionRequests);
 
-  default Boolean supportsCellProofs() {
+  default Boolean supportsSignedExecutionPayloadBid() {
     return false;
   }
+
+  BeaconBlockBodyBuilder signedExecutionPayloadBid(
+      SignedExecutionPayloadBid signedExecutionPayloadBid);
+
+  default Boolean supportsPayloadAttestations() {
+    return false;
+  }
+
+  BeaconBlockBodyBuilder payloadAttestations(SszList<PayloadAttestation> payloadAttestations);
 
   BeaconBlockBody build();
 }

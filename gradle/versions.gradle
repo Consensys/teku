@@ -1,8 +1,10 @@
 dependencyManagement {
   dependencies {
     dependency 'com.fasterxml.jackson.core:jackson-databind:2.19.2'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.19.1'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.19.1'
+    dependencySet(group: 'com.fasterxml.jackson.dataformat', version: '2.19.1') {
+      entry 'jackson-dataformat-yaml'
+      entry 'jackson-dataformat-toml'
+    }
     dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.19.1'
 
     dependencySet(group: 'com.google.errorprone', version: '2.41.0') {
@@ -36,7 +38,7 @@ dependencyManagement {
 
     dependency 'io.libp2p:jvm-libp2p:1.2.2-RELEASE'
     dependency 'tech.pegasys:jblst:0.3.15'
-    dependency 'io.consensys.protocols:jc-kzg-4844:2.1.1'
+    dependency 'io.consensys.protocols:jc-kzg-4844:2.1.5'
     dependency 'io.github.crate-crypto:java-eth-kzg:0.8.0'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.2.2'
@@ -62,7 +64,7 @@ dependencyManagement {
       entry 'oshi-core-java11'
     }
 
-    dependencySet(group: 'io.netty', version: '4.2.4.Final') {
+    dependencySet(group: 'io.netty', version: '4.2.7.Final') {
       entry 'netty-handler'
       entry 'netty-codec-http'
     }
@@ -134,26 +136,26 @@ dependencyManagement {
     dependency 'org.fusesource.leveldbjni:leveldbjni-win32:1.8'
     dependency 'tech.pegasys:leveldb-native:0.3.1'
 
-    dependencySet(group: "org.web3j", version: "4.12.2") {
+    dependencySet(group: "org.web3j", version: "4.14.0") {
       entry 'core'
       entry 'abi'
       entry 'crypto'
       entry 'utils'
     }
 
-    dependency 'org.xerial.snappy:snappy-java:1.1.10.8'
+    dependency 'org.xerial.snappy:snappy-java:1.1.10.7'
 
     dependency 'io.prometheus:prometheus-metrics-bom:1.3.10'
 
-    dependencySet(group: 'org.hyperledger.besu.internal', version: '25.6.0') {
-      entry('metrics-core')
-      entry('core')
-      entry('config')
+    dependencySet(group: 'org.hyperledger.besu.internal', version: '25.11.0') {
+      entry 'besu-metrics-core'
+      entry 'besu-ethereum-core'
+      entry 'besu-config'
     }
-    dependencySet(group: 'org.hyperledger.besu', version: '25.6.0') {
-      entry('besu-datatypes')
-      entry('evm')
-      entry('plugin-api')
+    dependencySet(group: 'org.hyperledger.besu', version: '25.11.0') {
+      entry 'besu-datatypes'
+      entry 'besu-evm'
+      entry 'besu-plugin-api'
     }
 
     dependencySet(group: 'org.testcontainers', version: '1.21.3') {
@@ -161,13 +163,7 @@ dependencyManagement {
       entry "junit-jupiter"
     }
 
-    // discovery includes tuweni libraries under a different name so version resolution doesn't work
-    // exclude them here and leave them to be included on the classpath by the version we use
-    dependency('tech.pegasys.discovery:discovery:25.4.0') {
-      exclude 'io.consensys.tuweni:bytes'
-      exclude 'io.consensys.tuweni:crypto'
-      exclude 'io.consensys.tuweni:units'
-    }
+    dependency 'tech.pegasys.discovery:discovery:25.4.0'
 
     dependencySet(group: 'org.jupnp', version: '3.0.3') {
       entry "org.jupnp"

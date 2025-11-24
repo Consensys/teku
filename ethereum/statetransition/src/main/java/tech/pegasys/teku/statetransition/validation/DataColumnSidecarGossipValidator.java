@@ -21,6 +21,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -37,10 +38,10 @@ import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -108,7 +109,6 @@ public class DataColumnSidecarGossipValidator {
   private final GossipValidationHelper gossipValidationHelper;
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
   private final MiscHelpersFulu miscHelpersFulu;
-  private final KZG kzg;
   private final Counter totalDataColumnSidecarsProcessingRequestsCounter;
   private final Counter totalDataColumnSidecarsProcessingSuccessesCounter;
   private final MetricsHistogram dataColumnSidecarInclusionProofVerificationTimeSeconds;
@@ -119,7 +119,6 @@ public class DataColumnSidecarGossipValidator {
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final GossipValidationHelper validationHelper,
       final MiscHelpersFulu miscHelpersFulu,
-      final KZG kzg,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider) {
 
@@ -135,7 +134,6 @@ public class DataColumnSidecarGossipValidator {
         invalidBlockRoots,
         validationHelper,
         miscHelpersFulu,
-        kzg,
         metricsSystem,
         timeProvider,
         LimitedSet.createSynchronized(validInfoSize),
@@ -153,7 +151,6 @@ public class DataColumnSidecarGossipValidator {
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final GossipValidationHelper gossipValidationHelper,
       final MiscHelpersFulu miscHelpersFulu,
-      final KZG kzg,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider,
       final Set<SlotProposerIndexAndColumnIndex> receivedValidDataColumnSidecarInfoSet,
@@ -163,7 +160,6 @@ public class DataColumnSidecarGossipValidator {
     this.invalidBlockRoots = invalidBlockRoots;
     this.gossipValidationHelper = gossipValidationHelper;
     this.miscHelpersFulu = miscHelpersFulu;
-    this.kzg = kzg;
     this.receivedValidDataColumnSidecarInfoSet = receivedValidDataColumnSidecarInfoSet;
     this.totalDataColumnSidecarsProcessingRequestsCounter =
         metricsSystem.createCounter(
@@ -187,7 +183,7 @@ public class DataColumnSidecarGossipValidator {
 
   public SafeFuture<InternalValidationResult> validate(final DataColumnSidecar dataColumnSidecar) {
     final BeaconBlockHeader blockHeader =
-        dataColumnSidecar.getSignedBeaconBlockHeader().getMessage();
+        DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader().getMessage();
 
     totalDataColumnSidecarsProcessingRequestsCounter.inc();
 
@@ -232,7 +228,7 @@ public class DataColumnSidecarGossipValidator {
     // Optimization: If we have already completely verified DataColumnSidecar with the same
     // SignedBlockHeader, we can skip most steps and jump to shortened validation
     if (validSignedBlockHeaders.contains(
-        dataColumnSidecar.getSignedBeaconBlockHeader().hashTreeRoot())) {
+        DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader().hashTreeRoot())) {
       return validateDataColumnSidecarWithKnownValidHeader(dataColumnSidecar, blockHeader);
     }
 
@@ -294,7 +290,7 @@ public class DataColumnSidecarGossipValidator {
      */
     try (MetricsHistogram.Timer ignored =
         dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-      if (!miscHelpersFulu.verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar)) {
+      if (!miscHelpersFulu.verifyDataColumnSidecarKzgProofs(dataColumnSidecar)) {
         return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
       }
     } catch (final Throwable t) {
@@ -328,7 +324,8 @@ public class DataColumnSidecarGossipValidator {
                * [REJECT] The proposer signature of sidecar.signed_block_header, is valid with respect to the block_header.proposer_index pubkey.
                */
               if (!verifyBlockHeaderSignature(
-                  postState, dataColumnSidecar.getSignedBeaconBlockHeader())) {
+                  postState,
+                  DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader())) {
                 return reject("DataColumnSidecar block header signature is invalid");
               }
 
@@ -337,22 +334,22 @@ public class DataColumnSidecarGossipValidator {
                *
                * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, sidecar.index) with valid header signature, sidecar inclusion proof, and kzg proof.
                */
-              if (!receivedValidDataColumnSidecarInfoSet.add(
-                  new SlotProposerIndexAndColumnIndex(
-                      blockHeader.getSlot(),
-                      blockHeader.getProposerIndex(),
-                      dataColumnSidecar.getIndex()))) {
+              if (!markForEquivocation(blockHeader, dataColumnSidecar)) {
                 return ignore(
                     "DataColumnSidecar is not the first valid for its slot and index. It will be dropped.");
               }
 
               validSignedBlockHeaders.add(
-                  dataColumnSidecar.getSignedBeaconBlockHeader().hashTreeRoot());
+                  DataColumnSidecarFulu.required(dataColumnSidecar)
+                      .getSignedBlockHeader()
+                      .hashTreeRoot());
               validInclusionProofInfoSet.add(
                   new InclusionProofInfo(
-                      dataColumnSidecar.getSszKZGCommitments().hashTreeRoot(),
-                      dataColumnSidecar.getKzgCommitmentsInclusionProof().hashTreeRoot(),
-                      dataColumnSidecar.getBlockBodyRoot()));
+                      dataColumnSidecar.getKzgCommitments().hashTreeRoot(),
+                      DataColumnSidecarFulu.required(dataColumnSidecar)
+                          .getKzgCommitmentsInclusionProof()
+                          .hashTreeRoot(),
+                      DataColumnSidecarFulu.required(dataColumnSidecar).getBlockBodyRoot()));
 
               totalDataColumnSidecarsProcessingSuccessesCounter.inc();
               return ACCEPT;
@@ -384,7 +381,7 @@ public class DataColumnSidecarGossipValidator {
      */
     try (MetricsHistogram.Timer ignored =
         dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-      if (!miscHelpersFulu.verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar)) {
+      if (!miscHelpersFulu.verifyDataColumnSidecarKzgProofs(dataColumnSidecar)) {
         return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
       }
     } catch (final Throwable t) {
@@ -394,9 +391,7 @@ public class DataColumnSidecarGossipValidator {
     /*
      * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, sidecar.index) with valid header signature, sidecar inclusion proof, and kzg proof.
      */
-    if (!receivedValidDataColumnSidecarInfoSet.add(
-        new SlotProposerIndexAndColumnIndex(
-            blockHeader.getSlot(), blockHeader.getProposerIndex(), dataColumnSidecar.getIndex()))) {
+    if (!markForEquivocation(blockHeader, dataColumnSidecar)) {
       return SafeFuture.completedFuture(
           ignore(
               "DataColumnSidecar is not the first valid for its slot and index. It will be dropped."));
@@ -410,9 +405,11 @@ public class DataColumnSidecarGossipValidator {
   private boolean verifyDataColumnSidecarInclusionProof(final DataColumnSidecar dataColumnSidecar) {
     if (validInclusionProofInfoSet.contains(
         new InclusionProofInfo(
-            dataColumnSidecar.getSszKZGCommitments().hashTreeRoot(),
-            dataColumnSidecar.getKzgCommitmentsInclusionProof().hashTreeRoot(),
-            dataColumnSidecar.getBlockBodyRoot()))) {
+            dataColumnSidecar.getKzgCommitments().hashTreeRoot(),
+            DataColumnSidecarFulu.required(dataColumnSidecar)
+                .getKzgCommitmentsInclusionProof()
+                .hashTreeRoot(),
+            DataColumnSidecarFulu.required(dataColumnSidecar).getBlockBodyRoot()))) {
       return true;
     }
     try (MetricsHistogram.Timer ignored =
@@ -438,6 +435,22 @@ public class DataColumnSidecarGossipValidator {
         signedBlockHeader.getMessage().getProposerIndex(),
         signedBlockHeader.getSignature(),
         state);
+  }
+
+  public void markForEquivocation(
+      final BeaconBlockHeader beaconBlockHeader, final List<DataColumnSidecar> sidecars) {
+    LOG.debug(
+        "Added recovered {} data column sidecars from block {} to gossip tracker",
+        sidecars.size(),
+        beaconBlockHeader.getRoot());
+    sidecars.forEach(sidecar -> markForEquivocation(beaconBlockHeader, sidecar));
+  }
+
+  private boolean markForEquivocation(
+      final BeaconBlockHeader beaconBlockHeader, final DataColumnSidecar sidecar) {
+    return receivedValidDataColumnSidecarInfoSet.add(
+        new SlotProposerIndexAndColumnIndex(
+            beaconBlockHeader.getSlot(), beaconBlockHeader.getProposerIndex(), sidecar.getIndex()));
   }
 
   private boolean isFirstValidForSlotProposerIndexAndColumnIndex(

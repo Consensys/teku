@@ -27,8 +27,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
@@ -135,7 +135,7 @@ public class BlobSidecarReconstructionProvider {
         SchemaDefinitionsDeneb.required(
             spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions());
 
-    return IntStream.range(0, dataColumnSidecars.getFirst().getSszKZGCommitments().size())
+    return IntStream.range(0, dataColumnSidecars.getFirst().getKzgCommitments().size())
         .filter(index -> blobIndices.isEmpty() || blobIndices.contains(UInt64.valueOf(index)))
         .mapToObj(
             blobIndex ->
@@ -156,7 +156,7 @@ public class BlobSidecarReconstructionProvider {
       final SchemaDefinitionsDeneb schemaDefinitionsDeneb) {
     final Bytes blobBytes =
         dataColumnSidecars.stream()
-            .map(dataColumnSidecar -> dataColumnSidecar.getDataColumn().get(blobIndex).getBytes())
+            .map(dataColumnSidecar -> dataColumnSidecar.getColumn().get(blobIndex).getBytes())
             .reduce(Bytes::concatenate)
             .orElseThrow();
     return miscHelpersDeneb.constructBlobSidecar(

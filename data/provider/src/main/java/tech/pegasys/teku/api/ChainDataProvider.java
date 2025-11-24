@@ -33,6 +33,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
+import tech.pegasys.teku.api.blobselector.BlobSelectorFactory;
 import tech.pegasys.teku.api.blobselector.BlobSidecarSelectorFactory;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.datacolumnselector.DataColumnSidecarSelectorFactory;
@@ -56,6 +57,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64Vector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -67,6 +69,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.metadata.BlobSidecarsAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.BlobsAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.DataColumnSidecarsAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
@@ -81,6 +84,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingParti
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.storage.client.BlobReconstructionProvider;
 import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -91,6 +95,7 @@ public class ChainDataProvider {
   private final BlockSelectorFactory blockSelectorFactory;
   private final StateSelectorFactory stateSelectorFactory;
   private final BlobSidecarSelectorFactory blobSidecarSelectorFactory;
+  private final BlobSelectorFactory blobSelectorFactory;
   private final DataColumnSidecarSelectorFactory dataColumnSidecarSelectorFactory;
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
@@ -102,7 +107,8 @@ public class ChainDataProvider {
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient,
       final RewardCalculator rewardCalculator,
-      final BlobSidecarReconstructionProvider blobSidecarReconstructionProvider) {
+      final BlobSidecarReconstructionProvider blobSidecarReconstructionProvider,
+      final BlobReconstructionProvider blobReconstructionProvider) {
     this(
         spec,
         recentChainData,
@@ -111,6 +117,7 @@ public class ChainDataProvider {
         new StateSelectorFactory(spec, combinedChainDataClient),
         new BlobSidecarSelectorFactory(
             spec, combinedChainDataClient, blobSidecarReconstructionProvider),
+        new BlobSelectorFactory(spec, combinedChainDataClient, blobReconstructionProvider),
         new DataColumnSidecarSelectorFactory(spec, combinedChainDataClient),
         rewardCalculator);
   }
@@ -123,6 +130,7 @@ public class ChainDataProvider {
       final BlockSelectorFactory blockSelectorFactory,
       final StateSelectorFactory stateSelectorFactory,
       final BlobSidecarSelectorFactory blobSidecarSelectorFactory,
+      final BlobSelectorFactory blobSelectorFactory,
       final DataColumnSidecarSelectorFactory dataColumnSidecarSelectorFactory,
       final RewardCalculator rewardCalculator) {
     this.spec = spec;
@@ -131,6 +139,7 @@ public class ChainDataProvider {
     this.blockSelectorFactory = blockSelectorFactory;
     this.stateSelectorFactory = stateSelectorFactory;
     this.blobSidecarSelectorFactory = blobSidecarSelectorFactory;
+    this.blobSelectorFactory = blobSelectorFactory;
     this.dataColumnSidecarSelectorFactory = dataColumnSidecarSelectorFactory;
     this.rewardCalculator = rewardCalculator;
   }
@@ -199,6 +208,11 @@ public class ChainDataProvider {
     return blobSidecarSelectorFactory
         .createSelectorForBlockId(blockIdParam)
         .getBlobSidecars(indices);
+  }
+
+  public SafeFuture<Optional<BlobsAndMetaData>> getBlobs(
+      final String blockIdParam, final List<Bytes32> versionedHashes) {
+    return blobSelectorFactory.createSelectorForBlockId(blockIdParam).getBlobs(versionedHashes);
   }
 
   public SafeFuture<Optional<List<BlobSidecar>>> getAllBlobSidecarsAtSlot(
@@ -745,10 +759,7 @@ public class ChainDataProvider {
     try {
       // need to get preState
       final BeaconState preState = spec.processSlots(data, proposalSlot);
-      return spec.atSlot(proposalSlot)
-          .getBlockProcessor()
-          .getExpectedWithdrawals(preState)
-          .getWithdrawalList();
+      return spec.getExpectedWithdrawals(preState).orElse(List.of());
     } catch (SlotProcessingException | EpochProcessingException e) {
       LOG.debug("Failed to get expected withdrawals for slot {}", proposalSlot, e);
     }
@@ -801,6 +812,31 @@ public class ChainDataProvider {
         .createSelectorForStateId(stateIdParam)
         .getState()
         .thenApply(this::getPendingPartialWithdrawals);
+  }
+
+  public SafeFuture<Optional<ObjectAndMetaData<SszUInt64Vector>>> getStateProposerLookahead(
+      final String stateIdParam) {
+    return stateSelectorFactory
+        .createSelectorForStateId(stateIdParam)
+        .getState()
+        .thenApply(this::getProposerLookahead);
+  }
+
+  Optional<ObjectAndMetaData<SszUInt64Vector>> getProposerLookahead(
+      final Optional<StateAndMetaData> maybeStateAndMetadata) {
+    checkMinimumMilestone(maybeStateAndMetadata, SpecMilestone.FULU, "proposer lookahead");
+
+    return maybeStateAndMetadata.map(
+        stateAndMetaData -> {
+          final SszUInt64Vector proposerLookahead =
+              stateAndMetaData.getData().toVersionFulu().orElseThrow().getProposerLookahead();
+          return new ObjectAndMetaData<>(
+              proposerLookahead,
+              stateAndMetaData.getMilestone(),
+              stateAndMetaData.isExecutionOptimistic(),
+              stateAndMetaData.isCanonical(),
+              stateAndMetaData.isFinalized());
+        });
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<SszList<PendingConsolidation>>>>

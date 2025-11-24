@@ -48,6 +48,7 @@ public class EpochProcessingExecutor {
       case PENDING_DEPOSITS -> processPendingDeposits(state);
       case PENDING_CONSOLIDATIONS -> processPendingConsolidations(state);
       case PROPOSER_LOOKAHEAD -> epochProcessor.processProposerLookahead(state);
+      case BUILDER_PENDING_PAYMENTS -> epochProcessor.processBuilderPendingPayments(state);
       default ->
           throw new UnsupportedOperationException(
               "Attempted to execute unknown operation type: " + operation);

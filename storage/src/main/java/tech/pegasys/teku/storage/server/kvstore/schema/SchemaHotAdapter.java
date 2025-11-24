@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.kvstore.schema;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -90,6 +91,10 @@ public class SchemaHotAdapter implements Schema {
     return delegate.getVariableLatestCanonicalBlockRoot();
   }
 
+  public KvStoreVariable<UInt64> getVariableCustodyGroupCount() {
+    return delegate.getVariableCustodyGroupCount();
+  }
+
   public KvStoreVariable<BeaconState> getVariableLatestFinalizedState() {
     return delegate.getVariableLatestFinalizedState();
   }
@@ -111,47 +116,34 @@ public class SchemaHotAdapter implements Schema {
   }
 
   public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
-    return Map.of(
-        "HOT_BLOCKS_BY_ROOT",
-        getColumnHotBlocksByRoot(),
-        "CHECKPOINT_STATES",
-        getColumnCheckpointStates(),
-        "VOTES",
-        getColumnVotes(),
-        "DEPOSITS_FROM_BLOCK_EVENTS",
-        getColumnDepositsFromBlockEvents(),
-        "STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT",
-        getColumnStateRootToSlotAndBlockRoot(),
-        "HOT_STATES_BY_ROOT",
-        getColumnHotStatesByRoot(),
-        "HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT",
-        getColumnHotBlockCheckpointEpochsByRoot(),
-        "BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX",
-        getColumnBlobSidecarBySlotRootBlobIndex());
+    return ImmutableMap.<String, KvStoreColumn<?, ?>>builder()
+        .put("HOT_BLOCKS_BY_ROOT", getColumnHotBlocksByRoot())
+        .put("CHECKPOINT_STATES", getColumnCheckpointStates())
+        .put("VOTES", getColumnVotes())
+        .put("DEPOSITS_FROM_BLOCK_EVENTS", getColumnDepositsFromBlockEvents())
+        .put("STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT", getColumnStateRootToSlotAndBlockRoot())
+        .put("HOT_STATES_BY_ROOT", getColumnHotStatesByRoot())
+        .put("HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT", getColumnHotBlockCheckpointEpochsByRoot())
+        .put(
+            "BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX",
+            getColumnBlobSidecarBySlotRootBlobIndex())
+        .build();
   }
 
   public Map<String, KvStoreVariable<?>> getVariableMap() {
-    return Map.of(
-        "GENESIS_TIME",
-        getVariableGenesisTime(),
-        "JUSTIFIED_CHECKPOINT",
-        getVariableJustifiedCheckpoint(),
-        "BEST_JUSTIFIED_CHECKPOINT",
-        getVariableBestJustifiedCheckpoint(),
-        "FINALIZED_CHECKPOINT",
-        getVariableFinalizedCheckpoint(),
-        "LATEST_FINALIZED_STATE",
-        getVariableLatestFinalizedState(),
-        "MIN_GENESIS_TIME_BLOCK",
-        getVariableMinGenesisTimeBlock(),
-        "WEAK_SUBJECTIVITY_CHECKPOINT",
-        getVariableWeakSubjectivityCheckpoint(),
-        "ANCHOR_CHECKPOINT",
-        getVariableAnchorCheckpoint(),
-        "FINALIZED_DEPOSIT_SNAPSHOT",
-        getVariableFinalizedDepositSnapshot(),
-        "LATEST_CANONICAL_BLOCK_ROOT",
-        getVariableLatestCanonicalBlockRoot());
+    return ImmutableMap.<String, KvStoreVariable<?>>builder()
+        .put("GENESIS_TIME", getVariableGenesisTime())
+        .put("JUSTIFIED_CHECKPOINT", getVariableJustifiedCheckpoint())
+        .put("BEST_JUSTIFIED_CHECKPOINT", getVariableBestJustifiedCheckpoint())
+        .put("FINALIZED_CHECKPOINT", getVariableFinalizedCheckpoint())
+        .put("LATEST_FINALIZED_STATE", getVariableLatestFinalizedState())
+        .put("MIN_GENESIS_TIME_BLOCK", getVariableMinGenesisTimeBlock())
+        .put("WEAK_SUBJECTIVITY_CHECKPOINT", getVariableWeakSubjectivityCheckpoint())
+        .put("ANCHOR_CHECKPOINT", getVariableAnchorCheckpoint())
+        .put("FINALIZED_DEPOSIT_SNAPSHOT", getVariableFinalizedDepositSnapshot())
+        .put("LATEST_CANONICAL_BLOCK_ROOT", getVariableLatestCanonicalBlockRoot())
+        .put("CUSTODY_GROUP_COUNT", getVariableCustodyGroupCount())
+        .build();
   }
 
   @Override
@@ -167,6 +159,12 @@ public class SchemaHotAdapter implements Schema {
   @Override
   public Collection<Bytes> getDeletedColumnIds() {
     // No hot db columns have been removed currently
+    return Collections.emptyList();
+  }
+
+  @Override
+  public Collection<Bytes> getDeletedVariableIds() {
+    // No hot db variables have been removed currently
     return Collections.emptyList();
   }
 }

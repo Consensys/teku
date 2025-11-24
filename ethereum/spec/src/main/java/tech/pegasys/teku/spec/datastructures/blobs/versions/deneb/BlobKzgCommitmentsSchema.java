@@ -19,7 +19,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
-import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitmentSchema;
 
@@ -38,11 +37,5 @@ public class BlobKzgCommitmentsSchema
   public SszList<SszKZGCommitment> createFromBlobsBundle(final BlobsBundle blobsBundle) {
     return createFromElements(
         blobsBundle.getCommitments().stream().map(SszKZGCommitment::new).toList());
-  }
-
-  public SszList<SszKZGCommitment> createFromBlobsCellBundle(
-      final BlobsCellBundle blobsCellBundle) {
-    return createFromElements(
-        blobsCellBundle.getCommitments().stream().map(SszKZGCommitment::new).toList());
   }
 }

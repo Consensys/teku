@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -55,7 +56,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   protected Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
   protected Optional<UInt64> earliestBlobSidecarSlot;
   protected Optional<Bytes32> latestCanonicalBlockRoot;
+  protected Optional<UInt64> custodyGroupCount;
+  protected Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads;
+  protected Map<Bytes32, BeaconState> executionPayloadStates;
   protected Optional<Bytes32> proposerBoostRoot = Optional.empty();
+
   protected final TestReadOnlyForkChoiceStrategy forkChoiceStrategy =
       new TestReadOnlyForkChoiceStrategy();
 
@@ -74,7 +79,10 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
       final Map<UInt64, VoteTracker> votes,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot,
-      final Optional<Bytes32> maybeLatestCanonicalBlockRoot) {
+      final Optional<Bytes32> maybeLatestCanonicalBlockRoot,
+      final Optional<UInt64> maybeCustodyGroupCount,
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads,
+      final Map<Bytes32, BeaconState> executionPayloadStates) {
     this.spec = spec;
     this.timeMillis = secondsToMillis(time);
     this.genesisTime = genesisTime;
@@ -90,6 +98,9 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     this.blobSidecars = blobSidecars;
     this.earliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
     this.latestCanonicalBlockRoot = maybeLatestCanonicalBlockRoot;
+    this.custodyGroupCount = maybeCustodyGroupCount;
+    this.executionPayloads = executionPayloads;
+    this.executionPayloadStates = executionPayloadStates;
   }
 
   // Readonly methods
@@ -116,6 +127,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   @Override
   public Checkpoint getFinalizedCheckpoint() {
     return finalizedCheckpoint;
+  }
+
+  @Override
+  public Optional<UInt64> getCustodyGroupCount() {
+    return custodyGroupCount;
   }
 
   @Override
@@ -297,6 +313,14 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
+  public void putExecutionPayloadAndState(
+      final SignedExecutionPayloadEnvelope executionPayload, final BeaconState state) {
+    final Bytes32 beaconBlockRoot = executionPayload.getBeaconBlockRoot();
+    executionPayloads.put(beaconBlockRoot, executionPayload);
+    executionPayloadStates.put(beaconBlockRoot, state);
+  }
+
+  @Override
   public void putStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot) {
     // NO-OP
   }
@@ -344,6 +368,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   @Override
   public void setLatestCanonicalBlockRoot(final Bytes32 latestCanonicalBlockRoot) {
     this.latestCanonicalBlockRoot = Optional.of(latestCanonicalBlockRoot);
+  }
+
+  @Override
+  public void setCustodyGroupCount(final UInt64 custodyGroupCount) {
+    this.custodyGroupCount = Optional.of(custodyGroupCount);
   }
 
   @Override

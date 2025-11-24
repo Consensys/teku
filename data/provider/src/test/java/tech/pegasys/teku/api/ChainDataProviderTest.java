@@ -83,6 +83,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
@@ -110,7 +111,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     final List<ProtoNodeData> chainHeads = provider.getChainHeads();
     assertThat(chainHeads)
         .containsExactly(
@@ -134,7 +136,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             null,
             mockCombinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(false);
     assertThatThrownBy(provider::getGenesisTime).isInstanceOf(ChainDataUnavailableException.class);
   }
@@ -148,7 +151,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
 
     final UInt64 result = provider.getGenesisTime();
     assertEquals(genesis, result);
@@ -162,7 +166,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             null,
             mockCombinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(false);
     assertThatThrownBy(provider::getGenesisData).isInstanceOf(ChainDataUnavailableException.class);
   }
@@ -179,7 +184,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
 
     final GenesisData result = provider.getGenesisData();
     assertThat(result)
@@ -195,7 +201,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     final SignedBeaconBlock block =
         storageSystem.getChainHead().getSignedBeaconBlock().orElseThrow();
     BlockAndMetaData result = provider.getBlockAndMetaData("head").get().orElseThrow();
@@ -212,7 +219,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     final SignedBeaconBlock block =
         storageSystem.getChainHead().getSignedBeaconBlock().orElseThrow();
     BlockHeadersResponse results =
@@ -228,7 +236,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     final UInt64 slot = combinedChainDataClient.getCurrentSlot();
     BlockHeadersResponse results =
         safeJoin(provider.getBlockHeaders(Optional.empty(), Optional.of(slot)));
@@ -243,7 +252,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
 
     final UInt64 headSlot = recentChainData.getHeadSlot();
     storageSystem.chainUpdater().advanceChain(headSlot.plus(1));
@@ -264,7 +274,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     List<Integer> indices =
         provider.getFilteredValidatorList(internalState, List.of("1", "33"), emptySet()).stream()
             .map(v -> v.getIndex().intValue())
@@ -281,7 +292,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     final Bytes48 key = internalState.getValidators().get(12).getPubkeyBytes();
     final String missingKey = data.randomPublicKey().toString();
     List<Bytes48> pubkeys =
@@ -303,7 +315,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
 
     assertThat(
             provider.getFilteredValidatorList(
@@ -324,7 +337,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     assertThat(
             provider
                 .getStateCommittees(
@@ -345,7 +359,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
 
     assertThat(
             provider
@@ -364,7 +379,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
 
     assertThat(
             provider
@@ -610,7 +626,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     final BeaconState internalState = data.randomBeaconState();
 
     BeaconBlockHeader expectedBlockHeader = BeaconBlockHeader.fromState(internalState);
@@ -631,7 +648,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     final BeaconState internalState = data.randomBeaconState(1024);
     assertThat(provider.getValidatorBalancesFromState(internalState, emptyList())).hasSize(1024);
 
@@ -649,7 +667,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     final BeaconState internalState = data.randomBeaconState(8);
     final Validator validator = internalState.getValidators().get(0);
     final StateValidatorIdentity identity =
@@ -673,7 +692,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     final Optional<ObjectAndMetaData<Bytes32>> response = provider.getBlockRoot("head").get();
     assertThat(response).isPresent();
     assertThat(response.get().getData()).isEqualTo(bestBlock.getRoot());
@@ -687,7 +707,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     ChainBuilder chainBuilder = storageSystem.chainBuilder();
 
     ChainBuilder.BlockOptions blockOptions = ChainBuilder.BlockOptions.create();
@@ -730,7 +751,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData1,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     when(recentChainData1.getCurrentEpoch()).thenReturn(Optional.empty());
     assertThatThrownBy(() -> provider.getValidatorInclusionAtEpoch(data.randomEpoch()))
         .isInstanceOf(ServiceUnavailableException.class);
@@ -744,7 +766,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     assertThatThrownBy(() -> provider.getValidatorInclusionAtEpoch(UInt64.valueOf(3)))
         .isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> provider.getValidatorInclusionAtEpoch(UInt64.valueOf(4)))
@@ -761,7 +784,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     final Optional<StateAndMetaData> maybeState =
         Optional.of(
             new StateAndMetaData(
@@ -780,7 +804,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     final Optional<StateAndMetaData> maybeState =
         Optional.of(
             new StateAndMetaData(
@@ -797,7 +822,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     assertDoesNotThrow(
         () -> provider.checkMinimumMilestone(Optional.empty(), SpecMilestone.ELECTRA, "badbeef"));
   }
@@ -811,7 +837,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             mockCombinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     // expect to see the last slot of epoch requested, so 3 * 8 - 1 (23)
     when(mockCombinedChainDataClient.getChainHead())
         .thenReturn(combinedChainDataClient.getChainHead());
@@ -830,7 +857,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     Optional<Bytes32> finalizedBlockRoot = provider.getFinalizedBlockRoot(UInt64.valueOf(24)).get();
     assertThat(finalizedBlockRoot).isPresent();
   }
@@ -844,7 +872,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     Optional<Bytes32> finalizedBlockRoot = provider.getFinalizedBlockRoot(UInt64.valueOf(1)).get();
     assertThat(finalizedBlockRoot).isEmpty();
   }
@@ -1049,6 +1078,43 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
   }
 
   @Test
+  void getProposerLookahead_withEmptyInput() {
+    final Spec capella = TestSpecFactory.createMinimalCapella();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(capella);
+    final ChainDataProvider chainDataProvider = setupBySpec(capella, dataStructureUtil, 16);
+    assertThat(chainDataProvider.getProposerLookahead(Optional.empty())).isEmpty();
+  }
+
+  @Test
+  void getProposerLookahead_respondsSuccessfully() {
+    final Spec capella = TestSpecFactory.createMinimalFulu();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(capella);
+    final BeaconStateFulu fuluState =
+        BeaconStateFulu.required(dataStructureUtil.randomBeaconState());
+    final ChainDataProvider chainDataProvider = setupBySpec(capella, dataStructureUtil, 16);
+    final StateAndMetaData stateAndMetaData =
+        new StateAndMetaData(fuluState, SpecMilestone.FULU, true, true, true);
+    final var expectedResult =
+        new ObjectAndMetaData<>(
+            fuluState.getProposerLookahead(), SpecMilestone.FULU, true, true, true);
+    assertThat(chainDataProvider.getProposerLookahead(Optional.of(stateAndMetaData)))
+        .isEqualTo(Optional.of(expectedResult));
+  }
+
+  @Test
+  void getProposerLookahead_failsBeforeFulu() {
+    final Spec capella = TestSpecFactory.createMinimalCapella();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(capella);
+    final ChainDataProvider chainDataProvider = setupBySpec(capella, dataStructureUtil, 16);
+    final StateAndMetaData stateAndMetaData =
+        new StateAndMetaData(
+            dataStructureUtil.randomBeaconState(), SpecMilestone.CAPELLA, true, true, true);
+    assertThatThrownBy(() -> chainDataProvider.getProposerLookahead(Optional.of(stateAndMetaData)))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("does not contain proposer lookahead");
+  }
+
+  @Test
   void getExpectedWithdrawalsGeneratesList() {
     final Spec capella = TestSpecFactory.createMinimalCapella();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(capella);
@@ -1116,7 +1182,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     assertThat(provider.getRandaoAtEpochFromState(state, Optional.of(epoch)))
         .isEqualTo(maybeRandao);
   }

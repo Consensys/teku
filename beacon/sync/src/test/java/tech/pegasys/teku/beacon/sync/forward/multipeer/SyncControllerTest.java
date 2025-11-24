@@ -22,6 +22,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.beacon.sync.forward.multipeer.SyncController.SYNC_AWAKE_INTERVAL;
 import static tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChainTestUtil.chainWith;
 import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 
@@ -34,7 +35,9 @@ import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync.SyncSubscriber;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -48,12 +51,14 @@ class SyncControllerTest {
   private final SyncTargetSelector syncTargetSelector = mock(SyncTargetSelector.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final Executor subscriberExecutor = mock(Executor.class);
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
 
   private final TargetChain targetChain = chainWith(dataStructureUtil.randomSlotAndBlockRoot());
 
   private final SyncController syncController =
       new SyncController(
-          eventThread, subscriberExecutor, recentChainData, syncTargetSelector, sync);
+          eventThread, asyncRunner, subscriberExecutor, recentChainData, syncTargetSelector, sync);
   private static final UInt64 HEAD_SLOT = UInt64.valueOf(2338);
 
   @BeforeEach
@@ -240,6 +245,42 @@ class SyncControllerTest {
     syncResult.complete(SyncResult.COMPLETE);
 
     verify(subscriberExecutor, never()).execute(any());
+  }
+
+  @Test
+  void shouldRestartSyncEverySyncAwakePeriod() {
+    final SafeFuture<SyncResult> syncResult = startFinalizedSync();
+    assertThat(syncController.isSyncActive()).isTrue();
+    syncResult.complete(SyncResult.COMPLETE);
+    assertNotSyncing();
+
+    final SyncSubscriber subscriber = mock(SyncSubscriber.class);
+    syncController.subscribeToSyncChanges(subscriber);
+
+    final SafeFuture<SyncResult> syncResultNew = new SafeFuture<>();
+    when(syncTargetSelector.selectSyncTarget(any()))
+        .thenReturn(Optional.of(SyncTarget.finalizedTarget(targetChain)));
+    when(sync.syncToChain(targetChain)).thenReturn(syncResultNew);
+    timeProvider.advanceTimeBySeconds(SYNC_AWAKE_INTERVAL.toSeconds());
+    asyncRunner.executeDueActions();
+    assertThat(syncController.isSyncActive()).isTrue();
+    assertSyncSubscriberNotified(subscriber, true);
+  }
+
+  @Test
+  void shouldNotRestartSyncWithoutNewTargets() {
+    final SafeFuture<SyncResult> syncResult = startFinalizedSync();
+    assertThat(syncController.isSyncActive()).isTrue();
+    syncResult.complete(SyncResult.COMPLETE);
+    assertNotSyncing();
+
+    when(syncTargetSelector.selectSyncTarget(any())).thenReturn(Optional.empty());
+    final SyncSubscriber subscriber = mock(SyncSubscriber.class);
+    syncController.subscribeToSyncChanges(subscriber);
+    timeProvider.advanceTimeBySeconds(SYNC_AWAKE_INTERVAL.toSeconds());
+    asyncRunner.executeDueActions();
+    assertNotSyncing();
+    assertSyncSubscriberNotified(subscriber, false);
   }
 
   private void assertSyncSubscriberNotified(

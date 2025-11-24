@@ -24,10 +24,11 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class DataColumnSidecarByRootCustodyImpl
@@ -70,10 +71,10 @@ public class DataColumnSidecarByRootCustodyImpl
 
   @Override
   public SafeFuture<Void> onNewValidatedDataColumnSidecar(
-      final DataColumnSidecar dataColumnSidecar) {
+      final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {
     cache.pruneCaches(dataColumnSidecar.getSlot().minusMinZero(maxCacheSizeInSlots));
     cache.addColumnSlotIdFromSidecar(dataColumnSidecar);
-    return custody.onNewValidatedDataColumnSidecar(dataColumnSidecar);
+    return custody.onNewValidatedDataColumnSidecar(dataColumnSidecar, remoteOrigin);
   }
 
   @Override
@@ -126,7 +127,7 @@ public class DataColumnSidecarByRootCustodyImpl
     }
 
     public void addColumnSlotIdFromSidecar(final DataColumnSidecar sidecar) {
-      addBlockRootToSlot(sidecar.getBlockRoot(), sidecar.getSlot());
+      addBlockRootToSlot(sidecar.getBeaconBlockRoot(), sidecar.getSlot());
     }
 
     public synchronized void addBlockRootToSlot(final Bytes32 blockRoot, final UInt64 slot) {

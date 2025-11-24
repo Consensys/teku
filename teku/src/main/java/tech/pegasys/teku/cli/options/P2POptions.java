@@ -14,6 +14,8 @@
 package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS;
+import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_DOWNLOAD_TIMEOUT_MS;
+import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_RECOVERY_TIMEOUT_MS;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND;
@@ -29,9 +31,9 @@ import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.cli.converter.OptionalIntConverter;
-import tech.pegasys.teku.cli.util.MultilineEntriesReader;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.io.MultilineEntriesReader;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
@@ -327,6 +329,34 @@ public class P2POptions {
       SyncConfig.DEFAULT_FORWARD_SYNC_MAX_BLOB_SIDECARS_PER_MINUTE;
 
   @Option(
+      names = {"--Xp2p-reworked-sidecar-recovery-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "",
+      arity = "0..1",
+      hidden = true,
+      fallbackValue = "true")
+  private boolean reworkedSidecarRecoveryEnabled = false;
+
+  @Option(
+      names = {"--Xp2p-reworked-sidecar-cancel-timeout-ms"},
+      paramLabel = "<NUMBER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "",
+      arity = "1",
+      hidden = true)
+  private Integer sidecarCancelTimeoutMs = DEFAULT_RECOVERY_TIMEOUT_MS;
+
+  @Option(
+      names = {"--Xp2p-reworked-sidecar-download-timeout-ms"},
+      paramLabel = "<NUMBER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "",
+      arity = "1",
+      hidden = true)
+  private Integer sidecarDownloadTimeoutMs = DEFAULT_DOWNLOAD_TIMEOUT_MS;
+
+  @Option(
       names = {"--p2p-subscribe-all-subnets-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -394,6 +424,16 @@ public class P2POptions {
       hidden = true,
       fallbackValue = "true")
   private boolean allTopicsFilterEnabled = P2PConfig.DEFAULT_PEER_ALL_TOPIC_FILTER_ENABLED;
+
+  @Option(
+      names = {"--Xexecution-proof-topics-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Enable all execution proof topics",
+      arity = "0..1",
+      hidden = true,
+      fallbackValue = "true")
+  private boolean executionProofTopicEnabled = P2PConfig.DEFAULT_EXECUTION_PROOF_GOSSIP_ENABLED;
 
   @Option(
       names = {"--Xpeer-request-limit"},
@@ -476,12 +516,15 @@ public class P2POptions {
       GossipConfig.DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
 
   @Option(
-      names = {"--Xdas-extra-custody-group-count"},
+      names = {"--Xcustody-group-count-override"},
       paramLabel = "<NUMBER>",
-      description = "Number of extra custody groups",
+      description =
+          "Override the number of custody groups. If it's lower than node configuration requirement, "
+              + "the value is ignored. If it's higher than maximum number of custody groups, the value is set to "
+              + "allowed maximum.",
       arity = "1",
       hidden = true)
-  private int dasExtraCustodyGroupCount = P2PConfig.DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT;
+  private int custodyGroupCountOverride = P2PConfig.DEFAULT_CUSTODY_GROUP_COUNT_OVERRIDE;
 
   @Option(
       names = {"--Xp2p-historical-data-max-concurrent-queries"},
@@ -494,6 +537,16 @@ public class P2POptions {
       arity = "1")
   private int historicalDataMaxConcurrentQueries =
       P2PConfig.DEFAULT_HISTORICAL_DATA_MAX_CONCURRENT_QUERIES;
+
+  @Option(
+      names = {"--Xp2p-historical-data-max-query-queue-size"},
+      hidden = true,
+      paramLabel = "<NUMBER>",
+      description =
+          "Limits the number of queries being queued when handling RPC requests. It has no effect if max-concurrent-queries is set to 0.",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "1")
+  private int historicalDataMaxQueryQueueSize = P2PConfig.DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE;
 
   private OptionalInt getP2pLowerBound() {
     if (p2pUpperBound.isPresent() && p2pLowerBound.isPresent()) {
@@ -580,8 +633,13 @@ public class P2POptions {
                   .peerRequestLimit(peerRequestLimit)
                   .floodPublishMaxMessageSizeThreshold(floodPublishMaxMessageSizeThreshold)
                   .gossipBlobsAfterBlockEnabled(gossipBlobsAfterBlockEnabled)
-                  .dasExtraCustodyGroupCount(dasExtraCustodyGroupCount)
-                  .historicalDataMaxConcurrentQueries(historicalDataMaxConcurrentQueries);
+                  .custodyGroupCountOverride(custodyGroupCountOverride)
+                  .historicalDataMaxConcurrentQueries(historicalDataMaxConcurrentQueries)
+                  .historicalDataMaxQueryQueueSize(historicalDataMaxQueryQueueSize)
+                  .executionProofTopicEnabled(executionProofTopicEnabled)
+                  .reworkedSidecarRecoveryTimeout(sidecarCancelTimeoutMs)
+                  .reworkedSidecarDownloadTimeout(sidecarDownloadTimeoutMs)
+                  .reworkedSidecarRecoveryEnabled(reworkedSidecarRecoveryEnabled);
               batchVerifyQueueCapacity.ifPresent(b::batchVerifyQueueCapacity);
             })
         .discovery(

@@ -53,6 +53,10 @@ public class VersionedHash {
     return value;
   }
 
+  public Bytes32 get() {
+    return Bytes32.wrap(Bytes.concatenate(version, value));
+  }
+
   public String toHexString() {
     return Bytes.wrap(version, value).toHexString();
   }

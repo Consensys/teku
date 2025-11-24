@@ -16,7 +16,7 @@ package tech.pegasys.teku.services.beaconchain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static tech.pegasys.teku.networks.EphemeryNetwork.MAX_EPHEMERY_SLOT;
+import static tech.pegasys.teku.services.beaconchain.EphemerySlotValidationService.MAX_EPHEMERY_SLOT;
 
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;

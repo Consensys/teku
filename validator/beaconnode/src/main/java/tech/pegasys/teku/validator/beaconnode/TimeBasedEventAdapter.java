@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
+// TODO-GLOAS: https://github.com/Consensys/teku/issues/10053
 public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -73,7 +74,8 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
         nextSlotStartTimeMillis.plus(spec.getAggregateDueMillis(nextSlot)),
         millisPerSlot,
         this::onAggregationDue);
-    if (spec.atSlot(nextSlot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
+    final SpecMilestone milestone = spec.atSlot(nextSlot).getMilestone();
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
       taskScheduler.scheduleRepeatingEventInMillis(
           nextSlotStartTimeMillis.plus(spec.getSyncMessageDueMillis(nextSlot)),
           millisPerSlot,
@@ -82,6 +84,12 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
           nextSlotStartTimeMillis.plus(spec.getContributionDueMillis(nextSlot)),
           millisPerSlot,
           this::onContributionCreationDue);
+    }
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      taskScheduler.scheduleRepeatingEventInMillis(
+          nextSlotStartTimeMillis.plus(spec.getPayloadAttestationDueMillis(nextSlot)),
+          millisPerSlot,
+          this::onPayloadAttestationCreationDue);
     }
   }
 
@@ -132,6 +140,18 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
       return;
     }
     validatorTimingChannel.onContributionCreationDue(slot);
+  }
+
+  private void onPayloadAttestationCreationDue(
+      final UInt64 scheduledTimeInMillis, final UInt64 actualTimeInMillis) {
+    final UInt64 slot = spec.getCurrentSlotFromTimeMillis(scheduledTimeInMillis, genesisTimeMillis);
+    if (isTooLate(scheduledTimeInMillis, actualTimeInMillis)) {
+      LOG.warn(
+          "Skipping payload attestation for slot {} due to unexpected delay in slot processing",
+          slot);
+      return;
+    }
+    validatorTimingChannel.onPayloadAttestationCreationDue(slot);
   }
 
   private void onAggregationDue(

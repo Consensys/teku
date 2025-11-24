@@ -15,9 +15,12 @@ package tech.pegasys.teku.reference.common.operations;
 
 import java.util.List;
 import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
@@ -30,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.ExecutionPayloadProcessingException;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 
 public interface OperationProcessor {
@@ -60,6 +64,13 @@ public interface OperationProcessor {
       Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException;
 
+  // >= Gloas
+  void processExecutionPayload(
+      MutableBeaconState state,
+      SignedExecutionPayloadEnvelope signedEnvelope,
+      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      throws ExecutionPayloadProcessingException;
+
   void processBlsToExecutionChange(
       MutableBeaconState state, SignedBlsToExecutionChange blsToExecutionChange)
       throws BlockProcessingException;
@@ -67,13 +78,17 @@ public interface OperationProcessor {
   void processWithdrawals(MutableBeaconState state, ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException;
 
-  void processDepositRequest(MutableBeaconState state, List<DepositRequest> depositRequest)
-      throws BlockProcessingException;
+  void processDepositRequest(MutableBeaconState state, List<DepositRequest> depositRequest);
 
-  void processWithdrawalRequest(MutableBeaconState state, List<WithdrawalRequest> withdrawalRequest)
-      throws BlockProcessingException;
+  void processWithdrawalRequest(
+      MutableBeaconState state, List<WithdrawalRequest> withdrawalRequest);
 
   void processConsolidationRequests(
-      MutableBeaconState state, List<ConsolidationRequest> consolidationRequest)
+      MutableBeaconState state, List<ConsolidationRequest> consolidationRequest);
+
+  void processExecutionPayloadBid(MutableBeaconState state, BeaconBlock beaconBlock)
+      throws BlockProcessingException;
+
+  void processPayloadAttestation(MutableBeaconState state, PayloadAttestation payloadAttestation)
       throws BlockProcessingException;
 }

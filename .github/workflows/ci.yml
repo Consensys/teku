@@ -1,0 +1,508 @@
+
+name: ci
+
+# Circle
+# https://app.circleci.com/pipelines/github/Consensys/teku/38576/workflows/4aac2ddd-0cbd-4d9c-9285-e49f911411d0
+# https://circleci.com/pricing/price-list/
+# medium   2    4
+# medium+  3    6
+# large    4    8
+# xlarge   8    16
+# 2xlarge  16   32
+# 2xlarge+ 20   40
+
+
+## RUNNERS
+# https://docs.github.com/en/actions/reference/runners/github-hosted-runners
+# ubuntu-24.04 = 4cpu, 16GB
+# ubuntu-latest-128= 32, 128GB
+# windows-2025 = 4 cpu, 16GB
+# ubuntu-24.04-arm = 4cpu, 16GB
+# macos-13 = 4cpu, 14GB
+# macos-15 = 3cpu(M1), 7GB
+# gha-runner-scale-set-ubuntu-22.04-amd64-med   = 4 , 16G 
+# gha-runner-scale-set-ubuntu-22.04-amd64-large = 8 , 32G 
+# gha-runner-scale-set-ubuntu-22.04-amd64-xl = 16 , 64G 
+# gha-runner-scale-set-ubuntu-22.04-amd64-xxl = 32 , 128G 
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - '*'
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+    inputs:
+      include_hash_in_docker:
+        description: 'include_hash_in_docker'
+        required: false
+        default: 'false'  # string "false"
+
+# if a new commit is made, cancel this run
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_TOOL_OPTIONS: -Xmx4096m
+  GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=4 -Xmx4096m
+
+jobs:
+
+  spotless:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+      - name: Spotless
+        run: |
+          ./gradlew spotlessCheck
+
+  moduleChecks:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+      - name: Check modules
+        run: |
+          ./gradlew checkMavenCoordinateCollisions checkModuleDependencies
+
+  windowsBuild:
+    needs: [spotless, moduleChecks ]
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare-windows
+      - name: Build
+        shell: powershell
+        run: |
+          $Env:JAVA_TOOL_OPTIONS = "-Xmx2g"
+          $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.vfs.watch=false"
+          cmd.exe /c gradlew.bat --no-daemon --parallel --build-cache
+      - name: Build
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force build\test-results
+          Get-ChildItem -Recurse | Where-Object {$_.FullName -match "test-results\\.*\\.*.xml"} | Copy-Item -Destination build\test-results\
+      - name: Publish Windows Test Results and Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          if-no-files-found: ignore
+          retention-days: 7
+          path: |
+            build/test-results/
+
+  assemble:
+    runs-on: ubuntu-24.04
+    outputs:
+      workflow-run-id: ${{ steps.workflowdetails.outputs.run_id }}
+      publish-version: ${{ steps.projectDetails.outputs.publish-version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+      - name: get workflow_details
+        id: workflowdetails
+        shell: bash
+        run: |
+          echo "run_id=${{ github.run_id }}" >> $GITHUB_OUTPUT
+          echo "build_date=$(date --rfc-3339=date)" >> $GITHUB_OUTPUT
+          echo "vcs_ref=${{ github.sha }}" >> $GITHUB_OUTPUT
+      - name: Determine Teku version
+        id: projectDetails
+        uses: ./.github/actions/get-project-version
+      - name: Prepare
+        uses: ./.github/actions/prepare
+      - name: Assemble
+        shell: bash      
+        run: |
+          ./gradlew clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compilePropertyTestJava assemble
+      - name: Upload distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: distribution
+          path: |
+            build/distributions/*.tar.gz
+            build/distributions/*.zip            
+          retention-days: 14
+      - name: Upload workspace build
+        uses: actions/upload-artifact@v4
+        with:
+          name: assemble-output
+          path: |
+            ./
+            !./.git/**
+          retention-days: 1
+          include-hidden-files: 'true'
+
+  ## OpenAPI spec
+  extractAPISpec:
+    needs: assemble
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+      - name: Download assemble-output
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
+          name: assemble-output
+          merge-multiple: true            
+      - name: Build runnable Teku binaries
+        shell: bash
+        run: |
+          ./gradlew --no-daemon --parallel installDist
+      - name: Build runnable Teku binaries
+        shell: bash
+        run: |
+          mkdir -p .openapidoc/spec
+
+          build/install/teku/bin/teku --network=mainnet --ee-endpoint=unsafe-test-stub --ignore-weak-subjectivity-period-enabled --Xinterop-enabled=true --rest-api-enabled=true --rest-api-docs-enabled=true 2>&1 > teku_output.log &
+          TEKU_PID=$!
+
+          EXIT_CODE=0
+          wget --timeout=30 --retry-connrefused --output-document=.openapidoc/spec/teku.json http://localhost:5051/swagger-docs
+          if [ $? != 0 ]; then
+            EXIT_CODE=1
+          fi
+
+          kill $TEKU_PID
+          exit $EXIT_CODE
+      - name: Upload openapi spec
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-spec
+          path: |
+            .openapidoc/spec/teku.json
+          retention-days: 7
+
+  # # TODO - check the user vars work for publishing 
+  # publishAPISpec:
+  #   #if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+  #   needs: extractAPISpec
+  #   runs-on: ubuntu-24.04
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v5
+  #       with:
+  #         submodules: 'recursive'
+  #     - name: Prepare
+  #       uses: ./.github/actions/prepare
+  #     - name: Download openapi spec
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: openapi-spec
+  #         path: ${{ github.workspace }}/.openapidoc/spec
+  #     - name: List openapidoc spec
+  #       run: |
+  #         tree .openapidoc/spec/          
+  #     - name: Use Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 22
+  #         cache-dependency-path: .openapidoc/package-lock.json 
+  #         cache: 'npm'  
+  #     - name: Install npm dependencies
+  #       working-directory: .openapidoc
+  #       run: |
+  #         npm ci
+  #         OA_GIT_USERNAME="${{ github.actor }}" OA_GIT_EMAIL="${{ github.actor }}@users.noreply.github.com" OA_GIT_URL="${{ github.server_url }}/${{ github.repository }}" OA_GH_PAGES_BRANCH="gh-pages" node publish.js
+
+  ## Tests 
+  unitTests:
+    needs: assemble
+    uses: ./.github/workflows/matrix-tests-template.yml
+    secrets: inherit  
+    with:
+      assemble_output_run_id: ${{ github.run_id }}
+      stage_name: Unit Tests
+      stage_key: unit
+      gradle_task: test
+      src_pattern: "*/src/test/java/*"
+      src_root: "src/test/java"
+      runner: "gha-runner-scale-set-ubuntu-22.04-amd64-large"
+
+  unitTestsReport:
+    runs-on: ubuntu-24.04
+    needs: unitTests
+    if: always()
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/collate-junit-reports
+        if: always()        
+        with:
+          stage_key: unit
+
+  integrationTests:
+    needs: assemble
+    runs-on: gha-runner-scale-set-ubuntu-22.04-amd64-xxl
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+      - name: Download assemble-output
+        uses: actions/download-artifact@v4
+        with:
+          name: assemble-output
+          path: ${{ github.workspace }}   
+      - name: Integration Tests
+        run: |
+          ./gradlew integrationTest
+      - name: Test results 
+        uses: ./.github/actions/collate-test-results
+        if: always()        
+        with:
+          stage_key: 'integration'
+
+  propertyTests:
+    needs: assemble
+    uses: ./.github/workflows/matrix-tests-template.yml
+    secrets: inherit
+    with:
+      assemble_output_run_id: ${{ github.run_id }}
+      stage_name: Property Tests
+      stage_key: property
+      gradle_task: propertyTest
+      src_pattern: "*/src/property-test/java/*"
+      src_root: "src/property-test/java"
+      runner: "gha-runner-scale-set-ubuntu-22.04-amd64-xl"
+
+  propertyTestsReport:
+    runs-on: ubuntu-24.04
+    needs: propertyTests
+    if: always()
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/collate-junit-reports
+        if: always()        
+        with:
+          stage_key: property
+
+  # comment these out until we switch from circleci to gha to allow docker to run fine on circleci
+  # acceptanceTests:
+  #   needs: assemble
+  #   uses: ./.github/workflows/matrix-tests-template.yml
+  #   secrets: inherit
+  #   with:
+  #     assemble_output_run_id: ${{ github.run_id }}
+  #     stage_name: Acceptance Tests
+  #     stage_key: acceptance
+  #     gradle_task: acceptanceTest
+  #     src_pattern: "*/src/acceptance-test/java/*"
+  #     src_root: "src/acceptance-test/java"
+  #     runner: "ubuntu-latest-128"
+
+  # acceptanceTestsReport:
+  #   runs-on: ubuntu-24.04
+  #   needs: acceptanceTests
+  #   steps:
+  #     - uses: actions/checkout@v5
+  #     - uses: ./.github/actions/collate-junit-reports
+  #       if: always()        
+  #       with:
+  #         stage_key: acceptance
+
+  referenceTestsPrep:
+    needs: assemble
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+      - name: Download assemble-output
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
+          name: assemble-output
+          merge-multiple: true
+          path: ${{ github.workspace }}          
+      - uses: actions/cache/restore@v4
+        with:
+          path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
+          key: reftests-${{ hashFiles('build.gradle') }}
+      - shell: bash
+        run: |
+          tree ./eth-reference-tests/            
+      - name: FetchReferenceTests
+        shell: bash
+        run: |
+          if [ ! -d "eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/tests" ]
+          then
+            ./gradlew --no-daemon expandRefTests
+          fi
+      - name: CompileReferenceTests
+        shell: bash
+        run: |
+          ./gradlew --no-daemon --parallel compileReferenceTestJava
+      - name: Caching reference tests 
+        uses: actions/cache/save@v4
+        with:
+          path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
+          key: reftests-${{ hashFiles('build.gradle') }}
+      - name: Upload reftests
+        uses: actions/upload-artifact@v4
+        with:
+          name: reftests
+          path: |
+            ./eth-reference-tests/
+          retention-days: 1
+          include-hidden-files: 'true'
+
+  referenceTests:
+    needs: referenceTestsPrep
+    runs-on: "gha-runner-scale-set-ubuntu-22.04-amd64-xxl"
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7]   # parallel shards
+        total: [8]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+      - name: Download assemble-output
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
+          name: assemble-output
+          merge-multiple: true
+          path: ${{ github.workspace }}
+      - uses: actions/cache/restore@v4
+        with:
+          path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
+          key: reftests-${{ hashFiles('build.gradle') }}          
+      - name: Download reftests
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
+          name: reftests
+          merge-multiple: true 
+          path: ./eth-reference-tests
+      - uses: actions/cache/restore@v4
+        with:
+          path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
+          key: reftests-${{ hashFiles('build.gradle') }}
+      - name: Compute shard ${{ matrix.shard }} of ${{ matrix.total }} for ReferenceTests
+        id: shard
+        shell: bash
+        run: |
+          SRC_PATTERN="*/src/referenceTest/generated_tests/*Test.java"
+          SRC_ROOT="src/referenceTest/generated_tests"
+          # 1) Collect test classes by pattern = FQNs
+          CLASSNAMES=$(find . -type f -name "*.java" -path "$SRC_PATTERN" \
+            | sed "s@.*/$SRC_ROOT/@@" \
+            | sed 's@/@.@g' \
+            | sed 's/.\{5\}$//')
+          # 2) Modulo split
+          CLASSES_FOR_SHARD=$(printf "%s\n" "$CLASSNAMES" \
+            | awk -v shards=${{ matrix.total }} -v shard=${{ matrix.shard }} '((NR-1) % shards) == shard')
+
+          if [ -z "$CLASSES_FOR_SHARD" ]; then
+            echo "args=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # 3) Build --tests args
+          GRADLE_ARGS=$(printf "%s\n" "$CLASSES_FOR_SHARD" | awk '{printf "--tests %s ", $0}')
+          echo "Prepared arguments for Gradle (ReferenceTests): $GRADLE_ARGS"
+          echo "args=$GRADLE_ARGS" >> "$GITHUB_OUTPUT"
+      - name: Run ReferenceTests (shard)
+        if: steps.shard.outputs.args != ''
+        run: |
+          ./gradlew --no-daemon --parallel --info \
+            -x generateReferenceTestClasses \
+            -x processReferenceTestResources \
+            -x cleanReferenceTestClasses \
+            referenceTest ${{ inputs.gradle_args }} ${{ steps.shard.outputs.args }}
+      - name: Upload JUnit XML + HTML for ReferenceTests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reference-reports-${{ matrix.shard }}
+          path: |
+            **/build/test-results/**/TEST-*.xml
+            **/build/reports/tests/**
+          if-no-files-found: ignore
+          retention-days: 1
+
+  referenceTestsReport:
+    runs-on: ubuntu-24.04
+    needs: referenceTests
+    if: always()
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/collate-junit-reports
+        if: always()
+        with:
+          stage_key: reference
+
+  # DockerTags
+  # everything is a standard develop-jdk24/21; but you also add develop to develop-jdk21
+  # develop = develop-jdk21
+  # develop-jdk24
+  # publishDockerJDK21:
+  #   #if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+  #   needs: [assemble]
+  #   uses: ./.github/workflows/publish-docker.yml
+  #   with:
+  #     assemble_run_id: ${{ github.run_id }}
+  #     jdk_version: jdk21
+  #     include_hash_in_docker: ${{ github.event_name == 'workflow_dispatch' && inputs.include_hash_in_docker || 'false' }}
+  #   secrets: inherit
+  #
+  # publishDockerJDK24:
+  #   #if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+  #   needs: [assemble]
+  #   uses: ./.github/workflows/publish-docker.yml
+  #   with:
+  #     assemble_run_id: ${{ github.run_id }}
+  #     jdk_version: jdk24
+  #   secrets: inherit
+
+  # Release Distribution
+  # publishRelease:
+  #   if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+  #   needs: [assemble]
+  #   uses: ./.github/workflows/publish-release.yml
+  #   with:
+  #     assemble_run_id: ${{ github.run_id }}
+  #     publish_version: ${{ needs.assemble.outputs.publish-version }}
+  #     include_hash_in_docker: ${{ github.event_name == 'workflow_dispatch' && inputs.include_hash_in_docker || 'false' }}
+  #   secrets: inherit

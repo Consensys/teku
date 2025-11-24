@@ -88,6 +88,13 @@ public class GenesisGenerator {
     return this;
   }
 
+  public GenesisGenerator withFuluEpoch(final UInt64 fuluForkEpoch) {
+    specConfigModifier =
+        specConfigModifier.andThen(
+            specConfigBuilder -> specConfigBuilder.fuluForkEpoch(fuluForkEpoch));
+    return this;
+  }
+
   public GenesisGenerator withTotalTerminalDifficulty(final long totalTerminalDifficulty) {
     return withTotalTerminalDifficulty(UInt256.valueOf(totalTerminalDifficulty));
   }

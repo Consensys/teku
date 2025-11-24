@@ -33,6 +33,7 @@ import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
 import tech.pegasys.teku.services.beaconchain.BeaconChainControllerFactory;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
+import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
@@ -56,6 +57,7 @@ public class TekuConfiguration {
   private final ExecutionLayerConfiguration executionLayerConfiguration;
   private final NatConfiguration natConfiguration;
   private final ValidatorRestApiConfig validatorRestApiConfig;
+  private final ZkChainConfiguration zkChainConfiguration;
 
   private TekuConfiguration(
       final Eth2NetworkConfiguration eth2NetworkConfiguration,
@@ -74,7 +76,8 @@ public class TekuConfiguration {
       final StoreConfig storeConfig,
       final NatConfiguration natConfiguration,
       final ValidatorRestApiConfig validatorRestApiConfig,
-      final BeaconChainControllerFactory beaconChainControllerFactory) {
+      final BeaconChainControllerFactory beaconChainControllerFactory,
+      final ZkChainConfiguration zkChainConfiguration) {
     this.eth2NetworkConfiguration = eth2NetworkConfiguration;
     this.storageConfiguration = storageConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
@@ -95,12 +98,14 @@ public class TekuConfiguration {
             storeConfig,
             spec,
             beaconChainControllerFactory,
-            metricsConfig);
+            metricsConfig,
+            zkChainConfiguration);
     this.validatorClientConfig =
         new ValidatorClientConfiguration(
             validatorConfig, interopConfig, validatorRestApiConfig, spec);
     this.natConfiguration = natConfiguration;
     this.validatorRestApiConfig = validatorRestApiConfig;
+    this.zkChainConfiguration = zkChainConfiguration;
   }
 
   public static Builder builder() {
@@ -167,6 +172,10 @@ public class TekuConfiguration {
     return validatorRestApiConfig;
   }
 
+  public ZkChainConfiguration zkChainConfiguration() {
+    return zkChainConfiguration;
+  }
+
   public static class Builder {
     private final Eth2NetworkConfiguration.Builder eth2NetworkConfigurationBuilder =
         Eth2NetworkConfiguration.builder().applyMainnetNetworkDefaults();
@@ -177,6 +186,8 @@ public class TekuConfiguration {
     private final ValidatorConfig.Builder validatorConfigBuilder = ValidatorConfig.builder();
     private final PowchainConfiguration.Builder powchainConfigBuilder =
         PowchainConfiguration.builder();
+    private final ZkChainConfiguration.Builder zkChainConfigBuilder =
+        ZkChainConfiguration.builder();
     private final ExecutionLayerConfiguration.Builder executionLayerConfigBuilder =
         ExecutionLayerConfiguration.builder();
     private final InteropConfig.InteropConfigBuilder interopConfigBuilder = InteropConfig.builder();
@@ -240,6 +251,8 @@ public class TekuConfiguration {
           storageConfiguration.getDataStorageMode().storesAllBlocks());
 
       final SyncConfig syncConfig = syncConfigBuilder.build();
+
+      final ZkChainConfiguration zkChainConfiguration = zkChainConfigBuilder.build();
 
       final long maxAllowedBatchSize =
           spec.getNetworkingConfigDeneb()
@@ -316,7 +329,8 @@ public class TekuConfiguration {
           storeConfigBuilder.build(),
           natConfigBuilder.build(),
           validatorRestApiConfigBuilder.build(),
-          beaconChainControllerFactory);
+          beaconChainControllerFactory,
+          zkChainConfiguration);
     }
 
     public Builder eth2NetworkConfig(final Consumer<Eth2NetworkConfiguration.Builder> consumer) {
@@ -347,6 +361,11 @@ public class TekuConfiguration {
 
     public Builder powchain(final Consumer<PowchainConfiguration.Builder> consumer) {
       consumer.accept(powchainConfigBuilder);
+      return this;
+    }
+
+    public Builder zkchain(final Consumer<ZkChainConfiguration.Builder> consumer) {
+      consumer.accept(zkChainConfigBuilder);
       return this;
     }
 

@@ -1,0 +1,16 @@
+{
+  "title" : "BuilderPendingPayment",
+  "type" : "object",
+  "required" : [ "weight", "withdrawal" ],
+  "properties" : {
+    "weight" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "withdrawal" : {
+      "$ref" : "#/components/schemas/BuilderPendingWithdrawal"
+    }
+  }
+}

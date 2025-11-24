@@ -29,8 +29,9 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -205,10 +206,6 @@ public class V4FinalizedKvStoreDao {
     return db.get(schema.getVariableFirstCustodyIncompleteSlot());
   }
 
-  public Optional<UInt64> getFirstSamplerIncompleteSlot() {
-    return db.get(schema.getVariableFirstSamplerIncompleteSlot());
-  }
-
   public Optional<Bytes> getSidecar(final DataColumnSlotAndIdentifier identifier) {
     return db.get(schema.getColumnSidecarByColumnSlotAndIdentifier(), identifier);
   }
@@ -252,6 +249,14 @@ public class V4FinalizedKvStoreDao {
     return db.getFirstEntry(schema.getColumnSidecarByColumnSlotAndIdentifier())
         .map(ColumnEntry::getKey)
         .map(DataColumnSlotAndIdentifier::slot);
+  }
+
+  public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
+    return db.getLastKey(schema.getColumnDataColumnSidecarsProofsBySlot());
+  }
+
+  public Optional<List<List<KZGProof>>> getDataColumnSidecarProofs(final UInt64 slot) {
+    return db.get(schema.getColumnDataColumnSidecarsProofsBySlot(), slot);
   }
 
   public <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
@@ -495,16 +500,11 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
-    public void setFirstSamplerIncompleteSlot(final UInt64 slot) {
-      transaction.put(schema.getVariableFirstSamplerIncompleteSlot(), slot);
-    }
-
-    @Override
     public void addSidecar(final DataColumnSidecar sidecar) {
       transaction.put(
           schema.getColumnSidecarByColumnSlotAndIdentifier(),
           new DataColumnSlotAndIdentifier(
-              sidecar.getSlot(), sidecar.getBlockRoot(), sidecar.getIndex()),
+              sidecar.getSlot(), sidecar.getBeaconBlockRoot(), sidecar.getIndex()),
           sidecar.sszSerialize());
     }
 
@@ -513,7 +513,7 @@ public class V4FinalizedKvStoreDao {
       transaction.put(
           schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(),
           new DataColumnSlotAndIdentifier(
-              sidecar.getSlot(), sidecar.getBlockRoot(), sidecar.getIndex()),
+              sidecar.getSlot(), sidecar.getBeaconBlockRoot(), sidecar.getIndex()),
           sidecar.sszSerialize());
     }
 
@@ -526,6 +526,17 @@ public class V4FinalizedKvStoreDao {
     public void removeNonCanonicalSidecar(final DataColumnSlotAndIdentifier identifier) {
       transaction.delete(
           schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(), identifier);
+    }
+
+    @Override
+    public void addDataColumnSidecarsProofs(
+        final UInt64 slot, final List<List<KZGProof>> kzgProofs) {
+      transaction.put(schema.getColumnDataColumnSidecarsProofsBySlot(), slot, kzgProofs);
+    }
+
+    @Override
+    public void removeDataColumnSidecarsProofs(final UInt64 slot) {
+      transaction.delete(schema.getColumnDataColumnSidecarsProofsBySlot(), slot);
     }
 
     @Override

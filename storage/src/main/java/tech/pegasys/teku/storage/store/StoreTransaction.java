@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -74,6 +75,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new HashMap<>();
   Optional<UInt64> maybeEarliestBlobSidecarTransactionSlot = Optional.empty();
   Optional<Bytes32> maybeLatestCanonicalBlockRoot = Optional.empty();
+  Optional<UInt64> maybeCustodyGroupCount = Optional.empty();
   private final UpdatableStore.StoreUpdateHandler updateHandler;
 
   StoreTransaction(
@@ -103,6 +105,12 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       this.maybeEarliestBlobSidecarTransactionSlot = maybeEarliestBlobSidecarSlot;
     }
     putStateRoot(state.hashTreeRoot(), block.getSlotAndBlockRoot());
+  }
+
+  @Override
+  public void putExecutionPayloadAndState(
+      final SignedExecutionPayloadEnvelope executionPayload, final BeaconState state) {
+    // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878
   }
 
   private boolean needToUpdateEarliestBlobSidecarSlot(
@@ -176,6 +184,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public void setLatestCanonicalBlockRoot(final Bytes32 latestCanonicalBlockRoot) {
     maybeLatestCanonicalBlockRoot = Optional.of(latestCanonicalBlockRoot);
+  }
+
+  @Override
+  public void setCustodyGroupCount(final UInt64 custodyGroupCount) {
+    maybeCustodyGroupCount = Optional.of(custodyGroupCount);
   }
 
   @Override
@@ -268,6 +281,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public Checkpoint getFinalizedCheckpoint() {
     return finalizedCheckpoint.orElseGet(store::getFinalizedCheckpoint);
+  }
+
+  @Override
+  public Optional<UInt64> getCustodyGroupCount() {
+    return maybeCustodyGroupCount;
   }
 
   @Override

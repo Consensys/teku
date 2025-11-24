@@ -26,8 +26,9 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -121,6 +122,8 @@ public interface Database extends AutoCloseable {
   Optional<UInt64> getSlotForFinalizedStateRoot(Bytes32 stateRoot);
 
   Optional<Bytes32> getLatestCanonicalBlockRoot();
+
+  Optional<UInt64> getCustodyGroupCount();
 
   /**
    * Return the finalized block at this slot if such a block exists.
@@ -255,8 +258,6 @@ public interface Database extends AutoCloseable {
   // Sidecars
   Optional<UInt64> getFirstCustodyIncompleteSlot();
 
-  Optional<UInt64> getFirstSamplerIncompleteSlot();
-
   Optional<DataColumnSidecar> getSidecar(DataColumnSlotAndIdentifier identifier);
 
   Optional<DataColumnSidecar> getNonCanonicalSidecar(DataColumnSlotAndIdentifier identifier);
@@ -282,9 +283,11 @@ public interface Database extends AutoCloseable {
 
   Optional<UInt64> getEarliestDataColumnSidecarSlot();
 
-  void setFirstCustodyIncompleteSlot(UInt64 slot);
+  Optional<UInt64> getLastDataColumnSidecarsProofsSlot();
 
-  void setFirstSamplerIncompleteSlot(UInt64 slot);
+  Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(final UInt64 slot);
+
+  void setFirstCustodyIncompleteSlot(UInt64 slot);
 
   void addSidecar(DataColumnSidecar sidecar);
 

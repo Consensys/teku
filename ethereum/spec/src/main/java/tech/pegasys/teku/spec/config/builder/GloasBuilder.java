@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
@@ -34,9 +33,9 @@ public class GloasBuilder extends BaseForkBuilder
   private Integer syncMessageDueBpsGloas;
 
   // gloas preset
-  private UInt64 kzgCommitmentsInclusionProofDepthGloas;
   private Integer ptcSize;
   private Integer maxPayloadAttestations;
+  private long builderPendingWithdrawalsLimit;
 
   GloasBuilder() {}
 
@@ -49,7 +48,7 @@ public class GloasBuilder extends BaseForkBuilder
             aggregateDueBpsGloas,
             attestationDueBpsGloas,
             contributionDueBpsGloas,
-            kzgCommitmentsInclusionProofDepthGloas,
+            builderPendingWithdrawalsLimit,
             maxPayloadAttestations,
             maxRequestPayloads,
             payloadAttestationDueBps,
@@ -106,10 +105,9 @@ public class GloasBuilder extends BaseForkBuilder
     return this;
   }
 
-  public GloasBuilder kzgCommitmentsInclusionProofDepthGloas(
-      final UInt64 kzgCommitmentsInclusionProofDepthGloas) {
-    checkNotNull(kzgCommitmentsInclusionProofDepthGloas);
-    this.kzgCommitmentsInclusionProofDepthGloas = kzgCommitmentsInclusionProofDepthGloas;
+  public GloasBuilder builderPendingWithdrawalsLimit(final Long builderPendingWithdrawalsLimit) {
+    checkNotNull(builderPendingWithdrawalsLimit);
+    this.builderPendingWithdrawalsLimit = builderPendingWithdrawalsLimit;
     return this;
   }
 
@@ -129,7 +127,7 @@ public class GloasBuilder extends BaseForkBuilder
     constants.put("payloadAttestationDueBps", payloadAttestationDueBps);
     constants.put("syncMessageDueBpsGloas", syncMessageDueBpsGloas);
 
-    constants.put("kzgCommitmentsInclusionProofDepthGloas", kzgCommitmentsInclusionProofDepthGloas);
+    constants.put("builderPendingWithdrawalsLimit", builderPendingWithdrawalsLimit);
     constants.put("ptcSize", ptcSize);
     constants.put("maxPayloadAttestations", maxPayloadAttestations);
 

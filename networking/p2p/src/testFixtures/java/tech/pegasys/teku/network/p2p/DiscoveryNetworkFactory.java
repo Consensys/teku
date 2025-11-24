@@ -29,6 +29,7 @@ import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
 import tech.pegasys.teku.network.p2p.peer.SimplePeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.PeerPools;
@@ -70,6 +71,8 @@ public class DiscoveryNetworkFactory {
     private final List<String> bootnodes = new ArrayList<>();
     private final Spec spec = TestSpecFactory.createMinimalPhase0();
 
+    private TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
+
     private DiscoveryTestNetworkBuilder() {}
 
     public DiscoveryTestNetworkBuilder staticPeer(final String staticPeer) {
@@ -82,10 +85,14 @@ public class DiscoveryNetworkFactory {
       return this;
     }
 
+    public DiscoveryTestNetworkBuilder timeProvider(final TimeProvider timeProvider) {
+      this.timeProvider = timeProvider;
+      return this;
+    }
+
     public DiscoveryNetwork<?> buildAndStart() throws Exception {
       int attempt = 1;
       while (true) {
-
         final Random random = new Random();
         final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
         final DiscoveryConfig discoveryConfig =
@@ -104,10 +111,7 @@ public class DiscoveryNetworkFactory {
         final PeerPools peerPools = new PeerPools();
         final ReputationManager reputationManager =
             new DefaultReputationManager(
-                metricsSystem,
-                StubTimeProvider.withTimeInSeconds(1000),
-                Constants.REPUTATION_MANAGER_CAPACITY,
-                peerPools);
+                metricsSystem, timeProvider, Constants.REPUTATION_MANAGER_CAPACITY, peerPools);
         final PeerSelectionStrategy peerSelectionStrategy =
             new SimplePeerSelectionStrategy(new TargetPeerRange(20, 30, 0));
         final DiscoveryNetwork<?> network =
@@ -130,13 +134,14 @@ public class DiscoveryNetworkFactory {
                               throw new UnsupportedOperationException();
                             })
                         .gossipTopicFilter(topic -> true)
-                        .timeProvider(StubTimeProvider.withTimeInMillis(0))
+                        .timeProvider(timeProvider)
                         .build())
                 .peerPools(peerPools)
                 .peerSelectionStrategy(peerSelectionStrategy)
                 .discoveryConfig(discoveryConfig)
                 .p2pConfig(config)
                 .spec(spec)
+                .timeProvider(timeProvider)
                 .currentSchemaDefinitionsSupplier(spec::getGenesisSchemaDefinitions)
                 .build();
         try {

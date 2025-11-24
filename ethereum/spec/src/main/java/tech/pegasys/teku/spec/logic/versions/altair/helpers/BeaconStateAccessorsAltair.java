@@ -179,20 +179,25 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
   public List<Integer> getAttestationParticipationFlagIndices(
       final BeaconState state, final AttestationData data, final UInt64 inclusionDelay) {
     final Checkpoint justifiedCheckpoint;
+    // Matching source
     if (data.getTarget().getEpoch().equals(getCurrentEpoch(state))) {
       justifiedCheckpoint = state.getCurrentJustifiedCheckpoint();
     } else {
       justifiedCheckpoint = state.getPreviousJustifiedCheckpoint();
     }
 
-    // Matching roots
     final boolean isMatchingSource = data.getSource().equals(justifiedCheckpoint);
-    final boolean isMatchingTarget =
-        isMatchingSource
-            && data.getTarget().getRoot().equals(getBlockRoot(state, data.getTarget().getEpoch()));
+
+    // Matching target
+    final Bytes32 targetRoot = getBlockRoot(state, data.getTarget().getEpoch());
+    final boolean targetRootMatches = data.getTarget().getRoot().equals(targetRoot);
+    final boolean isMatchingTarget = isMatchingSource && targetRootMatches;
+
+    // Matching head
+    final Bytes32 headRoot = getBlockRootAtSlot(state, data.getSlot());
+    final boolean headRootMatches = data.getBeaconBlockRoot().equals(headRoot);
     final boolean isMatchingHead =
-        isMatchingTarget
-            && data.getBeaconBlockRoot().equals(getBlockRootAtSlot(state, data.getSlot()));
+        computeIsMatchingHead(isMatchingTarget, headRootMatches, data, state);
 
     // Participation flag indices
     final IntList participationFlagIndices = new IntArrayList();
@@ -208,6 +213,14 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
       participationFlagIndices.add(ParticipationFlags.TIMELY_HEAD_FLAG_INDEX);
     }
     return participationFlagIndices;
+  }
+
+  protected boolean computeIsMatchingHead(
+      final boolean isMatchingTarget,
+      final boolean headRootMatches,
+      final AttestationData data,
+      final BeaconState state) {
+    return isMatchingTarget && headRootMatches;
   }
 
   protected boolean shouldSetTargetTimelinessFlag(

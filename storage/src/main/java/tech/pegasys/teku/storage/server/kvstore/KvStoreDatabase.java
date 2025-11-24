@@ -46,10 +46,11 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -204,6 +205,11 @@ public class KvStoreDatabase implements Database {
   @Override
   public Optional<Bytes32> getLatestCanonicalBlockRoot() {
     return dao.getLatestCanonicalBlockRoot();
+  }
+
+  @Override
+  public Optional<UInt64> getCustodyGroupCount() {
+    return dao.getCustodyGroupCount();
   }
 
   @Override
@@ -763,6 +769,7 @@ public class KvStoreDatabase implements Database {
     final Checkpoint bestJustifiedCheckpoint = dao.getBestJustifiedCheckpoint().orElseThrow();
     final BeaconState finalizedState = dao.getLatestFinalizedState().orElseThrow();
     final Optional<Bytes32> latestCanonicalBlockRoot = dao.getLatestCanonicalBlockRoot();
+    final Optional<UInt64> custodyGroupCount = dao.getCustodyGroupCount();
 
     final Map<UInt64, VoteTracker> votes = dao.getVotes();
 
@@ -810,7 +817,8 @@ public class KvStoreDatabase implements Database {
             bestJustifiedCheckpoint,
             blockInformation,
             votes,
-            latestCanonicalBlockRoot));
+            latestCanonicalBlockRoot,
+            custodyGroupCount));
   }
 
   @Override
@@ -1119,11 +1127,6 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public Optional<UInt64> getFirstSamplerIncompleteSlot() {
-    return dao.getFirstSamplerIncompleteSlot();
-  }
-
-  @Override
   public Optional<DataColumnSidecar> getSidecar(final DataColumnSlotAndIdentifier identifier) {
     final Optional<Bytes> maybePayload = dao.getSidecar(identifier);
     return maybePayload.map(payload -> spec.deserializeSidecar(payload, identifier.slot()));
@@ -1156,17 +1159,19 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void setFirstCustodyIncompleteSlot(final UInt64 slot) {
-    try (final FinalizedUpdater updater = finalizedUpdater()) {
-      updater.setFirstCustodyIncompleteSlot(slot);
-      updater.commit();
-    }
+  public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
+    return dao.getLastDataColumnSidecarsProofsSlot();
   }
 
   @Override
-  public void setFirstSamplerIncompleteSlot(final UInt64 slot) {
+  public Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(final UInt64 slot) {
+    return dao.getDataColumnSidecarsProofs(slot);
+  }
+
+  @Override
+  public void setFirstCustodyIncompleteSlot(final UInt64 slot) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
-      updater.setFirstSamplerIncompleteSlot(slot);
+      updater.setFirstCustodyIncompleteSlot(slot);
       updater.commit();
     }
   }
@@ -1195,10 +1200,10 @@ public class KvStoreDatabase implements Database {
             streamNonCanonicalDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive)) {
 
       if (pruneDataColumnSidecars(pruneLimit, prunableIdentifiers, false)) {
-        LOG.debug("Pruned reached the limit of {} data column sidecars", pruneLimit);
+        LOG.debug("Data column sidecars pruning reached the limit of {}", pruneLimit);
       }
       if (pruneDataColumnSidecars(pruneLimit, prunableNonCanonicalIdentifiers, true)) {
-        LOG.debug("Pruned reached the limit of {} non canonical data column sidecars", pruneLimit);
+        LOG.debug("Non-canonical data column sidecars pruning reached the limit of {}", pruneLimit);
       }
     }
   }
@@ -1297,6 +1302,7 @@ public class KvStoreDatabase implements Database {
               });
 
       update.getLatestCanonicalBlockRoot().ifPresent(updater::setLatestCanonicalBlockRoot);
+      update.getCustodyGroupCount().ifPresent(updater::setCustodyGroupCount);
       update.getJustifiedCheckpoint().ifPresent(updater::setJustifiedCheckpoint);
       update.getBestJustifiedCheckpoint().ifPresent(updater::setBestJustifiedCheckpoint);
       latestFinalizedStateUpdateStartTime = System.currentTimeMillis();

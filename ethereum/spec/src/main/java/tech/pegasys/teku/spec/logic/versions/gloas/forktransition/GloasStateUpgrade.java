@@ -13,8 +13,15 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.forktransition;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
@@ -49,21 +56,39 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
             state -> {
               BeaconStateFields.copyCommonFieldsFromSource(state, preState);
 
-              state.setCurrentEpochParticipation(preStateFulu.getCurrentEpochParticipation());
-              state.setPreviousEpochParticipation(preStateFulu.getPreviousEpochParticipation());
-              state.setCurrentSyncCommittee(preStateFulu.getCurrentSyncCommittee());
-              state.setNextSyncCommittee(preStateFulu.getNextSyncCommittee());
-              state.setInactivityScores(preStateFulu.getInactivityScores());
-
               state.setFork(
                   new Fork(
                       preState.getFork().getCurrentVersion(),
                       specConfig.getGloasForkVersion(),
                       epoch));
 
-              state.setLatestExecutionPayloadHeader(preStateFulu.getLatestExecutionPayloadHeader());
-              state.setNextWithdrawalValidatorIndex(preStateFulu.getNextWithdrawalValidatorIndex());
+              state.setPreviousEpochParticipation(preStateFulu.getPreviousEpochParticipation());
+              state.setCurrentEpochParticipation(preStateFulu.getCurrentEpochParticipation());
+              state.setInactivityScores(preStateFulu.getInactivityScores());
+              state.setCurrentSyncCommittee(preStateFulu.getCurrentSyncCommittee());
+              state.setNextSyncCommittee(preStateFulu.getNextSyncCommittee());
+
+              // New in Gloas
+              final Bytes32 latestBlockHash =
+                  preStateFulu.getLatestExecutionPayloadHeaderRequired().getBlockHash();
+              state.setLatestExecutionPayloadBid(
+                  schemaDefinitions
+                      .getExecutionPayloadBidSchema()
+                      .create(
+                          Bytes32.ZERO,
+                          Bytes32.ZERO,
+                          latestBlockHash,
+                          Bytes32.ZERO,
+                          Bytes20.ZERO,
+                          UInt64.ZERO,
+                          UInt64.ZERO,
+                          UInt64.ZERO,
+                          UInt64.ZERO,
+                          UInt64.ZERO,
+                          Bytes32.ZERO));
+
               state.setNextWithdrawalIndex(preStateFulu.getNextWithdrawalIndex());
+              state.setNextWithdrawalValidatorIndex(preStateFulu.getNextWithdrawalValidatorIndex());
               state.setHistoricalSummaries(preStateFulu.getHistoricalSummaries());
               state.setDepositRequestsStartIndex(preStateFulu.getDepositRequestsStartIndex());
               state.setDepositBalanceToConsume(preStateFulu.getDepositBalanceToConsume());
@@ -76,6 +101,25 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
               state.setPendingPartialWithdrawals(preStateFulu.getPendingPartialWithdrawals());
               state.setPendingConsolidations(preStateFulu.getPendingConsolidations());
               state.setProposerLookahead(preStateFulu.getProposerLookahead());
+
+              // New in Gloas
+              final SszBitvector executionPayloadAvailability =
+                  schemaDefinitions
+                      .getExecutionPayloadAvailabilitySchema()
+                      .ofBits(IntStream.range(0, specConfig.getSlotsPerHistoricalRoot()).toArray());
+              state.setExecutionPayloadAvailability(executionPayloadAvailability);
+              final List<BuilderPendingPayment> builderPendingPayments =
+                  Collections.nCopies(
+                      2 * specConfig.getSlotsPerEpoch(),
+                      schemaDefinitions.getBuilderPendingPaymentSchema().getDefault());
+              state.setBuilderPendingPayments(
+                  schemaDefinitions
+                      .getBuilderPendingPaymentsSchema()
+                      .createFromElements(builderPendingPayments));
+              state.setBuilderPendingWithdrawals(
+                  schemaDefinitions.getBuilderPendingWithdrawalsSchema().getDefault());
+              state.setLatestBlockHash(latestBlockHash);
+              state.setLatestWithdrawalsRoot(Bytes32.ZERO);
             });
   }
 }

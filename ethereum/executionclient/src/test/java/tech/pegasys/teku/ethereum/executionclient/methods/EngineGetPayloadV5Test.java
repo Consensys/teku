@@ -41,7 +41,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
+import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
@@ -126,7 +126,7 @@ class EngineGetPayloadV5Test {
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtil.randomPayloadExecutionContext(false);
     final UInt256 blockValue = UInt256.MAX_VALUE;
-    final BlobsCellBundle blobsCellBundle = dataStructureUtil.randomBlobsCellBundle();
+    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
     final ExecutionPayload executionPayloadFulu = dataStructureUtil.randomExecutionPayload();
     final ExecutionRequests executionRequests = dataStructureUtil.randomExecutionRequests();
     final List<Bytes> encodedExecutionRequests =
@@ -136,7 +136,7 @@ class EngineGetPayloadV5Test {
     when(executionEngineClient.getPayloadV5(eq(executionPayloadContext.getPayloadId())))
         .thenReturn(
             dummySuccessfulResponse(
-                executionPayloadFulu, blockValue, blobsCellBundle, encodedExecutionRequests));
+                executionPayloadFulu, blockValue, blobsBundle, encodedExecutionRequests));
 
     final JsonRpcRequestParams params =
         new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(UInt64.ZERO).build();
@@ -145,7 +145,7 @@ class EngineGetPayloadV5Test {
 
     final GetPayloadResponse expectedGetPayloadResponse =
         new GetPayloadResponse(
-            executionPayloadFulu, blockValue, blobsCellBundle, false, executionRequests);
+            executionPayloadFulu, blockValue, blobsBundle, false, executionRequests);
     assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedGetPayloadResponse);
 
     verify(executionEngineClient).getPayloadV5(eq(executionPayloadContext.getPayloadId()));
@@ -155,14 +155,14 @@ class EngineGetPayloadV5Test {
   private SafeFuture<Response<GetPayloadV5Response>> dummySuccessfulResponse(
       final ExecutionPayload executionPayload,
       final UInt256 blockValue,
-      final BlobsCellBundle blobsCellBundle,
+      final BlobsBundle blobsBundle,
       final List<Bytes> encodedExecutionRequests) {
     return SafeFuture.completedFuture(
         Response.fromPayloadReceivedAsJson(
             new GetPayloadV5Response(
                 ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload),
                 blockValue,
-                BlobsBundleV2.fromInternalBlobsBundle(blobsCellBundle),
+                BlobsBundleV2.fromInternalBlobsBundle(blobsBundle),
                 false,
                 encodedExecutionRequests)));
   }

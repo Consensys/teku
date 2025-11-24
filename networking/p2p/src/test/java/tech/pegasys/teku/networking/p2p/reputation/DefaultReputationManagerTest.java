@@ -208,4 +208,22 @@ class DefaultReputationManagerTest {
     assertThat(reputationManager.adjustReputation(peerAddress, LARGE_PENALTY))
         .isEqualTo(!type.equals(PeerConnectionType.STATIC));
   }
+
+  @Test
+  void shouldSwitchReputationWhenTypeChanges() {
+    // starting as score based should activate reputation tracking
+    peerPools.addPeerToPool(peerAddress.getId(), PeerConnectionType.SCORE_BASED);
+    assertThat(reputationManager.adjustReputation(peerAddress, LARGE_PENALTY)).isTrue();
+    assertThat(reputationManager.isConnectionInitiationAllowed(peerAddress)).isFalse();
+
+    // switching to static should switch to a static reputation (which ignores penalties)
+    peerPools.addPeerToPool(peerAddress.getId(), PeerConnectionType.STATIC);
+    assertThat(reputationManager.adjustReputation(peerAddress, LARGE_PENALTY)).isFalse();
+    assertThat(reputationManager.isConnectionInitiationAllowed(peerAddress)).isTrue();
+
+    // switching back to score based should switch back to a new score based reputation
+    peerPools.addPeerToPool(peerAddress.getId(), PeerConnectionType.RANDOMLY_SELECTED);
+    assertThat(reputationManager.adjustReputation(peerAddress, LARGE_PENALTY)).isTrue();
+    assertThat(reputationManager.isConnectionInitiationAllowed(peerAddress)).isFalse();
+  }
 }

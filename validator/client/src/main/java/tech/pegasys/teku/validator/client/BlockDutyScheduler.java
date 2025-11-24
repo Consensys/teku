@@ -27,11 +27,11 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 
 public class BlockDutyScheduler extends AbstractDutyScheduler {
-  static final int LOOKAHEAD_EPOCHS = 0;
+  private static final int LOOKAHEAD_EPOCHS = 0;
 
   public BlockDutyScheduler(
       final MetricsSystem metricsSystem, final DutyLoader<?> dutyLoader, final Spec spec) {
-    super(metricsSystem, "block", dutyLoader, LOOKAHEAD_EPOCHS, spec);
+    super(metricsSystem, "block", dutyLoader, spec);
 
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,
@@ -50,6 +50,9 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
 
   @Override
   public void onContributionCreationDue(final UInt64 slot) {}
+
+  @Override
+  public void onPayloadAttestationCreationDue(final UInt64 slot) {}
 
   @Override
   public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {}
@@ -75,5 +78,10 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
         dutyEpoch,
         headEpoch);
     return headEpoch.equals(dutyEpoch) ? currentTargetRoot : headBlockRoot;
+  }
+
+  @Override
+  public int getLookAheadEpochs(final UInt64 epoch) {
+    return LOOKAHEAD_EPOCHS;
   }
 }

@@ -104,9 +104,12 @@ public class BeaconRestApiTypes {
   public static final ParameterMetadata<String> PARAMETER_BLOCK_ID =
       new ParameterMetadata<>(PARAM_BLOCK_ID, CoreTypes.string(PARAM_BLOCK_ID_DESCRIPTION, "head"));
 
-  public static final ParameterMetadata<Bytes32> BLOCK_ROOT_PARAMETER =
+  public static final ParameterMetadata<String> BLOCK_ROOT_PARAMETER =
       new ParameterMetadata<>(
-          BLOCK_ROOT, BYTES32_TYPE.withDescription("Block root. Hex encoded with 0x prefix."));
+          BLOCK_ROOT,
+          CoreTypes.string(
+              "Block root. Hex encoded with 0x prefix.",
+              "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"));
 
   public static final ParameterMetadata<UInt64> SLOT_PARAMETER =
       new ParameterMetadata<>(
@@ -239,6 +242,12 @@ public class BeaconRestApiTypes {
           "indices",
           CoreTypes.UINT64_TYPE.withDescription(
               "Array of indices for blob sidecars to request for in the specified block. Returns all blob sidecars in the block if not specified."));
+
+  public static final ParameterMetadata<Bytes32> VERSIONED_HASHES_PARAMETER =
+      new ParameterMetadata<>(
+          "versioned_hashes",
+          BYTES32_TYPE.withDescription(
+              "Array of versioned hashes for blobs to request for in the specified block. Returns all blobs in the block if not specified."));
 
   public static final ParameterMetadata<UInt64> DATA_COLUMN_INDICES_PARAMETER =
       new ParameterMetadata<>(

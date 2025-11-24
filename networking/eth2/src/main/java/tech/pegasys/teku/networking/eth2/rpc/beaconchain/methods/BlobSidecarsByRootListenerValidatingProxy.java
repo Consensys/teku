@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
@@ -31,9 +30,8 @@ public class BlobSidecarsByRootListenerValidatingProxy extends BlobSidecarsByRoo
       final Peer peer,
       final Spec spec,
       final RpcResponseListener<BlobSidecar> listener,
-      final KZG kzg,
       final List<BlobIdentifier> expectedBlobIdentifiers) {
-    super(peer, spec, kzg, expectedBlobIdentifiers);
+    super(peer, spec, expectedBlobIdentifiers);
     this.listener = listener;
   }
 

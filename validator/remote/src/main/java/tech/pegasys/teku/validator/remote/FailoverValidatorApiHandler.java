@@ -37,6 +37,7 @@ import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.PtcDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
@@ -49,6 +50,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.SlotAndBuilderIndex;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -61,6 +69,7 @@ import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
+import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -74,6 +83,8 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       "remote_beacon_nodes_requests_total";
 
   private final Map<SlotAndBlockRoot, ValidatorApiChannel> blindedBlockCreatorCache =
+      LimitedMap.createSynchronizedLRU(2);
+  private final Map<SlotAndBuilderIndex, ValidatorApiChannel> executionPayloadBidCreatorCache =
       LimitedMap.createSynchronizedLRU(2);
 
   private final BeaconNodeReadinessManager beaconNodeReadinessManager;
@@ -151,6 +162,14 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Optional<PtcDuties>> getPtcDuties(
+      final UInt64 epoch, final IntCollection validatorIndices) {
+    return tryRequestUntilSuccess(
+        apiChannel -> apiChannel.getPtcDuties(epoch, validatorIndices),
+        BeaconNodeRequestLabels.GET_PTC_DUTIES_METHOD);
+  }
+
+  @Override
   public SafeFuture<Optional<PeerCount>> getPeerCount() {
     return tryRequestUntilSuccess(
         ValidatorApiChannel::getPeerCount, BeaconNodeRequestLabels.GET_PEER_COUNT_METHOD);
@@ -210,6 +229,14 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
         apiChannel ->
             apiChannel.createSyncCommitteeContribution(slot, subcommitteeIndex, beaconBlockRoot),
         BeaconNodeRequestLabels.CREATE_SYNC_COMMITTEE_CONTRIBUTION_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Optional<PayloadAttestationData>> createPayloadAttestationData(
+      final UInt64 slot) {
+    return tryRequestUntilSuccess(
+        apiChannel -> apiChannel.createPayloadAttestationData(slot),
+        BeaconNodeRequestLabels.CREATE_PAYLOAD_ATTESTATION_METHOD);
   }
 
   @Override
@@ -296,6 +323,15 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<List<SubmitDataError>> sendPayloadAttestationMessages(
+      final List<PayloadAttestationMessage> payloadAttestationMessages) {
+    return relayRequest(
+        apiChannel -> apiChannel.sendPayloadAttestationMessages(payloadAttestationMessages),
+        BeaconNodeRequestLabels.SEND_PAYLOAD_ATTESTATION_MESSAGES_METHOD,
+        failoversPublishSignedDuties);
+  }
+
+  @Override
   public SafeFuture<Void> prepareBeaconProposer(
       final Collection<BeaconPreparableProposer> beaconPreparableProposers) {
     return relayRequest(
@@ -333,6 +369,57 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     return relayRequest(
         apiChannel -> apiChannel.getSyncCommitteeSelectionProof(requests),
         BeaconNodeRequestLabels.SYNC_COMMITTEE_SELECTIONS);
+  }
+
+  @Override
+  public SafeFuture<Optional<ExecutionPayloadBid>> createUnsignedExecutionPayloadBid(
+      final UInt64 slot, final UInt64 builderIndex) {
+    return tryRequestUntilSuccess(
+        apiChannel ->
+            apiChannel
+                .createUnsignedExecutionPayloadBid(slot, builderIndex)
+                .thenPeek(
+                    bid -> {
+                      if (!failoverDelegates.isEmpty() && bid.isPresent()) {
+                        executionPayloadBidCreatorCache.put(
+                            bid.get().getSlotAndBuilderIndex(), apiChannel);
+                      }
+                    }),
+        BeaconNodeRequestLabels.CREATE_UNSIGNED_EXECUTION_PAYLOAD_BID_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Void> publishSignedExecutionPayloadBid(
+      final SignedExecutionPayloadBid signedExecutionPayloadBid) {
+    return relayRequest(
+        apiChannel -> apiChannel.publishSignedExecutionPayloadBid(signedExecutionPayloadBid),
+        BeaconNodeRequestLabels.PUBLISH_EXECUTION_PAYLOAD_BID_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Optional<ExecutionPayloadEnvelope>> createUnsignedExecutionPayload(
+      final UInt64 slot, final UInt64 builderIndex) {
+    final SlotAndBuilderIndex slotAndBuilderIndex = new SlotAndBuilderIndex(slot, builderIndex);
+    if (executionPayloadBidCreatorCache.containsKey(slotAndBuilderIndex)) {
+      LOG.info(
+          "Execution payload for slot {} and builder index {} would be created only by the beacon node which created the bid.",
+          slot,
+          builderIndex);
+      return executionPayloadBidCreatorCache
+          .remove(slotAndBuilderIndex)
+          .createUnsignedExecutionPayload(slot, builderIndex);
+    }
+    return tryRequestUntilSuccess(
+        apiChannel -> apiChannel.createUnsignedExecutionPayload(slot, builderIndex),
+        BeaconNodeRequestLabels.CREATE_UNSIGNED_EXECUTION_PAYLOAD_METHOD);
+  }
+
+  @Override
+  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+    return relayRequest(
+        apiChannel -> apiChannel.publishSignedExecutionPayload(signedExecutionPayload),
+        BeaconNodeRequestLabels.PUBLISH_EXECUTION_PAYLOAD_METHOD);
   }
 
   private <T> SafeFuture<T> relayRequest(

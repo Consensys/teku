@@ -22,8 +22,9 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -86,6 +87,8 @@ public interface StorageQueryChannel extends ChannelInterface {
 
   SafeFuture<Optional<Bytes32>> getLatestCanonicalBlockRoot();
 
+  SafeFuture<Optional<UInt64>> getCustodyGroupCount();
+
   SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(UInt64 slot);
 
   SafeFuture<Optional<Checkpoint>> getAnchor();
@@ -119,8 +122,6 @@ public interface StorageQueryChannel extends ChannelInterface {
 
   SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot();
 
-  SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot();
-
   SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnSlotAndIdentifier identifier);
 
   SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalSidecar(
@@ -128,8 +129,12 @@ public interface StorageQueryChannel extends ChannelInterface {
 
   SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(UInt64 slot);
 
+  SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalDataColumnIdentifiers(UInt64 slot);
+
   SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(
       UInt64 startSlot, UInt64 endSlot, UInt64 limit);
 
   SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot();
+
+  SafeFuture<Optional<List<List<KZGProof>>>> getDataColumnSidecarsProofs(UInt64 slot);
 }

@@ -50,7 +50,7 @@ public interface BlobSidecarManager extends AvailabilityCheckerFactory<BlobSidec
         @Override
         public AvailabilityChecker<BlobSidecar> createAvailabilityChecker(
             final SignedBeaconBlock block) {
-          return AvailabilityChecker.NOOP_BLOBSIDECAR;
+          return AvailabilityChecker.NOOP_BLOB_SIDECAR;
         }
 
         @Override

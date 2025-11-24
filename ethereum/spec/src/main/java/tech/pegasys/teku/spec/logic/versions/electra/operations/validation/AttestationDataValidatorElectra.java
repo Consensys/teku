@@ -64,10 +64,7 @@ public class AttestationDataValidatorElectra implements AttestationDataValidator
                         .compareTo(state.getSlot())
                     <= 0,
                 AttestationInvalidReason.SUBMITTED_TOO_QUICKLY),
-        () ->
-            check(
-                data.getIndex().equals(UInt64.ZERO),
-                AttestationInvalidReason.COMMITTEE_INDEX_MUST_BE_ZERO),
+        () -> checkCommitteeIndex(data),
         () -> {
           if (data.getTarget().getEpoch().equals(beaconStateAccessors.getCurrentEpoch(state))) {
             return check(
@@ -79,5 +76,10 @@ public class AttestationDataValidatorElectra implements AttestationDataValidator
                 AttestationInvalidReason.INCORRECT_PREVIOUS_JUSTIFIED_CHECKPOINT);
           }
         });
+  }
+
+  protected Optional<OperationInvalidReason> checkCommitteeIndex(final AttestationData data) {
+    return check(
+        data.getIndex().equals(UInt64.ZERO), AttestationInvalidReason.COMMITTEE_INDEX_MUST_BE_ZERO);
   }
 }

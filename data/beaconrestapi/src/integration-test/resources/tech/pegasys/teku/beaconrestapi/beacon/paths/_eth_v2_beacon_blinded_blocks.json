@@ -48,6 +48,8 @@
               "$ref" : "#/components/schemas/SignedBlindedBeaconBlockDeneb"
             }, {
               "$ref" : "#/components/schemas/SignedBlindedBeaconBlockElectra"
+            }, {
+              "$ref" : "#/components/schemas/SignedBeaconBlockGloas"
             } ]
           }
         }

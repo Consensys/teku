@@ -84,7 +84,8 @@ public class ElectraAttestationValidatorTest extends DenebAttestationValidatorTe
     assertThat(validate(wrongAttestation))
         .isEqualTo(
             InternalValidationResult.reject(
-                "Rejecting attestation because attestation data index must be 0"));
+                "Attestation data index must be 0 for Electra, but was %s.",
+                wrongAttestation.getData().getIndex()));
   }
 
   @Test
@@ -115,6 +116,7 @@ public class ElectraAttestationValidatorTest extends DenebAttestationValidatorTe
     assertThat(validate(wrongAttestation))
         .isEqualTo(
             InternalValidationResult.reject(
-                "Rejecting attestation because attestation data index must be 0"));
+                "Attestation data index must be 0 for Electra, but was %s.",
+                wrongAttestation.getData().getIndex()));
   }
 }

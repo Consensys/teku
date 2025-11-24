@@ -53,6 +53,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
@@ -85,7 +87,9 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.SimpleOperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
@@ -153,6 +157,8 @@ class BlockOperationSelectorFactoryTest {
   private final SyncCommitteeContributionPool contributionPool =
       new SyncCommitteeContributionPool(spec, contributionValidator);
 
+  private final PayloadAttestationPool payloadAttestationPool = mock(PayloadAttestationPool.class);
+
   private final DepositProvider depositProvider = mock(DepositProvider.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
   private final Bytes32 defaultGraffiti = dataStructureUtil.randomBytes32();
@@ -162,6 +168,8 @@ class BlockOperationSelectorFactoryTest {
   private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   private final ExecutionLayerBlockProductionManager executionLayer =
       mock(ExecutionLayerBlockProductionManager.class);
+  private final ExecutionPayloadBidManager executionPayloadBidManager =
+      mock(ExecutionPayloadBidManager.class);
 
   private final CapturingBeaconBlockBodyBuilder bodyBuilder =
       new CapturingBeaconBlockBodyBuilder(false, false);
@@ -178,11 +186,13 @@ class BlockOperationSelectorFactoryTest {
           voluntaryExitPool,
           blsToExecutionChangePool,
           contributionPool,
+          payloadAttestationPool,
           depositProvider,
           eth1DataCache,
           graffitiBuilder,
           forkChoiceNotifier,
           executionLayer,
+          executionPayloadBidManager,
           metricsSystem,
           timeProvider);
   private ExecutionPayloadContext executionPayloadContext;
@@ -1031,6 +1041,18 @@ class BlockOperationSelectorFactoryTest {
     public BeaconBlockBodyBuilder blobKzgCommitments(
         final SszList<SszKZGCommitment> blobKzgCommitments) {
       this.blobKzgCommitments = blobKzgCommitments;
+      return this;
+    }
+
+    @Override
+    public BeaconBlockBodyBuilder signedExecutionPayloadBid(
+        final SignedExecutionPayloadBid signedExecutionPayloadBid) {
+      return this;
+    }
+
+    @Override
+    public BeaconBlockBodyBuilder payloadAttestations(
+        final SszList<PayloadAttestation> payloadAttestations) {
       return this;
     }
 

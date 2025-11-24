@@ -40,14 +40,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.metadata.BlobSidecarsAndMetaData;
-import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
-@TestSpecContext(allMilestones = true)
+// TODO-GLOAS Fix test https://github.com/Consensys/teku/issues/9833
+@TestSpecContext(allMilestones = true, ignoredMilestones = SpecMilestone.GLOAS)
 public class BlobSidecarSelectorFactoryTest {
 
   private final CombinedChainDataClient client = mock(CombinedChainDataClient.class);
@@ -56,7 +56,6 @@ public class BlobSidecarSelectorFactoryTest {
   private final List<UInt64> indices = List.of(UInt64.ZERO, UInt64.ONE);
   private final SignedBeaconBlock block = data.randomSignedBeaconBlock();
   private final List<BlobSidecar> blobSidecars = data.randomBlobSidecars(3);
-
   private final BlobSidecarSelectorFactory blobSidecarSelectorFactory =
       new BlobSidecarSelectorFactory(spec, client, mock(BlobSidecarReconstructionProvider.class));
 
@@ -122,31 +121,6 @@ public class BlobSidecarSelectorFactoryTest {
   }
 
   @Test
-  public void blockRootSelector_shouldAttemptToGetFinalizedBlobSidecarsFromArchive()
-      throws ExecutionException, InterruptedException {
-    final UInt64 finalizedSlot = UInt64.valueOf(42);
-    final SignedBlockAndState blockAndState = data.randomSignedBlockAndState(100);
-    when(client.getChainHead()).thenReturn(Optional.of(ChainHead.create(blockAndState)));
-
-    when(client.getFinalizedSlotByBlockRoot(block.getRoot()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(finalizedSlot)));
-    final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(finalizedSlot, block.getRoot());
-    // not available in DB
-    when(client.getBlobSidecars(slotAndBlockRoot, indices))
-        .thenReturn(SafeFuture.completedFuture(List.of()));
-    // available in archive
-    when(client.getArchivedBlobSidecars(slotAndBlockRoot, indices))
-        .thenReturn(SafeFuture.completedFuture(blobSidecars));
-
-    final Optional<BlobSidecarsAndMetaData> result =
-        blobSidecarSelectorFactory
-            .blockRootSelector(block.getRoot())
-            .getBlobSidecars(indices)
-            .get();
-    assertThat(result.get().getData()).isEqualTo(blobSidecars);
-  }
-
-  @Test
   public void blockRootSelector_shouldGetBlobSidecarsByRetrievingBlock()
       throws ExecutionException, InterruptedException {
     final SignedBlockAndState blockAndState = data.randomSignedBlockAndState(100);
@@ -172,23 +146,6 @@ public class BlobSidecarSelectorFactoryTest {
       throws ExecutionException, InterruptedException {
     when(client.isFinalized(block.getSlot())).thenReturn(true);
     when(client.getBlobSidecars(block.getSlot(), indices))
-        .thenReturn(SafeFuture.completedFuture(blobSidecars));
-    when(client.isChainHeadOptimistic()).thenReturn(false);
-
-    final Optional<BlobSidecarsAndMetaData> result =
-        blobSidecarSelectorFactory.slotSelector(block.getSlot()).getBlobSidecars(indices).get();
-    assertThat(result.get().getData()).isEqualTo(blobSidecars);
-  }
-
-  @Test
-  public void slotSelector_shouldAttemptToGetFinalizedBlobSidecarsFromArchive()
-      throws ExecutionException, InterruptedException {
-    when(client.isFinalized(block.getSlot())).thenReturn(true);
-    // not available in DB
-    when(client.getBlobSidecars(block.getSlot(), indices))
-        .thenReturn(SafeFuture.completedFuture(List.of()));
-    // available in archive
-    when(client.getArchivedBlobSidecars(block.getSlot(), indices))
         .thenReturn(SafeFuture.completedFuture(blobSidecars));
     when(client.isChainHeadOptimistic()).thenReturn(false);
 
@@ -271,69 +228,13 @@ public class BlobSidecarSelectorFactoryTest {
     when(client.getBlockAtSlotExact(block.getSlot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
     when(client.getBlobSidecars(any(SlotAndBlockRoot.class), anyList()))
-        .thenReturn(SafeFuture.completedFuture(List.of()));
-    when(client.getArchivedBlobSidecars(any(SlotAndBlockRoot.class), anyList()))
-        .thenReturn(SafeFuture.completedFuture(List.of()));
-    when(client.getArchivedBlobSidecars(any(UInt64.class), anyList()))
-        .thenReturn(SafeFuture.completedFuture(List.of()));
-
+        .thenReturn(SafeFuture.completedFuture(List.of(data.randomBlobSidecar())));
     blobSidecarSelectorFactory.slotSelector(block.getSlot()).getBlobSidecars(indices).get();
     if (ctx.getSpec().isMilestoneSupported(SpecMilestone.DENEB)) {
       verify(client).getBlobSidecars(any(SlotAndBlockRoot.class), anyList());
     } else {
       verify(client, never()).getBlobSidecars(any(SlotAndBlockRoot.class), anyList());
     }
-  }
-
-  @Test
-  public void shouldForwardRequestsToReconstructionProviderAfterFulu()
-      throws InterruptedException, ExecutionException {
-    final BlobSidecarReconstructionProvider blobSidecarReconstructionProviderMock =
-        mock(BlobSidecarReconstructionProvider.class);
-    final BlobSidecarSelectorFactory blobSidecarSelectorFactoryFulu =
-        new BlobSidecarSelectorFactory(
-            TestSpecFactory.createMinimalFulu(), client, blobSidecarReconstructionProviderMock);
-
-    final SignedBlockAndState blockAndState = data.randomSignedBlockAndState(100);
-
-    when(client.getChainHead()).thenReturn(Optional.of(ChainHead.create(blockAndState)));
-    when(blobSidecarReconstructionProviderMock.reconstructBlobSidecars(
-            blockAndState.getSlotAndBlockRoot(), indices))
-        .thenReturn(SafeFuture.completedFuture(blobSidecars));
-
-    final Optional<List<BlobSidecar>> result =
-        blobSidecarSelectorFactoryFulu
-            .headSelector()
-            .getBlobSidecars(indices)
-            .get()
-            .map(ObjectAndMetaData::getData);
-    assertThat(result).hasValue(blobSidecars);
-    verify(blobSidecarReconstructionProviderMock)
-        .reconstructBlobSidecars(any(SlotAndBlockRoot.class), anyList());
-  }
-
-  @Test
-  public void shouldForwardSlotSelectorRequestsToReconstructionProviderAfterFulu()
-      throws InterruptedException, ExecutionException {
-    final BlobSidecarReconstructionProvider blobSidecarReconstructionProviderMock =
-        mock(BlobSidecarReconstructionProvider.class);
-    final BlobSidecarSelectorFactory blobSidecarSelectorFactoryFulu =
-        new BlobSidecarSelectorFactory(
-            TestSpecFactory.createMinimalFulu(), client, blobSidecarReconstructionProviderMock);
-
-    when(client.isFinalized(block.getSlot())).thenReturn(true);
-    when(blobSidecarReconstructionProviderMock.reconstructBlobSidecars(block.getSlot(), indices))
-        .thenReturn(SafeFuture.completedFuture(blobSidecars));
-
-    final Optional<List<BlobSidecar>> result =
-        blobSidecarSelectorFactoryFulu
-            .slotSelector(block.getSlot())
-            .getBlobSidecars(indices)
-            .get()
-            .map(ObjectAndMetaData::getData);
-    assertThat(result).hasValue(blobSidecars);
-    verify(blobSidecarReconstructionProviderMock)
-        .reconstructBlobSidecars(any(UInt64.class), anyList());
   }
 
   @Test
@@ -373,6 +274,8 @@ public class BlobSidecarSelectorFactoryTest {
     when(client.isFinalized(block.getSlot())).thenReturn(false);
     when(client.getBlockAtSlotExact(block.getSlot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
+    when(client.getBlobSidecars(block.getSlot(), indices))
+        .thenReturn(SafeFuture.completedFuture(blobSidecars));
     when(client.isChainHeadOptimistic()).thenReturn(false);
     when(client.getBlobSidecars(block.getSlotAndBlockRoot(), indices))
         .thenReturn(SafeFuture.completedFuture(blobSidecars));

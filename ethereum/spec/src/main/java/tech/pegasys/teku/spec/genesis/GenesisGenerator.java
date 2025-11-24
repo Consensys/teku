@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.genesis;
 
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 import static tech.pegasys.teku.spec.config.SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX;
 
@@ -20,7 +21,6 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -44,6 +44,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.MutableBeaconStateFulu;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
@@ -71,7 +73,7 @@ public class GenesisGenerator {
         schemaDefinitions.getBeaconBlockBodySchema().createEmpty().hashTreeRoot();
     final BeaconBlockHeader beaconBlockHeader =
         new BeaconBlockHeader(
-            SpecConfig.GENESIS_SLOT, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, latestBlockRoot);
+            SpecConfig.GENESIS_SLOT, ZERO, Bytes32.ZERO, Bytes32.ZERO, latestBlockRoot);
     state.setLatestBlockHeader(beaconBlockHeader);
     state.setFork(genesisFork);
 
@@ -150,10 +152,14 @@ public class GenesisGenerator {
       final SchemaDefinitionsFulu schemaDefinitionsFulu =
           SchemaDefinitionsFulu.required(genesisSpec.getSchemaDefinitions());
 
+      final BeaconStateAccessorsFulu accessorsFulu =
+          BeaconStateAccessorsFulu.required(genesisSpec.beaconStateAccessors());
+
+      final MiscHelpersFulu helpersFulu = MiscHelpersFulu.required(genesisSpec.miscHelpers());
+
       final List<UInt64> proposerLookahead =
-          IntStream.range(0, (specConfig.getMinSeedLookahead() + 1) * specConfig.getSlotsPerEpoch())
-              .mapToObj(__ -> UInt64.valueOf(0))
-              .toList();
+          helpersFulu.initializeProposerLookahead(
+              BeaconStateElectra.required(state), accessorsFulu);
 
       MutableBeaconStateFulu.required(state)
           .setProposerLookahead(

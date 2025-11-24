@@ -24,7 +24,6 @@ import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,30 +33,35 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStreamHandler;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
   private static final Logger LOG = LogManager.getLogger();
   // 64 slots * 128 columns at max = 8192, half of MAX_REQUEST_DATA_COLUMN_SIDECARS
   private static final int MAX_BATCH_SIZE = 64;
 
+  private final Spec spec;
+  private final RecentChainData recentChainData;
   private final BatchDataColumnsByRangeReqResp byRangeRpc;
   private final BatchDataColumnsByRootReqResp byRootRpc;
-  private final Supplier<UInt64> firstNonFinalizedSlotSupplier;
   private final DataColumnsByRootIdentifierSchema byRootSchema;
 
   public DataColumnReqRespBatchingImpl(
+      final Spec spec,
+      final RecentChainData recentChainData,
       final BatchDataColumnsByRangeReqResp byRangeRpc,
       final BatchDataColumnsByRootReqResp byRootRpc,
-      final Supplier<UInt64> firstNonFinalizedSlotSupplier,
       final DataColumnsByRootIdentifierSchema byRootSchema) {
+    this.spec = spec;
+    this.recentChainData = recentChainData;
     this.byRangeRpc = byRangeRpc;
     this.byRootRpc = byRootRpc;
-    this.firstNonFinalizedSlotSupplier = firstNonFinalizedSlotSupplier;
     this.byRootSchema = byRootSchema;
   }
 
@@ -99,7 +103,8 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
       return;
     }
 
-    final UInt64 firstNonFinalizedSlot = firstNonFinalizedSlotSupplier.get();
+    final UInt64 firstNonFinalizedSlot =
+        spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch()).increment();
     final List<ByRangeRequest> byRangeRequests =
         generateByRangeRequests(nodeRequests, firstNonFinalizedSlot);
     final List<ByRootRequest> byRootRequests =

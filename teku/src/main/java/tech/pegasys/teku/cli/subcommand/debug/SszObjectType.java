@@ -100,9 +100,7 @@ public enum SszObjectType {
   ExecutionPayloadAndBlobsBundle(
       denebSchemas(SchemaDefinitionsDeneb::getExecutionPayloadAndBlobsBundleSchema)),
   DataColumn(fuluSchemas(SchemaDefinitionsFulu::getDataColumnSchema)),
-  DataColumnSidecar(fuluSchemas(SchemaDefinitionsFulu::getDataColumnSidecarSchema)),
-  ExecutionPayloadAndBlobsCellBundle(
-      fuluSchemas(SchemaDefinitionsFulu::getExecutionPayloadAndBlobsCellBundleSchema));
+  DataColumnSidecar(fuluSchemas(SchemaDefinitionsFulu::getDataColumnSidecarSchema));
 
   private final Function<SpecVersion, SszSchema<?>> getSchema;
 

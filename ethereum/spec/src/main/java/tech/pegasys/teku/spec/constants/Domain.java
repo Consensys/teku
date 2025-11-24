@@ -32,5 +32,9 @@ public class Domain {
   public static final Bytes4 CONTRIBUTION_AND_PROOF = Bytes4.fromHexString("0x09000000");
 
   // Capella
-  public static final Bytes4 DOMAIN_BLS_TO_EXECUTION_CHANGE = Bytes4.fromHexString("0x0A000000");
+  public static final Bytes4 BLS_TO_EXECUTION_CHANGE = Bytes4.fromHexString("0x0A000000");
+
+  // Gloas
+  public static final Bytes4 BEACON_BUILDER = Bytes4.fromHexString("0x1B000000");
+  public static final Bytes4 PTC_ATTESTER = Bytes4.fromHexString("0x0C000000");
 }

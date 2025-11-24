@@ -30,6 +30,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Bea
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodyElectra;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
@@ -44,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public interface BeaconBlockBody extends SszContainer {
+
   BLSSignature getRandaoReveal();
 
   SszSignature getRandaoRevealSsz();
@@ -92,6 +96,14 @@ public interface BeaconBlockBody extends SszContainer {
     return Optional.empty();
   }
 
+  default Optional<SignedExecutionPayloadBid> getOptionalSignedExecutionPayloadBid() {
+    return Optional.empty();
+  }
+
+  default Optional<SszList<PayloadAttestation>> getOptionalPayloadAttestations() {
+    return Optional.empty();
+  }
+
   default boolean isBlinded() {
     return false;
   }
@@ -132,6 +144,10 @@ public interface BeaconBlockBody extends SszContainer {
   }
 
   default Optional<BlindedBeaconBlockBodyElectra> toBlindedVersionElectra() {
+    return Optional.empty();
+  }
+
+  default Optional<BeaconBlockBodyGloas> toVersionGloas() {
     return Optional.empty();
   }
 }

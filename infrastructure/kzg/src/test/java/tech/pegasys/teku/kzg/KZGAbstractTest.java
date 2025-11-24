@@ -18,21 +18,26 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.kzg.KZG.BLS_MODULUS;
 import static tech.pegasys.teku.kzg.KZG.CELLS_PER_EXT_BLOB;
 import static tech.pegasys.teku.kzg.KZG.FIELD_ELEMENTS_PER_BLOB;
 
 import com.google.common.collect.Streams;
+import com.google.common.io.Resources;
 import ethereum.ckzg4844.CKZGException;
 import ethereum.ckzg4844.CKZGException.CKZGError;
 import java.math.BigInteger;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,6 +46,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -333,6 +340,67 @@ public abstract class KZGAbstractTest {
                   List.of(invalidProof)))
           .isFalse();
     }
+  }
+
+  @Test
+  public void testDataColumnSidecarKzgProofFromDevnet() throws Exception {
+    final String sidecarJson =
+        Resources.toString(
+            Resources.getResource(KZGAbstractTest.class, "good-sidecar.json"),
+            StandardCharsets.UTF_8);
+    final DeserializableTypeDefinition<DataColumnSidecarJson.CellWithIdJson> cellWithIdJsonType =
+        DeserializableTypeDefinition.object(DataColumnSidecarJson.CellWithIdJson.class)
+            .name("CellWithIdJson")
+            .initializer(DataColumnSidecarJson.CellWithIdJson::new)
+            .withField(
+                "cell",
+                STRING_TYPE,
+                DataColumnSidecarJson.CellWithIdJson::getCell,
+                DataColumnSidecarJson.CellWithIdJson::setCell)
+            .withField(
+                "column_id",
+                INTEGER_TYPE,
+                DataColumnSidecarJson.CellWithIdJson::getColumnId,
+                DataColumnSidecarJson.CellWithIdJson::setColumnId)
+            .build();
+    final DeserializableTypeDefinition<DataColumnSidecarJson> dataColumnSidecarJsonType =
+        DeserializableTypeDefinition.object(DataColumnSidecarJson.class)
+            .name("DataColumnSidecarJson")
+            .initializer(DataColumnSidecarJson::new)
+            .withField(
+                "commitments",
+                DeserializableTypeDefinition.listOf(STRING_TYPE),
+                DataColumnSidecarJson::getCommitments,
+                DataColumnSidecarJson::setCommitments)
+            .withField(
+                "cells",
+                DeserializableTypeDefinition.listOf(cellWithIdJsonType),
+                DataColumnSidecarJson::getCellWithColumnIds,
+                DataColumnSidecarJson::setCellWithColumnIds)
+            .withField(
+                "proofs",
+                DeserializableTypeDefinition.listOf(STRING_TYPE),
+                DataColumnSidecarJson::getProofs,
+                DataColumnSidecarJson::setProofs)
+            .build();
+    final DataColumnSidecarJson dataColumnSidecarJson =
+        JsonUtil.parse(sidecarJson, dataColumnSidecarJsonType);
+    assertThat(
+            kzg.verifyCellProofBatch(
+                dataColumnSidecarJson.getCommitments().stream()
+                    .map(str -> new KZGCommitment(Bytes48.fromHexString(str)))
+                    .toList(),
+                dataColumnSidecarJson.getCellWithColumnIds().stream()
+                    .map(
+                        cellWithId ->
+                            new KZGCellWithColumnId(
+                                new KZGCell(Bytes.fromHexString(cellWithId.getCell())),
+                                KZGCellID.fromCellColumnIndex(cellWithId.getColumnId())))
+                    .toList(),
+                dataColumnSidecarJson.getProofs().stream()
+                    .map(str -> new KZGProof(Bytes48.fromHexString(str)))
+                    .toList()))
+        .isTrue();
   }
 
   Bytes getSampleBlob() {

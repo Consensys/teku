@@ -62,11 +62,15 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -77,12 +81,15 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.generator.ChainProperties;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
@@ -207,33 +214,32 @@ public class DatabaseTest {
   }
 
   @TestTemplate
-  @SuppressWarnings("JavaCase")
   public void verifyBlobsLifecycle(final DatabaseContext context) throws IOException {
     initialize(context);
 
     // no blobs, earliest slot 0, because of genesis Deneb
     assertThat(database.getEarliestBlobSidecarSlot()).contains(ZERO);
 
-    final BlobSidecar blobSidecar1_0 =
+    final BlobSidecar block1Sidecar0 =
         dataStructureUtil.randomBlobSidecarForBlock(
             dataStructureUtil.randomSignedBeaconBlock(1), 0);
     final SignedBeaconBlock blockAt2 = dataStructureUtil.randomSignedBeaconBlock(2);
-    final BlobSidecar blobSidecar2_0 = dataStructureUtil.randomBlobSidecarForBlock(blockAt2, 0);
-    final BlobSidecar blobSidecar2_1 = dataStructureUtil.randomBlobSidecarForBlock(blockAt2, 1);
-    final BlobSidecar blobSidecar3_0 =
+    final BlobSidecar block2Sidecar0 = dataStructureUtil.randomBlobSidecarForBlock(blockAt2, 0);
+    final BlobSidecar block2Sidecar1 = dataStructureUtil.randomBlobSidecarForBlock(blockAt2, 1);
+    final BlobSidecar block3Sidecar0 =
         dataStructureUtil.randomBlobSidecarForBlock(
             dataStructureUtil.randomSignedBeaconBlock(3), 0);
-    final BlobSidecar blobSidecar5_0 =
+    final BlobSidecar block5Sidecar0 =
         dataStructureUtil.randomBlobSidecarForBlock(
             dataStructureUtil.randomSignedBeaconBlock(5), 0);
     final BlobSidecar blobSidecarNotAdded = dataStructureUtil.randomBlobSidecar();
 
     // add blobs out of order
-    database.storeBlobSidecar(blobSidecar2_0);
-    database.storeBlobSidecar(blobSidecar1_0);
-    database.storeBlobSidecar(blobSidecar2_1);
-    database.storeBlobSidecar(blobSidecar5_0);
-    database.storeBlobSidecar(blobSidecar3_0);
+    database.storeBlobSidecar(block2Sidecar0);
+    database.storeBlobSidecar(block1Sidecar0);
+    database.storeBlobSidecar(block2Sidecar1);
+    database.storeBlobSidecar(block5Sidecar0);
+    database.storeBlobSidecar(block3Sidecar0);
 
     assertThat(database.getBlobSidecarColumnCount()).isEqualTo(5L);
     database.update(
@@ -245,10 +251,11 @@ public class DatabaseTest {
             Map.of(),
             Map.of(),
             Map.of(),
-            Optional.of(blobSidecar1_0.getSlot()),
+            Optional.of(block1Sidecar0.getSlot()),
             Map.of(),
             Map.of(),
             false,
+            Optional.empty(),
             Optional.empty(),
             Optional.empty(),
             true,
@@ -262,10 +269,11 @@ public class DatabaseTest {
             Map.of(),
             Map.of(),
             Map.of(),
-            Optional.of(blobSidecar3_0.getSlot()),
+            Optional.of(block3Sidecar0.getSlot()),
             Map.of(),
             Map.of(),
             false,
+            Optional.empty(),
             Optional.empty(),
             Optional.empty(),
             true,
@@ -274,7 +282,7 @@ public class DatabaseTest {
     assertThat(database.getEarliestBlobSidecarSlot()).contains(ZERO);
 
     // all added blobs must be there
-    List.of(blobSidecar1_0, blobSidecar2_0, blobSidecar2_1, blobSidecar3_0, blobSidecar5_0)
+    List.of(block1Sidecar0, block2Sidecar0, block2Sidecar1, block3Sidecar0, block5Sidecar0)
         .forEach(
             blobSidecar ->
                 assertThat(database.getBlobSidecar(blobSidecarToKey(blobSidecar)))
@@ -285,60 +293,60 @@ public class DatabaseTest {
 
     // all blobs must be streamed ordered by slot
     assertBlobSidecarKeys(
-        blobSidecar1_0.getSlot(),
-        blobSidecar5_0.getSlot(),
-        blobSidecarToKey(blobSidecar1_0),
-        blobSidecarToKey(blobSidecar2_0),
-        blobSidecarToKey(blobSidecar2_1),
-        blobSidecarToKey(blobSidecar3_0),
-        blobSidecarToKey(blobSidecar5_0));
+        block1Sidecar0.getSlot(),
+        block5Sidecar0.getSlot(),
+        blobSidecarToKey(block1Sidecar0),
+        blobSidecarToKey(block2Sidecar0),
+        blobSidecarToKey(block2Sidecar1),
+        blobSidecarToKey(block3Sidecar0),
+        blobSidecarToKey(block5Sidecar0));
     assertBlobSidecars(
         Map.of(
-            blobSidecar1_0.getSlot(),
-            List.of(blobSidecar1_0),
-            blobSidecar2_0.getSlot(),
-            List.of(blobSidecar2_0, blobSidecar2_1),
-            blobSidecar3_0.getSlot(),
-            List.of(blobSidecar3_0),
-            blobSidecar5_0.getSlot(),
-            List.of(blobSidecar5_0)));
+            block1Sidecar0.getSlot(),
+            List.of(block1Sidecar0),
+            block2Sidecar0.getSlot(),
+            List.of(block2Sidecar0, block2Sidecar1),
+            block3Sidecar0.getSlot(),
+            List.of(block3Sidecar0),
+            block5Sidecar0.getSlot(),
+            List.of(block5Sidecar0)));
 
     // let's prune with limit to 1
     assertThat(database.pruneOldestBlobSidecars(UInt64.MAX_VALUE, 1, blobSidecarsArchiver))
         .isTrue();
     assertBlobSidecarKeys(
-        blobSidecar2_0.getSlot(),
-        blobSidecar5_0.getSlot(),
-        blobSidecarToKey(blobSidecar2_0),
-        blobSidecarToKey(blobSidecar2_1),
-        blobSidecarToKey(blobSidecar3_0),
-        blobSidecarToKey(blobSidecar5_0));
+        block2Sidecar0.getSlot(),
+        block5Sidecar0.getSlot(),
+        blobSidecarToKey(block2Sidecar0),
+        blobSidecarToKey(block2Sidecar1),
+        blobSidecarToKey(block3Sidecar0),
+        blobSidecarToKey(block5Sidecar0));
     assertBlobSidecars(
         Map.of(
-            blobSidecar2_0.getSlot(), List.of(blobSidecar2_0, blobSidecar2_1),
-            blobSidecar3_0.getSlot(), List.of(blobSidecar3_0),
-            blobSidecar5_0.getSlot(), List.of(blobSidecar5_0)));
+            block2Sidecar0.getSlot(), List.of(block2Sidecar0, block2Sidecar1),
+            block3Sidecar0.getSlot(), List.of(block3Sidecar0),
+            block5Sidecar0.getSlot(), List.of(block5Sidecar0)));
     assertThat(database.getEarliestBlobSidecarSlot()).contains(UInt64.valueOf(2));
     assertThat(database.getBlobSidecarColumnCount()).isEqualTo(4L);
 
     // check if the pruned blob was written to disk. Not validating contents here.
-    assertThat(getSlotBlobsArchiveFile(blobSidecar1_0)).exists();
-    assertThat(getSlotBlobsArchiveFile(blobSidecar2_0)).doesNotExist();
+    assertThat(getSlotBlobsArchiveFile(block1Sidecar0)).exists();
+    assertThat(getSlotBlobsArchiveFile(block2Sidecar0)).doesNotExist();
 
     // let's prune up to slot 1 (nothing will be pruned)
     assertThat(database.pruneOldestBlobSidecars(ONE, 10, blobSidecarsArchiver)).isFalse();
     assertBlobSidecarKeys(
-        blobSidecar2_0.getSlot(),
-        blobSidecar5_0.getSlot(),
-        blobSidecarToKey(blobSidecar2_0),
-        blobSidecarToKey(blobSidecar2_1),
-        blobSidecarToKey(blobSidecar3_0),
-        blobSidecarToKey(blobSidecar5_0));
+        block2Sidecar0.getSlot(),
+        block5Sidecar0.getSlot(),
+        blobSidecarToKey(block2Sidecar0),
+        blobSidecarToKey(block2Sidecar1),
+        blobSidecarToKey(block3Sidecar0),
+        blobSidecarToKey(block5Sidecar0));
     assertBlobSidecars(
         Map.of(
-            blobSidecar2_0.getSlot(), List.of(blobSidecar2_0, blobSidecar2_1),
-            blobSidecar3_0.getSlot(), List.of(blobSidecar3_0),
-            blobSidecar5_0.getSlot(), List.of(blobSidecar5_0)));
+            block2Sidecar0.getSlot(), List.of(block2Sidecar0, block2Sidecar1),
+            block3Sidecar0.getSlot(), List.of(block3Sidecar0),
+            block5Sidecar0.getSlot(), List.of(block5Sidecar0)));
     assertThat(database.getEarliestBlobSidecarSlot()).contains(UInt64.valueOf(2));
     assertThat(database.getBlobSidecarColumnCount()).isEqualTo(4L);
 
@@ -346,15 +354,15 @@ public class DatabaseTest {
     assertThat(database.pruneOldestBlobSidecars(UInt64.valueOf(3), 10, blobSidecarsArchiver))
         .isFalse();
     assertBlobSidecarKeys(
-        blobSidecar1_0.getSlot(), blobSidecar5_0.getSlot(), blobSidecarToKey(blobSidecar5_0));
-    assertBlobSidecars(Map.of(blobSidecar5_0.getSlot(), List.of(blobSidecar5_0)));
+        block1Sidecar0.getSlot(), block5Sidecar0.getSlot(), blobSidecarToKey(block5Sidecar0));
+    assertBlobSidecars(Map.of(block5Sidecar0.getSlot(), List.of(block5Sidecar0)));
     assertThat(database.getEarliestBlobSidecarSlot()).contains(UInt64.valueOf(4));
     assertThat(database.getBlobSidecarColumnCount()).isEqualTo(1L);
 
     // check if the pruned blob was written to disk. Not validating contents here.
-    assertThat(getSlotBlobsArchiveFile(blobSidecar2_0)).exists();
-    assertThat(getSlotBlobsArchiveFile(blobSidecar3_0)).exists();
-    assertThat(getSlotBlobsArchiveFile(blobSidecar5_0)).doesNotExist();
+    assertThat(getSlotBlobsArchiveFile(block2Sidecar0)).exists();
+    assertThat(getSlotBlobsArchiveFile(block3Sidecar0)).exists();
+    assertThat(getSlotBlobsArchiveFile(block5Sidecar0)).doesNotExist();
 
     // let's prune all
     assertThat(database.pruneOldestBlobSidecars(UInt64.valueOf(5), 1, blobSidecarsArchiver))
@@ -365,7 +373,7 @@ public class DatabaseTest {
     assertThat(database.getBlobSidecarColumnCount()).isEqualTo(0L);
 
     // check if the pruned blob was written to disk. Not validating contents here.
-    assertThat(getSlotBlobsArchiveFile(blobSidecar5_0)).exists();
+    assertThat(getSlotBlobsArchiveFile(block5Sidecar0)).exists();
   }
 
   private Path getSlotBlobsArchiveFile(final BlobSidecar blobSidecar) {
@@ -374,30 +382,29 @@ public class DatabaseTest {
   }
 
   @TestTemplate
-  @SuppressWarnings("JavaCase")
   public void verifyNonCanonicalBlobsLifecycle(final DatabaseContext context) throws IOException {
     initialize(context);
 
-    final BlobSidecar blobSidecar1_0 =
+    final BlobSidecar block1Sidecar0 =
         dataStructureUtil.randomBlobSidecarForBlock(
             dataStructureUtil.randomSignedBeaconBlock(1), 0);
-    final SignedBeaconBlock blockAt2 = dataStructureUtil.randomSignedBeaconBlock(2);
-    final BlobSidecar blobSidecar2_0 = dataStructureUtil.randomBlobSidecarForBlock(blockAt2, 0);
-    final BlobSidecar blobSidecar2_1 = dataStructureUtil.randomBlobSidecarForBlock(blockAt2, 1);
-    final BlobSidecar blobSidecar3_0 =
+    final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2);
+    final BlobSidecar block2Sidecar0 = dataStructureUtil.randomBlobSidecarForBlock(block2, 0);
+    final BlobSidecar block2Sidecar1 = dataStructureUtil.randomBlobSidecarForBlock(block2, 1);
+    final BlobSidecar block3Sidecar0 =
         dataStructureUtil.randomBlobSidecarForBlock(
             dataStructureUtil.randomSignedBeaconBlock(3), 0);
-    final BlobSidecar blobSidecar5_0 =
+    final BlobSidecar block5Sidecar0 =
         dataStructureUtil.randomBlobSidecarForBlock(
             dataStructureUtil.randomSignedBeaconBlock(5), 0);
     final BlobSidecar blobSidecarNotAdded = dataStructureUtil.randomBlobSidecar();
 
     // add non-canonical blobs out of order
-    database.storeNonCanonicalBlobSidecar(blobSidecar2_0);
-    database.storeNonCanonicalBlobSidecar(blobSidecar1_0);
-    database.storeNonCanonicalBlobSidecar(blobSidecar2_1);
-    database.storeNonCanonicalBlobSidecar(blobSidecar5_0);
-    database.storeNonCanonicalBlobSidecar(blobSidecar3_0);
+    database.storeNonCanonicalBlobSidecar(block2Sidecar0);
+    database.storeNonCanonicalBlobSidecar(block1Sidecar0);
+    database.storeNonCanonicalBlobSidecar(block2Sidecar1);
+    database.storeNonCanonicalBlobSidecar(block5Sidecar0);
+    database.storeNonCanonicalBlobSidecar(block3Sidecar0);
 
     assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(5L);
 
@@ -411,9 +418,10 @@ public class DatabaseTest {
             Map.of(),
             Map.of(),
             Optional.empty(),
-            Map.of(blobSidecar1_0.getBlockRoot(), blobSidecar1_0.getSlot()),
+            Map.of(block1Sidecar0.getBlockRoot(), block1Sidecar0.getSlot()),
             Map.of(),
             false,
+            Optional.empty(),
             Optional.empty(),
             Optional.empty(),
             true,
@@ -428,16 +436,17 @@ public class DatabaseTest {
             Map.of(),
             Map.of(),
             Optional.empty(),
-            Map.of(blobSidecar3_0.getBlockRoot(), blobSidecar3_0.getSlot()),
+            Map.of(block3Sidecar0.getBlockRoot(), block3Sidecar0.getSlot()),
             Map.of(),
             false,
+            Optional.empty(),
             Optional.empty(),
             Optional.empty(),
             true,
             false));
 
     // check all non-canonical blobs are present
-    List.of(blobSidecar1_0, blobSidecar2_0, blobSidecar2_1, blobSidecar3_0, blobSidecar5_0)
+    List.of(block1Sidecar0, block2Sidecar0, block2Sidecar1, block3Sidecar0, block5Sidecar0)
         .forEach(
             blobSidecar ->
                 assertThat(database.getNonCanonicalBlobSidecar(blobSidecarToKey(blobSidecar)))
@@ -449,66 +458,66 @@ public class DatabaseTest {
 
     // all non-canonical blobs must be streamed ordered by slot
     assertNonCanonicalBlobSidecarKeys(
-        blobSidecar1_0.getSlot(),
-        blobSidecar5_0.getSlot(),
-        blobSidecarToKey(blobSidecar1_0),
-        blobSidecarToKey(blobSidecar2_0),
-        blobSidecarToKey(blobSidecar2_1),
-        blobSidecarToKey(blobSidecar3_0),
-        blobSidecarToKey(blobSidecar5_0));
+        block1Sidecar0.getSlot(),
+        block5Sidecar0.getSlot(),
+        blobSidecarToKey(block1Sidecar0),
+        blobSidecarToKey(block2Sidecar0),
+        blobSidecarToKey(block2Sidecar1),
+        blobSidecarToKey(block3Sidecar0),
+        blobSidecarToKey(block5Sidecar0));
     assertNonCanonicalBlobSidecars(
         Map.of(
-            blobSidecar1_0.getSlot(),
-            List.of(blobSidecar1_0),
-            blobSidecar2_0.getSlot(),
-            List.of(blobSidecar2_0, blobSidecar2_1),
-            blobSidecar3_0.getSlot(),
-            List.of(blobSidecar3_0),
-            blobSidecar5_0.getSlot(),
-            List.of(blobSidecar5_0)));
+            block1Sidecar0.getSlot(),
+            List.of(block1Sidecar0),
+            block2Sidecar0.getSlot(),
+            List.of(block2Sidecar0, block2Sidecar1),
+            block3Sidecar0.getSlot(),
+            List.of(block3Sidecar0),
+            block5Sidecar0.getSlot(),
+            List.of(block5Sidecar0)));
 
     // Pruning with a prune limit set to 1: Only blobSidecar1 will be pruned
     assertThat(
             database.pruneOldestNonCanonicalBlobSidecars(UInt64.MAX_VALUE, 1, blobSidecarsArchiver))
         .isTrue();
     assertNonCanonicalBlobSidecarKeys(
-        blobSidecar2_0.getSlot(),
-        blobSidecar5_0.getSlot(),
-        blobSidecarToKey(blobSidecar2_0),
-        blobSidecarToKey(blobSidecar2_1),
-        blobSidecarToKey(blobSidecar3_0),
-        blobSidecarToKey(blobSidecar5_0));
+        block2Sidecar0.getSlot(),
+        block5Sidecar0.getSlot(),
+        blobSidecarToKey(block2Sidecar0),
+        blobSidecarToKey(block2Sidecar1),
+        blobSidecarToKey(block3Sidecar0),
+        blobSidecarToKey(block5Sidecar0));
     assertNonCanonicalBlobSidecars(
         Map.of(
-            blobSidecar2_0.getSlot(), List.of(blobSidecar2_0, blobSidecar2_1),
-            blobSidecar3_0.getSlot(), List.of(blobSidecar3_0),
-            blobSidecar5_0.getSlot(), List.of(blobSidecar5_0)));
+            block2Sidecar0.getSlot(), List.of(block2Sidecar0, block2Sidecar1),
+            block3Sidecar0.getSlot(), List.of(block3Sidecar0),
+            block5Sidecar0.getSlot(), List.of(block5Sidecar0)));
     assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(4L);
 
     // check if the pruned blob was written to disk. Not validating contents here.
-    assertThat(getSlotBlobsArchiveFile(blobSidecar1_0)).exists();
-    assertThat(getSlotBlobsArchiveFile(blobSidecar2_0)).doesNotExist();
+    assertThat(getSlotBlobsArchiveFile(block1Sidecar0)).exists();
+    assertThat(getSlotBlobsArchiveFile(block2Sidecar0)).doesNotExist();
 
     // Pruning up to slot 1: No blobs pruned
     assertThat(database.pruneOldestNonCanonicalBlobSidecars(ONE, 10, blobSidecarsArchiver))
         .isFalse();
     assertNonCanonicalBlobSidecarKeys(
-        blobSidecar2_0.getSlot(),
-        blobSidecar5_0.getSlot(),
-        blobSidecarToKey(blobSidecar2_0),
-        blobSidecarToKey(blobSidecar2_1),
-        blobSidecarToKey(blobSidecar3_0),
-        blobSidecarToKey(blobSidecar5_0));
+        block2Sidecar0.getSlot(),
+        block5Sidecar0.getSlot(),
+        blobSidecarToKey(block2Sidecar0),
+        blobSidecarToKey(block2Sidecar1),
+        blobSidecarToKey(block3Sidecar0),
+        blobSidecarToKey(block5Sidecar0));
     assertNonCanonicalBlobSidecars(
         Map.of(
-            blobSidecar2_0.getSlot(), List.of(blobSidecar2_0, blobSidecar2_1),
-            blobSidecar3_0.getSlot(), List.of(blobSidecar3_0),
-            blobSidecar5_0.getSlot(), List.of(blobSidecar5_0)));
+            block2Sidecar0.getSlot(), List.of(block2Sidecar0, block2Sidecar1),
+            block3Sidecar0.getSlot(), List.of(block3Sidecar0),
+            block5Sidecar0.getSlot(), List.of(block5Sidecar0)));
     assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(4L);
 
     // check if the pruned blob was written to disk. Not validating contents here.
-    assertThat(getSlotBlobsArchiveFile(blobSidecar1_0)).exists();
-    assertThat(getSlotBlobsArchiveFile(blobSidecar2_0)).doesNotExist();
+    assertThat(getSlotBlobsArchiveFile(block1Sidecar0)).exists();
+    assertThat(getSlotBlobsArchiveFile(block2Sidecar0)).doesNotExist();
 
     // Prune blobs up to slot 3
     assertThat(
@@ -516,14 +525,14 @@ public class DatabaseTest {
                 UInt64.valueOf(3), 10, blobSidecarsArchiver))
         .isFalse();
     assertNonCanonicalBlobSidecarKeys(
-        blobSidecar1_0.getSlot(), blobSidecar5_0.getSlot(), blobSidecarToKey(blobSidecar5_0));
-    assertNonCanonicalBlobSidecars(Map.of(blobSidecar5_0.getSlot(), List.of(blobSidecar5_0)));
+        block1Sidecar0.getSlot(), block5Sidecar0.getSlot(), blobSidecarToKey(block5Sidecar0));
+    assertNonCanonicalBlobSidecars(Map.of(block5Sidecar0.getSlot(), List.of(block5Sidecar0)));
     assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(1L);
 
     // check if the pruned blob was written to disk. Not validating contents here.
-    assertThat(getSlotBlobsArchiveFile(blobSidecar2_0)).exists();
-    assertThat(getSlotBlobsArchiveFile(blobSidecar3_0)).exists();
-    assertThat(getSlotBlobsArchiveFile(blobSidecar5_0)).doesNotExist();
+    assertThat(getSlotBlobsArchiveFile(block2Sidecar0)).exists();
+    assertThat(getSlotBlobsArchiveFile(block3Sidecar0)).exists();
+    assertThat(getSlotBlobsArchiveFile(block5Sidecar0)).doesNotExist();
 
     // Pruning all blobs
     assertThat(
@@ -535,7 +544,18 @@ public class DatabaseTest {
     assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(0L);
 
     // check if the pruned blob was written to disk. Not validating contents here.
-    assertThat(getSlotBlobsArchiveFile(blobSidecar5_0)).exists();
+    assertThat(getSlotBlobsArchiveFile(block5Sidecar0)).exists();
+  }
+
+  @TestTemplate
+  public void canGetAndUpdateCustodyGroupCount(final DatabaseContext context) throws IOException {
+    initialize(context);
+    assertThat(recentChainData.getCustodyGroupCount()).isEmpty();
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    transaction.setCustodyGroupCount(UInt64.ONE);
+    assertThat(transaction.commit()).isCompleted();
+    assertThat(recentChainData.getCustodyGroupCount()).contains(UInt64.ONE);
+    assertThat(database.getCustodyGroupCount()).contains(UInt64.ONE);
   }
 
   @TestTemplate
@@ -2342,183 +2362,297 @@ public class DatabaseTest {
   }
 
   @TestTemplate
-  public void setFirstSamplerIncompleteSlot_isOperative(final DatabaseContext context)
-      throws IOException {
-    setupWithSpec(TestSpecFactory.createMinimalFulu());
-    initialize(context);
-    assertThat(database.getFirstSamplerIncompleteSlot().isEmpty()).isTrue();
-
-    final UInt64 incompleteSlot = UInt64.valueOf(123);
-    database.setFirstSamplerIncompleteSlot(UInt64.valueOf(123));
-    assertThat(database.getFirstSamplerIncompleteSlot()).contains(incompleteSlot);
-  }
-
-  @TestTemplate
-  @SuppressWarnings("JavaCase")
   public void streamDataColumnIdentifiers_isOperative(final DatabaseContext context)
       throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalFulu());
     initialize(context);
 
     final SignedBeaconBlockHeader blockHeader1 = dataStructureUtil.randomSignedBeaconBlockHeader();
-    final DataColumnSidecar dataColumnSidecar1_0 =
+    final DataColumnSidecar block1Sidecar0 =
         dataStructureUtil.randomDataColumnSidecar(blockHeader1, ZERO);
-    final DataColumnSlotAndIdentifier columnSlotAndIdentifier1_0 =
-        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_0);
-    final DataColumnSidecar dataColumnSidecar1_1 =
+    final DataColumnSlotAndIdentifier block1Column0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar0);
+    final DataColumnSidecar block1Sidecar1 =
         dataStructureUtil.randomDataColumnSidecar(blockHeader1, ONE);
-    final DataColumnSlotAndIdentifier columnSlotAndIdentifier1_1 =
-        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_1);
+    final DataColumnSlotAndIdentifier block1Column1 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar1);
 
     final SignedBeaconBlockHeader blockHeader2 =
         dataStructureUtil.randomSignedBeaconBlockHeader(
             blockHeader1.getMessage().getSlot().plus(100));
-    final DataColumnSidecar dataColumnSidecar2_0 =
+    final DataColumnSidecar block2Sidecar0 =
         dataStructureUtil.randomDataColumnSidecar(blockHeader2, ZERO);
-    final DataColumnSlotAndIdentifier columnSlotAndIdentifier2_0 =
-        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar2_0);
+    final DataColumnSlotAndIdentifier block2Column0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block2Sidecar0);
 
-    database.addSidecar(dataColumnSidecar1_0);
-    database.addSidecar(dataColumnSidecar1_1);
-    database.addSidecar(dataColumnSidecar2_0);
+    database.addSidecar(block1Sidecar0);
+    database.addSidecar(block1Sidecar1);
+    database.addSidecar(block2Sidecar0);
 
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
-        database.streamDataColumnIdentifiers(dataColumnSidecar1_0.getSlot().plus(1))) {
+        database.streamDataColumnIdentifiers(block1Sidecar0.getSlot().plus(1))) {
       assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
     }
 
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
-        database.streamDataColumnIdentifiers(dataColumnSidecar1_0.getSlot())) {
+        database.streamDataColumnIdentifiers(block1Sidecar0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList())
-          .containsExactly(columnSlotAndIdentifier1_0, columnSlotAndIdentifier1_1);
+          .containsExactly(block1Column0, block1Column1);
     }
 
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(
-            dataColumnSidecar1_0.getSlot().plus(1), dataColumnSidecar2_0.getSlot().plus(1))) {
-      assertThat(dataColumnIdentifiersStream.toList()).containsExactly(columnSlotAndIdentifier2_0);
+            block1Sidecar0.getSlot().plus(1), block2Sidecar0.getSlot().plus(1))) {
+      assertThat(dataColumnIdentifiersStream.toList()).containsExactly(block2Column0);
     }
   }
 
   @TestTemplate
-  @SuppressWarnings("JavaCase")
   public void pruneAllSidecars_isOperative(final DatabaseContext context) throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalFulu());
     initialize(context);
 
     final SignedBeaconBlockHeader blockHeader1 =
         dataStructureUtil.randomSignedBeaconBlockHeader(ONE);
-    final DataColumnSidecar dataColumnSidecar1_0 =
+    final DataColumnSidecar block1Sidecar0 =
         dataStructureUtil.randomDataColumnSidecar(blockHeader1, ZERO);
-    final DataColumnSlotAndIdentifier columnSlotAndIdentifier1_0 =
-        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_0);
-    final DataColumnSidecar dataColumnSidecar1_1 =
+    final DataColumnSlotAndIdentifier block1Column0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar0);
+    final DataColumnSidecar block1Sidecar1 =
         dataStructureUtil.randomDataColumnSidecar(blockHeader1, ONE);
-    final DataColumnSlotAndIdentifier columnSlotAndIdentifier1_1 =
-        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_1);
+    final DataColumnSlotAndIdentifier block1Column1 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar1);
 
     final SignedBeaconBlockHeader blockHeader2 =
         dataStructureUtil.randomSignedBeaconBlockHeader(
             blockHeader1.getMessage().getSlot().plus(100));
-    final DataColumnSidecar dataColumnSidecar2_0 =
+    final DataColumnSidecar block2Sidecar0 =
         dataStructureUtil.randomDataColumnSidecar(blockHeader2, ZERO);
-    final DataColumnSlotAndIdentifier columnSlotAndIdentifier2_0 =
-        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar2_0);
+    final DataColumnSlotAndIdentifier block2Column0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block2Sidecar0);
 
-    database.addSidecar(dataColumnSidecar1_0);
-    database.addSidecar(dataColumnSidecar1_1);
-    database.addSidecar(dataColumnSidecar2_0);
+    database.addSidecar(block1Sidecar0);
+    database.addSidecar(block1Sidecar1);
+    database.addSidecar(block2Sidecar0);
 
     database.pruneAllSidecars(ZERO, 10);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
-        database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar2_0.getSlot())) {
+        database.streamDataColumnIdentifiers(ZERO, block2Sidecar0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList())
-          .containsExactly(
-              columnSlotAndIdentifier1_0, columnSlotAndIdentifier1_1, columnSlotAndIdentifier2_0);
+          .containsExactly(block1Column0, block1Column1, block2Column0);
     }
 
     database.pruneAllSidecars(ONE, 10);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
-        database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar2_0.getSlot())) {
-      assertThat(dataColumnIdentifiersStream.toList()).containsExactly(columnSlotAndIdentifier2_0);
+        database.streamDataColumnIdentifiers(ZERO, block2Sidecar0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList()).containsExactly(block2Column0);
     }
 
-    database.pruneAllSidecars(dataColumnSidecar2_0.getSlot(), 10);
+    database.pruneAllSidecars(block2Sidecar0.getSlot(), 10);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
-        database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar2_0.getSlot())) {
+        database.streamDataColumnIdentifiers(ZERO, block2Sidecar0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
     }
   }
 
   @TestTemplate
-  @SuppressWarnings("JavaCase")
   public void pruneAllSidecars_pruneBasedOnSlots(final DatabaseContext context) throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalFulu());
     initialize(context);
 
     final SignedBeaconBlockHeader blockHeader1 =
         dataStructureUtil.randomSignedBeaconBlockHeader(ONE);
-    final DataColumnSidecar dataColumnSidecar1_0 =
+    final DataColumnSidecar block1Sidecar0 =
         dataStructureUtil.randomDataColumnSidecar(blockHeader1, ZERO);
-    final DataColumnSlotAndIdentifier columnSlotAndIdentifier1_0 =
-        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_0);
-    final DataColumnSidecar dataColumnSidecar1_1 =
+    final DataColumnSlotAndIdentifier block1Column0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar0);
+    final DataColumnSidecar block1Sidecar1 =
         dataStructureUtil.randomDataColumnSidecar(blockHeader1, ONE);
-    final DataColumnSlotAndIdentifier columnSlotAndIdentifier1_1 =
-        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_1);
-    final DataColumnSidecar dataColumnSidecar1_2 =
+    final DataColumnSlotAndIdentifier block1Column1 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar1);
+    final DataColumnSidecar block1Sidecar2 =
         dataStructureUtil.randomDataColumnSidecar(blockHeader1, UInt64.valueOf(2));
-    final DataColumnSlotAndIdentifier columnSlotAndIdentifier1_2 =
-        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_2);
+    final DataColumnSlotAndIdentifier block1Column2 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar2);
 
     final SignedBeaconBlockHeader blockHeader2 =
         dataStructureUtil.randomSignedBeaconBlockHeader(
             blockHeader1.getMessage().getSlot().plus(100));
-    final DataColumnSidecar dataColumnSidecar2_0 =
+    final DataColumnSidecar block2Sidecar0 =
         dataStructureUtil.randomDataColumnSidecar(blockHeader2, ZERO);
-    final DataColumnSlotAndIdentifier columnSlotAndIdentifier2_0 =
-        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar2_0);
+    final DataColumnSlotAndIdentifier block2Column0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block2Sidecar0);
     final SignedBeaconBlockHeader blockHeader3 =
         dataStructureUtil.randomSignedBeaconBlockHeader(
             blockHeader1.getMessage().getSlot().plus(200));
-    final DataColumnSidecar dataColumnSidecar3_0 =
+    final DataColumnSidecar block3Sidecar0 =
         dataStructureUtil.randomDataColumnSidecar(blockHeader3, ZERO);
-    final DataColumnSlotAndIdentifier columnSlotAndIdentifier3_0 =
-        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar3_0);
+    final DataColumnSlotAndIdentifier block3Column0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block3Sidecar0);
 
-    database.addSidecar(dataColumnSidecar1_0);
-    database.addSidecar(dataColumnSidecar1_1);
-    database.addSidecar(dataColumnSidecar1_2);
-    database.addSidecar(dataColumnSidecar2_0);
-    database.addSidecar(dataColumnSidecar3_0);
+    database.addSidecar(block1Sidecar0);
+    database.addSidecar(block1Sidecar1);
+    database.addSidecar(block1Sidecar2);
+    database.addSidecar(block2Sidecar0);
+    database.addSidecar(block3Sidecar0);
 
     // not pruned yet should contain all sidecars
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
-        database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar3_0.getSlot())) {
+        database.streamDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList())
           .containsExactly(
-              columnSlotAndIdentifier1_0,
-              columnSlotAndIdentifier1_1,
-              columnSlotAndIdentifier1_2,
-              columnSlotAndIdentifier2_0,
-              columnSlotAndIdentifier3_0);
+              block1Column0, block1Column1, block1Column2, block2Column0, block3Column0);
     }
 
     // prune sidecars passing 2 as the limit should prune sidecars from the first 2 slots that it
     // can find,
     // leaving the sidecar from block header 3
-    database.pruneAllSidecars(dataColumnSidecar3_0.getSlot(), 2);
+    database.pruneAllSidecars(block3Sidecar0.getSlot(), 2);
 
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
-        database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar3_0.getSlot())) {
-      assertThat(dataColumnIdentifiersStream.toList()).containsExactly(columnSlotAndIdentifier3_0);
+        database.streamDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList()).containsExactly(block3Column0);
     }
 
-    database.pruneAllSidecars(dataColumnSidecar3_0.getSlot(), 2);
+    database.pruneAllSidecars(block3Sidecar0.getSlot(), 2);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
-        database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar3_0.getSlot())) {
+        database.streamDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
     }
+  }
+
+  @TestTemplate
+  public void pruneAllSidecars_pruneNonCanonical(final DatabaseContext context) throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+
+    final SignedBeaconBlockHeader blockHeader1 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(ONE);
+    final DataColumnSidecar block1Sidecar0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader1, ZERO);
+    final DataColumnSlotAndIdentifier block1Column0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar0);
+    final DataColumnSidecar block1Sidecar1 =
+        dataStructureUtil.randomDataColumnSidecar(
+            blockHeader1, block1Sidecar0.getKzgCommitments(), ONE);
+    final DataColumnSlotAndIdentifier block1Column1 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar1);
+    final DataColumnSidecar block1Sidecar2 =
+        dataStructureUtil.randomDataColumnSidecar(
+            blockHeader1, block1Sidecar0.getKzgCommitments(), UInt64.valueOf(2));
+    final DataColumnSlotAndIdentifier block1Column2 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar2);
+
+    final SignedBeaconBlockHeader blockHeader2 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(
+            blockHeader1.getMessage().getSlot().plus(100));
+    final DataColumnSidecar block2Sidecar0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader2, ZERO);
+    final DataColumnSlotAndIdentifier block2Column0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block2Sidecar0);
+    final SignedBeaconBlockHeader blockHeader3 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(
+            blockHeader1.getMessage().getSlot().plus(200));
+    final DataColumnSidecar block3Sidecar0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader3, ZERO);
+    final DataColumnSlotAndIdentifier block3Column0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block3Sidecar0);
+
+    database.addSidecar(block1Sidecar0);
+    database.addSidecar(block1Sidecar1);
+    database.addSidecar(block1Sidecar2);
+    database.addNonCanonicalSidecar(block2Sidecar0);
+    database.addNonCanonicalSidecar(block3Sidecar0);
+
+    // not pruned yet should contain all sidecars
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList())
+          .containsExactly(block1Column0, block1Column1, block1Column2);
+    }
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamNonCanonicalDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList())
+          .containsExactly(block2Column0, block3Column0);
+    }
+
+    // prune sidecars passing 1 as the limit should prune sidecars from the first 2 slots that it
+    // can find, one canonical and one non-canonical, limit is passed separately.
+    // So leaving only the sidecar from block header 3
+    database.pruneAllSidecars(block3Sidecar0.getSlot(), 1);
+
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
+    }
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamNonCanonicalDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList()).containsExactly(block3Column0);
+    }
+
+    database.pruneAllSidecars(block3Sidecar0.getSlot(), 2);
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
+    }
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamNonCanonicalDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
+    }
+  }
+
+  @TestTemplate
+  public void dataColumnSidecarsProofs_lifecycle(final DatabaseContext context) throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+
+    final SignedBeaconBlockHeader header = dataStructureUtil.randomSignedBeaconBlockHeader();
+    // we need to build sidecars with the same number of cells in each
+    final List<KZGCommitment> kzgCommitments = dataStructureUtil.randomKZGCommitments(14);
+    final SszList<SszKZGCommitment> sszKZGCommitments =
+        SchemaDefinitionsFulu.required(spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions())
+            .getDataColumnSidecarSchema()
+            .getKzgCommitmentsSchema()
+            .createFromElements(kzgCommitments.stream().map(SszKZGCommitment::new).toList());
+    final List<DataColumnSidecar> dataColumnSidecarsExtension =
+        Stream.iterate(UInt64.valueOf(64), UInt64::increment)
+            .limit(64)
+            .map(
+                index ->
+                    dataStructureUtil.randomDataColumnSidecar(header, sszKZGCommitments, index))
+            .toList();
+    final List<List<KZGProof>> expectedProofs =
+        dataColumnSidecarsExtension.stream()
+            .map(
+                dataColumnSidecar ->
+                    dataColumnSidecar.getKzgProofs().stream()
+                        .map(SszKZGProof::getKZGProof)
+                        .toList())
+            .toList();
+
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.addDataColumnSidecarsProofs(
+          header.getMessage().getSlot(),
+          dataColumnSidecarsExtension.stream()
+              .map(
+                  sidecar -> sidecar.getKzgProofs().stream().map(SszKZGProof::getKZGProof).toList())
+              .toList());
+      updater.commit();
+    }
+
+    assertThat(database.getLastDataColumnSidecarsProofsSlot())
+        .contains(header.getMessage().getSlot());
+    assertThat(database.getDataColumnSidecarsProofs(header.getMessage().getSlot()))
+        .contains(expectedProofs);
+
+    // remove it
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.removeDataColumnSidecarsProofs(header.getMessage().getSlot());
+      updater.commit();
+    }
+
+    assertThat(database.getLastDataColumnSidecarsProofsSlot()).isEmpty();
+    assertThat(database.getDataColumnSidecarsProofs(header.getMessage().getSlot())).isEmpty();
   }
 
   private List<Map.Entry<Bytes32, UInt64>> getFinalizedStateRootsList() {

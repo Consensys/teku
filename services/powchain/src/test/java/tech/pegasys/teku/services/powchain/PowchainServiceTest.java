@@ -36,6 +36,7 @@ import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JClient;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.Spec;
@@ -54,12 +55,13 @@ public class PowchainServiceTest {
   private final Web3JClient web3JClient = mock(Web3JClient.class);
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private Supplier<Optional<BeaconState>> latestFinalizedState;
+  private final MetricsSystem metricsSystem = new StubMetricsSystem();
 
   @BeforeEach
   public void setup() {
+    when(serviceConfig.getMetricsSystem()).thenReturn(metricsSystem);
     when(serviceConfig.createAsyncRunner("powchain")).thenReturn(mock(AsyncRunner.class));
     when(serviceConfig.getTimeProvider()).thenReturn(mock(TimeProvider.class));
-    when(serviceConfig.getMetricsSystem()).thenReturn(mock(MetricsSystem.class));
     when(powConfig.isEnabled()).thenReturn(false);
     when(powConfig.getSpec()).thenReturn(spec);
     when(powConfig.getDepositContract()).thenReturn(Eth1Address.ZERO);
@@ -94,7 +96,6 @@ public class PowchainServiceTest {
   public void shouldFallbackToNonWebsocketsEndpoint_WhenEth1EndpointNotProvided() {
     when(web3JClient.isWebsocketsClient()).thenReturn(false);
     when(serviceConfig.getTimeProvider()).thenReturn(mock(TimeProvider.class));
-    when(serviceConfig.getMetricsSystem()).thenReturn(mock(MetricsSystem.class));
     when(powConfig.getDepositContract()).thenReturn(Eth1Address.ZERO);
     final EventChannels eventChannels = mock(EventChannels.class);
     when(eventChannels.getPublisher(Eth1EventsChannel.class))

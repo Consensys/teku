@@ -19,6 +19,7 @@ import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSeri
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BYTES_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.COMPRESSED_BRANCH_INFO_KV_STORE_SERIALIZER;
+import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.DATA_COLUMN_SIDECARS_PROOFS_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX_KEY_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.UINT64_SERIALIZER;
 
@@ -31,6 +32,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranchInfo;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
@@ -54,6 +56,7 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   private final KvStoreColumn<DataColumnSlotAndIdentifier, Bytes> sidecarByColumnSlotAndIdentifier;
   private final KvStoreColumn<DataColumnSlotAndIdentifier, Bytes>
       nonCanonicalSidecarByColumnSlotAndIdentifier;
+  private final KvStoreColumn<UInt64, List<List<KZGProof>>> dataColumnSidecarsProofsBySlot;
   private final List<Bytes> deletedColumnIds;
 
   public V6SchemaCombinedTreeState(final Spec spec) {
@@ -99,13 +102,17 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
     nonCanonicalSidecarByColumnSlotAndIdentifier =
         KvStoreColumn.create(
             finalizedOffset + 17, COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER, BYTES_SERIALIZER);
+    dataColumnSidecarsProofsBySlot =
+        KvStoreColumn.create(
+            finalizedOffset + 19, UINT64_SERIALIZER, DATA_COLUMN_SIDECARS_PROOFS_SERIALIZER);
     deletedColumnIds =
         List.of(
             asColumnId(finalizedOffset + 9),
             asColumnId(finalizedOffset + 10),
             asColumnId(finalizedOffset + 11),
             asColumnId(finalizedOffset + 12),
-            asColumnId(finalizedOffset + 13));
+            asColumnId(finalizedOffset + 13),
+            asColumnId(finalizedOffset + 18));
   }
 
   @Override
@@ -173,6 +180,11 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   }
 
   @Override
+  public KvStoreColumn<UInt64, List<List<KZGProof>>> getColumnDataColumnSidecarsProofsBySlot() {
+    return dataColumnSidecarsProofsBySlot;
+  }
+
+  @Override
   public Map<String, KvStoreVariable<?>> getVariableMap() {
     return ImmutableMap.<String, KvStoreVariable<?>>builder()
         .put("GENESIS_TIME", getVariableGenesisTime())
@@ -188,8 +200,8 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
         .put("EARLIEST_BLOB_SIDECAR_SLOT", getVariableEarliestBlobSidecarSlot())
         .put("EARLIEST_BLOCK_SLOT", getVariableEarliestBlockSlot())
         .put("LATEST_CANONICAL_BLOCK_ROOT", getVariableLatestCanonicalBlockRoot())
+        .put("CUSTODY_GROUP_COUNT", getVariableCustodyGroupCount())
         .put("FIRST_CUSTODY_INCOMPLETE_SLOT", getVariableFirstCustodyIncompleteSlot())
-        .put("FIRST_SAMPLER_INCOMPLETE_SLOT", getVariableFirstSamplerIncompleteSlot())
         .build();
   }
 
@@ -221,6 +233,7 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
         .put(
             "NON_CANONICAL_SIDECAR_BY_COLUMN_SLOT_AND_IDENTIFIER",
             getColumnNonCanonicalSidecarByColumnSlotAndIdentifier())
+        .put("DATA_COLUMN_SIDECARS_PROOFS_BY_SLOT", getColumnDataColumnSidecarsProofsBySlot())
         .build();
   }
 

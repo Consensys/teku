@@ -69,6 +69,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
@@ -516,7 +517,12 @@ public class TekuBeaconNode extends TekuNode {
           assertThat(maybeState.get().toVersionBellatrix()).isPresent();
           final BeaconStateBellatrix genesisState =
               maybeState.get().toVersionBellatrix().orElseThrow();
-          assertThat(genesisState.getLatestExecutionPayloadHeader().isDefault())
+          assertThat(
+                  genesisState
+                      .getLatestExecutionPayloadHeader()
+                      .map(ExecutionPayloadHeader::isDefault)
+                      // >= Gloas
+                      .orElse(false))
               .describedAs("Is latest execution payload header a default payload header")
               .isFalse();
         });
@@ -599,6 +605,28 @@ public class TekuBeaconNode extends TekuNode {
     return fetchBeaconHeadRootData().map(Pair::getLeft);
   }
 
+  private Optional<Bytes32> fetchBlockRoot(final String blockId) throws IOException {
+    final String result =
+        httpClient.get(getRestApiUrl(), "/eth/v1/beacon/blocks/" + blockId + "/root");
+    if (result.isEmpty()) {
+      return Optional.empty();
+    }
+    final JsonNode jsonNode = OBJECT_MAPPER.readTree(result);
+    final Bytes32 root = Bytes32.fromHexString(jsonNode.get("data").get("root").asText());
+    return Optional.of(root);
+  }
+
+  public Bytes32 waitForBlockAtSlot(final UInt64 slot) {
+    final AtomicReference<Bytes32> block = new AtomicReference<>(null);
+    waitFor(
+        () -> {
+          final Optional<Bytes32> blockRoot = fetchBlockRoot(slot.toString());
+          assertThat(blockRoot).isPresent();
+          block.set(blockRoot.get());
+        });
+    return block.get();
+  }
+
   private Optional<UInt64> getFinalizedEpoch() {
     try {
       final String result =
@@ -619,6 +647,10 @@ public class TekuBeaconNode extends TekuNode {
 
   private Optional<SignedBeaconBlock> fetchHeadBlock() throws IOException {
     final String blockId = "head";
+    return fetchBlock(blockId);
+  }
+
+  private Optional<SignedBeaconBlock> fetchBlock(final String blockId) throws IOException {
     final String result = httpClient.get(getRestApiUrl(), "/eth/v2/beacon/blocks/" + blockId);
     if (result.isEmpty()) {
       return Optional.empty();
@@ -651,6 +683,14 @@ public class TekuBeaconNode extends TekuNode {
                   .getJsonTypeDefinition());
       return Optional.of(JsonUtil.parse(result.get(), jsonTypeDefinition));
     }
+  }
+
+  public SignedBeaconBlock getFinalizedBlock() throws IOException {
+    return fetchBlock("finalized").orElseThrow();
+  }
+
+  public SignedBeaconBlock getHeadBlock() throws IOException {
+    return fetchBlock("head").orElseThrow();
   }
 
   private Optional<BeaconState> fetchHeadState() throws IOException {

@@ -1,0 +1,121 @@
+name: matrix-tests-template
+
+on:
+  workflow_call:
+
+    inputs:
+      assemble_output_run_id:
+        type: string
+        required: true
+      stage_name:
+        type: string
+        required: true
+      stage_key:
+        type: string
+        required: true
+      gradle_task:
+        type: string
+        required: true
+      # Where to look for test sources, and the root segment used to compute FQNs
+      src_pattern:
+        type: string
+        required: true
+      src_root:
+        type: string
+        required: true
+      runner:
+        type: string
+        required: false
+        default: gha-runner-scale-set-ubuntu-22.04-amd64-xxl
+
+permissions:
+  actions: read     # download the assemble output as an artifacts
+  contents: read
+
+jobs:
+  matrix-tests-template:
+    runs-on: ${{ inputs.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7]   # parallel shards
+        total: [8]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+          fetch-depth: 0  # Full history
+          fetch-tags: true
+
+      - name: Download assemble-output
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.assemble_output_run_id }}
+          name: assemble-output
+          merge-multiple: true
+          path: ${{ github.workspace }}
+
+      - name: Prepare
+        uses: ./.github/actions/prepare
+
+      # only acceptance tests need the docker login
+      - name: Login to dockerhub
+        uses: docker/login-action@v3
+        if: ${{ inputs.stage_key == 'acceptance' }}
+        with:
+          # Don't panic, throw away account to avoid Docker rate limits when downloading.
+          # Second reason we're doing this is so that forked PRs from external contributors works ie env vars aren't visible to forked PRs from within contexts
+          username: "cddockeruser"
+          password: "fa8651f2-88be-48b7-98ce-e711bd376252"          
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+
+      - name: Compute shard ${{ matrix.shard }} of ${{ matrix.total }} for ${{ inputs.stage_name }}
+        id: shard
+        shell: bash
+        run: |
+          SRC_PATTERN="${{ inputs.src_pattern }}" # e.g. */src/test/java/* or */src/property-test/java/* etc 
+          # 1) Collect test classes by pattern = FQNs
+          CLASSNAMES=$(find . -type f -name "*.java" -path "$SRC_PATTERN" \
+            | sed "s@.*/${{ inputs.src_root }}/@@" \
+            | sed 's@/@.@g' \
+            | sed 's/.\{5\}$//' \
+            | sort )
+          # 2) Modulo split i.e (NR-1) % shards == shard
+          CLASSES_FOR_SHARD=$(printf "%s\n" "$CLASSNAMES" \
+            | awk -v shards=${{ matrix.total }} -v shard=${{ matrix.shard }} '((NR-1) % shards) == shard')
+          if [ -z "$CLASSES_FOR_SHARD" ]; then
+            echo "args=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # 3) Build --tests args
+          GRADLE_ARGS=$(printf "%s\n" "$CLASSES_FOR_SHARD" | awk '{printf "--tests %s ", $0}')
+          echo "Prepared arguments for Gradle (${{ inputs.stage_name }}): $GRADLE_ARGS"
+          echo "args=$GRADLE_ARGS" >> "$GITHUB_OUTPUT"
+
+      - name: Run ${{ inputs.stage_name }} (shard)
+        if: steps.shard.outputs.args != ''
+        run: |
+          ./gradlew --no-daemon --parallel --info ${{ inputs.gradle_task }} ${{ steps.shard.outputs.args }}
+
+      - name: Upload JUnit XML + HTML for ${{ inputs.stage_name }}
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.stage_key }}-reports-${{ matrix.shard }}
+          path: |
+            **/build/test-results/**/TEST-*.xml
+            **/build/reports/tests/**
+          if-no-files-found: ignore
+          retention-days: 1
+      

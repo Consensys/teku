@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.teku.networking.p2p.connection.PeerPools;
 import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
@@ -49,6 +50,7 @@ public class DiscoveryNetworkBuilder {
   protected NetworkConfig p2pConfig;
   protected Spec spec;
   protected SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier;
+  protected TimeProvider timeProvider;
 
   protected DiscoveryService discoveryService;
   protected ConnectionManager connectionManager;
@@ -85,11 +87,13 @@ public class DiscoveryNetworkBuilder {
     checkNotNull(p2pNetwork);
     checkNotNull(peerSelectionStrategy);
     checkNotNull(discoveryConfig);
+    checkNotNull(timeProvider);
 
     return new ConnectionManager(
         metricsSystem,
         discoveryService,
         asyncRunner,
+        timeProvider,
         p2pNetwork,
         peerSelectionStrategy,
         discoveryConfig.getStaticPeers().stream().map(p2pNetwork::createPeerAddress).toList(),
@@ -184,6 +188,11 @@ public class DiscoveryNetworkBuilder {
 
   public DiscoveryNetworkBuilder connectionManager(final ConnectionManager connectionManager) {
     this.connectionManager = connectionManager;
+    return this;
+  }
+
+  public DiscoveryNetworkBuilder timeProvider(final TimeProvider timeProvider) {
+    this.timeProvider = timeProvider;
     return this;
   }
 }

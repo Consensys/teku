@@ -21,6 +21,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -90,6 +93,24 @@ public abstract class NoOpSigner implements Signer {
   @Override
   public SafeFuture<BLSSignature> signValidatorRegistration(
       final ValidatorRegistration validatorRegistration) {
+    return new SafeFuture<>();
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signExecutionPayloadBid(
+      final ExecutionPayloadBid bid, final ForkInfo forkInfo) {
+    return new SafeFuture<>();
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signExecutionPayloadEnvelope(
+      final ExecutionPayloadEnvelope envelope, final ForkInfo forkInfo) {
+    return new SafeFuture<>();
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signPayloadAttestationData(
+      final PayloadAttestationData payloadAttestationData, final ForkInfo forkInfo) {
     return new SafeFuture<>();
   }
 

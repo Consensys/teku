@@ -26,8 +26,9 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -83,6 +84,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   Optional<UInt64> getSlotForFinalizedStateRoot(Bytes32 stateRoot);
 
   Optional<Bytes32> getLatestCanonicalBlockRoot();
+
+  Optional<UInt64> getCustodyGroupCount();
 
   Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(Bytes32 root);
 
@@ -173,8 +176,6 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<UInt64> getFirstCustodyIncompleteSlot();
 
-  Optional<UInt64> getFirstSamplerIncompleteSlot();
-
   Optional<Bytes> getSidecar(DataColumnSlotAndIdentifier identifier);
 
   Optional<Bytes> getNonCanonicalSidecar(DataColumnSlotAndIdentifier identifier);
@@ -189,6 +190,10 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   List<DataColumnSlotAndIdentifier> getDataColumnIdentifiers(SlotAndBlockRoot slotAndBlockRoot);
 
   Optional<UInt64> getEarliestDataSidecarColumnSlot();
+
+  Optional<UInt64> getLastDataColumnSidecarsProofsSlot();
+
+  Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(UInt64 slot);
 
   interface CombinedUpdater extends HotUpdater, FinalizedUpdater {}
 
@@ -214,6 +219,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     void setFinalizedCheckpoint(Checkpoint checkpoint);
 
     void setLatestCanonicalBlockRoot(Bytes32 canonicalBlockRoot);
+
+    void setCustodyGroupCount(UInt64 custodyGroupCount);
 
     void setWeakSubjectivityCheckpoint(Checkpoint checkpoint);
 
@@ -295,8 +302,6 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void setFirstCustodyIncompleteSlot(UInt64 slot);
 
-    void setFirstSamplerIncompleteSlot(UInt64 slot);
-
     void addSidecar(DataColumnSidecar sidecar);
 
     void addNonCanonicalSidecar(DataColumnSidecar sidecar);
@@ -304,6 +309,10 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     void removeSidecar(DataColumnSlotAndIdentifier identifier);
 
     void removeNonCanonicalSidecar(DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier);
+
+    void addDataColumnSidecarsProofs(UInt64 slot, List<List<KZGProof>> kzgProofs);
+
+    void removeDataColumnSidecarsProofs(UInt64 slot);
 
     void commit();
 

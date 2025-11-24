@@ -16,17 +16,13 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSortedMap;
-import java.nio.channels.ClosedChannelException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
@@ -39,9 +35,8 @@ import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
-import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
@@ -57,8 +52,6 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 public class DataColumnSidecarsByRangeMessageHandler
     extends PeerRequiredLocalMessageHandler<
         DataColumnSidecarsByRangeRequestMessage, DataColumnSidecar> {
-
-  private static final Logger LOG = LogManager.getLogger();
 
   private final SpecConfigFulu specConfigFulu;
   private final CombinedChainDataClient combinedChainDataClient;
@@ -110,7 +103,7 @@ public class DataColumnSidecarsByRangeMessageHandler
       final String protocolId,
       final Eth2Peer peer,
       final DataColumnSidecarsByRangeRequestMessage message,
-      final ResponseCallback<DataColumnSidecar> responseCallback) {
+      final ResponseCallback<DataColumnSidecar> callback) {
     final UInt64 startSlot = message.getStartSlot();
     final UInt64 endSlot = message.getMaxSlot();
     final List<UInt64> columns = message.getColumns();
@@ -123,13 +116,13 @@ public class DataColumnSidecarsByRangeMessageHandler
                     peer.getId().toBase58(), peer.getDiscoveryNodeId().orElseThrow()),
                 new DasReqRespLogger.ByRangeRequest(
                     message.getStartSlot(), message.getCount().intValue(), message.getColumns()));
-    final LoggingResponseCallback<DataColumnSidecar> responseCallbackWithLogging =
-        new LoggingResponseCallback<>(responseCallback, responseLogger);
+    final LoggingResponseCallback<DataColumnSidecar> callbackWithLogging =
+        new LoggingResponseCallback<>(callback, responseLogger);
 
     final int requestedCount = calculateRequestedCount(message);
 
     final Optional<RequestKey> maybeRequestKey =
-        peer.approveDataColumnSidecarsRequest(responseCallbackWithLogging, requestedCount);
+        peer.approveDataColumnSidecarsRequest(callbackWithLogging, requestedCount);
 
     if (!peer.approveRequest() || maybeRequestKey.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
@@ -155,7 +148,7 @@ public class DataColumnSidecarsByRangeMessageHandler
 
     final RequestState initialState =
         new RequestState(
-            responseCallbackWithLogging,
+            callbackWithLogging,
             specConfigFulu.getMaxRequestDataColumnSidecars(),
             startSlot,
             endSlot,
@@ -176,12 +169,9 @@ public class DataColumnSidecarsByRangeMessageHandler
           if (sentDataColumnSidecars != requestedCount) {
             peer.adjustDataColumnSidecarsRequest(maybeRequestKey.get(), sentDataColumnSidecars);
           }
-          responseCallbackWithLogging.completeSuccessfully();
+          callbackWithLogging.completeSuccessfully();
         },
-        error -> {
-          peer.adjustDataColumnSidecarsRequest(maybeRequestKey.get(), 0);
-          handleProcessingRequestError(error, responseCallbackWithLogging);
-        });
+        error -> handleError(error, callbackWithLogging, "data column sidecars by range"));
   }
 
   private int calculateRequestedCount(final DataColumnSidecarsByRangeRequestMessage message) {
@@ -208,23 +198,6 @@ public class DataColumnSidecarsByRangeMessageHandler
                 return sendDataColumnSidecars(requestState);
               }
             });
-  }
-
-  private void handleProcessingRequestError(
-      final Throwable error, final ResponseCallback<DataColumnSidecar> callback) {
-    final Throwable rootCause = Throwables.getRootCause(error);
-    if (rootCause instanceof RpcException) {
-      LOG.trace("Rejecting data column sidecars by range request", error);
-      callback.completeWithErrorResponse((RpcException) rootCause);
-    } else {
-      if (rootCause instanceof StreamClosedException
-          || rootCause instanceof ClosedChannelException) {
-        LOG.trace("Stream closed while sending requested data column sidecars", error);
-      } else {
-        LOG.error("Failed to process data column sidecars request", error);
-      }
-      callback.completeWithUnexpectedError(error);
-    }
   }
 
   @VisibleForTesting

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.client.signer;
 
+import static tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue.DEFAULT_MAXIMUM_QUEUE_SIZE;
+
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -48,7 +50,12 @@ public abstract class AbstractExternalSignerIntegrationTest {
   protected final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final ThrottlingTaskQueueWithPriority queue =
       ThrottlingTaskQueueWithPriority.create(
-          8, metricsSystem, TekuMetricCategory.VALIDATOR, "externalSignerTest");
+          8,
+          DEFAULT_MAXIMUM_QUEUE_SIZE,
+          metricsSystem,
+          TekuMetricCategory.VALIDATOR,
+          "externalSignerTest",
+          "externalSignerTestRejected");
   protected final SigningRootUtil signingRootUtil = new SigningRootUtil(spec);
 
   protected ClientAndServer client;

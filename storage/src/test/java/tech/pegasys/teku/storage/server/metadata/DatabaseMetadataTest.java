@@ -84,7 +84,8 @@ class DatabaseMetadataTest {
         .isEqualTo(defaultConfiguration.getMaxOpenFiles());
     assertThat(result.getArchiveDbConfiguration()).isNotNull();
     assertThat(result.getArchiveDbConfiguration())
-        .isEqualToComparingFieldByField(defaultConfiguration);
+        .usingRecursiveComparison()
+        .isEqualTo(defaultConfiguration);
   }
 
   @Test

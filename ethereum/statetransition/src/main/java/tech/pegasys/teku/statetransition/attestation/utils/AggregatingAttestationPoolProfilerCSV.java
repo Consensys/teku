@@ -316,8 +316,10 @@ public class AggregatingAttestationPoolProfilerCSV implements AggregatingAttesta
     attestations.forEach(
         attestation ->
             rewards.add(
-                blockProcessor.processAttestationProposerReward(
-                    mutableBeaconStateAltair, attestation, indexedAttestationProvider)));
+                blockProcessor
+                    .processAttestation(
+                        mutableBeaconStateAltair, attestation, indexedAttestationProvider)
+                    .proposerReward()));
 
     return rewards.stream()
         .map(maybeValue -> maybeValue.orElse(UInt64.ZERO))

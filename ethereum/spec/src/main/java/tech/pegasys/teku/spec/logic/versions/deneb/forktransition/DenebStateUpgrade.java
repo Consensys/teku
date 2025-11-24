@@ -64,7 +64,7 @@ public class DenebStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
 
               final ExecutionPayloadHeaderCapella capellaHeader =
                   preStateCapella
-                      .getLatestExecutionPayloadHeader()
+                      .getLatestExecutionPayloadHeaderRequired()
                       .toVersionCapella()
                       .orElseThrow();
               final ExecutionPayloadHeader upgradedExecutionPayloadHeader =

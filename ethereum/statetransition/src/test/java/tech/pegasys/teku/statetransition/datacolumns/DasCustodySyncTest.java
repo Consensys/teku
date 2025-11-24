@@ -16,6 +16,11 @@ package tech.pegasys.teku.statetransition.datacolumns;
 import static java.time.Duration.ofMillis;
 import static java.time.Duration.ofMinutes;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -24,19 +29,22 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetrieverStub;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DelayedDataColumnSidecarRetriever;
 
-@SuppressWarnings("JavaCase")
 public class DasCustodySyncTest {
 
   static final int MAX_AVERAGE_COLUMN_DB_READS_PER_SLOT = 30;
@@ -57,6 +65,8 @@ public class DasCustodySyncTest {
                           .balancePerAdditionalCustodyGroup(UInt64.valueOf(32000000000L))
                           .minEpochsForDataColumnSidecarsRequests(64)));
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
   final DasCustodyStand custodyStand =
       DasCustodyStand.builder(spec)
           .withAsyncDb(ofMillis(1))
@@ -68,10 +78,22 @@ public class DasCustodySyncTest {
   final DataColumnSidecarRetriever asyncRetriever =
       new DelayedDataColumnSidecarRetriever(
           retrieverStub, custodyStand.stubAsync.getStubAsyncRunner(), ofMillis(0));
+  final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator =
+      mock(MinCustodyPeriodSlotCalculator.class);
   final DasCustodySync dasCustodySync =
-      new DasCustodySync(custodyStand.custody, asyncRetriever, minSyncRequests, maxSyncRequests);
+      new DasCustodySync(
+          custodyStand.custody,
+          asyncRetriever,
+          minCustodyPeriodSlotCalculator,
+          minSyncRequests,
+          maxSyncRequests);
 
   final int epochLength = spec.slotsPerEpoch(UInt64.ZERO);
+
+  @BeforeEach
+  public void setup() {
+    when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any())).thenReturn(UInt64.ZERO);
+  }
 
   @Test
   void sanityTest() {
@@ -90,8 +112,8 @@ public class DasCustodySyncTest {
     printAndResetStats();
     assertThat(retrieverStub.requests).isEmpty();
 
-    SignedBeaconBlock block_1 = custodyStand.createBlockWithBlobs(1);
-    custodyStand.blockResolver.addBlock(block_1.getMessage());
+    final SignedBeaconBlock block = custodyStand.createBlockWithBlobs(1);
+    custodyStand.blockResolver.addBlock(block.getMessage());
     custodyStand.setCurrentSlot(6);
 
     advanceTimeGraduallyUntilAllDone();
@@ -173,7 +195,7 @@ public class DasCustodySyncTest {
       addBlockAndSidecars(slot);
       custodyStand.incCurrentSlot(1);
       if (slot % epochLength == 0) {
-        int epoch = slot / epochLength;
+        final int epoch = slot / epochLength;
         custodyStand.setFinalizedEpoch(epoch - 2);
       }
       advanceTimeGraduallyUntilAllDone();
@@ -236,11 +258,41 @@ public class DasCustodySyncTest {
     assertAllCustodyColumnsPresent();
   }
 
+  AsyncStream<DataColumnSlotAndIdentifier> testData(
+      final List<DataColumnSlotAndIdentifier> columns) {
+    return AsyncStream.createUnsafe(columns.iterator());
+  }
+
+  @Test
+  void syncOutsideOfPeriod() {
+    final List<DataColumnSlotAndIdentifier> columns =
+        List.of(
+            new DataColumnSlotAndIdentifier(
+                UInt64.ONE,
+                new DataColumnIdentifier(
+                    dataStructureUtil.randomBytes32(),
+                    dataStructureUtil.randomDataColumnSidecarIndex())),
+            new DataColumnSlotAndIdentifier(
+                UInt64.valueOf(1025),
+                new DataColumnIdentifier(
+                    dataStructureUtil.randomBytes32(),
+                    dataStructureUtil.randomDataColumnSidecarIndex())));
+    final DataColumnSidecarRetriever retriever = mock(DataColumnSidecarRetriever.class);
+    final DataColumnSidecarCustody custody = mock(DataColumnSidecarCustody.class);
+    when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any()))
+        .thenReturn(UInt64.valueOf(1024));
+    when(custody.retrieveMissingColumns()).thenReturn(testData(columns));
+    final DasCustodySync custodySync =
+        new DasCustodySync(
+            custody, retriever, minCustodyPeriodSlotCalculator, minSyncRequests, maxSyncRequests);
+    custodySync.fillUp();
+    verify(retriever).retrieve(columns.get(1));
+    verifyNoMoreInteractions(retriever);
+  }
+
   @Test
   void nonFinalizationShouldNotPreventSyncingAndOverloadDB() {
-    // TODO-fulu this is too high and needs to be fixed
-    // (https://github.com/Consensys/teku/issues/9470)
-    final int maxAverageColumnDbReadsPerSlot = 400;
+    // all the block data will be coming from the proto array, so it's not a problem
     final int maxAverageBlockDbReadsPerSlot = 400;
 
     custodyStand.setCurrentSlot(0);
@@ -257,7 +309,7 @@ public class DasCustodySyncTest {
     }
 
     assertThat(custodyStand.db.getDbReadCounter().get() / 1000)
-        .isLessThan(maxAverageColumnDbReadsPerSlot);
+        .isLessThan(MAX_AVERAGE_COLUMN_DB_READS_PER_SLOT);
     assertThat(custodyStand.blockResolver.getBlockAccessCounter().get() / 1000)
         .isLessThan(maxAverageBlockDbReadsPerSlot);
 
@@ -268,7 +320,7 @@ public class DasCustodySyncTest {
     advanceTimeGraduallyUntilAllDone();
     printAndResetStats();
 
-    List<DataColumnSlotAndIdentifier> missingColumns =
+    final List<DataColumnSlotAndIdentifier> missingColumns =
         await(custodyStand.custody.retrieveMissingColumns().toList());
     assertThat(missingColumns).isEmpty();
     assertAllCustodyColumnsPresent();
@@ -287,27 +339,27 @@ public class DasCustodySyncTest {
     advanceTimeGraduallyUntilAllDone();
     assertThat(retrieverStub.requests).isEmpty();
 
-    SignedBeaconBlock block_1_0 = custodyStand.createBlockWithBlobs(1);
-    custodyStand.blockResolver.addBlock(block_1_0.getMessage());
+    final SignedBeaconBlock block1 = custodyStand.createBlockWithBlobs(1);
+    custodyStand.blockResolver.addBlock(block1.getMessage());
     custodyStand.setCurrentSlot(6);
 
     advanceTimeGraduallyUntilAllDone();
 
-    final List<DataColumnSidecarRetrieverStub.RetrieveRequest> retrieveRequests_1_0 =
+    final List<DataColumnSidecarRetrieverStub.RetrieveRequest> retrieveRequests =
         new ArrayList<>(retrieverStub.requests);
-    assertThat(retrieveRequests_1_0).isNotEmpty();
+    assertThat(retrieveRequests).isNotEmpty();
 
-    final SignedBeaconBlock block_1_1 = custodyStand.createBlockWithBlobs(1);
-    custodyStand.blockResolver.addBlock(block_1_1.getMessage());
+    final SignedBeaconBlock block2 = custodyStand.createBlockWithBlobs(1);
+    custodyStand.blockResolver.addBlock(block2.getMessage());
     custodyStand.setCurrentSlot(7);
 
     advanceTimeGraduallyUntilAllDone();
-    assertThat(retrieveRequests_1_0)
+    assertThat(retrieveRequests)
         .allSatisfy(
-            request_1_0 -> {
-              assertThat(request_1_0.promise()).isCancelled();
+            request2 -> {
+              assertThat(request2.future()).isCancelled();
             });
-    assertThat(retrieverStub.requests).hasSize(retrieveRequests_1_0.size() * 2);
+    assertThat(retrieverStub.requests).hasSize(retrieveRequests.size() * 2);
   }
 
   private void addBlockAndSidecars(final int slot) {
@@ -344,7 +396,7 @@ public class DasCustodySyncTest {
                           assertThat(sidecar.getSlot()).isEqualTo(uSlot);
                           assertThat(sidecar.getIndex()).isEqualTo(colIndex);
 
-                          assertThat(sidecar.getBlockRoot()).isEqualTo(block.getRoot());
+                          assertThat(sidecar.getBeaconBlockRoot()).isEqualTo(block.getRoot());
                         });
               }
             }

@@ -29,8 +29,6 @@ import tech.pegasys.teku.infrastructure.async.RootCauseExceptionHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.SubnetSubscriptionService;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
@@ -132,14 +130,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final int peerBlobSidecarsRateLimit,
       final int peerRequestLimit,
       final Spec spec,
-      final KZG kzg,
       final DiscoveryNodeIdExtractor discoveryNodeIdExtractor,
-      final Optional<UInt64> custodyGroupCount,
       final DasReqRespLogger dasLogger) {
-
-    // TODO-fulu: we have no guarantee here that it's synced already
-    // (https://github.com/Consensys/teku/issues/9461)
-    custodyGroupCount.ifPresent(metadataMessagesFactory::updateCustodyGroupCount);
     attestationSubnetService.subscribeToUpdates(
         metadataMessagesFactory::updateAttestationSubnetIds);
     syncCommitteeSubnetService.subscribeToUpdates(
@@ -164,7 +156,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             peerBlocksRateLimit,
             peerBlobSidecarsRateLimit,
             peerRequestLimit,
-            kzg,
             discoveryNodeIdExtractor),
         statusMessageFactory,
         metadataMessagesFactory,

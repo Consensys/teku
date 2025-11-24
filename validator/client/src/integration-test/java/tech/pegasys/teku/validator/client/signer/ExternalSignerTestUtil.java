@@ -54,15 +54,15 @@ class ExternalSignerTestUtil {
       final long timeoutCount) {
 
     assertThat(
-            metricsSystem.getCounterValue(
+            metricsSystem.getLabelledCounterValue(
                 TekuMetricCategory.VALIDATOR, "external_signer_requests_total", "success"))
         .isEqualTo(successCount);
     assertThat(
-            metricsSystem.getCounterValue(
+            metricsSystem.getLabelledCounterValue(
                 TekuMetricCategory.VALIDATOR, "external_signer_requests_total", "failed"))
         .isEqualTo(failCount);
     assertThat(
-            metricsSystem.getCounterValue(
+            metricsSystem.getLabelledCounterValue(
                 TekuMetricCategory.VALIDATOR, "external_signer_requests_total", "timeout"))
         .isEqualTo(timeoutCount);
   }

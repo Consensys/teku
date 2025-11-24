@@ -272,28 +272,28 @@ class CachingTaskQueueTest {
 
   private void assertCacheHitCount(final int expectedCount) {
     final double value =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.STORAGE, METRICS_PREFIX + "_tasks_total", "cached");
     assertThat(value).isEqualTo(expectedCount);
   }
 
   private void assertNewTaskCount(final int expectedCount) {
     final double value =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.STORAGE, METRICS_PREFIX + "_tasks_total", "new");
     assertThat(value).isEqualTo(expectedCount);
   }
 
   private void assertDuplicateTaskCount(final int expectedCount) {
     final double value =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.STORAGE, METRICS_PREFIX + "_tasks_total", "duplicate");
     assertThat(value).isEqualTo(expectedCount);
   }
 
   private void assertRebasedTaskCount(final int expectedCount) {
     final double value =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.STORAGE, METRICS_PREFIX + "_tasks_total", "rebase");
     assertThat(value).isEqualTo(expectedCount);
   }
@@ -342,7 +342,7 @@ class CachingTaskQueueTest {
     @Override
     public Stream<Integer> streamIntermediateSteps() {
       @SuppressWarnings("DoNotUseDeprecatedFastutilMethod")
-      Stream<Integer> stream = intermediateSteps.stream();
+      Stream<Integer> stream = intermediateSteps.intStream().boxed();
       return stream;
     }
 

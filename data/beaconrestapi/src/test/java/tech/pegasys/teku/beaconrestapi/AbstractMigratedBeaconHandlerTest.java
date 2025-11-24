@@ -75,6 +75,12 @@ public abstract class AbstractMigratedBeaconHandlerTest {
         UInt64.valueOf(highestSlot));
   }
 
+  protected void setSpec(final Spec spec) {
+    this.spec = spec;
+    this.dataStructureUtil = new DataStructureUtil(this.spec);
+    schemaDefinitionCache = new SchemaDefinitionCache(this.spec);
+  }
+
   protected <T> ObjectAndMetaData<T> withMetaData(final T value) {
     return new ObjectAndMetaData<>(value, spec.getGenesisSpec().getMilestone(), false, true, false);
   }

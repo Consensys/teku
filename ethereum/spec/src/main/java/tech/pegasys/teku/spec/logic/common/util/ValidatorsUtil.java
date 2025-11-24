@@ -35,8 +35,9 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
 public class ValidatorsUtil {
-  private final SpecConfig specConfig;
-  private final MiscHelpers miscHelpers;
+
+  protected final SpecConfig specConfig;
+  protected final MiscHelpers miscHelpers;
   private final BeaconStateAccessors beaconStateAccessors;
 
   public ValidatorsUtil(
@@ -120,9 +121,9 @@ public class ValidatorsUtil {
         epoch.compareTo(nextEpoch) <= 0, "get_committee_assignment: Epoch number too high");
 
     final UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
-    for (UInt64 slot = startSlot;
-        slot.isLessThan(startSlot.plus(specConfig.getSlotsPerEpoch()));
-        slot = slot.plus(UInt64.ONE)) {
+    final UInt64 endSlotExclusive = startSlot.plus(specConfig.getSlotsPerEpoch());
+
+    for (UInt64 slot = startSlot; slot.isLessThan(endSlotExclusive); slot = slot.plus(UInt64.ONE)) {
 
       for (UInt64 index = UInt64.ZERO;
           index.compareTo(committeeCountPerSlot) < 0;
@@ -134,6 +135,18 @@ public class ValidatorsUtil {
       }
     }
     return Optional.empty();
+  }
+
+  public Optional<UInt64> getPtcAssignment(
+      final BeaconState state, final UInt64 epoch, final int validatorIndex) {
+    // NO-OP in Phase0
+    return Optional.empty();
+  }
+
+  public Int2ObjectMap<UInt64> getValidatorIndexToPtcAssignmentMap(
+      final BeaconState state, final UInt64 epoch) {
+    // NO-OP in Phase0
+    return new Int2ObjectOpenHashMap<>();
   }
 
   public EpochAttestationSchedule getAttestationCommitteesAtEpoch(

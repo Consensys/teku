@@ -135,8 +135,10 @@ public class AggregatingAttestationPoolProfilerLog implements AggregatingAttesta
     attestations.forEach(
         attestation ->
             rewards.add(
-                blockProcessor.processAttestationProposerReward(
-                    mutableBeaconStateAltair, attestation, indexedAttestationProvider)));
+                blockProcessor
+                    .processAttestation(
+                        mutableBeaconStateAltair, attestation, indexedAttestationProvider)
+                    .proposerReward()));
 
     return rewards.stream()
         .filter(Optional::isPresent)

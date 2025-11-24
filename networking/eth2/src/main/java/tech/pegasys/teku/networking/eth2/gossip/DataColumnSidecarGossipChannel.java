@@ -15,7 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip;
 
 import java.util.List;
 import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
 public interface DataColumnSidecarGossipChannel extends VoidReturningChannelInterface {

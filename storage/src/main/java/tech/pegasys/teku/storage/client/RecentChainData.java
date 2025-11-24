@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -395,6 +396,11 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
     bestBlockInitialized.complete(null);
   }
 
+  public Optional<SlotAndBlockRoot> findCommonAncestor(
+      final Bytes32 blockRoot1, final Bytes32 blockRoot2) {
+    return store.getForkChoiceStrategy().findCommonAncestor(blockRoot1, blockRoot2);
+  }
+
   private Optional<ReorgContext> computeReorgContext(
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
       final Optional<ChainHead> originalChainHead,
@@ -648,6 +654,15 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
     return validatedBlockProvider.getBlock(root);
   }
 
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>>
+      retrieveSignedExecutionPayloadEnvelopeByBlockRoot(final Bytes32 beaconBlockRoot) {
+    if (store == null) {
+      return EmptyStoreResults.EMPTY_SIGNED_EXECUTION_PAYLOAD_ENVELOPE_FUTURE;
+    }
+    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+  }
+
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(final Bytes32 blockRoot) {
     if (store == null) {
       return EmptyStoreResults.EMPTY_STATE_FUTURE;
@@ -768,5 +783,9 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
 
   public void setBlockTimelinessIfEmpty(final SignedBeaconBlock block) {
     lateBlockReorgLogic.setBlockTimelinessFromArrivalTime(block, store.getTimeInMillis());
+  }
+
+  public Optional<UInt64> getCustodyGroupCount() {
+    return store.getCustodyGroupCount();
   }
 }

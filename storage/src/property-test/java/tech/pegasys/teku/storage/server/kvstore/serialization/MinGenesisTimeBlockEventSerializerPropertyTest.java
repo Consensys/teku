@@ -37,6 +37,6 @@ public class MinGenesisTimeBlockEventSerializerPropertyTest {
     final byte[] serialized = MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER.serialize(value);
     final MinGenesisTimeBlockEvent deserialized =
         MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER.deserialize(serialized);
-    assertThat(deserialized).isEqualToComparingFieldByField(value);
+    assertThat(deserialized).usingDefaultComparator().isEqualTo(value);
   }
 }

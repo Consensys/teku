@@ -472,6 +472,24 @@ class ValidatorRegistratorTest {
   }
 
   @TestTemplate
+  void shouldQueueOnlyOneRetry() {
+    SafeFuture<Void> firstAttempt = new SafeFuture<>();
+    SafeFuture<Void> secondAttempt = new SafeFuture<>();
+    when(validatorApiChannel.registerValidators(any()))
+        .thenReturn(firstAttempt)
+        .thenReturn(secondAttempt);
+
+    setOwnedValidators(validator1, validator2, validator3);
+
+    runRegistrationFlowWithSubscription(0);
+    firstAttempt.completeExceptionally(new IllegalStateException("oopsy"));
+    runRegistrationFlowWithSubscription(0);
+    secondAttempt.completeExceptionally(new IllegalStateException("oopsy"));
+
+    assertThat(stubAsyncRunner.countDelayedActions()).isOne();
+  }
+
+  @TestTemplate
   void checksValidatorStatusWithPublicKeyOverride() {
     final BLSPublicKey validator2KeyOverride = dataStructureUtil.randomPublicKey();
     when(proposerConfigPropertiesProvider.getBuilderRegistrationPublicKeyOverride(

@@ -40,14 +40,13 @@ public class WithPrecomputeBenchmark {
 
     @Setup(Level.Invocation)
     public void setup() {
-      config = new SidecarBenchmarkConfig(isPrecompute);
+      config = new SidecarBenchmarkConfig(isPrecompute, isRustEnabled);
     }
   }
 
   @Benchmark
   public void computeExtendedMatrixAndProofs(final ExecutionPlan plan) {
-    plan.config.miscHelpersFulu.computeExtendedMatrixAndProofs(
-        plan.config.blobs, plan.config.getKzg(plan.isRustEnabled));
+    plan.config.miscHelpersFulu.computeExtendedMatrixAndProofs(plan.config.blobs);
   }
 
   @Benchmark
@@ -63,7 +62,6 @@ public class WithPrecomputeBenchmark {
     final int size = plan.config.dataColumnSidecars.size();
     final int halfSize = size / 2;
     plan.config.miscHelpersFulu.reconstructAllDataColumnSidecars(
-        plan.config.dataColumnSidecars.subList(halfSize, size),
-        plan.config.getKzg(plan.isRustEnabled));
+        plan.config.dataColumnSidecars.subList(halfSize, size));
   }
 }

@@ -32,6 +32,7 @@ import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.GOSSIP;
+import static tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR;
 import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.ARRIVAL_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.BEGIN_IMPORTING_LABEL;
@@ -70,8 +71,8 @@ import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.NoOpKZG;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -86,7 +87,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.availability.Availabi
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
-import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
@@ -163,6 +163,7 @@ public class BlockManagerTest {
   }
 
   private void setupWithSpec(final Spec spec) {
+    spec.reinitializeForTesting(blobSidecarManager, NOOP_DATACOLUMN_SIDECAR, NoOpKZG.INSTANCE);
     this.spec = spec;
     this.dataStructureUtil = new DataStructureUtil(spec);
     final StubMetricsSystem metricsSystem = new StubMetricsSystem();
@@ -178,7 +179,6 @@ public class BlockManagerTest {
             spec,
             new InlineEventThread(),
             localRecentChainData,
-            blobSidecarManager,
             forkChoiceNotifier,
             transitionBlockValidator,
             metricsSystem);
@@ -210,7 +210,7 @@ public class BlockManagerTest {
         .initializeGenesisWithPayload(false, dataStructureUtil.randomExecutionPayloadHeader());
     assertThat(blockManager.start()).isCompleted();
     when(blobSidecarManager.createAvailabilityChecker(any()))
-        .thenReturn(AvailabilityChecker.NOOP_BLOBSIDECAR);
+        .thenReturn(AvailabilityChecker.NOOP_BLOB_SIDECAR);
     when(blockValidator.initiateBroadcastValidation(any(), any()))
         .thenReturn(blockBroadcastValidator);
     when(blockBroadcastValidator.getResult()).thenReturn(SafeFuture.completedFuture(SUCCESS));
@@ -1035,39 +1035,6 @@ public class BlockManagerTest {
     assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
         .isCompletedWithValueMatching(Optional::isEmpty);
     assertThat(invalidBlockRoots).doesNotContainKeys(block1.getRoot());
-  }
-
-  @Test
-  void preDeneb_shouldNotWorryAboutBlobSidecars() {
-    setupWithSpec(
-        TestSpecFactory.create(
-            SpecMilestone.CAPELLA,
-            Eth2Network.MAINNET,
-            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP)));
-    final SignedBlockAndState signedBlockAndState1 =
-        localChain
-            .chainBuilder()
-            .generateBlockAtSlot(
-                incrementSlot(), BlockOptions.create().setGenerateRandomBlobs(true));
-    final List<BlobSidecar> blobSidecars1 =
-        localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
-    assertThatNothingStoredForSlotRoot(signedBlockAndState1.getSlotAndBlockRoot());
-    assertThat(blobSidecars1).isEmpty();
-    assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
-        .isCompletedWithValueMatching(Optional::isEmpty);
-
-    final SignedBeaconBlock block1 = signedBlockAndState1.getBlock();
-    // pre-Deneb is used NOOP with default not required
-    final AvailabilityChecker<BlobSidecar> blobSidecarsAvailabilityChecker1 =
-        createAvailabilityCheckerWithNotRequiredBlobSidecars(block1);
-
-    assertThatBlockImport(block1).isCompletedWithValueMatching(BlockImportResult::isSuccessful);
-    verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
-    assertThat(localRecentChainData.retrieveBlockByRoot(block1.getRoot()))
-        .isCompletedWithValue(Optional.of(block1.getMessage()));
-    assertThat(localRecentChainData.getBlobSidecars(block1.getSlotAndBlockRoot())).isEmpty();
-    assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
-        .isCompletedWithValueMatching(Optional::isEmpty);
   }
 
   private AvailabilityChecker<BlobSidecar> createAvailabilityCheckerWithValidBlobSidecars(

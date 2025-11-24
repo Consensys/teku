@@ -14,12 +14,9 @@
 package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
 import java.time.Duration;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -30,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -37,14 +35,16 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
 public class SimpleSidecarRetriever
     implements DataColumnSidecarRetriever, DataColumnPeerManager.PeerListener {
@@ -52,7 +52,6 @@ public class SimpleSidecarRetriever
 
   private final Spec spec;
   private final MiscHelpersFulu miscHelpersFulu;
-  private final DataColumnPeerSearcher peerSearcher;
   private final DasPeerCustodyCountSupplier custodyCountSupplier;
   private final DataColumnReqResp reqResp;
   private final AsyncRunner asyncRunner;
@@ -69,7 +68,6 @@ public class SimpleSidecarRetriever
   public SimpleSidecarRetriever(
       final Spec spec,
       final DataColumnPeerManager peerManager,
-      final DataColumnPeerSearcher peerSearcher,
       final DasPeerCustodyCountSupplier custodyCountSupplier,
       final DataColumnReqResp reqResp,
       final AsyncRunner asyncRunner,
@@ -77,7 +75,6 @@ public class SimpleSidecarRetriever
     this.spec = spec;
     this.miscHelpersFulu =
         MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
-    this.peerSearcher = peerSearcher;
     this.custodyCountSupplier = custodyCountSupplier;
     this.asyncRunner = asyncRunner;
     this.roundPeriod = roundPeriod;
@@ -98,11 +95,7 @@ public class SimpleSidecarRetriever
   @Override
   public SafeFuture<DataColumnSidecar> retrieve(final DataColumnSlotAndIdentifier columnId) {
     final RetrieveRequest request =
-        pendingRequests.computeIfAbsent(
-            columnId,
-            __ ->
-                new RetrieveRequest(
-                    columnId, peerSearcher.requestPeers(columnId.slot(), columnId.columnIndex())));
+        pendingRequests.computeIfAbsent(columnId, __ -> new RetrieveRequest(columnId));
     startIfNecessary();
     return request.result;
   }
@@ -113,37 +106,72 @@ public class SimpleSidecarRetriever
   }
 
   @Override
-  public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {
+  public void onNewValidatedSidecar(
+      final DataColumnSidecar sidecar, final RemoteOrigin remoteOrigin) {
     final DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier =
         DataColumnSlotAndIdentifier.fromDataColumn(sidecar);
-    final List<Map.Entry<DataColumnSlotAndIdentifier, RetrieveRequest>> filteredRequests =
-        pendingRequests.entrySet().stream()
-            .filter(request -> request.getKey().equals(dataColumnSlotAndIdentifier))
-            .filter(request -> !request.getValue().result.isDone())
-            .toList();
-    filteredRequests.forEach(requestEntry -> reqRespCompleted(requestEntry.getValue(), sidecar));
+
+    Optional.ofNullable(pendingRequests.get(dataColumnSlotAndIdentifier))
+        .filter(request -> !request.result.isDone())
+        .ifPresent(request -> reqRespCompleted(request, sidecar));
   }
 
-  private List<RequestMatch> matchRequestsAndPeers() {
-    disposeCompletedRequests();
+  @Override
+  public void start() {}
+
+  @Override
+  public void stop() {}
+
+  private Stream<RequestMatch> matchRequestsAndPeers() {
     final RequestTracker ongoingRequestsTracker = createFromCurrentPendingRequests();
     return pendingRequests.entrySet().stream()
         .filter(entry -> entry.getValue().activeRpcRequest == null)
         .sorted(Comparator.comparing(entry -> entry.getKey().slot()))
         .flatMap(
             entry -> {
-              RetrieveRequest request = entry.getValue();
+              final RetrieveRequest request = entry.getValue();
               return findBestMatchingPeer(request, ongoingRequestsTracker).stream()
                   .peek(peer -> ongoingRequestsTracker.decreaseAvailableRequests(peer.nodeId))
                   .map(peer -> new RequestMatch(peer, request));
-            })
-        .toList();
+            });
+  }
+
+  private boolean activateMatchedRequest(final RequestMatch match) {
+    if (!match.request.activeRpcRequestSet.compareAndSet(false, true)) {
+      // already activated
+      return false;
+    }
+
+    final SafeFuture<DataColumnSidecar> reqRespPromise =
+        reqResp.requestDataColumnSidecar(match.peer.nodeId, match.request.columnId);
+    match.request.onPeerRequest(match.peer().nodeId);
+
+    final SafeFuture<Void> activeRpcRequest =
+        reqRespPromise.handle(
+            (sidecar, err) -> {
+              reqRespCompleted(match.request, sidecar);
+
+              if (err != null) {
+                LOG.debug(
+                    "SimpleSidecarRetriever.Request failed for {} due to: {}",
+                    () -> match.request.columnId,
+                    () -> ExceptionUtil.getMessageOrSimpleName(err));
+              }
+
+              return null;
+            });
+
+    // here we make sure that if something goes wrong in the handle call we
+    // log all the info to fix the bug
+    activeRpcRequest.ignoreCancelException().finishStackTrace();
+
+    match.request.activeRpcRequest = new ActiveRequest(activeRpcRequest, match.peer);
+    return true;
   }
 
   private Optional<ConnectedPeer> findBestMatchingPeer(
       final RetrieveRequest request, final RequestTracker ongoingRequestsTracker) {
-    final Collection<ConnectedPeer> matchingPeers =
-        findMatchingPeers(request, ongoingRequestsTracker);
+    final Stream<ConnectedPeer> matchingPeers = findMatchingPeers(request, ongoingRequestsTracker);
 
     // taking first the peers which were not requested yet, then peers which are less busy
     final Comparator<ConnectedPeer> comparator =
@@ -152,69 +180,61 @@ public class SimpleSidecarRetriever
             .thenComparing(
                 (ConnectedPeer peer) ->
                     ongoingRequestsTracker.getAvailableRequestCount(peer.nodeId));
-    return matchingPeers.stream().max(comparator);
+    return matchingPeers.max(comparator);
   }
 
-  private Collection<ConnectedPeer> findMatchingPeers(
+  private Stream<ConnectedPeer> findMatchingPeers(
       final RetrieveRequest request, final RequestTracker ongoingRequestsTracker) {
     return connectedPeers.values().stream()
         .filter(peer -> peer.isCustodyFor(request.columnId))
-        .filter(peer -> ongoingRequestsTracker.hasAvailableRequests(peer.nodeId))
-        .toList();
+        .filter(peer -> ongoingRequestsTracker.hasAvailableRequests(peer.nodeId));
   }
 
   private void disposeCompletedRequests() {
-    final Iterator<Map.Entry<DataColumnSlotAndIdentifier, RetrieveRequest>> pendingIterator =
-        pendingRequests.entrySet().iterator();
-    while (pendingIterator.hasNext()) {
-      final Map.Entry<DataColumnSlotAndIdentifier, RetrieveRequest> pendingEntry =
-          pendingIterator.next();
-      final RetrieveRequest pendingRequest = pendingEntry.getValue();
-      if (pendingRequest.result.isDone()) {
-        pendingIterator.remove();
-        pendingRequest.peerSearchRequest.dispose();
-        if (pendingRequest.activeRpcRequest != null) {
-          pendingRequest.activeRpcRequest.promise().cancel(true);
-        }
-      }
-    }
+    pendingRequests
+        .entrySet()
+        .removeIf(
+            pendingEntry -> {
+              final RetrieveRequest pendingRequest = pendingEntry.getValue();
+              if (pendingRequest.result.isDone()) {
+                if (pendingRequest.activeRpcRequest != null) {
+                  pendingRequest.activeRpcRequest.promise().cancel(true);
+                }
+                return true;
+              }
+              return false;
+            });
   }
 
   private void nextRound() {
-    final List<RequestMatch> matches = matchRequestsAndPeers();
-    for (final RequestMatch match : matches) {
-      if (match.request.activeRpcRequestSet.compareAndSet(false, true)) {
-        final SafeFuture<DataColumnSidecar> reqRespPromise =
-            reqResp.requestDataColumnSidecar(match.peer.nodeId, match.request.columnId);
-        match.request().onPeerRequest(match.peer().nodeId);
-        match.request.activeRpcRequest =
-            new ActiveRequest(
-                reqRespPromise.whenComplete(
-                    (sidecar, err) -> reqRespCompleted(match.request, sidecar)),
-                match.peer);
-      }
-    }
+    disposeCompletedRequests();
 
-    final long activeRequestCount =
-        pendingRequests.values().stream().filter(r -> r.activeRpcRequest != null).count();
-    LOG.trace(
-        "SimpleSidecarRetriever.nextRound: completed: {}, errored: {},  total pending: {}, active pending: {}, new active: {}, number of custody peers: {}",
-        retrieveCounter,
-        errorCounter,
-        pendingRequests.size(),
-        activeRequestCount,
-        matches.size(),
-        gatherAvailableCustodiesInfo());
+    final long activatedMatches =
+        matchRequestsAndPeers()
+            .map(this::activateMatchedRequest)
+            .filter(activated -> activated)
+            .count();
+
+    if (LOG.isTraceEnabled()) {
+      final long activeRequestCount =
+          pendingRequests.values().stream().filter(r -> r.activeRpcRequest != null).count();
+      LOG.trace(
+          "SimpleSidecarRetriever.nextRound: completed: {}, errored: {},  total pending: {}, active pending: {}, new active: {}, number of custody peers: {}",
+          retrieveCounter,
+          errorCounter,
+          pendingRequests.size(),
+          activeRequestCount,
+          activatedMatches,
+          gatherAvailableCustodiesInfo());
+    }
 
     reqResp.flush();
   }
 
-  @SuppressWarnings("unused")
   private void reqRespCompleted(
       final RetrieveRequest request, final DataColumnSidecar maybeResult) {
     if (maybeResult != null && pendingRequests.remove(request.columnId) != null) {
       request.result.completeAsync(maybeResult, asyncRunner);
-      request.peerSearchRequest.dispose();
       retrieveCounter.incrementAndGet();
     } else if (request.activeRpcRequestSet.compareAndSet(true, false)) {
       request.activeRpcRequest = null;
@@ -250,33 +270,29 @@ public class SimpleSidecarRetriever
   @Override
   public void peerConnected(final UInt256 nodeId) {
     LOG.trace(
-        "SimpleSidecarRetriever.peerConnected: {}", "0x..." + nodeId.toHexString().substring(58));
+        "SimpleSidecarRetriever.peerConnected: 0x...{}", () -> nodeId.toHexString().substring(58));
     connectedPeers.computeIfAbsent(nodeId, __ -> new ConnectedPeer(nodeId));
   }
 
   @Override
   public void peerDisconnected(final UInt256 nodeId) {
     LOG.trace(
-        "SimpleSidecarRetriever.peerDisconnected: {}",
-        "0x..." + nodeId.toHexString().substring(58));
+        "SimpleSidecarRetriever.peerDisconnected: 0x...{}",
+        () -> nodeId.toHexString().substring(58));
     connectedPeers.remove(nodeId);
   }
 
-  private record ActiveRequest(SafeFuture<DataColumnSidecar> promise, ConnectedPeer peer) {}
+  private record ActiveRequest(SafeFuture<Void> promise, ConnectedPeer peer) {}
 
   private static class RetrieveRequest {
     final DataColumnSlotAndIdentifier columnId;
-    final DataColumnPeerSearcher.PeerSearchRequest peerSearchRequest;
     final SafeFuture<DataColumnSidecar> result = new SafeFuture<>();
     final Map<UInt256, Integer> peerRequestCount = new HashMap<>();
     final AtomicBoolean activeRpcRequestSet = new AtomicBoolean(false);
     volatile ActiveRequest activeRpcRequest = null;
 
-    private RetrieveRequest(
-        final DataColumnSlotAndIdentifier columnId,
-        final DataColumnPeerSearcher.PeerSearchRequest peerSearchRequest) {
+    private RetrieveRequest(final DataColumnSlotAndIdentifier columnId) {
       this.columnId = columnId;
-      this.peerSearchRequest = peerSearchRequest;
     }
 
     public void onPeerRequest(final UInt256 peerId) {

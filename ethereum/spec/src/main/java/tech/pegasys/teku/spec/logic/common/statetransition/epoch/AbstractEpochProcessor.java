@@ -134,6 +134,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     }
 
     processPendingConsolidations(state);
+    processBuilderPendingPayments(state);
     processEffectiveBalanceUpdates(state, validatorStatuses.getStatuses());
     processSlashingsReset(state);
     processRandaoMixesReset(state);

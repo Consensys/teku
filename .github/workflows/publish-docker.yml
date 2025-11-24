@@ -1,0 +1,151 @@
+
+name: publish-docker
+
+on:
+  workflow_call:
+    inputs:
+      assemble_run_id:
+        required: true
+        type: string
+      jdk_version:
+        required: true
+        type: string
+        default: "jdk21"
+      include_hash_in_docker:
+        required: false
+        type: string
+        default: 'false'
+        # no boolean type
+
+jobs:
+  # DockerTags
+  # everything is a standard develop-jdk24/21; but you also add develop to develop-jdk21
+  # develop = develop-jdk21
+  # develop-jdk24
+  publishDocker:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write  
+    environment: publish
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+      - name: Download assemble-output
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.assemble_run_id }}
+          name: assemble-output
+          merge-multiple: true
+          path: ${{ github.workspace }}
+      - name: get workflow_details
+        id: jdkDetails
+        shell: bash
+        run: |
+          # on a release tag also add `latest` and `maj.min` version tags if it's not an `rc`
+          if [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref_type }}" == "tag" ]; then
+            echo "buildVersion=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            dockertags="consensys/teku:${{ github.ref_name }},consensys/teku:${{ github.ref_name }}-${{ inputs.jdk_version }}"
+            
+            semver=${{ github.ref_name }}
+            if [[ ${semver,,} != *"-rc"* ]]; then
+              echo "It's not an rc version, proceeding with extra tags..."
+              # Extract major.minor 
+              if [[ $semver =~ ^([0-9]+)\.([0-9]+)\.[0-9]+(-rc)?$ ]]; then
+                major_minor="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+                echo "major.minor: $major_minor"
+              else
+                echo "Invalid semver string"
+              fi              
+              dockertags="${dockertags},consensys/teku:${major_minor},consensys/teku:${major_minor}-${{ inputs.jdk_version }}"
+              dockertags="${dockertags},consensys/teku:latest,consensys/teku:latest-${{ inputs.jdk_version }}"
+            fi
+            echo "dockertags=${dockertags}" >> $GITHUB_OUTPUT
+
+          else
+            echo "buildVersion=develop" >> $GITHUB_OUTPUT
+            dockertags="consensys/teku:develop-${{ inputs.jdk_version }}"
+            if [ "${{ inputs.jdk_version }}" = "jdk21" ]; then
+              dockertags="$dockertags,consensys/teku:develop"
+            fi
+            if [ "${{ inputs.include_hash_in_docker }}" = "true" ]; then
+              dockertags="$dockertags,consensys/teku:${{ github.sha }}"
+            fi
+            echo "dockertags=${dockertags}" >> $GITHUB_OUTPUT
+          fi
+      - name: Get the artifacts in one place
+        run: |
+          mkdir -p build/docker-teku/
+          ./gradlew dockerDistUntar
+          cp docker/${{ inputs.jdk_version }}/Dockerfile build/docker-teku/
+          echo "Creating buildVersion: ${{ steps.jdkDetails.outputs.buildVersion }}"
+          echo "Creating dockertags: ${{ steps.jdkDetails.outputs.dockertags }}"
+          # tree build/docker-teku/
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USER_RW }}
+          password: ${{ secrets.DOCKER_PASSWORD_RW }}
+      - name: build and push the combined manifest
+        uses: docker/build-push-action@v6
+        id: dockerBuildPush
+        env:
+          DOCKER_BUILD_SUMMARY: false
+        with:
+          context: build/docker-teku/.
+          platforms: linux/arm64,linux/amd64
+          provenance: false
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache          
+          build-args: |
+            VERSION=${{ steps.jdkDetails.outputs.buildVersion }}
+            VCS_REF=${{ github.sha }}
+            BUILD_DATE=${{ steps.jdkDetails.outputs.build_date }}
+          push: true
+          tags: ${{ steps.jdkDetails.outputs.dockertags }}
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+      - name: Sign image with keyless cosign
+        run: |
+          IMAGE=docker.io/consensys/teku@${{ steps.dockerBuildPush.outputs.digest }}
+          echo "Signing $IMAGE"
+          cosign sign --yes $IMAGE
+      - name: Generate provenance file
+        run: |
+          BUILD_FINISHED_ON=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          cat > provenance.json <<'EOF'
+          {
+            "buildType": "https://slsa.dev/container/v1",
+            "builder": {
+              "id": "https://github.com/${{ github.repository }}/.github/workflows/${{ github.workflow_ref }}"
+            },
+            "invocation": {
+              "parameters": {
+                "git_ref": "${{ github.ref }}",
+                "git_sha": "${{ github.sha }}",
+                "build_run_id": "${{ github.run_id }}",
+                "build_run_number": "${{ github.run_number }}"
+              }
+            },
+            "metadata": {
+              "buildStartedOn": "${{ github.event.head_commit.timestamp }}",
+              "buildFinishedOn": "__BUILD_FINISHED_ON__"
+            },
+            "source": {
+              "repository": "https://github.com/${{ github.repository }}",
+              "revision": "${{ github.sha }}"
+            }
+          }
+          EOF
+          sed -i "s/__BUILD_FINISHED_ON__/$BUILD_FINISHED_ON/" provenance.json
+      - name: Attest cosign provenance 
+        run: |
+          IMAGE=docker.io/consensys/teku@${{ steps.dockerBuildPush.outputs.digest }}
+          echo "Attesting provenance for $IMAGE"
+          cosign attest --yes --predicate provenance.json --type slsaprovenance $IMAGE

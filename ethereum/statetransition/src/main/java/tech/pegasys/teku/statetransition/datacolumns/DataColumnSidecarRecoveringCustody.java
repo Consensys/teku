@@ -18,8 +18,7 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
@@ -28,13 +27,6 @@ public interface DataColumnSidecarRecoveringCustody
     extends DataColumnSidecarByRootCustody, DataColumnSidecarCustody, SlotEventsChannel {
   DataColumnSidecarRecoveringCustody NOOP =
       new DataColumnSidecarRecoveringCustody() {
-        @Override
-        public void onNewBlock(SignedBeaconBlock block, Optional<RemoteOrigin> remoteOrigin) {}
-
-        @Override
-        public void subscribeToValidDataColumnSidecars(
-            DataColumnSidecarManager.ValidDataColumnSidecarsListener sidecarsListener) {}
-
         @Override
         public void onSlot(UInt64 slot) {}
 
@@ -46,7 +38,7 @@ public interface DataColumnSidecarRecoveringCustody
 
         @Override
         public SafeFuture<Void> onNewValidatedDataColumnSidecar(
-            DataColumnSidecar dataColumnSidecar) {
+            final DataColumnSidecar dataColumnSidecar, final RemoteOrigin origin) {
           return SafeFuture.COMPLETE;
         }
 
@@ -66,10 +58,16 @@ public interface DataColumnSidecarRecoveringCustody
             DataColumnSlotAndIdentifier columnId) {
           return SafeFuture.completedFuture(false);
         }
+
+        @Override
+        public void onSyncingStatusChanged(boolean inSync) {}
+
+        @Override
+        public void subscribeToRecoveredColumnSidecar(
+            final ValidDataColumnSidecarsListener subscriber) {}
       };
 
-  void onNewBlock(SignedBeaconBlock block, Optional<RemoteOrigin> remoteOrigin);
+  void onSyncingStatusChanged(boolean inSync);
 
-  void subscribeToValidDataColumnSidecars(
-      DataColumnSidecarManager.ValidDataColumnSidecarsListener sidecarsListener);
+  void subscribeToRecoveredColumnSidecar(ValidDataColumnSidecarsListener subscriber);
 }

@@ -169,7 +169,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
             });
 
     final long countTooBigCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK,
             "rpc_blob_sidecars_by_root_requests_total",
             "count_too_big");
@@ -194,7 +194,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
     verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
     final long rateLimitedCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK, "rpc_blob_sidecars_by_root_requests_total", "rate_limited");
 
     assertThat(rateLimitedCount).isOne();
@@ -268,9 +268,8 @@ public class BlobSidecarsByRootMessageHandlerTest {
 
     // Requesting 3 blob sidecars
     verify(peer, times(1)).approveBlobSidecarsRequest(any(), eq(Long.valueOf(3)));
-    // Request cancelled due to error
-    verify(peer, times(1))
-        .adjustBlobSidecarsRequest(eq(allowedObjectsRequest.orElseThrow()), eq(Long.valueOf(0)));
+    // Be protective: do not adjust due to error
+    verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
     verify(callback, never()).respond(any());
     verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
@@ -305,9 +304,8 @@ public class BlobSidecarsByRootMessageHandlerTest {
 
     // Requesting 3 blob sidecars
     verify(peer, times(1)).approveBlobSidecarsRequest(any(), eq(Long.valueOf(3)));
-    // Request cancelled due to error
-    verify(peer, times(1))
-        .adjustBlobSidecarsRequest(eq(allowedObjectsRequest.orElseThrow()), eq(Long.valueOf(0)));
+    // Be protective: do not adjust due to error
+    verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
     verify(callback, never()).respond(any());
     verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());

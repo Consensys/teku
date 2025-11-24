@@ -78,7 +78,10 @@ public interface BlockProductionPerformance {
         public void beaconBlockBodyPrepared() {}
 
         @Override
-        public void getStateAtSlot() {}
+        public void lateBlockReorgPreparationCompleted() {}
+
+        @Override
+        public void getState() {}
 
         @Override
         public void engineGetPayload() {}
@@ -115,7 +118,9 @@ public interface BlockProductionPerformance {
 
   void beaconBlockBodyPrepared();
 
-  void getStateAtSlot();
+  void lateBlockReorgPreparationCompleted();
+
+  void getState();
 
   void engineGetPayload();
 

@@ -15,11 +15,10 @@ package tech.pegasys.teku.networks;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static java.util.Arrays.asList;
 import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE;
+import static tech.pegasys.teku.spec.config.SpecConfigLoader.EPHEMERY_CONFIG_URL;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 import static tech.pegasys.teku.spec.networks.Eth2Network.CHIADO;
-import static tech.pegasys.teku.spec.networks.Eth2Network.EPHEMERY;
 import static tech.pegasys.teku.spec.networks.Eth2Network.GNOSIS;
 import static tech.pegasys.teku.spec.networks.Eth2Network.HOLESKY;
 import static tech.pegasys.teku.spec.networks.Eth2Network.HOODI;
@@ -44,6 +43,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
+import tech.pegasys.teku.infrastructure.io.MultilineEntriesReader;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class Eth2NetworkConfiguration {
+
   public static final int DEFAULT_ATTESTATION_WAIT_TIMEOUT_MILLIS = 1_500;
   private static final Logger LOG = LogManager.getLogger();
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
@@ -546,10 +547,6 @@ public class Eth2NetworkConfiguration {
                 constants,
                 strictConfigLoadingEnabled,
                 builder -> {
-                  // Ephemery network field change periodically, update to current
-                  if (constants.equals(EPHEMERY.configName())) {
-                    EphemeryNetwork.updateConfig(builder);
-                  }
                   altairForkEpoch.ifPresent(builder::altairForkEpoch);
                   bellatrixForkEpoch.ifPresent(builder::bellatrixForkEpoch);
                   capellaForkEpoch.ifPresent(builder::capellaForkEpoch);
@@ -778,8 +775,44 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder discoveryBootnodes(final String... discoveryBootnodes) {
-      this.discoveryBootnodes = asList(discoveryBootnodes);
+      for (final String bootnode : discoveryBootnodes) {
+        addBootnodeIfMissing(bootnode);
+      }
       return this;
+    }
+
+    public Builder discoveryBootnodesFromUrl(final String fileOrUrl) {
+      try {
+        final List<String> bootnodesFromUrl = MultilineEntriesReader.readEntries(fileOrUrl);
+        for (final String bootnode : bootnodesFromUrl) {
+          if (bootnode.startsWith("- enr:-")) {
+            // clean up yaml entries
+            final String cleanBootnode = bootnode.substring(2);
+            addBootnodeIfMissing(cleanBootnode);
+          } else if (bootnode.startsWith("enr")) {
+            addBootnodeIfMissing(bootnode);
+          } else {
+
+            LOG.debug("Failed to add invalid bootnode {}", bootnode);
+            throw new InvalidConfigurationException(
+                String.format("Invalid bootnode found in URL (%s): %s", fileOrUrl, bootnode));
+          }
+        }
+      } catch (final InvalidConfigurationException e) {
+        throw e;
+      } catch (final Exception e) {
+        throw new InvalidConfigurationException("Error reading bootnodes from " + fileOrUrl, e);
+      }
+      return this;
+    }
+
+    private void addBootnodeIfMissing(final String bootnode) {
+      if (!this.discoveryBootnodes.contains(bootnode)) {
+        LOG.debug("Adding bootnode {}", bootnode);
+        this.discoveryBootnodes.add(bootnode);
+      } else {
+        LOG.debug("Skipping known bootnode {}", bootnode);
+      }
     }
 
     public Builder eth1DepositContractAddress(final String eth1Address) {
@@ -1138,17 +1171,12 @@ public class Eth2NetworkConfiguration {
 
     private Builder applyEphemeryNetworkDefaults() {
       return applyTestnetDefaults()
-          .constants(EPHEMERY.configName())
+          .constants(EPHEMERY_CONFIG_URL)
           .startupTimeoutSeconds(120)
           .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
           .eth1DepositContractDeployBlock(0)
           .checkpointSyncUrl("https://ephemery.beaconstate.ethstaker.cc")
-          .discoveryBootnodes(
-              "enr:-Iq4QNMYHuJGbnXyBj6FPS2UkOQ-hnxT-mIdNMMr7evR9UYtLemaluorL6J10RoUG1V4iTPTEbl3huijSNs5_ssBWFiGAYhBNHOzgmlkgnY0gmlwhIlKy_CJc2VjcDI1NmsxoQNULnJBzD8Sakd9EufSXhM4rQTIkhKBBTmWVJUtLCp8KoN1ZHCCIyk",
-              "enr:-LK4QDvXfoKH4pVoVoJx3vz0q-3nFtxYKgIacrYPuorPO-KrGlOwQOlCDEPh0e_1x9O2Ob6YWajVU6y7IjIGYOQfXkwEh2F0dG5ldHOIAAAAAACAAQCEZXRoMpDKcygcUAAQG___________gmlkgnY0gmlwhIlKy_CJc2VjcDI1NmsxoQOqgG9xgvsFBhOI6mfWosFJheJOxvVz2zlbQzMeK-S7dIN0Y3CCI4yDdWRwgiOM",
-              "enr:-Jq4QI0JCZcwDmfiuBbzjtmE_QTQVi4-jRUJko5RMq1RCjQeTXncHIoCtriXgU_FrCtl9R2AKSyHcmF0fCuS4pIL4h0BhGV0aDKQynMoHFAAEBv__________4JpZIJ2NIJpcIRBbZouiXNlY3AyNTZrMaEC8GXWOjFPp85Cpv9CY6V-CfzNPkMm0VyNNeuiFxfjg3mDdWRwgiMp",
-              "enr:-Iq4QIc297-de1P6hznMX2cIdVsQkve9BD9NUsJ7vVQa7eh5UpekA9rLid5A-yLiS3gZwOGugYZPi58x76zNs2cEQFCGAYhBJlTYgmlkgnY0gmlwhEFtmi6Jc2VjcDI1NmsxoQJDyix-IHa_mVwLBEN9NeG8I-RUjNQK_MGxk9OqRQUAtIN1ZHCCIyg",
-              "enr:-MS4QPNnPV4zZJkeytVQTm8fg3Mrtyq7l3oVy9ht4229w5OUOftE2EsXAfgxEopHavIPTzdWGchD-rXDh_eS6fdF_dsBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDKcygcUAAQG___________gmlkgnY0gmlwhKfrAbmEcXVpY4IjUYlzZWNwMjU2azGhAwnM8CLwGlnZFe7XhDoC4PSYZMvWypChdu0NX9vmCGjKiHN5bmNuZXRzAIN0Y3CCI1CDdWRwgiNQ");
+          .discoveryBootnodesFromUrl("https://ephemery.dev/latest/boot_enr.txt");
     }
 
     private Builder applyHoodiNetworkDefaults() {

@@ -33,6 +33,7 @@ dependencies {
   implementation project(':services:chainstorage')
   implementation project(':services:executionlayer')
   implementation project(':services:powchain')
+  implementation project(':services:zkchain')
   implementation project(':infrastructure:serviceutils')
   implementation project(':services:timer')
   implementation project(':storage')
@@ -55,7 +56,7 @@ dependencies {
   implementation 'org.apache.logging.log4j:log4j-slf4j2-impl'
   implementation 'io.consensys.tuweni:tuweni-ssz'
   implementation 'io.consensys.tuweni:tuweni-units'
-  implementation 'org.hyperledger.besu.internal:metrics-core'
+  implementation 'org.hyperledger.besu.internal:besu-metrics-core'
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'org.xerial.snappy:snappy-java'
@@ -73,4 +74,5 @@ dependencies {
 
   testImplementation project(':data:provider')
   testImplementation 'org.awaitility:awaitility'
+  testImplementation 'org.jsoup:jsoup'
 }

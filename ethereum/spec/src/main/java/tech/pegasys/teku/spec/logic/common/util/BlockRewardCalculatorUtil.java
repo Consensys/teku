@@ -158,8 +158,10 @@ public class BlockRewardCalculatorUtil {
     return block.getBody().getAttestations().stream()
         .map(
             attestation ->
-                blockProcessor.processAttestationProposerReward(
-                    mutableBeaconStateAltair, attestation, indexedAttestationProvider))
+                blockProcessor
+                    .processAttestation(
+                        mutableBeaconStateAltair, attestation, indexedAttestationProvider)
+                    .proposerReward())
         .filter(Optional::isPresent)
         .map(Optional::get)
         .map(UInt64::longValue)

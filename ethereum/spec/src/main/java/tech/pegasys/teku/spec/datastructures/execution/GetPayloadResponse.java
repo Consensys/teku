@@ -24,7 +24,6 @@ public class GetPayloadResponse {
   private final ExecutionPayload executionPayload;
   private final UInt256 executionPayloadValue;
   private final Optional<BlobsBundle> blobsBundle;
-  private final Optional<BlobsCellBundle> blobsCellBundle;
   private final boolean shouldOverrideBuilder;
   private final Optional<ExecutionRequests> executionRequests;
 
@@ -32,7 +31,6 @@ public class GetPayloadResponse {
     this.executionPayload = executionPayload;
     this.executionPayloadValue = UInt256.ZERO;
     this.blobsBundle = Optional.empty();
-    this.blobsCellBundle = Optional.empty();
     this.shouldOverrideBuilder = false;
     this.executionRequests = Optional.empty();
   }
@@ -42,7 +40,6 @@ public class GetPayloadResponse {
     this.executionPayload = executionPayload;
     this.executionPayloadValue = executionPayloadValue;
     this.blobsBundle = Optional.empty();
-    this.blobsCellBundle = Optional.empty();
     this.shouldOverrideBuilder = false;
     this.executionRequests = Optional.empty();
   }
@@ -55,20 +52,6 @@ public class GetPayloadResponse {
     this.executionPayload = executionPayload;
     this.executionPayloadValue = executionPayloadValue;
     this.blobsBundle = Optional.of(blobsBundle);
-    this.blobsCellBundle = Optional.empty();
-    this.shouldOverrideBuilder = shouldOverrideBuilder;
-    this.executionRequests = Optional.empty();
-  }
-
-  public GetPayloadResponse(
-      final ExecutionPayload executionPayload,
-      final UInt256 executionPayloadValue,
-      final BlobsCellBundle blobsCellBundle,
-      final boolean shouldOverrideBuilder) {
-    this.executionPayload = executionPayload;
-    this.executionPayloadValue = executionPayloadValue;
-    this.blobsBundle = Optional.empty();
-    this.blobsCellBundle = Optional.of(blobsCellBundle);
     this.shouldOverrideBuilder = shouldOverrideBuilder;
     this.executionRequests = Optional.empty();
   }
@@ -82,21 +65,6 @@ public class GetPayloadResponse {
     this.executionPayload = executionPayload;
     this.executionPayloadValue = executionPayloadValue;
     this.blobsBundle = Optional.of(blobsBundle);
-    this.blobsCellBundle = Optional.empty();
-    this.shouldOverrideBuilder = shouldOverrideBuilder;
-    this.executionRequests = Optional.of(executionRequests);
-  }
-
-  public GetPayloadResponse(
-      final ExecutionPayload executionPayload,
-      final UInt256 executionPayloadValue,
-      final BlobsCellBundle blobsCellBundle,
-      final boolean shouldOverrideBuilder,
-      final ExecutionRequests executionRequests) {
-    this.executionPayload = executionPayload;
-    this.executionPayloadValue = executionPayloadValue;
-    this.blobsBundle = Optional.empty();
-    this.blobsCellBundle = Optional.of(blobsCellBundle);
     this.shouldOverrideBuilder = shouldOverrideBuilder;
     this.executionRequests = Optional.of(executionRequests);
   }
@@ -111,10 +79,6 @@ public class GetPayloadResponse {
 
   public Optional<BlobsBundle> getBlobsBundle() {
     return blobsBundle;
-  }
-
-  public Optional<BlobsCellBundle> getBlobsCellBundle() {
-    return blobsCellBundle;
   }
 
   public boolean getShouldOverrideBuilder() {
@@ -138,7 +102,6 @@ public class GetPayloadResponse {
         && Objects.equals(executionPayload, that.executionPayload)
         && Objects.equals(executionPayloadValue, that.executionPayloadValue)
         && Objects.equals(blobsBundle, that.blobsBundle)
-        && Objects.equals(blobsCellBundle, that.blobsCellBundle)
         && Objects.equals(executionRequests, that.executionRequests);
   }
 
@@ -148,7 +111,6 @@ public class GetPayloadResponse {
         executionPayload,
         executionPayloadValue,
         blobsBundle,
-        blobsCellBundle,
         shouldOverrideBuilder,
         executionRequests);
   }
@@ -159,7 +121,6 @@ public class GetPayloadResponse {
         .add("executionPayload", executionPayload)
         .add("executionPayloadValue", executionPayloadValue)
         .add("blobsBundle", blobsBundle)
-        .add("blobsCellBundle", blobsCellBundle)
         .add("shouldOverrideBuilder", shouldOverrideBuilder)
         .add("executionRequests", executionRequests)
         .toString();

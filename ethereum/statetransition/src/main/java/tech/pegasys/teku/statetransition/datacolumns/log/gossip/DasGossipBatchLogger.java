@@ -24,13 +24,12 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.statetransition.datacolumns.util.StringifyUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -90,9 +89,7 @@ public class DasGossipBatchLogger implements DasGossipLogger {
         events.stream().collect(Collectors.groupingBy(e -> e.validationResult().code()));
     eventsByValidateCode.forEach(
         (validationCode, codeEvents) -> {
-          Level level = validationCode == ValidationResultCode.REJECT ? Level.INFO : Level.DEBUG;
-          LOG.log(
-              level,
+          LOG.debug(
               "Received {} data columns (validation result: {}) by gossip {} for block {}: {}",
               codeEvents.size(),
               validationCode,
@@ -200,14 +197,20 @@ public class DasGossipBatchLogger implements DasGossipLogger {
         + " ago";
   }
 
-  private boolean needToLogEvent(final boolean isSevereEvent) {
-    return LOG.isDebugEnabled() || (isSevereEvent && LOG.isInfoEnabled());
+  private boolean needToLogEvent() {
+    return LOG.isDebugEnabled();
   }
 
   @Override
   public synchronized void onReceive(
       final DataColumnSidecar sidecar, final InternalValidationResult validationResult) {
-    if (needToLogEvent(validationResult.isReject())) {
+    LOG.trace(
+        "DataColumnSidecar received: {}, commitments: {}, proofs: {}, reason: {}",
+        sidecar::toLogString,
+        sidecar::getKzgCommitments,
+        sidecar::getKzgProofs,
+        () -> validationResult.getDescription().orElse("<no reason>"));
+    if (needToLogEvent()) {
       events.add(
           new ReceiveEvent(timeProvider.getTimeInMillis().longValue(), sidecar, validationResult));
     }
@@ -216,21 +219,21 @@ public class DasGossipBatchLogger implements DasGossipLogger {
   @Override
   public synchronized void onPublish(
       final DataColumnSidecar sidecar, final Optional<Throwable> result) {
-    if (needToLogEvent(result.isPresent())) {
+    if (needToLogEvent()) {
       events.add(new PublishEvent(timeProvider.getTimeInMillis().longValue(), sidecar, result));
     }
   }
 
   @Override
   public void onDataColumnSubnetSubscribe(final int subnetId) {
-    if (needToLogEvent(false)) {
+    if (needToLogEvent()) {
       events.add(new SubscribeEvent(timeProvider.getTimeInMillis().longValue(), subnetId));
     }
   }
 
   @Override
   public void onDataColumnSubnetUnsubscribe(final int subnetId) {
-    if (needToLogEvent(false)) {
+    if (needToLogEvent()) {
       events.add(new UnsubscribeEvent(timeProvider.getTimeInMillis().longValue(), subnetId));
     }
   }
@@ -245,7 +248,7 @@ public class DasGossipBatchLogger implements DasGossipLogger {
         final TEvent e = (TEvent) event;
         final DataColumnSidecar sidecar = e.sidecar();
         final SlotAndBlockRoot blockId =
-            new SlotAndBlockRoot(sidecar.getSlot(), sidecar.getBlockRoot());
+            new SlotAndBlockRoot(sidecar.getSlot(), sidecar.getBeaconBlockRoot());
         eventsByBlock.computeIfAbsent(blockId, __ -> new ArrayList<>()).add(e);
       }
     }

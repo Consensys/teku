@@ -37,10 +37,6 @@ public class FallbackData {
     return getPayloadResponse.getBlobsBundle();
   }
 
-  public Optional<BlobsCellBundle> getBlobsCellBundle() {
-    return getPayloadResponse.getBlobsCellBundle();
-  }
-
   public UInt256 getExecutionPayloadValue() {
     return getPayloadResponse.getExecutionPayloadValue();
   }

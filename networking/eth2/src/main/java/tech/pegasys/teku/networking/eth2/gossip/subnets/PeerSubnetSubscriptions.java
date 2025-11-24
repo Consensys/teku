@@ -75,8 +75,8 @@ public class PeerSubnetSubscriptions {
       final SettableLabelledGauge subnetPeerCountGauge) {
     final Map<String, Collection<NodeId>> subscribersByTopic = network.getSubscribersByTopic();
 
-    SchemaDefinitionsSupplier currentSchemaDefinitions = currentVersion::getSchemaDefinitions;
-    Integer dataColumnSidecarSubnetCount =
+    final SchemaDefinitionsSupplier currentSchemaDefinitions = currentVersion::getSchemaDefinitions;
+    final int dataColumnSidecarSubnetCount =
         currentVersion
             .getConfig()
             .toVersionFulu()
@@ -134,14 +134,19 @@ public class PeerSubnetSubscriptions {
                                   .forEach(subscriber -> b.addSubscriber(columnSubnet, subscriber));
                             }))
             .build();
-    updateMetrics(currentSchemaDefinitions, subnetPeerCountGauge, subscriptions);
+    updateMetrics(
+        currentSchemaDefinitions,
+        subnetPeerCountGauge,
+        subscriptions,
+        dataColumnSidecarSubnetCount);
     return subscriptions;
   }
 
   private static void updateMetrics(
       final SchemaDefinitionsSupplier currentSchemaDefinitions,
       final SettableLabelledGauge subnetPeerCountGauge,
-      final PeerSubnetSubscriptions subscriptions) {
+      final PeerSubnetSubscriptions subscriptions,
+      final int dataColumnSidecarSubnetCount) {
     streamAllAttestationSubnetIds(currentSchemaDefinitions)
         .forEach(
             subnetId ->
@@ -156,6 +161,14 @@ public class PeerSubnetSubscriptions {
                     subscriptions.syncCommitteeSubnetSubscriptions.subscriberCountBySubnetId
                         .getOrDefault(subnetId, 0),
                     "sync_committee_" + subnetId));
+
+    IntStream.range(0, dataColumnSidecarSubnetCount)
+        .forEach(
+            subnetId ->
+                subnetPeerCountGauge.set(
+                    subscriptions.dataColumnSidecarSubnetSubscriptions.subscriberCountBySubnetId
+                        .getOrDefault(subnetId, 0),
+                    "data_column_sidecar_" + subnetId));
   }
 
   private static IntStream streamAllAttestationSubnetIds(

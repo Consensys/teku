@@ -87,11 +87,8 @@ class MergeTransitionBlockValidatorTest {
 
     final SafeFuture<PayloadValidationResult> result =
         transitionVerifier.verifyTransitionBlock(
-            chainHead
-                .getState()
-                .toVersionBellatrix()
-                .orElseThrow()
-                .getLatestExecutionPayloadHeader(),
+            BeaconStateBellatrix.required(chainHead.getState())
+                .getLatestExecutionPayloadHeaderRequired(),
             blockToVerify.getBlock());
 
     // No need to request blocks and check TTD
@@ -117,11 +114,8 @@ class MergeTransitionBlockValidatorTest {
 
     final SafeFuture<PayloadValidationResult> result =
         transitionVerifier.verifyTransitionBlock(
-            chainHead
-                .getState()
-                .toVersionBellatrix()
-                .orElseThrow()
-                .getLatestExecutionPayloadHeader(),
+            BeaconStateBellatrix.required(chainHead.getState())
+                .getLatestExecutionPayloadHeaderRequired(),
             blockToVerify.getBlock());
 
     assertThat(result)
@@ -147,11 +141,8 @@ class MergeTransitionBlockValidatorTest {
 
     final SafeFuture<PayloadValidationResult> result =
         transitionVerifier.verifyTransitionBlock(
-            chainHead
-                .getState()
-                .toVersionBellatrix()
-                .orElseThrow()
-                .getLatestExecutionPayloadHeader(),
+            BeaconStateBellatrix.required(chainHead.getState())
+                .getLatestExecutionPayloadHeaderRequired(),
             blockToVerify.getBlock());
 
     assertThat(result).isCompleted();
@@ -181,7 +172,7 @@ class MergeTransitionBlockValidatorTest {
 
     final SafeFuture<PayloadValidationResult> result =
         transitionVerifier.verifyTransitionBlock(
-            chainHeadState.getLatestExecutionPayloadHeader(), blockToVerify.getBlock());
+            chainHeadState.getLatestExecutionPayloadHeaderRequired(), blockToVerify.getBlock());
 
     assertThat(result).isCompletedWithValue(new PayloadValidationResult(PayloadStatus.VALID));
   }
@@ -211,7 +202,7 @@ class MergeTransitionBlockValidatorTest {
 
     final SafeFuture<PayloadValidationResult> result =
         transitionVerifier.verifyTransitionBlock(
-            chainHeadState.getLatestExecutionPayloadHeader(), blockToVerify.getBlock());
+            chainHeadState.getLatestExecutionPayloadHeaderRequired(), blockToVerify.getBlock());
 
     assertThatSafeFuture(result).isCompletedExceptionallyWith(FatalServiceFailureException.class);
   }

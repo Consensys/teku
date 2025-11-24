@@ -19,13 +19,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.SignedBeaconBlockBlinderBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.fulu.SignedBeaconBlockUnblinderFulu;
 import tech.pegasys.teku.spec.logic.common.util.BlindBlockUtil;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class BlindBlockUtilFulu extends BlindBlockUtil {
-  private final SchemaDefinitionsBellatrix schemaDefinitions;
+  private final SchemaDefinitionsFulu schemaDefinitions;
   private final SignedBeaconBlockBlinder signedBeaconBlockBlinder;
 
-  public BlindBlockUtilFulu(final SchemaDefinitionsBellatrix schemaDefinitions) {
+  public BlindBlockUtilFulu(final SchemaDefinitionsFulu schemaDefinitions) {
     this.schemaDefinitions = schemaDefinitions;
     this.signedBeaconBlockBlinder = new SignedBeaconBlockBlinderBellatrix(schemaDefinitions);
   }

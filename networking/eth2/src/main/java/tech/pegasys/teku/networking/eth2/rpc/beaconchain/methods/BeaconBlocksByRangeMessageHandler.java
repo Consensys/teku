@@ -18,8 +18,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 
-import com.google.common.base.Throwables;
-import java.nio.channels.ClosedChannelException;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -40,7 +38,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandle
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.InvalidRpcMethodVersion;
-import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
@@ -155,22 +152,7 @@ public class BeaconBlocksByRangeMessageHandler
               }
               callback.completeSuccessfully();
             },
-            error -> {
-              peer.adjustBlocksRequest(maybeRequestKey.get(), 0);
-              final Throwable rootCause = Throwables.getRootCause(error);
-              if (rootCause instanceof RpcException) {
-                LOG.trace("Rejecting beacon blocks by range request", error); // Keep full context
-                callback.completeWithErrorResponse((RpcException) rootCause);
-              } else {
-                if (rootCause instanceof StreamClosedException
-                    || rootCause instanceof ClosedChannelException) {
-                  LOG.trace("Stream closed while sending requested blocks", error);
-                } else {
-                  LOG.error("Failed to process blocks by range request", error);
-                }
-                callback.completeWithUnexpectedError(error);
-              }
-            });
+            error -> handleError(error, callback, "blocks by range"));
   }
 
   private SafeFuture<RequestState> sendMatchingBlocks(

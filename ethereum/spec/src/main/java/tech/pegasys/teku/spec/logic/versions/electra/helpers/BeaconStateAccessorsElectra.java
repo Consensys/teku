@@ -21,7 +21,6 @@ import static tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersE
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.crypto.Sha256;
@@ -40,7 +39,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.helpers.BeaconStateAccessorsD
 
 public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
 
-  private final SpecConfigElectra configElectra;
+  protected final SpecConfigElectra configElectra;
   protected PredicatesElectra predicatesElectra;
 
   public BeaconStateAccessorsElectra(
@@ -71,10 +70,8 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
    */
   public UInt64 getPendingBalanceToWithdraw(
       final BeaconStateElectra state, final int validatorIndex) {
-    final List<PendingPartialWithdrawal> partialWithdrawals =
-        state.getPendingPartialWithdrawals().asList();
-    return partialWithdrawals.stream()
-        .filter(z -> z.getValidatorIndex() == validatorIndex)
+    return state.getPendingPartialWithdrawals().stream()
+        .filter(withdrawal -> withdrawal.getValidatorIndex() == validatorIndex)
         .map(PendingPartialWithdrawal::getAmount)
         .reduce(UInt64.ZERO, UInt64::plus);
   }

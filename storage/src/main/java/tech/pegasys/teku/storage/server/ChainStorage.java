@@ -25,10 +25,11 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -292,6 +293,11 @@ public class ChainStorage
   }
 
   @Override
+  public SafeFuture<Optional<UInt64>> getCustodyGroupCount() {
+    return SafeFuture.of(database::getCustodyGroupCount);
+  }
+
+  @Override
   public SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot) {
     return SafeFuture.of(() -> database.getNonCanonicalBlocksAtSlot(slot));
   }
@@ -394,11 +400,6 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot() {
-    return SafeFuture.of(database::getFirstSamplerIncompleteSlot);
-  }
-
-  @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
       final DataColumnSlotAndIdentifier identifier) {
     return SafeFuture.of(() -> database.getSidecar(identifier));
@@ -422,6 +423,18 @@ public class ChainStorage
   }
 
   @Override
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalDataColumnIdentifiers(
+      final UInt64 slot) {
+    return SafeFuture.of(
+        () -> {
+          try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+              database.streamNonCanonicalDataColumnIdentifiers(slot)) {
+            return dataColumnIdentifiersStream.toList();
+          }
+        });
+  }
+
+  @Override
   public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(
       final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
     return SafeFuture.of(
@@ -439,13 +452,13 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Void> onFirstCustodyIncompleteSlot(final UInt64 slot) {
-    return SafeFuture.fromRunnable(() -> database.setFirstCustodyIncompleteSlot(slot));
+  public SafeFuture<Optional<List<List<KZGProof>>>> getDataColumnSidecarsProofs(final UInt64 slot) {
+    return SafeFuture.of(() -> database.getDataColumnSidecarsProofs(slot));
   }
 
   @Override
-  public SafeFuture<Void> onFirstSamplerIncompleteSlot(final UInt64 slot) {
-    return SafeFuture.fromRunnable(() -> database.setFirstSamplerIncompleteSlot(slot));
+  public SafeFuture<Void> onFirstCustodyIncompleteSlot(final UInt64 slot) {
+    return SafeFuture.fromRunnable(() -> database.setFirstCustodyIncompleteSlot(slot));
   }
 
   @Override

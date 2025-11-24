@@ -1,0 +1,75 @@
+
+name: publish-release
+
+on:
+  workflow_call:
+    inputs:
+      assemble_run_id:
+        required: true
+        type: string
+      publish_version:
+        required: true
+        type: string
+
+jobs:
+  publishRelease:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write  
+    environment: publish
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+      - name: Install python deps for cloudsmith 
+        run: |
+          sudo apt update
+          sudo apt install python3 python3-pip python3-venv
+      - name: Publish to Cloudsmith
+        run: |
+          ./gradlew --no-daemon --parallel --info cloudsmithUpload publish
+      - name: create distributions dir
+        shell: bash
+        run: |
+          mkdir -p build/distributions/      
+      - name: Download distribution
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.assemble_run_id }}
+          name: distribution
+          merge-multiple: true
+          path: build/distributions/
+      - name: Generate Checksum
+        working-directory: ./build/distributions
+        run: |
+          shasum -a 256 "teku-${{ inputs.publish_version }}.tar.gz" > "teku-${{ inputs.publish_version }}.tar.gz.sha256"
+          shasum -a 256 "teku-${{ inputs.publish_version }}.zip" > "teku-${{ inputs.publish_version }}.zip.sha256"
+      - name: Determine Prerelease
+        id: determine-prerelease
+        run: |
+          if [[ "${{ inputs.publish_version }}" == *-RC* ]]; then
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          fi
+      # Create release tag and attach the distribution
+      - name: Teku Release
+        id: release
+        uses: softprops/action-gh-release@v2.2.1
+        with:
+          files: |
+            build/distributions/teku-${{ inputs.publish_version }}.tar.gz
+            build/distributions/teku-${{ inputs.publish_version }}.tar.gz.sha256
+            build/distributions/teku-${{ inputs.publish_version }}.zip
+            build/distributions/teku-${{ inputs.publish_version }}.zip.sha256
+          tag_name: ${{ inputs.publish_version }}
+          body: |
+            **Teku Release**
+          draft: true
+          prerelease: ${{ steps.determine-prerelease.outputs.prerelease }}
+          preserve_order: true      

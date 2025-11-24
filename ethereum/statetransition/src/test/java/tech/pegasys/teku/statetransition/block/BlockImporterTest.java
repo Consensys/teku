@@ -65,7 +65,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -103,7 +102,6 @@ public class BlockImporterTest {
           spec,
           new InlineEventThread(),
           recentChainData,
-          BlobSidecarManager.NOOP,
           forkChoiceNotifier,
           transitionBlockValidator,
           metricsSystem);
@@ -461,7 +459,6 @@ public class BlockImporterTest {
             spec,
             new InlineEventThread(),
             storageSystem.recentChainData(),
-            BlobSidecarManager.NOOP,
             forkChoiceNotifier,
             transitionBlockValidator,
             storageSystem.getMetricsSystem());
@@ -507,7 +504,6 @@ public class BlockImporterTest {
             spec,
             new InlineEventThread(),
             storageSystem.recentChainData(),
-            BlobSidecarManager.NOOP,
             forkChoiceNotifier,
             transitionBlockValidator,
             storageSystem.getMetricsSystem());
@@ -561,7 +557,6 @@ public class BlockImporterTest {
             spec,
             new InlineEventThread(),
             storageSystem.recentChainData(),
-            BlobSidecarManager.NOOP,
             forkChoiceNotifier,
             transitionBlockValidator,
             storageSystem.getMetricsSystem());
@@ -607,7 +602,6 @@ public class BlockImporterTest {
             spec,
             new InlineEventThread(),
             storageSystem.recentChainData(),
-            BlobSidecarManager.NOOP,
             forkChoiceNotifier,
             transitionBlockValidator,
             storageSystem.getMetricsSystem());
@@ -641,7 +635,6 @@ public class BlockImporterTest {
             spec,
             new InlineEventThread(),
             storageSystem.recentChainData(),
-            BlobSidecarManager.NOOP,
             forkChoiceNotifier,
             transitionBlockValidator,
             storageSystem.getMetricsSystem());
@@ -696,7 +689,6 @@ public class BlockImporterTest {
             spec,
             new InlineEventThread(),
             storageSystem.recentChainData(),
-            BlobSidecarManager.NOOP,
             forkChoiceNotifier,
             transitionBlockValidator,
             storageSystem.getMetricsSystem());
@@ -742,7 +734,7 @@ public class BlockImporterTest {
             .generateBlockAtSlot(
                 currentSlot.minus(wsPeriodInSlots),
                 BlockOptions.create()
-                    .setBlsToExecutionChange(
+                    .setBlsToExecutionChanges(
                         blsToExecutionChangeGenerator.asSszList(
                             UInt64.ZERO, signedBlsToExecutionChange)));
 

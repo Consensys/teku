@@ -22,7 +22,10 @@ public enum GossipTopicName {
   PROPOSER_SLASHING,
   VOLUNTARY_EXIT,
   SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF,
-  BLS_TO_EXECUTION_CHANGE;
+  BLS_TO_EXECUTION_CHANGE,
+  EXECUTION_PAYLOAD,
+  PAYLOAD_ATTESTATION_MESSAGE,
+  EXECUTION_PAYLOAD_BID;
 
   @Override
   public String toString() {
@@ -43,5 +46,9 @@ public enum GossipTopicName {
 
   public static String getDataColumnSidecarSubnetTopicName(final int subnetId) {
     return "data_column_sidecar_" + subnetId;
+  }
+
+  public static String getExecutionProofSubnetTopicName(final int subnetId) {
+    return "execution_proof_" + subnetId;
   }
 }

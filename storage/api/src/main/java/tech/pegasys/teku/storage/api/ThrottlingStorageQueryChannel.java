@@ -21,11 +21,13 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.TaskQueue;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -38,19 +40,22 @@ import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
 
   private final StorageQueryChannel delegate;
-  private final ThrottlingTaskQueue taskQueue;
+  private final TaskQueue taskQueue;
 
   public ThrottlingStorageQueryChannel(
       final StorageQueryChannel delegate,
       final int maxConcurrentQueries,
+      final int maximumQueueSize,
       final MetricsSystem metricsSystem) {
     this.delegate = delegate;
     taskQueue =
         ThrottlingTaskQueue.create(
             maxConcurrentQueries,
+            maximumQueueSize,
             metricsSystem,
             TekuMetricCategory.STORAGE,
-            "throttling_storage_query_queue_size");
+            "throttling_storage_query_queue_size",
+            "throttling_storage_query_rejected");
   }
 
   @Override
@@ -149,6 +154,11 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
+  public SafeFuture<Optional<UInt64>> getCustodyGroupCount() {
+    return taskQueue.queueTask(delegate::getCustodyGroupCount);
+  }
+
+  @Override
   public SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot) {
     return taskQueue.queueTask(() -> delegate.getNonCanonicalBlocksBySlot(slot));
   }
@@ -218,11 +228,6 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot() {
-    return taskQueue.queueTask(delegate::getFirstSamplerIncompleteSlot);
-  }
-
-  @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
       final DataColumnSlotAndIdentifier identifier) {
     return taskQueue.queueTask(() -> delegate.getSidecar(identifier));
@@ -240,6 +245,12 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalDataColumnIdentifiers(
+      final UInt64 slot) {
+    return taskQueue.queueTask(() -> delegate.getNonCanonicalDataColumnIdentifiers(slot));
+  }
+
+  @Override
   public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(
       final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
     return taskQueue.queueTask(() -> delegate.getDataColumnIdentifiers(startSlot, endSlot, limit));
@@ -248,5 +259,10 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
   @Override
   public SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot() {
     return taskQueue.queueTask(delegate::getEarliestDataColumnSidecarSlot);
+  }
+
+  @Override
+  public SafeFuture<Optional<List<List<KZGProof>>>> getDataColumnSidecarsProofs(final UInt64 slot) {
+    return taskQueue.queueTask(() -> delegate.getDataColumnSidecarsProofs(slot));
   }
 }

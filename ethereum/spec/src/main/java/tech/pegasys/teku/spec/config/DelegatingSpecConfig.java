@@ -20,6 +20,7 @@ import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
 
 public class DelegatingSpecConfig implements SpecConfig {
   protected final SpecConfig specConfig;
@@ -476,5 +477,10 @@ public class DelegatingSpecConfig implements SpecConfig {
   @Override
   public BLSSignatureVerifier getBLSSignatureVerifier() {
     return specConfig.getBLSSignatureVerifier();
+  }
+
+  @Override
+  public BatchSignatureVerifier createBatchSignatureVerifier() {
+    return specConfig.createBatchSignatureVerifier();
   }
 }

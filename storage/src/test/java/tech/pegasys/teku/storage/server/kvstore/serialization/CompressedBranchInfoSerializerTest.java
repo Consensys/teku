@@ -55,6 +55,6 @@ class CompressedBranchInfoSerializerTest {
     final CompressedBranchInfo input = new CompressedBranchInfo(depth, children);
     final byte[] serialized = serializer.serialize(input);
     final CompressedBranchInfo output = serializer.deserialize(serialized);
-    assertThat(output).isEqualToComparingFieldByField(input);
+    assertThat(output).usingDefaultComparator().isEqualTo(input);
   }
 }

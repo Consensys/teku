@@ -27,6 +27,9 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -38,8 +41,11 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 class LocalSignerTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final Spec denebSpec = TestSpecFactory.createMinimalDeneb();
+  private final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final DataStructureUtil dataStructureUtilDeneb = new DataStructureUtil(denebSpec);
+  private final DataStructureUtil dataStructureUtilGloas = new DataStructureUtil(gloasSpec);
 
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
 
@@ -203,6 +209,66 @@ class LocalSignerTest {
                 "pTYaqzqFTKb4bOX8kc8vEFj6z/eLbYH9+uGeFFxtklCUlPqugzAQyc7y/8KPcBPJBzRv5Knuph2wnGIyY2c0YbQzblvfXlPGjhBMhL/t8iaS4uF5mYvrZDKefXoNF9TB"));
 
     final SafeFuture<BLSSignature> result = signer.signValidatorRegistration(validatorRegistration);
+    asyncRunner.executeQueuedActions();
+
+    assertThat(result)
+        .withFailMessage(
+            "expected: %s\nbut was: %s",
+            expectedSignature.toBytesCompressed().toBase64String(),
+            result.getImmediately().toBytesCompressed().toBase64String())
+        .isCompletedWithValue(expectedSignature);
+  }
+
+  @Test
+  public void shouldSignExecutionPayloadBid() {
+    final ExecutionPayloadBid bid = dataStructureUtilGloas.randomExecutionPayloadBid();
+    final BLSSignature expectedSignature =
+        BLSSignature.fromBytesCompressed(
+            Bytes.fromBase64String(
+                "jKXnVjb5vBjxXDb3SDaoU0nXkfZEvbHjtUlR5X4YQxpjECxhGCbuWDU736kvV5C2BUD7aGjk6iHMPv3qyr/YNcbnoyZczx5c9hKy5nLZAxbkQLIhsVUElFDn0TfolUy2"));
+
+    final SafeFuture<BLSSignature> result = signer.signExecutionPayloadBid(bid, fork);
+    asyncRunner.executeQueuedActions();
+
+    assertThat(result)
+        .withFailMessage(
+            "expected: %s\nbut was: %s",
+            expectedSignature.toBytesCompressed().toBase64String(),
+            result.getImmediately().toBytesCompressed().toBase64String())
+        .isCompletedWithValue(expectedSignature);
+  }
+
+  @Test
+  public void shouldSignExecutionPayloadEnvelope() {
+    final ExecutionPayloadEnvelope envelope =
+        dataStructureUtilGloas.randomExecutionPayloadEnvelope();
+    final BLSSignature expectedSignature =
+        BLSSignature.fromBytesCompressed(
+            Bytes.fromBase64String(
+                "lj8tDRzsm+L87EpnFKCF6h+KNxkw2z7C+ltZ3lLy+AqqjFLCTTvUvrhn2w1WkEgnDRSytxINuWt+cvn1f9dJ83ZurN+Q/0uHtSeXujENLFK4Msbxbh+PzM+nxI4Ixc71"));
+
+    final SafeFuture<BLSSignature> result = signer.signExecutionPayloadEnvelope(envelope, fork);
+    asyncRunner.executeQueuedActions();
+
+    assertThat(result)
+        .withFailMessage(
+            "expected: %s\nbut was: %s",
+            expectedSignature.toBytesCompressed().toBase64String(),
+            result.getImmediately().toBytesCompressed().toBase64String())
+        .isCompletedWithValue(expectedSignature);
+  }
+
+  @Test
+  public void shouldSignPayloadAttestationData() {
+    final PayloadAttestationData payloadAttestationData =
+        dataStructureUtilGloas.randomPayloadAttestationData();
+    final BLSSignature expectedSignature =
+        BLSSignature.fromBytesCompressed(
+            Bytes.fromBase64String(
+                "tvf+z4784dw1b8XIDKuCBIAeGGQimNn0a6rH5s0NK3H8jKMgIKKadvR5Ui02bBtCGJwR7iLDGMF3KdzkMspzyVb1D+hdL600LttoSBp+HM+NJ0xsT5ajwNk1yO0RzajH"));
+
+    final SafeFuture<BLSSignature> result =
+        signer.signPayloadAttestationData(payloadAttestationData, fork);
     asyncRunner.executeQueuedActions();
 
     assertThat(result)

@@ -17,7 +17,10 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
 public interface DataAvailabilitySampler {
 
@@ -42,6 +45,10 @@ public interface DataAvailabilitySampler {
         public SamplingEligibilityStatus checkSamplingEligibility(BeaconBlock block) {
           return SamplingEligibilityStatus.NOT_REQUIRED_OLD_EPOCH;
         }
+
+        @Override
+        public void onNewValidatedDataColumnSidecar(
+            final DataColumnSlotAndIdentifier columnId, RemoteOrigin origin) {}
       };
 
   /**
@@ -57,4 +64,12 @@ public interface DataAvailabilitySampler {
   void flush();
 
   SamplingEligibilityStatus checkSamplingEligibility(BeaconBlock block);
+
+  void onNewValidatedDataColumnSidecar(DataColumnSlotAndIdentifier columnId, RemoteOrigin origin);
+
+  default void onNewValidatedDataColumnSidecar(
+      final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {
+    onNewValidatedDataColumnSidecar(
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar), remoteOrigin);
+  }
 }

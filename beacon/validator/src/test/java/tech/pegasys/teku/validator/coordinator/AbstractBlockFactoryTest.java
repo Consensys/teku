@@ -44,8 +44,10 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -58,10 +60,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleDeneb;
-import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleFulu;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
-import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -81,6 +82,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.SlotCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
@@ -90,10 +92,13 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -115,8 +120,12 @@ public abstract class AbstractBlockFactoryTest {
   protected final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   protected final ExecutionLayerBlockProductionManager executionLayer =
       mock(ExecutionLayerBlockProductionManager.class);
+  protected final ExecutionPayloadBidManager executionPayloadBidManager =
+      mock(ExecutionPayloadBidManager.class);
   protected final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
+  protected final PayloadAttestationPool payloadAttestationPool =
+      mock(PayloadAttestationPool.class);
   protected final DepositProvider depositProvider = mock(DepositProvider.class);
   protected final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
   protected final StubMetricsSystem metricsSystem = new StubMetricsSystem();
@@ -125,7 +134,7 @@ public abstract class AbstractBlockFactoryTest {
   // execution context
   protected ExecutionPayload executionPayload = null;
   protected Optional<BlobsBundle> blobsBundle = Optional.empty();
-  protected Optional<BlobsCellBundle> blobsCellBundle = Optional.empty();
+  protected ExecutionPayloadBid executionPayloadBid = null;
 
   // builder context
   protected ExecutionPayloadHeader executionPayloadHeader = null;
@@ -170,6 +179,8 @@ public abstract class AbstractBlockFactoryTest {
     final SszList<SignedVoluntaryExit> voluntaryExits = blockBodyLists.createVoluntaryExits();
     final SszList<SignedBlsToExecutionChange> blsToExecutionChanges =
         blockBodyLists.createBlsToExecutionChanges();
+    final SszList<PayloadAttestation> payloadAttestations =
+        blockBodyLists.createPayloadAttestations();
 
     final SpecMilestone milestone = spec.atSlot(newSlot).getMilestone();
 
@@ -195,6 +206,8 @@ public abstract class AbstractBlockFactoryTest {
     when(proposerSlashingPool.getItemsForBlock(any(), any(), any())).thenReturn(proposerSlashings);
     when(voluntaryExitPool.getItemsForBlock(any(), any(), any())).thenReturn(voluntaryExits);
     when(blsToExecutionChangePool.getItemsForBlock(any())).thenReturn(blsToExecutionChanges);
+    when(payloadAttestationPool.getPayloadAttestationsForBlock(any(), any()))
+        .thenReturn(payloadAttestations);
     when(eth1DataCache.getEth1Vote(any())).thenReturn(ETH1_DATA);
     if (blinded) {
       when(forkChoiceNotifier.getPayloadId(any(), any()))
@@ -219,7 +232,7 @@ public abstract class AbstractBlockFactoryTest {
     when(syncCommitteeContributionPool.createSyncAggregateForBlock(newSlot, bestBlockRoot))
         .thenAnswer(invocation -> createEmptySyncAggregate(spec));
 
-    final UInt256 blockExecutionValue;
+    UInt256 blockExecutionValue;
     final UInt64 blockProposerRewards;
 
     if (milestone.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
@@ -268,13 +281,11 @@ public abstract class AbstractBlockFactoryTest {
       assertThat(block.getBody().getOptionalBlsToExecutionChanges()).isEmpty();
     }
 
-    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-      assertThat(block.getBody().getOptionalBlobKzgCommitments())
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      assertThat(block.getBody().getOptionalSignedExecutionPayloadBid())
           .hasValueSatisfying(
-              blobKzgCommitments ->
-                  assertThat(blobKzgCommitments)
-                      .hasSameElementsAs(
-                          getCommitmentsFromBlobsCellBundleOrBuilderBlobKzgCommitments()));
+              signedBid -> assertThat(signedBid.getMessage()).isEqualTo(executionPayloadBid));
+      assertThat(block.getBody().getOptionalPayloadAttestations()).hasValue(payloadAttestations);
     } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
       assertThat(block.getBody().getOptionalBlobKzgCommitments())
           .hasValueSatisfying(
@@ -371,7 +382,7 @@ public abstract class AbstractBlockFactoryTest {
         BlobsBundle blobsBundle =
             this.blobsBundle.orElseThrow(
                 () -> new IllegalStateException("BlobsBundle was not prepared"));
-        signedBlockContainer = dataStructureUtil.randomSignedBlockContentsDeneb(blobsBundle);
+        signedBlockContainer = dataStructureUtil.randomSignedBlockContents(blobsBundle);
       }
     } else {
       if (blinded) {
@@ -398,14 +409,14 @@ public abstract class AbstractBlockFactoryTest {
     final SignedBlockContainer signedBlockContainer;
 
     if (blinded) {
-      final SszList<SszKZGCommitment> commitments = getCommitmentsFromBuilderPayloadFulu();
+      final SszList<SszKZGCommitment> commitments = getCommitmentsFromBuilderPayload();
       signedBlockContainer =
           dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
     } else {
-      BlobsCellBundle blobsCellBundle =
-          this.blobsCellBundle.orElseThrow(
-              () -> new IllegalStateException("BlobsCellBundle was not prepared"));
-      signedBlockContainer = dataStructureUtil.randomSignedBlockContentsFulu(blobsCellBundle);
+      final BlobsBundle blobsBundle =
+          this.blobsBundle.orElseThrow(
+              () -> new IllegalStateException("BlobsBundle was not prepared"));
+      signedBlockContainer = dataStructureUtil.randomSignedBlockContents(blobsBundle);
     }
 
     // simulate caching of the builder payload
@@ -432,16 +443,22 @@ public abstract class AbstractBlockFactoryTest {
 
   protected void prepareValidPayload(final Spec spec, final BeaconState genericState) {
     final BeaconStateBellatrix state = BeaconStateBellatrix.required(genericState);
-    final MiscHelpers miscHelpers = spec.atSlot(state.getSlot()).miscHelpers();
-    final BeaconStateAccessors beaconStateAccessors =
-        spec.atSlot(state.getSlot()).beaconStateAccessors();
+    final SpecVersion specVersion = spec.atSlot(state.getSlot());
+    final MiscHelpers miscHelpers = specVersion.miscHelpers();
+    final BeaconStateAccessors beaconStateAccessors = specVersion.beaconStateAccessors();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     executionPayload =
         dataStructureUtil.randomExecutionPayload(
             genericState.getSlot(),
             builder ->
                 builder
-                    .parentHash(state.getLatestExecutionPayloadHeader().getBlockHash())
+                    .parentHash(
+                        state
+                            .toVersionGloas()
+                            .map(BeaconStateGloas::getLatestBlockHash)
+                            .orElseGet(
+                                () ->
+                                    state.getLatestExecutionPayloadHeaderRequired().getBlockHash()))
                     .prevRandao(
                         beaconStateAccessors.getRandaoMix(
                             state, beaconStateAccessors.getCurrentEpoch(state)))
@@ -459,13 +476,6 @@ public abstract class AbstractBlockFactoryTest {
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle(count);
     this.blobsBundle = Optional.of(blobsBundle);
     return blobsBundle;
-  }
-
-  protected BlobsCellBundle prepareBlobsCellBundle(final Spec spec, final int count) {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final BlobsCellBundle blobsCellBundle = dataStructureUtil.randomBlobsCellBundle(count);
-    this.blobsCellBundle = Optional.of(blobsCellBundle);
-    return blobsCellBundle;
   }
 
   protected SszList<SszKZGCommitment> prepareBuilderBlobKzgCommitments(
@@ -487,10 +497,9 @@ public abstract class AbstractBlockFactoryTest {
           SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions());
       builderPayload =
           schemaDefinitionsFulu
-              .getExecutionPayloadAndBlobsCellBundleSchema()
+              .getExecutionPayloadAndBlobsBundleSchema()
               .create(
-                  builderExecutionPayload,
-                  dataStructureUtil.randomBuilderBlobsBundleFulu(blobsCount));
+                  builderExecutionPayload, dataStructureUtil.randomBuilderBlobsBundle(blobsCount));
     } else if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
           SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions());
@@ -514,16 +523,7 @@ public abstract class AbstractBlockFactoryTest {
             args -> {
               final GetPayloadResponse getPayloadResponse;
 
-              if (blobsCellBundle.isPresent()) {
-                final ExecutionRequestsSchema executionRequestsSchema =
-                    SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions())
-                        .getExecutionRequestsSchema();
-                final ExecutionRequests executionRequests =
-                    executionRequestsSchema.create(List.of(), List.of(), List.of());
-                getPayloadResponse =
-                    new GetPayloadResponse(
-                        executionPayload, value, blobsCellBundle.get(), false, executionRequests);
-              } else if (blobsBundle.isPresent()) {
+              if (blobsBundle.isPresent()) {
                 if (spec.isMilestoneSupported(SpecMilestone.ELECTRA)) {
                   final ExecutionRequestsSchema executionRequestsSchema =
                       SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions())
@@ -576,6 +576,46 @@ public abstract class AbstractBlockFactoryTest {
               cachedExecutionPayloadResult = executionPayloadResult;
               return executionPayloadResult;
             });
+    // simulate a bid
+    when(executionPayloadBidManager.getBidForBlock(any(), any(), any()))
+        .thenAnswer(
+            args -> {
+              final BeaconStateGloas state = BeaconStateGloas.required(args.getArgument(0));
+              final SafeFuture<GetPayloadResponse> getPayloadResponseFuture = args.getArgument(1);
+              // verify we pass the correct future to the bid manager
+              assertThat(getPayloadResponseFuture)
+                  .isEqualTo(
+                      cachedExecutionPayloadResult.getPayloadResponseFutureFromLocalFlowRequired());
+              final UInt64 slot = state.getSlot();
+              final SchemaDefinitionsGloas schemaDefinitions =
+                  SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
+              final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
+                  schemaDefinitions.getBlobKzgCommitmentsSchema();
+              this.executionPayloadBid =
+                  schemaDefinitions
+                      .getExecutionPayloadBidSchema()
+                      .create(
+                          executionPayload.getParentHash(),
+                          state.getLatestBlockHeader().getRoot(),
+                          executionPayload.getBlockHash(),
+                          executionPayload.getPrevRandao(),
+                          executionPayload.getFeeRecipient(),
+                          executionPayload.getGasLimit(),
+                          // self-built for simplification
+                          UInt64.valueOf(spec.getBeaconProposerIndex(state, slot)),
+                          slot,
+                          ZERO,
+                          ZERO,
+                          blobsBundle
+                              .map(blobKzgCommitmentsSchema::createFromBlobsBundle)
+                              .orElse(blobKzgCommitmentsSchema.of())
+                              .hashTreeRoot());
+              return SafeFuture.completedFuture(
+                  Optional.of(
+                      schemaDefinitions
+                          .getSignedExecutionPayloadBidSchema()
+                          .create(executionPayloadBid, BLSSignature.infinity())));
+            });
     // simulate caching of the payload result
     when(executionLayer.getCachedPayloadResult(any()))
         .thenAnswer(__ -> Optional.of(cachedExecutionPayloadResult));
@@ -595,31 +635,10 @@ public abstract class AbstractBlockFactoryTest {
                     "Neither BlobsBundle or builder BlobKzgCommitments were prepared"));
   }
 
-  private List<SszKZGCommitment> getCommitmentsFromBlobsCellBundleOrBuilderBlobKzgCommitments() {
-    return blobsCellBundle
-        .map(
-            blobsCellBundle ->
-                blobsCellBundle.getCommitments().stream()
-                    .map(SszKZGCommitment::new)
-                    .collect(Collectors.toList()))
-        .or(() -> builderBlobKzgCommitments.map(SszList::asList))
-        .orElseThrow(
-            () ->
-                new IllegalStateException(
-                    "Neither BlobsCellBundle or builder BlobKzgCommitments were prepared"));
-  }
-
   private SszList<SszKZGCommitment> getCommitmentsFromBuilderPayload() {
     return builderPayload
         .flatMap(BuilderPayload::getOptionalBlobsBundle)
-        .map(BlobsBundleDeneb::getCommitments)
-        .orElseThrow(() -> new IllegalStateException("BuilderPayload was not prepared"));
-  }
-
-  private SszList<SszKZGCommitment> getCommitmentsFromBuilderPayloadFulu() {
-    return builderPayload
-        .flatMap(BuilderPayload::getOptionalBlobsCellBundle)
-        .map(BlobsBundleFulu::getCommitments)
+        .map(tech.pegasys.teku.spec.datastructures.builder.BlobsBundle::getCommitments)
         .orElseThrow(() -> new IllegalStateException("BuilderPayload was not prepared"));
   }
 

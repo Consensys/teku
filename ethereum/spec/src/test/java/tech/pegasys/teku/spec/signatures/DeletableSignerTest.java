@@ -32,6 +32,9 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -42,7 +45,7 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class DeletableSignerTest {
-  private final Spec spec = TestSpecFactory.createMinimalAltair();
+  private final Spec spec = TestSpecFactory.createMinimalGloas();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(UInt64.ONE);
 
@@ -256,6 +259,69 @@ public class DeletableSignerTest {
         .isCompletedExceptionallyWith(SignerNotActiveException.class);
 
     verify(delegate, never()).signValidatorRegistration(validatorRegistration);
+  }
+
+  @Test
+  void signExecutionPayloadBid_shouldSignWhenActive() {
+    final ExecutionPayloadBid bid = dataStructureUtil.randomExecutionPayloadBid();
+    when(delegate.signExecutionPayloadBid(bid, forkInfo)).thenReturn(signatureFuture);
+
+    assertThatSafeFuture(signer.signExecutionPayloadBid(bid, forkInfo))
+        .isCompletedWithValue(signature);
+  }
+
+  @Test
+  void signExecutionPayloadBid_shouldNotSignWhenDisabled() {
+    final ExecutionPayloadBid bid = dataStructureUtil.randomExecutionPayloadBid();
+    signer.delete();
+
+    assertThatSafeFuture(signer.signExecutionPayloadBid(bid, forkInfo))
+        .isCompletedExceptionallyWith(SignerNotActiveException.class);
+
+    verify(delegate, never()).signExecutionPayloadBid(bid, forkInfo);
+  }
+
+  @Test
+  void signExecutionPayloadEnvelope_shouldSignWhenActive() {
+    final ExecutionPayloadEnvelope envelope = dataStructureUtil.randomExecutionPayloadEnvelope();
+    when(delegate.signExecutionPayloadEnvelope(envelope, forkInfo)).thenReturn(signatureFuture);
+
+    assertThatSafeFuture(signer.signExecutionPayloadEnvelope(envelope, forkInfo))
+        .isCompletedWithValue(signature);
+  }
+
+  @Test
+  void signExecutionPayloadEnvelope_shouldNotSignWhenDisabled() {
+    final ExecutionPayloadEnvelope envelope = dataStructureUtil.randomExecutionPayloadEnvelope();
+    signer.delete();
+
+    assertThatSafeFuture(signer.signExecutionPayloadEnvelope(envelope, forkInfo))
+        .isCompletedExceptionallyWith(SignerNotActiveException.class);
+
+    verify(delegate, never()).signExecutionPayloadEnvelope(envelope, forkInfo);
+  }
+
+  @Test
+  void signPayloadAttestationData_shouldSignWhenActive() {
+    final PayloadAttestationData payloadAttestationData =
+        dataStructureUtil.randomPayloadAttestationData();
+    when(delegate.signPayloadAttestationData(payloadAttestationData, forkInfo))
+        .thenReturn(signatureFuture);
+
+    assertThatSafeFuture(signer.signPayloadAttestationData(payloadAttestationData, forkInfo))
+        .isCompletedWithValue(signature);
+  }
+
+  @Test
+  void signPayloadAttestationData_shouldNotSignWhenDisabled() {
+    final PayloadAttestationData payloadAttestationData =
+        dataStructureUtil.randomPayloadAttestationData();
+    signer.delete();
+
+    assertThatSafeFuture(signer.signPayloadAttestationData(payloadAttestationData, forkInfo))
+        .isCompletedExceptionallyWith(SignerNotActiveException.class);
+
+    verify(delegate, never()).signPayloadAttestationData(payloadAttestationData, forkInfo);
   }
 
   @Test

@@ -214,9 +214,14 @@ public class BeaconStateBuilderFulu
         schema.getPendingPartialWithdrawalsSchema().createFromElements(List.of());
     this.pendingConsolidations =
         schema.getPendingConsolidationsSchema().createFromElements(List.of());
+
     this.proposerLookahead =
         dataStructureUtil.randomSszUInt64Vector(
             schema.getProposerLookaheadSchema(),
-            schema.getProposerLookaheadSchema().getMaxLength());
+            schema.getProposerLookaheadSchema().getMaxLength(),
+            () ->
+                defaultValidatorCount > 0
+                    ? dataStructureUtil.randomUInt64(defaultValidatorCount)
+                    : UInt64.ZERO);
   }
 }

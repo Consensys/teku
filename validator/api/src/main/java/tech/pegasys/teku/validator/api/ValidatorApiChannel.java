@@ -28,6 +28,7 @@ import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.PtcDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
@@ -37,6 +38,12 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -49,7 +56,7 @@ import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
-public interface ValidatorApiChannel extends ChannelInterface {
+public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface {
   ValidatorApiChannel NO_OP =
       new ValidatorApiChannel() {
         @Override
@@ -87,6 +94,12 @@ public interface ValidatorApiChannel extends ChannelInterface {
         }
 
         @Override
+        public SafeFuture<Optional<PtcDuties>> getPtcDuties(
+            final UInt64 epoch, final IntCollection validatorIndices) {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+
+        @Override
         public SafeFuture<Optional<PeerCount>> getPeerCount() {
           return SafeFuture.completedFuture(Optional.empty());
         }
@@ -117,6 +130,12 @@ public interface ValidatorApiChannel extends ChannelInterface {
         @Override
         public SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
             final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot) {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+
+        @Override
+        public SafeFuture<Optional<PayloadAttestationData>> createPayloadAttestationData(
+            final UInt64 slot) {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
@@ -170,6 +189,12 @@ public interface ValidatorApiChannel extends ChannelInterface {
         }
 
         @Override
+        public SafeFuture<List<SubmitDataError>> sendPayloadAttestationMessages(
+            final List<PayloadAttestationMessage> payloadAttestationMessages) {
+          return SafeFuture.completedFuture(List.of());
+        }
+
+        @Override
         public SafeFuture<Void> prepareBeaconProposer(
             final Collection<BeaconPreparableProposer> beaconPreparableProposers) {
           return SafeFuture.COMPLETE;
@@ -198,6 +223,32 @@ public interface ValidatorApiChannel extends ChannelInterface {
             getSyncCommitteeSelectionProof(final List<SyncCommitteeSelectionProof> requests) {
           return SafeFuture.completedFuture(Optional.of(requests));
         }
+
+        @Override
+        public SafeFuture<Optional<ExecutionPayloadBid>> createUnsignedExecutionPayloadBid(
+            final UInt64 slot, final UInt64 builderIndex) {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+
+        @Override
+        public SafeFuture<Void> publishSignedExecutionPayloadBid(
+            final SignedExecutionPayloadBid signedExecutionPayloadBid) {
+          return SafeFuture.COMPLETE;
+        }
+
+        @Override
+        public SafeFuture<Optional<ExecutionPayloadEnvelope>> createUnsignedExecutionPayload(
+            final UInt64 slot, final UInt64 builderIndex) {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+
+        @Override
+        public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+            final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+          return SafeFuture.completedFuture(
+              PublishSignedExecutionPayloadResult.success(
+                  signedExecutionPayload.getBeaconBlockRoot()));
+        }
       };
 
   int UNKNOWN_VALIDATOR_ID = -1;
@@ -217,6 +268,8 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Optional<ProposerDuties>> getProposerDuties(UInt64 epoch);
 
+  SafeFuture<Optional<PtcDuties>> getPtcDuties(UInt64 epoch, IntCollection validatorIndices);
+
   SafeFuture<Optional<PeerCount>> getPeerCount();
 
   SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
@@ -232,6 +285,8 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
       UInt64 slot, int subcommitteeIndex, Bytes32 beaconBlockRoot);
+
+  SafeFuture<Optional<PayloadAttestationData>> createPayloadAttestationData(UInt64 slot);
 
   SafeFuture<Void> subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
 
@@ -253,6 +308,9 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Void> sendSignedContributionAndProofs(
       Collection<SignedContributionAndProof> signedContributionAndProofs);
+
+  SafeFuture<List<SubmitDataError>> sendPayloadAttestationMessages(
+      List<PayloadAttestationMessage> payloadAttestationMessages);
 
   SafeFuture<Void> prepareBeaconProposer(
       Collection<BeaconPreparableProposer> beaconPreparableProposers);

@@ -14,12 +14,16 @@
 package tech.pegasys.teku.networking.p2p.connection;
 
 import static java.util.Collections.emptyList;
+import static tech.pegasys.teku.networking.p2p.reputation.DefaultReputationManager.COOLDOWN_PERIOD;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -34,6 +38,8 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
@@ -43,10 +49,11 @@ import tech.pegasys.teku.service.serviceutils.Service;
 
 public class ConnectionManager extends Service {
   private static final Logger LOG = LogManager.getLogger();
-  private static final Duration RECONNECT_TIMEOUT = Duration.ofSeconds(20);
+  private static final UInt64 STABLE_CONNECTION_THRESHOLD_MILLIS = UInt64.valueOf(2000);
   protected static final Duration WARMUP_DISCOVERY_INTERVAL = Duration.ofSeconds(1);
   protected static final Duration DISCOVERY_INTERVAL = Duration.ofSeconds(30);
   private final AsyncRunner asyncRunner;
+  private final TimeProvider timeProvider;
   private final P2PNetwork<? extends Peer> network;
   private final Set<PeerAddress> staticPeers;
   private final DiscoveryService discoveryService;
@@ -60,10 +67,14 @@ public class ConnectionManager extends Service {
   private volatile long peerConnectedSubscriptionId;
   private volatile Cancellable periodicPeerSearch;
 
+  private final Map<PeerAddress, Integer> lastStaticPeerReconnectionDelay =
+      new ConcurrentHashMap<>();
+
   public ConnectionManager(
       final MetricsSystem metricsSystem,
       final DiscoveryService discoveryService,
       final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider,
       final P2PNetwork<? extends Peer> network,
       final PeerSelectionStrategy peerSelectionStrategy,
       final List<PeerAddress> peerAddresses,
@@ -73,6 +84,7 @@ public class ConnectionManager extends Service {
     this.staticPeers = new HashSet<>(peerAddresses);
     this.discoveryService = discoveryService;
     this.peerSelectionStrategy = peerSelectionStrategy;
+    this.timeProvider = timeProvider;
 
     final LabelledMetric<Counter> connectionAttemptCounter =
         metricsSystem.createLabelledCounter(
@@ -225,30 +237,71 @@ public class ConnectionManager extends Service {
             peer -> {
               LOG.debug("Connection to peer {} was successful", peer.getId());
               successfulConnectionCounter.inc();
+              final UInt64 connectionTimeMillis = timeProvider.getTimeInMillis();
               peer.subscribeDisconnect(
                   (reason, locallyInitiated) -> {
+                    if (wasConnectionStable(connectionTimeMillis)) {
+                      // A client may disconnect us immediately after the connection is established
+                      // The delay must be reset only after a stable connection is lost
+                      lastStaticPeerReconnectionDelay.remove(peerAddress);
+                    }
+
+                    final Duration retryDelay = computeStaticPeerRetryDelay(peerAddress);
                     LOG.debug(
                         "Peer {} disconnected. Will try to reconnect in {} sec",
                         peerAddress,
-                        RECONNECT_TIMEOUT.toSeconds());
+                        retryDelay.toSeconds());
                     asyncRunner
-                        .runAfterDelay(
-                            () -> maintainPersistentConnection(peerAddress), RECONNECT_TIMEOUT)
+                        .runAfterDelay(() -> maintainPersistentConnection(peerAddress), retryDelay)
                         .finishDebug(LOG);
                   });
               return peer;
             })
         .exceptionallyCompose(
             error -> {
+              final Duration retryDelay = computeStaticPeerRetryDelay(peerAddress);
               LOG.debug(
                   "Connection to {} failed: {}. Will retry in {} sec",
                   peerAddress,
                   error,
-                  RECONNECT_TIMEOUT.toSeconds());
+                  retryDelay.toSeconds());
               failedConnectionCounter.inc();
               return asyncRunner.runAfterDelay(
-                  () -> maintainPersistentConnection(peerAddress), RECONNECT_TIMEOUT);
+                  () -> maintainPersistentConnection(peerAddress), retryDelay);
             });
+  }
+
+  /** A connection is considered stable if it lasted more than the defined threshold */
+  private boolean wasConnectionStable(final UInt64 connectionTimeMillis) {
+    final UInt64 immediateDisconnectionTime =
+        connectionTimeMillis.plus(STABLE_CONNECTION_THRESHOLD_MILLIS);
+    return timeProvider.getTimeInMillis().isGreaterThanOrEqualTo(immediateDisconnectionTime);
+  }
+
+  // compute increasing delay, up to 120s, between attempts to connect to a static peer
+  // each failure increases the delay by a factor of 3: 3s, 9s, 27s, 81s, 120s, 120s, ...
+  @VisibleForTesting
+  Duration computeStaticPeerRetryDelay(final PeerAddress peerAddress) {
+    return Duration.ofSeconds(
+        lastStaticPeerReconnectionDelay.compute(
+            peerAddress,
+            (__, lastAttempt) -> {
+              if (lastAttempt == null) {
+                return 3;
+              } else {
+                return computeIncrease(lastAttempt);
+              }
+            }));
+  }
+
+  @VisibleForTesting
+  Integer getLastStaticPeerReconnectionDelay(final PeerAddress peerAddress) {
+    return lastStaticPeerReconnectionDelay.get(peerAddress);
+  }
+
+  // separate method to make errorprone happy
+  private static int computeIncrease(final int lastAttempt) {
+    return Math.min(lastAttempt * 3, COOLDOWN_PERIOD.intValue());
   }
 
   public void addPeerPredicate(final Predicate<DiscoveryPeer> predicate) {

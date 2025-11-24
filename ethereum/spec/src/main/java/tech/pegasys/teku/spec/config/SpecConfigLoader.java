@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.config;
 
+import static tech.pegasys.teku.spec.networks.Eth2Network.EPHEMERY;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,12 +33,12 @@ import tech.pegasys.teku.spec.networks.Eth2Presets;
 
 public class SpecConfigLoader {
   private static final Logger LOG = LogManager.getLogger();
+  public static final String EPHEMERY_CONFIG_URL = "https://ephemery.dev/latest/config.yaml";
   private static final List<String> AVAILABLE_PRESETS =
       List.of("phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu", "gloas");
   private static final List<String> BUILTIN_NETWORKS =
       List.of(
           "chiado",
-          "ephemery",
           "gnosis",
           "holesky",
           "hoodi",
@@ -192,6 +194,12 @@ public class SpecConfigLoader {
   }
 
   private static InputStream loadConfigurationFile(final String source) throws IOException {
+    if (source.equals(EPHEMERY.configName())) {
+      return getConfigLoader()
+          .load(EPHEMERY_CONFIG_URL)
+          .orElseThrow(
+              () -> new FileNotFoundException("Could not load spec config from " + source));
+    }
     return getConfigLoader()
         .load(source, CONFIG_PATH + source + ".yaml")
         .orElseThrow(() -> new FileNotFoundException("Could not load spec config from " + source));

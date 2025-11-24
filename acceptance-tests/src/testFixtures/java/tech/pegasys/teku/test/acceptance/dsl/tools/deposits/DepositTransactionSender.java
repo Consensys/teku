@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.FastRawTransactionManager;
 import org.web3j.tx.gas.ContractGasProvider;
@@ -97,18 +98,7 @@ class DepositTransactionSender {
             .sendAsync());
   }
 
-  private static class DepositContractGasProvider implements ContractGasProvider {
-
-    private final Web3j web3j;
-
-    public DepositContractGasProvider(final Web3j web3j) {
-      this.web3j = web3j;
-    }
-
-    @Override
-    public BigInteger getGasPrice(final String contractFunc) {
-      return getGasPrice();
-    }
+  private record DepositContractGasProvider(Web3j web3j) implements ContractGasProvider {
 
     @Override
     public BigInteger getGasPrice() {
@@ -120,7 +110,7 @@ class DepositTransactionSender {
     }
 
     @Override
-    public BigInteger getGasLimit(final String contractFunc) {
+    public BigInteger getGasLimit(final Transaction transaction) {
       return getGasLimit();
     }
 

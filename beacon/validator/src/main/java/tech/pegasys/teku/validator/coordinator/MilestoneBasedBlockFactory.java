@@ -27,11 +27,10 @@ import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanc
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
@@ -46,7 +45,7 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
   private final Spec spec;
 
   public MilestoneBasedBlockFactory(
-      final Spec spec, final BlockOperationSelectorFactory operationSelector, final KZG kzg) {
+      final Spec spec, final BlockOperationSelectorFactory operationSelector) {
     this.spec = spec;
     final BlockFactoryPhase0 blockFactoryPhase0 = new BlockFactoryPhase0(spec, operationSelector);
 
@@ -54,14 +53,18 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
     final Supplier<BlockFactoryDeneb> blockFactoryDenebSupplier =
         Suppliers.memoize(() -> new BlockFactoryDeneb(spec, operationSelector));
     final Supplier<BlockFactoryFulu> blockFactoryFuluSupplier =
-        Suppliers.memoize(() -> new BlockFactoryFulu(spec, operationSelector, kzg));
+        Suppliers.memoize(() -> new BlockFactoryFulu(spec, operationSelector));
+    final Supplier<BlockFactoryGloas> blockFactoryGloasSupplier =
+        Suppliers.memoize(() -> new BlockFactoryGloas(spec, operationSelector));
 
     // Populate forks factories
     spec.getEnabledMilestones()
         .forEach(
             forkAndSpecMilestone -> {
               final SpecMilestone milestone = forkAndSpecMilestone.getSpecMilestone();
-              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+                registeredFactories.put(milestone, blockFactoryGloasSupplier.get());
+              } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
                 registeredFactories.put(milestone, blockFactoryFuluSupplier.get());
               } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
                 registeredFactories.put(milestone, blockFactoryDenebSupplier.get());

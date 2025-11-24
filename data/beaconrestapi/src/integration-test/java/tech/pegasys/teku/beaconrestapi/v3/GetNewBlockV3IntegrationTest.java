@@ -28,6 +28,8 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXEC
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.SpecMilestone.FULU;
+import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.io.Resources;
@@ -74,7 +76,8 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
 
   @TestTemplate
   void shouldGetUnBlindedBeaconBlockAsJson() throws Exception {
-    assumeThat(specMilestone).isLessThan(DENEB);
+    assumeThat(specMilestone.isLessThan(DENEB) || specMilestone.isGreaterThanOrEqualTo(GLOAS))
+        .isTrue();
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(ONE);
     final BLSSignature signature =
@@ -97,7 +100,8 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
 
   @TestTemplate
   void shouldGetUnblindedBeaconBlockAsSsz() throws IOException {
-    assumeThat(specMilestone).isLessThan(DENEB);
+    assumeThat(specMilestone.isLessThan(DENEB) || specMilestone.isGreaterThanOrEqualTo(GLOAS))
+        .isTrue();
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(ONE);
     final BLSSignature signature =
@@ -119,7 +123,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
 
   @TestTemplate
   void shouldGetBlindedBeaconBlockAsJson() throws Exception {
-    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
+    assumeThat(specMilestone).isBetween(BELLATRIX, FULU);
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlindedBlockContainerAndMetaData(ONE);
     final BLSSignature signature =
@@ -142,7 +146,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
 
   @TestTemplate
   void shouldGetBlindedBeaconBlockAsSsz() throws IOException {
-    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
+    assumeThat(specMilestone).isBetween(BELLATRIX, FULU);
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlindedBlockContainerAndMetaData(ONE);
     final BeaconBlock blindedBeaconBlock = blockContainerAndMetaData.blockContainer().getBlock();
@@ -165,7 +169,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
 
   @TestTemplate
   void shouldGetUnBlindedBlockContentPostDenebAsJson() throws Exception {
-    assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
+    assumeThat(specMilestone).isBetween(DENEB, FULU);
     final BlockContainer blockContents = dataStructureUtil.randomBlockContents(ONE);
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(blockContents, ONE);
@@ -189,7 +193,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
 
   @TestTemplate
   void shouldGetUnBlindedBlockContentPostDenebAsSsz() throws IOException {
-    assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
+    assumeThat(specMilestone).isBetween(DENEB, FULU);
     final BlockContainer blockContents = dataStructureUtil.randomBlockContents(ONE);
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(blockContents, ONE);
