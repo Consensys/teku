@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
@@ -78,7 +80,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
 
   /**
    * When syncing or backfilling always make sure to call this method with known DataColumn *before*
-   * calling {@link DasSamplerBasic#checkDataAvailability(UInt64, Bytes32)} so that RPC fetch won't
+   * calling {@link DataAvailabilitySampler#checkDataAvailability(BeaconBlock)} so that RPC fetch won't
    * be executed on those columns.
    */
   @Override
@@ -90,10 +92,12 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   }
 
   @Override
-  public SafeFuture<List<UInt64>> checkDataAvailability(
-      final UInt64 slot, final Bytes32 blockRoot) {
-    final DataColumnSamplingTracker tracker = getOrCreateTracker(slot, blockRoot);
+  public SafeFuture<List<UInt64>> checkDataAvailability(final SignedBeaconBlock beaconBlock) {
+    final UInt64 slot = beaconBlock.getSlot();
+    final Bytes32 blockRoot = beaconBlock.getRoot();
 
+    final DataColumnSamplingTracker tracker = getOrCreateTracker(slot, blockRoot);
+    tracker.setBlock(beaconBlock);
     if (tracker.rpcFetchScheduled().compareAndSet(false, true)) {
       fetchMissingColumnsViaRPC(slot, blockRoot, tracker);
     }
@@ -230,5 +234,9 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
 
               return false;
             });
+  }
+
+  public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
+      return recentlySampledColumnsByRoot.get(blockRoot).getBlock();
   }
 }

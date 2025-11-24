@@ -71,6 +71,7 @@ public class DasPreSampler {
   }
 
   private void onNewPreImportBlock(final SignedBeaconBlock block) {
+      //TODO where is the right point to add the block to the tracker?
     final Set<DataColumnSlotAndIdentifier> requiredColumnIdentifiers =
         new HashSet<>(calculateSamplingColumnIds(block.getSlot(), block.getRoot()));
 
@@ -86,7 +87,7 @@ public class DasPreSampler {
         .always(
             () ->
                 sampler
-                    .checkDataAvailability(block.getSlot(), block.getRoot())
+                    .checkDataAvailability(block)
                     .finish(
                         succ ->
                             LOG.debug(

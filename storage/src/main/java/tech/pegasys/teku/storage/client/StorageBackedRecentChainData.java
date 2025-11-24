@@ -16,11 +16,13 @@ package tech.pegasys.teku.storage.client;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
@@ -82,18 +84,18 @@ public class StorageBackedRecentChainData extends RecentChainData {
   }
 
   public static SafeFuture<RecentChainData> create(
-      final MetricsSystem metricsSystem,
-      final StoreConfig storeConfig,
-      final AsyncRunner asyncRunner,
-      final SingleBlockProvider validatedBlockProvider,
-      final SingleBlobSidecarProvider validatedBlobSidecarProvider,
-      final StorageQueryChannel storageQueryChannel,
-      final StorageUpdateChannel storageUpdateChannel,
-      final VoteUpdateChannel voteUpdateChannel,
-      final FinalizedCheckpointChannel finalizedCheckpointChannel,
-      final ChainHeadChannel chainHeadChannel,
-      final ValidatorIsConnectedProvider validatorIsConnectedProvider,
-      final Spec spec) {
+          final MetricsSystem metricsSystem,
+          final StoreConfig storeConfig,
+          final AsyncRunner asyncRunner,
+          final SingleBlockProvider validatedBlockProvider,
+          final SingleBlobSidecarProvider validatedBlobSidecarProvider,
+          final StorageQueryChannel storageQueryChannel,
+          final StorageUpdateChannel storageUpdateChannel,
+          final VoteUpdateChannel voteUpdateChannel,
+          final FinalizedCheckpointChannel finalizedCheckpointChannel,
+          final ChainHeadChannel chainHeadChannel,
+          final ValidatorIsConnectedProvider validatorIsConnectedProvider,
+          final Spec spec) {
     final StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
             asyncRunner,

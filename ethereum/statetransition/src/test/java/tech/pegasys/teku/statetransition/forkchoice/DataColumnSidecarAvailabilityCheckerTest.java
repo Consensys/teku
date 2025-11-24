@@ -84,7 +84,7 @@ class DataColumnSidecarAvailabilityCheckerTest {
     final RuntimeException exception = new RuntimeException("Error during DAS check");
     when(das.checkSamplingEligibility(block.getMessage()))
         .thenReturn(DataAvailabilitySampler.SamplingEligibilityStatus.REQUIRED);
-    when(das.checkDataAvailability(any(), any())).thenReturn(SafeFuture.failedFuture(exception));
+    when(das.checkDataAvailability(any())).thenReturn(SafeFuture.failedFuture(exception));
     assertThat(checker.initiateDataAvailabilityCheck()).isTrue();
     assertThat(checker.getAvailabilityCheckResult().get())
         .isEqualTo(DataAndValidationResult.notAvailable(exception));
@@ -96,7 +96,7 @@ class DataColumnSidecarAvailabilityCheckerTest {
     List<UInt64> listOfIndices = Lists.newArrayList(UInt64.valueOf(1), UInt64.valueOf(2));
     when(das.checkSamplingEligibility(block.getMessage()))
         .thenReturn(DataAvailabilitySampler.SamplingEligibilityStatus.REQUIRED);
-    when(das.checkDataAvailability(any(), any()))
+    when(das.checkDataAvailability(any()))
         .thenReturn(SafeFuture.completedFuture(listOfIndices));
     assertThat(checker.initiateDataAvailabilityCheck()).isTrue();
     assertThat(checker.getAvailabilityCheckResult().get())

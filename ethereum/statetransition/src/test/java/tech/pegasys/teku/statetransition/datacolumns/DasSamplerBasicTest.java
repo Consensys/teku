@@ -137,13 +137,14 @@ public class DasSamplerBasicTest {
 
   @Test
   void checkDataAvailability_shouldAddToTrackerAndReturnCompletionFuture() {
+      final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
     final SlotAndBlockRoot slotAndBlockRoot =
-        new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
+        new SlotAndBlockRoot(block.getSlot(), block.getRoot());
 
     when(retriever.retrieve(any())).thenReturn(new SafeFuture<>());
 
     final SafeFuture<List<UInt64>> completionFuture =
-        sampler.checkDataAvailability(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
+        sampler.checkDataAvailability(block);
 
     assertSamplerTracker(
         slotAndBlockRoot.getBlockRoot(), slotAndBlockRoot.getSlot(), SAMPLING_INDICES);
@@ -159,13 +160,14 @@ public class DasSamplerBasicTest {
   @Test
   @SuppressWarnings("FutureReturnValueIgnored")
   void checkDataAvailability_shouldCallRetrieverForMissingColumnsAndCallCustodyOnRetrieval() {
-    final SignedBeaconBlockHeader block = dataStructureUtil.randomSignedBeaconBlockHeader();
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
+    final SignedBeaconBlockHeader blockHeader = block.asHeader();
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(block.getMessage().getSlot(), block.getMessage().getRoot());
 
     final Map<UInt64, DataColumnSidecar> missingColumnSidecars =
         SAMPLING_INDICES.stream()
-            .map(index -> Map.entry(index, dataStructureUtil.randomDataColumnSidecar(block, index)))
+            .map(index -> Map.entry(index, dataStructureUtil.randomDataColumnSidecar(blockHeader, index)))
             .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
     final Map<UInt64, SafeFuture<DataColumnSidecar>> futureSidecarsByIndex =
         missingColumnSidecars.values().stream()
@@ -191,7 +193,7 @@ public class DasSamplerBasicTest {
         .thenReturn(Duration.ofSeconds(1));
 
     // da check is requested
-    sampler.checkDataAvailability(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
+    sampler.checkDataAvailability(block);
 
     assertRPCFetchInMillis(
         slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), SAMPLING_INDICES, 1_000);
@@ -220,14 +222,15 @@ public class DasSamplerBasicTest {
   @Test
   @SuppressWarnings("FutureReturnValueIgnored")
   void checkDataAvailability_shouldRPCFetchImmediatelyIfNotPreviouslyScheduled() {
-    final SlotAndBlockRoot slotAndBlockRoot =
-        new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
+      final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
+      final SlotAndBlockRoot slotAndBlockRoot =
+              new SlotAndBlockRoot(block.getMessage().getSlot(), block.getMessage().getRoot());
 
     when(retriever.retrieve(any())).thenReturn(new SafeFuture<>());
 
     when(rpcFetchDelayProvider.calculate(slotAndBlockRoot.getSlot())).thenReturn(Duration.ZERO);
 
-    sampler.checkDataAvailability(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
+    sampler.checkDataAvailability(block);
 
     assertRPCFetchInMillis(
         slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), SAMPLING_INDICES, 0);
@@ -244,17 +247,16 @@ public class DasSamplerBasicTest {
     final DataColumnSidecar source2 =
         dataStructureUtil.randomDataColumnSidecar(
             dataStructureUtil.randomSignedBeaconBlockHeader(), dataStructureUtil.randomUInt64());
-    final SlotAndBlockRoot source3 =
-        new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
+      final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
 
     sampler.onNewValidatedDataColumnSidecar(source1, RemoteOrigin.CUSTODY);
     sampler.onNewValidatedDataColumnSidecar(source2, RemoteOrigin.RPC);
-    sampler.checkDataAvailability(source3.getSlot(), source3.getBlockRoot());
+    sampler.checkDataAvailability(block);
 
     assertThat(sampler.getRecentlySampledColumnsByRoot())
         .containsKey(source1.blockRoot())
         .containsKey(source2.getBeaconBlockRoot())
-        .containsKey(source3.getBlockRoot());
+        .containsKey(block.getRoot());
   }
 
   @Test
