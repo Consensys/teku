@@ -56,7 +56,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           submodules: 'recursive'
       - name: Prepare
@@ -69,7 +69,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           submodules: 'recursive'
       - name: Prepare
@@ -83,7 +83,7 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           submodules: 'recursive'
       - name: Prepare
@@ -115,7 +115,7 @@ jobs:
       publish-version: ${{ steps.projectDetails.outputs.publish-version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           submodules: 'recursive'
       - name: get workflow_details
@@ -158,7 +158,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           submodules: 'recursive'
       - name: Prepare
@@ -206,7 +206,7 @@ jobs:
   #   runs-on: ubuntu-24.04
   #   steps:
   #     - name: Checkout
-  #       uses: actions/checkout@v5
+  #       uses: actions/checkout@v6
   #       with:
   #         submodules: 'recursive'
   #     - name: Prepare
@@ -250,7 +250,7 @@ jobs:
     needs: unitTests
     if: always()
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/collate-junit-reports
         if: always()        
         with:
@@ -261,7 +261,7 @@ jobs:
     runs-on: gha-runner-scale-set-ubuntu-22.04-amd64-xxl
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           submodules: 'recursive'
       - name: Prepare
@@ -298,7 +298,7 @@ jobs:
     needs: propertyTests
     if: always()
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/collate-junit-reports
         if: always()        
         with:
@@ -322,7 +322,7 @@ jobs:
   #   runs-on: ubuntu-24.04
   #   needs: acceptanceTests
   #   steps:
-  #     - uses: actions/checkout@v5
+  #     - uses: actions/checkout@v6
   #     - uses: ./.github/actions/collate-junit-reports
   #       if: always()        
   #       with:
@@ -333,7 +333,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           submodules: 'recursive'
       - name: Prepare
@@ -389,7 +389,7 @@ jobs:
         total: [8]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           submodules: 'recursive'
       - name: Prepare
@@ -467,7 +467,7 @@ jobs:
     needs: referenceTests
     if: always()
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/collate-junit-reports
         if: always()
         with:
