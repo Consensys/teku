@@ -182,7 +182,7 @@ public class DebugDataFileDumper implements DebugDataDumper {
       return;
     }
     final UInt64 slot = signedEnvelope.getSlot();
-    final Bytes32 blockRoot = signedEnvelope.getMessage().getBeaconBlockRoot();
+    final Bytes32 blockRoot = signedEnvelope.getBeaconBlockRoot();
     final UInt64 builderIndex = signedEnvelope.getMessage().getBuilderIndex();
     final String fileName =
         String.format("%s_%s_%s.ssz", slot, blockRoot.toUnprefixedHexString(), builderIndex);
