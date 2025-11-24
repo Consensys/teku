@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -69,6 +70,11 @@ public class SchemaHotAdapter implements Schema {
   public KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes>
       getColumnBlobSidecarBySlotRootBlobIndex() {
     return delegate.getColumnBlobSidecarBySlotRootBlobIndex();
+  }
+
+  public KvStoreColumn<Bytes32, SignedExecutionPayloadEnvelope>
+      getColumnHotExecutionPayloadsByRoot() {
+    return delegate.getColumnHotExecutionPayloadsByRoot();
   }
 
   public KvStoreVariable<UInt64> getVariableGenesisTime() {
@@ -127,6 +133,7 @@ public class SchemaHotAdapter implements Schema {
         .put(
             "BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX",
             getColumnBlobSidecarBySlotRootBlobIndex())
+        .put("HOT_EXECUTION_PAYLOADS_BY_ROOT", getColumnHotExecutionPayloadsByRoot())
         .build();
   }
 

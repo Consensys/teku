@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -48,6 +49,7 @@ public class StorageUpdate {
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
   private final Optional<Bytes32> latestCanonicalBlockRoot;
   private final Optional<UInt64> custodyGroupCount;
+  private final Map<Bytes32, SignedExecutionPayloadAndState> hotExecutionPayloadAndStates;
   private final boolean blobSidecarsEnabled;
   private final boolean sidecarsEnabled;
   private final boolean isEmpty;
@@ -67,6 +69,7 @@ public class StorageUpdate {
       final Optional<Bytes32> optimisticTransitionBlockRoot,
       final Optional<Bytes32> latestCanonicalBlockRoot,
       final Optional<UInt64> custodyGroupCount,
+      final Map<Bytes32, SignedExecutionPayloadAndState> hotExecutionPayloadAndStates,
       @NonUpdating final boolean blobSidecarsEnabled,
       @NonUpdating final boolean sidecarsEnabled) {
     this.genesisTime = genesisTime;
@@ -83,6 +86,7 @@ public class StorageUpdate {
     this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
     this.latestCanonicalBlockRoot = latestCanonicalBlockRoot;
     this.custodyGroupCount = custodyGroupCount;
+    this.hotExecutionPayloadAndStates = hotExecutionPayloadAndStates;
     this.blobSidecarsEnabled = blobSidecarsEnabled;
     this.sidecarsEnabled = sidecarsEnabled;
     checkArgument(
@@ -102,6 +106,7 @@ public class StorageUpdate {
             && maybeEarliestBlobSidecarSlot.isEmpty()
             && latestCanonicalBlockRoot.isEmpty()
             && custodyGroupCount.isEmpty()
+            && hotExecutionPayloadAndStates.isEmpty()
             && !optimisticTransitionBlockRootSet;
   }
 
@@ -143,6 +148,10 @@ public class StorageUpdate {
 
   public Map<Bytes32, UInt64> getDeletedHotBlocks() {
     return deletedHotBlocks;
+  }
+
+  public Map<Bytes32, SignedExecutionPayloadAndState> getHotExecutionPayloadAndStates() {
+    return hotExecutionPayloadAndStates;
   }
 
   public Map<Bytes32, Bytes32> getFinalizedChildToParentMap() {
