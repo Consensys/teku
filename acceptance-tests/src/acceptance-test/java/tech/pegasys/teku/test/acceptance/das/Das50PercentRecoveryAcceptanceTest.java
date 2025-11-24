@@ -85,7 +85,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
     final SpecConfigFulu specConfigFulu =
         SpecConfigFulu.required(primaryNode.getSpec().forMilestone(SpecMilestone.FULU).getConfig());
     final int allFuluColumns =
-        IntStream.range(firstFuluSlot, endSlot)
+        IntStream.rangeClosed(firstFuluSlot, endSlot)
             .mapToObj(UInt64::valueOf)
             .map(
                 slot ->
@@ -156,7 +156,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
     final SpecConfigFulu specConfigFulu =
         SpecConfigFulu.required(primaryNode.getSpec().forMilestone(SpecMilestone.FULU).getConfig());
     final int allFuluColumns =
-        IntStream.range(firstFuluSlot, endSlot)
+        IntStream.rangeClosed(firstFuluSlot, endSlot)
             .mapToObj(UInt64::valueOf)
             .map(
                 slot ->
