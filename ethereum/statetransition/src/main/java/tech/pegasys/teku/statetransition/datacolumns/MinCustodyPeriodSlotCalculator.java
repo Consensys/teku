@@ -16,27 +16,24 @@ package tech.pegasys.teku.statetransition.datacolumns;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
 
 public interface MinCustodyPeriodSlotCalculator {
 
   static MinCustodyPeriodSlotCalculator createFromSpec(final Spec spec) {
     final UInt64 fuluActivationEpoch =
         spec.getForkSchedule().getFork(SpecMilestone.FULU).getEpoch();
+
     return currentSlot -> {
       final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
       final int custodyPeriodEpochs =
           spec.getSpecConfig(currentEpoch)
               .toVersionFulu()
-              .map(SpecConfigFulu::getMinEpochsForDataColumnSidecarsRequests)
-              .orElse(0);
-      if (custodyPeriodEpochs == 0) {
-        return currentSlot;
-      } else {
-        final UInt64 minCustodyEpoch =
-            currentEpoch.minusMinZero(custodyPeriodEpochs).max(fuluActivationEpoch);
-        return spec.computeStartSlotAtEpoch(minCustodyEpoch);
-      }
+              .orElseThrow()
+              .getMinEpochsForDataColumnSidecarsRequests();
+
+      final UInt64 minCustodyEpoch =
+          currentEpoch.minusMinZero(custodyPeriodEpochs).max(fuluActivationEpoch);
+      return spec.computeStartSlotAtEpoch(minCustodyEpoch);
     };
   }
 
