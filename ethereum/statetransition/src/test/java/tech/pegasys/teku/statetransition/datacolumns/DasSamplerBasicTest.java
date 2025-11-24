@@ -137,14 +137,13 @@ public class DasSamplerBasicTest {
 
   @Test
   void checkDataAvailability_shouldAddToTrackerAndReturnCompletionFuture() {
-      final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(block.getSlot(), block.getRoot());
 
     when(retriever.retrieve(any())).thenReturn(new SafeFuture<>());
 
-    final SafeFuture<List<UInt64>> completionFuture =
-        sampler.checkDataAvailability(block);
+    final SafeFuture<List<UInt64>> completionFuture = sampler.checkDataAvailability(block);
 
     assertSamplerTracker(
         slotAndBlockRoot.getBlockRoot(), slotAndBlockRoot.getSlot(), SAMPLING_INDICES);
@@ -167,7 +166,9 @@ public class DasSamplerBasicTest {
 
     final Map<UInt64, DataColumnSidecar> missingColumnSidecars =
         SAMPLING_INDICES.stream()
-            .map(index -> Map.entry(index, dataStructureUtil.randomDataColumnSidecar(blockHeader, index)))
+            .map(
+                index ->
+                    Map.entry(index, dataStructureUtil.randomDataColumnSidecar(blockHeader, index)))
             .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
     final Map<UInt64, SafeFuture<DataColumnSidecar>> futureSidecarsByIndex =
         missingColumnSidecars.values().stream()
@@ -222,9 +223,9 @@ public class DasSamplerBasicTest {
   @Test
   @SuppressWarnings("FutureReturnValueIgnored")
   void checkDataAvailability_shouldRPCFetchImmediatelyIfNotPreviouslyScheduled() {
-      final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
-      final SlotAndBlockRoot slotAndBlockRoot =
-              new SlotAndBlockRoot(block.getMessage().getSlot(), block.getMessage().getRoot());
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(block.getMessage().getSlot(), block.getMessage().getRoot());
 
     when(retriever.retrieve(any())).thenReturn(new SafeFuture<>());
 
@@ -247,7 +248,7 @@ public class DasSamplerBasicTest {
     final DataColumnSidecar source2 =
         dataStructureUtil.randomDataColumnSidecar(
             dataStructureUtil.randomSignedBeaconBlockHeader(), dataStructureUtil.randomUInt64());
-      final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
 
     sampler.onNewValidatedDataColumnSidecar(source1, RemoteOrigin.CUSTODY);
     sampler.onNewValidatedDataColumnSidecar(source2, RemoteOrigin.RPC);

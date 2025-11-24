@@ -13,13 +13,14 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -30,8 +31,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 record DataColumnSamplingTracker(
     UInt64 slot,
     Bytes32 blockRoot,
@@ -41,8 +40,6 @@ record DataColumnSamplingTracker(
     SafeFuture<List<UInt64>> completionFuture,
     AtomicReference<Optional<SignedBeaconBlock>> block) {
   private static final Logger LOG = LogManager.getLogger();
-
-
 
   static DataColumnSamplingTracker create(
       final UInt64 slot,
@@ -61,22 +58,22 @@ record DataColumnSamplingTracker(
         new AtomicReference<>(Optional.empty()));
   }
 
-    public Optional<SignedBeaconBlock> getBlock() {
-        return block.get();
+  public Optional<SignedBeaconBlock> getBlock() {
+    return block.get();
+  }
+
+  public boolean setBlock(final SignedBeaconBlock block) {
+    final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(slot, blockRoot);
+    checkArgument(block.getSlotAndBlockRoot().equals(slotAndBlockRoot), "Wrong block");
+    final Optional<SignedBeaconBlock> oldBlock = this.block.getAndSet(Optional.of(block));
+    if (oldBlock.isPresent()) {
+      return false;
     }
 
-    public boolean setBlock(final SignedBeaconBlock block) {
-        final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(slot, blockRoot);
-        checkArgument(block.getSlotAndBlockRoot().equals(slotAndBlockRoot), "Wrong block");
-        final Optional<SignedBeaconBlock> oldBlock = this.block.getAndSet(Optional.of(block));
-        if (oldBlock.isPresent()) {
-            return false;
-        }
+    LOG.debug("Block received for {}", slotAndBlockRoot::toLogString);
 
-        LOG.debug("Block received for {}", slotAndBlockRoot::toLogString);
-
-        return true;
-    }
+    return true;
+  }
 
   boolean add(final DataColumnSlotAndIdentifier columnIdentifier, final RemoteOrigin origin) {
     if (!slot.equals(columnIdentifier.slot()) || !blockRoot.equals(columnIdentifier.blockRoot())) {
@@ -115,5 +112,4 @@ record DataColumnSamplingTracker(
         .map(idx -> new DataColumnSlotAndIdentifier(slot, blockRoot, idx))
         .toList();
   }
-
 }

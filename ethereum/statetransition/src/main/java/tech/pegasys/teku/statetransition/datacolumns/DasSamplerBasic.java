@@ -80,8 +80,8 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
 
   /**
    * When syncing or backfilling always make sure to call this method with known DataColumn *before*
-   * calling {@link DataAvailabilitySampler#checkDataAvailability(BeaconBlock)} so that RPC fetch won't
-   * be executed on those columns.
+   * calling {@link DataAvailabilitySampler#checkDataAvailability(BeaconBlock)} so that RPC fetch
+   * won't be executed on those columns.
    */
   @Override
   public void onNewValidatedDataColumnSidecar(
@@ -237,6 +237,6 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   }
 
   public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
-      return recentlySampledColumnsByRoot.get(blockRoot).getBlock();
+    return recentlySampledColumnsByRoot.get(blockRoot).getBlock();
   }
 }

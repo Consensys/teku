@@ -96,8 +96,7 @@ class DataColumnSidecarAvailabilityCheckerTest {
     List<UInt64> listOfIndices = Lists.newArrayList(UInt64.valueOf(1), UInt64.valueOf(2));
     when(das.checkSamplingEligibility(block.getMessage()))
         .thenReturn(DataAvailabilitySampler.SamplingEligibilityStatus.REQUIRED);
-    when(das.checkDataAvailability(any()))
-        .thenReturn(SafeFuture.completedFuture(listOfIndices));
+    when(das.checkDataAvailability(any())).thenReturn(SafeFuture.completedFuture(listOfIndices));
     assertThat(checker.initiateDataAvailabilityCheck()).isTrue();
     assertThat(checker.getAvailabilityCheckResult().get())
         .isEqualTo(DataAndValidationResult.validResult(listOfIndices));

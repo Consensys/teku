@@ -82,8 +82,7 @@ public class DasPreSamplerTest {
 
     // Setup for the block that will be sampled
     when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(List.of());
-    when(sampler.checkDataAvailability(blockToSample))
-        .thenReturn(SafeFuture.completedFuture(null));
+    when(sampler.checkDataAvailability(blockToSample)).thenReturn(SafeFuture.completedFuture(null));
 
     dasPreSampler.onNewPreImportBlocks(List.of(blockToSample, blockToSkip));
 
@@ -112,8 +111,7 @@ public class DasPreSamplerTest {
     when(sampler.checkSamplingEligibility(block.getMessage())).thenReturn(REQUIRED);
     when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(columnIndices);
     when(custody.hasCustodyDataColumnSidecar(any())).thenReturn(SafeFuture.completedFuture(false));
-    when(sampler.checkDataAvailability(block))
-        .thenReturn(SafeFuture.completedFuture(null));
+    when(sampler.checkDataAvailability(block)).thenReturn(SafeFuture.completedFuture(null));
 
     dasPreSampler.onNewPreImportBlocks(List.of(block));
 
@@ -141,8 +139,7 @@ public class DasPreSamplerTest {
     when(custody.hasCustodyDataColumnSidecar(col2)).thenReturn(SafeFuture.completedFuture(true));
     when(custody.hasCustodyDataColumnSidecar(col4)).thenReturn(SafeFuture.completedFuture(false));
 
-    when(sampler.checkDataAvailability(block))
-        .thenReturn(SafeFuture.completedFuture(null));
+    when(sampler.checkDataAvailability(block)).thenReturn(SafeFuture.completedFuture(null));
 
     dasPreSampler.onNewPreImportBlocks(List.of(block));
 

@@ -383,7 +383,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ExecutionPayloadBidManager executionPayloadBidManager;
   protected volatile ExecutionPayloadManager executionPayloadManager;
   protected volatile ExecutionProofManager executionProofManager;
-    protected volatile Optional<DasSamplerBasic> dasSamplerBasic = Optional.empty();
+  protected volatile Optional<DasSamplerBasic> dasSamplerBasic = Optional.empty();
   protected volatile Optional<DasCustodySync> dasCustodySync = Optional.empty();
   protected volatile Optional<DataColumnSidecarRetriever> recoveringSidecarRetriever =
       Optional.empty();
@@ -571,7 +571,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final ValidatorIsConnectedProvider validatorIsConnectedProvider =
         new ValidatorIsConnectedProviderReference(() -> proposersDataManager);
 
-    final SingleBlockProvider singleBlockProviderResolver = new SingleBlockProviderResolver(blockBlobSidecarsTrackersPool, dasSamplerBasic);
+    final SingleBlockProvider singleBlockProviderResolver =
+        new SingleBlockProviderResolver(blockBlobSidecarsTrackersPool, dasSamplerBasic);
 
     // Init other services
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
@@ -1011,16 +1012,17 @@ public class BeaconChainController extends Service implements BeaconChainControl
             DEFAULT_MIN_WAIT_MILLIS,
             DEFAULT_TARGET_WAIT_MILLIS);
 
-    dasSamplerBasic = Optional.of(
-        new DasSamplerBasic(
-            spec,
-            beaconAsyncRunner,
-            currentSlotProvider,
-            rpcFetchDelayProvider,
-            dataColumnSidecarRecoveringCustody,
-            recoveringSidecarRetriever,
-            custodyGroupCountManager,
-            recentChainData));
+    dasSamplerBasic =
+        Optional.of(
+            new DasSamplerBasic(
+                spec,
+                beaconAsyncRunner,
+                currentSlotProvider,
+                rpcFetchDelayProvider,
+                dataColumnSidecarRecoveringCustody,
+                recoveringSidecarRetriever,
+                custodyGroupCountManager,
+                recentChainData));
     LOG.info(
         "DAS Basic Sampler initialized with {} groups to sample",
         custodyGroupCountManager.getSamplingGroupCount());
