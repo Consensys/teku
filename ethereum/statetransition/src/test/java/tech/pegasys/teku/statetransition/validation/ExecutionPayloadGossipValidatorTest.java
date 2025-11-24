@@ -239,7 +239,8 @@ public class ExecutionPayloadGossipValidatorTest {
       final Optional<ExecutionPayload> payload,
       final Optional<UInt64> builderIndex,
       final Optional<Bytes32> beaconBlockRoot,
-      final Optional<UInt64> slot) {
+      final Optional<UInt64> slot,
+      final Optional<BLSSignature> signature) {
     final SchemaDefinitionsGloas schemaDefinitions =
         spec.getGenesisSchemaDefinitions().toVersionGloas().orElseThrow();
     final ExecutionPayloadEnvelopeSchema envelopeSchema =
@@ -256,71 +257,90 @@ public class ExecutionPayloadGossipValidatorTest {
             slot.orElse(originalMessage.getSlot()),
             originalMessage.getBlobKzgCommitments(),
             originalMessage.getStateRoot());
-    return signedEnvelopeSchema.create(modifiedMessage, original.getSignature());
+    return signedEnvelopeSchema.create(modifiedMessage, signature.orElse(original.getSignature()));
   }
 
   private SignedExecutionPayloadEnvelope createExecutionPayloadEnvelopeWithBuilderIndex(
       final SignedExecutionPayloadEnvelope envelope, final UInt64 builderIndex) {
     return createModifiedExecutionPayloadEnvelope(
-        envelope, Optional.empty(), Optional.of(builderIndex), Optional.empty(), Optional.empty());
+        envelope,
+        Optional.empty(),
+        Optional.of(builderIndex),
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty());
   }
 
   private SignedExecutionPayloadEnvelope createExecutionPayloadEnvelopeWithSlot(
       final SignedExecutionPayloadEnvelope envelope, final UInt64 slot) {
     return createModifiedExecutionPayloadEnvelope(
-        envelope, Optional.empty(), Optional.empty(), Optional.empty(), Optional.of(slot));
+        envelope,
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty(),
+        Optional.of(slot),
+        Optional.empty());
   }
 
   private SignedExecutionPayloadEnvelope createExecutionPayloadEnvelopeWithBlockRoot(
       final SignedExecutionPayloadEnvelope envelope, final Bytes32 blockRoot) {
     return createModifiedExecutionPayloadEnvelope(
-        envelope, Optional.empty(), Optional.empty(), Optional.of(blockRoot), Optional.empty());
+        envelope,
+        Optional.empty(),
+        Optional.empty(),
+        Optional.of(blockRoot),
+        Optional.empty(),
+        Optional.empty());
   }
 
   private SignedExecutionPayloadEnvelope createExecutionPayloadEnvelopeWithSignature(
       final SignedExecutionPayloadEnvelope envelope, final BLSSignature signature) {
-    final SchemaDefinitionsGloas schemaDefinitionsGloas =
+    return createModifiedExecutionPayloadEnvelope(
+        envelope,
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty(),
+        Optional.of(signature));
+  }
+
+  private ExecutionPayload createExecutionPayloadWithBlockHash(
+      final ExecutionPayload original, final Bytes32 blockHash) {
+    final SchemaDefinitionsGloas schemaDefinitions =
         spec.getGenesisSchemaDefinitions().toVersionGloas().orElseThrow();
-    final SignedExecutionPayloadEnvelopeSchema signedExecutionPayloadEnvelopeSchema =
-        schemaDefinitionsGloas.getSignedExecutionPayloadEnvelopeSchema();
-    return signedExecutionPayloadEnvelopeSchema.create(envelope.getMessage(), signature);
+    return schemaDefinitions
+        .getExecutionPayloadSchema()
+        .createExecutionPayload(
+            builder ->
+                builder
+                    .parentHash(original.getParentHash())
+                    .feeRecipient(original.getFeeRecipient())
+                    .stateRoot(original.getStateRoot())
+                    .receiptsRoot(original.getReceiptsRoot())
+                    .logsBloom(original.getLogsBloom())
+                    .prevRandao(original.getPrevRandao())
+                    .blockNumber(original.getBlockNumber())
+                    .gasLimit(original.getGasLimit())
+                    .gasUsed(original.getGasUsed())
+                    .timestamp(original.getTimestamp())
+                    .extraData(original.getExtraData())
+                    .baseFeePerGas(original.getBaseFeePerGas())
+                    .blockHash(blockHash)
+                    .transactions(
+                        original.getTransactions().stream().map(SszByteListImpl::getBytes).toList())
+                    .withdrawals(() -> original.getOptionalWithdrawals().orElseThrow().asList())
+                    .blobGasUsed(() -> UInt64.ZERO)
+                    .excessBlobGas(() -> UInt64.ZERO));
   }
 
   private SignedExecutionPayloadEnvelope createExecutionPayloadEnvelopeWithBlockHash(
       final SignedExecutionPayloadEnvelope envelope, final Bytes32 blockHash) {
-    final ExecutionPayload executionPayload = envelope.getMessage().getPayload();
-    final SchemaDefinitionsGloas schemaDefinitionsGloas =
-        spec.getGenesisSchemaDefinitions().toVersionGloas().orElseThrow();
-    final ExecutionPayload executionPayloadWithBlockHash =
-        schemaDefinitionsGloas
-            .getExecutionPayloadSchema()
-            .createExecutionPayload(
-                builder ->
-                    builder
-                        .parentHash(executionPayload.getParentHash())
-                        .feeRecipient(executionPayload.getFeeRecipient())
-                        .stateRoot(executionPayload.getStateRoot())
-                        .receiptsRoot(executionPayload.getReceiptsRoot())
-                        .logsBloom(executionPayload.getLogsBloom())
-                        .prevRandao(executionPayload.getPrevRandao())
-                        .blockNumber(executionPayload.getBlockNumber())
-                        .gasLimit(executionPayload.getGasLimit())
-                        .gasUsed(executionPayload.getGasUsed())
-                        .timestamp(executionPayload.getTimestamp())
-                        .extraData(executionPayload.getExtraData())
-                        .baseFeePerGas(executionPayload.getBaseFeePerGas())
-                        .blockHash(blockHash)
-                        .transactions(
-                            executionPayload.getTransactions().stream()
-                                .map(SszByteListImpl::getBytes)
-                                .toList())
-                        .withdrawals(
-                            () -> executionPayload.getOptionalWithdrawals().orElseThrow().asList())
-                        .blobGasUsed(() -> UInt64.ZERO)
-                        .excessBlobGas(() -> UInt64.ZERO));
+    final ExecutionPayload newPayload =
+        createExecutionPayloadWithBlockHash(envelope.getMessage().getPayload(), blockHash);
     return createModifiedExecutionPayloadEnvelope(
         envelope,
-        Optional.of(executionPayloadWithBlockHash),
+        Optional.of(newPayload),
+        Optional.empty(),
         Optional.empty(),
         Optional.empty(),
         Optional.empty());
