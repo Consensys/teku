@@ -21,7 +21,8 @@ import tech.pegasys.teku.spec.config.SpecConfigFulu;
 public interface MinCustodyPeriodSlotCalculator {
 
   static MinCustodyPeriodSlotCalculator createFromSpec(final Spec spec) {
-    final UInt64 fuluActivationEpoch = spec.getForkSchedule().getFork(SpecMilestone.FULU).getEpoch();
+    final UInt64 fuluActivationEpoch =
+        spec.getForkSchedule().getFork(SpecMilestone.FULU).getEpoch();
     return currentSlot -> {
       final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
       final int custodyPeriodEpochs =
@@ -32,7 +33,8 @@ public interface MinCustodyPeriodSlotCalculator {
       if (custodyPeriodEpochs == 0) {
         return currentSlot;
       } else {
-        final UInt64 minCustodyEpoch = currentEpoch.minusMinZero(custodyPeriodEpochs).max(fuluActivationEpoch);
+        final UInt64 minCustodyEpoch =
+            currentEpoch.minusMinZero(custodyPeriodEpochs).max(fuluActivationEpoch);
         return spec.computeStartSlotAtEpoch(minCustodyEpoch);
       }
     };
