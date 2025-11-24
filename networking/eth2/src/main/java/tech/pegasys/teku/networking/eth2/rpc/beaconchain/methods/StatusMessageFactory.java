@@ -19,8 +19,10 @@ import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.spec.Spec;
@@ -43,9 +45,18 @@ public class StatusMessageFactory implements SlotEventsChannel {
   private final AtomicReference<Optional<UInt64>> maybeEarliestAvailableSlot =
       new AtomicReference<>(Optional.empty());
 
-  public StatusMessageFactory(final Spec spec, final CombinedChainDataClient recentChainData) {
+  public StatusMessageFactory(
+      final Spec spec,
+      final CombinedChainDataClient recentChainData,
+      final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.combinedChainDataClient = recentChainData;
+
+    metricsSystem.createGauge(
+        TekuMetricCategory.BEACON,
+        "earliest_available_slot",
+        "Value representing the earliest slot where the node has data available to serve peers.",
+        () -> maybeEarliestAvailableSlot.get().map(UInt64::doubleValue).orElse(0.0));
   }
 
   public Optional<RpcRequestBodySelector<StatusMessage>> createStatusMessage() {
