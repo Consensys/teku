@@ -274,11 +274,6 @@ public class DasCustodyBackfiller extends Service
       return doStop().thenApply(__ -> false);
     }
 
-    var latestFinalizedSlot = combinedChainDataClient.getFinalizedBlockSlot();
-    if (latestFinalizedSlot.isEmpty()) {
-      return SafeFuture.completedFuture(false);
-    }
-
     var latestSlotInBatch = earliestAvailableCustodySlot.get().minusMinZero(1);
     var oldestCustodySlot =
         minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(
@@ -348,13 +343,13 @@ public class DasCustodyBackfiller extends Service
     final Map<SlotAndBlockRoot, List<UInt64>> missingCustody =
         batchData.columnsInCustody.stream()
             .filter(
-                col ->
+                columnId ->
                     batchData.blocksInfo.stream()
                         .anyMatch(
                             info ->
-                                col.slot().equals(info.slot)
+                                columnId.slot().equals(info.slot)
                                     && info.blockRoot()
-                                        .map(b -> b.equals(col.blockRoot()))
+                                        .map(b -> b.equals(columnId.blockRoot()))
                                         .orElse(false)))
             .collect(Collectors.groupingBy(DataColumnSlotAndIdentifier::getSlotAndBlockRoot))
             .entrySet()
