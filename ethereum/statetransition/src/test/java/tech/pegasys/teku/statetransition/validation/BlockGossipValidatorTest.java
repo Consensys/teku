@@ -58,6 +58,7 @@ public class BlockGossipValidatorTest {
   private StorageSystem storageSystem;
   private final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =
       mock(ReceivedBlockEventsChannel.class);
+  private GossipValidationHelper gossipValidationHelper;
 
   private BlockGossipValidator blockGossipValidator;
 
@@ -67,11 +68,10 @@ public class BlockGossipValidatorTest {
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesis(false);
     recentChainData = storageSystem.recentChainData();
+    gossipValidationHelper =
+        new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem());
     blockGossipValidator =
-        new BlockGossipValidator(
-            spec,
-            new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem()),
-            receivedBlockEventsChannelPublisher);
+        new BlockGossipValidator(spec, gossipValidationHelper, receivedBlockEventsChannelPublisher);
   }
 
   @TestTemplate

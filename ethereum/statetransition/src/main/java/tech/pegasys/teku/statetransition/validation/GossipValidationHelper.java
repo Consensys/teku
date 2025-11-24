@@ -22,6 +22,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -70,6 +71,17 @@ public class GossipValidationHelper {
         .orElse(false);
   }
 
+  public boolean isSignatureValidWithRespectToBuilderIndex(
+      final Bytes signingRoot,
+      final UInt64 proposerIndex,
+      final BLSSignature signature,
+      final BeaconState postState) {
+
+    return spec.getValidatorPubKey(postState, proposerIndex)
+        .map(publicKey -> BLS.verify(publicKey, signingRoot, signature))
+        .orElse(false);
+  }
+
   /**
    * Retrieve the state for the parent block, applying the epoch transition if required to be able
    * to calculate the expected proposer for block.
@@ -82,6 +94,11 @@ public class GossipValidationHelper {
         ? recentChainData.retrieveStateAtSlot(
             new SlotAndBlockRoot(firstSlotInBlockEpoch, parentBlockRoot))
         : recentChainData.retrieveBlockState(parentBlockRoot);
+  }
+
+  public SafeFuture<Optional<BeaconState>> getStateAtSlotAndBlockRoot(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return recentChainData.retrieveStateAtSlot(slotAndBlockRoot);
   }
 
   public boolean currentFinalizedCheckpointIsAncestorOfBlock(
@@ -126,5 +143,9 @@ public class GossipValidationHelper {
 
   public ReadOnlyForkChoiceStrategy getForkChoiceStrategy() {
     return recentChainData.getForkChoiceStrategy().orElseThrow();
+  }
+
+  public SafeFuture<Optional<BeaconBlock>> retrieveBlockByRoot(final Bytes32 root) {
+    return recentChainData.retrieveBlockByRoot(root);
   }
 }
