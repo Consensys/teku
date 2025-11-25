@@ -18,6 +18,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
@@ -40,7 +41,7 @@ public class BlockPublisherFulu extends BlockPublisherPhase0 {
 
   private final OptionalInt dasPublishWithholdColumnsEverySlots;
 
-  private UInt64 lastWithheldSlot = UInt64.MAX_VALUE;
+  private final AtomicReference<UInt64> lastWithheldSlot = new AtomicReference<>(null);
 
   private final CustodyGroupCountManager custodyGroupCountManager;
 
@@ -103,7 +104,7 @@ public class BlockPublisherFulu extends BlockPublisherPhase0 {
           "Withholding {} non-custodied sidecars at {}",
           dataColumnSidecars.size() - dataColumnSidecarsToPublish.size(),
           dataColumnSidecars.getFirst().getSlotAndBlockRoot());
-      lastWithheldSlot = dataColumnSidecars.getFirst().getSlot();
+      lastWithheldSlot.set(dataColumnSidecars.getFirst().getSlot());
     }
 
     dataColumnSidecarGossipChannel.publishDataColumnSidecars(
@@ -115,12 +116,12 @@ public class BlockPublisherFulu extends BlockPublisherPhase0 {
     final boolean publishAll;
     if (dasPublishWithholdColumnsEverySlots.isEmpty()) {
       publishAll = true;
-    } else if (lastWithheldSlot.equals(UInt64.MAX_VALUE)) {
+    } else if (lastWithheldSlot.get() == null) {
       publishAll = false;
     } else {
       publishAll =
           slot.minusMinZero(dasPublishWithholdColumnsEverySlots.getAsInt())
-              .isLessThan(lastWithheldSlot);
+              .isLessThan(lastWithheldSlot.get());
     }
 
     return publishAll;
