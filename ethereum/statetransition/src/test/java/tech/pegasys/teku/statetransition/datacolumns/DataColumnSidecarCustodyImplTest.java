@@ -75,11 +75,11 @@ public class DataColumnSidecarCustodyImplTest {
 
   public static Stream<Arguments> minCustodyScenarios() {
     return Stream.of(
-        Arguments.of(0, 0),
-        Arguments.of(32768, 0),
-        Arguments.of(32765, 0),
-        Arguments.of(32776, 8),
-        Arguments.of(32784, 16));
+        Arguments.of(0, Optional.of(ZERO)),
+        Arguments.of(32768, Optional.of(ZERO)),
+        Arguments.of(32765, Optional.of(ZERO)),
+        Arguments.of(32776, Optional.of(UInt64.valueOf(8))),
+        Arguments.of(32784, Optional.of(UInt64.valueOf(16))));
   }
 
   @BeforeEach
@@ -163,9 +163,10 @@ public class DataColumnSidecarCustodyImplTest {
 
   @ParameterizedTest
   @MethodSource("minCustodyScenarios")
-  public void computesCustodyPeriodCorrectly(final int currentSlot, final int expectedCustodySlot) {
+  public void computesCustodyPeriodCorrectly(
+      final int currentSlot, final Optional<UInt64> expectedCustodySlot) {
     assertThat(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(UInt64.valueOf(currentSlot)))
-        .isEqualTo(UInt64.valueOf(expectedCustodySlot));
+        .isEqualTo(expectedCustodySlot);
   }
 
   @Test
