@@ -115,6 +115,7 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
+import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -314,6 +315,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
+    final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
+    final UInt64 stateSlot = spec.computeStartSlotAtEpoch(epoch);
+    LOG.trace(
+        "Retrieving proposer duties for epoch {}, current epoch {}, state query slot {}",
+        epoch,
+        currentEpoch,
+        stateSlot);
     if (epoch.isGreaterThan(combinedChainDataClient.getCurrentEpoch().plus(DUTY_EPOCH_TOLERANCE))) {
       return SafeFuture.failedFuture(
           new IllegalArgumentException(
@@ -321,9 +329,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                   "Proposer duties were requested for a future epoch (current: %s, requested: %s).",
                   combinedChainDataClient.getCurrentEpoch().toString(), epoch)));
     }
-    LOG.trace("Retrieving proposer duties from epoch {}", epoch);
     return combinedChainDataClient
-        .getStateAtSlotExact(spec.computeStartSlotAtEpoch(epoch))
+        .getStateAtSlotExact(stateSlot)
         .thenApply(maybeState -> maybeState.map(state -> getProposerDutiesFromState(state, epoch)));
   }
 
@@ -981,9 +988,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   }
 
   @Override
-  public SafeFuture<Void> publishSignedExecutionPayload(
+  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
-    return executionPayloadPublisher.publishSignedExecutionPayload(signedExecutionPayload);
+    return executionPayloadPublisher
+        .publishSignedExecutionPayload(signedExecutionPayload)
+        .exceptionally(
+            ex -> {
+              final String reason = getRootCauseMessage(ex);
+              return PublishSignedExecutionPayloadResult.rejected(
+                  signedExecutionPayload.getBeaconBlockRoot(), reason);
+            });
   }
 
   private Optional<SubmitDataError> fromInternalValidationResult(

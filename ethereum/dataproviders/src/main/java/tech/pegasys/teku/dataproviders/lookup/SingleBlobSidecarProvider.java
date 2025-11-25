@@ -18,6 +18,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 
+@FunctionalInterface
 public interface SingleBlobSidecarProvider {
   SingleBlobSidecarProvider NOOP = (blockRoot, index) -> Optional.empty();
 

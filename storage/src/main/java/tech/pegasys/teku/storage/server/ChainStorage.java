@@ -25,6 +25,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -448,6 +449,11 @@ public class ChainStorage
   @Override
   public SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot() {
     return SafeFuture.of(database::getEarliestDataColumnSidecarSlot);
+  }
+
+  @Override
+  public SafeFuture<Optional<List<List<KZGProof>>>> getDataColumnSidecarsProofs(final UInt64 slot) {
+    return SafeFuture.of(() -> database.getDataColumnSidecarsProofs(slot));
   }
 
   @Override

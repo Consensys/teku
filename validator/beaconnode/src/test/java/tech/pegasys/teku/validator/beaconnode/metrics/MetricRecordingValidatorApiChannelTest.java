@@ -280,7 +280,7 @@ class MetricRecordingValidatorApiChannelTest {
   }
 
   private long getCounterValue(final String methodLabel, final RequestOutcome outcome) {
-    return metricsSystem.getCounterValue(
+    return metricsSystem.getLabelledCounterValue(
         TekuMetricCategory.VALIDATOR,
         MetricRecordingValidatorApiChannel.BEACON_NODE_REQUESTS_COUNTER_NAME,
         methodLabel,

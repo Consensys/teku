@@ -40,15 +40,21 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
       final MutableStore store,
       final SignedExecutionPayloadEnvelope signedEnvelope,
       final BeaconState postState) {
-    // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878
+    // Add new execution payload to store
+    store.putExecutionPayloadAndState(signedEnvelope, postState);
   }
 
+  // Checking of blob data availability is delayed until the processing of the execution payload
   @Override
   public AvailabilityChecker<?> createAvailabilityChecker(final SignedBeaconBlock block) {
-    // TODO-GLOAS: in ePBS, data availability is delayed until the processing of the execution
-    // payload.
-    // We may have a dedicated availability checker for the execution stage.
-    // If it will be the case, this will remain a NOOP
-    return AvailabilityChecker.NOOP;
+    return AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR;
+  }
+
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 add a real data availability check
+  // (not required for devnet-0)
+  @Override
+  public AvailabilityChecker<?> createAvailabilityChecker(
+      final SignedExecutionPayloadEnvelope executionPayload) {
+    return AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR;
   }
 }

@@ -34,6 +34,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
@@ -659,6 +660,16 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
         .map(DataColumnSlotAndIdentifier::slot);
   }
 
+  @Override
+  public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
+    return db.getLastKey(schema.getColumnDataColumnSidecarsProofsBySlot());
+  }
+
+  @Override
+  public Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(final UInt64 slot) {
+    return db.get(schema.getColumnDataColumnSidecarsProofsBySlot(), slot);
+  }
+
   static class V4CombinedUpdater<S extends SchemaCombined> implements CombinedUpdater {
     private final KvStoreTransaction transaction;
 
@@ -982,6 +993,17 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     public void removeNonCanonicalSidecar(final DataColumnSlotAndIdentifier identifier) {
       transaction.delete(
           schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(), identifier);
+    }
+
+    @Override
+    public void addDataColumnSidecarsProofs(
+        final UInt64 slot, final List<List<KZGProof>> kzgProofs) {
+      transaction.put(schema.getColumnDataColumnSidecarsProofsBySlot(), slot, kzgProofs);
+    }
+
+    @Override
+    public void removeDataColumnSidecarsProofs(final UInt64 slot) {
+      transaction.delete(schema.getColumnDataColumnSidecarsProofsBySlot(), slot);
     }
   }
 }

@@ -42,6 +42,7 @@ public enum ExecutionPayloadFields implements SszFieldName {
   BUILDER_INDEX,
   SLOT,
   VALUE,
+  EXECUTION_PAYMENT,
   BLOB_KZG_COMMITMENTS_ROOT;
 
   private final String sszFieldName;

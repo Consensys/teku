@@ -17,6 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@FunctionalInterface
 public interface EarliestBlobSidecarSlotProvider {
   EarliestBlobSidecarSlotProvider NOOP = () -> SafeFuture.completedFuture(Optional.empty());
 
