@@ -65,7 +65,7 @@ public class BeaconChainMethodsTest {
   final RecentChainData recentChainData = mock(RecentChainData.class);
   final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   final StatusMessageFactory statusMessageFactory =
-      new StatusMessageFactory(spec, combinedChainDataClient);
+      new StatusMessageFactory(spec, combinedChainDataClient, metricsSystem);
   final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
 
   @BeforeEach
