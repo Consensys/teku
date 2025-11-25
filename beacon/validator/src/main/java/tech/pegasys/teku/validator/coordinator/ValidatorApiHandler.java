@@ -73,6 +73,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -315,22 +316,46 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       return NodeSyncingException.failedFuture();
     }
     final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
-    final UInt64 stateSlot = spec.computeStartSlotAtEpoch(epoch);
-    LOG.trace(
+    final int tolerance = spec.getSpecConfig(epoch).getMinSeedLookahead() + DUTY_EPOCH_TOLERANCE;
+    LOG.trace("Proposer duty tolerance is {} epochs", tolerance);
+    if (epoch.isGreaterThan(currentEpoch.plus(tolerance))) {
+      return SafeFuture.failedFuture(
+          new IllegalArgumentException(
+              String.format(
+                  "Proposer duties were requested %s epochs ahead, only 1 epoch in future is supported.",
+                  epoch.minus(combinedChainDataClient.getCurrentEpoch()).toString())));
+    }
+
+    final UInt64 stateSlot = getStateSlotForProposerDuties(spec, currentEpoch, epoch);
+    LOG.debug(
         "Retrieving proposer duties for epoch {}, current epoch {}, state query slot {}",
         epoch,
         currentEpoch,
         stateSlot);
-    if (epoch.isGreaterThan(combinedChainDataClient.getCurrentEpoch().plus(DUTY_EPOCH_TOLERANCE))) {
-      return SafeFuture.failedFuture(
-          new IllegalArgumentException(
-              String.format(
-                  "Proposer duties were requested for a future epoch (current: %s, requested: %s).",
-                  combinedChainDataClient.getCurrentEpoch().toString(), epoch)));
-    }
     return combinedChainDataClient
         .getStateAtSlotExact(stateSlot)
         .thenApply(maybeState -> maybeState.map(state -> getProposerDutiesFromState(state, epoch)));
+  }
+
+  // PRE: the distance between dutiesEpoch and currentEpoch is validated
+  static UInt64 getStateSlotForProposerDuties(
+      final Spec spec, final UInt64 currentEpoch, final UInt64 dutiesEpoch) {
+    if (dutiesEpoch.isLessThanOrEqualTo(currentEpoch)) {
+      return spec.computeStartSlotAtEpoch(dutiesEpoch);
+    }
+    if (spec.atEpoch(currentEpoch).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+      // Fulu and beyond has 2 epochs of proposer duties in `state.proposer_lookahead`.
+      // Beyond 2 epochs, we need to get inside the 2 epoch range.
+      // next epoch is easy, just use first slot of current epoch
+      // at 2 epochs, we need the first slot of the epoch before the duty epoch.
+      return dutiesEpoch.minusMinZero(currentEpoch).isGreaterThan(1)
+          ? spec.computeStartSlotAtEpoch(dutiesEpoch.decrement())
+          : spec.computeStartSlotAtEpoch(currentEpoch);
+    }
+
+    // pre-fulu we would perform epoch transition if needed, we will need the
+    // start slot of the duties epoch to compute proposer duties
+    return spec.computeStartSlotAtEpoch(dutiesEpoch);
   }
 
   @Override

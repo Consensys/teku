@@ -105,6 +105,7 @@ class PendingDuties {
   }
 
   public synchronized void recalculate() {
+    LOG.trace("Recalculating duties, epoch {}", epoch);
     scheduledDuties.cancel(false);
     // We need to ensure the duties future is completed before .
     scheduledDuties = dutyLoader.loadDutiesForEpoch(epoch);
