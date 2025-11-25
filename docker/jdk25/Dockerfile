@@ -1,4 +1,4 @@
-FROM eclipse-temurin:24 AS jre-build
+FROM eclipse-temurin:25 AS jre-build
 
 # Create a custom Java runtime
 RUN JAVA_TOOL_OPTIONS="-Djdk.lang.Process.launchMechanism=vfork" $JAVA_HOME/bin/jlink \

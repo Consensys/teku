@@ -54,9 +54,10 @@ public interface Eth2Peer extends Peer, SyncSource {
       final MetadataMessagesFactory metadataMessagesFactory,
       final PeerChainValidator peerChainValidator,
       final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator,
-      final RateTracker blockRequestTracker,
+      final RateTracker blocksRequestTracker,
       final RateTracker blobSidecarsRequestTracker,
       final RateTracker dataColumnSidecarsRequestTracker,
+      final RateTracker executionPayloadEnvelopesRequestTracker,
       final RateTracker requestTracker,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider) {
@@ -69,9 +70,10 @@ public interface Eth2Peer extends Peer, SyncSource {
         metadataMessagesFactory,
         peerChainValidator,
         dataColumnSidecarSignatureValidator,
-        blockRequestTracker,
+        blocksRequestTracker,
         blobSidecarsRequestTracker,
         dataColumnSidecarsRequestTracker,
+        executionPayloadEnvelopesRequestTracker,
         requestTracker,
         metricsSystem,
         timeProvider);
@@ -133,22 +135,59 @@ public interface Eth2Peer extends Peer, SyncSource {
   <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
       final Eth2RpcMethod<I, O> method, final RpcRequestBodySelector<I> requestBodySelector);
 
-  Optional<RequestKey> approveBlocksRequest(
-      ResponseCallback<SignedBeaconBlock> callback, long blocksCount);
+  <T> Optional<RequestKey> approveObjectsRequest(
+      RequestObject requestObject, ResponseCallback<T> callback, long objectsCount);
 
-  void adjustBlocksRequest(RequestKey requestKey, long objectCount);
+  void adjustObjectsRequest(
+      RequestObject requestObject, RequestKey requestKey, long returnedObjectsCount);
 
-  Optional<RequestKey> approveBlobSidecarsRequest(
-      ResponseCallback<BlobSidecar> callback, long blobSidecarsCount);
+  default Optional<RequestKey> approveBlocksRequest(
+      final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
+    return approveObjectsRequest(RequestObject.BLOCK, callback, blocksCount);
+  }
 
-  void adjustBlobSidecarsRequest(RequestKey blobSidecarsRequest, long returnedBlobSidecarsCount);
+  default void adjustBlocksRequest(final RequestKey requestKey, final long returnedBlocksCount) {
+    adjustObjectsRequest(RequestObject.BLOCK, requestKey, returnedBlocksCount);
+  }
+
+  default Optional<RequestKey> approveBlobSidecarsRequest(
+      final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
+    return approveObjectsRequest(RequestObject.BLOB_SIDECAR, callback, blobSidecarsCount);
+  }
+
+  default void adjustBlobSidecarsRequest(
+      final RequestKey requestKey, final long returnedBlobSidecarsCount) {
+    adjustObjectsRequest(RequestObject.BLOB_SIDECAR, requestKey, returnedBlobSidecarsCount);
+  }
+
+  default Optional<RequestKey> approveDataColumnSidecarsRequest(
+      final ResponseCallback<DataColumnSidecar> callback, final long dataColumnSidecarsCount) {
+    return approveObjectsRequest(
+        RequestObject.DATA_COLUMN_SIDECAR, callback, dataColumnSidecarsCount);
+  }
+
+  default void adjustDataColumnSidecarsRequest(
+      final RequestKey requestKey, final long returnedDataColumnSidecarsCount) {
+    adjustObjectsRequest(
+        RequestObject.DATA_COLUMN_SIDECAR, requestKey, returnedDataColumnSidecarsCount);
+  }
+
+  default Optional<RequestKey> approveExecutionPayloadEnvelopesRequest(
+      final ResponseCallback<SignedExecutionPayloadEnvelope> callback,
+      final long executionPayloadEnvelopesCount) {
+    return approveObjectsRequest(
+        RequestObject.EXECUTION_PAYLOAD_ENVELOPE, callback, executionPayloadEnvelopesCount);
+  }
+
+  default void adjustExecutionPayloadEnvelopesRequest(
+      final RequestKey requestKey, final long returnedExecutionPayloadEnvelopesCount) {
+    adjustObjectsRequest(
+        RequestObject.EXECUTION_PAYLOAD_ENVELOPE,
+        requestKey,
+        returnedExecutionPayloadEnvelopesCount);
+  }
 
   long getAvailableDataColumnSidecarsRequestCount();
-
-  Optional<RequestKey> approveDataColumnSidecarsRequest(
-      ResponseCallback<DataColumnSidecar> callback, long dataColumnSidecarsCount);
-
-  void adjustDataColumnSidecarsRequest(RequestKey requestKey, long objectCount);
 
   boolean approveRequest();
 

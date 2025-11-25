@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.util.AttestationValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.AttestationUtilDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
@@ -198,6 +199,16 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
             .getCommitteeBitsSchema()
             .orElseThrow()
             .ofBits(singleAttestation.getFirstCommitteeIndex().intValue()));
+  }
+
+  @Override
+  public AttestationValidationResult validateIndexValue(final UInt64 index) {
+    // [REJECT] attestation.data.index == 0
+    if (!index.isZero()) {
+      return AttestationValidationResult.invalid(
+          () -> String.format("Attestation data index must be 0 for Electra, but was %s.", index));
+    }
+    return AttestationValidationResult.VALID;
   }
 
   private SszBitlist getSingleAttestationAggregationBits(

@@ -14,10 +14,13 @@
 package tech.pegasys.teku.statetransition.execution;
 
 import java.util.Optional;
+import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -29,6 +32,13 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 public class DefaultExecutionPayloadManager implements ExecutionPayloadManager {
 
   private static final Logger LOG = LogManager.getLogger();
+
+  // The cache is currently only used for the `payload_present` voting, so no need for a long term
+  // caching
+  private static final int RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE = 32;
+
+  private final Set<Bytes32> recentSeenExecutionPayloads =
+      LimitedSet.createSynchronized(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
 
   private final AsyncRunner asyncRunner;
   private final ExecutionPayloadGossipValidator executionPayloadGossipValidator;
@@ -44,6 +54,11 @@ public class DefaultExecutionPayloadManager implements ExecutionPayloadManager {
     this.executionPayloadGossipValidator = executionPayloadGossipValidator;
     this.forkChoice = forkChoice;
     this.executionLayer = executionLayer;
+  }
+
+  @Override
+  public boolean isExecutionPayloadRecentlySeen(final Bytes32 beaconBlockRoot) {
+    return recentSeenExecutionPayloads.contains(beaconBlockRoot);
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
@@ -67,33 +82,24 @@ public class DefaultExecutionPayloadManager implements ExecutionPayloadManager {
     return validationResult;
   }
 
-  @Override
-  public SafeFuture<ExecutionPayloadImportResult> importExecutionPayload(
-      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
-    return doImportExecutionPayload(signedExecutionPayload)
-        .thenPeek(
-            result -> {
-              if (result.isSuccessful()) {
-                LOG.trace("Imported execution payload: {}", signedExecutionPayload);
-              }
-            });
-  }
-
   private SafeFuture<ExecutionPayloadImportResult> doImportExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+    // cache the seen `beacon_block_root`
+    recentSeenExecutionPayloads.add(signedExecutionPayload.getBeaconBlockRoot());
     return asyncRunner
         .runAsync(() -> forkChoice.onExecutionPayload(signedExecutionPayload, executionLayer))
         .thenPeek(
             result -> {
-              if (!result.isSuccessful()) {
+              if (result.isSuccessful()) {
+                LOG.debug(
+                    "Successfully imported execution payload {}",
+                    signedExecutionPayload::toLogString);
+              } else {
                 LOG.debug(
                     "Failed to import execution payload for reason {}: {}",
                     result::getFailureReason,
                     signedExecutionPayload::toLogString);
               }
-              LOG.debug(
-                  "Successfully imported execution payload {}",
-                  signedExecutionPayload::toLogString);
             })
         .exceptionally(
             ex -> {

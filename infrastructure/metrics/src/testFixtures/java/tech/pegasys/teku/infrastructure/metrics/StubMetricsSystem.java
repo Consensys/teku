@@ -89,7 +89,11 @@ public class StubMetricsSystem implements MetricsSystem {
         .computeIfAbsent(name, __ -> new StubLabelledGauge(category, name, help));
   }
 
-  public long getCounterValue(
+  public long getCounterValue(final MetricCategory category, final String name) {
+    return getLabelledCounterValue(category, name);
+  }
+
+  public long getLabelledCounterValue(
       final MetricCategory category, final String name, final String... labels) {
     final Map<String, StubLabelledCounter> counters = this.counters.get(category);
     final StubLabelledCounter labelledCounter = counters.get(name);

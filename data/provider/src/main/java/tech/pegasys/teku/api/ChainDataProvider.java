@@ -57,6 +57,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64Vector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -811,6 +812,31 @@ public class ChainDataProvider {
         .createSelectorForStateId(stateIdParam)
         .getState()
         .thenApply(this::getPendingPartialWithdrawals);
+  }
+
+  public SafeFuture<Optional<ObjectAndMetaData<SszUInt64Vector>>> getStateProposerLookahead(
+      final String stateIdParam) {
+    return stateSelectorFactory
+        .createSelectorForStateId(stateIdParam)
+        .getState()
+        .thenApply(this::getProposerLookahead);
+  }
+
+  Optional<ObjectAndMetaData<SszUInt64Vector>> getProposerLookahead(
+      final Optional<StateAndMetaData> maybeStateAndMetadata) {
+    checkMinimumMilestone(maybeStateAndMetadata, SpecMilestone.FULU, "proposer lookahead");
+
+    return maybeStateAndMetadata.map(
+        stateAndMetaData -> {
+          final SszUInt64Vector proposerLookahead =
+              stateAndMetaData.getData().toVersionFulu().orElseThrow().getProposerLookahead();
+          return new ObjectAndMetaData<>(
+              proposerLookahead,
+              stateAndMetaData.getMilestone(),
+              stateAndMetaData.isExecutionOptimistic(),
+              stateAndMetaData.isCanonical(),
+              stateAndMetaData.isFinalized());
+        });
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<SszList<PendingConsolidation>>>>

@@ -225,7 +225,7 @@ class LocalSignerTest {
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
-                "pToYn303XI2b3xhMp9gnkHdWYTISbpMUYns6iy3BL+n5YBt/zrsS6I1tAJ67Aw0sBhc2NIyt2BH8va1gc9pMhFTUwM068fTEHiGBy9rlOv2xMsKwkH01Jjz0ukS7bgDw"));
+                "jKXnVjb5vBjxXDb3SDaoU0nXkfZEvbHjtUlR5X4YQxpjECxhGCbuWDU736kvV5C2BUD7aGjk6iHMPv3qyr/YNcbnoyZczx5c9hKy5nLZAxbkQLIhsVUElFDn0TfolUy2"));
 
     final SafeFuture<BLSSignature> result = signer.signExecutionPayloadBid(bid, fork);
     asyncRunner.executeQueuedActions();
@@ -265,7 +265,7 @@ class LocalSignerTest {
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
-                "ldhpHqJ1c6qzpC5imB8DjWLmPSL9SvoBsGQc8PuW6GmsoioKu54BTpRjiJk6h7DMDQNC5mcYQc3rzNDaDs/bpIpfSkvMyLCsvTKkRnDQzEIgng/ONDSHj2U4o89tkSZD"));
+                "tvf+z4784dw1b8XIDKuCBIAeGGQimNn0a6rH5s0NK3H8jKMgIKKadvR5Ui02bBtCGJwR7iLDGMF3KdzkMspzyVb1D+hdL600LttoSBp+HM+NJ0xsT5ajwNk1yO0RzajH"));
 
     final SafeFuture<BLSSignature> result =
         signer.signPayloadAttestationData(payloadAttestationData, fork);

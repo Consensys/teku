@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -25,8 +25,10 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler.SamplingEligibilityStatus.NOT_REQUIRED_OLD_EPOCH;
 import static tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler.SamplingEligibilityStatus.REQUIRED;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -60,6 +62,13 @@ public class DasPreSamplerTest {
     verify(sampler).flush();
     verifyNoMoreInteractions(sampler);
     verifyNoInteractions(custody, custodyGroupCountManager);
+  }
+
+  @Test
+  void onNewPreImportedBlocks_shouldFilterNull() {
+    final List<SignedBeaconBlock> blocks = new ArrayList<>();
+    blocks.add(null);
+    assertDoesNotThrow(() -> dasPreSampler.onNewPreImportBlocks(blocks));
   }
 
   @Test
@@ -110,7 +119,8 @@ public class DasPreSamplerTest {
 
     verify(custody).hasCustodyDataColumnSidecar(col1);
     verify(custody).hasCustodyDataColumnSidecar(col5);
-    verify(sampler, never()).onAlreadyKnownDataColumn(any(), any());
+    verify(sampler, never())
+        .onNewValidatedDataColumnSidecar(any(DataColumnSlotAndIdentifier.class), any());
     verify(sampler).checkDataAvailability(block.getSlot(), block.getRoot());
     verify(sampler).flush();
   }
@@ -137,9 +147,12 @@ public class DasPreSamplerTest {
     dasPreSampler.onNewPreImportBlocks(List.of(block));
 
     // Verify sampler is notified about the column in custody
-    verify(sampler).onAlreadyKnownDataColumn(col2, RemoteOrigin.CUSTODY);
+    verify(sampler).onNewValidatedDataColumnSidecar(col2, RemoteOrigin.CUSTODY);
     verify(sampler, never())
-        .onAlreadyKnownDataColumn(argThat(id -> id.columnIndex().equals(UInt64.valueOf(4))), any());
+        .onNewValidatedDataColumnSidecar(
+            ArgumentMatchers.<DataColumnSlotAndIdentifier>argThat(
+                id -> id.columnIndex().equals(UInt64.valueOf(4))),
+            any());
 
     verify(sampler).checkDataAvailability(block.getSlot(), block.getRoot());
     verify(sampler).flush();

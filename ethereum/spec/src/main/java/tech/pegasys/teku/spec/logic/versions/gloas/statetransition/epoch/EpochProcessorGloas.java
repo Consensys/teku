@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch;
 
+import com.google.common.collect.Iterables;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableVector;
@@ -70,36 +72,32 @@ public class EpochProcessorGloas extends EpochProcessorFulu {
     final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
     final SszMutableVector<BuilderPendingPayment> builderPendingPayments =
         stateGloas.getBuilderPendingPayments();
-    builderPendingPayments
-        .asList()
-        .subList(0, specConfig.getSlotsPerEpoch())
+    IntStream.range(0, specConfig.getSlotsPerEpoch())
         .forEach(
-            payment -> {
+            i -> {
+              final BuilderPendingPayment payment = builderPendingPayments.get(i);
               if (payment.getWeight().isGreaterThan(quorum)) {
+                final UInt64 amount = payment.getWithdrawal().getAmount();
                 final UInt64 exitQueueEpoch =
                     BeaconStateMutatorsElectra.required(beaconStateMutators)
-                        .computeExitEpochAndUpdateChurn(
-                            stateGloas, payment.getWithdrawal().getAmount());
+                        .computeExitEpochAndUpdateChurn(stateGloas, amount);
+                final UInt64 withdrawableEpoch =
+                    exitQueueEpoch.plus(specConfig.getMinValidatorWithdrawabilityDelay());
                 stateGloas
                     .getBuilderPendingWithdrawals()
                     .append(
-                        payment
-                            .getWithdrawal()
-                            .copyWithNewWithdrawableEpoch(
-                                exitQueueEpoch.plus(
-                                    specConfig.getMinValidatorWithdrawabilityDelay())));
+                        payment.getWithdrawal().copyWithNewWithdrawableEpoch(withdrawableEpoch));
               }
             });
-    final List<BuilderPendingPayment> updatedBuilderPendingPayments =
+    final List<BuilderPendingPayment> oldPayments =
         new ArrayList<>(
             builderPendingPayments
                 .asList()
                 .subList(specConfig.getSlotsPerEpoch(), builderPendingPayments.size()));
-    final BuilderPendingPayment emptyPayment =
-        builderPendingPayments.getSchema().getElementSchema().getDefault();
-    updatedBuilderPendingPayments.addAll(
-        IntStream.range(0, specConfig.getSlotsPerEpoch()).mapToObj(__ -> emptyPayment).toList());
-    stateGloas.setBuilderPendingPayments(
-        builderPendingPayments.getSchema().createFromElements(updatedBuilderPendingPayments));
+    final List<BuilderPendingPayment> newPayments =
+        Collections.nCopies(
+            specConfig.getSlotsPerEpoch(),
+            builderPendingPayments.getSchema().getElementSchema().getDefault());
+    builderPendingPayments.setAll(Iterables.concat(oldPayments, newPayments));
   }
 }

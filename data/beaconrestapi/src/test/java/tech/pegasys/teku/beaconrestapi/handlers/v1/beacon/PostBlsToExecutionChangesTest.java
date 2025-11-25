@@ -42,15 +42,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
 class PostBlsToExecutionChangesTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   public void setup() {
-    spec = TestSpecFactory.createMinimalCapella();
-    dataStructureUtil = new DataStructureUtil(spec);
+    setSpec(TestSpecFactory.createMinimalCapella());
     setHandler(new PostBlsToExecutionChanges(nodeDataProvider, schemaDefinitionCache));
   }
 

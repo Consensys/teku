@@ -40,8 +40,11 @@ import org.assertj.core.api.Condition;
 import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
+import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGProof;
@@ -83,6 +86,7 @@ import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidato
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
+import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -128,6 +132,10 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           "Test " + testDefinition.getDisplayName() + " has been ignored");
     }
 
+    final AsyncRunnerFactory asyncRunnerFactory =
+        AsyncRunnerFactory.createDefault(
+            new MetricTrackingExecutorFactory(new StubMetricsSystem()));
+
     // Load `meta.yaml` and read the BLS setting
     final ForkChoiceMetaData metaData = getMetaData(testDefinition);
     final boolean blsDisabled = metaData.getBlsSetting() == IGNORED;
@@ -154,7 +162,9 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final DasSamplerBasic dasSampler =
         new DasSamplerBasic(
             spec,
+            asyncRunnerFactory.create("das", 1),
             currentSlotProvider,
+            RPCFetchDelayProvider.NO_DELAY,
             DataColumnSidecarRecoveringCustody.NOOP,
             new DataColumnSidecarRetrieverStub(),
             // using a const for the custody group count here, the test doesn't care

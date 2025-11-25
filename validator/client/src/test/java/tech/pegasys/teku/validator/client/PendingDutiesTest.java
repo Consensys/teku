@@ -244,10 +244,10 @@ class PendingDutiesTest {
 
   private void validateMetrics(final String duty, final long successCount, final long failCount) {
     final long labelledCounterSuccess =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.VALIDATOR, "duties_performed_total", duty, "success");
     final long labelledCounterFailed =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.VALIDATOR, "duties_performed_total", duty, "failed");
     assertThat(labelledCounterSuccess).isEqualTo(successCount);
     assertThat(labelledCounterFailed).isEqualTo(failCount);

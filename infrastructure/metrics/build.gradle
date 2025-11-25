@@ -1,5 +1,5 @@
 dependencies {
-    api 'org.hyperledger.besu:plugin-api'
+    api 'org.hyperledger.besu:besu-plugin-api'
 
     implementation project(':infrastructure:exceptions')
     implementation project(':infrastructure:io')
@@ -8,9 +8,9 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'io.consensys.tuweni:tuweni-units'
     implementation 'org.hdrhistogram:HdrHistogram'
-    implementation 'org.hyperledger.besu.internal:metrics-core'
+    implementation 'org.hyperledger.besu.internal:besu-metrics-core'
 
     testFixturesApi 'com.google.guava:guava'
-    testFixturesApi 'org.hyperledger.besu:plugin-api'
-    testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
+    testFixturesApi 'org.hyperledger.besu:besu-plugin-api'
+    testFixturesImplementation 'org.hyperledger.besu.internal:besu-metrics-core'
 }

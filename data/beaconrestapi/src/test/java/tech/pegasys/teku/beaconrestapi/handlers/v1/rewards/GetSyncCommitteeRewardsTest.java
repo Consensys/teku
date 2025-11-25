@@ -40,7 +40,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetSyncCommitteeRewardsTest
     extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
@@ -48,8 +47,7 @@ public class GetSyncCommitteeRewardsTest
 
   @BeforeEach
   void setup() {
-    spec = TestSpecFactory.createMinimalAltair();
-    dataStructureUtil = new DataStructureUtil(spec);
+    setSpec(TestSpecFactory.createMinimalAltair());
     initialise(SpecMilestone.ALTAIR);
     genesis();
     final SyncAggregate syncAggregate =

@@ -178,7 +178,7 @@ public class Eth2P2PNetworkBuilder {
     final RpcEncoding rpcEncoding =
         RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
     if (statusMessageFactory == null) {
-      statusMessageFactory = new StatusMessageFactory(spec, combinedChainDataClient);
+      statusMessageFactory = new StatusMessageFactory(spec, combinedChainDataClient, metricsSystem);
       eventChannels.subscribe(SlotEventsChannel.class, statusMessageFactory);
     }
     if (metadataMessagesFactory != null && spec.isMilestoneSupported(SpecMilestone.FULU)) {

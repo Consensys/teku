@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.statetransition.util;
 
+import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS;
+import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_MIN_WAIT_MILLIS;
+import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_TARGET_WAIT_MILLIS;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Collections;
@@ -38,10 +42,12 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.datacolumns.CurrentSlotProvider;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELRecoveryManager;
-import tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELRecoveryManagerImpl;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELManager;
+import tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELManagerImpl;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
+import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class PoolFactory {
@@ -146,16 +152,17 @@ public class PoolFactory {
         DEFAULT_MAX_BLOCKS);
   }
 
-  public DataColumnSidecarELRecoveryManager createDataColumnSidecarELRecoveryManager(
+  public DataColumnSidecarELManager createDataColumnSidecarELManager(
       final Spec spec,
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
       final BiConsumer<List<DataColumnSidecar>, RemoteOrigin> dataColumnSidecarPublisher,
+      final DataColumnSidecarGossipValidator dataColumnSidecarGossipValidator,
       final CustodyGroupCountManager custodyGroupCountManager,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider) {
-    return new DataColumnSidecarELRecoveryManagerImpl(
+    return new DataColumnSidecarELManagerImpl(
         spec,
         asyncRunner,
         recentChainData,
@@ -168,7 +175,8 @@ public class PoolFactory {
         metricsSystem,
         timeProvider,
         EL_BLOBS_FETCHING_DELAY,
-        EL_BLOBS_FETCHING_MAX_RETRIES);
+        EL_BLOBS_FETCHING_MAX_RETRIES,
+        dataColumnSidecarGossipValidator);
   }
 
   public BlockBlobSidecarsTrackersPoolImpl createPoolForBlockBlobSidecarsTrackers(
@@ -183,17 +191,28 @@ public class PoolFactory {
       final UInt64 historicalBlockTolerance,
       final UInt64 futureBlockTolerance,
       final int maxTrackers) {
+
+    final RPCFetchDelayProvider rpcFetchDelayProvider =
+        RPCFetchDelayProvider.create(
+            spec,
+            timeProvider,
+            recentChainData,
+            CurrentSlotProvider.create(spec, recentChainData.getStore()),
+            DEFAULT_MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS,
+            DEFAULT_MIN_WAIT_MILLIS,
+            DEFAULT_TARGET_WAIT_MILLIS);
+
     return new BlockBlobSidecarsTrackersPoolImpl(
         blockImportChannel,
         blockBlobSidecarsTrackersPoolSizeGauge,
         blockBlobSidecarsTrackersPoolStats,
         spec,
-        timeProvider,
         asyncRunner,
         recentChainData,
         executionLayer,
         gossipValidatorSupplier,
         blobSidecarGossipPublisher,
+        rpcFetchDelayProvider,
         historicalBlockTolerance,
         futureBlockTolerance,
         maxTrackers);
@@ -203,12 +222,12 @@ public class PoolFactory {
   BlockBlobSidecarsTrackersPoolImpl createPoolForBlockBlobSidecarsTrackers(
       final BlockImportChannel blockImportChannel,
       final Spec spec,
-      final TimeProvider timeProvider,
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
       final Supplier<BlobSidecarGossipValidator> gossipValidatorSupplier,
       final Function<BlobSidecar, SafeFuture<Void>> blobSidecarGossipPublisher,
+      final RPCFetchDelayProvider rpcFetchDelayProvider,
       final UInt64 historicalBlockTolerance,
       final UInt64 futureBlockTolerance,
       final int maxItems,
@@ -218,12 +237,12 @@ public class PoolFactory {
         blockBlobSidecarsTrackersPoolSizeGauge,
         blockBlobSidecarsTrackersPoolStats,
         spec,
-        timeProvider,
         asyncRunner,
         recentChainData,
         executionLayer,
         gossipValidatorSupplier,
         blobSidecarGossipPublisher,
+        rpcFetchDelayProvider,
         historicalBlockTolerance,
         futureBlockTolerance,
         maxItems,

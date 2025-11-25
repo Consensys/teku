@@ -83,6 +83,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
@@ -1074,6 +1075,43 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
                     Optional.of(UInt64.valueOf(129))))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("more than 128 slots ahead");
+  }
+
+  @Test
+  void getProposerLookahead_withEmptyInput() {
+    final Spec capella = TestSpecFactory.createMinimalCapella();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(capella);
+    final ChainDataProvider chainDataProvider = setupBySpec(capella, dataStructureUtil, 16);
+    assertThat(chainDataProvider.getProposerLookahead(Optional.empty())).isEmpty();
+  }
+
+  @Test
+  void getProposerLookahead_respondsSuccessfully() {
+    final Spec capella = TestSpecFactory.createMinimalFulu();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(capella);
+    final BeaconStateFulu fuluState =
+        BeaconStateFulu.required(dataStructureUtil.randomBeaconState());
+    final ChainDataProvider chainDataProvider = setupBySpec(capella, dataStructureUtil, 16);
+    final StateAndMetaData stateAndMetaData =
+        new StateAndMetaData(fuluState, SpecMilestone.FULU, true, true, true);
+    final var expectedResult =
+        new ObjectAndMetaData<>(
+            fuluState.getProposerLookahead(), SpecMilestone.FULU, true, true, true);
+    assertThat(chainDataProvider.getProposerLookahead(Optional.of(stateAndMetaData)))
+        .isEqualTo(Optional.of(expectedResult));
+  }
+
+  @Test
+  void getProposerLookahead_failsBeforeFulu() {
+    final Spec capella = TestSpecFactory.createMinimalCapella();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(capella);
+    final ChainDataProvider chainDataProvider = setupBySpec(capella, dataStructureUtil, 16);
+    final StateAndMetaData stateAndMetaData =
+        new StateAndMetaData(
+            dataStructureUtil.randomBeaconState(), SpecMilestone.CAPELLA, true, true, true);
+    assertThatThrownBy(() -> chainDataProvider.getProposerLookahead(Optional.of(stateAndMetaData)))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("does not contain proposer lookahead");
   }
 
   @Test

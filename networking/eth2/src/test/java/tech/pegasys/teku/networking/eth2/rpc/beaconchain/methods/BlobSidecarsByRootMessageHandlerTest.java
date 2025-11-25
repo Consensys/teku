@@ -169,7 +169,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
             });
 
     final long countTooBigCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK,
             "rpc_blob_sidecars_by_root_requests_total",
             "count_too_big");
@@ -194,7 +194,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
     verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
     final long rateLimitedCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK, "rpc_blob_sidecars_by_root_requests_total", "rate_limited");
 
     assertThat(rateLimitedCount).isOne();

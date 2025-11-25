@@ -24,6 +24,7 @@ import java.util.OptionalInt;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.fetch.DefaultFetchTaskFactory;
 import tech.pegasys.teku.beacon.sync.fetch.FetchTaskFactory;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
@@ -117,6 +118,8 @@ public class SyncingNodeManager {
     final MergeTransitionBlockValidator transitionBlockValidator =
         new MergeTransitionBlockValidator(spec, recentChainData);
 
+    final MetricsSystem metricsSystem = new StubMetricsSystem();
+
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,
@@ -124,7 +127,7 @@ public class SyncingNodeManager {
             recentChainData,
             new NoopForkChoiceNotifier(),
             transitionBlockValidator,
-            new StubMetricsSystem());
+            metricsSystem);
 
     final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =
         eventChannels.getPublisher(ReceivedBlockEventsChannel.class);
@@ -132,7 +135,7 @@ public class SyncingNodeManager {
     final BlockGossipValidator blockGossipValidator =
         new BlockGossipValidator(
             spec,
-            new GossipValidationHelper(spec, recentChainData),
+            new GossipValidationHelper(spec, recentChainData, metricsSystem),
             receivedBlockEventsChannelPublisher);
     final BlockValidator blockValidator = new BlockValidator(blockGossipValidator);
 
