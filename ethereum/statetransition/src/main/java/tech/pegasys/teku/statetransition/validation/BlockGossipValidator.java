@@ -40,7 +40,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
@@ -104,6 +103,8 @@ public class BlockGossipValidator {
     return validateSlotIsAfterFinalized(block)
         .or(
             () ->
+                // First equivocation check without marking the block as received to avoid rejecting
+                // other blocks that could still come from gossip
                 convertEquivocationResultToValidationResult(
                     performBlockEquivocationCheck(false, block)))
         .or(() -> validateSlotIsNotFromFuture(block))
@@ -130,6 +131,9 @@ public class BlockGossipValidator {
         .or(() -> validateSignature(block, parentState))
         .or(
             () ->
+                // Final equivocation check as last step to mark the block as received (depending on
+                // the BroadcastValidationLevel) after considering any other block that have come
+                // from gossip in the meantime
                 convertEquivocationResultToValidationResult(
                     performBlockEquivocationCheck(markAsReceived, block)))
         .orElse(InternalValidationResult.ACCEPT);
@@ -265,7 +269,7 @@ public class BlockGossipValidator {
         block.getMessage().getBody().getOptionalSignedExecutionPayloadBid();
     if (maybeSignedExecutionPayloadBid.isPresent()) {
       return validateExecutionPayloadBid(
-          block.getParentRoot(), parentState, maybeSignedExecutionPayloadBid.get());
+          block.getParentRoot(), maybeSignedExecutionPayloadBid.get());
     } else {
       return validateExecutionPayload(block, parentState);
     }
@@ -297,20 +301,16 @@ public class BlockGossipValidator {
   }
 
   private Optional<InternalValidationResult> validateExecutionPayloadBid(
-      final Bytes32 blockParentRoot,
-      final BeaconState parentState,
-      final SignedExecutionPayloadBid signedExecutionPayloadBid) {
+      final Bytes32 blockParentRoot, final SignedExecutionPayloadBid signedExecutionPayloadBid) {
     final ExecutionPayloadBid executionPayloadBid = signedExecutionPayloadBid.getMessage();
-    final BeaconStateGloas parentStateGloas = BeaconStateGloas.required(parentState);
     /*
      * [REJECT] The block's execution payload parent (defined by bid.parent_block_hash) passes all validation
      */
-    if (!executionPayloadBid.getParentBlockHash().equals(parentStateGloas.getLatestBlockHash())) {
+    if (!gossipValidationHelper.isBlockAvailable(executionPayloadBid.getParentBlockRoot())) {
       return Optional.of(
           reject(
-              "Execution payload bid has invalid parent block hash %s, expecting %s",
-              executionPayloadBid.getParentBlockHash().toHexString(),
-              parentStateGloas.getLatestBlockHash().toHexString()));
+              "Execution payload bid has invalid parent block root %s",
+              executionPayloadBid.getParentBlockRoot()));
     }
     /*
      * [REJECT] The bid's parent (defined by bid.parent_block_root) equals the block's parent (defined by block.parent_root)
@@ -319,8 +319,7 @@ public class BlockGossipValidator {
       return Optional.of(
           reject(
               "Execution payload has invalid parent block root %s, expecting %s",
-              executionPayloadBid.getParentBlockRoot().toHexString(),
-              blockParentRoot.toHexString()));
+              executionPayloadBid.getParentBlockRoot(), blockParentRoot));
     }
     return Optional.empty();
   }
