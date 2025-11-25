@@ -220,6 +220,19 @@ public class PeerSubnetSubscriptions {
     return dataColumnSidecarSubnetSubscriptions.getSubnetSubscriptions(peerId);
   }
 
+  public Optional<SszBitvector> getAttestationSubnetSubscriptionsIfAvailable(final NodeId peerId) {
+    return attestationSubnetSubscriptions.getSubnetSubscriptionsIfAvailable(peerId);
+  }
+
+  public Optional<SszBitvector> getSyncCommitteeSubscriptionsIfAvailable(final NodeId peerId) {
+    return syncCommitteeSubnetSubscriptions.getSubnetSubscriptionsIfAvailable(peerId);
+  }
+
+  public Optional<SszBitvector> getDataColumnSidecarSubnetSubscriptionsIfAvailable(
+      final NodeId peerId) {
+    return dataColumnSidecarSubnetSubscriptions.getSubnetSubscriptionsIfAvailable(peerId);
+  }
+
   public SszBitvector getDataColumnSidecarSubnetSubscriptionsByNodeId(
       final UInt256 peerId, final Optional<Integer> custodyGroupCount) {
     return nodeIdToDataColumnSidecarSubnetsCalculator
@@ -319,6 +332,10 @@ public class PeerSubnetSubscriptions {
 
     public SszBitvector getSubnetSubscriptions(final NodeId peerId) {
       return subscriptionsByPeer.getOrDefault(peerId, subscriptionSchema.getDefault());
+    }
+
+    public Optional<SszBitvector> getSubnetSubscriptionsIfAvailable(final NodeId peerId) {
+      return Optional.ofNullable(subscriptionsByPeer.get(peerId));
     }
 
     public SszBitvectorSchema<?> getSubscriptionSchema() {
