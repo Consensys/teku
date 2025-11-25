@@ -21,7 +21,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.OptionalInt;
-import java.util.Set;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -44,7 +43,6 @@ class BlockPublisherFuluTest {
       mock(DataColumnSidecarGossipChannel.class);
   private final CustodyGroupCountManager custodyGroupCountManager =
       mock(CustodyGroupCountManager.class);
-  private final OptionalInt dasPublishWithholdColumnsEverySlots = OptionalInt.empty();
   private final BlockPublisherFulu blockPublisherFulu =
       new BlockPublisherFulu(
           mock(AsyncRunner.class),
@@ -54,7 +52,19 @@ class BlockPublisherFuluTest {
           dataColumnSidecarGossipChannel,
           mock(DutyMetrics.class),
           custodyGroupCountManager,
-          dasPublishWithholdColumnsEverySlots,
+          OptionalInt.empty(),
+          true);
+  private final int dasPublishWithholdColumnsEverySlots = 10;
+  final BlockPublisherFulu blockPublisherFuluTest =
+      new BlockPublisherFulu(
+          mock(AsyncRunner.class),
+          mock(BlockFactory.class),
+          mock(BlockImportChannel.class),
+          mock(BlockGossipChannel.class),
+          dataColumnSidecarGossipChannel,
+          mock(DutyMetrics.class),
+          custodyGroupCountManager,
+          OptionalInt.of(dasPublishWithholdColumnsEverySlots),
           true);
 
   private final Spec spec = TestSpecFactory.createMinimalFulu();
@@ -92,112 +102,53 @@ class BlockPublisherFuluTest {
 
   @Test
   void mustPublishAll_isAlwaysFalseWhenWithholdIsSetBeforeFirstUse() {
-    final BlockPublisherFulu blockPublisherFulu =
-        new BlockPublisherFulu(
-            mock(AsyncRunner.class),
-            mock(BlockFactory.class),
-            mock(BlockImportChannel.class),
-            mock(BlockGossipChannel.class),
-            dataColumnSidecarGossipChannel,
-            mock(DutyMetrics.class),
-            custodyGroupCountManager,
-            OptionalInt.of(10),
-            true);
     for (UInt64 i = UInt64.ZERO; i.isLessThan(1_000); i = i.increment()) {
-      assertThat(blockPublisherFulu.mustPublishAll(i)).isFalse();
+      assertThat(blockPublisherFuluTest.mustPublishAll(i)).isFalse();
     }
+
+    // when trying to publish in any slot, non-custodied columns will be withheld
+    final List<UInt64> custodiedColumns = List.of(UInt64.valueOf(1), UInt64.valueOf(3));
+    when(custodyGroupCountManager.getCustodyColumnIndices()).thenReturn(custodiedColumns);
+    blockPublisherFuluTest.publishDataColumnSidecars(
+        dataColumnSidecars, BlockPublishingPerformance.NOOP);
+    final List<DataColumnSidecar> expectedDataColumnSidecars =
+        dataColumnSidecars.stream()
+            .filter(sidecar -> custodiedColumns.contains(sidecar.getIndex()))
+            .toList();
+    // only custodied columns are published
+    verify(dataColumnSidecarGossipChannel)
+        .publishDataColumnSidecars(expectedDataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL);
   }
 
   @Test
   void mustPublishAll_isResetAfterPublish() {
-    final int newWithholdSlots = 10;
-    final BlockPublisherFulu blockPublisherFulu =
-        new BlockPublisherFulu(
-            mock(AsyncRunner.class),
-            mock(BlockFactory.class),
-            mock(BlockImportChannel.class),
-            mock(BlockGossipChannel.class),
-            dataColumnSidecarGossipChannel,
-            mock(DutyMetrics.class),
-            custodyGroupCountManager,
-            OptionalInt.of(newWithholdSlots),
-            true);
-    assertThat(blockPublisherFulu.mustPublishAll(UInt64.ZERO)).isFalse();
+    assertThat(blockPublisherFuluTest.mustPublishAll(UInt64.ZERO)).isFalse();
 
-    when(custodyGroupCountManager.getCustodyColumnIndices())
-        .thenReturn(List.of(UInt64.valueOf(1), UInt64.valueOf(3)));
-    blockPublisherFulu.publishDataColumnSidecars(
+    final List<UInt64> custodiedColumns = List.of(UInt64.valueOf(1), UInt64.valueOf(3));
+    when(custodyGroupCountManager.getCustodyColumnIndices()).thenReturn(custodiedColumns);
+    blockPublisherFuluTest.publishDataColumnSidecars(
         dataColumnSidecars, BlockPublishingPerformance.NOOP);
-    final List<DataColumnSidecar> expectedDataColumnSidecars =
-        dataColumnSidecars.stream()
-            .filter(sidecar -> Set.of(1, 3).contains(sidecar.getIndex().intValue()))
-            .toList();
     // only custodied columns are published
     verify(dataColumnSidecarGossipChannel)
-        .publishDataColumnSidecars(expectedDataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL);
+        .publishDataColumnSidecars(
+            dataColumnSidecars.stream()
+                .filter(sidecar -> custodiedColumns.contains(sidecar.getIndex()))
+                .toList(),
+            RemoteOrigin.LOCAL_PROPOSAL);
 
     final UInt64 lastSlot = dataColumnSidecars.getFirst().getSlot();
     // publish all next newWithholdSlots slots
     for (UInt64 currentSlot = lastSlot;
-        currentSlot.isLessThan(lastSlot.plus(newWithholdSlots));
+        currentSlot.isLessThan(lastSlot.plus(dasPublishWithholdColumnsEverySlots));
         currentSlot = currentSlot.increment()) {
-      assertThat(blockPublisherFulu.mustPublishAll(currentSlot)).isTrue();
+      assertThat(blockPublisherFuluTest.mustPublishAll(currentSlot)).isTrue();
     }
+
     // but after that we need to withhold again
-    for (UInt64 currentSlot = lastSlot.plus(newWithholdSlots + 1);
-        currentSlot.isLessThan(lastSlot.plus(newWithholdSlots * 2));
+    for (UInt64 currentSlot = lastSlot.plus(dasPublishWithholdColumnsEverySlots + 1);
+        currentSlot.isLessThan(lastSlot.plus(dasPublishWithholdColumnsEverySlots * 2));
         currentSlot = currentSlot.increment()) {
-      assertThat(blockPublisherFulu.mustPublishAll(currentSlot)).isFalse();
+      assertThat(blockPublisherFuluTest.mustPublishAll(currentSlot)).isFalse();
     }
-  }
-
-  @Test
-  void publishDataColumnSidecarsWithheld() {
-    final int newWithholdSlots = 10;
-    final BlockPublisherFulu blockPublisherFulu =
-        new BlockPublisherFulu(
-            mock(AsyncRunner.class),
-            mock(BlockFactory.class),
-            mock(BlockImportChannel.class),
-            mock(BlockGossipChannel.class),
-            dataColumnSidecarGossipChannel,
-            mock(DutyMetrics.class),
-            custodyGroupCountManager,
-            OptionalInt.of(newWithholdSlots),
-            true);
-
-    when(custodyGroupCountManager.getCustodyColumnIndices())
-        .thenReturn(List.of(UInt64.valueOf(1), UInt64.valueOf(3)));
-    blockPublisherFulu.publishDataColumnSidecars(
-        dataColumnSidecars, BlockPublishingPerformance.NOOP);
-    final List<DataColumnSidecar> expectedDataColumnSidecars =
-        dataColumnSidecars.stream()
-            .filter(sidecar -> Set.of(1, 3).contains(sidecar.getIndex().intValue()))
-            .toList();
-    // only custodied columns are published
-    verify(dataColumnSidecarGossipChannel)
-        .publishDataColumnSidecars(expectedDataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL);
-
-    // next slot are all published
-    final UInt64 lastSlot = dataColumnSidecars.getFirst().getSlot();
-    final List<DataColumnSidecar> nextSlotDataColumnSidecars =
-        dataStructureUtil.randomDataColumnSidecars(lastSlot.increment());
-    blockPublisherFulu.publishDataColumnSidecars(
-        nextSlotDataColumnSidecars, BlockPublishingPerformance.NOOP);
-    verify(dataColumnSidecarGossipChannel)
-        .publishDataColumnSidecars(nextSlotDataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL);
-
-    // but after withhold slots DataColumnSidecars are filtered again
-    final List<DataColumnSidecar> afterWithholdIsOverDataColumnSidecars =
-        dataStructureUtil.randomDataColumnSidecars(lastSlot.plus(newWithholdSlots + 1));
-    blockPublisherFulu.publishDataColumnSidecars(
-        afterWithholdIsOverDataColumnSidecars, BlockPublishingPerformance.NOOP);
-    final List<DataColumnSidecar> expectedAfterWithholdIsOverDataColumnSidecars =
-        afterWithholdIsOverDataColumnSidecars.stream()
-            .filter(sidecar -> Set.of(1, 3).contains(sidecar.getIndex().intValue()))
-            .toList();
-    verify(dataColumnSidecarGossipChannel)
-        .publishDataColumnSidecars(
-            expectedAfterWithholdIsOverDataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL);
   }
 }
