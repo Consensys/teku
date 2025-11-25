@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.List;
@@ -39,8 +41,6 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecar
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
-
 public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -55,7 +55,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
 
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
-    private final RPCFetchDelayProvider rpcFetchDelayProvider;
+  private final RPCFetchDelayProvider rpcFetchDelayProvider;
 
   public DasSamplerBasic(
       final Spec spec,
@@ -76,7 +76,11 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
     this.custodyGroupCountManager = custodyGroupCountManager;
     this.recentChainData = recentChainData;
 
-      metricsSystem.createGauge(BEACON, "das_recently_sampled_blocks_size","DAS recently sampled blocks size", () -> (long) recentlySampledColumnsByRoot.size());
+    metricsSystem.createGauge(
+        BEACON,
+        "das_recently_sampled_blocks_size",
+        "DAS recently sampled blocks size",
+        () -> (long) recentlySampledColumnsByRoot.size());
   }
 
   @VisibleForTesting

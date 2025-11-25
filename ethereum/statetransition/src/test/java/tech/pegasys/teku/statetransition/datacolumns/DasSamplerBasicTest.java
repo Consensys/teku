@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -93,7 +92,8 @@ public class DasSamplerBasicTest {
             custody,
             retriever,
             custodyGroupCountManager,
-            recentChainData, metricsSystem);
+            recentChainData,
+            metricsSystem);
   }
 
   @Test
