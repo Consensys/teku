@@ -33,7 +33,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -247,11 +246,6 @@ public class DataColumnSidecarCustodyImpl
 
   @VisibleForTesting
   SafeFuture<SlotCustody> retrieveSlotCustody(final UInt64 slot) {
-    if (!spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-      return SafeFuture.completedFuture(
-          new SlotCustody(
-              slot, Optional.empty(), Collections.emptyList(), Collections.emptyList()));
-    }
     if (slot.isLessThan(
         minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot.get()))) {
       LOG.trace(

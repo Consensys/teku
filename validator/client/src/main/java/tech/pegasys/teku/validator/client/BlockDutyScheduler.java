@@ -16,8 +16,6 @@ package tech.pegasys.teku.validator.client;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Map;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.response.ValidatorStatus;
@@ -25,12 +23,11 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 
 public class BlockDutyScheduler extends AbstractDutyScheduler {
-  private static final Logger LOG = LogManager.getLogger();
+  private static final int LOOKAHEAD_EPOCHS = 0;
 
   public BlockDutyScheduler(
       final MetricsSystem metricsSystem, final DutyLoader<?> dutyLoader, final Spec spec) {
@@ -85,12 +82,6 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
 
   @Override
   public int getLookAheadEpochs(final UInt64 epoch) {
-    final int lookAheadEpochs =
-        spec.atEpoch(epoch).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU) ? 1 : 0;
-    LOG.debug(
-        "LookAhead period for block duty  at milestone {} is {}",
-        spec.atEpoch(epoch).getMilestone(),
-        lookAheadEpochs);
-    return lookAheadEpochs;
+    return LOOKAHEAD_EPOCHS;
   }
 }
