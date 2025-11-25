@@ -90,8 +90,8 @@ class BitvectorImplTest {
   @Test
   public void deserializationNonZeroPadding() {
     assertThatThrownBy(() -> BitvectorImpl.fromBytes(Bytes.of(5), 2))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("Invalid padding bits for Bitvector");
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Invalid padding bits for Bitvector");
   }
 
   @Test

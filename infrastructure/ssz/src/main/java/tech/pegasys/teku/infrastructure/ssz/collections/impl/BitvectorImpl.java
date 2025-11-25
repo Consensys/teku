@@ -35,11 +35,11 @@ class BitvectorImpl {
     BitSet bitset = new BitSet(size);
 
     final int paddingSize = (size % 8);
-    if(paddingSize != 0) {
+    if (paddingSize != 0) {
       final byte paddingMask = (byte) (0xFF << paddingSize);
-        if ((bytes.get((size - 1) / 8) & paddingMask) != 0) {
-          throw new IllegalArgumentException("Invalid padding bits for Bitvector");
-        }
+      if ((bytes.get((size - 1) / 8) & paddingMask) != 0) {
+        throw new IllegalArgumentException("Invalid padding bits for Bitvector");
+      }
     }
 
     for (int i = size - 1; i >= 0; i--) {
