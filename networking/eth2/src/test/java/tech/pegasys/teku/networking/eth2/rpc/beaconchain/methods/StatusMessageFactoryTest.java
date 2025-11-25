@@ -24,6 +24,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -43,6 +44,7 @@ class StatusMessageFactoryTest {
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private StatusMessageFactory statusMessageFactory;
 
@@ -58,7 +60,7 @@ class StatusMessageFactoryTest {
     when(recentChainData.getChainHead())
         .thenAnswer(__ -> Optional.of(ChainHead.create(dataStructureUtil.randomBlockAndState(0))));
 
-    statusMessageFactory = new StatusMessageFactory(spec, combinedChainDataClient);
+    statusMessageFactory = new StatusMessageFactory(spec, combinedChainDataClient, metricsSystem);
   }
 
   @Test

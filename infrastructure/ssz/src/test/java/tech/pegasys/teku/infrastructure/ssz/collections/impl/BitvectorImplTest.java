@@ -88,6 +88,21 @@ class BitvectorImplTest {
   }
 
   @Test
+  public void deserializationNonZeroPadding() {
+    assertThatThrownBy(() -> BitvectorImpl.fromBytes(Bytes.of(5), 2))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Invalid padding bits for Bitvector");
+  }
+
+  @Test
+  public void deserializationNoPadding() {
+    BitvectorImpl bitvector = BitvectorImpl.fromBytes(Bytes.of(5, 9), 16);
+    Bytes ssz = bitvector.serialize();
+    BitvectorImpl bitvector1 = BitvectorImpl.fromBytes(ssz, 16);
+    Assertions.assertEquals(bitvector, bitvector1);
+  }
+
+  @Test
   void bitlistHashTest() {
     Bytes32 hashOld =
         Bytes32.fromHexString("0x447ac4def72d4aa09ded8e1130cbe013511d4881c3393903ada630f034e985d7");

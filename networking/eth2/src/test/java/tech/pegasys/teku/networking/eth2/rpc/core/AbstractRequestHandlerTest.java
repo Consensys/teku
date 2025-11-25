@@ -24,6 +24,7 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
 import tech.pegasys.teku.networking.eth2.rpc.Utils;
@@ -49,6 +50,7 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   protected final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   protected final PeerLookup peerLookup = mock(PeerLookup.class);
+  protected final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   protected final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
   protected final RecentChainData recentChainData = mock(RecentChainData.class);
@@ -73,7 +75,7 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
             () -> CustodyGroupCountManager.NOOP,
             recentChainData,
             new NoOpMetricsSystem(),
-            new StatusMessageFactory(spec, combinedChainDataClient),
+            new StatusMessageFactory(spec, combinedChainDataClient, metricsSystem),
             new MetadataMessagesFactory(),
             getRpcEncoding(),
             DasReqRespLogger.NOOP);

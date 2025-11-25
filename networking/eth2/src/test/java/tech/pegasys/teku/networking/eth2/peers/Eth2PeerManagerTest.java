@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer.PeerStatusSubscriber;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
@@ -61,8 +62,9 @@ public class Eth2PeerManagerTest {
       mock(CombinedChainDataClient.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final Eth2PeerFactory eth2PeerFactory = mock(Eth2PeerFactory.class);
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final StatusMessageFactory statusMessageFactory =
-      new StatusMessageFactory(spec, combinedChainDataClient);
+      new StatusMessageFactory(spec, combinedChainDataClient, metricsSystem);
 
   private final Map<Peer, Eth2Peer> eth2Peers = new HashMap<>();
 
