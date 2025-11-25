@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -38,6 +39,8 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecar
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
+
 public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -52,7 +55,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
 
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
-  private final RPCFetchDelayProvider rpcFetchDelayProvider;
+    private final RPCFetchDelayProvider rpcFetchDelayProvider;
 
   public DasSamplerBasic(
       final Spec spec,
@@ -62,7 +65,8 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
       final DataColumnSidecarCustody custody,
       final DataColumnSidecarRetriever retriever,
       final CustodyGroupCountManager custodyGroupCountManager,
-      final RecentChainData recentChainData) {
+      final RecentChainData recentChainData,
+      final MetricsSystem metricsSystem) {
     this.currentSlotProvider = currentSlotProvider;
     this.rpcFetchDelayProvider = rpcFetchDelayProvider;
     this.spec = spec;
@@ -71,6 +75,8 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
     this.retriever = retriever;
     this.custodyGroupCountManager = custodyGroupCountManager;
     this.recentChainData = recentChainData;
+
+      metricsSystem.createGauge(BEACON, "das_recently_sampled_blocks_size","DAS recently sampled blocks size", () -> (long) recentlySampledColumnsByRoot.size());
   }
 
   @VisibleForTesting
@@ -157,6 +163,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   }
 
   private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {
+
     return recentlySampledColumnsByRoot.computeIfAbsent(
         blockRoot,
         k -> {

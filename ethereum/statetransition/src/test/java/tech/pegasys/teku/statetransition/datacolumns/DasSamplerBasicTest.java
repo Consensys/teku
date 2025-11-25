@@ -29,10 +29,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -57,6 +59,7 @@ public class DasSamplerBasicTest {
   private final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(0);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(stubTimeProvider);
   private final RPCFetchDelayProvider rpcFetchDelayProvider = mock(RPCFetchDelayProvider.class);
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private RecentChainData recentChainData;
   private DataColumnSidecarCustody custody;
@@ -90,7 +93,7 @@ public class DasSamplerBasicTest {
             custody,
             retriever,
             custodyGroupCountManager,
-            recentChainData);
+            recentChainData, metricsSystem);
   }
 
   @Test
