@@ -347,7 +347,7 @@ public class BlockGossipValidatorTest {
 
   @TestTemplate
   void shouldRejectWhenKzgCommitmentsExceedLimit(final SpecContext specContext) {
-    // We check kzg commitments in Deneb and Fulu only
+    // We check kzg commitments between Deneb and Fulu only
     specContext.assumeMilestonesActive(SpecMilestone.DENEB, SpecMilestone.FULU);
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem
