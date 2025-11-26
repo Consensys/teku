@@ -44,6 +44,7 @@ public class P2PConfig {
   public static final boolean DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED = false;
   public static final boolean DEFAULT_GOSSIP_SCORING_ENABLED = true;
   public static final boolean DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED = true;
+  public static final boolean DEFAULT_DAS_DISABLE_EL_RECOVERY = false;
   public static final int DEFAULT_BATCH_VERIFY_MAX_THREADS =
       Math.max(4, Runtime.getRuntime().availableProcessors() / 2);
   public static final int DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY = 30_000;
@@ -51,6 +52,7 @@ public class P2PConfig {
   public static final boolean DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED = false;
   // it's not allowed to set less than requirement which is > 0, so it's safe value
   public static final int DEFAULT_CUSTODY_GROUP_COUNT_OVERRIDE = 0;
+  public static final int DEFAULT_DAS_PUBLISH_WITHHOLD_COLUMNS_EVERY_SLOTS = -1;
   public static final int DEFAULT_RECOVERY_TIMEOUT_MS = 180_000;
   public static final int DEFAULT_DOWNLOAD_TIMEOUT_MS = 40_000;
   // RocksDB is configured with 6 background jobs and threads (DEFAULT_MAX_BACKGROUND_JOBS and
@@ -72,6 +74,8 @@ public class P2PConfig {
   private final int targetSubnetSubscriberCount;
   private final boolean subscribeAllSubnetsEnabled;
   private final int custodyGroupCountOverride;
+  private final OptionalInt dasPublishWithholdColumnsEverySlots;
+  private final boolean dasDisableElRecovery;
   private final int historicalDataMaxConcurrentQueries;
   private final int historicalDataMaxQueryQueueSize;
   private final int peerBlocksRateLimit;
@@ -97,6 +101,8 @@ public class P2PConfig {
       final int targetSubnetSubscriberCount,
       final boolean subscribeAllSubnetsEnabled,
       final int custodyGroupCountOverride,
+      final OptionalInt dasPublishWithholdColumnsEverySlots,
+      final boolean dasDisableElRecovery,
       final int historicalDataMaxConcurrentQueries,
       final int historicalDataMaxQueryQueueSize,
       final int peerBlocksRateLimit,
@@ -120,6 +126,8 @@ public class P2PConfig {
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
     this.custodyGroupCountOverride = custodyGroupCountOverride;
+    this.dasPublishWithholdColumnsEverySlots = dasPublishWithholdColumnsEverySlots;
+    this.dasDisableElRecovery = dasDisableElRecovery;
     this.historicalDataMaxConcurrentQueries = historicalDataMaxConcurrentQueries;
     this.historicalDataMaxQueryQueueSize = historicalDataMaxQueryQueueSize;
     this.peerBlocksRateLimit = peerBlocksRateLimit;
@@ -176,6 +184,14 @@ public class P2PConfig {
     final int maxGroups = specConfig.getNumberOfCustodyGroups();
     return Integer.min(
         maxGroups, Integer.max(minCustodyGroupRequirement, custodyGroupCountOverride));
+  }
+
+  public OptionalInt getDasPublishWithholdColumnsEverySlots() {
+    return dasPublishWithholdColumnsEverySlots;
+  }
+
+  public boolean isDasDisableElRecovery() {
+    return dasDisableElRecovery;
   }
 
   public int getHistoricalDataMaxConcurrentQueries() {
@@ -253,6 +269,9 @@ public class P2PConfig {
     private Boolean subscribeAllSubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
     private Boolean subscribeAllCustodySubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
     private int custodyGroupCountOverride = DEFAULT_CUSTODY_GROUP_COUNT_OVERRIDE;
+    private int dasPublishWithholdColumnsEverySlots =
+        DEFAULT_DAS_PUBLISH_WITHHOLD_COLUMNS_EVERY_SLOTS;
+    private boolean dasDisableElRecovery = DEFAULT_DAS_DISABLE_EL_RECOVERY;
     private int historicalDataMaxConcurrentQueries = DEFAULT_HISTORICAL_DATA_MAX_CONCURRENT_QUERIES;
     private int historicalDataMaxQueryQueueSize = DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE;
     private Integer peerBlocksRateLimit = DEFAULT_PEER_BLOCKS_RATE_LIMIT;
@@ -306,6 +325,13 @@ public class P2PConfig {
       if (subscribeAllCustodySubnetsEnabled) {
         custodyGroupCountOverride = Integer.MAX_VALUE;
       }
+      final OptionalInt dasPublishWithholdColumnsEverySlotsOptional;
+      if (dasPublishWithholdColumnsEverySlots == DEFAULT_DAS_PUBLISH_WITHHOLD_COLUMNS_EVERY_SLOTS) {
+        dasPublishWithholdColumnsEverySlotsOptional = OptionalInt.empty();
+      } else {
+        dasPublishWithholdColumnsEverySlotsOptional =
+            OptionalInt.of(dasPublishWithholdColumnsEverySlots);
+      }
 
       return new P2PConfig(
           spec,
@@ -316,6 +342,8 @@ public class P2PConfig {
           targetSubnetSubscriberCount,
           subscribeAllSubnetsEnabled,
           custodyGroupCountOverride,
+          dasPublishWithholdColumnsEverySlotsOptional,
+          dasDisableElRecovery,
           historicalDataMaxConcurrentQueries,
           historicalDataMaxQueryQueueSize,
           peerBlocksRateLimit,
@@ -377,6 +405,17 @@ public class P2PConfig {
 
     public Builder custodyGroupCountOverride(final int custodyGroupCountOverride) {
       this.custodyGroupCountOverride = custodyGroupCountOverride;
+      return this;
+    }
+
+    public Builder dasPublishWithholdColumnsEverySlots(
+        final int dasPublishWithholdColumnsEverySlots) {
+      this.dasPublishWithholdColumnsEverySlots = dasPublishWithholdColumnsEverySlots;
+      return this;
+    }
+
+    public Builder dasDisableElRecovery(final boolean dasDisableElRecovery) {
+      this.dasDisableElRecovery = dasDisableElRecovery;
       return this;
     }
 
