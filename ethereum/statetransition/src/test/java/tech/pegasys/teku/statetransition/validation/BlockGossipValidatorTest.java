@@ -16,11 +16,9 @@ package tech.pegasys.teku.statetransition.validation;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,7 +40,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyBuilderGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
@@ -394,7 +391,7 @@ public class BlockGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldRejectBlockWhenExecutionPayloadBidParentRootIsInvalid(final SpecContext specContext) {
+  void shouldRejectBlockWithIncorrectExecutionPayloadBidParentRoot(final SpecContext specContext) {
     specContext.assumeGloasActive();
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     final SignedBlockAndState signedBlockAndState =
@@ -427,72 +424,8 @@ public class BlockGossipValidatorTest {
             result ->
                 result.equals(
                     InternalValidationResult.reject(
-                        "Execution payload bid has invalid parent block root %s",
-                        badParentBlockRoot)));
-  }
-
-  @TestTemplate
-  void shouldRejectBlockWithIncorrectExecutionPayloadBidParentRoot(final SpecContext specContext) {
-    specContext.assumeGloasActive();
-    // Mocking the gossip helper to cover the case when the bid parent block is valid but not the
-    // same as the parent block root
-    final GossipValidationHelper gossipValidationHelperMock = mock(GossipValidationHelper.class);
-    final BlockGossipValidator blockGossipValidatorMocked =
-        new BlockGossipValidator(
-            spec, gossipValidationHelperMock, receivedBlockEventsChannelPublisher);
-    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
-    final SignedBlockAndState signedBlockAndState =
-        storageSystem.chainBuilder().generateBlockAtSlot(nextSlot);
-    final BeaconState state = signedBlockAndState.getState();
-    final SignedBeaconBlock block = signedBlockAndState.getBlock();
-    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
-
-    final Bytes32 expectedParentRoot = block.getParentRoot();
-    final Bytes32 badBidParentBlockRoot = Bytes32.random();
-
-    when(gossipValidationHelperMock.isSlotFinalized(block.getSlot())).thenReturn(false);
-    when(gossipValidationHelperMock.isSlotFromFuture(block.getSlot())).thenReturn(false);
-    when(gossipValidationHelperMock.isBlockAvailable(block.getRoot())).thenReturn(false);
-    when(gossipValidationHelperMock.isBlockAvailable(block.getParentRoot())).thenReturn(true);
-    when(gossipValidationHelperMock.currentFinalizedCheckpointIsAncestorOfBlock(
-            block.getSlot(), block.getParentRoot()))
-        .thenReturn(true);
-    when(gossipValidationHelperMock.getSlotForBlockRoot(block.getParentRoot()))
-        .thenReturn(Optional.of(nextSlot.decrement()));
-    when(gossipValidationHelperMock.isProposerTheExpectedProposer(
-            block.getProposerIndex(), block.getSlot(), state))
-        .thenReturn(true);
-    when(gossipValidationHelperMock.getParentStateInBlockEpoch(
-            nextSlot.decrement(), block.getParentRoot(), block.getSlot()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
-    when(gossipValidationHelperMock.isBlockAvailable(badBidParentBlockRoot)).thenReturn(true);
-
-    final SignedBeaconBlock invalidBlock =
-        createBlockWithModifiedExecutionPayloadBid(
-            signedBlockAndState,
-            originalExecutionPayloadBid ->
-                originalExecutionPayloadBid
-                    .getSchema()
-                    .create(
-                        originalExecutionPayloadBid.getParentBlockHash(),
-                        badBidParentBlockRoot,
-                        originalExecutionPayloadBid.getBlockHash(),
-                        originalExecutionPayloadBid.getPrevRandao(),
-                        originalExecutionPayloadBid.getFeeRecipient(),
-                        originalExecutionPayloadBid.getGasLimit(),
-                        originalExecutionPayloadBid.getBuilderIndex(),
-                        originalExecutionPayloadBid.getSlot(),
-                        originalExecutionPayloadBid.getValue(),
-                        originalExecutionPayloadBid.getExecutionPayment(),
-                        originalExecutionPayloadBid.getBlobKzgCommitmentsRoot()));
-
-    assertThat(blockGossipValidatorMocked.validate(invalidBlock, true))
-        .isCompletedWithValueMatching(
-            result ->
-                result.equals(
-                    InternalValidationResult.reject(
                         "Execution payload has invalid parent block root %s, expecting %s",
-                        badBidParentBlockRoot, expectedParentRoot)));
+                        badParentBlockRoot, signedBlockAndState.getBlock().getParentRoot())));
   }
 
   private SignedBeaconBlock createBlockWithModifiedExecutionPayloadBid(

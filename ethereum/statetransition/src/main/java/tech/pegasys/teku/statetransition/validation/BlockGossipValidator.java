@@ -177,6 +177,13 @@ public class BlockGossipValidator {
     return Optional.empty();
   }
 
+  /**
+   * Saving for future instead of rejecting because the parent block root was not seen but that
+   * doesn't mean it's invalid. If the parent block was invalid the current block would already have
+   * been rejected in {@link
+   * tech.pegasys.teku.statetransition.block.BlockManager#validateAndImportBlock(SignedBeaconBlock,
+   * Optional)}
+   */
   private Optional<InternalValidationResult> validateParentBlockPassesValidation(
       final SignedBeaconBlock block) {
     /*
@@ -297,15 +304,6 @@ public class BlockGossipValidator {
     if (maybeSignedExecutionPayloadBid.isPresent()) {
       final ExecutionPayloadBid executionPayloadBid =
           maybeSignedExecutionPayloadBid.get().getMessage();
-      /*
-       * [REJECT] The block's execution payload parent (defined by bid.parent_block_root) passes all validation
-       */
-      if (!gossipValidationHelper.isBlockAvailable(executionPayloadBid.getParentBlockRoot())) {
-        return Optional.of(
-            reject(
-                "Execution payload bid has invalid parent block root %s",
-                executionPayloadBid.getParentBlockRoot()));
-      }
       /*
        * [REJECT] The bid's parent (defined by bid.parent_block_root) equals the block's parent (defined by block.parent_root)
        */
