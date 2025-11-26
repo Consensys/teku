@@ -83,24 +83,36 @@ public class BlockGossipValidator {
   private SafeFuture<InternalValidationResult> internalValidate(
       final SignedBeaconBlock block, final boolean markAsReceived) {
 
+    final Optional<UInt64> maybeParentBlockSlot =
+        gossipValidationHelper.getSlotForBlockRoot(block.getParentRoot());
     // Phase 1: Perform cheap, stateless checks
     final Optional<InternalValidationResult> statelessValidationResult =
-        performStatelessValidation(block);
+        performStatelessValidation(block, maybeParentBlockSlot);
     if (statelessValidationResult.isPresent()) {
       return completedFuture(statelessValidationResult.get());
     }
 
     // Phase 2: Load parent state and perform stateful checks
-    final UInt64 parentSlot =
-        gossipValidationHelper.getSlotForBlockRoot(block.getParentRoot()).orElseThrow();
-    return gossipValidationHelper
-        .getParentStateInBlockEpoch(parentSlot, block.getParentRoot(), block.getSlot())
-        .thenApply(
-            maybeParentState -> performStatefulValidation(block, maybeParentState, markAsReceived));
+    return maybeParentBlockSlot
+        .map(
+            parentSlot ->
+                gossipValidationHelper
+                    .getParentStateInBlockEpoch(parentSlot, block.getParentRoot(), block.getSlot())
+                    .thenApply(
+                        maybeParentState ->
+                            performStatefulValidation(block, maybeParentState, markAsReceived)))
+        .orElseGet(
+            () -> {
+              LOG.error(
+                  "Parent slot for block {} with parent {} not found after stateless validation passed. This indicates a potential race condition.",
+                  block.getRoot(),
+                  block.getParentRoot());
+              return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+            });
   }
 
   private Optional<InternalValidationResult> performStatelessValidation(
-      final SignedBeaconBlock block) {
+      final SignedBeaconBlock block, final Optional<UInt64> maybeParentBlockSlot) {
     return validateSlotIsAfterFinalized(block)
         .or(
             () ->
@@ -112,7 +124,7 @@ public class BlockGossipValidator {
         .or(() -> validateBlockIsNew(block))
         .or(() -> validateParentBlockPassesValidation(block))
         .or(() -> validateFinalizedCheckpointIsAncestor(block))
-        .or(() -> validateParentBlockSeen(block))
+        .or(() -> validateParentBlockSeen(block, maybeParentBlockSlot))
         .or(() -> validateKzgCommitments(block));
   }
 
@@ -211,13 +223,11 @@ public class BlockGossipValidator {
   }
 
   private Optional<InternalValidationResult> validateParentBlockSeen(
-      final SignedBeaconBlock block) {
+      final SignedBeaconBlock block, final Optional<UInt64> maybeParentBlockSlot) {
     /*
      * [IGNORE] The block's parent (defined by block.parent_root) has been seen (via gossip or non-gossip sources)
      * (a client MAY queue blocks for processing once the parent block is retrieved).
      */
-    final Optional<UInt64> maybeParentBlockSlot =
-        gossipValidationHelper.getSlotForBlockRoot(block.getParentRoot());
     if (maybeParentBlockSlot.isEmpty()) {
       LOG.trace("BlockValidator: Parent block does not exist. Saving for future processing.");
       return Optional.of(InternalValidationResult.SAVE_FOR_FUTURE);
