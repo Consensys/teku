@@ -32,6 +32,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
@@ -53,7 +54,9 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
  * href="https://github.com/ethereum/consensus-specs/blob/master/specs/fulu/p2p-interface.md#data_column_sidecar_subnet_id">spec</a>
  */
 public class DataColumnSidecarGossipValidator {
+
   private static final Logger LOG = LogManager.getLogger();
+  public static final String REJECT_VALIDATION_RESULT_LABEL = "REJECT";
   public static final BiFunction<MetricsSystem, TimeProvider, MetricsHistogram>
       DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_HISTOGRAM =
           (metricsSystem, timeProvider) ->
@@ -111,6 +114,7 @@ public class DataColumnSidecarGossipValidator {
   private final MiscHelpersFulu miscHelpersFulu;
   private final Counter totalDataColumnSidecarsProcessingRequestsCounter;
   private final Counter totalDataColumnSidecarsProcessingSuccessesCounter;
+  private final LabelledMetric<Counter> totalDataColumnSidecarsProcessingValidatedCounter;
   private final MetricsHistogram dataColumnSidecarInclusionProofVerificationTimeSeconds;
   private final MetricsHistogram dataColumnSidecarKzgBatchVerificationTimeSeconds;
 
@@ -171,6 +175,14 @@ public class DataColumnSidecarGossipValidator {
             TekuMetricCategory.BEACON,
             "data_column_sidecar_processing_successes_total",
             "Total number of data column sidecars verified for gossip");
+
+    totalDataColumnSidecarsProcessingValidatedCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.BEACON,
+            "data_column_sidecar_processing_validated_total",
+            "Total number of data column sidecars validated. Includes a label validation_result.",
+            "validation_result");
+
     this.dataColumnSidecarInclusionProofVerificationTimeSeconds =
         DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_HISTOGRAM.apply(
             metricsSystem, timeProvider);
@@ -191,6 +203,9 @@ public class DataColumnSidecarGossipValidator {
      * [REJECT] The sidecar is valid as verified by verify_data_column_sidecar(sidecar).
      */
     if (!miscHelpersFulu.verifyDataColumnSidecar(dataColumnSidecar)) {
+      totalDataColumnSidecarsProcessingValidatedCounter
+          .labels(REJECT_VALIDATION_RESULT_LABEL)
+          .inc();
       return completedFuture(reject("DataColumnSidecar has invalid structure"));
     }
 
@@ -200,6 +215,9 @@ public class DataColumnSidecarGossipValidator {
     if (!isFirstValidForSlotProposerIndexAndColumnIndex(dataColumnSidecar, blockHeader)) {
       LOG.trace(
           "DataColumnSidecar is not the first valid for its slot and index. It will be dropped.");
+      totalDataColumnSidecarsProcessingValidatedCounter
+          .labels(InternalValidationResult.IGNORE.toString())
+          .inc();
       return completedFuture(InternalValidationResult.IGNORE);
     }
 
@@ -214,6 +232,9 @@ public class DataColumnSidecarGossipValidator {
      */
     if (gossipValidationHelper.isSlotFromFuture(blockHeader.getSlot())) {
       LOG.trace("DataColumnSidecar is from the future. It will be saved for future processing.");
+      totalDataColumnSidecarsProcessingValidatedCounter
+          .labels(InternalValidationResult.SAVE_FOR_FUTURE.toString())
+          .inc();
       return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
     }
 
@@ -222,6 +243,9 @@ public class DataColumnSidecarGossipValidator {
      */
     if (gossipValidationHelper.isSlotFinalized(blockHeader.getSlot())) {
       LOG.trace("DataColumnSidecar is too old (slot already finalized)");
+      totalDataColumnSidecarsProcessingValidatedCounter
+          .labels(InternalValidationResult.IGNORE.toString())
+          .inc();
       return completedFuture(InternalValidationResult.IGNORE);
     }
 
@@ -244,6 +268,9 @@ public class DataColumnSidecarGossipValidator {
     if (!gossipValidationHelper.isBlockAvailable(blockHeader.getParentRoot())) {
       LOG.trace(
           "DataColumnSidecar block header parent block is not available. It will be saved for future processing.");
+      totalDataColumnSidecarsProcessingValidatedCounter
+          .labels(InternalValidationResult.SAVE_FOR_FUTURE.toString())
+          .inc();
       return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
     }
     final Optional<UInt64> maybeParentBlockSlot =
@@ -251,6 +278,9 @@ public class DataColumnSidecarGossipValidator {
     if (maybeParentBlockSlot.isEmpty()) {
       LOG.trace(
           "DataColumnSidecar block header parent block does not exist. It will be saved for future processing");
+      totalDataColumnSidecarsProcessingValidatedCounter
+          .labels(InternalValidationResult.SAVE_FOR_FUTURE.toString())
+          .inc();
       return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
     }
     final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
@@ -259,6 +289,9 @@ public class DataColumnSidecarGossipValidator {
      * [REJECT] The sidecar's block's parent (defined by block_header.parent_root) passes validation.
      */
     if (invalidBlockRoots.containsKey(blockHeader.getParentRoot())) {
+      totalDataColumnSidecarsProcessingValidatedCounter
+          .labels(REJECT_VALIDATION_RESULT_LABEL)
+          .inc();
       return completedFuture(reject("DataColumnSidecar block header has an invalid parent root"));
     }
 
@@ -266,6 +299,9 @@ public class DataColumnSidecarGossipValidator {
      * [REJECT] The sidecar is from a higher slot than the sidecar's block's parent (defined by block_header.parent_root).
      */
     if (!blockHeader.getSlot().isGreaterThan(parentBlockSlot)) {
+      totalDataColumnSidecarsProcessingValidatedCounter
+          .labels(REJECT_VALIDATION_RESULT_LABEL)
+          .inc();
       return completedFuture(reject("Parent block slot is after DataColumnSidecar slot"));
     }
 
@@ -274,6 +310,9 @@ public class DataColumnSidecarGossipValidator {
      */
     if (!gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
         blockHeader.getSlot(), blockHeader.getParentRoot())) {
+      totalDataColumnSidecarsProcessingValidatedCounter
+          .labels(REJECT_VALIDATION_RESULT_LABEL)
+          .inc();
       return completedFuture(
           reject("DataColumnSidecar block header does not descend from finalized checkpoint"));
     }
@@ -282,6 +321,9 @@ public class DataColumnSidecarGossipValidator {
      * [REJECT] The sidecar's kzg_commitments field inclusion proof is valid as verified by verify_data_column_sidecar_inclusion_proof(sidecar).
      */
     if (!verifyDataColumnSidecarInclusionProof(dataColumnSidecar)) {
+      totalDataColumnSidecarsProcessingValidatedCounter
+          .labels(REJECT_VALIDATION_RESULT_LABEL)
+          .inc();
       return completedFuture(reject("DataColumnSidecar inclusion proof validation failed"));
     }
 
@@ -291,9 +333,15 @@ public class DataColumnSidecarGossipValidator {
     try (MetricsHistogram.Timer ignored =
         dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
       if (!miscHelpersFulu.verifyDataColumnSidecarKzgProofs(dataColumnSidecar)) {
+        totalDataColumnSidecarsProcessingValidatedCounter
+            .labels(REJECT_VALIDATION_RESULT_LABEL)
+            .inc();
         return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
       }
     } catch (final Throwable t) {
+      totalDataColumnSidecarsProcessingValidatedCounter
+          .labels(REJECT_VALIDATION_RESULT_LABEL)
+          .inc();
       return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
     }
 
@@ -310,11 +358,17 @@ public class DataColumnSidecarGossipValidator {
               if (maybePostState.isEmpty()) {
                 LOG.trace(
                     "DataColumnSidecar block header state wasn't available. Must have been pruned by finalized.");
+                totalDataColumnSidecarsProcessingValidatedCounter
+                    .labels(InternalValidationResult.IGNORE.toString())
+                    .inc();
                 return InternalValidationResult.IGNORE;
               }
               final BeaconState postState = maybePostState.get();
               if (!gossipValidationHelper.isProposerTheExpectedProposer(
                   blockHeader.getProposerIndex(), blockHeader.getSlot(), postState)) {
+                totalDataColumnSidecarsProcessingValidatedCounter
+                    .labels(REJECT_VALIDATION_RESULT_LABEL)
+                    .inc();
                 return reject(
                     "DataColumnSidecar block header proposed by incorrect proposer (%s)",
                     blockHeader.getProposerIndex());
@@ -326,6 +380,9 @@ public class DataColumnSidecarGossipValidator {
               if (!verifyBlockHeaderSignature(
                   postState,
                   DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader())) {
+                totalDataColumnSidecarsProcessingValidatedCounter
+                    .labels(REJECT_VALIDATION_RESULT_LABEL)
+                    .inc();
                 return reject("DataColumnSidecar block header signature is invalid");
               }
 
@@ -352,6 +409,7 @@ public class DataColumnSidecarGossipValidator {
                       DataColumnSidecarFulu.required(dataColumnSidecar).getBlockBodyRoot()));
 
               totalDataColumnSidecarsProcessingSuccessesCounter.inc();
+              totalDataColumnSidecarsProcessingValidatedCounter.labels(ACCEPT.toString()).inc();
               return ACCEPT;
             });
   }
@@ -365,6 +423,9 @@ public class DataColumnSidecarGossipValidator {
      */
     if (!gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
         blockHeader.getSlot(), blockHeader.getParentRoot())) {
+      totalDataColumnSidecarsProcessingValidatedCounter
+          .labels(REJECT_VALIDATION_RESULT_LABEL)
+          .inc();
       return completedFuture(
           reject("DataColumnSidecar block header does not descend from finalized checkpoint"));
     }
@@ -373,6 +434,9 @@ public class DataColumnSidecarGossipValidator {
      * [REJECT] The sidecar's kzg_commitments field inclusion proof is valid as verified by verify_data_column_sidecar_inclusion_proof(sidecar).
      */
     if (!verifyDataColumnSidecarInclusionProof(dataColumnSidecar)) {
+      totalDataColumnSidecarsProcessingValidatedCounter
+          .labels(REJECT_VALIDATION_RESULT_LABEL)
+          .inc();
       return completedFuture(reject("DataColumnSidecar inclusion proof validation failed"));
     }
 
@@ -382,9 +446,15 @@ public class DataColumnSidecarGossipValidator {
     try (MetricsHistogram.Timer ignored =
         dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
       if (!miscHelpersFulu.verifyDataColumnSidecarKzgProofs(dataColumnSidecar)) {
+        totalDataColumnSidecarsProcessingValidatedCounter
+            .labels(REJECT_VALIDATION_RESULT_LABEL)
+            .inc();
         return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
       }
     } catch (final Throwable t) {
+      totalDataColumnSidecarsProcessingValidatedCounter
+          .labels(REJECT_VALIDATION_RESULT_LABEL)
+          .inc();
       return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
     }
 
@@ -398,6 +468,7 @@ public class DataColumnSidecarGossipValidator {
     }
 
     totalDataColumnSidecarsProcessingSuccessesCounter.inc();
+    totalDataColumnSidecarsProcessingValidatedCounter.labels(ACCEPT.toString()).inc();
 
     return SafeFuture.completedFuture(ACCEPT);
   }
