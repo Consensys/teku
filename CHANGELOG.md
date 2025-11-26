@@ -14,3 +14,4 @@
   `data_column_sidecar_processing_validated_total`.
 
 ### Bug Fixes
+- Teku may crash when shutting down

@@ -167,15 +167,17 @@ public class DataColumnSidecarCustodyImpl
 
     LOG.debug(
         "Custody group count increased from {} to {}", oldCustodyGroupCount, newCustodyGroupCount);
-    final UInt64 minCustodyPeriodSlot =
-        minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(slot);
-    db.setFirstCustodyIncompleteSlot(minCustodyPeriodSlot)
-        .finish(
-            error ->
-                LOG.error(
-                    "Unexpected error while updating first custody incomplete slot with a new value: {}.",
-                    minCustodyPeriodSlot,
-                    error));
+    minCustodyPeriodSlotCalculator
+        .getMinCustodyPeriodSlot(slot)
+        .ifPresent(
+            minCustodyPeriodSlot ->
+                db.setFirstCustodyIncompleteSlot(minCustodyPeriodSlot)
+                    .finish(
+                        error ->
+                            LOG.error(
+                                "Unexpected error while updating first custody incomplete slot with a new value: {}.",
+                                minCustodyPeriodSlot,
+                                error)));
   }
 
   @Override
@@ -232,13 +234,16 @@ public class DataColumnSidecarCustodyImpl
     return AsyncStream.create(db.getFirstCustodyIncompleteSlot())
         .flatMap(
             maybeFirstIncompleteSlot -> {
-              final UInt64 firstIncompleteSlot =
-                  maybeFirstIncompleteSlot.orElseGet(
+              final Optional<UInt64> firstIncompleteSlot =
+                  maybeFirstIncompleteSlot.or(
                       () ->
                           minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(
                               currentSlot.get()));
+              if (firstIncompleteSlot.isEmpty()) {
+                return AsyncStream.empty();
+              }
               final Stream<UInt64> slotStream =
-                  UInt64.rangeClosed(firstIncompleteSlot, toSlotIncluded);
+                  UInt64.rangeClosed(firstIncompleteSlot.get(), toSlotIncluded);
               return AsyncStream.createUnsafe(slotStream.iterator())
                   .mapAsync(this::retrieveSlotCustody);
             });
@@ -247,7 +252,12 @@ public class DataColumnSidecarCustodyImpl
   @VisibleForTesting
   SafeFuture<SlotCustody> retrieveSlotCustody(final UInt64 slot) {
     if (slot.isLessThan(
-        minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot.get()))) {
+        minCustodyPeriodSlotCalculator
+            .getMinCustodyPeriodSlot(currentSlot.get())
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Cannot retrieve slot custody outside custody period (" + slot + ")")))) {
       LOG.trace(
           "Skipping custody for slot {}, because currentSlot {} is beyond minCustodyPeriod",
           slot,
