@@ -53,7 +53,7 @@ public class ElectraUpgradeAcceptanceTest extends AcceptanceTestBase {
         createGenesisGenerator()
             .network(NETWORK_NAME)
             .withGenesisTime(genesisTime)
-            .genesisDelaySeconds(30)
+            .genesisDelaySeconds(20)
             .withAltairEpoch(UInt64.ZERO)
             .withBellatrixEpoch(UInt64.ZERO)
             .withCapellaEpoch(UInt64.ZERO)
