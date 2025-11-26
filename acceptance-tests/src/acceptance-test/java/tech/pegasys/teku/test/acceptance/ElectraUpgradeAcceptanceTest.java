@@ -41,7 +41,7 @@ public class ElectraUpgradeAcceptanceTest extends AcceptanceTestBase {
   void upgradeFromDeneb() throws Exception {
     final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
     final int genesisTime =
-        currentTime.intValue() + 30; // genesis in 30 seconds to give node time to start
+        currentTime.intValue() + 40; // genesis in 30 seconds to give node time to start
 
     final BesuNode besuNode = createBesuNode(genesisTime);
     besuNode.start();
@@ -53,7 +53,7 @@ public class ElectraUpgradeAcceptanceTest extends AcceptanceTestBase {
         createGenesisGenerator()
             .network(NETWORK_NAME)
             .withGenesisTime(genesisTime)
-            .genesisDelaySeconds(20)
+            .genesisDelaySeconds(0)
             .withAltairEpoch(UInt64.ZERO)
             .withBellatrixEpoch(UInt64.ZERO)
             .withCapellaEpoch(UInt64.ZERO)
