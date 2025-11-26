@@ -309,6 +309,8 @@ public class BlockGossipValidator {
       /*
        * [REJECT] The block's execution payload parent (defined by bid.parent_block_hash) passes all validation
        */
+
+      // Verify that the bid is for the right parent execution block
       if (!executionPayloadBid.getParentBlockHash().equals(parentStateGloas.getLatestBlockHash())) {
         return Optional.of(
             reject(
