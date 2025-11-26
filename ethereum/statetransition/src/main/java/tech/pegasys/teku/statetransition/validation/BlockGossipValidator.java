@@ -332,7 +332,7 @@ public class BlockGossipValidator {
       if (!executionPayloadBid.getParentBlockRoot().equals(block.getParentRoot())) {
         return Optional.of(
             reject(
-                "Execution payload has invalid parent block root %s, expecting %s",
+                "Execution payload bid has invalid parent block root %s, expecting %s",
                 executionPayloadBid.getParentBlockRoot(), block.getParentRoot()));
       }
     }

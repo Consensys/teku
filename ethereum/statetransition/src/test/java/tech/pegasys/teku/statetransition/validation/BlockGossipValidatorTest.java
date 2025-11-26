@@ -463,7 +463,7 @@ public class BlockGossipValidatorTest {
             result ->
                 result.equals(
                     InternalValidationResult.reject(
-                        "Execution payload has invalid parent block root %s, expecting %s",
+                        "Execution payload bid has invalid parent block root %s, expecting %s",
                         badParentBlockRoot, signedBlockAndState.getBlock().getParentRoot())));
   }
 
