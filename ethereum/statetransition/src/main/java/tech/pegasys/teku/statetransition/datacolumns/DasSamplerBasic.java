@@ -170,7 +170,11 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
 
   private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {
     if (recentlySampledColumnsByRoot.size() < MAX_RECENTLY_SAMPLED_BLOCKS) {
-        LOG.debug("Creating new DAS sampling tracker for slot {} root {}, currently size of tracker is {}", slot, blockRoot, recentlySampledColumnsByRoot.size());
+      LOG.debug(
+          "Creating new DAS sampling tracker for slot {} root {}, currently size of tracker is {}",
+          slot,
+          blockRoot,
+          recentlySampledColumnsByRoot.size());
       return recentlySampledColumnsByRoot.computeIfAbsent(
           blockRoot,
           k -> {
