@@ -42,6 +42,8 @@ import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChannel {
+
+  private static final int MAX_RECENTLY_SAMPLED_BLOCKS = 64;
   private static final Logger LOG = LogManager.getLogger();
 
   private final DataColumnSidecarCustody custody;
@@ -51,7 +53,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   private final CurrentSlotProvider currentSlotProvider;
   private final CustodyGroupCountManager custodyGroupCountManager;
   private final Map<Bytes32, DataColumnSamplingTracker> recentlySampledColumnsByRoot =
-      new ConcurrentHashMap<>();
+      new ConcurrentHashMap<>(MAX_RECENTLY_SAMPLED_BLOCKS);
 
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
@@ -167,15 +169,21 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   }
 
   private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {
+    if (recentlySampledColumnsByRoot.size() < MAX_RECENTLY_SAMPLED_BLOCKS) {
+      return recentlySampledColumnsByRoot.computeIfAbsent(
+          blockRoot,
+          k -> {
+            final DataColumnSamplingTracker tracker =
+                DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager);
+            onFirstSeen(slot, blockRoot, tracker);
+            return tracker;
+          });
+    }
 
-    return recentlySampledColumnsByRoot.computeIfAbsent(
-        blockRoot,
-        k -> {
-          final DataColumnSamplingTracker tracker =
-              DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager);
-          onFirstSeen(slot, blockRoot, tracker);
-          return tracker;
-        });
+    LOG.warn(
+        "DAS sampler reached max recently sampled blocks limit ({}). ",
+        MAX_RECENTLY_SAMPLED_BLOCKS);
+    return recentlySampledColumnsByRoot.get(blockRoot);
   }
 
   private SafeFuture<DataColumnSidecar> retrieveColumnWithSamplingAndCustody(
