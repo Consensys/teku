@@ -145,14 +145,17 @@ public class DataColumnSidecarCustodyImplTest {
     custody.onSlot(UInt64.valueOf(1));
     assertThat(custody.getTotalCustodyGroupCount()).isEqualTo(groupCount);
     verifyNoInteractions(custodyGroupCountManager);
+    assertThat(dbAccessor.getFirstCustodyIncompleteSlot()).isCompletedWithValue(Optional.empty());
   }
 
   @Test
   public void onSlot_checksOnEpochBoundarySlot() {
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(groupCount + 3);
-    custody.onSlot(UInt64.valueOf(8));
+    custody.onSlot(UInt64.valueOf(FULU_ACTIVATION_SLOT));
     assertThat(custody.getTotalCustodyGroupCount()).isEqualTo(groupCount + 3);
     verify(custodyGroupCountManager).getCustodyGroupCount();
+    assertThat(dbAccessor.getFirstCustodyIncompleteSlot())
+        .isCompletedWithValue(Optional.of(UInt64.valueOf(8)));
   }
 
   @Test
@@ -163,6 +166,15 @@ public class DataColumnSidecarCustodyImplTest {
     // if epoch 2 is final, then slots 0-23 are 'final' and slot 24 is the first non final
     assertThat(dbAccessor.getFirstCustodyIncompleteSlot())
         .isCompletedWithValue(Optional.of(UInt64.valueOf(24)));
+  }
+
+  @Test
+  public void onNewFinalizedCheckpoint_doesNothingPreFulu() {
+    custody.onSlot(UInt64.valueOf(FULU_ACTIVATION_SLOT - 1));
+    final SafeFuture<Void> future = custody.advanceFirstIncompleteSlot(UInt64.valueOf(2));
+    assertThat(future).isCompleted();
+    // if epoch 2 is final, then slots 0-23 are 'final' and slot 24 is the first non final
+    assertThat(dbAccessor.getFirstCustodyIncompleteSlot()).isCompletedWithValue(Optional.empty());
   }
 
   @ParameterizedTest
