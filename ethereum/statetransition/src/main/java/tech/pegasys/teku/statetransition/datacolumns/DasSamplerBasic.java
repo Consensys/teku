@@ -109,6 +109,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
     final Bytes32 blockRoot = beaconBlock.getRoot();
 
     final DataColumnSamplingTracker tracker = getOrCreateTracker(slot, blockRoot);
+    //TODO fix this as block might not be in tracker if we reached max recently sampled blocks
     tracker.setBlock(beaconBlock);
     if (tracker.rpcFetchScheduled().compareAndSet(false, true)) {
       fetchMissingColumnsViaRPC(slot, blockRoot, tracker);
