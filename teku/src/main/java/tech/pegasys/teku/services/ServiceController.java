@@ -36,7 +36,13 @@ public abstract class ServiceController extends Service implements ServiceContro
 
   @Override
   protected SafeFuture<?> doStop() {
-    return SafeFuture.allOf(services.stream().map(Service::stop).toArray(SafeFuture[]::new));
+    final Iterator<Service> iterator = services.reversed().iterator();
+    SafeFuture<?> startupFuture = iterator.next().stop();
+    while (iterator.hasNext()) {
+      final Service nextService = iterator.next();
+      startupFuture = startupFuture.thenCompose(__ -> nextService.stop());
+    }
+    return startupFuture;
   }
 
   @Override
