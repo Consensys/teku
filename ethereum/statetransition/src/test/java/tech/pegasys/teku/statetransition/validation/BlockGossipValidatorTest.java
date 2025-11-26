@@ -299,6 +299,7 @@ public class BlockGossipValidatorTest {
 
   @TestTemplate
   void shouldReturnInvalidOnWrongExecutionPayloadTimestamp(final SpecContext specContext) {
+    // The payload timestamp is checked from Bellatrix to Fulu only
     specContext.assumeMilestonesActive(SpecMilestone.BELLATRIX, SpecMilestone.FULU);
 
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);

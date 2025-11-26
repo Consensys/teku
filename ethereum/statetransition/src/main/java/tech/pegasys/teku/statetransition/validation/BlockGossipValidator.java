@@ -112,7 +112,8 @@ public class BlockGossipValidator {
         .or(() -> validateParentBlockPassesValidation(block))
         .or(() -> validateFinalizedCheckpointIsAncestor(block))
         .or(() -> validateParentBlockSeen(block))
-        .or(() -> validateKzgCommitments(block));
+        .or(() -> validateKzgCommitments(block))
+        .or(() -> validateExecutionPayloadBid(block));
   }
 
   private InternalValidationResult performStatefulValidation(
@@ -127,7 +128,7 @@ public class BlockGossipValidator {
     final BeaconState parentState = maybeParentState.get();
 
     return validateProposer(block, parentState)
-        .or(() -> validatePayload(block, parentState))
+        .or(() -> validateExecutionPayload(block, parentState))
         .or(() -> validateSignature(block, parentState))
         .or(
             () ->
@@ -263,22 +264,11 @@ public class BlockGossipValidator {
     return Optional.empty();
   }
 
-  private Optional<InternalValidationResult> validatePayload(
-      final SignedBeaconBlock block, final BeaconState parentState) {
-    final Optional<SignedExecutionPayloadBid> maybeSignedExecutionPayloadBid =
-        block.getMessage().getBody().getOptionalSignedExecutionPayloadBid();
-    if (maybeSignedExecutionPayloadBid.isPresent()) {
-      return validateExecutionPayloadBid(
-          block.getParentRoot(), maybeSignedExecutionPayloadBid.get());
-    } else {
-      return validateExecutionPayload(block, parentState);
-    }
-  }
-
   private Optional<InternalValidationResult> validateExecutionPayload(
       final SignedBeaconBlock block, final BeaconState parentState) {
     final MiscHelpers miscHelpers = spec.atSlot(block.getSlot()).miscHelpers();
-    if (miscHelpers.isMergeTransitionComplete(parentState)) {
+    if (miscHelpers.isMergeTransitionComplete(parentState)
+        && block.getMessage().getBody().getOptionalSignedExecutionPayloadBid().isEmpty()) {
       final Optional<ExecutionPayload> executionPayload =
           block.getMessage().getBody().getOptionalExecutionPayload();
       if (executionPayload.isEmpty()) {
@@ -301,25 +291,30 @@ public class BlockGossipValidator {
   }
 
   private Optional<InternalValidationResult> validateExecutionPayloadBid(
-      final Bytes32 blockParentRoot, final SignedExecutionPayloadBid signedExecutionPayloadBid) {
-    final ExecutionPayloadBid executionPayloadBid = signedExecutionPayloadBid.getMessage();
-    /*
-     * [REJECT] The block's execution payload parent (defined by bid.parent_block_hash) passes all validation
-     */
-    if (!gossipValidationHelper.isBlockAvailable(executionPayloadBid.getParentBlockRoot())) {
-      return Optional.of(
-          reject(
-              "Execution payload bid has invalid parent block root %s",
-              executionPayloadBid.getParentBlockRoot()));
-    }
-    /*
-     * [REJECT] The bid's parent (defined by bid.parent_block_root) equals the block's parent (defined by block.parent_root)
-     */
-    if (!executionPayloadBid.getParentBlockRoot().equals(blockParentRoot)) {
-      return Optional.of(
-          reject(
-              "Execution payload has invalid parent block root %s, expecting %s",
-              executionPayloadBid.getParentBlockRoot(), blockParentRoot));
+      final SignedBeaconBlock block) {
+    final Optional<SignedExecutionPayloadBid> maybeSignedExecutionPayloadBid =
+        block.getMessage().getBody().getOptionalSignedExecutionPayloadBid();
+    if (maybeSignedExecutionPayloadBid.isPresent()) {
+      final ExecutionPayloadBid executionPayloadBid =
+          maybeSignedExecutionPayloadBid.get().getMessage();
+      /*
+       * [REJECT] The block's execution payload parent (defined by bid.parent_block_root) passes all validation
+       */
+      if (!gossipValidationHelper.isBlockAvailable(executionPayloadBid.getParentBlockRoot())) {
+        return Optional.of(
+            reject(
+                "Execution payload bid has invalid parent block root %s",
+                executionPayloadBid.getParentBlockRoot()));
+      }
+      /*
+       * [REJECT] The bid's parent (defined by bid.parent_block_root) equals the block's parent (defined by block.parent_root)
+       */
+      if (!executionPayloadBid.getParentBlockRoot().equals(block.getParentRoot())) {
+        return Optional.of(
+            reject(
+                "Execution payload has invalid parent block root %s, expecting %s",
+                executionPayloadBid.getParentBlockRoot(), block.getParentRoot()));
+      }
     }
     return Optional.empty();
   }
