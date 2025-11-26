@@ -19,7 +19,6 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.stream.IntStream;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -68,11 +67,6 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
     primaryNode.waitForLogMessageContaining("non-custodied sidecars at");
     // DataColumnSidecars are reconstructed on secondaryNode
     secondaryNode.waitForLogMessageContaining("Data column sidecars recovery finished for block");
-    secondaryNode.waitForNonOptimisticBlock();
-
-    final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
-
-    final int endSlot = blockAtHead.getSlot().intValue();
     final int firstFuluSlot =
         primaryNode
             .getSpec()
@@ -83,6 +77,12 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
                     .getConfig()
                     .getFuluForkEpoch())
             .intValue();
+    secondaryNode.waitForBlockAtOrAfterSlot(firstFuluSlot);
+
+    final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
+
+    final int endSlot = blockAtHead.getSlot().intValue();
+
     final SpecConfigFulu specConfigFulu =
         SpecConfigFulu.required(primaryNode.getSpec().forMilestone(SpecMilestone.FULU).getConfig());
     final int allFuluColumns =
@@ -99,7 +99,6 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
   }
 
   @Test
-  @Disabled
   public void
       shouldAbleToReconstructDataColumnSidecarsFrom50Percent_whenSyncingWithReworkedRetriever()
           throws Exception {
@@ -110,7 +109,10 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
                 .withDiscoveryNetwork()
                 // interop validators are not count for validator custody
                 .withCustodyGroupCountOverride(subnetCount / 2)
+                // we don't want to make this test extreme, withhold once and don't repeat
+                .withDasPublishWithholdColumnsEverySlots(9999)
                 .withInteropValidators(0, 64)
+                .withDasDisableElRecovery()
                 .build());
 
     primaryNode.start();
@@ -126,12 +128,12 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
                 // supernode
                 .withSubscribeAllCustodySubnetsEnabled()
                 .withInteropValidators(0, 0)
+                .withDasDisableElRecovery()
                 .withExperimentalReworkedRecovery()
                 .build());
 
     // Wait for few epochs, so sync will kick-in when second node is started
-    primaryNode.waitForEpochAtOrAbove(2);
-    primaryNode.waitForEpochAtOrAbove(5);
+    primaryNode.waitForEpochAtOrAbove(4);
 
     secondaryNode.start();
     // DataColumnSidecars are reconstructed on secondaryNode
@@ -141,11 +143,6 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
     // as first node custodies only 64 columns, it means we need to rebuild every single slot
     // sidecars one by one, so we will not wait for finalization, one slot recovery is ok
 
-    // delay to commit block
-    secondaryNode.waitForNonOptimisticBlock();
-    final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
-
-    final int endSlot = blockAtHead.getSlot().intValue();
     final int firstFuluSlot =
         primaryNode
             .getSpec()
@@ -156,6 +153,10 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
                     .getConfig()
                     .getFuluForkEpoch())
             .intValue();
+    secondaryNode.waitForBlockAtOrAfterSlot(firstFuluSlot);
+    final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
+
+    final int endSlot = blockAtHead.getSlot().intValue();
     final SpecConfigFulu specConfigFulu =
         SpecConfigFulu.required(primaryNode.getSpec().forMilestone(SpecMilestone.FULU).getConfig());
     final int allFuluColumns =
