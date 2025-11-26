@@ -12,3 +12,4 @@
 - Added new metric `beacon_earliest_available_slot`.
 
 ### Bug Fixes
+- Teku may crash when shutting down
