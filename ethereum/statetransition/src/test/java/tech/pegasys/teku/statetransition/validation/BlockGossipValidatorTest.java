@@ -400,8 +400,6 @@ public class BlockGossipValidatorTest {
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
     final Bytes32 badParentBlockHash = Bytes32.random();
-    final Bytes32 expectedParentBlockHash =
-        BeaconStateGloas.required(signedBlockAndState.getState()).getLatestBlockHash();
 
     final SignedBeaconBlock invalidBlock =
         createBlockWithModifiedExecutionPayloadBid(
@@ -421,13 +419,16 @@ public class BlockGossipValidatorTest {
                         originalExecutionPayloadBid.getValue(),
                         originalExecutionPayloadBid.getExecutionPayment(),
                         originalExecutionPayloadBid.getBlobKzgCommitmentsRoot()));
+    final BeaconStateGloas parentState =
+        BeaconStateGloas.required(storageSystem.chainBuilder().getStateAtSlot(nextSlot.minus(ONE)));
+    final Bytes32 expectedParentBlockHash = parentState.getLatestBlockHash();
     assertThat(blockGossipValidator.validate(invalidBlock, true))
         .isCompletedWithValueMatching(
             result ->
                 result.equals(
                     InternalValidationResult.reject(
                         "Execution payload bid has invalid parent block hash %s, expecting %s",
-                        badParentBlockHash.toHexString(), expectedParentBlockHash.toHexString())));
+                        badParentBlockHash, expectedParentBlockHash)));
   }
 
   @TestTemplate
