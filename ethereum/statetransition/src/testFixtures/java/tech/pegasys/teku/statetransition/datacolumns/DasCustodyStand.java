@@ -156,7 +156,7 @@ public class DasCustodyStand {
     return custodyGroupCountManager.getCustodyColumnIndices();
   }
 
-  public UInt64 getMinCustodySlot() {
+  public Optional<UInt64> getMinCustodySlot() {
     return minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot);
   }
 
