@@ -305,18 +305,26 @@ public class BlockGossipValidator {
     if (maybeSignedExecutionPayloadBid.isPresent()) {
       final ExecutionPayloadBid executionPayloadBid =
           maybeSignedExecutionPayloadBid.get().getMessage();
-      final BeaconStateGloas parentStateGloas = BeaconStateGloas.required(parentState);
+      final Optional<BeaconStateGloas> maybeParentStateGloas = parentState.toVersionGloas();
       /*
+       * If execution_payload verification of block's execution payload parent by an execution node is complete:
        * [REJECT] The block's execution payload parent (defined by bid.parent_block_hash) passes all validation
        */
 
-      // Verify that the bid is for the right parent execution block
-      if (!executionPayloadBid.getParentBlockHash().equals(parentStateGloas.getLatestBlockHash())) {
+      // Verify that the bid is for the right parent execution block.
+      // The first block after Gloas activates will have a Fulu parent state and hence we could skip
+      // the parent block hash check.
+      // The block's execution payload parent should have been already verified to perform this
+      // check.
+      if (maybeParentStateGloas.isPresent()
+          && !executionPayloadBid
+              .getParentBlockHash()
+              .equals(maybeParentStateGloas.get().getLatestBlockHash())) {
         return Optional.of(
             reject(
                 "Execution payload bid has invalid parent block hash %s, expecting %s",
-                executionPayloadBid.getParentBlockHash().toHexString(),
-                parentStateGloas.getLatestBlockHash().toHexString()));
+                executionPayloadBid.getParentBlockHash(),
+                maybeParentStateGloas.get().getLatestBlockHash()));
       }
       /*
        * [REJECT] The bid's parent (defined by bid.parent_block_root) equals the block's parent (defined by block.parent_root)
