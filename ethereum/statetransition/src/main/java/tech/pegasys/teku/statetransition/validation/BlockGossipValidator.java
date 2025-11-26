@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
+import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.spec.config.Constants.VALID_BLOCK_SET_SIZE;
 import static tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult.BLOCK_ALREADY_SEEN_FOR_SLOT_PROPOSER;
@@ -93,22 +94,14 @@ public class BlockGossipValidator {
     }
 
     // Phase 2: Load parent state and perform stateful checks
-    return maybeParentBlockSlot
-        .map(
-            parentSlot ->
-                gossipValidationHelper
-                    .getParentStateInBlockEpoch(parentSlot, block.getParentRoot(), block.getSlot())
-                    .thenApply(
-                        maybeParentState ->
-                            performStatefulValidation(block, maybeParentState, markAsReceived)))
-        .orElseGet(
-            () -> {
-              LOG.error(
-                  "Parent slot for block {} with parent {} not found after stateless validation passed. This indicates a potential race condition.",
-                  block.getRoot(),
-                  block.getParentRoot());
-              return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
-            });
+    checkState(
+        maybeParentBlockSlot.isPresent(),
+        "ParentBlockSlot must be present if stateless validation passes");
+    final UInt64 parentSlot = maybeParentBlockSlot.get();
+    return gossipValidationHelper
+        .getParentStateInBlockEpoch(parentSlot, block.getParentRoot(), block.getSlot())
+        .thenApply(
+            maybeParentState -> performStatefulValidation(block, maybeParentState, markAsReceived));
   }
 
   private Optional<InternalValidationResult> performStatelessValidation(
