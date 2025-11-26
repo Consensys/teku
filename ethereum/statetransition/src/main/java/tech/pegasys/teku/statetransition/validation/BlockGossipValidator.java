@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
@@ -112,8 +113,7 @@ public class BlockGossipValidator {
         .or(() -> validateParentBlockPassesValidation(block))
         .or(() -> validateFinalizedCheckpointIsAncestor(block))
         .or(() -> validateParentBlockSeen(block))
-        .or(() -> validateKzgCommitments(block))
-        .or(() -> validateExecutionPayloadBid(block));
+        .or(() -> validateKzgCommitments(block));
   }
 
   private InternalValidationResult performStatefulValidation(
@@ -129,6 +129,7 @@ public class BlockGossipValidator {
 
     return validateProposer(block, parentState)
         .or(() -> validateExecutionPayload(block, parentState))
+        .or(() -> validateExecutionPayloadBid(block, parentState))
         .or(() -> validateSignature(block, parentState))
         .or(
             () ->
@@ -298,12 +299,23 @@ public class BlockGossipValidator {
   }
 
   private Optional<InternalValidationResult> validateExecutionPayloadBid(
-      final SignedBeaconBlock block) {
+      final SignedBeaconBlock block, final BeaconState parentState) {
     final Optional<SignedExecutionPayloadBid> maybeSignedExecutionPayloadBid =
         block.getMessage().getBody().getOptionalSignedExecutionPayloadBid();
     if (maybeSignedExecutionPayloadBid.isPresent()) {
       final ExecutionPayloadBid executionPayloadBid =
           maybeSignedExecutionPayloadBid.get().getMessage();
+      final BeaconStateGloas parentStateGloas = BeaconStateGloas.required(parentState);
+      /*
+       * [REJECT] The block's execution payload parent (defined by bid.parent_block_hash) passes all validation
+       */
+      if (!executionPayloadBid.getParentBlockHash().equals(parentStateGloas.getLatestBlockHash())) {
+        return Optional.of(
+            reject(
+                "Execution payload bid has invalid parent block hash %s, expecting %s",
+                executionPayloadBid.getParentBlockHash().toHexString(),
+                parentStateGloas.getLatestBlockHash().toHexString()));
+      }
       /*
        * [REJECT] The bid's parent (defined by bid.parent_block_root) equals the block's parent (defined by block.parent_root)
        */

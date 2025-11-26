@@ -391,6 +391,45 @@ public class BlockGossipValidatorTest {
   }
 
   @TestTemplate
+  void shouldRejectBlockWithIncorrectExecutionPayloadBidParentHash(final SpecContext specContext) {
+    specContext.assumeGloasActive();
+    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
+    final SignedBlockAndState signedBlockAndState =
+        storageSystem.chainBuilder().generateBlockAtSlot(nextSlot);
+    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
+
+    final Bytes32 badParentBlockHash = Bytes32.random();
+    final Bytes32 expectedParentBlockHash =
+        signedBlockAndState.getState().toVersionGloas().orElseThrow().getLatestBlockHash();
+
+    final SignedBeaconBlock invalidBlock =
+        createBlockWithModifiedExecutionPayloadBid(
+            signedBlockAndState,
+            originalExecutionPayloadBid ->
+                originalExecutionPayloadBid
+                    .getSchema()
+                    .create(
+                        badParentBlockHash,
+                        originalExecutionPayloadBid.getParentBlockRoot(),
+                        originalExecutionPayloadBid.getBlockHash(),
+                        originalExecutionPayloadBid.getPrevRandao(),
+                        originalExecutionPayloadBid.getFeeRecipient(),
+                        originalExecutionPayloadBid.getGasLimit(),
+                        originalExecutionPayloadBid.getBuilderIndex(),
+                        originalExecutionPayloadBid.getSlot(),
+                        originalExecutionPayloadBid.getValue(),
+                        originalExecutionPayloadBid.getExecutionPayment(),
+                        originalExecutionPayloadBid.getBlobKzgCommitmentsRoot()));
+    assertThat(blockGossipValidator.validate(invalidBlock, true))
+        .isCompletedWithValueMatching(
+            result ->
+                result.equals(
+                    InternalValidationResult.reject(
+                        "Execution payload bid has invalid parent block hash %s, expecting %s",
+                        badParentBlockHash.toHexString(), expectedParentBlockHash.toHexString())));
+  }
+
+  @TestTemplate
   void shouldRejectBlockWithIncorrectExecutionPayloadBidParentRoot(final SpecContext specContext) {
     specContext.assumeGloasActive();
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
