@@ -34,9 +34,9 @@ class BitvectorImpl {
         size);
     BitSet bitset = new BitSet(size);
 
-    final int paddingSize = size % 8;
-    if (paddingSize != 0) {
-      if ((bytes.get((size - 1) / 8) >>> paddingSize) != 0) {
+    final int bitsInLastByte = size % 8;
+    if (bitsInLastByte != 0) {
+      if ((bytes.get((size - 1) / 8) >>> bitsInLastByte) != 0) {
         throw new IllegalArgumentException("Invalid padding bits for Bitvector");
       }
     }
