@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyBuilderGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
@@ -400,7 +401,7 @@ public class BlockGossipValidatorTest {
 
     final Bytes32 badParentBlockHash = Bytes32.random();
     final Bytes32 expectedParentBlockHash =
-        signedBlockAndState.getState().toVersionGloas().orElseThrow().getLatestBlockHash();
+        BeaconStateGloas.required(signedBlockAndState.getState()).getLatestBlockHash();
 
     final SignedBeaconBlock invalidBlock =
         createBlockWithModifiedExecutionPayloadBid(
