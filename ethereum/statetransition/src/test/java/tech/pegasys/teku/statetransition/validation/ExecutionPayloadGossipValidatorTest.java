@@ -115,7 +115,7 @@ public class ExecutionPayloadGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldSaveForFutureIfBlockIsNotImported() {
+  void shouldRejectIfBlockIsNotImported() {
     final GossipValidationHelper gossipValidationHelperMock = mock(GossipValidationHelper.class);
     final ExecutionPayloadGossipValidator executionPayloadGossipValidatorMocked =
         new ExecutionPayloadGossipValidator(spec, gossipValidationHelperMock);
