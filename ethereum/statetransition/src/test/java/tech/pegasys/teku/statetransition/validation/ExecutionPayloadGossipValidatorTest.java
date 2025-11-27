@@ -115,9 +115,7 @@ public class ExecutionPayloadGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldSaveForFutureIfBlockInvalid() {
-    // We need to mock the GossipValidationHelper since it's not possible to make a block seen but
-    // invalid
+  void shouldSaveForFutureIfBlockIsNotImportedYet() {
     final GossipValidationHelper gossipValidationHelperMock = mock(GossipValidationHelper.class);
     final ExecutionPayloadGossipValidator executionPayloadGossipValidatorMocked =
         new ExecutionPayloadGossipValidator(spec, gossipValidationHelperMock);

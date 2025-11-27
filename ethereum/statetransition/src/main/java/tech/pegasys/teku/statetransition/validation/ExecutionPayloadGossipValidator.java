@@ -26,7 +26,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
@@ -34,21 +33,22 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.signatures.SigningRootUtil;
 
 public class ExecutionPayloadGossipValidator {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Spec spec;
   private final GossipValidationHelper gossipValidationHelper;
+  private final SigningRootUtil signingRootUtil;
 
   private final Set<BlockRootAndBuilderIndex> seenPayloads =
       LimitedSet.createSynchronized(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
 
   public ExecutionPayloadGossipValidator(
       final Spec spec, final GossipValidationHelper gossipValidationHelper) {
-    this.spec = spec;
     this.gossipValidationHelper = gossipValidationHelper;
+    signingRootUtil = new SigningRootUtil(spec);
   }
 
   public SafeFuture<InternalValidationResult> validate(
@@ -121,7 +121,6 @@ public class ExecutionPayloadGossipValidator {
       return Optional.of(InternalValidationResult.IGNORE);
     }
 
-    // Fetch block slot once to avoid redundant lookups.
     final Optional<UInt64> maybeBeaconBlockSlot =
         gossipValidationHelper.getSlotForBlockRoot(envelope.getBeaconBlockRoot());
 
@@ -147,7 +146,11 @@ public class ExecutionPayloadGossipValidator {
     }
 
     /*
-     * [SAVE_FOR_FUTURE] block passes validation
+     * [REJECT] block passes validation
+     *
+     * Saving for future instead of rejecting because the parent block was not seen but that
+     * doesn't mean that it's invalid.
+     * If the parent block was invalid it would have been rejected in BlockManager::validateAndImportBlock
      */
     if (!gossipValidationHelper.isBlockAvailable(envelope.getBeaconBlockRoot())) {
       LOG.trace(
@@ -233,22 +236,12 @@ public class ExecutionPayloadGossipValidator {
   }
 
   private boolean isSignatureValid(
-      final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope,
-      final BeaconState postState) {
-    final Bytes32 domain =
-        spec.getDomain(
-            Domain.BEACON_BUILDER,
-            spec.getCurrentEpoch(postState),
-            postState.getFork(),
-            postState.getGenesisValidatorsRoot());
+      final SignedExecutionPayloadEnvelope envelope, final BeaconState postState) {
     final Bytes signingRoot =
-        spec.computeSigningRoot(signedExecutionPayloadEnvelope.getMessage(), domain);
-
+        signingRootUtil.signingRootForSignExecutionPayloadEnvelope(
+            envelope.getMessage(), postState.getForkInfo());
     return gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
-        signingRoot,
-        signedExecutionPayloadEnvelope.getMessage().getBuilderIndex(),
-        signedExecutionPayloadEnvelope.getSignature(),
-        postState);
+        signingRoot, envelope.getMessage().getBuilderIndex(), envelope.getSignature(), postState);
   }
 
   private void markAsSeen(
