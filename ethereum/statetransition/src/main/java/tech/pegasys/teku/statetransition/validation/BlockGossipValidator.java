@@ -91,7 +91,7 @@ public class BlockGossipValidator {
      */
     if (gossipValidationHelper.isSlotFinalized(block.getSlot())) {
       LOG.trace("BlockValidator: Block slot {} is finalized. Dropping.", block.getSlot());
-      return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
+      return completedFuture(InternalValidationResult.IGNORE);
     }
 
     // Intermediate equivocation check without marking the block as received to avoid rejecting
@@ -101,7 +101,7 @@ public class BlockGossipValidator {
             performBlockEquivocationCheck(false, block));
 
     if (!intermediateValidationResult.isAccept()) {
-      return SafeFuture.completedFuture(intermediateValidationResult);
+      return completedFuture(intermediateValidationResult);
     }
 
     /*
@@ -111,12 +111,12 @@ public class BlockGossipValidator {
      */
     if (gossipValidationHelper.isSlotFromFuture(block.getSlot())) {
       LOG.trace("BlockValidator: Block is from the future. Saving for future processing.");
-      return SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+      return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
     }
 
     if (gossipValidationHelper.isBlockAvailable(block.getRoot())) {
       LOG.trace("Block is already imported.");
-      return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
+      return completedFuture(InternalValidationResult.IGNORE);
     }
 
     /*
@@ -130,7 +130,7 @@ public class BlockGossipValidator {
      */
     if (!gossipValidationHelper.isBlockAvailable(block.getParentRoot())) {
       LOG.trace("Block parent is not available. Saving for future processing.");
-      return SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+      return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
     }
 
     /*
@@ -139,7 +139,7 @@ public class BlockGossipValidator {
      */
     if (!gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
         block.getSlot(), block.getParentRoot())) {
-      return SafeFuture.completedFuture(reject("Block does not descend from finalized checkpoint"));
+      return completedFuture(reject("Block does not descend from finalized checkpoint"));
     }
 
     /*
@@ -153,12 +153,13 @@ public class BlockGossipValidator {
           "BlockValidator: Parent block does not exist. It will be saved for future processing");
       return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
     }
-    final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
+
     /*
      * [REJECT] The block is from a higher slot than its parent.
      */
+    final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
     if (parentBlockSlot.isGreaterThanOrEqualTo(block.getSlot())) {
-      return SafeFuture.completedFuture(reject("Parent block is after child block."));
+      return completedFuture(reject("Parent block is after child block."));
     }
 
     /*
@@ -175,7 +176,7 @@ public class BlockGossipValidator {
             "BlockValidator: Block has {} kzg commitments, max allowed {}",
             blobKzgCommitmentsCount,
             maxBlobsPerBlock);
-        return SafeFuture.completedFuture(
+        return completedFuture(
             reject(
                 "Block has %d kzg commitments, max allowed %d",
                 blobKzgCommitmentsCount, maxBlobsPerBlock));
