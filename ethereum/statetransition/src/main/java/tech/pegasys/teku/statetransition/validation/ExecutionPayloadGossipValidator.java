@@ -147,16 +147,12 @@ public class ExecutionPayloadGossipValidator {
 
     /*
      * [REJECT] block passes validation
-     *
-     * Saving for future instead of rejecting because the parent block was not seen but that
-     * doesn't mean that it's invalid.
-     * If the parent block was invalid it would have been rejected in BlockManager::validateAndImportBlock
      */
     if (!gossipValidationHelper.isBlockAvailable(envelope.getBeaconBlockRoot())) {
-      LOG.trace(
-          "Block with root {} is unavailable. Saving for future processing.",
-          envelope.getBeaconBlockRoot());
-      return Optional.of(InternalValidationResult.SAVE_FOR_FUTURE);
+      return Optional.of(
+          reject(
+              "Execution payload envelope's block with root %s is invalid",
+              envelope.getBeaconBlockRoot()));
     }
 
     /*

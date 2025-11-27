@@ -131,7 +131,12 @@ public class ExecutionPayloadGossipValidatorTest {
             signedExecutionPayloadEnvelope.getBeaconBlockRoot()))
         .thenReturn(false);
     assertThat(executionPayloadGossipValidatorMocked.validate(signedExecutionPayloadEnvelope))
-        .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
+        .isCompletedWithValueMatching(
+            internalValidationResult ->
+                internalValidationResult.equals(
+                    InternalValidationResult.reject(
+                        "Execution payload envelope's block with root %s is invalid",
+                        signedExecutionPayloadEnvelope.getBeaconBlockRoot())));
   }
 
   @TestTemplate
