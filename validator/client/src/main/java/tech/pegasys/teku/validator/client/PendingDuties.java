@@ -105,7 +105,7 @@ class PendingDuties {
   }
 
   public synchronized void recalculate() {
-    LOG.trace("Recalculating duties, epoch {}", epoch);
+    LOG.trace("Recalculating {} duties, epoch {}", dutyLoader::getDutyType, () -> epoch);
     scheduledDuties.cancel(false);
     // We need to ensure the duties future is completed before .
     scheduledDuties = dutyLoader.loadDutiesForEpoch(epoch);
@@ -113,9 +113,9 @@ class PendingDuties {
         this::processPendingActions,
         error -> {
           if (!(Throwables.getRootCause(error) instanceof CancellationException)) {
-            LOG.error("Failed to load duties", error);
+            LOG.error("Failed to load {} duties", dutyLoader::getDutyType, () -> error);
           } else {
-            LOG.trace("Loading duties cancelled", error);
+            LOG.trace("Loading {} duties cancelled", dutyLoader::getDutyType, () -> error);
           }
         });
   }
@@ -159,6 +159,10 @@ class PendingDuties {
   }
 
   public synchronized void onHeadUpdate(final Bytes32 dependentRoot) {
+    LOG.trace(
+        "Received head update for {} duties,  dependentRoot {}",
+        dutyLoader::getDutyType,
+        () -> dependentRoot);
     getCurrentDuties()
         .ifPresentOrElse(
             duties -> {

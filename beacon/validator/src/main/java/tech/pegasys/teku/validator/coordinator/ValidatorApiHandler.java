@@ -326,7 +326,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                   epoch.minus(combinedChainDataClient.getCurrentEpoch()).toString())));
     }
 
-    final UInt64 stateSlot = getStateSlotForProposerDuties(spec, currentEpoch, epoch);
+    final UInt64 stateSlot = getStateSlotForProposerDuties(spec, epoch);
     LOG.debug(
         "Retrieving proposer duties for epoch {}, current epoch {}, state query slot {}",
         epoch,
@@ -338,23 +338,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   }
 
   // PRE: the distance between dutiesEpoch and currentEpoch is validated
-  static UInt64 getStateSlotForProposerDuties(
-      final Spec spec, final UInt64 currentEpoch, final UInt64 dutiesEpoch) {
-    if (dutiesEpoch.isLessThanOrEqualTo(currentEpoch)) {
-      return spec.computeStartSlotAtEpoch(dutiesEpoch);
+  static UInt64 getStateSlotForProposerDuties(final Spec spec, final UInt64 dutiesEpoch) {
+    if (spec.atEpoch(dutiesEpoch).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+      if (spec.atEpoch(dutiesEpoch.minusMinZero(1))
+          .getMilestone()
+          .isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+        // on fulu boundary we have no context,
+        // but after fulu boundary our dependent root is previous epoch
+        return spec.computeStartSlotAtEpoch(dutiesEpoch.minusMinZero(1));
+      }
     }
-    if (spec.atEpoch(currentEpoch).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-      // Fulu and beyond has 2 epochs of proposer duties in `state.proposer_lookahead`.
-      // Beyond 2 epochs, we need to get inside the 2 epoch range.
-      // next epoch is easy, just use first slot of current epoch
-      // at 2 epochs, we need the first slot of the epoch before the duty epoch.
-      return dutiesEpoch.minusMinZero(currentEpoch).isGreaterThan(1)
-          ? spec.computeStartSlotAtEpoch(dutiesEpoch.decrement())
-          : spec.computeStartSlotAtEpoch(currentEpoch);
-    }
-
-    // pre-fulu we would perform epoch transition if needed, we will need the
-    // start slot of the duties epoch to compute proposer duties
     return spec.computeStartSlotAtEpoch(dutiesEpoch);
   }
 
@@ -1035,10 +1028,18 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
 
   private ProposerDuties getProposerDutiesFromState(final BeaconState state, final UInt64 epoch) {
     final List<ProposerDuty> result = getProposalSlotsForEpoch(state, epoch);
+    if (spec.atEpoch(epoch).getMilestone().isLessThan(SpecMilestone.FULU)) {
+      return new ProposerDuties(
+          spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state),
+          result,
+          combinedChainDataClient.isChainHeadOptimistic());
+    }
+    final Bytes32 dependentRoot =
+        epoch.isGreaterThanOrEqualTo(spec.getCurrentEpoch(state))
+            ? spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state)
+            : spec.atEpoch(epoch).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
     return new ProposerDuties(
-        spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state),
-        result,
-        combinedChainDataClient.isChainHeadOptimistic());
+        dependentRoot, result, combinedChainDataClient.isChainHeadOptimistic());
   }
 
   private SafeFuture<Optional<BeaconState>> getStateForCommitteeDuties(

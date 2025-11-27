@@ -393,31 +393,24 @@ class ValidatorApiHandlerTest {
     // |   2   |      16    |    23    |
     // |   3   |      24    |    31    |
     return Stream.of(
-        Arguments.of(SpecMilestone.PHASE0, 0, 0, 0),
-        Arguments.of(SpecMilestone.PHASE0, 1, 1, 8),
-        Arguments.of(SpecMilestone.PHASE0, 2, 1, 8),
-        Arguments.of(SpecMilestone.PHASE0, 1, 2, 16), // would mean a roll forward pre fulu.
-        Arguments.of(SpecMilestone.FULU, 0, 0, 0),
-        Arguments.of(SpecMilestone.FULU, 0, 1, 0),
-        Arguments.of(SpecMilestone.FULU, 0, 2, 8), // would not be possible pre-fulu
-        Arguments.of(SpecMilestone.FULU, 1, 1, 8),
-        Arguments.of(SpecMilestone.FULU, 2, 1, 8),
-        Arguments.of(SpecMilestone.FULU, 1, 2, 8), // different to pre-fulu
-        Arguments.of(SpecMilestone.FULU, 1, 3, 16) // extra range post fulu, roll forward
-        );
+        Arguments.of(SpecMilestone.PHASE0, 0, 0),
+        Arguments.of(SpecMilestone.PHASE0, 1, 8),
+        Arguments.of(SpecMilestone.PHASE0, 2, 16),
+        Arguments.of(SpecMilestone.PHASE0, 3, 24),
+        Arguments.of(SpecMilestone.FULU, 0, 0),
+        Arguments.of(SpecMilestone.FULU, 1, 0),
+        Arguments.of(SpecMilestone.FULU, 2, 8),
+        Arguments.of(SpecMilestone.FULU, 3, 16));
   }
 
   @ParameterizedTest
   @MethodSource("getStateSlotForProposerDutiesTestCases")
   public void getStateSlotForProposerDuties(
-      final SpecMilestone specMilestone,
-      final int currentEpoch,
-      final int requestedEpoch,
-      final int expectedSlot) {
+      final SpecMilestone specMilestone, final int requestedEpoch, final int expectedSlot) {
     final Spec localSpec = TestSpecFactory.createMinimal(specMilestone);
     final UInt64 querySlot =
         ValidatorApiHandler.getStateSlotForProposerDuties(
-            localSpec, UInt64.valueOf(currentEpoch), UInt64.valueOf(requestedEpoch));
+            localSpec, UInt64.valueOf(requestedEpoch));
 
     assertThat(querySlot.intValue()).isEqualTo(expectedSlot);
   }
@@ -438,8 +431,11 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getProposerDuties_shouldReturnDutiesForCurrentEpoch() {
-    final BeaconState state = createStateWithActiveValidators(epochStartSlot);
-    when(chainDataClient.getStateAtSlotExact(epochStartSlot))
+    final UInt64 previousEpochStartSlot =
+        epochStartSlot.minus(spec.getGenesisSpecConfig().getSlotsPerEpoch());
+    final BeaconState state = createStateWithActiveValidators(previousEpochStartSlot);
+
+    when(chainDataClient.getStateAtSlotExact(previousEpochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
 
@@ -472,8 +468,10 @@ class ValidatorApiHandlerTest {
 
   @Test
   void getProposerDuties_shouldReturnDutiesInOrder() {
-    final BeaconState state = createStateWithActiveValidators(epochStartSlot);
-    when(chainDataClient.getStateAtSlotExact(epochStartSlot))
+    final UInt64 previousEpochStartSlot =
+        epochStartSlot.minus(spec.getGenesisSpecConfig().getSlotsPerEpoch());
+    final BeaconState state = createStateWithActiveValidators(previousEpochStartSlot);
+    when(chainDataClient.getStateAtSlotExact(previousEpochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
 
