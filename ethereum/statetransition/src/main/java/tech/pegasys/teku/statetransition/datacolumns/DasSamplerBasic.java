@@ -19,7 +19,9 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.Optional;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,7 +45,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChannel {
 
-  private static final int MAX_RECENTLY_SAMPLED_BLOCKS = 64;
+  private static final int MAX_RECENTLY_SAMPLED_BLOCKS = 128;
   private static final Logger LOG = LogManager.getLogger();
 
   private final DataColumnSidecarCustody custody;
@@ -54,6 +56,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   private final CustodyGroupCountManager custodyGroupCountManager;
   private final Map<Bytes32, DataColumnSamplingTracker> recentlySampledColumnsByRoot =
       new ConcurrentHashMap<>(MAX_RECENTLY_SAMPLED_BLOCKS);
+  private final NavigableSet<Bytes32> orderedSidecarsTrackers = new TreeSet<>();
 
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
@@ -109,7 +112,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
     final Bytes32 blockRoot = beaconBlock.getRoot();
 
     final DataColumnSamplingTracker tracker = getOrCreateTracker(slot, blockRoot);
-    //TODO fix this as block might not be in tracker if we reached max recently sampled blocks
+    // TODO fix this as block might not be in tracker if we reached max recently sampled blocks
     tracker.setBlock(beaconBlock);
     if (tracker.rpcFetchScheduled().compareAndSet(false, true)) {
       fetchMissingColumnsViaRPC(slot, blockRoot, tracker);
@@ -170,26 +173,41 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   }
 
   private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {
-    if (recentlySampledColumnsByRoot.size() < MAX_RECENTLY_SAMPLED_BLOCKS) {
-      LOG.debug(
-          "Creating new DAS sampling tracker for slot {} root {}, currently size of tracker is {}",
-          slot,
-          blockRoot,
-          recentlySampledColumnsByRoot.size());
+    final DataColumnSamplingTracker tracker = recentlySampledColumnsByRoot.get(blockRoot);
+
+    if (tracker == null) {
+      makeRoomForNewTracker();
       return recentlySampledColumnsByRoot.computeIfAbsent(
           blockRoot,
           k -> {
-            final DataColumnSamplingTracker tracker =
+            final DataColumnSamplingTracker newTracker =
                 DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager);
-            onFirstSeen(slot, blockRoot, tracker);
-            return tracker;
+            orderedSidecarsTrackers.add(blockRoot);
+            onFirstSeen(slot, blockRoot, newTracker);
+            return newTracker;
           });
     }
+    return tracker;
+  }
 
-    LOG.warn(
-        "DAS sampler reached max recently sampled blocks limit ({}). ",
-        MAX_RECENTLY_SAMPLED_BLOCKS);
-    return recentlySampledColumnsByRoot.get(blockRoot);
+  private void makeRoomForNewTracker() {
+    while (recentlySampledColumnsByRoot.size() > MAX_RECENTLY_SAMPLED_BLOCKS - 1) {
+      final Bytes32 toRemove = orderedSidecarsTrackers.pollFirst();
+      if (toRemove == null) {
+        break;
+      }
+      removeAllForBlock(toRemove);
+    }
+  }
+
+  private synchronized void removeAllForBlock(final Bytes32 blockRoot) {
+    final DataColumnSamplingTracker tracker = recentlySampledColumnsByRoot.remove(blockRoot);
+
+    if (tracker != null) {
+      orderedSidecarsTrackers.remove(blockRoot);
+      // TODO maybe we need something like
+      // tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl.dropMissingContent
+    }
   }
 
   private SafeFuture<DataColumnSidecar> retrieveColumnWithSamplingAndCustody(
