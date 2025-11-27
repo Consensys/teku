@@ -140,6 +140,9 @@ public class BlockManager extends Service
       blockImportPerformance = Optional.empty();
     }
 
+    /*
+     * [REJECT] The block's parent (defined by block.parent_root) passes validation.
+     */
     if (propagateInvalidity(block).isPresent()) {
       return SafeFuture.completedFuture(
           InternalValidationResult.reject("Block (or its parent) previously marked as invalid"));
