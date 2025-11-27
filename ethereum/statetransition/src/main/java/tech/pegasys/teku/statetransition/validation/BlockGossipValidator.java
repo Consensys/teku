@@ -34,7 +34,6 @@ import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
@@ -43,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.signatures.SigningRootUtil;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 
 public class BlockGossipValidator {
@@ -50,6 +50,7 @@ public class BlockGossipValidator {
   private final Spec spec;
   private final GossipValidationHelper gossipValidationHelper;
   private final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher;
+  private final SigningRootUtil signingRootUtil;
   private final Map<SlotAndProposer, Bytes32> receivedValidBlockRoots =
       LimitedMap.createNonSynchronized(VALID_BLOCK_SET_SIZE);
 
@@ -60,6 +61,7 @@ public class BlockGossipValidator {
     this.spec = spec;
     this.gossipValidationHelper = gossipValidationHelper;
     this.receivedBlockEventsChannelPublisher = receivedBlockEventsChannelPublisher;
+    signingRootUtil = new SigningRootUtil(spec);
   }
 
   /**
@@ -324,13 +326,8 @@ public class BlockGossipValidator {
 
   private boolean blockSignatureIsValidWithRespectToProposerIndex(
       final SignedBeaconBlock block, final BeaconState postState) {
-    final Bytes32 domain =
-        spec.getDomain(
-            Domain.BEACON_PROPOSER,
-            spec.getCurrentEpoch(postState),
-            postState.getFork(),
-            postState.getGenesisValidatorsRoot());
-    final Bytes signingRoot = spec.computeSigningRoot(block.getMessage(), domain);
+    final Bytes signingRoot =
+        signingRootUtil.signingRootForSignBlock(block.getMessage(), postState.getForkInfo());
     return gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
         signingRoot, block.getProposerIndex(), block.getSignature(), postState);
   }
