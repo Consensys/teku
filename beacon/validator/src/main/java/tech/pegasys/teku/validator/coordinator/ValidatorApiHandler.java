@@ -324,7 +324,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
           new IllegalArgumentException(
               String.format(
                   "Proposer duties were requested %s epochs ahead, only 1 epoch in future is supported.",
-                  epoch.minus(combinedChainDataClient.getCurrentEpoch()).toString())));
+                  epoch.minus(currentEpoch).toString())));
     }
 
     final UInt64 stateSlot = getStateSlotForProposerDuties(spec, epoch);
@@ -340,10 +340,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
 
   // PRE: the distance between dutiesEpoch and currentEpoch is validated
   static UInt64 getStateSlotForProposerDuties(final Spec spec, final UInt64 dutiesEpoch) {
-    if (spec.atEpoch(dutiesEpoch).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-      if (spec.atEpoch(dutiesEpoch.minusMinZero(1))
-          .getMilestone()
-          .isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+      final UInt64 fuluActivationEpoch =
+          spec.getForkSchedule().getFork(SpecMilestone.FULU).getEpoch();
+      if (dutiesEpoch.minusMinZero(1).isGreaterThanOrEqualTo(fuluActivationEpoch)) {
         // on fulu boundary we have no context,
         // but after fulu boundary our dependent root is previous epoch
         return spec.computeStartSlotAtEpoch(dutiesEpoch.minusMinZero(1));
