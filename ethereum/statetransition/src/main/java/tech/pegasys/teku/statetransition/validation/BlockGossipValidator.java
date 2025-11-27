@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.spec.config.Constants.VALID_BLOCK_SET_SIZE;
 import static tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult.BLOCK_ALREADY_SEEN_FOR_SLOT_PROPOSER;
@@ -84,41 +83,108 @@ public class BlockGossipValidator {
   private SafeFuture<InternalValidationResult> internalValidate(
       final SignedBeaconBlock block, final boolean markAsReceived) {
 
-    final Optional<UInt64> maybeParentBlockSlot =
-        gossipValidationHelper.getSlotForBlockRoot(block.getParentRoot());
-    // Phase 1: Perform cheap, stateless checks
-    final Optional<InternalValidationResult> statelessValidationResult =
-        performStatelessValidation(block, maybeParentBlockSlot);
-    if (statelessValidationResult.isPresent()) {
-      return completedFuture(statelessValidationResult.get());
+    /*
+     * [IGNORE] The block is from a slot greater than the latest finalized slot -- i.e. validate that
+     * signed_beacon_block.message.slot > compute_start_slot_at_epoch(store.finalized_checkpoint.epoch)
+     * (a client MAY choose to validate and store such blocks for additional purposes
+     * -- e.g. slashing detection, archive nodes, etc.).
+     */
+    if (gossipValidationHelper.isSlotFinalized(block.getSlot())) {
+      LOG.trace("BlockValidator: Block slot {} is finalized. Dropping.", block.getSlot());
+      return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
     }
 
-    // Phase 2: Load parent state and perform stateful checks
-    checkState(
-        maybeParentBlockSlot.isPresent(),
-        "Parent block slot must be present if stateless validation passes");
-    final UInt64 parentSlot = maybeParentBlockSlot.get();
+    // Intermediate equivocation check without marking the block as received to avoid rejecting
+    // other blocks that could still come from gossip
+    final InternalValidationResult intermediateValidationResult =
+        equivocationCheckResultToInternalValidationResult(
+            performBlockEquivocationCheck(false, block));
+
+    if (!intermediateValidationResult.isAccept()) {
+      return SafeFuture.completedFuture(intermediateValidationResult);
+    }
+
+    /*
+     * [IGNORE] The block is not from a future slot (with a MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance)
+     * -- i.e. validate that signed_beacon_block.message.slot <= current_slot
+     * (a client MAY queue future blocks for processing at the appropriate slot).
+     */
+    if (gossipValidationHelper.isSlotFromFuture(block.getSlot())) {
+      LOG.trace("BlockValidator: Block is from the future. Saving for future processing.");
+      return SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+    }
+
+    if (gossipValidationHelper.isBlockAvailable(block.getRoot())) {
+      LOG.trace("Block is already imported.");
+      return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
+    }
+
+    /*
+     * [REJECT] The block's parent (defined by block.parent_root) passes validation.
+     */
+
+    /*
+     * Saving for future instead of rejecting because the parent block root was not seen but that
+     * doesn't mean it's invalid. If the parent block was invalid the current block would already have
+     * been rejected in BlockManager#validateAndImportBlock
+     */
+    if (!gossipValidationHelper.isBlockAvailable(block.getParentRoot())) {
+      LOG.trace("Block parent is not available. Saving for future processing.");
+      return SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+    }
+
+    /*
+     * [REJECT] The current finalized_checkpoint is an ancestor of block
+     * -- i.e. get_checkpoint_block(store, block.parent_root, store.finalized_checkpoint.epoch) == store.finalized_checkpoint.root
+     */
+    if (!gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
+        block.getSlot(), block.getParentRoot())) {
+      return SafeFuture.completedFuture(reject("Block does not descend from finalized checkpoint"));
+    }
+
+    /*
+     * [IGNORE] The block's parent (defined by block.parent_root) has been seen (via gossip or non-gossip sources)
+     * (a client MAY queue blocks for processing once the parent block is retrieved).
+     */
+    final Optional<UInt64> maybeParentBlockSlot =
+        gossipValidationHelper.getSlotForBlockRoot(block.getParentRoot());
+    if (maybeParentBlockSlot.isEmpty()) {
+      LOG.trace(
+          "BlockValidator: Parent block does not exist. It will be saved for future processing");
+      return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+    }
+    final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
+    /*
+     * [REJECT] The block is from a higher slot than its parent.
+     */
+    if (parentBlockSlot.isGreaterThanOrEqualTo(block.getSlot())) {
+      return SafeFuture.completedFuture(reject("Parent block is after child block."));
+    }
+
+    /*
+     * [REJECT] The length of KZG commitments is less than or equal to the limitation defined in Consensus Layer
+     */
+    final Optional<SszList<SszKZGCommitment>> blobKzgCommitments =
+        block.getMessage().getBody().getOptionalBlobKzgCommitments();
+    if (blobKzgCommitments.isPresent()) {
+      final Integer maxBlobsPerBlock =
+          spec.getMaxBlobsPerBlockAtSlot(block.getSlot()).orElseThrow();
+      final int blobKzgCommitmentsCount = blobKzgCommitments.get().size();
+      if (blobKzgCommitmentsCount > maxBlobsPerBlock) {
+        LOG.trace(
+            "BlockValidator: Block has {} kzg commitments, max allowed {}",
+            blobKzgCommitmentsCount,
+            maxBlobsPerBlock);
+        return SafeFuture.completedFuture(
+            reject(
+                "Block has %d kzg commitments, max allowed %d",
+                blobKzgCommitmentsCount, maxBlobsPerBlock));
+      }
+    }
     return gossipValidationHelper
-        .getParentStateInBlockEpoch(parentSlot, block.getParentRoot(), block.getSlot())
+        .getParentStateInBlockEpoch(parentBlockSlot, block.getParentRoot(), block.getSlot())
         .thenApply(
             maybeParentState -> performStatefulValidation(block, maybeParentState, markAsReceived));
-  }
-
-  private Optional<InternalValidationResult> performStatelessValidation(
-      final SignedBeaconBlock block, final Optional<UInt64> maybeParentBlockSlot) {
-    return validateSlotIsAfterFinalized(block)
-        .or(
-            () ->
-                // First equivocation check without marking the block as received to avoid rejecting
-                // other blocks that could still come from gossip
-                convertEquivocationResultToValidationResult(
-                    performBlockEquivocationCheck(false, block)))
-        .or(() -> validateSlotIsNotFromFuture(block))
-        .or(() -> validateBlockIsNew(block))
-        .or(() -> validateParentBlockPassesValidation(block))
-        .or(() -> validateFinalizedCheckpointIsAncestor(block))
-        .or(() -> validateParentBlockSeen(block, maybeParentBlockSlot))
-        .or(() -> validateKzgCommitments(block));
   }
 
   private InternalValidationResult performStatefulValidation(
@@ -139,123 +205,11 @@ public class BlockGossipValidator {
         .or(
             () ->
                 // Final equivocation check as last step to mark the block as received (depending on
-                // the BroadcastValidationLevel) after considering any other block that have come
-                // from gossip in the meantime
+                // the BroadcastValidationLevel) after considering all other blocks that have been
+                // received from gossip in the meantime
                 convertEquivocationResultToValidationResult(
                     performBlockEquivocationCheck(markAsReceived, block)))
         .orElse(InternalValidationResult.ACCEPT);
-  }
-
-  private Optional<InternalValidationResult> validateSlotIsAfterFinalized(
-      final SignedBeaconBlock block) {
-    /*
-     * [IGNORE] The block is from a slot greater than the latest finalized slot -- i.e. validate that
-     * signed_beacon_block.message.slot > compute_start_slot_at_epoch(store.finalized_checkpoint.epoch)
-     * (a client MAY choose to validate and store such blocks for additional purposes
-     * -- e.g. slashing detection, archive nodes, etc).
-     */
-    if (gossipValidationHelper.isSlotFinalized(block.getSlot())) {
-      LOG.trace("BlockValidator: Block slot {} is finalized. Dropping.", block.getSlot());
-      return Optional.of(InternalValidationResult.IGNORE);
-    }
-    return Optional.empty();
-  }
-
-  private Optional<InternalValidationResult> validateSlotIsNotFromFuture(
-      final SignedBeaconBlock block) {
-    /*
-     * [IGNORE] The block is not from a future slot (with a MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance)
-     * -- i.e. validate that signed_beacon_block.message.slot <= current_slot
-     * (a client MAY queue future blocks for processing at the appropriate slot).
-     */
-    if (gossipValidationHelper.isSlotFromFuture(block.getSlot())) {
-      LOG.trace("BlockValidator: Block is from the future. Saving for future processing.");
-      return Optional.of(InternalValidationResult.SAVE_FOR_FUTURE);
-    }
-    return Optional.empty();
-  }
-
-  private Optional<InternalValidationResult> validateBlockIsNew(final SignedBeaconBlock block) {
-    if (gossipValidationHelper.isBlockAvailable(block.getRoot())) {
-      LOG.trace("Block is already imported.");
-      return Optional.of(InternalValidationResult.IGNORE);
-    }
-    return Optional.empty();
-  }
-
-  /**
-   * Saving for future instead of rejecting because the parent block root was not seen but that
-   * doesn't mean it's invalid. If the parent block was invalid the current block would already have
-   * been rejected in {@link
-   * tech.pegasys.teku.statetransition.block.BlockManager#validateAndImportBlock(SignedBeaconBlock,
-   * Optional)}
-   */
-  private Optional<InternalValidationResult> validateParentBlockPassesValidation(
-      final SignedBeaconBlock block) {
-    /*
-     * [REJECT] The block's parent (defined by block.parent_root) passes validation.
-     */
-    if (!gossipValidationHelper.isBlockAvailable(block.getParentRoot())) {
-      LOG.trace("Block parent is not available. Saving for future processing.");
-      return Optional.of(InternalValidationResult.SAVE_FOR_FUTURE);
-    }
-    return Optional.empty();
-  }
-
-  private Optional<InternalValidationResult> validateFinalizedCheckpointIsAncestor(
-      final SignedBeaconBlock block) {
-    /*
-     * [REJECT] The current finalized_checkpoint is an ancestor of block
-     * -- i.e. get_checkpoint_block(store, block.parent_root, store.finalized_checkpoint.epoch) == store.finalized_checkpoint.root
-     */
-    if (!gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
-        block.getSlot(), block.getParentRoot())) {
-      return Optional.of(reject("Block does not descend from finalized checkpoint"));
-    }
-    return Optional.empty();
-  }
-
-  private Optional<InternalValidationResult> validateParentBlockSeen(
-      final SignedBeaconBlock block, final Optional<UInt64> maybeParentBlockSlot) {
-    /*
-     * [IGNORE] The block's parent (defined by block.parent_root) has been seen (via gossip or non-gossip sources)
-     * (a client MAY queue blocks for processing once the parent block is retrieved).
-     */
-    if (maybeParentBlockSlot.isEmpty()) {
-      LOG.trace("BlockValidator: Parent block does not exist. Saving for future processing.");
-      return Optional.of(InternalValidationResult.SAVE_FOR_FUTURE);
-    }
-    /*
-     * [REJECT] The block is from a higher slot than its parent.
-     */
-    if (maybeParentBlockSlot.get().isGreaterThanOrEqualTo(block.getSlot())) {
-      return Optional.of(reject("Parent block is after child block."));
-    }
-    return Optional.empty();
-  }
-
-  private Optional<InternalValidationResult> validateKzgCommitments(final SignedBeaconBlock block) {
-    /*
-     * [REJECT] The length of KZG commitments is less than or equal to the limitation defined in Consensus Layer
-     */
-    final Optional<SszList<SszKZGCommitment>> blobKzgCommitments =
-        block.getMessage().getBody().getOptionalBlobKzgCommitments();
-    if (blobKzgCommitments.isPresent()) {
-      final Integer maxBlobsPerBlock =
-          spec.getMaxBlobsPerBlockAtSlot(block.getSlot()).orElseThrow();
-      final int blobKzgCommitmentsCount = blobKzgCommitments.get().size();
-      if (blobKzgCommitmentsCount > maxBlobsPerBlock) {
-        LOG.trace(
-            "BlockValidator: Block has {} kzg commitments, max allowed {}",
-            blobKzgCommitmentsCount,
-            maxBlobsPerBlock);
-        return Optional.of(
-            reject(
-                "Block has %d kzg commitments, max allowed %d",
-                blobKzgCommitmentsCount, maxBlobsPerBlock));
-      }
-    }
-    return Optional.empty();
   }
 
   private Optional<InternalValidationResult> validateProposer(
