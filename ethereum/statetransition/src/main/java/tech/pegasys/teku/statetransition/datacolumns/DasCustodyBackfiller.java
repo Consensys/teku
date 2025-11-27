@@ -259,21 +259,22 @@ public class DasCustodyBackfiller extends Service
     LOG.debug(
         "DasCustodyBackfiller: earliestAvailableCustodySlot {}", earliestAvailableCustodySlot);
 
-    if (earliestAvailableCustodySlot
-        .get()
-        .isLessThanOrEqualTo(
-            minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(
-                combinedChainDataClient.getCurrentSlot()))) {
+    final Optional<UInt64> minCustodyPeriodSlot =
+        minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(
+            combinedChainDataClient.getCurrentSlot());
+
+    if (minCustodyPeriodSlot.isEmpty()) {
+      return SafeFuture.completedFuture(false);
+    }
+
+    if (earliestAvailableCustodySlot.get().isLessThanOrEqualTo(minCustodyPeriodSlot.get())) {
 
       return SafeFuture.completedFuture(false);
     }
 
     var latestSlotInBatch = earliestAvailableCustodySlot.get().minusMinZero(1);
-    var oldestCustodySlot =
-        minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(
-            combinedChainDataClient.getCurrentSlot());
     var earliestSlotInBatch =
-        latestSlotInBatch.minusMinZero(batchSizeInSlots - 1).max(oldestCustodySlot);
+        latestSlotInBatch.minusMinZero(batchSizeInSlots - 1).max(minCustodyPeriodSlot.get());
 
     return combinedChainDataClient
         .getDataColumnIdentifiers(earliestSlotInBatch, latestSlotInBatch, UInt64.valueOf(100_000))
@@ -283,7 +284,7 @@ public class DasCustodyBackfiller extends Service
                 new BatchData(
                     earliestSlotInBatch,
                     latestSlotInBatch,
-                    oldestCustodySlot,
+                    minCustodyPeriodSlot.get(),
                     custodyGroupCountManager.getCustodyColumnIndices(),
                     dataColumnSlotAndIdentifiers,
                     slotAndBlockRootWithBlobsPresences))
@@ -311,11 +312,7 @@ public class DasCustodyBackfiller extends Service
 
     final List<SafeFuture<Void>> rpcFutures = new ArrayList<>();
     for (DataColumnSlotAndIdentifier missingColumn : missingColumnsToRequest) {
-      if (missingColumn
-          .slot()
-          .isGreaterThanOrEqualTo(
-              minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(
-                  combinedChainDataClient.getCurrentSlot()))) {
+      if (missingColumn.slot().isGreaterThanOrEqualTo(batchData.minCustodyPeriodSlot)) {
         rpcFutures.add(requestColumnSidecar(missingColumn));
       }
     }
@@ -394,7 +391,8 @@ public class DasCustodyBackfiller extends Service
                       .map(
                           block ->
                               updateEarliestAvailableCustodySlot(
-                                  block.getSlot().increment().max(batchData.targetSlot), batchData))
+                                  block.getSlot().increment().max(batchData.minCustodyPeriodSlot),
+                                  batchData))
 
                       // there is no block in effect prior to our batch, still backfilling blocks
                       // so return false to wait for the next round
@@ -408,7 +406,7 @@ public class DasCustodyBackfiller extends Service
         .apply(slot)
         .thenApply(
             __ -> {
-              if (slot.isLessThanOrEqualTo(batchData.targetSlot)) {
+              if (slot.isLessThanOrEqualTo(batchData.minCustodyPeriodSlot)) {
                 custodyGroupCountManager.setCustodyGroupSyncedCount(
                     batchData.requiredColumnsInCustody.size());
 
@@ -471,7 +469,7 @@ public class DasCustodyBackfiller extends Service
   private record BatchData(
       UInt64 fromSlot,
       UInt64 toSlot,
-      UInt64 targetSlot,
+      UInt64 minCustodyPeriodSlot,
       List<UInt64> requiredColumnsInCustody,
       List<DataColumnSlotAndIdentifier> columnsInCustody,
       List<SlotAndBlockRootWithBlobsPresence> blocksInfo) {
