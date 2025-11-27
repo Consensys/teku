@@ -77,7 +77,8 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
                     .getConfig()
                     .getFuluForkEpoch())
             .intValue();
-    secondaryNode.waitForBlockAtOrAfterSlot(firstFuluSlot);
+    secondaryNode.waitForBlockSatisfying(
+        block -> assertThat(block.getSlot().intValue()).isGreaterThanOrEqualTo(firstFuluSlot));
 
     final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
 
@@ -104,7 +105,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
           throws Exception {
     final TekuBeaconNode primaryNode =
         createTekuBeaconNode(
-            createSwiftConfigBuilder()
+            createFuluMinimalConfigBuilder()
                 .withRealNetwork()
                 .withDiscoveryNetwork()
                 // interop validators are not count for validator custody
@@ -120,7 +121,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
 
     final TekuBeaconNode secondaryNode =
         createTekuBeaconNode(
-            createSwiftConfigBuilder()
+            createFuluMinimalConfigBuilder()
                 .withRealNetwork()
                 .withDiscoveryNetwork()
                 .withGenesisTime(genesisTime.intValue())
@@ -133,7 +134,8 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
                 .build());
 
     // Wait for few epochs, so sync will kick-in when second node is started
-    primaryNode.waitForEpochAtOrAbove(4);
+    primaryNode.waitForEpochAtOrAbove(2);
+    primaryNode.waitForEpochAtOrAbove(3);
 
     secondaryNode.start();
     // DataColumnSidecars are reconstructed on secondaryNode
@@ -153,7 +155,8 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
                     .getConfig()
                     .getFuluForkEpoch())
             .intValue();
-    secondaryNode.waitForBlockAtOrAfterSlot(firstFuluSlot);
+    secondaryNode.waitForBlockSatisfying(
+        block -> assertThat(block.getSlot().intValue()).isGreaterThanOrEqualTo(firstFuluSlot));
     final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
 
     final int endSlot = blockAtHead.getSlot().intValue();
@@ -205,20 +208,6 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
   private TekuNodeConfigBuilder createFuluMinimalConfigBuilder() throws Exception {
     return TekuNodeConfigBuilder.createBeaconNode()
         .withNetwork(Resources.getResource("fulu-minimal.yaml"))
-        .withStubExecutionEngine()
-        .withLogLevel("DEBUG");
-  }
-
-  private TekuNodeConfigBuilder createSwiftConfigBuilder() throws Exception {
-    return TekuNodeConfigBuilder.createBeaconNode()
-        .withNetwork("swift")
-        .withAltairEpoch(UInt64.ZERO)
-        .withBellatrixEpoch(UInt64.ZERO)
-        .withCapellaEpoch(UInt64.ZERO)
-        .withDenebEpoch(UInt64.ZERO)
-        .withElectraEpoch(UInt64.ZERO)
-        .withFuluEpoch(UInt64.ONE)
-        .withTotalTerminalDifficulty(0)
         .withStubExecutionEngine()
         .withLogLevel("DEBUG");
   }
