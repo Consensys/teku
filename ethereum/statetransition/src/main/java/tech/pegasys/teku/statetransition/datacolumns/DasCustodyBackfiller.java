@@ -132,8 +132,7 @@ public class DasCustodyBackfiller extends Service
     if (custodyGroupCount > currentSyncCustodyGroupCount) {
       currentSyncCustodyGroupCount = custodyGroupCount;
       requiresResyncDueToCustodyGroupCountChange = true;
-      LOG.info("DasCustodyBackfiller: custody increase detected, starting.");
-      doStart().finishError(LOG);
+      LOG.info("DasCustodyBackfiller: custody increase detected");
     }
   }
 
@@ -266,12 +265,7 @@ public class DasCustodyBackfiller extends Service
             minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(
                 combinedChainDataClient.getCurrentSlot()))) {
 
-      custodyGroupCountManager.setCustodyGroupSyncedCount(
-          custodyGroupCountManager.getCustodyColumnIndices().size());
-
-      LOG.debug("DasCustodyBackfiller: Column custody backfill completed successfully. Stopping.");
-
-      return doStop().thenApply(__ -> false);
+      return SafeFuture.completedFuture(false);
     }
 
     var latestSlotInBatch = earliestAvailableCustodySlot.get().minusMinZero(1);
@@ -328,7 +322,7 @@ public class DasCustodyBackfiller extends Service
 
     // We wait for the DB variable update AND all RPCs to finish.
     return SafeFuture.allOf(SafeFuture.allOf(rpcFutures.toArray(SafeFuture[]::new)))
-        .thenCompose(__ -> updateEarliestAvailableCustodySlot(batchData))
+        .thenCompose(__ -> calculateAndUpdateEarliestAvailableCustodySlot(batchData))
         .thenPeek(
             cursorUpdated -> {
               LOG.info("DasCustodyBackfiller: Batch completed: {}", batchData);
@@ -381,30 +375,49 @@ public class DasCustodyBackfiller extends Service
    * Moves the cursor backwards based on batch contents. Returns TRUE if cursor was updated, FALSE
    * if stuck (gap).
    */
-  private SafeFuture<Boolean> updateEarliestAvailableCustodySlot(final BatchData batchData) {
+  private SafeFuture<Boolean> calculateAndUpdateEarliestAvailableCustodySlot(
+      final BatchData batchData) {
     var oldestExistingBlockInBatch = batchData.oldestExistingBlockInBatch();
 
     if (oldestExistingBlockInBatch.isPresent()) {
       // Batch has blocks, just move earliestAvailableCustodySlot back to last existing block in the
       // batch
       final UInt64 nextSlot = oldestExistingBlockInBatch.get();
-      return earliestAvailableCustodySlotWriter.apply(nextSlot).thenApply(__ -> true);
+      return updateEarliestAvailableCustodySlot(nextSlot, batchData);
     } else {
       // No blocks in batch, lookup most recent block from the oldest slot of the batch
       return combinedChainDataClient
           .getBlockInEffectAtSlot(batchData.fromSlot().minusMinZero(1))
           .thenCompose(
-              maybeBlockInEffect -> {
-                if (maybeBlockInEffect.isPresent()) {
-                  return earliestAvailableCustodySlotWriter
-                      .apply(
-                          maybeBlockInEffect.get().getSlot().increment().max(batchData.targetSlot))
-                      .thenApply(__ -> true);
-                }
-                // there is no block in effect prior to our batch, still backfilling blocks
-                return SafeFuture.completedFuture(false);
-              });
+              maybeBlockInEffect ->
+                  maybeBlockInEffect
+                      .map(
+                          block ->
+                              updateEarliestAvailableCustodySlot(
+                                  block.getSlot().increment().max(batchData.targetSlot), batchData))
+
+                      // there is no block in effect prior to our batch, still backfilling blocks
+                      // so return false to wait for the next round
+                      .orElseGet(() -> SafeFuture.completedFuture(false)));
     }
+  }
+
+  private SafeFuture<Boolean> updateEarliestAvailableCustodySlot(
+      final UInt64 slot, final BatchData batchData) {
+    return earliestAvailableCustodySlotWriter
+        .apply(slot)
+        .thenApply(
+            __ -> {
+              if (slot.isLessThanOrEqualTo(batchData.targetSlot)) {
+                custodyGroupCountManager.setCustodyGroupSyncedCount(
+                    batchData.requiredColumnsInCustody.size());
+
+                LOG.debug("DasCustodyBackfiller: Column custody backfill completed successfully.");
+                return false;
+              }
+
+              return true;
+            });
   }
 
   private SafeFuture<Void> requestColumnSidecar(final DataColumnSlotAndIdentifier colId) {

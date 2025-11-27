@@ -15,8 +15,8 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -171,33 +171,6 @@ class DasCustodyBackfillerTest {
 
     // Cursor should be head + 1 => 201
     assertThat(cursorStore.get()).isPresent().hasValue(UInt64.valueOf(201));
-  }
-
-  @Test
-  void backfill_shouldStopIfCursorReachesMinCustodySlot() {
-    // Setup specific current slot
-    UInt64 currentSlot = UInt64.valueOf(1000);
-    when(combinedChainDataClient.getCurrentSlot()).thenReturn(currentSlot);
-
-    // Setup min custody slot
-    UInt64 minCustodySlot = UInt64.valueOf(100);
-    when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot))
-        .thenReturn(minCustodySlot);
-
-    // Set the backfill cursor to exactly the min slot (meaning we are done)
-    cursorStore.set(Optional.of(minCustodySlot));
-
-    backfiller.start();
-    asyncRunner.executeQueuedActions();
-
-    // Verify the calculator was called with the correct current slot
-    verify(minCustodyPeriodSlotCalculator, atLeastOnce()).getMinCustodyPeriodSlot(eq(currentSlot));
-
-    // Verify it updates the synced count to the size of CUSTODY_INDICES (which is 2 in this test)
-    verify(custodyGroupCountManager).setCustodyGroupSyncedCount(eq(CUSTODY_INDICES.size()));
-
-    // Verify we didn't try to fetch more columns
-    verify(combinedChainDataClient, never()).getDataColumnIdentifiers(any(), any(), any());
   }
 
   @Test
@@ -374,10 +347,69 @@ class DasCustodyBackfillerTest {
     assertThat(pendingFutureFork.isCancelled()).isTrue();
   }
 
+  @Test
+  void backfill_shouldCompleteAndNotifyManagerWhenReachingMinCustodySlot() {
+    // Setup:
+    // Min Custody Slot: 100
+    // Current Cursor: 101
+    // Batch will cover [100, 100]
+    // Block at 100 exists
+    UInt64 minCustodySlot = UInt64.valueOf(100);
+    UInt64 startCursor = UInt64.valueOf(101);
+    cursorStore.set(Optional.of(startCursor));
+
+    when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any())).thenReturn(minCustodySlot);
+
+    // Block at 100 exists and has blobs
+    SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlockWithCommitments(minCustodySlot, 1);
+    when(combinedChainDataClient.getFinalizedBlockSlot()).thenReturn(Optional.of(UInt64.MAX_VALUE));
+    when(combinedChainDataClient.isFinalized(minCustodySlot)).thenReturn(true);
+    when(combinedChainDataClient.getFinalizedBlockAtSlotExact(minCustodySlot))
+            .thenReturn(completedFuture(Optional.of(block)));
+
+    // We are missing columns, so it does work
+    when(combinedChainDataClient.getDataColumnIdentifiers(any(), any(), any()))
+            .thenReturn(completedFuture(List.of()));
+
+    when(retriever.retrieve(any())).thenReturn(completedFuture(mock(DataColumnSidecar.class)));
+    when(dataColumnSidecarCustody.onNewValidatedDataColumnSidecar(any(), any()))
+            .thenReturn(SafeFuture.COMPLETE);
+
+    // Execute
+    backfiller.start();
+    asyncRunner.executeQueuedActions();
+
+    // Verification:
+    // 1. Cursor should be updated to 100
+    assertThat(cursorStore.get()).isPresent().hasValue(minCustodySlot);
+
+    // 2. IMPORTANT: Verify the manager was notified with the count of columns we are tracking
+    verify(custodyGroupCountManager).setCustodyGroupSyncedCount(CUSTODY_INDICES.size());
+  }
+
+  @Test
+  void backfill_shouldNotRunIfCursorIsAlreadyAtMinCustodySlot() {
+    // Min Custody: 100, Cursor: 100
+    UInt64 minCustodySlot = UInt64.valueOf(100);
+    cursorStore.set(Optional.of(minCustodySlot));
+
+    when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any())).thenReturn(minCustodySlot);
+
+    backfiller.start();
+    asyncRunner.executeQueuedActions();
+
+    // Should return false immediately, triggering no DB lookups
+    verify(combinedChainDataClient, never()).getDataColumnIdentifiers(any(), any(), any());
+    verify(combinedChainDataClient, never()).getFinalizedBlockAtSlotExact(any());
+
+    // Cursor remains unchanged
+    assertThat(cursorStore.get()).isPresent().hasValue(minCustodySlot);
+  }
+
   // --- Helper Methods ---
 
-  private DataColumnSlotAndIdentifier argThatMatch(UInt64 slot, Bytes32 root) {
-    return org.mockito.ArgumentMatchers.argThat(
+  private DataColumnSlotAndIdentifier argThatMatch(final UInt64 slot, final Bytes32 root) {
+    return argThat(
         argument ->
             argument != null && argument.slot().equals(slot) && argument.blockRoot().equals(root));
   }
