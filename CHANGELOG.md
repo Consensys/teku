@@ -9,6 +9,9 @@
 ### Breaking Changes
 
 ### Additions and Improvements
-- Added new metric `beacon_earliest_available_slot`.
+
+- Added new metrics `beacon_earliest_available_slot` and
+  `data_column_sidecar_processing_validated_total`.
 
 ### Bug Fixes
+- Teku may crash when shutting down

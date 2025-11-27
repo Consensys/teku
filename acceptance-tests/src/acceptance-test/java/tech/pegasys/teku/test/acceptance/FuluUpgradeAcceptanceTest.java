@@ -41,7 +41,7 @@ public class FuluUpgradeAcceptanceTest extends AcceptanceTestBase {
   void upgradeFromElectra() throws Exception {
     final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
     final int genesisTime =
-        currentTime.intValue() + 30; // genesis in 30 seconds to give node time to start
+        currentTime.intValue() + 45; // genesis in 45 seconds to give node time to start
 
     final BesuNode besuNode = createBesuNode(genesisTime);
     besuNode.start();
