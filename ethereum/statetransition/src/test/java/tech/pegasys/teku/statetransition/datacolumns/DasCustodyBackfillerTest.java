@@ -361,19 +361,20 @@ class DasCustodyBackfillerTest {
     when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any())).thenReturn(minCustodySlot);
 
     // Block at 100 exists and has blobs
-    SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlockWithCommitments(minCustodySlot, 1);
+    SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(minCustodySlot, 1);
     when(combinedChainDataClient.getFinalizedBlockSlot()).thenReturn(Optional.of(UInt64.MAX_VALUE));
     when(combinedChainDataClient.isFinalized(minCustodySlot)).thenReturn(true);
     when(combinedChainDataClient.getFinalizedBlockAtSlotExact(minCustodySlot))
-            .thenReturn(completedFuture(Optional.of(block)));
+        .thenReturn(completedFuture(Optional.of(block)));
 
     // We are missing columns, so it does work
     when(combinedChainDataClient.getDataColumnIdentifiers(any(), any(), any()))
-            .thenReturn(completedFuture(List.of()));
+        .thenReturn(completedFuture(List.of()));
 
     when(retriever.retrieve(any())).thenReturn(completedFuture(mock(DataColumnSidecar.class)));
     when(dataColumnSidecarCustody.onNewValidatedDataColumnSidecar(any(), any()))
-            .thenReturn(SafeFuture.COMPLETE);
+        .thenReturn(SafeFuture.COMPLETE);
 
     // Execute
     backfiller.start();
