@@ -548,4 +548,9 @@ public class ForkChoiceUtil {
   public AvailabilityChecker<?> createAvailabilityChecker(final SignedBeaconBlock block) {
     return AvailabilityChecker.NOOP;
   }
+
+  public AvailabilityChecker<?> createAvailabilityChecker(
+      final SignedExecutionPayloadEnvelope executionPayload) {
+    return AvailabilityChecker.NOOP;
+  }
 }

@@ -129,6 +129,7 @@ import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
+import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
@@ -1401,12 +1402,29 @@ class ValidatorApiHandlerTest {
   public void publishSignedExecutionPayload_shouldPublish() {
     final SignedExecutionPayloadEnvelope signedExecutionPayload =
         dataStructureUtil.randomSignedExecutionPayloadEnvelope(5);
+    final PublishSignedExecutionPayloadResult publishResult =
+        PublishSignedExecutionPayloadResult.success(signedExecutionPayload.getBeaconBlockRoot());
     when(executionPayloadPublisher.publishSignedExecutionPayload(eq(signedExecutionPayload)))
-        .thenReturn(SafeFuture.COMPLETE);
-    final SafeFuture<Void> result =
-        validatorApiHandler.publishSignedExecutionPayload(signedExecutionPayload);
+        .thenReturn(SafeFuture.completedFuture(publishResult));
 
-    assertThat(result).isCompleted();
+    assertThat(validatorApiHandler.publishSignedExecutionPayload(signedExecutionPayload))
+        .isCompletedWithValue(publishResult);
+
+    verify(executionPayloadPublisher).publishSignedExecutionPayload(signedExecutionPayload);
+  }
+
+  @Test
+  public void publishSignedExecutionPayload_shouldHandleExceptions() {
+    final SignedExecutionPayloadEnvelope signedExecutionPayload =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(5);
+    final PublishSignedExecutionPayloadResult failedResult =
+        PublishSignedExecutionPayloadResult.rejected(
+            signedExecutionPayload.getBeaconBlockRoot(), "oopsy");
+    when(executionPayloadPublisher.publishSignedExecutionPayload(eq(signedExecutionPayload)))
+        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
+
+    assertThat(validatorApiHandler.publishSignedExecutionPayload(signedExecutionPayload))
+        .isCompletedWithValue(failedResult);
 
     verify(executionPayloadPublisher).publishSignedExecutionPayload(signedExecutionPayload);
   }

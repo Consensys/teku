@@ -13,28 +13,29 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 
 public interface MinCustodyPeriodSlotCalculator {
 
   static MinCustodyPeriodSlotCalculator createFromSpec(final Spec spec) {
+    final UInt64 fuluActivationEpoch =
+        spec.getForkSchedule().getFork(SpecMilestone.FULU).getEpoch();
+
     return currentSlot -> {
       final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
-      final int custodyPeriodEpochs =
-          spec.getSpecConfig(currentEpoch)
-              .toVersionFulu()
-              .map(SpecConfigFulu::getMinEpochsForDataColumnSidecarsRequests)
-              .orElse(0);
-      if (custodyPeriodEpochs == 0) {
-        return currentSlot;
-      } else {
-        final UInt64 minCustodyEpoch = currentEpoch.minusMinZero(custodyPeriodEpochs);
-        return spec.computeStartSlotAtEpoch(minCustodyEpoch);
-      }
+      return spec.getSpecConfig(currentEpoch)
+          .toVersionFulu()
+          .map(SpecConfigFulu::getMinEpochsForDataColumnSidecarsRequests)
+          .map(
+              custodyPeriodEpochs ->
+                  currentEpoch.minusMinZero(custodyPeriodEpochs).max(fuluActivationEpoch))
+          .map(spec::computeStartSlotAtEpoch);
     };
   }
 
-  UInt64 getMinCustodyPeriodSlot(UInt64 currentSlot);
+  Optional<UInt64> getMinCustodyPeriodSlot(UInt64 currentSlot);
 }

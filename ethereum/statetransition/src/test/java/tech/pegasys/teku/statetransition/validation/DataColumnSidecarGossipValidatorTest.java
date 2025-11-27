@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
@@ -25,12 +26,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -51,7 +52,7 @@ public class DataColumnSidecarGossipValidatorTest {
   private final Map<Bytes32, BlockImportResult> invalidBlocks = new HashMap<>();
   private final GossipValidationHelper gossipValidationHelper = mock(GossipValidationHelper.class);
   private final MiscHelpersFulu miscHelpersFulu = mock(MiscHelpersFulu.class);
-  private final MetricsSystem metricsSystemStub = new StubMetricsSystem();
+  private final StubMetricsSystem metricsSystemStub = new StubMetricsSystem();
   private final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(0);
   private DataStructureUtil dataStructureUtil;
   private DataColumnSidecarGossipValidator validator;
@@ -119,14 +120,21 @@ public class DataColumnSidecarGossipValidatorTest {
   void shouldAccept() {
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.ACCEPT, 1));
   }
 
+  /*
+   Spec says client should ignore or save it for future. Teku saves it for future processing.
+  */
   @TestTemplate
-  void shouldIgnoreWhenSlotIsFromFuture() {
+  void shouldSaveForFutureWhenSlotIsFromFuture() {
     when(gossipValidationHelper.isSlotFromFuture(slot)).thenReturn(true);
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.SAVE_FOR_FUTURE, 1));
   }
 
   @TestTemplate
@@ -135,6 +143,8 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.IGNORE, 1));
   }
 
   @TestTemplate
@@ -145,6 +155,8 @@ public class DataColumnSidecarGossipValidatorTest {
             result ->
                 result.equals(
                     InternalValidationResult.reject("DataColumnSidecar has invalid structure")));
+
+    assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
   }
 
   @TestTemplate
@@ -153,6 +165,8 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.SAVE_FOR_FUTURE, 1));
   }
 
   @TestTemplate
@@ -163,6 +177,8 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
   }
 
   @TestTemplate
@@ -171,6 +187,8 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.SAVE_FOR_FUTURE, 1));
   }
 
   @TestTemplate
@@ -179,6 +197,8 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
   }
 
   @TestTemplate
@@ -188,6 +208,8 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
   }
 
   @TestTemplate
@@ -202,6 +224,8 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
   }
 
   @TestTemplate
@@ -210,6 +234,8 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
   }
 
   @TestTemplate
@@ -219,6 +245,8 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
   }
 
   @TestTemplate
@@ -231,6 +259,8 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.IGNORE, 1));
   }
 
   @TestTemplate
@@ -240,6 +270,8 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.IGNORE, 1));
   }
 
   @TestTemplate
@@ -249,6 +281,8 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
   }
 
   @TestTemplate
@@ -258,6 +292,8 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.ACCEPT, 1, ValidationResultCode.IGNORE, 1));
   }
 
   @TestTemplate
@@ -283,6 +319,8 @@ public class DataColumnSidecarGossipValidatorTest {
     verify(gossipValidationHelper, never()).isProposerTheExpectedProposer(any(), any(), any());
     verify(gossipValidationHelper, never())
         .isSignatureValidWithRespectToProposerIndex(any(), any(), any(), any());
+
+    assertValidationMetrics(Map.of(ValidationResultCode.ACCEPT, 1, ValidationResultCode.IGNORE, 1));
   }
 
   @TestTemplate
@@ -342,6 +380,8 @@ public class DataColumnSidecarGossipValidatorTest {
     verify(miscHelpersFulu).verifyDataColumnSidecarInclusionProof(dataColumnSidecarNew);
     verify(miscHelpersFulu).verifyDataColumnSidecarKzgProofs(dataColumnSidecarNew);
     verify(gossipValidationHelper).getParentStateInBlockEpoch(any(), any(), any());
+
+    assertValidationMetrics(Map.of(ValidationResultCode.ACCEPT, 2, ValidationResultCode.IGNORE, 1));
   }
 
   @TestTemplate
@@ -442,5 +482,32 @@ public class DataColumnSidecarGossipValidatorTest {
     // Signature is validating again though header was known valid until dropped from cache
     verify(gossipValidationHelper)
         .isSignatureValidWithRespectToProposerIndex(any(), any(), any(), any());
+
+    assertValidationMetrics(Map.of(ValidationResultCode.ACCEPT, 6));
+  }
+
+  private void assertValidationMetrics(final Map<ValidationResultCode, Integer> values) {
+    assertThat(
+            metricsSystemStub.getCounterValue(
+                TekuMetricCategory.BEACON, "data_column_sidecar_processing_requests_total"))
+        .isEqualTo(values.values().stream().map(Integer::longValue).reduce(0L, Long::sum));
+
+    values.forEach(
+        (validationResultCode, count) -> {
+          assertThat(
+                  metricsSystemStub.getLabelledCounterValue(
+                      TekuMetricCategory.BEACON,
+                      "data_column_sidecar_processing_validated_total",
+                      validationResultCode.name()))
+              .isEqualTo(count.longValue());
+
+          if (validationResultCode == ValidationResultCode.ACCEPT) {
+            assertThat(
+                    metricsSystemStub.getCounterValue(
+                        TekuMetricCategory.BEACON,
+                        "data_column_sidecar_processing_successes_total"))
+                .isEqualTo(count.longValue());
+          }
+        });
   }
 }
