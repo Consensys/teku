@@ -535,9 +535,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     final ForkChoiceUtil forkChoiceUtil = spec.atSlot(signedEnvelope.getSlot()).getForkChoiceUtil();
 
-    // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 add a real data availability check
-    // (not required for devnet-0)
-    final AvailabilityChecker<?> availabilityChecker = AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR;
+    final AvailabilityChecker<?> availabilityChecker =
+        forkChoiceUtil.createAvailabilityChecker(signedEnvelope);
 
     availabilityChecker.initiateDataAvailabilityCheck();
 
@@ -566,7 +565,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                         "Data availability check for slot: {}, builder: {}, block_root: {} result: {}",
                         signedEnvelope.getSlot(),
                         signedEnvelope.getMessage().getBuilderIndex(),
-                        signedEnvelope.getMessage().getBeaconBlockRoot(),
+                        signedEnvelope.getBeaconBlockRoot(),
                         result.toLogString()));
 
     return payloadExecutor
@@ -700,8 +699,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return result;
   }
 
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 it requires more validations and more
-  // interactions with the store (e.g. onExecutionPayloadResult)
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 it requires potentially more
+  // validations and more interactions with the store (e.g. onExecutionPayloadResult)
   private ExecutionPayloadImportResult importExecutionPayloadAndState(
       final SignedExecutionPayloadEnvelope signedEnvelope,
       final ForkChoiceUtil forkChoiceUtil,
@@ -921,7 +920,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     P2P_LOG.onInvalidExecutionPayload(
         signedEnvelope.getSlot(),
         signedEnvelope.getMessage().getBuilderIndex(),
-        signedEnvelope.getMessage().getBeaconBlockRoot(),
+        signedEnvelope.getBeaconBlockRoot(),
         signedEnvelope.sszSerialize(),
         result.getFailureReason().name(),
         result.getFailureCause());

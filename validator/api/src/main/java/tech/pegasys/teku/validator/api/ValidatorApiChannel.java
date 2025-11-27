@@ -243,9 +243,11 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
         }
 
         @Override
-        public SafeFuture<Void> publishSignedExecutionPayload(
+        public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
             final SignedExecutionPayloadEnvelope signedExecutionPayload) {
-          return SafeFuture.COMPLETE;
+          return SafeFuture.completedFuture(
+              PublishSignedExecutionPayloadResult.success(
+                  signedExecutionPayload.getBeaconBlockRoot()));
         }
       };
 

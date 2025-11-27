@@ -34,7 +34,7 @@ import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
 
 public class AttestationDutyScheduler extends AbstractDutyScheduler {
   private static final Logger LOG = LogManager.getLogger();
-  static final int LOOKAHEAD_EPOCHS = 1;
+  private static final int LOOKAHEAD_EPOCHS = 1;
 
   private final AtomicInteger nextAttestationSlot = new AtomicInteger();
 

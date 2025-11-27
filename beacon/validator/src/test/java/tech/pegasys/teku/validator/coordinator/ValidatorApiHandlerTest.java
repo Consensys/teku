@@ -123,6 +123,7 @@ import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
+import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
@@ -372,26 +373,12 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getProposerDuties_shouldFailForEpochTooFarAhead() {
-    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(3));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(2));
 
     final SafeFuture<Optional<ProposerDuties>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(IllegalArgumentException.class);
-  }
-
-  @Test
-  public void getProposerDuties_shouldReturnDutiesForNextEpoch() {
-    final BeaconState state = createStateWithActiveValidators(epochStartSlot);
-    when(chainDataClient.getStateAtSlotExact(epochStartSlot))
-        .thenReturn(completedFuture(Optional.of(state)));
-    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
-
-    final SafeFuture<Optional<ProposerDuties>> result =
-        validatorApiHandler.getProposerDuties(EPOCH.increment());
-    final ProposerDuties duties = assertCompletedSuccessfully(result).orElseThrow();
-    assertThat(duties.getDuties().size()).isEqualTo(spec.slotsPerEpoch(EPOCH.increment()));
-    assertThat(duties.getDependentRoot()).isEqualTo(spec.getCurrentDutyDependentRoot(state));
   }
 
   @Test
@@ -409,11 +396,24 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
+  public void getProposerDuties_shouldAllowOneEpochTolerance() {
+    final BeaconState state = createStateWithActiveValidators(epochStartSlot);
+    when(chainDataClient.getStateAtSlotExact(epochStartSlot))
+        .thenReturn(completedFuture(Optional.of(state)));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(1));
+
+    final SafeFuture<Optional<ProposerDuties>> result =
+        validatorApiHandler.getProposerDuties(EPOCH);
+    final Optional<ProposerDuties> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.orElseThrow().getDuties().size()).isEqualTo(spec.slotsPerEpoch(EPOCH));
+  }
+
+  @Test
   void getProposerDuties_shouldReturnDutiesInOrder() {
     final BeaconState state = createStateWithActiveValidators(epochStartSlot);
     when(chainDataClient.getStateAtSlotExact(epochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
-    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(1));
 
     final SafeFuture<Optional<ProposerDuties>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
@@ -1341,12 +1341,29 @@ class ValidatorApiHandlerTest {
   public void publishSignedExecutionPayload_shouldPublish() {
     final SignedExecutionPayloadEnvelope signedExecutionPayload =
         dataStructureUtil.randomSignedExecutionPayloadEnvelope(5);
+    final PublishSignedExecutionPayloadResult publishResult =
+        PublishSignedExecutionPayloadResult.success(signedExecutionPayload.getBeaconBlockRoot());
     when(executionPayloadPublisher.publishSignedExecutionPayload(eq(signedExecutionPayload)))
-        .thenReturn(SafeFuture.COMPLETE);
-    final SafeFuture<Void> result =
-        validatorApiHandler.publishSignedExecutionPayload(signedExecutionPayload);
+        .thenReturn(SafeFuture.completedFuture(publishResult));
 
-    assertThat(result).isCompleted();
+    assertThat(validatorApiHandler.publishSignedExecutionPayload(signedExecutionPayload))
+        .isCompletedWithValue(publishResult);
+
+    verify(executionPayloadPublisher).publishSignedExecutionPayload(signedExecutionPayload);
+  }
+
+  @Test
+  public void publishSignedExecutionPayload_shouldHandleExceptions() {
+    final SignedExecutionPayloadEnvelope signedExecutionPayload =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(5);
+    final PublishSignedExecutionPayloadResult failedResult =
+        PublishSignedExecutionPayloadResult.rejected(
+            signedExecutionPayload.getBeaconBlockRoot(), "oopsy");
+    when(executionPayloadPublisher.publishSignedExecutionPayload(eq(signedExecutionPayload)))
+        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
+
+    assertThat(validatorApiHandler.publishSignedExecutionPayload(signedExecutionPayload))
+        .isCompletedWithValue(failedResult);
 
     verify(executionPayloadPublisher).publishSignedExecutionPayload(signedExecutionPayload);
   }

@@ -17,10 +17,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -30,12 +33,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
-import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class BeaconStateAccessorsFuluTest {
-
+  private static final Logger LOG = LogManager.getLogger();
   private final Spec spec = TestSpecFactory.createMinimalFulu();
   private final PredicatesElectra predicatesElectra =
       new PredicatesElectra(spec.getGenesisSpecConfig());
@@ -46,12 +48,12 @@ public class BeaconStateAccessorsFuluTest {
       new MiscHelpersFulu(specConfigFulu, predicatesElectra, schemaDefinitionsFulu);
   private final BeaconStateAccessorsFulu stateAccessorsFulu =
       new BeaconStateAccessorsFulu(spec.getGenesisSpecConfig(), predicatesElectra, miscHelpers);
-  private final StorageSystem storageSystem =
-      InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.PRUNE, spec);
+  private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(16, spec);
 
   @Test
   void getProposerIndices_notGenesisEpoch() {
     storageSystem.chainUpdater().initializeGenesis();
+
     final SignedBlockAndState blockAndState = storageSystem.chainUpdater().advanceChain(16);
     final List<Integer> proposerLookahead =
         getProposerLookaheadFromState(blockAndState.getState().toVersionFulu().orElseThrow());
@@ -84,27 +86,50 @@ public class BeaconStateAccessorsFuluTest {
   }
 
   @Test
+  void getBeaconProposerIndex_currentSlot() {
+    storageSystem.chainUpdater().initializeGenesis();
+
+    final SignedBlockAndState blockAndState = storageSystem.chainUpdater().advanceChain(16);
+    assertThat(stateAccessorsFulu.getBeaconProposerIndex(blockAndState.getState())).isEqualTo(14);
+  }
+
+  @Test
   void getBeaconProposerIndex_currentEpoch() {
     storageSystem.chainUpdater().initializeGenesis();
+
     final SignedBlockAndState blockAndState = storageSystem.chainUpdater().advanceChain(16);
     assertThat(
-            stateAccessorsFulu.getBeaconProposerIndex(blockAndState.getState(), UInt64.valueOf(16)))
-        .isEqualTo(0);
+            stateAccessorsFulu.getBeaconProposerIndex(blockAndState.getState(), UInt64.valueOf(17)))
+        .isEqualTo(13);
   }
 
   @Test
   void getBeaconProposerIndex_nextEpoch() {
     storageSystem.chainUpdater().initializeGenesis();
-    final SignedBlockAndState blockAndState = storageSystem.chainUpdater().advanceChain(16);
-    assertThat(
-            stateAccessorsFulu.getBeaconProposerIndex(blockAndState.getState(), UInt64.valueOf(24)))
-        .isEqualTo(0);
+
+    final int stateSlot = 16;
+    final SignedBlockAndState blockAndState = storageSystem.chainUpdater().advanceChain(stateSlot);
+    final List<Integer> proposers =
+        blockAndState.getState().toVersionFulu().orElseThrow().getProposerLookahead().stream()
+            .map(SszUInt64::longValue)
+            .map(Long::intValue)
+            .toList();
+    LOG.debug("Checking proposers in proposer_lookahead");
+    final UInt64 stateEpochStartSlot =
+        spec.computeStartSlotAtEpoch(spec.computeEpochAtSlot(UInt64.valueOf(stateSlot)));
+    for (int i = 0; i < proposers.size(); i++) {
+      assertThat(
+              stateAccessorsFulu.getBeaconProposerIndex(
+                  blockAndState.getState(), stateEpochStartSlot.plus(i)))
+          .isEqualTo(proposers.get(i));
+    }
   }
 
   @ParameterizedTest
   @ValueSource(ints = {8, 33})
   void getBeaconProposerIndex_shouldThrowIfNotCurrentOrNextEpoch(final int slot) {
     storageSystem.chainUpdater().initializeGenesis();
+
     final SignedBlockAndState blockAndState = storageSystem.chainUpdater().advanceChain(16);
     assertThatThrownBy(
             () ->

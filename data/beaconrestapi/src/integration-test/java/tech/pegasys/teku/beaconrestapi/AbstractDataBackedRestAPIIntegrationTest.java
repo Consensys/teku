@@ -148,6 +148,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
   protected final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
   protected final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
+
   protected final BlockProductionAndPublishingPerformanceFactory
       blockProductionAndPublishingFactory =
           mock(BlockProductionAndPublishingPerformanceFactory.class);

@@ -336,7 +336,7 @@ public class P2POptions {
       arity = "0..1",
       hidden = true,
       fallbackValue = "true")
-  private boolean reworkedSidecarRecoveryEnabled = false;
+  private boolean reworkedSidecarRecoveryEnabled = true;
 
   @Option(
       names = {"--Xp2p-reworked-sidecar-cancel-timeout-ms"},
@@ -527,6 +527,27 @@ public class P2POptions {
   private int custodyGroupCountOverride = P2PConfig.DEFAULT_CUSTODY_GROUP_COUNT_OVERRIDE;
 
   @Option(
+      names = {"--Xdas-publish-withhold-columns-every-slots"},
+      hidden = true,
+      paramLabel = "<NUMBER>",
+      description =
+          "If set will not publish non-custodied DataColumnSidecars on block production once in configured number of slots",
+      arity = "1")
+  private int dasPublishWithholdColumnsEverySlots =
+      P2PConfig.DEFAULT_DAS_PUBLISH_WITHHOLD_COLUMNS_EVERY_SLOTS;
+
+  @Option(
+      names = {"--Xdas-disable-el-recovery"},
+      hidden = true,
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "If set will disable attempts to recover blobs from EL to build DataColumnSidecars",
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean dasDisableElRecovery = P2PConfig.DEFAULT_DAS_DISABLE_EL_RECOVERY;
+
+  @Option(
       names = {"--Xp2p-historical-data-max-concurrent-queries"},
       hidden = true,
       paramLabel = "<NUMBER>",
@@ -634,6 +655,8 @@ public class P2POptions {
                   .floodPublishMaxMessageSizeThreshold(floodPublishMaxMessageSizeThreshold)
                   .gossipBlobsAfterBlockEnabled(gossipBlobsAfterBlockEnabled)
                   .custodyGroupCountOverride(custodyGroupCountOverride)
+                  .dasPublishWithholdColumnsEverySlots(dasPublishWithholdColumnsEverySlots)
+                  .dasDisableElRecovery(dasDisableElRecovery)
                   .historicalDataMaxConcurrentQueries(historicalDataMaxConcurrentQueries)
                   .historicalDataMaxQueryQueueSize(historicalDataMaxQueryQueueSize)
                   .executionProofTopicEnabled(executionProofTopicEnabled)
