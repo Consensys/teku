@@ -95,7 +95,8 @@ class DasCustodyBackfillerTest {
     when(combinedChainDataClient.getCurrentSlot()).thenReturn(UInt64.valueOf(1000));
 
     // Default min custody slot is very old
-    when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any())).thenReturn(Optional.of(UInt64.ZERO));
+    when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any()))
+        .thenReturn(Optional.of(UInt64.ZERO));
 
     backfiller =
         new DasCustodyBackfiller(
@@ -358,7 +359,8 @@ class DasCustodyBackfillerTest {
     UInt64 startCursor = UInt64.valueOf(101);
     cursorStore.set(Optional.of(startCursor));
 
-    when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any())).thenReturn(Optional.of(minCustodySlot));
+    when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any()))
+        .thenReturn(Optional.of(minCustodySlot));
 
     // Block at 100 exists and has blobs
     SignedBeaconBlock block =
@@ -394,7 +396,8 @@ class DasCustodyBackfillerTest {
     UInt64 minCustodySlot = UInt64.valueOf(100);
     cursorStore.set(Optional.of(minCustodySlot));
 
-    when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any())).thenReturn(Optional.of(minCustodySlot));
+    when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any()))
+        .thenReturn(Optional.of(minCustodySlot));
 
     backfiller.start();
     asyncRunner.executeQueuedActions();
