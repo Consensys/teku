@@ -280,7 +280,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   }
 
   public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
-      LOG.debug("Obtaining block for root {} from DasSamplerBasic", blockRoot);
+    LOG.debug("Obtaining block for root {} from DasSamplerBasic", blockRoot);
     return recentlySampledColumnsByRoot.get(blockRoot).getBlock();
   }
 }
