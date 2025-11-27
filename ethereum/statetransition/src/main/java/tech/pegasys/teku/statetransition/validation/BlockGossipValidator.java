@@ -198,23 +198,6 @@ public class BlockGossipValidator {
       return InternalValidationResult.IGNORE;
     }
     final BeaconState parentState = maybeParentState.get();
-
-    return validateProposer(block, parentState)
-        .or(() -> validateExecutionPayload(block, parentState))
-        .or(() -> validateExecutionPayloadBid(block, parentState))
-        .or(() -> validateSignature(block, parentState))
-        .or(
-            () ->
-                // Final equivocation check as last step to mark the block as received (depending on
-                // the BroadcastValidationLevel) after considering all other blocks that have been
-                // received from gossip in the meantime
-                convertEquivocationResultToValidationResult(
-                    performBlockEquivocationCheck(markAsReceived, block)))
-        .orElse(InternalValidationResult.ACCEPT);
-  }
-
-  private Optional<InternalValidationResult> validateProposer(
-      final SignedBeaconBlock block, final BeaconState state) {
     /*
      * [REJECT] The block is proposed by the expected proposer_index for the block's slot in the context
      * of the current shuffling (defined by parent_root/slot).
@@ -223,22 +206,19 @@ public class BlockGossipValidator {
      * -- in such a case do not REJECT, instead IGNORE this message.
      */
     if (!gossipValidationHelper.isProposerTheExpectedProposer(
-        block.getProposerIndex(), block.getSlot(), state)) {
-      return Optional.of(
-          reject("Block proposed by incorrect proposer (%s)", block.getProposerIndex()));
+        block.getProposerIndex(), block.getSlot(), parentState)) {
+      return reject("Block proposed by incorrect proposer (%s)", block.getProposerIndex());
     }
-    return Optional.empty();
-  }
 
-  private Optional<InternalValidationResult> validateExecutionPayload(
-      final SignedBeaconBlock block, final BeaconState parentState) {
     final MiscHelpers miscHelpers = spec.atSlot(block.getSlot()).miscHelpers();
+    final Optional<SignedExecutionPayloadBid> maybeSignedExecutionPayloadBid =
+        block.getMessage().getBody().getOptionalSignedExecutionPayloadBid();
     if (miscHelpers.isMergeTransitionComplete(parentState)
-        && block.getMessage().getBody().getOptionalSignedExecutionPayloadBid().isEmpty()) {
+        && maybeSignedExecutionPayloadBid.isEmpty()) {
       final Optional<ExecutionPayload> executionPayload =
           block.getMessage().getBody().getOptionalExecutionPayload();
       if (executionPayload.isEmpty()) {
-        return Optional.of(reject("Missing execution payload"));
+        return reject("Missing execution payload");
       }
       /*
        * [REJECT] The block's execution payload timestamp is correct with respect to the slot
@@ -249,17 +229,10 @@ public class BlockGossipValidator {
               .getTimestamp()
               .compareTo(spec.computeTimeAtSlot(parentState, block.getSlot()))
           != 0) {
-        return Optional.of(
-            reject("Execution Payload timestamp is not consistent with block slot time"));
+        return reject("Execution Payload timestamp is not consistent with block slot time");
       }
     }
-    return Optional.empty();
-  }
 
-  private Optional<InternalValidationResult> validateExecutionPayloadBid(
-      final SignedBeaconBlock block, final BeaconState parentState) {
-    final Optional<SignedExecutionPayloadBid> maybeSignedExecutionPayloadBid =
-        block.getMessage().getBody().getOptionalSignedExecutionPayloadBid();
     if (maybeSignedExecutionPayloadBid.isPresent()) {
       final ExecutionPayloadBid executionPayloadBid =
           maybeSignedExecutionPayloadBid.get().getMessage();
@@ -278,41 +251,32 @@ public class BlockGossipValidator {
           && !executionPayloadBid
               .getParentBlockHash()
               .equals(maybeParentStateGloas.get().getLatestBlockHash())) {
-        return Optional.of(
-            reject(
-                "Execution payload bid has invalid parent block hash %s, expecting %s",
-                executionPayloadBid.getParentBlockHash(),
-                maybeParentStateGloas.get().getLatestBlockHash()));
+        return reject(
+            "Execution payload bid has invalid parent block hash %s, expecting %s",
+            executionPayloadBid.getParentBlockHash(),
+            maybeParentStateGloas.get().getLatestBlockHash());
       }
+
       /*
        * [REJECT] The bid's parent (defined by bid.parent_block_root) equals the block's parent (defined by block.parent_root)
        */
       if (!executionPayloadBid.getParentBlockRoot().equals(block.getParentRoot())) {
-        return Optional.of(
-            reject(
-                "Execution payload bid has invalid parent block root %s, expecting %s",
-                executionPayloadBid.getParentBlockRoot(), block.getParentRoot()));
+        return reject(
+            "Execution payload bid has invalid parent block root %s, expecting %s",
+            executionPayloadBid.getParentBlockRoot(), block.getParentRoot());
       }
     }
-    return Optional.empty();
-  }
 
-  private Optional<InternalValidationResult> validateSignature(
-      final SignedBeaconBlock block, final BeaconState parentState) {
     /*
      * [REJECT] The proposer signature, signed_beacon_block.signature, is valid with respect to the proposer_index pubkey.
      */
     if (!blockSignatureIsValidWithRespectToProposerIndex(block, parentState)) {
-      return Optional.of(reject("Block signature is invalid"));
+      return reject("Block signature is invalid");
     }
-    return Optional.empty();
-  }
+    final EquivocationCheckResult secondEquivocationCheckResult =
+        performBlockEquivocationCheck(markAsReceived, block);
 
-  private Optional<InternalValidationResult> convertEquivocationResultToValidationResult(
-      final EquivocationCheckResult equivocationCheckResult) {
-    final InternalValidationResult result =
-        equivocationCheckResultToInternalValidationResult(equivocationCheckResult);
-    return result.isAccept() ? Optional.empty() : Optional.of(result);
+    return equivocationCheckResultToInternalValidationResult(secondEquivocationCheckResult);
   }
 
   private InternalValidationResult equivocationCheckResultToInternalValidationResult(
