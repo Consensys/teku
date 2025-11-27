@@ -377,6 +377,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile KZG kzg;
   protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile BlobSidecarGossipValidator blobSidecarValidator;
+  protected volatile DataColumnSidecarGossipValidator dataColumnSidecarGossipValidator;
   protected volatile DataColumnSidecarManager dataColumnSidecarManager;
   protected volatile ExecutionPayloadBidManager executionPayloadBidManager;
   protected volatile ExecutionPayloadManager executionPayloadManager;
@@ -816,7 +817,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initDataColumnSidecarManager() {
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      final DataColumnSidecarGossipValidator dataColumnSidecarGossipValidator =
+      dataColumnSidecarGossipValidator =
           DataColumnSidecarGossipValidator.create(
               spec,
               invalidBlockRoots,
@@ -1201,7 +1202,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initDataColumnSidecarELManager() {
     LOG.debug("BeaconChainController.initDataColumnSidecarELManager()");
-    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+    if (beaconConfig.p2pConfig().isDasDisableElRecovery()) {
+      LOG.warn(
+          "DataColumnSidecarELRecoveryManager is NOOP: blobs recovery from local EL is disabled.");
+    }
+    if (spec.isMilestoneSupported(SpecMilestone.FULU)
+        && !beaconConfig.p2pConfig().isDasDisableElRecovery()) {
 
       final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel =
           eventChannels.getPublisher(DataColumnSidecarGossipChannel.class);
@@ -1213,6 +1219,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               recentChainData,
               executionLayer,
               dataColumnSidecarGossipChannel::publishDataColumnSidecars,
+              dataColumnSidecarGossipValidator,
               custodyGroupCountManager,
               metricsSystem,
               timeProvider);
@@ -1618,6 +1625,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blobSidecarGossipChannel,
             dataColumnSidecarGossipChannel,
             dutyMetrics,
+            custodyGroupCountManager,
+            beaconConfig.p2pConfig().getDasPublishWithholdColumnsEverySlots(),
             beaconConfig.p2pConfig().isGossipBlobsAfterBlockEnabled());
 
     final ExecutionPayloadFactory executionPayloadFactory;

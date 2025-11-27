@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 public class PtcDutyScheduler extends AbstractDutyScheduler {
 
   private static final Logger LOG = LogManager.getLogger();
+  private static final int LOOKAHEAD_EPOCHS = 1;
 
   public PtcDutyScheduler(
       final MetricsSystem metricsSystem, final DutyLoader<?> dutyLoader, final Spec spec) {
@@ -92,6 +93,6 @@ public class PtcDutyScheduler extends AbstractDutyScheduler {
 
   @Override
   int getLookAheadEpochs(final UInt64 epoch) {
-    return 1;
+    return LOOKAHEAD_EPOCHS;
   }
 }

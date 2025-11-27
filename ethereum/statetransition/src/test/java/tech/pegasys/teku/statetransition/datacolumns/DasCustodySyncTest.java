@@ -92,7 +92,8 @@ public class DasCustodySyncTest {
 
   @BeforeEach
   public void setup() {
-    when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any())).thenReturn(UInt64.ZERO);
+    when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any()))
+        .thenReturn(Optional.of(UInt64.ZERO));
   }
 
   @Test
@@ -280,7 +281,7 @@ public class DasCustodySyncTest {
     final DataColumnSidecarRetriever retriever = mock(DataColumnSidecarRetriever.class);
     final DataColumnSidecarCustody custody = mock(DataColumnSidecarCustody.class);
     when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any()))
-        .thenReturn(UInt64.valueOf(1024));
+        .thenReturn(Optional.of(UInt64.valueOf(1024)));
     when(custody.retrieveMissingColumns()).thenReturn(testData(columns));
     final DasCustodySync custodySync =
         new DasCustodySync(
@@ -371,7 +372,8 @@ public class DasCustodySyncTest {
 
   private void assertAllCustodyColumnsPresent() {
     assertCustodyColumnsPresent(
-        custodyStand.getMinCustodySlot().intValue(), custodyStand.getCurrentSlot().intValue());
+        custodyStand.getMinCustodySlot().orElseThrow().intValue(),
+        custodyStand.getCurrentSlot().intValue());
   }
 
   private void assertCustodyColumnsPresent(final int fromSlot, final int tillSlot) {
