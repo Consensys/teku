@@ -158,15 +158,16 @@ public class ExecutionPayloadGossipValidator {
     /*
      * [REJECT] block.slot equals envelope.slot
      */
-    if (!envelope.getSlot().equals(maybeBeaconBlockSlot.get())) {
+    final UInt64 beaconBlockSlot = maybeBeaconBlockSlot.get();
+    if (!envelope.getSlot().equals(beaconBlockSlot)) {
       LOG.trace(
           "SignedExecutionPayloadEnvelope slot {} does not match block slot {}.",
           envelope.getSlot(),
-          maybeBeaconBlockSlot.get());
+          beaconBlockSlot);
       return Optional.of(
           reject(
               "SignedExecutionPayloadEnvelope slot %s does not match block slot %s.",
-              envelope.getSlot(), maybeBeaconBlockSlot.get()));
+              envelope.getSlot(), beaconBlockSlot));
     }
 
     return Optional.empty();
