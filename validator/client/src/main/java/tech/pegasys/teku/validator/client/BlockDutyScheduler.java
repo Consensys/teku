@@ -110,8 +110,8 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
         spec.atEpoch(epoch).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU) ? 1 : 0;
     LOG.trace(
         "LookAhead period for block duty at milestone {} is {}",
-            () -> spec.atEpoch(epoch).getMilestone(),
-            () -> lookAheadEpochs);
+        () -> spec.atEpoch(epoch).getMilestone(),
+        () -> lookAheadEpochs);
     return lookAheadEpochs;
   }
 }
