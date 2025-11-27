@@ -96,7 +96,7 @@ public class BlockGossipValidator {
     // Phase 2: Load parent state and perform stateful checks
     checkState(
         maybeParentBlockSlot.isPresent(),
-        "ParentBlockSlot must be present if stateless validation passes");
+        "Parent block slot must be present if stateless validation passes");
     final UInt64 parentSlot = maybeParentBlockSlot.get();
     return gossipValidationHelper
         .getParentStateInBlockEpoch(parentSlot, block.getParentRoot(), block.getSlot())
