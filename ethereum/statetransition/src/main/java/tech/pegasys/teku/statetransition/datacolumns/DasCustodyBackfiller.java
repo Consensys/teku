@@ -77,7 +77,9 @@ public class DasCustodyBackfiller extends Service
 
   private volatile int currentSyncCustodyGroupCount;
   private volatile boolean requiresResyncDueToCustodyGroupCountChange;
-  private volatile boolean isFirstRound = true;
+  private volatile boolean isFirstRoundAfterStartup = true;
+
+  private volatile boolean inSync = false;
 
   private final Map<DataColumnSlotAndIdentifier, SafeFuture<DataColumnSidecar>> pendingRequests =
       new ConcurrentHashMap<>();
@@ -126,6 +128,10 @@ public class DasCustodyBackfiller extends Service
     pendingRequests.values().forEach(f -> f.cancel(true));
     pendingRequests.clear();
     return SafeFuture.COMPLETE;
+  }
+
+  public synchronized void onNodeSyncStateChanged(final boolean inSync) {
+    this.inSync = inSync;
   }
 
   @Override
@@ -206,6 +212,12 @@ public class DasCustodyBackfiller extends Service
       return;
     }
 
+    if(!(inSync || isFirstRoundAfterStartup)) {
+      backfilling.set(false);
+      LOG.info("syncing, skipping backfilling");
+      return;
+    }
+
     attemptNextBackfillStep()
         .handleComposed(
             (shouldRerunImmediately, error) -> {
@@ -241,14 +253,14 @@ public class DasCustodyBackfiller extends Service
 
     if (requiresResyncDueToCustodyGroupCountChange) {
       requiresResyncDueToCustodyGroupCountChange = false;
-      isFirstRound = false; // we don't need to do the first round
+      isFirstRoundAfterStartup = false; // we don't need to do the first round
       return eventuallyResetEarliestAvailableCustodySlot(
               Optional.of(combinedChainDataClient.getCurrentSlot()))
           .thenApply(__ -> true);
     }
 
-    if (isFirstRound) {
-      return prepareAndExecuteFirstRoundBatch(minCustodyPeriodSlot.get());
+    if (isFirstRoundAfterStartup) {
+      return prepareAndExecuteHeadsCheckBatch(minCustodyPeriodSlot.get());
     }
 
     return earliestAvailableCustodySlotProvider
@@ -265,7 +277,7 @@ public class DasCustodyBackfiller extends Service
    * transaction, so it is possible that the node shuts down after a block is written on disk but
    * before all custody columns has been written.
    */
-  private SafeFuture<Boolean> prepareAndExecuteFirstRoundBatch(final UInt64 minCustodyPeriodSlot) {
+  private SafeFuture<Boolean> prepareAndExecuteHeadsCheckBatch(final UInt64 minCustodyPeriodSlot) {
     return getLatestChainHeadSlot()
         .map(
             latestSlot ->
@@ -275,7 +287,7 @@ public class DasCustodyBackfiller extends Service
                         minCustodyPeriodSlot,
                         true)
                     .thenCompose(this::executeBatch)
-                    .thenPeek(__ -> isFirstRound = false))
+                    .thenPeek(__ -> isFirstRoundAfterStartup = false))
         .orElse(SafeFuture.completedFuture(true));
   }
 
@@ -309,7 +321,7 @@ public class DasCustodyBackfiller extends Service
 
     var latestSlotInBatch = earliestAvailableCustodySlot.get().minusMinZero(1);
     var earliestSlotInBatch =
-        calculateEarliestSlotForBatch(latestSlotInBatch, earliestAvailableCustodySlot.get());
+        calculateEarliestSlotForBatch(latestSlotInBatch, minCustodyPeriodSlot);
 
     return prepareBatch(earliestSlotInBatch, latestSlotInBatch, minCustodyPeriodSlot, false)
         .thenCompose(this::executeBatch);
@@ -326,7 +338,7 @@ public class DasCustodyBackfiller extends Service
       final UInt64 minCustodyPeriodSlot,
       final boolean isHeadsCustodyCheckBatch) {
     return combinedChainDataClient
-        .getDataColumnIdentifiers(fromSlot, toSlot, UInt64.valueOf(100_000))
+        .getDataColumnIdentifiers(fromSlot, toSlot, UInt64.valueOf(Integer.MAX_VALUE))
         .thenCombine(
             retrieveBlocksWithBlobsInRange(fromSlot, toSlot),
             (dataColumnSlotAndIdentifiers, slotAndBlockRootWithBlobsPresences) ->
@@ -374,7 +386,7 @@ public class DasCustodyBackfiller extends Service
               LOG.info("DasCustodyBackfiller: Batch completed: {}", batchData);
               if (!cursorUpdated) {
                 LOG.info(
-                    "DasCustodyBackfiller: No progress, probably still back filling blocks. Waiting next round.");
+                    "DasCustodyBackfiller: No progress, waiting for blocks to be backfilled. Waiting next round.");
               }
             });
   }
@@ -471,8 +483,12 @@ public class DasCustodyBackfiller extends Service
             });
   }
 
+  private static final SafeFuture<DataColumnSidecar> REQUEST_PLACE_HOLDER = SafeFuture.failedFuture(new IllegalStateException("This is not supposed to be consumed"));
+
   private SafeFuture<Void> requestColumnSidecar(final DataColumnSlotAndIdentifier colId) {
-    if (pendingRequests.containsKey(colId)) {
+
+    // this is a way to atomically allocate a pendingRequest for a given columnId
+    if (pendingRequests.putIfAbsent(colId, REQUEST_PLACE_HOLDER) != null) {
       return SafeFuture.COMPLETE;
     }
 

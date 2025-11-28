@@ -152,7 +152,7 @@ public class SimpleSidecarRetriever
               reqRespCompleted(match.request, sidecar);
 
               if (err != null) {
-                LOG.debug(
+                LOG.info(
                     "SimpleSidecarRetriever.Request failed for {} due to: {}",
                     () -> match.request.columnId,
                     () -> ExceptionUtil.getMessageOrSimpleName(err));
@@ -199,6 +199,9 @@ public class SimpleSidecarRetriever
               if (pendingRequest.result.isDone()) {
                 if (pendingRequest.activeRpcRequest != null) {
                   pendingRequest.activeRpcRequest.promise().cancel(true);
+                }
+                if(pendingRequest.result.isCancelled() || pendingRequest.result.isCompletedExceptionally()) {
+                  LOG.info("REMOVED (disposeCompletedRequests) {}: {}", pendingRequest.columnId, pendingRequest.result);
                 }
                 return true;
               }
