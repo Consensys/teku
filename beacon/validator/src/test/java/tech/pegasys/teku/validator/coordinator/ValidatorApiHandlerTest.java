@@ -49,9 +49,15 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InOrder;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
@@ -131,7 +137,7 @@ import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
 
 class ValidatorApiHandlerTest {
-
+  private static final Logger LOG = LogManager.getLogger();
   private static final UInt64 EPOCH = UInt64.valueOf(13);
   private static final UInt64 PREVIOUS_EPOCH = EPOCH.minus(ONE);
 
@@ -373,7 +379,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getProposerDuties_shouldFailForEpochTooFarAhead() {
-    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(2));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(3));
 
     final SafeFuture<Optional<ProposerDuties>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
@@ -381,10 +387,56 @@ class ValidatorApiHandlerTest {
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(IllegalArgumentException.class);
   }
 
+  public static Stream<Arguments> getStateSlotForProposerDutiesTestCases() {
+    // | EPOCH | START SLOT | END SLOT |
+    // |   0   |       0    |     7    |
+    // |   1   |       8    |    15    |
+    // |   2   |      16    |    23    |
+    // |   3   |      24    |    31    |
+    return Stream.of(
+        Arguments.of(SpecMilestone.PHASE0, 0, 0),
+        Arguments.of(SpecMilestone.PHASE0, 1, 8),
+        Arguments.of(SpecMilestone.PHASE0, 2, 16),
+        Arguments.of(SpecMilestone.PHASE0, 3, 24),
+        Arguments.of(SpecMilestone.FULU, 0, 0),
+        Arguments.of(SpecMilestone.FULU, 1, 0),
+        Arguments.of(SpecMilestone.FULU, 2, 8),
+        Arguments.of(SpecMilestone.FULU, 3, 16));
+  }
+
+  @ParameterizedTest
+  @MethodSource("getStateSlotForProposerDutiesTestCases")
+  public void getStateSlotForProposerDuties(
+      final SpecMilestone specMilestone, final int requestedEpoch, final int expectedSlot) {
+    final Spec localSpec = TestSpecFactory.createMinimal(specMilestone);
+    final UInt64 querySlot =
+        ValidatorApiHandler.getStateSlotForProposerDuties(
+            localSpec, UInt64.valueOf(requestedEpoch));
+
+    assertThat(querySlot.intValue()).isEqualTo(expectedSlot);
+  }
+
   @Test
-  public void getProposerDuties_shouldReturnDutiesForCurrentEpoch() {
+  public void getProposerDuties_shouldReturnDutiesForNextEpoch() {
     final BeaconState state = createStateWithActiveValidators(epochStartSlot);
     when(chainDataClient.getStateAtSlotExact(epochStartSlot))
+        .thenReturn(completedFuture(Optional.of(state)));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
+
+    final SafeFuture<Optional<ProposerDuties>> result =
+        validatorApiHandler.getProposerDuties(EPOCH.increment());
+    final ProposerDuties duties = assertCompletedSuccessfully(result).orElseThrow();
+    assertThat(duties.getDuties().size()).isEqualTo(spec.slotsPerEpoch(EPOCH.increment()));
+    assertThat(duties.getDependentRoot()).isEqualTo(spec.getCurrentDutyDependentRoot(state));
+  }
+
+  @Test
+  public void getProposerDuties_shouldReturnDutiesForCurrentEpoch() {
+    final UInt64 previousEpochStartSlot =
+        epochStartSlot.minus(spec.getGenesisSpecConfig().getSlotsPerEpoch());
+    final BeaconState state = createStateWithActiveValidators(previousEpochStartSlot);
+
+    when(chainDataClient.getStateAtSlotExact(previousEpochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
 
@@ -397,10 +449,17 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getProposerDuties_shouldAllowOneEpochTolerance() {
+    final UInt64 epoch = EPOCH.minus(1);
     final BeaconState state = createStateWithActiveValidators(epochStartSlot);
-    when(chainDataClient.getStateAtSlotExact(epochStartSlot))
+    final UInt64 querySlot = spec.computeStartSlotAtEpoch(epoch);
+    LOG.debug(
+        "Epoch Start slot {}, Test Epoch {}, expect query slot {}",
+        epochStartSlot,
+        epoch,
+        querySlot);
+    when(chainDataClient.getStateAtSlotExact(querySlot))
         .thenReturn(completedFuture(Optional.of(state)));
-    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(1));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(epoch);
 
     final SafeFuture<Optional<ProposerDuties>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
@@ -410,10 +469,12 @@ class ValidatorApiHandlerTest {
 
   @Test
   void getProposerDuties_shouldReturnDutiesInOrder() {
-    final BeaconState state = createStateWithActiveValidators(epochStartSlot);
-    when(chainDataClient.getStateAtSlotExact(epochStartSlot))
+    final UInt64 previousEpochStartSlot =
+        epochStartSlot.minus(spec.getGenesisSpecConfig().getSlotsPerEpoch());
+    final BeaconState state = createStateWithActiveValidators(previousEpochStartSlot);
+    when(chainDataClient.getStateAtSlotExact(previousEpochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
-    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(1));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
 
     final SafeFuture<Optional<ProposerDuties>> result =
         validatorApiHandler.getProposerDuties(EPOCH);

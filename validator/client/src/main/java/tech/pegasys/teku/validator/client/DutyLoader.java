@@ -20,4 +20,6 @@ import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
 public interface DutyLoader<T extends ScheduledDuties> {
   SafeFuture<Optional<T>> loadDutiesForEpoch(final UInt64 epoch);
+
+  String getDutyType();
 }
