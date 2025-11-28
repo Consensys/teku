@@ -202,7 +202,8 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   }
 
   private synchronized void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {
-    final DataColumnSamplingTracker tracker = recentlySampledColumnsByRoot.remove(slotAndBlockRoot.getBlockRoot());
+    final DataColumnSamplingTracker tracker =
+        recentlySampledColumnsByRoot.remove(slotAndBlockRoot.getBlockRoot());
 
     if (tracker != null) {
       orderedSidecarsTrackers.remove(slotAndBlockRoot);
