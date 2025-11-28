@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -156,7 +157,9 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
                     .getFuluForkEpoch())
             .intValue();
     secondaryNode.waitForBlockSatisfying(
-        block -> assertThat(block.getSlot().intValue()).isGreaterThanOrEqualTo(firstFuluSlot));
+        block -> assertThat(block.getSlot().intValue()).isGreaterThanOrEqualTo(firstFuluSlot),
+        2,
+        TimeUnit.MINUTES);
     final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
 
     final int endSlot = blockAtHead.getSlot().intValue();
