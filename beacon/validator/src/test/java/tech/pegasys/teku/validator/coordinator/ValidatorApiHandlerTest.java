@@ -410,8 +410,10 @@ class ValidatorApiHandlerTest {
       final SpecMilestone specMilestone, final int requestedEpoch, final int expectedSlot) {
     final Spec localSpec = TestSpecFactory.createMinimal(specMilestone);
     final UInt64 querySlot =
-        ValidatorApiHandler.getStateSlotForProposerDuties(
-            localSpec, UInt64.valueOf(requestedEpoch));
+        localSpec
+            .getGenesisSpec()
+            .getBlockProposalUtil()
+            .getStateSlotForProposerDuties(localSpec, UInt64.valueOf(requestedEpoch));
 
     assertThat(querySlot.intValue()).isEqualTo(expectedSlot);
   }

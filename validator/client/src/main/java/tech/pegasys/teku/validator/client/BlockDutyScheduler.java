@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.validator.client;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,7 +23,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 
@@ -75,39 +72,48 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
       final Bytes32 currentTargetRoot,
       final UInt64 headEpoch,
       final UInt64 dutyEpoch) {
-    if (spec.atEpoch(dutyEpoch).getMilestone().isLessThan(SpecMilestone.FULU)
-        || spec.atEpoch(dutyEpoch.minusMinZero(1)).getMilestone().isLessThan(SpecMilestone.FULU)) {
-      // prior to fulu, and also fulu change epoch, will just use phase0 dependent root
-      checkArgument(
-          dutyEpoch.isGreaterThanOrEqualTo(headEpoch),
-          "Attempting to calculate dependent root for duty epoch %s that is before the updated head epoch %s",
-          dutyEpoch,
-          headEpoch);
-      return headEpoch.equals(dutyEpoch) ? currentTargetRoot : headBlockRoot;
-    }
-
-    checkArgument(
-        dutyEpoch.isGreaterThanOrEqualTo(headEpoch),
-        "Attempting to calculate dependent root for duty epoch %s that is before the updated head epoch %s",
-        dutyEpoch,
-        headEpoch);
-    if (headEpoch.equals(dutyEpoch)) {
-      LOG.debug("headEpoch {} - returning previousDutyDependentRoot", () -> headEpoch);
-      return previousTargetRoot;
-    } else if (headEpoch.increment().equals(dutyEpoch)) {
-      LOG.debug("dutyEpoch (next epoch) {} - returning currentDutyDependentRoot", () -> dutyEpoch);
-      return currentTargetRoot;
-    } else {
-      LOG.debug(
-          "headBlockRoot returned - dutyEpoch {}, headEpoch {}", () -> dutyEpoch, () -> headEpoch);
-      return headBlockRoot;
-    }
+    return spec.atEpoch(dutyEpoch)
+        .getBlockProposalUtil()
+        .getBlockProposalDependentRoot(
+            headBlockRoot, previousTargetRoot, currentTargetRoot, headEpoch, dutyEpoch);
+    //    if (spec.atEpoch(dutyEpoch).getMilestone().isLessThan(SpecMilestone.FULU)
+    //        ||
+    // spec.atEpoch(dutyEpoch.minusMinZero(1)).getMilestone().isLessThan(SpecMilestone.FULU)) {
+    //      // prior to fulu, and also fulu change epoch, will just use phase0 dependent root
+    //      checkArgument(
+    //          dutyEpoch.isGreaterThanOrEqualTo(headEpoch),
+    //          "Attempting to calculate dependent root for duty epoch %s that is before the updated
+    // head epoch %s",
+    //          dutyEpoch,
+    //          headEpoch);
+    //      return headEpoch.equals(dutyEpoch) ? currentTargetRoot : headBlockRoot;
+    //    }
+    //
+    //    checkArgument(
+    //        dutyEpoch.isGreaterThanOrEqualTo(headEpoch),
+    //        "Attempting to calculate dependent root for duty epoch %s that is before the updated
+    // head epoch %s",
+    //        dutyEpoch,
+    //        headEpoch);
+    //    if (headEpoch.equals(dutyEpoch)) {
+    //      LOG.debug("headEpoch {} - returning previousDutyDependentRoot", () -> headEpoch);
+    //      return previousTargetRoot;
+    //    } else if (headEpoch.increment().equals(dutyEpoch)) {
+    //      LOG.debug("dutyEpoch (next epoch) {} - returning currentDutyDependentRoot", () ->
+    // dutyEpoch);
+    //      return currentTargetRoot;
+    //    } else {
+    //      LOG.debug(
+    //          "headBlockRoot returned - dutyEpoch {}, headEpoch {}", () -> dutyEpoch, () ->
+    // headEpoch);
+    //      return headBlockRoot;
+    //    }
   }
 
   @Override
   public int getLookAheadEpochs(final UInt64 epoch) {
     final int lookAheadEpochs =
-        spec.atEpoch(epoch).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU) ? 1 : 0;
+        spec.atEpoch(epoch).getBlockProposalUtil().getProposerLookAheadEpochs();
     LOG.trace(
         "LookAhead period for block duty at milestone {} is {}",
         () -> spec.atEpoch(epoch).getMilestone(),
