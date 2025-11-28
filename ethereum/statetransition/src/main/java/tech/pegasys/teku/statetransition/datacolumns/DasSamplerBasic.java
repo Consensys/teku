@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
@@ -56,7 +57,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   private final CustodyGroupCountManager custodyGroupCountManager;
   private final Map<Bytes32, DataColumnSamplingTracker> recentlySampledColumnsByRoot =
       new ConcurrentHashMap<>(MAX_RECENTLY_SAMPLED_BLOCKS);
-  private final NavigableSet<Bytes32> orderedSidecarsTrackers = new TreeSet<>();
+  private final NavigableSet<SlotAndBlockRoot> orderedSidecarsTrackers = new TreeSet<>();
 
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
@@ -182,7 +183,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
           k -> {
             final DataColumnSamplingTracker newTracker =
                 DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager);
-            orderedSidecarsTrackers.add(blockRoot);
+            orderedSidecarsTrackers.add(new SlotAndBlockRoot(slot, blockRoot));
             onFirstSeen(slot, blockRoot, newTracker);
             return newTracker;
           });
@@ -192,7 +193,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
 
   private void makeRoomForNewTracker() {
     while (recentlySampledColumnsByRoot.size() > MAX_RECENTLY_SAMPLED_BLOCKS - 1) {
-      final Bytes32 toRemove = orderedSidecarsTrackers.pollFirst();
+      final SlotAndBlockRoot toRemove = orderedSidecarsTrackers.pollFirst();
       if (toRemove == null) {
         break;
       }
@@ -200,11 +201,11 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
     }
   }
 
-  private synchronized void removeAllForBlock(final Bytes32 blockRoot) {
-    final DataColumnSamplingTracker tracker = recentlySampledColumnsByRoot.remove(blockRoot);
+  private synchronized void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {
+    final DataColumnSamplingTracker tracker = recentlySampledColumnsByRoot.remove(slotAndBlockRoot.getBlockRoot());
 
     if (tracker != null) {
-      orderedSidecarsTrackers.remove(blockRoot);
+      orderedSidecarsTrackers.remove(slotAndBlockRoot);
       // TODO maybe we need something like
       // tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl.dropMissingContent
     }
@@ -280,7 +281,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   }
 
   public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
-    LOG.debug("Obtaining block for root {} from DasSamplerBasic", blockRoot);
-    return recentlySampledColumnsByRoot.get(blockRoot).getBlock();
+    return Optional.ofNullable(recentlySampledColumnsByRoot.get(blockRoot))
+        .flatMap(DataColumnSamplingTracker::getBlock);
   }
 }
