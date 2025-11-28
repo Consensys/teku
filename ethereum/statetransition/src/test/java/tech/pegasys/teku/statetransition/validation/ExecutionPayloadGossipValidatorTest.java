@@ -14,15 +14,15 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
+import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -53,6 +54,8 @@ public class ExecutionPayloadGossipValidatorTest {
   private ChainUpdater chainUpdater;
   private GossipValidationHelper gossipValidationHelper;
   private ExecutionPayloadGossipValidator executionPayloadGossipValidator;
+  private final Map<Bytes32, BlockImportResult> invalidBlockRoots =
+      LimitedMap.createSynchronizedLRU(50);
 
   @BeforeEach
   void setUp(final SpecContext specContext) {
@@ -65,7 +68,7 @@ public class ExecutionPayloadGossipValidatorTest {
     gossipValidationHelper =
         new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem());
     executionPayloadGossipValidator =
-        new ExecutionPayloadGossipValidator(spec, gossipValidationHelper);
+        new ExecutionPayloadGossipValidator(spec, gossipValidationHelper, invalidBlockRoots);
   }
 
   @TestTemplate
@@ -115,28 +118,18 @@ public class ExecutionPayloadGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldRejectIfBlockIsNotImported() {
-    final GossipValidationHelper gossipValidationHelperMock = mock(GossipValidationHelper.class);
-    final ExecutionPayloadGossipValidator executionPayloadGossipValidatorMocked =
-        new ExecutionPayloadGossipValidator(spec, gossipValidationHelperMock);
+  void shouldRejectIfBlockItselfIsInvalid() {
     chainUpdater.advanceChain(ONE);
     final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope =
         chainBuilder.getExecutionPayloadAndStateAtSlot(ONE).executionPayload();
-    when(gossipValidationHelperMock.getSlotForBlockRoot(
-            signedExecutionPayloadEnvelope.getBeaconBlockRoot()))
-        .thenReturn(Optional.of(signedExecutionPayloadEnvelope.getSlot()));
-    when(gossipValidationHelperMock.isSlotFinalized(signedExecutionPayloadEnvelope.getSlot()))
-        .thenReturn(false);
-    when(gossipValidationHelperMock.isBlockAvailable(
-            signedExecutionPayloadEnvelope.getBeaconBlockRoot()))
-        .thenReturn(false);
-    assertThat(executionPayloadGossipValidatorMocked.validate(signedExecutionPayloadEnvelope))
-        .isCompletedWithValueMatching(
-            internalValidationResult ->
-                internalValidationResult.equals(
-                    InternalValidationResult.reject(
-                        "Execution payload envelope's block with root %s is invalid",
-                        signedExecutionPayloadEnvelope.getBeaconBlockRoot())));
+    final Bytes32 blockRoot = signedExecutionPayloadEnvelope.getBeaconBlockRoot();
+
+    invalidBlockRoots.put(blockRoot, BlockImportResult.FAILED_BROADCAST_VALIDATION);
+
+    assertThat(executionPayloadGossipValidator.validate(signedExecutionPayloadEnvelope))
+        .isCompletedWithValue(
+            InternalValidationResult.reject(
+                "Execution payload envelope's block with root %s is invalid", blockRoot));
   }
 
   @TestTemplate

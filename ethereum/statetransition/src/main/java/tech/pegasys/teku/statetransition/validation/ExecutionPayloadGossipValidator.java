@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.validation;
 import static tech.pegasys.teku.spec.config.Constants.RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.signatures.SigningRootUtil;
 
 public class ExecutionPayloadGossipValidator {
@@ -45,9 +47,14 @@ public class ExecutionPayloadGossipValidator {
   private final Set<BlockRootAndBuilderIndex> seenPayloads =
       LimitedSet.createSynchronized(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
 
+  private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
+
   public ExecutionPayloadGossipValidator(
-      final Spec spec, final GossipValidationHelper gossipValidationHelper) {
+      final Spec spec,
+      final GossipValidationHelper gossipValidationHelper,
+      final Map<Bytes32, BlockImportResult> invalidBlockRoots) {
     this.gossipValidationHelper = gossipValidationHelper;
+    this.invalidBlockRoots = invalidBlockRoots;
     signingRootUtil = new SigningRootUtil(spec);
   }
 
@@ -84,6 +91,17 @@ public class ExecutionPayloadGossipValidator {
               }
 
               final BeaconBlock beaconBlock = maybeBeaconBlock.get();
+
+              /*
+               * [REJECT] block passes validation
+               */
+              if (invalidBlockRoots.containsKey(beaconBlock.getRoot())) {
+                return Optional.of(
+                    reject(
+                        "Execution payload envelope's block with root %s is invalid",
+                        envelope.getBeaconBlockRoot()));
+              }
+
               final Optional<ExecutionPayloadBid> maybeExecutionPayloadBid =
                   beaconBlock
                       .getBody()
@@ -143,16 +161,6 @@ public class ExecutionPayloadGossipValidator {
       LOG.trace(
           "SignedExecutionPayloadEnvelope slot {} is finalized. Dropping.", envelope.getSlot());
       return Optional.of(InternalValidationResult.IGNORE);
-    }
-
-    /*
-     * [REJECT] block passes validation
-     */
-    if (!gossipValidationHelper.isBlockAvailable(envelope.getBeaconBlockRoot())) {
-      return Optional.of(
-          reject(
-              "Execution payload envelope's block with root %s is invalid",
-              envelope.getBeaconBlockRoot()));
     }
 
     /*
