@@ -77,6 +77,7 @@ public class DasCustodyBackfiller extends Service
 
   private volatile int currentSyncCustodyGroupCount;
   private volatile boolean requiresResyncDueToCustodyGroupCountChange;
+  private volatile boolean isFirstRound = true;
 
   private final Map<DataColumnSlotAndIdentifier, SafeFuture<DataColumnSidecar>> pendingRequests =
       new ConcurrentHashMap<>();
@@ -229,28 +230,70 @@ public class DasCustodyBackfiller extends Service
    * try the next batch immediately. Returns FALSE if we should wait for the scheduled interval.
    */
   private SafeFuture<Boolean> attemptNextBackfillStep() {
+    final Optional<UInt64> minCustodyPeriodSlot =
+        minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(
+            combinedChainDataClient.getCurrentSlot());
+
+    if (minCustodyPeriodSlot.isEmpty()) {
+      LOG.debug("Fulu not yet enabled");
+      return SafeFuture.completedFuture(false);
+    }
+
     if (requiresResyncDueToCustodyGroupCountChange) {
       requiresResyncDueToCustodyGroupCountChange = false;
+      isFirstRound = false; // we don't need to do the first round
       return eventuallyResetEarliestAvailableCustodySlot(
               Optional.of(combinedChainDataClient.getCurrentSlot()))
           .thenApply(__ -> true);
     }
 
-    return earliestAvailableCustodySlotProvider.get().thenCompose(this::prepareAndExecuteBatch);
+    if (isFirstRound) {
+      return prepareAndExecuteFirstRoundBatch(minCustodyPeriodSlot.get());
+    }
+
+    return earliestAvailableCustodySlotProvider
+        .get()
+        .thenCompose(
+            earliestAvailableCustodySlot ->
+                this.prepareAndExecuteBatch(
+                    earliestAvailableCustodySlot, minCustodyPeriodSlot.get()));
+  }
+
+  /**
+   * The first batch after startup is a special batch that checks that our latest slots (chain
+   * heads) have all custody. This is required because we write blocks and columns not in the same
+   * transaction, so it is possible that the node shuts down after a block is written on disk but
+   * before all custody columns has been written.
+   */
+  private SafeFuture<Boolean> prepareAndExecuteFirstRoundBatch(final UInt64 minCustodyPeriodSlot) {
+    return getLatestChainHeadSlot()
+        .map(
+            latestSlot ->
+                prepareBatch(
+                        calculateEarliestSlotForBatch(latestSlot, minCustodyPeriodSlot),
+                        latestSlot,
+                        minCustodyPeriodSlot,
+                        true)
+                    .thenCompose(this::executeBatch)
+                    .thenPeek(__ -> isFirstRound = false))
+        .orElse(SafeFuture.completedFuture(true));
+  }
+
+  private Optional<UInt64> getLatestChainHeadSlot() {
+    return combinedChainDataClient.getRecentChainData().getChainHeads().stream()
+        .map(ProtoNodeData::getSlot)
+        .max(UInt64::compareTo);
   }
 
   private SafeFuture<Boolean> prepareAndExecuteBatch(
-      final Optional<UInt64> earliestAvailableCustodySlot) {
+      final Optional<UInt64> earliestAvailableCustodySlot, final UInt64 minCustodyPeriodSlot) {
     if (earliestAvailableCustodySlot.isEmpty()) {
       // is the db variable is not initialized
       // we are most likely coming from a checkpoint sync with a fresh DB
       // let's choose the most recent slot head +1, so that we make sure we cover the head in the
       // first batch
       final Optional<UInt64> mostRecentHeadSlotPlus1 =
-          combinedChainDataClient.getRecentChainData().getChainHeads().stream()
-              .map(ProtoNodeData::getSlot)
-              .max(UInt64::compareTo)
-              .map(UInt64::increment);
+          getLatestChainHeadSlot().map(UInt64::increment);
 
       return eventuallyResetEarliestAvailableCustodySlot(mostRecentHeadSlotPlus1)
           .thenApply(__ -> false);
@@ -259,36 +302,42 @@ public class DasCustodyBackfiller extends Service
     LOG.debug(
         "DasCustodyBackfiller: earliestAvailableCustodySlot {}", earliestAvailableCustodySlot);
 
-    final Optional<UInt64> minCustodyPeriodSlot =
-        minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(
-            combinedChainDataClient.getCurrentSlot());
-
-    if (minCustodyPeriodSlot.isEmpty()) {
-      return SafeFuture.completedFuture(false);
-    }
-
-    if (earliestAvailableCustodySlot.get().isLessThanOrEqualTo(minCustodyPeriodSlot.get())) {
+    if (earliestAvailableCustodySlot.get().isLessThanOrEqualTo(minCustodyPeriodSlot)) {
 
       return SafeFuture.completedFuture(false);
     }
 
     var latestSlotInBatch = earliestAvailableCustodySlot.get().minusMinZero(1);
     var earliestSlotInBatch =
-        latestSlotInBatch.minusMinZero(batchSizeInSlots - 1).max(minCustodyPeriodSlot.get());
+        calculateEarliestSlotForBatch(latestSlotInBatch, earliestAvailableCustodySlot.get());
 
+    return prepareBatch(earliestSlotInBatch, latestSlotInBatch, minCustodyPeriodSlot, false)
+        .thenCompose(this::executeBatch);
+  }
+
+  private UInt64 calculateEarliestSlotForBatch(
+      final UInt64 earliestSlot, final UInt64 minCustodyPeriodSlot) {
+    return earliestSlot.minusMinZero(batchSizeInSlots - 1).max(minCustodyPeriodSlot);
+  }
+
+  private SafeFuture<BatchData> prepareBatch(
+      final UInt64 fromSlot,
+      final UInt64 toSlot,
+      final UInt64 minCustodyPeriodSlot,
+      final boolean isHeadsCustodyCheckBatch) {
     return combinedChainDataClient
-        .getDataColumnIdentifiers(earliestSlotInBatch, latestSlotInBatch, UInt64.valueOf(100_000))
+        .getDataColumnIdentifiers(fromSlot, toSlot, UInt64.valueOf(100_000))
         .thenCombine(
-            retrieveBlocksWithBlobsInRange(earliestSlotInBatch, latestSlotInBatch),
+            retrieveBlocksWithBlobsInRange(fromSlot, toSlot),
             (dataColumnSlotAndIdentifiers, slotAndBlockRootWithBlobsPresences) ->
                 new BatchData(
-                    earliestSlotInBatch,
-                    latestSlotInBatch,
-                    minCustodyPeriodSlot.get(),
+                    fromSlot,
+                    toSlot,
+                    minCustodyPeriodSlot,
                     custodyGroupCountManager.getCustodyColumnIndices(),
                     dataColumnSlotAndIdentifiers,
-                    slotAndBlockRootWithBlobsPresences))
-        .thenCompose(this::executeBatch);
+                    slotAndBlockRootWithBlobsPresences,
+                    isHeadsCustodyCheckBatch));
   }
 
   private SafeFuture<Boolean> executeBatch(final BatchData batchData) {
@@ -369,11 +418,15 @@ public class DasCustodyBackfiller extends Service
   }
 
   /**
-   * Moves the cursor backwards based on batch contents. Returns TRUE if cursor was updated, FALSE
-   * if stuck (gap).
+   * Moves the cursor backwards based on batch contents. Returns TRUE if cursor was updated, or if
+   * it is a isHeadsCustodyCheckBatch batch Returns FALSE if no update (empty slots gap).
    */
   private SafeFuture<Boolean> calculateAndUpdateEarliestAvailableCustodySlot(
       final BatchData batchData) {
+    if (batchData.isHeadsCustodyCheckBatch) {
+      return SafeFuture.completedFuture(true);
+    }
+
     var oldestExistingBlockInBatch = batchData.oldestExistingBlockInBatch();
 
     if (oldestExistingBlockInBatch.isPresent()) {
@@ -472,7 +525,8 @@ public class DasCustodyBackfiller extends Service
       UInt64 minCustodyPeriodSlot,
       List<UInt64> requiredColumnsInCustody,
       List<DataColumnSlotAndIdentifier> columnsInCustody,
-      List<SlotAndBlockRootWithBlobsPresence> blocksInfo) {
+      List<SlotAndBlockRootWithBlobsPresence> blocksInfo,
+      boolean isHeadsCustodyCheckBatch) {
 
     Optional<UInt64> oldestExistingBlockInBatch() {
       return blocksInfo.stream()

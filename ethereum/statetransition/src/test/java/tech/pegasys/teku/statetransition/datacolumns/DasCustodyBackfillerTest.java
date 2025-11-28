@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.time.Duration;
 import java.util.List;
@@ -114,14 +115,14 @@ class DasCustodyBackfillerTest {
 
   @Test
   void start_shouldScheduleBackfillTask() {
-    backfiller.start();
+    safeJoin(backfiller.start());
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
   }
 
   @Test
   void stop_shouldCancelScheduledTask() {
-    backfiller.start();
-    backfiller.stop();
+    safeJoin(backfiller.start());
+    safeJoin(backfiller.stop());
     // StubAsyncRunner doesn't remove cancelled tasks from the queue immediately,
     // but we can verify no interactions happen if we execute queued actions
     asyncRunner.executeQueuedActions();
@@ -132,7 +133,7 @@ class DasCustodyBackfillerTest {
   void onGroupCountUpdate_shouldTriggerResyncWhenCountIncreases() {
     // Setup initial state
     cursorStore.set(Optional.of(UInt64.valueOf(500)));
-    backfiller.start();
+    safeJoin(backfiller.start());
 
     // Increase custody count
     backfiller.onGroupCountUpdate(CUSTODY_GROUP_COUNT + 1, 32);
@@ -149,7 +150,7 @@ class DasCustodyBackfillerTest {
 
   @Test
   void onGroupCountUpdate_shouldIgnorIfCountDoesNotIncrease() {
-    backfiller.start();
+    safeJoin(backfiller.start());
     asyncRunner.executeQueuedActions(); // Run initial check
 
     backfiller.onGroupCountUpdate(CUSTODY_GROUP_COUNT, 32); // Same count
@@ -167,7 +168,7 @@ class DasCustodyBackfillerTest {
     when(head.getSlot()).thenReturn(UInt64.valueOf(200));
     when(recentChainData.getChainHeads()).thenReturn(List.of(head));
 
-    backfiller.start();
+    safeJoin(backfiller.start());
     asyncRunner.executeQueuedActions();
 
     // Cursor should be head + 1 => 201
@@ -205,7 +206,7 @@ class DasCustodyBackfillerTest {
         .thenReturn(SafeFuture.COMPLETE);
 
     // Run
-    backfiller.start();
+    safeJoin(backfiller.start());
     asyncRunner.executeQueuedActions();
 
     // Verify we requested the missing column (Index 1)
@@ -236,7 +237,7 @@ class DasCustodyBackfillerTest {
     when(combinedChainDataClient.getDataColumnIdentifiers(any(), any(), any()))
         .thenReturn(completedFuture(List.of()));
 
-    backfiller.start();
+    safeJoin(backfiller.start());
     asyncRunner.executeQueuedActions();
 
     // Verify NO retrieval attempted because block has no blobs
@@ -267,7 +268,7 @@ class DasCustodyBackfillerTest {
     when(combinedChainDataClient.getBlockInEffectAtSlot(eq(UInt64.valueOf(90))))
         .thenReturn(completedFuture(Optional.of(olderBlockAndState.getBlock())));
 
-    backfiller.start();
+    safeJoin(backfiller.start());
     asyncRunner.executeQueuedActions();
 
     // Cursor should jump to olderBlockSlot + 1 -> 81
@@ -319,7 +320,7 @@ class DasCustodyBackfillerTest {
         .thenReturn(pendingFutureFork);
 
     // Start backfill
-    backfiller.start();
+    safeJoin(backfiller.start());
     asyncRunner.executeQueuedActions();
 
     // Verify both were requested (Now strictly 1 time each because we restricted custody to [0])
@@ -379,7 +380,7 @@ class DasCustodyBackfillerTest {
         .thenReturn(SafeFuture.COMPLETE);
 
     // Execute
-    backfiller.start();
+    safeJoin(backfiller.start());
     asyncRunner.executeQueuedActions();
 
     // Verification:
@@ -399,7 +400,7 @@ class DasCustodyBackfillerTest {
     when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any()))
         .thenReturn(Optional.of(minCustodySlot));
 
-    backfiller.start();
+    safeJoin(backfiller.start());
     asyncRunner.executeQueuedActions();
 
     // Should return false immediately, triggering no DB lookups
