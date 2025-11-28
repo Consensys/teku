@@ -127,4 +127,9 @@ public class GossipValidationHelper {
   public ReadOnlyForkChoiceStrategy getForkChoiceStrategy() {
     return recentChainData.getForkChoiceStrategy().orElseThrow();
   }
+
+  public SafeFuture<Optional<BeaconState>> getStateAtSlotAndBlockRoot(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return recentChainData.retrieveStateAtSlot(slotAndBlockRoot);
+  }
 }
