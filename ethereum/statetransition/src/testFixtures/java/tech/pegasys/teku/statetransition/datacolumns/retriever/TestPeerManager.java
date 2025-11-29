@@ -15,8 +15,10 @@ package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
@@ -33,7 +35,9 @@ public class TestPeerManager implements DataColumnPeerManager, DataColumnReqResp
 
   @Override
   public SafeFuture<DataColumnSidecar> requestDataColumnSidecar(
-      final UInt256 nodeId, final DataColumnSlotAndIdentifier columnIdentifier) {
+      final UInt256 nodeId,
+      final Supplier<UInt64> finalizedEpochSupplier,
+      final DataColumnSlotAndIdentifier columnIdentifier) {
     final TestPeer peer = connectedPeers.get(nodeId);
     if (peer == null) {
       return SafeFuture.failedFuture(new DasPeerDisconnectedException());

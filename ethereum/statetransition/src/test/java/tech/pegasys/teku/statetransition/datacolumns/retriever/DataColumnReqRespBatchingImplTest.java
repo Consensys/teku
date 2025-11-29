@@ -24,7 +24,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
@@ -37,25 +36,17 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsBy
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DataColumnReqRespBatchingImplTest {
   final Spec spec = TestSpecFactory.createMinimalFulu();
   final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  final RecentChainData recentChainData = mock(RecentChainData.class);
   final BatchDataColumnsByRangeReqResp byRangehRpc = mock(BatchDataColumnsByRangeReqResp.class);
   final BatchDataColumnsByRootReqResp byRootRpc = mock(BatchDataColumnsByRootReqResp.class);
   final DataColumnsByRootIdentifierSchema byRootSchema =
       SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions())
           .getDataColumnsByRootIdentifierSchema();
   final DataColumnReqRespBatchingImpl dataColumnReqResp =
-      new DataColumnReqRespBatchingImpl(
-          spec, recentChainData, byRangehRpc, byRootRpc, byRootSchema);
-
-  @BeforeEach
-  public void setUp() {
-    when(recentChainData.getFinalizedEpoch()).thenReturn(ONE);
-  }
+      new DataColumnReqRespBatchingImpl(spec, byRangehRpc, byRootRpc, byRootSchema);
 
   @Test
   @SuppressWarnings("JavaCase")
@@ -86,19 +77,23 @@ public class DataColumnReqRespBatchingImplTest {
     final SafeFuture<DataColumnSidecar> dataColumnSidecar1_0_Future =
         dataColumnReqResp.requestDataColumnSidecar(
             UInt256.ZERO,
+            () -> ZERO,
             new DataColumnSlotAndIdentifier(blockHeader1.getMessage().getSlot(), blockRoot1, ZERO));
     final SafeFuture<DataColumnSidecar> dataColumnSidecar1_1_Future =
         dataColumnReqResp.requestDataColumnSidecar(
             UInt256.ZERO,
+            () -> ZERO,
             new DataColumnSlotAndIdentifier(blockHeader1.getMessage().getSlot(), blockRoot1, ONE));
     final SafeFuture<DataColumnSidecar> dataColumnSidecar1_3_Future =
         dataColumnReqResp.requestDataColumnSidecar(
             UInt256.ONE,
+            () -> ZERO,
             new DataColumnSlotAndIdentifier(
                 blockHeader1.getMessage().getSlot(), blockRoot1, UInt64.valueOf(3)));
     final SafeFuture<DataColumnSidecar> dataColumnSidecar2_0_Future =
         dataColumnReqResp.requestDataColumnSidecar(
             UInt256.valueOf(2),
+            () -> ZERO,
             new DataColumnSlotAndIdentifier(blockHeader2.getMessage().getSlot(), blockRoot2, ZERO));
     dataColumnReqResp.flush();
 
@@ -163,31 +158,31 @@ public class DataColumnReqRespBatchingImplTest {
 
     final SafeFuture<DataColumnSidecar> dataColumnSidecar1_0_Future =
         dataColumnReqResp.requestDataColumnSidecar(
-            UInt256.ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar1_0));
+            UInt256.ZERO, () -> ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar1_0));
     final SafeFuture<DataColumnSidecar> dataColumnSidecar1_1_Future =
         dataColumnReqResp.requestDataColumnSidecar(
-            UInt256.ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar1_1));
+            UInt256.ZERO, () -> ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar1_1));
     final SafeFuture<DataColumnSidecar> dataColumnSidecar2_0_Future =
         dataColumnReqResp.requestDataColumnSidecar(
-            UInt256.ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar2_0));
+            UInt256.ZERO, () -> ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar2_0));
     final SafeFuture<DataColumnSidecar> dataColumnSidecar2_1_Future =
         dataColumnReqResp.requestDataColumnSidecar(
-            UInt256.ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar2_1));
+            UInt256.ZERO, () -> ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar2_1));
     final SafeFuture<DataColumnSidecar> dataColumnSidecar3_0_Future =
         dataColumnReqResp.requestDataColumnSidecar(
-            UInt256.ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar3_0));
+            UInt256.ZERO, () -> ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar3_0));
     final SafeFuture<DataColumnSidecar> dataColumnSidecar3_1_Future =
         dataColumnReqResp.requestDataColumnSidecar(
-            UInt256.ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar3_1));
+            UInt256.ZERO, () -> ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar3_1));
     final SafeFuture<DataColumnSidecar> dataColumnSidecar4_1_Future =
         dataColumnReqResp.requestDataColumnSidecar(
-            UInt256.ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar4_1));
+            UInt256.ZERO, () -> ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar4_1));
     final SafeFuture<DataColumnSidecar> dataColumnSidecar5_0_Future =
         dataColumnReqResp.requestDataColumnSidecar(
-            UInt256.ONE, DataColumnSlotAndIdentifier.fromDataColumn(sidecar5_0));
+            UInt256.ONE, () -> ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar5_0));
     final SafeFuture<DataColumnSidecar> dataColumnSidecar5_1_Future =
         dataColumnReqResp.requestDataColumnSidecar(
-            UInt256.ONE, DataColumnSlotAndIdentifier.fromDataColumn(sidecar5_1));
+            UInt256.ONE, () -> ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar5_1));
 
     dataColumnReqResp.flush();
 
@@ -241,20 +236,24 @@ public class DataColumnReqRespBatchingImplTest {
     final SafeFuture<DataColumnSidecar> dataColumnSidecar10_0_Future =
         dataColumnReqResp.requestDataColumnSidecar(
             UInt256.ZERO,
+            () -> ZERO,
             new DataColumnSlotAndIdentifier(
                 blockHeader10.getMessage().getSlot(), blockRoot1, ZERO));
     final SafeFuture<DataColumnSidecar> dataColumnSidecar10_1_Future =
         dataColumnReqResp.requestDataColumnSidecar(
             UInt256.ZERO,
+            () -> ZERO,
             new DataColumnSlotAndIdentifier(blockHeader10.getMessage().getSlot(), blockRoot1, ONE));
     final SafeFuture<DataColumnSidecar> dataColumnSidecar10_3_Future =
         dataColumnReqResp.requestDataColumnSidecar(
             UInt256.ONE,
+            () -> ZERO,
             new DataColumnSlotAndIdentifier(
                 blockHeader10.getMessage().getSlot(), blockRoot1, UInt64.valueOf(3)));
     final SafeFuture<DataColumnSidecar> dataColumnSidecar11_0_Future =
         dataColumnReqResp.requestDataColumnSidecar(
             UInt256.valueOf(2),
+            () -> ZERO,
             new DataColumnSlotAndIdentifier(
                 blockHeader11.getMessage().getSlot(), blockRoot2, ZERO));
     dataColumnReqResp.flush();
@@ -322,31 +321,31 @@ public class DataColumnReqRespBatchingImplTest {
 
     final SafeFuture<DataColumnSidecar> dataColumnSidecar1_0_Future =
         dataColumnReqResp.requestDataColumnSidecar(
-            UInt256.ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar1_0));
+            UInt256.ZERO, () -> ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar1_0));
     final SafeFuture<DataColumnSidecar> dataColumnSidecar1_1_Future =
         dataColumnReqResp.requestDataColumnSidecar(
-            UInt256.ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar1_1));
+            UInt256.ZERO, () -> ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar1_1));
     final SafeFuture<DataColumnSidecar> dataColumnSidecar2_0_Future =
         dataColumnReqResp.requestDataColumnSidecar(
-            UInt256.ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar2_0));
+            UInt256.ZERO, () -> ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar2_0));
     final SafeFuture<DataColumnSidecar> dataColumnSidecar2_1_Future =
         dataColumnReqResp.requestDataColumnSidecar(
-            UInt256.ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar2_1));
+            UInt256.ZERO, () -> ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar2_1));
     final SafeFuture<DataColumnSidecar> dataColumnSidecar3_0_Future =
         dataColumnReqResp.requestDataColumnSidecar(
-            UInt256.ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar3_0));
+            UInt256.ZERO, () -> ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar3_0));
     final SafeFuture<DataColumnSidecar> dataColumnSidecar3_1_Future =
         dataColumnReqResp.requestDataColumnSidecar(
-            UInt256.ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar3_1));
+            UInt256.ZERO, () -> ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar3_1));
     final SafeFuture<DataColumnSidecar> dataColumnSidecar4_1_Future =
         dataColumnReqResp.requestDataColumnSidecar(
-            UInt256.ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar4_1));
+            UInt256.ZERO, () -> ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar4_1));
     final SafeFuture<DataColumnSidecar> dataColumnSidecar15_0_Future =
         dataColumnReqResp.requestDataColumnSidecar(
-            UInt256.ONE, DataColumnSlotAndIdentifier.fromDataColumn(sidecar15_0));
+            UInt256.ONE, () -> ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar15_0));
     final SafeFuture<DataColumnSidecar> dataColumnSidecar15_1_Future =
         dataColumnReqResp.requestDataColumnSidecar(
-            UInt256.ONE, DataColumnSlotAndIdentifier.fromDataColumn(sidecar15_1));
+            UInt256.ONE, () -> ZERO, DataColumnSlotAndIdentifier.fromDataColumn(sidecar15_1));
 
     dataColumnReqResp.flush();
 

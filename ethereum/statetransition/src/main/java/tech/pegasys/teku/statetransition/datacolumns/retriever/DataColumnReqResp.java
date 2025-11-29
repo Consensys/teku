@@ -13,15 +13,19 @@
 
 package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
+import java.util.function.Supplier;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 public interface DataColumnReqResp {
 
   SafeFuture<DataColumnSidecar> requestDataColumnSidecar(
-      UInt256 nodeId, DataColumnSlotAndIdentifier columnIdentifier);
+      UInt256 nodeId,
+      Supplier<UInt64> finalizedEpochSupplier,
+      DataColumnSlotAndIdentifier columnIdentifier);
 
   void flush();
 

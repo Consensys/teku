@@ -938,7 +938,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final DataColumnReqResp dasRpc =
         new DataColumnReqRespBatchingImpl(
             spec,
-            recentChainData,
             loggingByRangeReqResp,
             loggingByRootReqResp,
             schemaDefinitionsFulu.getDataColumnsByRootIdentifierSchema());

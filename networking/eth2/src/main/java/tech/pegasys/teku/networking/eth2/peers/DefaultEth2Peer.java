@@ -346,6 +346,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   public SafeFuture<Void> requestDataColumnSidecarsByRoot(
       final List<DataColumnsByRootIdentifier> dataColumnIdentifiers,
       final RpcResponseListener<DataColumnSidecar> listener) {
+    LOG.info("Requesting data column sidecars by root: {}", dataColumnIdentifiers);
     return rpcMethods
         .dataColumnSidecarsByRoot()
         .map(
@@ -491,6 +492,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final UInt64 count,
       final List<UInt64> columns,
       final RpcResponseListener<DataColumnSidecar> listener) {
+    LOG.info("Requesting data column sidecars by range: {}+{}({})", startSlot, count, columns);
     return rpcMethods
         .getDataColumnSidecarsByRange()
         .map(
