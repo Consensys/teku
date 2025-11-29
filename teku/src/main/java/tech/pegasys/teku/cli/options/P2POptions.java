@@ -336,7 +336,7 @@ public class P2POptions {
       arity = "0..1",
       hidden = true,
       fallbackValue = "true")
-  private boolean reworkedSidecarRecoveryEnabled = true;
+  private boolean reworkedSidecarRecoveryEnabled = false;
 
   @Option(
       names = {"--Xp2p-reworked-sidecar-cancel-timeout-ms"},
