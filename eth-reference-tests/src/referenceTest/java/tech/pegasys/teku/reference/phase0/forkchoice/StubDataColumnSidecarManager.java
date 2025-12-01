@@ -24,6 +24,8 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -93,11 +95,12 @@ public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<
             final MiscHelpersFulu helpers =
                 spec.forMilestone(SpecMilestone.FULU).miscHelpers().toVersionFulu().orElseThrow();
             final MetricsSystem metricsSystem = new StubMetricsSystem();
+            final TimeProvider timeProvider = new SystemTimeProvider();
             validator =
                 DataColumnSidecarGossipValidator.create(
                     spec,
                     new ConcurrentHashMap<>(),
-                    new GossipValidationHelper(spec, recentChainData, metricsSystem),
+                    new GossipValidationHelper(spec, recentChainData, metricsSystem, timeProvider),
                     helpers,
                     metricsSystem,
                     recentChainData.getStore());

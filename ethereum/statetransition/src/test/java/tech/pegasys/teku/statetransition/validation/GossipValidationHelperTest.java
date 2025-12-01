@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableContainer;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -51,14 +53,15 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 @TestSpecContext(
     signatureVerifierNoop = true,
-    milestone = {SpecMilestone.PHASE0, SpecMilestone.FULU})
+    milestone = {SpecMilestone.PHASE0, SpecMilestone.FULU, SpecMilestone.GLOAS})
 public class GossipValidationHelperTest {
   private Spec spec;
   private RecentChainData recentChainData;
   private DataStructureUtil dataStructureUtil;
   private StorageSystem storageSystem;
-
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private GossipValidationHelper gossipValidationHelper;
+  private int maximumGossipClockDisparity;
 
   @BeforeEach
   void setUp(final SpecContext specContext) {
@@ -67,9 +70,11 @@ public class GossipValidationHelperTest {
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesis(false);
     recentChainData = storageSystem.recentChainData();
+    maximumGossipClockDisparity = spec.getNetworkingConfig().getMaximumGossipClockDisparity();
 
     gossipValidationHelper =
-        new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem());
+        new GossipValidationHelper(
+            spec, recentChainData, storageSystem.getMetricsSystem(), timeProvider);
   }
 
   @TestTemplate
@@ -280,7 +285,8 @@ public class GossipValidationHelperTest {
     final ChainUpdater chainUpdater = new ChainUpdater(localRecentChainData, chainBuilder, spec);
 
     final GossipValidationHelper gossipValidationHelper =
-        new GossipValidationHelper(spec, localRecentChainData, storageSystem.getMetricsSystem());
+        new GossipValidationHelper(
+            spec, localRecentChainData, storageSystem.getMetricsSystem(), timeProvider);
     chainUpdater.initializeGenesis();
 
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(1));
@@ -303,5 +309,51 @@ public class GossipValidationHelperTest {
             gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
                 blockAndState.getSlot(), blockAndState.getParentRoot()))
         .isFalse();
+  }
+
+  @TestTemplate
+  void isForCurrentSlot_shouldNotUnderflow() {
+    AssertionsForClassTypes.assertThat(gossipValidationHelper.isForCurrentSlot(UInt64.ZERO))
+        .isTrue();
+  }
+
+  @TestTemplate
+  void isForCurrentSlot_shouldRejectOutsideLowerBound() {
+    final UInt64 slot = UInt64.valueOf(1000);
+    final UInt64 slotStartTimeMillis =
+        spec.computeTimeAtSlot(slot, recentChainData.getGenesisTime()).times(1000);
+    timeProvider.advanceTimeByMillis(
+        slotStartTimeMillis.minus(maximumGossipClockDisparity).decrement().longValue());
+    AssertionsForClassTypes.assertThat(gossipValidationHelper.isForCurrentSlot(slot)).isFalse();
+  }
+
+  @TestTemplate
+  void isForCurrentSlot_shouldAcceptLowerBound() {
+    final UInt64 slot = UInt64.valueOf(1000);
+    final UInt64 slotStartTimeMillis =
+        spec.computeTimeAtSlot(slot, recentChainData.getGenesisTime()).times(1000);
+    timeProvider.advanceTimeByMillis(
+        slotStartTimeMillis.minus(maximumGossipClockDisparity).longValue());
+    AssertionsForClassTypes.assertThat(gossipValidationHelper.isForCurrentSlot(slot)).isTrue();
+  }
+
+  @TestTemplate
+  void isForCurrentSlot_shouldAcceptUpperBound() {
+    final UInt64 slot = UInt64.valueOf(1000);
+    final UInt64 nextSlotStartTimeMillis =
+        spec.computeTimeAtSlot(slot.increment(), recentChainData.getGenesisTime()).times(1000);
+    timeProvider.advanceTimeByMillis(
+        nextSlotStartTimeMillis.plus(maximumGossipClockDisparity).longValue());
+    AssertionsForClassTypes.assertThat(gossipValidationHelper.isForCurrentSlot(slot)).isTrue();
+  }
+
+  @TestTemplate
+  void isForCurrentSlot_shouldRejectOutsideUpperBound() {
+    final UInt64 slot = UInt64.valueOf(1000);
+    final UInt64 nextSlotStartTimeMillis =
+        spec.computeTimeAtSlot(slot.increment(), recentChainData.getGenesisTime()).times(1000);
+    timeProvider.advanceTimeByMillis(
+        nextSlotStartTimeMillis.plus(maximumGossipClockDisparity).increment().longValue());
+    AssertionsForClassTypes.assertThat(gossipValidationHelper.isForCurrentSlot(slot)).isFalse();
   }
 }

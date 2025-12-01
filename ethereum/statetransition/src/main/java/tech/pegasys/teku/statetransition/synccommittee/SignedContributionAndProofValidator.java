@@ -31,7 +31,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
@@ -47,6 +46,7 @@ import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBatchBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.util.SeenAggregatesCache;
+import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -59,7 +59,7 @@ public class SignedContributionAndProofValidator {
       new SeenAggregatesCache<>(VALID_CONTRIBUTION_AND_PROOF_SET_SIZE);
   private final SyncCommitteeStateUtils syncCommitteeStateUtils;
   private final AsyncBLSSignatureVerifier signatureVerifier;
-  private final SyncCommitteeCurrentSlotUtil slotUtil;
+  private final GossipValidationHelper gossipValidationHelper;
 
   private final RecentChainData recentChainData;
 
@@ -67,13 +67,13 @@ public class SignedContributionAndProofValidator {
       final Spec spec,
       final RecentChainData recentChainData,
       final SyncCommitteeStateUtils syncCommitteeStateUtils,
-      final TimeProvider timeProvider,
-      final AsyncBLSSignatureVerifier signatureVerifier) {
+      final AsyncBLSSignatureVerifier signatureVerifier,
+      final GossipValidationHelper gossipValidationHelper) {
     this.spec = spec;
     this.syncCommitteeStateUtils = syncCommitteeStateUtils;
     this.signatureVerifier = signatureVerifier;
     this.recentChainData = recentChainData;
-    this.slotUtil = new SyncCommitteeCurrentSlotUtil(recentChainData, spec, timeProvider);
+    this.gossipValidationHelper = gossipValidationHelper;
   }
 
   public SafeFuture<InternalValidationResult> validate(final SignedContributionAndProof proof) {
@@ -113,7 +113,7 @@ public class SignedContributionAndProofValidator {
 
     // [IGNORE] The contribution's slot is for the current slot (with a
     // `MAXIMUM_GOSSIP_CLOCK_DISPARITY` allowance), i.e. `contribution.slot == current_slot`.
-    if (!slotUtil.isForCurrentSlot(contribution.getSlot())) {
+    if (!gossipValidationHelper.isForCurrentSlot(contribution.getSlot())) {
       LOG.trace(
           "Ignoring proof from aggregator {}, "
               + "because it is not from the current slot "

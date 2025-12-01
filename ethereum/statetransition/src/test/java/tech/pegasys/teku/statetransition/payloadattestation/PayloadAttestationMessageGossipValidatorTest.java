@@ -75,7 +75,7 @@ public class PayloadAttestationMessageGossipValidatorTest {
     blockRoot = payloadAttestationMessage.getData().getBeaconBlockRoot();
     postState = dataStructureUtil.randomBeaconState();
 
-    when(gossipValidationHelper.isSlotFromFuture(slot)).thenReturn(false);
+    when(gossipValidationHelper.isForCurrentSlot(slot)).thenReturn(true);
     when(gossipValidationHelper.isBlockAvailable(blockRoot)).thenReturn(true);
     when(gossipValidationHelper.getStateAtSlotAndBlockRoot(new SlotAndBlockRoot(slot, blockRoot)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(postState)));
@@ -100,11 +100,11 @@ public class PayloadAttestationMessageGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldSaveForFuture_whenSlotIsFromFuture() {
-    when(gossipValidationHelper.isSlotFromFuture(slot)).thenReturn(true);
+  void shouldIgnore_whenSlotIsNotCurrent() {
+    when(gossipValidationHelper.isForCurrentSlot(slot)).thenReturn(false);
     SafeFutureAssert.assertThatSafeFuture(
             payloadAttestationMessageGossipValidator.validate(payloadAttestationMessage))
-        .isCompletedWithValue(SAVE_FOR_FUTURE);
+        .isCompletedWithValue(IGNORE);
   }
 
   @TestTemplate

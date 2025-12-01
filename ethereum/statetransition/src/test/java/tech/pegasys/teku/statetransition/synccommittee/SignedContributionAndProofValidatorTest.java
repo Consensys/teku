@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.signatures.SimpleSignatureVerificationService;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -66,8 +67,12 @@ class SignedContributionAndProofValidatorTest {
             spec,
             storageSystem.recentChainData(),
             syncCommitteeStateUtils,
-            timeProvider,
-            new SimpleSignatureVerificationService());
+            new SimpleSignatureVerificationService(),
+            new GossipValidationHelper(
+                spec,
+                storageSystem.recentChainData(),
+                storageSystem.getMetricsSystem(),
+                timeProvider));
     return storageSystem.chainUpdater().initializeGenesis();
   }
 

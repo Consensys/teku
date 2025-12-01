@@ -1258,7 +1258,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initGossipValidationHelper() {
     LOG.debug("BeaconChainController.initGossipValidationHelper()");
-    gossipValidationHelper = new GossipValidationHelper(spec, recentChainData, metricsSystem);
+    gossipValidationHelper =
+        new GossipValidationHelper(spec, recentChainData, metricsSystem, timeProvider);
   }
 
   protected void initPerformanceTracker() {
@@ -1794,8 +1795,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 spec,
                 recentChainData,
                 syncCommitteeStateUtils,
-                timeProvider,
-                signatureVerificationService));
+                signatureVerificationService,
+                gossipValidationHelper));
 
     syncCommitteeMessagePool =
         new SyncCommitteeMessagePool(
@@ -1805,7 +1806,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 recentChainData,
                 syncCommitteeStateUtils,
                 signatureVerificationService,
-                timeProvider));
+                gossipValidationHelper));
     eventChannels
         .subscribe(SlotEventsChannel.class, syncCommitteeContributionPool)
         .subscribe(SlotEventsChannel.class, syncCommitteeMessagePool);
