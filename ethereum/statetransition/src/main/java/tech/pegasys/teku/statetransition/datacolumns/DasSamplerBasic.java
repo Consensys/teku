@@ -153,12 +153,11 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
         .finish(
             throwable -> {
               if (ExceptionUtil.hasCause(throwable, CancellationException.class)) {
-                if (throwable.getMessage() != null) {
-                  LOG.warn(
-                      "CancellationException in checkDataAvailability: {}", throwable.getMessage());
-                } else {
-                  LOG.warn("Some columns failed to download at slot {}", slot);
-                }
+                final String error = throwable.getMessage();
+                LOG.debug(
+                    "CancellationException in checkDataAvailability: {}",
+                    () -> error == null ? "<no message>" : error);
+
               } else {
                 LOG.error("data availability check failed", throwable);
               }
