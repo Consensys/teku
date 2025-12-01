@@ -83,7 +83,7 @@ public class RecentBlocksFetchServiceTest {
             pendingBlockPool,
             pendingAttestationsPool,
             blockBlobSidecarsTrackersPool,
-                dasSamplerBasic,
+            dasSamplerBasic,
             forwardSync,
             fetchTaskFactory,
             maxConcurrentRequests);

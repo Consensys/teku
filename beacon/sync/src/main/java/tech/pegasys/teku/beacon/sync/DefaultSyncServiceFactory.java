@@ -73,7 +73,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final PendingPool<ValidatableAttestation> pendingAttestations;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
-    private final Optional<DasSamplerBasic> dasBasicSampler;
+  private final Optional<DasSamplerBasic> dasBasicSampler;
   private final int getStartupTargetPeerCount;
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final Duration startupTimeout;
@@ -117,7 +117,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     this.pendingBlocks = pendingBlocks;
     this.pendingAttestations = pendingAttestations;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
-        this.dasBasicSampler = dasBasicSampler;
+    this.dasBasicSampler = dasBasicSampler;
     this.getStartupTargetPeerCount = getStartupTargetPeerCount;
     this.signatureVerifier = signatureVerifier;
     this.startupTimeout = startupTimeout;
@@ -140,7 +140,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
             pendingBlocks,
             pendingAttestations,
             blockBlobSidecarsTrackersPool,
-                dasBasicSampler,
+            dasBasicSampler,
             forwardSyncService,
             fetchTaskFactory);
     final RecentBlobSidecarsFetcher recentBlobSidecarsFetcher =

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beacon.sync.gossip.blocks;
 
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -28,8 +29,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 import tech.pegasys.teku.statetransition.util.PendingPool;
-
-import java.util.Optional;
 
 public class RecentBlocksFetchService
     extends AbstractFetchService<Bytes32, FetchBlockTask, SignedBeaconBlock>
@@ -114,8 +113,8 @@ public class RecentBlocksFetchService
       // We already have this block, waiting for blobs
       return;
     }
-    if(dasBasicSampler.isPresent() && dasBasicSampler.get().containsBlock(blockRoot)){
-        return;
+    if (dasBasicSampler.isPresent() && dasBasicSampler.get().containsBlock(blockRoot)) {
+      return;
     }
     final FetchBlockTask task = createTask(blockRoot);
     if (allTasks.putIfAbsent(blockRoot, task) != null) {

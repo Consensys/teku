@@ -27,7 +27,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -187,11 +186,14 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
                   final DataColumnSamplingTracker newTracker =
                       DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager);
                   orderedSidecarsTrackers.add(new SlotAndBlockRoot(slot, blockRoot));
-                    LOG.debug("Created new DAS tracker for slot {} root {}", slot, blockRoot);
+                  LOG.debug("Created new DAS tracker for slot {} root {}", slot, blockRoot);
 
                   return newTracker;
                 });
-          LOG.debug("Currently size of recently sampled blocks {} and orderedTracker {}", recentlySampledColumnsByRoot.size(),orderedSidecarsTrackers.size());
+        LOG.debug(
+            "Currently size of recently sampled blocks {} and orderedTracker {}",
+            recentlySampledColumnsByRoot.size(),
+            orderedSidecarsTrackers.size());
       }
       onFirstSeen(slot, blockRoot, tracker);
     }
@@ -200,7 +202,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
 
   private void makeRoomForNewTracker() {
     while (recentlySampledColumnsByRoot.size() > MAX_RECENTLY_SAMPLED_BLOCKS - 1) {
-        LOG.debug("Making room for new DAS tracker, removing oldest sampled block");
+      LOG.debug("Making room for new DAS tracker, removing oldest sampled block");
       final SlotAndBlockRoot toRemove = orderedSidecarsTrackers.pollFirst();
       if (toRemove == null) {
         break;
@@ -295,10 +297,13 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
     }
   }
 
-    public synchronized boolean containsBlock(final Bytes32 blockRoot) {
-      LOG.debug("Checking if DAS sampler contains block {}, {}", blockRoot, getBlock(blockRoot).isPresent());
-        return getBlock(blockRoot).isPresent();
-    }
+  public synchronized boolean containsBlock(final Bytes32 blockRoot) {
+    LOG.debug(
+        "Checking if DAS sampler contains block {}, {}",
+        blockRoot,
+        getBlock(blockRoot).isPresent());
+    return getBlock(blockRoot).isPresent();
+  }
 
   public synchronized Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
     return Optional.ofNullable(recentlySampledColumnsByRoot.get(blockRoot))
