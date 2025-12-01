@@ -383,7 +383,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ExecutionPayloadBidManager executionPayloadBidManager;
   protected volatile ExecutionPayloadManager executionPayloadManager;
   protected volatile ExecutionProofManager executionProofManager;
-  protected volatile Optional<DasSamplerBasic> dasSamplerBasic = Optional.empty();
+  protected volatile DasSamplerBasic dasSamplerBasic;
   protected volatile Optional<DasCustodySync> dasCustodySync = Optional.empty();
   protected volatile Optional<DataColumnSidecarRetriever> recoveringSidecarRetriever =
       Optional.empty();
@@ -571,8 +571,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final ValidatorIsConnectedProvider validatorIsConnectedProvider =
         new ValidatorIsConnectedProviderReference(() -> proposersDataManager);
 
-    final SingleBlockProvider singleBlockProviderResolver =
-        new SingleBlockProviderResolver(blockBlobSidecarsTrackersPool, dasSamplerBasic);
+//  final SingleBlockProvider singleBlockProviderResolver =
+//                new SingleBlockProviderResolver((blockRoot) -> blockBlobSidecarsTrackersPool.getBlock(blockRoot),
+//                        (blockRoot) -> dasSamplerBasic.getBlock(blockRoot));
+
 
     // Init other services
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
@@ -582,7 +584,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     metricsSystem,
                     storeConfig,
                     beaconAsyncRunner,
-                    singleBlockProviderResolver,
+                        (blockRoot) -> blockBlobSidecarsTrackersPool.getBlock(blockRoot),
                     (blockRoot, index) ->
                         blockBlobSidecarsTrackersPool.getBlobSidecar(blockRoot, index),
                     storageQueryChannel,
@@ -1013,7 +1015,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             DEFAULT_TARGET_WAIT_MILLIS);
 
     dasSamplerBasic =
-        Optional.of(
             new DasSamplerBasic(
                 spec,
                 beaconAsyncRunner,
@@ -1023,13 +1024,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 recoveringSidecarRetriever,
                 custodyGroupCountManager,
                 recentChainData,
-                metricsSystem));
+                metricsSystem);
     LOG.info(
         "DAS Basic Sampler initialized with {} groups to sample",
         custodyGroupCountManager.getSamplingGroupCount());
-    eventChannels.subscribe(SlotEventsChannel.class, dasSamplerBasic.get());
+    eventChannels.subscribe(SlotEventsChannel.class, dasSamplerBasic);
 
-    this.dataAvailabilitySampler = dasSamplerBasic.get();
+    this.dataAvailabilitySampler = dasSamplerBasic;
     this.recoveringSidecarRetriever = Optional.of(recoveringSidecarRetriever);
   }
 
@@ -2062,6 +2063,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         pendingBlocks,
         pendingAttestations,
         blockBlobSidecarsTrackersPool,
+        dasSamplerBasic,
         beaconConfig.eth2NetworkConfig().getStartupTargetPeerCount(),
         signatureVerificationService,
         Duration.ofSeconds(beaconConfig.eth2NetworkConfig().getStartupTimeoutSeconds()),

@@ -14,6 +14,10 @@
 package tech.pegasys.teku.services.beaconchain;
 
 import java.util.Optional;
+import java.util.function.Supplier;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -22,24 +26,21 @@ import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 
 public class SingleBlockProviderResolver implements SingleBlockProvider {
 
-  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
-  private final Optional<DasSamplerBasic> dasSamplerBasic;
+  private final SingleBlockProvider blockProvider;
+  private final SingleBlockProvider blockProviderFulu;
+
+    private static final Logger LOG = LogManager.getLogger();
 
   public SingleBlockProviderResolver(
-      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
-      final Optional<DasSamplerBasic> dasSamplerBasic) {
-    this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
-    this.dasSamplerBasic = dasSamplerBasic;
+          final SingleBlockProvider blockProvider,
+          final SingleBlockProvider blockProviderFulu) {
+    this.blockProvider = blockProvider;
+    this.blockProviderFulu = blockProviderFulu;
   }
 
   @Override
   public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
-    return dasSamplerBasic
-        .map(
-            samplerBasic ->
-                samplerBasic
-                    .getBlock(blockRoot)
-                    .or(() -> blockBlobSidecarsTrackersPool.getBlock(blockRoot)))
-        .orElseGet(() -> blockBlobSidecarsTrackersPool.getBlock(blockRoot));
+    LOG.debug("Current state of things {} {}", blockProviderFulu, blockProvider);
+    return Optional.ofNullable(blockProviderFulu.getBlock(blockRoot)).orElse(blockProvider.getBlock(blockRoot));
   }
 }

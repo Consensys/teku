@@ -427,6 +427,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
   @Override
   public synchronized Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
+      LOG.debug("Getting block from blockBLobSidecarstrackerspool for blockRoot {}", blockRoot);
     return Optional.ofNullable(blockBlobSidecarsTrackers.get(blockRoot))
         .flatMap(BlockBlobSidecarsTracker::getBlock);
   }

@@ -27,6 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -177,25 +178,29 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
     DataColumnSamplingTracker tracker = recentlySampledColumnsByRoot.get(blockRoot);
 
     if (tracker == null) {
-        synchronized (this) {
-            makeRoomForNewTracker();
-            tracker = recentlySampledColumnsByRoot.computeIfAbsent(
-                    blockRoot,
-                    k -> {
-                        final DataColumnSamplingTracker newTracker =
-                                DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager);
-                        orderedSidecarsTrackers.add(new SlotAndBlockRoot(slot, blockRoot));
+      synchronized (this) {
+        makeRoomForNewTracker();
+        tracker =
+            recentlySampledColumnsByRoot.computeIfAbsent(
+                blockRoot,
+                k -> {
+                  final DataColumnSamplingTracker newTracker =
+                      DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager);
+                  orderedSidecarsTrackers.add(new SlotAndBlockRoot(slot, blockRoot));
+                    LOG.debug("Created new DAS tracker for slot {} root {}", slot, blockRoot);
 
-                        return newTracker;
-                    });
-        }
-        onFirstSeen(slot, blockRoot, tracker);
+                  return newTracker;
+                });
+          LOG.debug("Currently size of recently sampled blocks {} and orderedTracker {}", recentlySampledColumnsByRoot.size(),orderedSidecarsTrackers.size());
+      }
+      onFirstSeen(slot, blockRoot, tracker);
     }
     return tracker;
   }
 
   private void makeRoomForNewTracker() {
     while (recentlySampledColumnsByRoot.size() > MAX_RECENTLY_SAMPLED_BLOCKS - 1) {
+        LOG.debug("Making room for new DAS tracker, removing oldest sampled block");
       final SlotAndBlockRoot toRemove = orderedSidecarsTrackers.pollFirst();
       if (toRemove == null) {
         break;
@@ -264,33 +269,37 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
     final UInt64 firstNonFinalizedSlot =
         spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch()).increment();
     synchronized (this) {
-        recentlySampledColumnsByRoot
-                .values()
-                .removeIf(
-                        tracker -> {
-                            final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(tracker.slot(), tracker.blockRoot());
-                            if (tracker.completionFuture().isDone()) {
-                                orderedSidecarsTrackers.remove(slotAndBlockRoot);
-                                return true;
+      recentlySampledColumnsByRoot
+          .values()
+          .removeIf(
+              tracker -> {
+                final SlotAndBlockRoot slotAndBlockRoot =
+                    new SlotAndBlockRoot(tracker.slot(), tracker.blockRoot());
+                if (tracker.completionFuture().isDone()) {
+                  orderedSidecarsTrackers.remove(slotAndBlockRoot);
+                  return true;
+                }
+                if (tracker.slot().isLessThan(firstNonFinalizedSlot)
+                    || recentChainData.containsBlock(tracker.blockRoot())) {
 
-                            }
-                            if (tracker.slot().isLessThan(firstNonFinalizedSlot)
-                                    || recentChainData.containsBlock(tracker.blockRoot())) {
+                  // make sure the future releases any pending waiters
+                  tracker
+                      .completionFuture()
+                      .completeExceptionally(new RuntimeException("DAS sampling expired"));
+                  orderedSidecarsTrackers.remove(slotAndBlockRoot);
+                  return true;
+                }
 
-                                // make sure the future releases any pending waiters
-                                tracker
-                                        .completionFuture()
-                                        .completeExceptionally(new RuntimeException("DAS sampling expired"));
-                                orderedSidecarsTrackers.remove(slotAndBlockRoot);
-                                return true;
-                            }
-
-                            return false;
-                        });
+                return false;
+              });
     }
   }
 
-  public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
+    public synchronized boolean containsBlock(final Bytes32 blockRoot) {
+        return getBlock(blockRoot).isPresent();
+    }
+
+  public synchronized Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
     return Optional.ofNullable(recentlySampledColumnsByRoot.get(blockRoot))
         .flatMap(DataColumnSamplingTracker::getBlock);
   }
