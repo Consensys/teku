@@ -235,7 +235,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
     if (!LOG.isDebugEnabled()) {
       LOG.info(
-          "head: {}:{}, payload: {}:{}",
+          "EL Stub FCU head: {}:{}, payload: {}:{}",
           forkChoiceState.getHeadBlockSlot(),
           forkChoiceState.getHeadBlockRoot(),
           forkChoiceState.getHeadExecutionBlockNumber(),
