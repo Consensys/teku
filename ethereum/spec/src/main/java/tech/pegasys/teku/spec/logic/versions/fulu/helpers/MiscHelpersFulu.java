@@ -401,8 +401,8 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
                         .create(
                             kzgCellAndProofs.get(cellIndex).cell(),
                             kzgCellAndProofs.get(cellIndex).proof(),
-                            blobIndex,
-                            cellIndex));
+                            cellIndex,
+                            blobIndex));
               }
               return row;
             })
@@ -426,8 +426,8 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
                         .create(
                             kzgCells.get(cellIndex),
                             blobAndCellProofs.cellProofs().get(cellIndex),
-                            blobIndex,
-                            cellIndex));
+                            cellIndex,
+                            blobIndex));
               }
               return row;
             })
