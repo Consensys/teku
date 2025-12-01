@@ -49,15 +49,11 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InOrder;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
@@ -385,37 +381,6 @@ class ValidatorApiHandlerTest {
         validatorApiHandler.getProposerDuties(EPOCH);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(IllegalArgumentException.class);
-  }
-
-  public static Stream<Arguments> getStateSlotForProposerDutiesTestCases() {
-    // | EPOCH | START SLOT | END SLOT |
-    // |   0   |       0    |     7    |
-    // |   1   |       8    |    15    |
-    // |   2   |      16    |    23    |
-    // |   3   |      24    |    31    |
-    return Stream.of(
-        Arguments.of(SpecMilestone.PHASE0, 0, 0),
-        Arguments.of(SpecMilestone.PHASE0, 1, 8),
-        Arguments.of(SpecMilestone.PHASE0, 2, 16),
-        Arguments.of(SpecMilestone.PHASE0, 3, 24),
-        Arguments.of(SpecMilestone.FULU, 0, 0),
-        Arguments.of(SpecMilestone.FULU, 1, 0),
-        Arguments.of(SpecMilestone.FULU, 2, 8),
-        Arguments.of(SpecMilestone.FULU, 3, 16));
-  }
-
-  @ParameterizedTest
-  @MethodSource("getStateSlotForProposerDutiesTestCases")
-  public void getStateSlotForProposerDuties(
-      final SpecMilestone specMilestone, final int requestedEpoch, final int expectedSlot) {
-    final Spec localSpec = TestSpecFactory.createMinimal(specMilestone);
-    final UInt64 querySlot =
-        localSpec
-            .getGenesisSpec()
-            .getBlockProposalUtil()
-            .getStateSlotForProposerDuties(localSpec, UInt64.valueOf(requestedEpoch));
-
-    assertThat(querySlot.intValue()).isEqualTo(expectedSlot);
   }
 
   @Test

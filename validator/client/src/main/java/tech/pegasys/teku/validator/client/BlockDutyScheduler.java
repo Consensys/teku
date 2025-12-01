@@ -76,38 +76,6 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
         .getBlockProposalUtil()
         .getBlockProposalDependentRoot(
             headBlockRoot, previousTargetRoot, currentTargetRoot, headEpoch, dutyEpoch);
-    //    if (spec.atEpoch(dutyEpoch).getMilestone().isLessThan(SpecMilestone.FULU)
-    //        ||
-    // spec.atEpoch(dutyEpoch.minusMinZero(1)).getMilestone().isLessThan(SpecMilestone.FULU)) {
-    //      // prior to fulu, and also fulu change epoch, will just use phase0 dependent root
-    //      checkArgument(
-    //          dutyEpoch.isGreaterThanOrEqualTo(headEpoch),
-    //          "Attempting to calculate dependent root for duty epoch %s that is before the updated
-    // head epoch %s",
-    //          dutyEpoch,
-    //          headEpoch);
-    //      return headEpoch.equals(dutyEpoch) ? currentTargetRoot : headBlockRoot;
-    //    }
-    //
-    //    checkArgument(
-    //        dutyEpoch.isGreaterThanOrEqualTo(headEpoch),
-    //        "Attempting to calculate dependent root for duty epoch %s that is before the updated
-    // head epoch %s",
-    //        dutyEpoch,
-    //        headEpoch);
-    //    if (headEpoch.equals(dutyEpoch)) {
-    //      LOG.debug("headEpoch {} - returning previousDutyDependentRoot", () -> headEpoch);
-    //      return previousTargetRoot;
-    //    } else if (headEpoch.increment().equals(dutyEpoch)) {
-    //      LOG.debug("dutyEpoch (next epoch) {} - returning currentDutyDependentRoot", () ->
-    // dutyEpoch);
-    //      return currentTargetRoot;
-    //    } else {
-    //      LOG.debug(
-    //          "headBlockRoot returned - dutyEpoch {}, headEpoch {}", () -> dutyEpoch, () ->
-    // headEpoch);
-    //      return headBlockRoot;
-    //    }
   }
 
   @Override
