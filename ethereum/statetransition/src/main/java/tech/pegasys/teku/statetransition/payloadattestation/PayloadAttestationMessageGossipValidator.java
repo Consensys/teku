@@ -15,6 +15,9 @@ package tech.pegasys.teku.statetransition.payloadattestation;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.spec.config.Constants.RECENT_SEEN_PAYLOAD_ATTESTATIONS_CACHE_SIZE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import java.util.Map;
@@ -67,7 +70,7 @@ public class PayloadAttestationMessageGossipValidator {
           "Ignoring payload attestation with slot {} from validator with index {} because it's not from the current slot.",
           data.getSlot(),
           payloadAttestationMessage.getValidatorIndex());
-      return completedFuture(InternalValidationResult.IGNORE);
+      return completedFuture(IGNORE);
     }
 
     /*
@@ -81,7 +84,7 @@ public class PayloadAttestationMessageGossipValidator {
           "Payload attestation for slot {} and validator index {} already seen.",
           key.slot(),
           key.validatorIndex());
-      return completedFuture(InternalValidationResult.IGNORE);
+      return completedFuture(IGNORE);
     }
 
     /*
@@ -93,7 +96,7 @@ public class PayloadAttestationMessageGossipValidator {
       LOG.trace(
           "Payload attestations's block with root {} is not available. Saving for future processing.",
           data.getBeaconBlockRoot());
-      return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+      return completedFuture(SAVE_FOR_FUTURE);
     }
 
     /*
@@ -115,7 +118,7 @@ public class PayloadAttestationMessageGossipValidator {
                     "State for block root {} and slot {} is unavailable.",
                     data.getBeaconBlockRoot(),
                     data.getSlot());
-                return InternalValidationResult.SAVE_FOR_FUTURE;
+                return SAVE_FOR_FUTURE;
               }
               final BeaconState state = maybeState.get();
               /*
@@ -141,7 +144,7 @@ public class PayloadAttestationMessageGossipValidator {
                 return reject("Invalid payload attestation signature");
               }
               seenPayloadAttestations.add(key);
-              return InternalValidationResult.ACCEPT;
+              return ACCEPT;
             });
   }
 
