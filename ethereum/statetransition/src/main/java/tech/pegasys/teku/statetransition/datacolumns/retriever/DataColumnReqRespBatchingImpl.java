@@ -85,11 +85,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
   private record ByRootRequest(Bytes32 root, Set<UInt64> columns) {}
 
   private void flushForNode(final UInt256 nodeId, final List<RequestEntry> nodeRequests) {
-    // TODO: DEBUG
-    LOG.info(
-        "Flushing requests for node {}: {}",
-        nodeId,
-        nodeRequests.stream().map(RequestEntry::columnIdentifier).toList());
+    LOG.debug("Flushing requests for node {}: {} total", nodeId, nodeRequests.size());
     if (nodeRequests.isEmpty()) {
       return;
     }
