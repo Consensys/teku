@@ -155,4 +155,9 @@ public class GossipValidationHelper {
         && currentTimeMillis.isLessThanOrEqualTo(
             slotEndTimeMillis.plus(maximumGossipClockDisparityMillis));
   }
+
+  public boolean isValidatorInPayloadTimelinessCommittee(
+      final UInt64 validatorIndex, final BeaconState state, final UInt64 slot) {
+    return spec.getPtc(state, slot).contains(validatorIndex.intValue());
+  }
 }

@@ -77,6 +77,9 @@ public class PayloadAttestationMessageGossipValidatorTest {
 
     when(gossipValidationHelper.isForCurrentSlot(slot)).thenReturn(true);
     when(gossipValidationHelper.isBlockAvailable(blockRoot)).thenReturn(true);
+    when(gossipValidationHelper.isValidatorInPayloadTimelinessCommittee(
+            payloadAttestationMessage.getValidatorIndex(), postState, slot))
+        .thenReturn(true);
     when(gossipValidationHelper.getStateAtSlotAndBlockRoot(new SlotAndBlockRoot(slot, blockRoot)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(postState)));
     final SpecVersion specVersion = mock(SpecVersion.class);
@@ -144,7 +147,9 @@ public class PayloadAttestationMessageGossipValidatorTest {
 
   @TestTemplate
   void shouldReject_whenValidatorNotInPtcCommittee() {
-    when(spec.getPtc(postState, slot)).thenReturn(IntList.of());
+    when(gossipValidationHelper.isValidatorInPayloadTimelinessCommittee(
+            payloadAttestationMessage.getValidatorIndex(), postState, slot))
+        .thenReturn(false);
     SafeFutureAssert.assertThatSafeFuture(
             payloadAttestationMessageGossipValidator.validate(payloadAttestationMessage))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);

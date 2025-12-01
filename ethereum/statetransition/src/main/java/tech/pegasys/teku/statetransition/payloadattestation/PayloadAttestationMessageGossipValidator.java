@@ -17,7 +17,6 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.spec.config.Constants.RECENT_SEEN_PAYLOAD_ATTESTATIONS_CACHE_SIZE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
-import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Map;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
@@ -40,7 +39,6 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 public class PayloadAttestationMessageGossipValidator {
 
   private static final Logger LOG = LogManager.getLogger();
-  final Spec spec;
   final GossipValidationHelper gossipValidationHelper;
   final SigningRootUtil signingRootUtil;
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
@@ -51,7 +49,6 @@ public class PayloadAttestationMessageGossipValidator {
       final Spec spec,
       final GossipValidationHelper gossipValidationHelper,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots) {
-    this.spec = spec;
     this.gossipValidationHelper = gossipValidationHelper;
     this.invalidBlockRoots = invalidBlockRoots;
     signingRootUtil = new SigningRootUtil(spec);
@@ -126,8 +123,8 @@ public class PayloadAttestationMessageGossipValidator {
                * The state is the head state corresponding to processing the block up to the current slot as determined
                * by the fork choice.
                */
-              final IntList ptc = spec.getPtc(state, data.getSlot());
-              if (!ptc.contains(payloadAttestationMessage.getValidatorIndex().intValue())) {
+              if (!gossipValidationHelper.isValidatorInPayloadTimelinessCommittee(
+                  payloadAttestationMessage.getValidatorIndex(), state, data.getSlot())) {
                 LOG.trace(
                     "Payload attestation's validator index {} is not in the payload committee for slot {}.",
                     payloadAttestationMessage.getValidatorIndex(),
