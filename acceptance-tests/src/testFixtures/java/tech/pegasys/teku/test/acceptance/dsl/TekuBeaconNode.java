@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -494,7 +495,10 @@ public class TekuBeaconNode extends TekuNode {
     LOG.debug("Non default execution payload found at slot " + slot);
   }
 
-  public void waitForBlockSatisfying(final ThrowingConsumer<? super SignedBeaconBlock> assertions) {
+  public void waitForBlockSatisfying(
+      final ThrowingConsumer<? super SignedBeaconBlock> assertions,
+      final int timeout,
+      final TimeUnit timeUnit) {
     LOG.debug("Wait for a block satisfying certain assertions");
 
     waitFor(
@@ -503,8 +507,12 @@ public class TekuBeaconNode extends TekuNode {
           assertThat(block).isPresent();
           assertThat(block.get()).satisfies(assertions);
         },
-        1,
-        MINUTES);
+        timeout,
+        timeUnit);
+  }
+
+  public void waitForBlockSatisfying(final ThrowingConsumer<? super SignedBeaconBlock> assertions) {
+    waitForBlockSatisfying(assertions, 1, MINUTES);
   }
 
   public void waitForGenesisWithNonDefaultExecutionPayload() {
