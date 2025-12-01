@@ -24,7 +24,6 @@ import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,7 +33,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStreamHandler;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
@@ -46,25 +44,18 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
   // 64 slots * 128 columns at max = 8192, half of MAX_REQUEST_DATA_COLUMN_SIDECARS
   private static final int MAX_BATCH_SIZE = 64;
 
-  private final Spec spec;
-  private final BatchDataColumnsByRangeReqResp byRangeRpc;
   private final BatchDataColumnsByRootReqResp byRootRpc;
   private final DataColumnsByRootIdentifierSchema byRootSchema;
 
   public DataColumnReqRespBatchingImpl(
-      final Spec spec,
-      final BatchDataColumnsByRangeReqResp byRangeRpc,
       final BatchDataColumnsByRootReqResp byRootRpc,
       final DataColumnsByRootIdentifierSchema byRootSchema) {
-    this.spec = spec;
-    this.byRangeRpc = byRangeRpc;
     this.byRootRpc = byRootRpc;
     this.byRootSchema = byRootSchema;
   }
 
   private record RequestEntry(
       UInt256 nodeId,
-      Supplier<UInt64> finalizedEpochSupplier,
       DataColumnSlotAndIdentifier columnIdentifier,
       SafeFuture<DataColumnSidecar> promise) {}
 
@@ -73,11 +64,8 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
 
   @Override
   public SafeFuture<DataColumnSidecar> requestDataColumnSidecar(
-      final UInt256 nodeId,
-      final Supplier<UInt64> finalizedEpochSupplier,
-      final DataColumnSlotAndIdentifier columnIdentifier) {
-    final RequestEntry entry =
-        new RequestEntry(nodeId, finalizedEpochSupplier, columnIdentifier, new SafeFuture<>());
+      final UInt256 nodeId, final DataColumnSlotAndIdentifier columnIdentifier) {
+    final RequestEntry entry = new RequestEntry(nodeId, columnIdentifier, new SafeFuture<>());
     bufferedRequests.add(entry);
     return entry.promise();
   }
@@ -94,11 +82,10 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
     }
   }
 
-  private record ByRangeRequest(UInt64 start, UInt64 end, Set<UInt64> columns) {}
-
   private record ByRootRequest(Bytes32 root, Set<UInt64> columns) {}
 
   private void flushForNode(final UInt256 nodeId, final List<RequestEntry> nodeRequests) {
+    // TODO: DEBUG
     LOG.info(
         "Flushing requests for node {}: {}",
         nodeId,
@@ -107,18 +94,8 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
       return;
     }
 
-    final UInt64 firstNonFinalizedSlot =
-        spec.computeStartSlotAtEpoch(nodeRequests.getFirst().finalizedEpochSupplier().get())
-            .increment();
-    final List<ByRangeRequest> byRangeRequests =
-        generateByRangeRequests(nodeRequests, firstNonFinalizedSlot);
-    final List<RequestEntry> remainingNodeRequests = filterRequests(nodeRequests, byRangeRequests);
-    final List<ByRootRequest> byRootRequests = generateByRootRequests(remainingNodeRequests);
-    LOG.trace(
-        "Processing prepared requests for node {}: byRoot({}), byRange({})",
-        nodeId,
-        byRootRequests,
-        byRangeRequests);
+    final List<ByRootRequest> byRootRequests = groupByRootRequests(nodeRequests);
+    LOG.trace("Processing prepared requests for node {}: byRoot({})", nodeId, byRootRequests);
 
     final List<DataColumnsByRootIdentifier> byRootIdentifiers =
         byRootRequests.stream()
@@ -133,86 +110,11 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
     final AsyncStream<DataColumnSidecar> byRootStream =
         AsyncStream.createUnsafe(byRootBatches.iterator())
             .flatMap(byRootBatch -> byRootRpc.requestDataColumnSidecarsByRoot(nodeId, byRootBatch));
-    final AsyncStream<DataColumnSidecar> byRangeStream =
-        AsyncStream.createUnsafe(byRangeRequests.iterator())
-            .flatMap(
-                byRangeRequest ->
-                    byRangeRpc.requestDataColumnSidecarsByRange(
-                        nodeId,
-                        byRangeRequest.start(),
-                        byRangeRequest.end().increment().minus(byRangeRequest.start()).intValue(),
-                        new ArrayList<>(byRangeRequest.columns())));
 
-    byRootStream.merge(byRangeStream).consume(createResponseHandler(nodeRequests));
+    byRootStream.consume(createResponseHandler(nodeRequests));
   }
 
-  private List<RequestEntry> filterRequests(
-      final List<RequestEntry> nodeRequests, final List<ByRangeRequest> byRangeRequests) {
-    final List<RequestEntry> remainingNodeRequests = new ArrayList<>();
-    final Set<SlotAndColumnIndex> requested = new HashSet<>();
-    byRangeRequests.forEach(
-        request -> {
-          for (UInt64 slot = request.start();
-              slot.isLessThanOrEqualTo(request.end());
-              slot = slot.increment()) {
-            final UInt64 currentSlot = slot;
-            request
-                .columns()
-                .forEach(columnId -> requested.add(new SlotAndColumnIndex(currentSlot, columnId)));
-          }
-        });
-    nodeRequests.stream()
-        .filter(
-            request ->
-                !requested.contains(
-                    new SlotAndColumnIndex(
-                        request.columnIdentifier().slot(),
-                        request.columnIdentifier().columnIndex())))
-        .forEach(remainingNodeRequests::add);
-
-    return remainingNodeRequests;
-  }
-
-  record SlotAndColumnIndex(UInt64 slot, UInt64 columnIndex) {}
-
-  private List<ByRangeRequest> generateByRangeRequests(
-      final List<RequestEntry> nodeRequests, final UInt64 firstNonFinalizedSlot) {
-    final NavigableMap<UInt64, Set<UInt64>> bySlotMap = new TreeMap<>();
-    nodeRequests.forEach(
-        nodeRequest -> {
-          final UInt64 slot = nodeRequest.columnIdentifier().slot();
-          if (slot.isGreaterThanOrEqualTo(firstNonFinalizedSlot)) {
-            return;
-          }
-          final UInt64 column = nodeRequest.columnIdentifier.columnIndex();
-          bySlotMap.computeIfAbsent(slot, k -> new HashSet<>()).add(column);
-        });
-
-    if (bySlotMap.isEmpty()) {
-      return Collections.emptyList();
-    }
-
-    Map.Entry<UInt64, Set<UInt64>> start = bySlotMap.pollFirstEntry();
-    UInt64 last = start.getKey();
-    final List<ByRangeRequest> byRangeRequests = new ArrayList<>();
-    while (!bySlotMap.isEmpty()) {
-      final Map.Entry<UInt64, Set<UInt64>> next = bySlotMap.pollFirstEntry();
-      if (next.getKey().equals(last.increment()) && next.getValue().equals(start.getValue())) {
-        last = next.getKey();
-      } else {
-        byRangeRequests.add(new ByRangeRequest(start.getKey(), last, start.getValue()));
-        start = next;
-        last = next.getKey();
-      }
-    }
-
-    if (byRangeRequests.isEmpty() || !byRangeRequests.getLast().end().equals(last)) {
-      byRangeRequests.add(new ByRangeRequest(start.getKey(), last, start.getValue()));
-    }
-    return Collections.unmodifiableList(byRangeRequests);
-  }
-
-  private List<ByRootRequest> generateByRootRequests(final List<RequestEntry> nodeRequests) {
+  private List<ByRootRequest> groupByRootRequests(final List<RequestEntry> nodeRequests) {
     final NavigableMap<SlotAndBlockRoot, Set<UInt64>> bySlotAndBlockRootMap = new TreeMap<>();
     nodeRequests.forEach(
         nodeRequest -> {
@@ -273,6 +175,6 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
 
   @Override
   public int getCurrentRequestLimit(final UInt256 nodeId) {
-    return byRangeRpc.getCurrentRequestLimit(nodeId);
+    return byRootRpc.getCurrentRequestLimit(nodeId);
   }
 }
