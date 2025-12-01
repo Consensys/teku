@@ -214,6 +214,7 @@ public class SyncingNodeManager {
             pendingBlocks,
             pendingAttestations,
             BlockBlobSidecarsTrackersPool.NOOP,
+            Optional.empty(),
             syncService,
             fetchBlockTaskFactory);
     recentBlocksFetcher.subscribeBlockFetched(blockManager::importBlock);
