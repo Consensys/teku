@@ -171,7 +171,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     }
     if (blockHash.equals(terminalBlockHash)) {
       // TBH flow
-      LOG.info("TBH: sending terminal block hash " + terminalBlockHash);
+      LOG.debug("TBH: sending terminal block hash " + terminalBlockHash);
       terminalBlockSent = true;
       return SafeFuture.completedFuture(Optional.of(terminalBlock));
     }
@@ -198,7 +198,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     }
     if (timeProvider.getTimeInSeconds().isGreaterThanOrEqualTo(transitionTime)) {
       // TTD flow
-      LOG.info("TTD: sending terminal block hash " + terminalBlockHash);
+      LOG.debug("TTD: sending terminal block hash " + terminalBlockHash);
       terminalBlockSent = true;
       return SafeFuture.completedFuture(terminalBlock);
     }
@@ -212,7 +212,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     offlineCheck();
 
     if (!bellatrixActivationDetected) {
-      LOG.info(
+      LOG.debug(
           "forkChoiceUpdated received before terminalBlock has been sent. Assuming transition already happened");
 
       // do the activation check to be able to respond to terminal block verification
@@ -233,7 +233,15 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                   return payloadId;
                 }));
 
-    LOG.info(
+    if (!LOG.isDebugEnabled()) {
+      LOG.info(
+          "head: {}:{}, payload: {}:{}",
+          forkChoiceState.getHeadBlockSlot(),
+          forkChoiceState.getHeadBlockRoot(),
+          forkChoiceState.getHeadExecutionBlockNumber(),
+          forkChoiceState.getHeadExecutionBlockHash());
+    }
+    LOG.debug(
         "forkChoiceUpdated: forkChoiceState: {} payloadBuildingAttributes: {} -> forkChoiceUpdatedResult: {}",
         forkChoiceState,
         payloadBuildingAttributes,
@@ -248,7 +256,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     offlineCheck();
 
     if (!bellatrixActivationDetected) {
-      LOG.info(
+      LOG.debug(
           "getPayload received before terminalBlock has been sent. Assuming transition already happened");
 
       // do the activation check to be able to respond to terminal block verification
@@ -306,9 +314,9 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     headAndAttrs.currentExecutionPayload = Optional.of(executionPayload);
 
     LOG.info(
-        "getPayload: payloadId: {} slot: {} -> executionPayload blockHash: {}",
-        executionPayloadContext.getPayloadId(),
+        "slot: {}, payloadId: {}, Payload hash: {}",
         state.getSlot(),
+        executionPayloadContext.getPayloadId(),
         executionPayload.getBlockHash());
 
     final Optional<ExecutionRequests> maybeExecutionRequests = getExecutionRequests(slot);
@@ -318,7 +326,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
             .currentBlobsBundle
             .map(
                 blobsBundle -> {
-                  LOG.info("getPayload: blobsBundle: {}", blobsBundle.toBriefString());
+                  LOG.debug("getPayload: blobsBundle: {}", blobsBundle.toBriefString());
                   return maybeExecutionRequests
                       .map(
                           executionRequests ->
@@ -362,7 +370,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     final PayloadStatus returnedStatus =
         Optional.ofNullable(knownPosBlocks.get(executionPayload.getBlockHash()))
             .orElse(payloadStatus);
-    LOG.info(
+    LOG.debug(
         "newPayload: executionPayload blockHash: {}  versionedHashes: {} parentBeaconBlockRoot: {} -> {}",
         executionPayload.getBlockHash(),
         newPayloadRequest.getVersionedHashes(),
@@ -407,7 +415,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     offlineCheck();
 
     final UInt64 slot = state.getSlot();
-    LOG.info(
+    LOG.debug(
         "getPayloadHeader: payloadId: {} slot: {} ... delegating to getPayload ...",
         executionPayloadContext,
         slot);
@@ -420,7 +428,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         .thenApply(
             getPayloadResponse -> {
               final ExecutionPayload executionPayload = getPayloadResponse.getExecutionPayload();
-              LOG.info(
+              LOG.debug(
                   "getPayloadHeader: payloadId: {} slot: {} -> executionPayload blockHash: {}",
                   executionPayloadContext,
                   slot,
@@ -509,7 +517,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         "provided signed blinded block contains an execution payload header not matching the previously retrieved "
             + "execution payload via getPayloadHeader");
 
-    LOG.info(
+    LOG.debug(
         "proposeBlindedBlock: slot: {} block: {} -> unblinded executionPayload blockHash: {}",
         slot,
         signedBeaconBlock.getRoot(),
@@ -579,7 +587,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   private void checkBellatrixActivation() {
     if (!bellatrixActivationDetected) {
-      LOG.info("Bellatrix activation detected");
+      LOG.debug("Bellatrix activation detected");
       bellatrixActivationDetected = true;
       prepareTransitionBlocks(timeProvider.getTimeInSeconds());
     }
@@ -591,10 +599,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     final SpecConfigBellatrix specConfigBellatrix =
         specVersion.getConfig().toVersionBellatrix().orElseThrow();
 
-    LOG.info("Preparing transition blocks using spec");
+    LOG.debug("Preparing transition blocks using spec");
     final Bytes32 configTerminalBlockHash = specConfigBellatrix.getTerminalBlockHash();
 
-    LOG.info("Preparing transition via TBH: {}", configTerminalBlockHash);
+    LOG.debug("Preparing transition via TBH: {}", configTerminalBlockHash);
     this.transitionTime = bellatrixActivationTime;
     this.terminalBlockHash = configTerminalBlockHash;
 
