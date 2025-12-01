@@ -44,7 +44,7 @@ class SingleBlockProviderResolverTest {
 
     SingleBlockProviderResolver resolver =
         new SingleBlockProviderResolver(
-                blockBlobSidecarsTrackersPool::getBlock, dasBasicSampler::getBlock);
+            blockBlobSidecarsTrackersPool::getBlock, dasBasicSampler::getBlock);
     SignedBeaconBlock actualBlock = resolver.getBlock(expectedBlock.getRoot()).get();
 
     assertEquals(expectedBlock, actualBlock);
@@ -58,13 +58,13 @@ class SingleBlockProviderResolverTest {
     when(blockBlobSidecarsTrackersPool.getBlock(expectedBlock.getRoot()))
         .thenReturn(Optional.of(expectedBlock));
 
-      SingleBlockProviderResolver resolver =
-              new SingleBlockProviderResolver(
-                      blockBlobSidecarsTrackersPool::getBlock, dasBasicSampler::getBlock);
+    SingleBlockProviderResolver resolver =
+        new SingleBlockProviderResolver(
+            blockBlobSidecarsTrackersPool::getBlock, dasBasicSampler::getBlock);
     SignedBeaconBlock actualBlock = resolver.getBlock(expectedBlock.getRoot()).get();
 
     verify(dasBasicSampler).getBlock(expectedBlock.getRoot());
-    verify(blockBlobSidecarsTrackersPool,times(2)).getBlock(expectedBlock.getRoot());
+    verify(blockBlobSidecarsTrackersPool, times(2)).getBlock(expectedBlock.getRoot());
     assertEquals(expectedBlock, actualBlock);
   }
 
@@ -76,13 +76,13 @@ class SingleBlockProviderResolverTest {
     when(blockBlobSidecarsTrackersPool.getBlock(expectedBlock.getRoot()))
         .thenReturn(Optional.empty());
 
-      SingleBlockProviderResolver resolver =
-              new SingleBlockProviderResolver(
-                      blockBlobSidecarsTrackersPool::getBlock, dasBasicSampler::getBlock);
+    SingleBlockProviderResolver resolver =
+        new SingleBlockProviderResolver(
+            blockBlobSidecarsTrackersPool::getBlock, dasBasicSampler::getBlock);
     Optional<SignedBeaconBlock> actualBlock = resolver.getBlock(expectedBlock.getRoot());
 
     verify(dasBasicSampler).getBlock(expectedBlock.getRoot());
-    verify(blockBlobSidecarsTrackersPool,times(2)).getBlock(expectedBlock.getRoot());
+    verify(blockBlobSidecarsTrackersPool, times(2)).getBlock(expectedBlock.getRoot());
     assertEquals(Optional.empty(), actualBlock);
   }
 }

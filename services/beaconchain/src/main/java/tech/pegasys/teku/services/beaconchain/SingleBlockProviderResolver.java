@@ -36,7 +36,8 @@ public class SingleBlockProviderResolver implements SingleBlockProvider {
   @Override
   public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
     LOG.debug("Current state of things {} {}", blockProviderFulu, blockProvider);
-    return Optional.ofNullable(blockProviderFulu.getBlock(blockRoot).or(()-> blockProvider.getBlock(blockRoot)))
+    return Optional.ofNullable(
+            blockProviderFulu.getBlock(blockRoot).or(() -> blockProvider.getBlock(blockRoot)))
         .orElse(blockProvider.getBlock(blockRoot));
   }
 }
