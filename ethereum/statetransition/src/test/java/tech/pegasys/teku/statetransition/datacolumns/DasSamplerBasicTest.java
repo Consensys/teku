@@ -120,9 +120,11 @@ public class DasSamplerBasicTest {
 
     sampler.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC);
 
+    assertSamplerTrackerHasRPCFetchScheduled(sidecar.getBeaconBlockRoot(), true);
+
     assertRPCFetchInMillis(
         sidecar.getSlot(), sidecar.getBeaconBlockRoot(), remainingColumns, 1_000);
-    assertSamplerTrackerHasRPCFetchScheduled(sidecar.getBeaconBlockRoot(), true);
+    assertSamplerTrackerHasRPCFetchScheduled(sidecar.getBeaconBlockRoot(), false);
   }
 
   @Test
