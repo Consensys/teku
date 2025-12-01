@@ -96,6 +96,10 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
       final UInt64 slot, final Bytes32 blockRoot) {
     final DataColumnSamplingTracker tracker = getOrCreateTracker(slot, blockRoot);
 
+    if (tracker.completionFuture().isDone()) {
+      return tracker.completionFuture();
+    }
+
     if (tracker.rpcFetchScheduled().compareAndSet(false, true)) {
       fetchMissingColumnsViaRPC(slot, blockRoot, tracker);
     }
@@ -150,6 +154,9 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
                         tracker.samplingRequirement().size()));
               }
             })
+        // let's reset the fetched flag so that this tracker can reissue RPC requests on DA check
+        // retry
+        .alwaysRun(() -> tracker.rpcFetchScheduled().set(false))
         .finish(
             throwable -> {
               if (ExceptionUtil.hasCause(throwable, CancellationException.class)) {
