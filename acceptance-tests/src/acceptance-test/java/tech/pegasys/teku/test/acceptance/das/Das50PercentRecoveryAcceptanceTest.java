@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -67,11 +68,6 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
     primaryNode.waitForLogMessageContaining("non-custodied sidecars at");
     // DataColumnSidecars are reconstructed on secondaryNode
     secondaryNode.waitForLogMessageContaining("Data column sidecars recovery finished for block");
-    secondaryNode.waitForNonOptimisticBlock();
-
-    final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
-
-    final int endSlot = blockAtHead.getSlot().intValue();
     final int firstFuluSlot =
         primaryNode
             .getSpec()
@@ -82,6 +78,13 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
                     .getConfig()
                     .getFuluForkEpoch())
             .intValue();
+    secondaryNode.waitForBlockSatisfying(
+        block -> assertThat(block.getSlot().intValue()).isGreaterThanOrEqualTo(firstFuluSlot));
+
+    final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
+
+    final int endSlot = blockAtHead.getSlot().intValue();
+
     final SpecConfigFulu specConfigFulu =
         SpecConfigFulu.required(primaryNode.getSpec().forMilestone(SpecMilestone.FULU).getConfig());
     final int allFuluColumns =
@@ -103,12 +106,15 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
           throws Exception {
     final TekuBeaconNode primaryNode =
         createTekuBeaconNode(
-            createSwiftConfigBuilder()
+            createFuluMinimalConfigBuilder()
                 .withRealNetwork()
                 .withDiscoveryNetwork()
                 // interop validators are not count for validator custody
                 .withCustodyGroupCountOverride(subnetCount / 2)
+                // we don't want to make this test extreme, withhold once and don't repeat
+                .withDasPublishWithholdColumnsEverySlots(9999)
                 .withInteropValidators(0, 64)
+                .withDasDisableElRecovery()
                 .build());
 
     primaryNode.start();
@@ -116,7 +122,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
 
     final TekuBeaconNode secondaryNode =
         createTekuBeaconNode(
-            createSwiftConfigBuilder()
+            createFuluMinimalConfigBuilder()
                 .withRealNetwork()
                 .withDiscoveryNetwork()
                 .withGenesisTime(genesisTime.intValue())
@@ -124,12 +130,13 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
                 // supernode
                 .withSubscribeAllCustodySubnetsEnabled()
                 .withInteropValidators(0, 0)
+                .withDasDisableElRecovery()
                 .withExperimentalReworkedRecovery()
                 .build());
 
     // Wait for few epochs, so sync will kick-in when second node is started
     primaryNode.waitForEpochAtOrAbove(2);
-    primaryNode.waitForEpochAtOrAbove(5);
+    primaryNode.waitForEpochAtOrAbove(3);
 
     secondaryNode.start();
     // DataColumnSidecars are reconstructed on secondaryNode
@@ -139,11 +146,6 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
     // as first node custodies only 64 columns, it means we need to rebuild every single slot
     // sidecars one by one, so we will not wait for finalization, one slot recovery is ok
 
-    // delay to commit block
-    secondaryNode.waitForNonOptimisticBlock();
-    final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
-
-    final int endSlot = blockAtHead.getSlot().intValue();
     final int firstFuluSlot =
         primaryNode
             .getSpec()
@@ -154,6 +156,13 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
                     .getConfig()
                     .getFuluForkEpoch())
             .intValue();
+    secondaryNode.waitForBlockSatisfying(
+        block -> assertThat(block.getSlot().intValue()).isGreaterThanOrEqualTo(firstFuluSlot),
+        2,
+        TimeUnit.MINUTES);
+    final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
+
+    final int endSlot = blockAtHead.getSlot().intValue();
     final SpecConfigFulu specConfigFulu =
         SpecConfigFulu.required(primaryNode.getSpec().forMilestone(SpecMilestone.FULU).getConfig());
     final int allFuluColumns =
@@ -202,20 +211,6 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
   private TekuNodeConfigBuilder createFuluMinimalConfigBuilder() throws Exception {
     return TekuNodeConfigBuilder.createBeaconNode()
         .withNetwork(Resources.getResource("fulu-minimal.yaml"))
-        .withStubExecutionEngine()
-        .withLogLevel("DEBUG");
-  }
-
-  private TekuNodeConfigBuilder createSwiftConfigBuilder() throws Exception {
-    return TekuNodeConfigBuilder.createBeaconNode()
-        .withNetwork("swift")
-        .withAltairEpoch(UInt64.ZERO)
-        .withBellatrixEpoch(UInt64.ZERO)
-        .withCapellaEpoch(UInt64.ZERO)
-        .withDenebEpoch(UInt64.ZERO)
-        .withElectraEpoch(UInt64.ZERO)
-        .withFuluEpoch(UInt64.ONE)
-        .withTotalTerminalDifficulty(0)
         .withStubExecutionEngine()
         .withLogLevel("DEBUG");
   }

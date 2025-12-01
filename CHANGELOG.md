@@ -9,6 +9,10 @@
 ### Breaking Changes
 
 ### Additions and Improvements
-- Added new metric `beacon_earliest_available_slot`.
+
+- Added new metrics `beacon_earliest_available_slot` and
+  `data_column_sidecar_processing_validated_total`.
+- Block proposal duties can now be scheduled in advance for fulu.
 
 ### Bug Fixes
+- Fixed a storage issue which sometimes caused Teku to crash during shut down.

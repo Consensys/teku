@@ -151,8 +151,9 @@ public class DasCustodySync implements SlotEventsChannel {
                 if (missingColumn
                     .slot()
                     .isGreaterThan(
-                        minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(
-                            currentSlot.get()))) {
+                        minCustodyPeriodSlotCalculator
+                            .getMinCustodyPeriodSlot(currentSlot.get())
+                            .orElseThrow())) {
                   addPendingRequest(missingColumn);
                 } else {
                   LOG.debug(
