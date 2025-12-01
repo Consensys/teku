@@ -28,6 +28,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -66,6 +67,7 @@ public class BlockGossipValidatorTest {
   private StorageSystem storageSystem;
   private final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =
       mock(ReceivedBlockEventsChannel.class);
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
 
   private BlockGossipValidator blockGossipValidator;
 
@@ -78,7 +80,8 @@ public class BlockGossipValidatorTest {
     blockGossipValidator =
         new BlockGossipValidator(
             spec,
-            new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem()),
+            new GossipValidationHelper(
+                spec, recentChainData, storageSystem.getMetricsSystem(), timeProvider),
             receivedBlockEventsChannelPublisher);
   }
 
@@ -242,7 +245,7 @@ public class BlockGossipValidatorTest {
         new BlockGossipValidator(
             spec,
             new GossipValidationHelper(
-                spec, localRecentChainData, storageSystem.getMetricsSystem()),
+                spec, localRecentChainData, storageSystem.getMetricsSystem(), timeProvider),
             receivedBlockEventsChannelPublisher);
     chainUpdater.initializeGenesis();
 
@@ -284,7 +287,8 @@ public class BlockGossipValidatorTest {
     blockGossipValidator =
         new BlockGossipValidator(
             spec,
-            new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem()),
+            new GossipValidationHelper(
+                spec, recentChainData, storageSystem.getMetricsSystem(), timeProvider),
             receivedBlockEventsChannelPublisher);
 
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
@@ -309,7 +313,8 @@ public class BlockGossipValidatorTest {
     blockGossipValidator =
         new BlockGossipValidator(
             spec,
-            new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem()),
+            new GossipValidationHelper(
+                spec, recentChainData, storageSystem.getMetricsSystem(), timeProvider),
             receivedBlockEventsChannelPublisher);
 
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
@@ -359,7 +364,8 @@ public class BlockGossipValidatorTest {
     blockGossipValidator =
         new BlockGossipValidator(
             spec,
-            new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem()),
+            new GossipValidationHelper(
+                spec, recentChainData, storageSystem.getMetricsSystem(), timeProvider),
             receivedBlockEventsChannelPublisher);
 
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
