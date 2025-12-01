@@ -14,6 +14,7 @@
 package tech.pegasys.teku.services.beaconchain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -43,7 +44,7 @@ class SingleBlockProviderResolverTest {
 
     SingleBlockProviderResolver resolver =
         new SingleBlockProviderResolver(
-            BlockBlobSidecarsTrackersPool.NOOP, Optional.of(dasBasicSampler));
+                blockBlobSidecarsTrackersPool::getBlock, dasBasicSampler::getBlock);
     SignedBeaconBlock actualBlock = resolver.getBlock(expectedBlock.getRoot()).get();
 
     assertEquals(expectedBlock, actualBlock);
@@ -57,13 +58,13 @@ class SingleBlockProviderResolverTest {
     when(blockBlobSidecarsTrackersPool.getBlock(expectedBlock.getRoot()))
         .thenReturn(Optional.of(expectedBlock));
 
-    SingleBlockProviderResolver resolver =
-        new SingleBlockProviderResolver(
-            blockBlobSidecarsTrackersPool, Optional.of(dasBasicSampler));
+      SingleBlockProviderResolver resolver =
+              new SingleBlockProviderResolver(
+                      blockBlobSidecarsTrackersPool::getBlock, dasBasicSampler::getBlock);
     SignedBeaconBlock actualBlock = resolver.getBlock(expectedBlock.getRoot()).get();
 
     verify(dasBasicSampler).getBlock(expectedBlock.getRoot());
-    verify(blockBlobSidecarsTrackersPool).getBlock(expectedBlock.getRoot());
+    verify(blockBlobSidecarsTrackersPool,times(2)).getBlock(expectedBlock.getRoot());
     assertEquals(expectedBlock, actualBlock);
   }
 
@@ -75,13 +76,13 @@ class SingleBlockProviderResolverTest {
     when(blockBlobSidecarsTrackersPool.getBlock(expectedBlock.getRoot()))
         .thenReturn(Optional.empty());
 
-    SingleBlockProviderResolver resolver =
-        new SingleBlockProviderResolver(
-            blockBlobSidecarsTrackersPool, Optional.of(dasBasicSampler));
+      SingleBlockProviderResolver resolver =
+              new SingleBlockProviderResolver(
+                      blockBlobSidecarsTrackersPool::getBlock, dasBasicSampler::getBlock);
     Optional<SignedBeaconBlock> actualBlock = resolver.getBlock(expectedBlock.getRoot());
 
     verify(dasBasicSampler).getBlock(expectedBlock.getRoot());
-    verify(blockBlobSidecarsTrackersPool).getBlock(expectedBlock.getRoot());
+    verify(blockBlobSidecarsTrackersPool,times(2)).getBlock(expectedBlock.getRoot());
     assertEquals(Optional.empty(), actualBlock);
   }
 }
