@@ -73,7 +73,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final PendingPool<ValidatableAttestation> pendingAttestations;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
-    private final DasSamplerBasic dasBasicSampler;
+    private final Optional<DasSamplerBasic> dasBasicSampler;
   private final int getStartupTargetPeerCount;
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final Duration startupTimeout;
@@ -96,7 +96,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final PendingPool<ValidatableAttestation> pendingAttestations,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
-      final DasSamplerBasic dasBasicSampler,
+      final Optional<DasSamplerBasic> dasBasicSampler,
       final int getStartupTargetPeerCount,
       final SignatureVerificationService signatureVerifier,
       final Duration startupTimeout,

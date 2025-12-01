@@ -29,6 +29,8 @@ import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 
+import java.util.Optional;
+
 public class RecentBlocksFetchService
     extends AbstractFetchService<Bytes32, FetchBlockTask, SignedBeaconBlock>
     implements RecentBlocksFetcher {
@@ -41,7 +43,7 @@ public class RecentBlocksFetchService
   private final PendingPool<SignedBeaconBlock> pendingBlockPool;
   private final PendingPool<ValidatableAttestation> pendingAttestationsPool;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
-  private final DasSamplerBasic dasBasicSampler;
+  private final Optional<DasSamplerBasic> dasBasicSampler;
   private final FetchTaskFactory fetchTaskFactory;
   private final Subscribers<BlockSubscriber> blockSubscribers = Subscribers.create(true);
 
@@ -50,7 +52,7 @@ public class RecentBlocksFetchService
       final PendingPool<SignedBeaconBlock> pendingBlockPool,
       final PendingPool<ValidatableAttestation> pendingAttestationsPool,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
-      final DasSamplerBasic dasBasicSampler,
+      final Optional<DasSamplerBasic> dasBasicSampler,
       final ForwardSync forwardSync,
       final FetchTaskFactory fetchTaskFactory,
       final int maxConcurrentRequests) {
@@ -68,7 +70,7 @@ public class RecentBlocksFetchService
       final PendingPool<SignedBeaconBlock> pendingBlocksPool,
       final PendingPool<ValidatableAttestation> pendingAttestations,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
-      final DasSamplerBasic dasBasicSampler,
+      final Optional<DasSamplerBasic> dasBasicSampler,
       final ForwardSync forwardSync,
       final FetchTaskFactory fetchTaskFactory) {
     return new RecentBlocksFetchService(
@@ -112,7 +114,7 @@ public class RecentBlocksFetchService
       // We already have this block, waiting for blobs
       return;
     }
-    if(dasBasicSampler.containsBlock(blockRoot)){
+    if(dasBasicSampler.isPresent() && dasBasicSampler.get().containsBlock(blockRoot)){
         return;
     }
     final FetchBlockTask task = createTask(blockRoot);

@@ -383,7 +383,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ExecutionPayloadBidManager executionPayloadBidManager;
   protected volatile ExecutionPayloadManager executionPayloadManager;
   protected volatile ExecutionProofManager executionProofManager;
-  protected volatile DasSamplerBasic dasSamplerBasic;
+  protected volatile Optional<DasSamplerBasic> dasSamplerBasic = Optional.empty();;
   protected volatile Optional<DasCustodySync> dasCustodySync = Optional.empty();
   protected volatile Optional<DataColumnSidecarRetriever> recoveringSidecarRetriever =
       Optional.empty();
@@ -1014,7 +1014,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             DEFAULT_MIN_WAIT_MILLIS,
             DEFAULT_TARGET_WAIT_MILLIS);
 
-    dasSamplerBasic =
+    dasSamplerBasic = Optional.of(
             new DasSamplerBasic(
                 spec,
                 beaconAsyncRunner,
@@ -1024,13 +1024,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 recoveringSidecarRetriever,
                 custodyGroupCountManager,
                 recentChainData,
-                metricsSystem);
+                metricsSystem));
     LOG.info(
         "DAS Basic Sampler initialized with {} groups to sample",
         custodyGroupCountManager.getSamplingGroupCount());
-    eventChannels.subscribe(SlotEventsChannel.class, dasSamplerBasic);
+    eventChannels.subscribe(SlotEventsChannel.class, dasSamplerBasic.get());
 
-    this.dataAvailabilitySampler = dasSamplerBasic;
+    this.dataAvailabilitySampler = dasSamplerBasic.get();
     this.recoveringSidecarRetriever = Optional.of(recoveringSidecarRetriever);
   }
 
