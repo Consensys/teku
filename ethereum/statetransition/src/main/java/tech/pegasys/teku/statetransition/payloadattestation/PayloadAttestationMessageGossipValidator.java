@@ -137,7 +137,7 @@ public class PayloadAttestationMessageGossipValidator {
               /*
                * [REJECT] payload_attestation_message.signature is valid with respect to the validator's public key.
                */
-              if (!isSignatureValid(payloadAttestationMessage, maybeState.get())) {
+              if (!isSignatureValid(payloadAttestationMessage, state)) {
                 return reject("Invalid payload attestation signature");
               }
               seenPayloadAttestations.add(key);
@@ -146,15 +146,15 @@ public class PayloadAttestationMessageGossipValidator {
   }
 
   private boolean isSignatureValid(
-      final PayloadAttestationMessage payloadAttestationMessage, final BeaconState postState) {
+      final PayloadAttestationMessage payloadAttestationMessage, final BeaconState state) {
     final Bytes signingRoot =
         signingRootUtil.signingRootForSignPayloadAttestationData(
-            payloadAttestationMessage.getData(), postState.getForkInfo());
+            payloadAttestationMessage.getData(), state.getForkInfo());
     return gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
         signingRoot,
         payloadAttestationMessage.getValidatorIndex(),
         payloadAttestationMessage.getSignature(),
-        postState);
+        state);
   }
 
   record ValidatorIndexAndSlot(UInt64 validatorIndex, UInt64 slot) {}
