@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,6 +25,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -148,8 +150,19 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
                         tracker.samplingRequirement().size()));
               }
             })
-        .ignoreCancelException()
-        .finishError(LOG);
+        .finish(
+            throwable -> {
+              if (ExceptionUtil.hasCause(throwable, CancellationException.class)) {
+                if (throwable.getMessage() != null) {
+                  LOG.warn(
+                      "CancellationException in checkDataAvailability: {}", throwable.getMessage());
+                } else {
+                  LOG.warn("Some columns failed to download at slot {}", slot);
+                }
+              } else {
+                LOG.error("data availability check failed", throwable);
+              }
+            });
   }
 
   private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {

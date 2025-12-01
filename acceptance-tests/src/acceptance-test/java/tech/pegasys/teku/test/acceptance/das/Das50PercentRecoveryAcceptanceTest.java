@@ -131,7 +131,8 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
                 .withSubscribeAllCustodySubnetsEnabled()
                 .withInteropValidators(0, 0)
                 .withDasDisableElRecovery()
-                .withExperimentalReworkedRecovery()
+                .withReworkedRecovery()
+                .withReworkedRecoveryTimeouts(100_000, 40_000)
                 .build());
 
     // Wait for few epochs, so sync will kick-in when second node is started
