@@ -313,7 +313,8 @@ public class GossipValidationHelperTest {
 
   @TestTemplate
   void isForCurrentSlot_shouldNotUnderflow() {
-    AssertionsForClassTypes.assertThat(gossipValidationHelper.isForCurrentSlot(UInt64.ZERO))
+    AssertionsForClassTypes.assertThat(
+            gossipValidationHelper.isSlotWithinGossipTimeWindow(UInt64.ZERO))
         .isTrue();
   }
 
@@ -324,7 +325,8 @@ public class GossipValidationHelperTest {
         spec.computeTimeAtSlot(slot, recentChainData.getGenesisTime()).times(1000);
     timeProvider.advanceTimeByMillis(
         slotStartTimeMillis.minus(maximumGossipClockDisparity).decrement().longValue());
-    AssertionsForClassTypes.assertThat(gossipValidationHelper.isForCurrentSlot(slot)).isFalse();
+    AssertionsForClassTypes.assertThat(gossipValidationHelper.isSlotWithinGossipTimeWindow(slot))
+        .isFalse();
   }
 
   @TestTemplate
@@ -334,7 +336,8 @@ public class GossipValidationHelperTest {
         spec.computeTimeAtSlot(slot, recentChainData.getGenesisTime()).times(1000);
     timeProvider.advanceTimeByMillis(
         slotStartTimeMillis.minus(maximumGossipClockDisparity).longValue());
-    AssertionsForClassTypes.assertThat(gossipValidationHelper.isForCurrentSlot(slot)).isTrue();
+    AssertionsForClassTypes.assertThat(gossipValidationHelper.isSlotWithinGossipTimeWindow(slot))
+        .isTrue();
   }
 
   @TestTemplate
@@ -344,7 +347,8 @@ public class GossipValidationHelperTest {
         spec.computeTimeAtSlot(slot.increment(), recentChainData.getGenesisTime()).times(1000);
     timeProvider.advanceTimeByMillis(
         nextSlotStartTimeMillis.plus(maximumGossipClockDisparity).longValue());
-    AssertionsForClassTypes.assertThat(gossipValidationHelper.isForCurrentSlot(slot)).isTrue();
+    AssertionsForClassTypes.assertThat(gossipValidationHelper.isSlotWithinGossipTimeWindow(slot))
+        .isTrue();
   }
 
   @TestTemplate
@@ -354,6 +358,7 @@ public class GossipValidationHelperTest {
         spec.computeTimeAtSlot(slot.increment(), recentChainData.getGenesisTime()).times(1000);
     timeProvider.advanceTimeByMillis(
         nextSlotStartTimeMillis.plus(maximumGossipClockDisparity).increment().longValue());
-    AssertionsForClassTypes.assertThat(gossipValidationHelper.isForCurrentSlot(slot)).isFalse();
+    AssertionsForClassTypes.assertThat(gossipValidationHelper.isSlotWithinGossipTimeWindow(slot))
+        .isFalse();
   }
 }

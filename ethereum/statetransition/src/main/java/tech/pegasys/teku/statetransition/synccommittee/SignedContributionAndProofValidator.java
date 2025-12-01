@@ -113,7 +113,7 @@ public class SignedContributionAndProofValidator {
 
     // [IGNORE] The contribution's slot is for the current slot (with a
     // `MAXIMUM_GOSSIP_CLOCK_DISPARITY` allowance), i.e. `contribution.slot == current_slot`.
-    if (!gossipValidationHelper.isForCurrentSlot(contribution.getSlot())) {
+    if (!gossipValidationHelper.isSlotWithinGossipTimeWindow(contribution.getSlot())) {
       LOG.trace(
           "Ignoring proof from aggregator {}, "
               + "because it is not from the current slot "

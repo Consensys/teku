@@ -62,7 +62,7 @@ public class PayloadAttestationMessageGossipValidator {
      * [IGNORE] The message's slot is for the current slot (with a MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance),
      * i.e. data.slot == current_slot
      */
-    if (!gossipValidationHelper.isForCurrentSlot(data.getSlot())) {
+    if (!gossipValidationHelper.isSlotWithinGossipTimeWindow(data.getSlot())) {
       LOG.trace(
           "Ignoring payload attestation with slot {} from validator with index {} because it's not from the current slot.",
           data.getSlot(),
