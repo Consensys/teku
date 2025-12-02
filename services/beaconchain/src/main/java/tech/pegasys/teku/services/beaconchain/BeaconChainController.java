@@ -24,7 +24,6 @@ import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_KZG_PR
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_KZG_PRECOMPUTE_SUPERNODE;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.DEFAULT_MAXIMUM_ATTESTATION_COUNT;
-import static tech.pegasys.teku.statetransition.datacolumns.DasCustodyBackfiller.BATCH_SIZE_IN_SLOTS;
 import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS;
 import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_MIN_WAIT_MILLIS;
 import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_TARGET_WAIT_MILLIS;
@@ -510,9 +509,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             p2pNetwork.start(),
             blockManager.start(),
             syncService.start(),
-            dasCustodyBackfiller.isPresent()
-                ? dasCustodyBackfiller.get().start()
-                : SafeFuture.COMPLETE,
             SafeFuture.fromRunnable(
                 () -> {
                   terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start);
@@ -550,9 +546,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             p2pNetwork.stop(),
             timerService.stop(),
             ephemerySlotValidationService.doStop(),
-            dasCustodyBackfiller.isPresent()
-                ? dasCustodyBackfiller.get().stop()
-                : SafeFuture.COMPLETE,
             SafeFuture.fromRunnable(
                 () -> {
                   terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop);
@@ -1031,29 +1024,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
               timeProvider,
               specConfigFulu.getNumberOfColumns());
     }
-    //    final DasCustodySync svc =
-    //        new DasCustodySync(
-    //            dataColumnSidecarRecoveringCustody,
-    //            recoveringSidecarRetriever,
-    //            minCustodyPeriodSlotCalculator);
-    //    dasCustodySync = Optional.of(svc);
-    //    eventChannels.subscribe(SlotEventsChannel.class, svc);
-
-    final DasCustodyBackfiller s =
-        new DasCustodyBackfiller(
-            combinedChainDataClient,
-            Duration.ofSeconds(5),
+    final DasCustodySync svc =
+        new DasCustodySync(
             dataColumnSidecarRecoveringCustody,
-            custodyGroupCountManager,
             recoveringSidecarRetriever,
-            minCustodyPeriodSlotCalculator,
-            dasAsyncRunner,
-            sidecarDB::getFirstCustodyIncompleteSlot,
-            sidecarDB::setFirstCustodyIncompleteSlot,
-            BATCH_SIZE_IN_SLOTS);
-    eventChannels.subscribe(CustodyGroupCountChannel.class, s);
-    eventChannels.subscribe(FinalizedCheckpointChannel.class, s);
-    dasCustodyBackfiller = Optional.of(s);
+            minCustodyPeriodSlotCalculator);
+    dasCustodySync = Optional.of(svc);
+    eventChannels.subscribe(SlotEventsChannel.class, svc);
 
     final CurrentSlotProvider currentSlotProvider =
         CurrentSlotProvider.create(spec, recentChainData.getStore());
@@ -2158,11 +2135,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     syncService.subscribeToSyncStateChangesAndUpdate(
         event -> dataColumnSidecarELManager.onSyncingStatusChanged(event.isInSync()));
-
-    dasCustodyBackfiller.ifPresent(
-        backfiller ->
-            syncService.subscribeToSyncStateChangesAndUpdate(
-                syncState -> backfiller.onNodeSyncStateChanged(syncState.isInSync())));
   }
 
   protected void initOperationsReOrgManager() {
