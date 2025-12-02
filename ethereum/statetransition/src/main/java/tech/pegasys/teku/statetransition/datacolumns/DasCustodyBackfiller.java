@@ -494,14 +494,8 @@ public class DasCustodyBackfiller extends Service
             });
   }
 
-  private static final SafeFuture<DataColumnSidecar> REQUEST_PLACE_HOLDER =
-      SafeFuture.failedFuture(new IllegalStateException("This is not supposed to be consumed"));
-
   private SafeFuture<Void> requestColumnSidecar(final DataColumnSlotAndIdentifier colId) {
-
-    // this is a way to atomically allocate a pendingRequest for a given columnId
-    // avoiding concurrency issues using `containsKey` and later `put`
-    if (pendingRequests.putIfAbsent(colId, REQUEST_PLACE_HOLDER) != null) {
+    if (pendingRequests.containsKey(colId)) {
       return SafeFuture.COMPLETE;
     }
 
