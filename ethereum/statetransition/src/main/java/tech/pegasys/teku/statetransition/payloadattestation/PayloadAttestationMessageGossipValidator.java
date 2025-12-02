@@ -16,8 +16,8 @@ package tech.pegasys.teku.statetransition.payloadattestation;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.spec.config.Constants.RECENT_SEEN_PAYLOAD_ATTESTATIONS_CACHE_SIZE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import java.util.Map;
@@ -67,10 +67,13 @@ public class PayloadAttestationMessageGossipValidator {
      */
     if (!gossipValidationHelper.isSlotWithinGossipTimeWindow(data.getSlot())) {
       LOG.trace(
-          "Ignoring payload attestation with slot {} from validator with index {} because it's not from the current slot.",
+          "Ignoring payload attestation with slot {} from validator with index {} because it's not from the current slot",
           data.getSlot(),
           payloadAttestationMessage.getValidatorIndex());
-      return completedFuture(IGNORE);
+      return completedFuture(
+          ignore(
+              "Ignoring payload attestation with slot %s from validator with index %s because it's not from the current slot",
+              data.getSlot(), payloadAttestationMessage.getValidatorIndex()));
     }
 
     /*
@@ -81,10 +84,13 @@ public class PayloadAttestationMessageGossipValidator {
         new ValidatorIndexAndSlot(payloadAttestationMessage.getValidatorIndex(), data.getSlot());
     if (seenPayloadAttestations.contains(key)) {
       LOG.trace(
-          "Payload attestation for slot {} and validator index {} already seen.",
+          "Payload attestation for slot {} and validator index {} already seen",
           key.slot(),
           key.validatorIndex());
-      return completedFuture(IGNORE);
+      return completedFuture(
+          ignore(
+              "Payload attestation for slot %s and validator index %s already seen",
+              key.slot(), key.validatorIndex()));
     }
 
     /*
@@ -94,7 +100,7 @@ public class PayloadAttestationMessageGossipValidator {
      */
     if (!gossipValidationHelper.isBlockAvailable(data.getBeaconBlockRoot())) {
       LOG.trace(
-          "Payload attestations's block with root {} is not available. Saving for future processing.",
+          "Payload attestations's block with root {} is not available. Saving for future processing",
           data.getBeaconBlockRoot());
       return completedFuture(SAVE_FOR_FUTURE);
     }
@@ -103,10 +109,10 @@ public class PayloadAttestationMessageGossipValidator {
      * [REJECT] The message's block data.beacon_block_root passes validation.
      */
     if (invalidBlockRoots.containsKey(data.getBeaconBlockRoot())) {
-      LOG.trace("Payload attestations's block with root {} is invalid.", data.getBeaconBlockRoot());
+      LOG.trace("Payload attestations's block with root {} is invalid", data.getBeaconBlockRoot());
       return completedFuture(
           reject(
-              "Payload attestations's block with root %s is invalid.", data.getBeaconBlockRoot()));
+              "Payload attestations's block with root %s is invalid", data.getBeaconBlockRoot()));
     }
 
     return gossipValidationHelper
@@ -115,7 +121,7 @@ public class PayloadAttestationMessageGossipValidator {
             maybeState -> {
               if (maybeState.isEmpty()) {
                 LOG.trace(
-                    "State for block root {} and slot {} is unavailable.",
+                    "State for block root {} and slot {} is unavailable",
                     data.getBeaconBlockRoot(),
                     data.getSlot());
                 return SAVE_FOR_FUTURE;
@@ -129,11 +135,11 @@ public class PayloadAttestationMessageGossipValidator {
               if (!gossipValidationHelper.isValidatorInPayloadTimelinessCommittee(
                   payloadAttestationMessage.getValidatorIndex(), state, data.getSlot())) {
                 LOG.trace(
-                    "Payload attestation's validator index {} is not in the payload committee for slot {}.",
+                    "Payload attestation's validator index {} is not in the payload committee for slot {}",
                     payloadAttestationMessage.getValidatorIndex(),
                     data.getSlot());
                 return reject(
-                    "Payload attestation's validator index %s is not in the payload committee.",
+                    "Payload attestation's validator index %s is not in the payload committee",
                     payloadAttestationMessage.getValidatorIndex());
               }
 

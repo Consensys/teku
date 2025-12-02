@@ -20,9 +20,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.HashMap;
@@ -32,7 +34,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -64,7 +65,7 @@ public class PayloadAttestationMessageGossipValidatorTest {
 
   @BeforeEach
   void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
-    DataStructureUtil dataStructureUtil = specContext.getDataStructureUtil();
+    final DataStructureUtil dataStructureUtil = specContext.getDataStructureUtil();
     this.payloadAttestationMessageGossipValidator =
         new PayloadAttestationMessageGossipValidator(
             spec, gossipValidationHelper, invalidBlockRoots);
@@ -97,7 +98,7 @@ public class PayloadAttestationMessageGossipValidatorTest {
 
   @TestTemplate
   void shouldAccept() {
-    SafeFutureAssert.assertThatSafeFuture(
+    assertThatSafeFuture(
             payloadAttestationMessageGossipValidator.validate(payloadAttestationMessage))
         .isCompletedWithValue(ACCEPT);
   }
@@ -105,25 +106,31 @@ public class PayloadAttestationMessageGossipValidatorTest {
   @TestTemplate
   void shouldIgnore_whenSlotIsNotCurrent() {
     when(gossipValidationHelper.isSlotWithinGossipTimeWindow(slot)).thenReturn(false);
-    SafeFutureAssert.assertThatSafeFuture(
+    assertThatSafeFuture(
             payloadAttestationMessageGossipValidator.validate(payloadAttestationMessage))
-        .isCompletedWithValue(IGNORE);
+        .isCompletedWithValue(
+            ignore(
+                "Ignoring payload attestation with slot %s from validator with index %s because it's not from the current slot",
+                slot, validatorIndex));
   }
 
   @TestTemplate
   void shouldIgnore_whenAlreadySeen() {
-    SafeFutureAssert.assertThatSafeFuture(
+    assertThatSafeFuture(
             payloadAttestationMessageGossipValidator.validate(payloadAttestationMessage))
         .isCompletedWithValue(ACCEPT);
-    SafeFutureAssert.assertThatSafeFuture(
+    assertThatSafeFuture(
             payloadAttestationMessageGossipValidator.validate(payloadAttestationMessage))
-        .isCompletedWithValue(IGNORE);
+        .isCompletedWithValue(
+            ignore(
+                "Payload attestation for slot %s and validator index %s already seen",
+                slot, validatorIndex));
   }
 
   @TestTemplate
   void shouldSaveForFuture_whenBlockNotAvailable() {
     when(gossipValidationHelper.isBlockAvailable(blockRoot)).thenReturn(false);
-    SafeFutureAssert.assertThatSafeFuture(
+    assertThatSafeFuture(
             payloadAttestationMessageGossipValidator.validate(payloadAttestationMessage))
         .isCompletedWithValue(SAVE_FOR_FUTURE);
   }
@@ -131,16 +138,17 @@ public class PayloadAttestationMessageGossipValidatorTest {
   @TestTemplate
   void shouldReject_whenBlockIsInvalid() {
     invalidBlockRoots.put(blockRoot, BlockImportResult.FAILED_INVALID_ANCESTRY);
-    SafeFutureAssert.assertThatSafeFuture(
+    assertThatSafeFuture(
             payloadAttestationMessageGossipValidator.validate(payloadAttestationMessage))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
+        .isCompletedWithValue(
+            reject("Payload attestations's block with root %s is invalid", blockRoot));
   }
 
   @TestTemplate
   void shouldSaveForFuture_whenStateIsUnavailable() {
     when(gossipValidationHelper.getStateAtSlotAndBlockRoot(new SlotAndBlockRoot(slot, blockRoot)))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    SafeFutureAssert.assertThatSafeFuture(
+    assertThatSafeFuture(
             payloadAttestationMessageGossipValidator.validate(payloadAttestationMessage))
         .isCompletedWithValue(SAVE_FOR_FUTURE);
   }
@@ -150,9 +158,12 @@ public class PayloadAttestationMessageGossipValidatorTest {
     when(gossipValidationHelper.isValidatorInPayloadTimelinessCommittee(
             payloadAttestationMessage.getValidatorIndex(), postState, slot))
         .thenReturn(false);
-    SafeFutureAssert.assertThatSafeFuture(
+    assertThatSafeFuture(
             payloadAttestationMessageGossipValidator.validate(payloadAttestationMessage))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
+        .isCompletedWithValue(
+            reject(
+                "Payload attestation's validator index %s is not in the payload committee",
+                validatorIndex));
   }
 
   @TestTemplate
@@ -160,15 +171,15 @@ public class PayloadAttestationMessageGossipValidatorTest {
     when(gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
             any(), any(), any(), any()))
         .thenReturn(false);
-    SafeFutureAssert.assertThatSafeFuture(
+    assertThatSafeFuture(
             payloadAttestationMessageGossipValidator.validate(payloadAttestationMessage))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
+        .isCompletedWithValue(reject("Invalid payload attestation signature"));
   }
 
   @TestTemplate
   void shouldSkipSeenPayloadAttestation() {
     // First validation is successful
-    SafeFutureAssert.assertThatSafeFuture(
+    assertThatSafeFuture(
             payloadAttestationMessageGossipValidator.validate(payloadAttestationMessage))
         .isCompletedWithValue(ACCEPT);
     verify(gossipValidationHelper).isBlockAvailable(blockRoot);
@@ -179,9 +190,12 @@ public class PayloadAttestationMessageGossipValidatorTest {
     clearInvocations(gossipValidationHelper);
 
     // Second validation is ignored
-    SafeFutureAssert.assertThatSafeFuture(
+    assertThatSafeFuture(
             payloadAttestationMessageGossipValidator.validate(payloadAttestationMessage))
-        .isCompletedWithValue(IGNORE);
+        .isCompletedWithValue(
+            ignore(
+                "Payload attestation for slot %s and validator index %s already seen",
+                slot, validatorIndex));
     verify(gossipValidationHelper, never()).isBlockAvailable(blockRoot);
     verify(gossipValidationHelper, never()).getStateAtSlotAndBlockRoot(any());
     verify(gossipValidationHelper, never())
@@ -194,7 +208,7 @@ public class PayloadAttestationMessageGossipValidatorTest {
     when(gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
             any(), any(), any(), any()))
         .thenReturn(false);
-    SafeFutureAssert.assertThatSafeFuture(
+    assertThatSafeFuture(
             payloadAttestationMessageGossipValidator.validate(payloadAttestationMessage))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
 
@@ -204,7 +218,7 @@ public class PayloadAttestationMessageGossipValidatorTest {
         .thenReturn(true);
 
     // It should be accepted now
-    SafeFutureAssert.assertThatSafeFuture(
+    assertThatSafeFuture(
             payloadAttestationMessageGossipValidator.validate(payloadAttestationMessage))
         .isCompletedWithValue(ACCEPT);
   }
