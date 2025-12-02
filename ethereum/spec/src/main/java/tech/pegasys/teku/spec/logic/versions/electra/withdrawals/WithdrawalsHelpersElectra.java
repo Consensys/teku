@@ -53,15 +53,15 @@ public class WithdrawalsHelpersElectra extends WithdrawalsHelpersCapella {
 
   @Override
   protected int sweepForPendingPartialWithdrawals(
-      final List<Withdrawal> withdrawals, final BeaconState state) {
-    final BeaconStateElectra stateElectra = BeaconStateElectra.required(state);
+      final BeaconState state, final List<Withdrawal> withdrawals) {
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(state.getSlot());
     UInt64 withdrawalIndex = getNextWithdrawalIndex(state, withdrawals);
     int processedPartialWithdrawalsCount = 0;
 
     final int bound = getBoundForPendingPartialWithdrawals(withdrawals);
 
-    for (PendingPartialWithdrawal withdrawal : stateElectra.getPendingPartialWithdrawals()) {
+    for (final PendingPartialWithdrawal withdrawal :
+        BeaconStateElectra.required(state).getPendingPartialWithdrawals()) {
       if (withdrawal.getWithdrawableEpoch().isGreaterThan(epoch) || withdrawals.size() == bound) {
         break;
       }
