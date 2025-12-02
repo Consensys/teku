@@ -19,6 +19,8 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.stream.IntStream;
+
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -28,6 +30,7 @@ import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 
+@Disabled("until new DasCustodyBackfiller is enabled by default")
 public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
   @Test
   public void shouldBeAbleToCheckpointSyncAndBackfillCustody() throws Exception {
