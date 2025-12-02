@@ -19,7 +19,6 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.stream.IntStream;
-
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
