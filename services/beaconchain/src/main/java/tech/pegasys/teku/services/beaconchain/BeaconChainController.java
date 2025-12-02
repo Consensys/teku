@@ -233,6 +233,7 @@ import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
+import tech.pegasys.teku.statetransition.validation.ExecutionPayloadBidGossipValidator;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadGossipValidator;
 import tech.pegasys.teku.statetransition.validation.ExecutionProofGossipValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
@@ -867,7 +868,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initExecutionPayloadBidManager() {
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
-      executionPayloadBidManager = new DefaultExecutionPayloadBidManager(spec);
+      final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator =
+          new ExecutionPayloadBidGossipValidator(spec, gossipValidationHelper);
+      executionPayloadBidManager =
+          new DefaultExecutionPayloadBidManager(spec, executionPayloadBidGossipValidator);
     } else {
       executionPayloadBidManager = ExecutionPayloadBidManager.NOOP;
     }

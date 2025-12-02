@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
+import tech.pegasys.teku.statetransition.validation.ExecutionPayloadBidGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidManager {
@@ -38,16 +39,29 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
+  private final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator;
 
-  public DefaultExecutionPayloadBidManager(final Spec spec) {
+  public DefaultExecutionPayloadBidManager(
+      final Spec spec,
+      final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator) {
     this.spec = spec;
+    this.executionPayloadBidGossipValidator = executionPayloadBidGossipValidator;
   }
 
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9960 (not required for devnet-0)
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<InternalValidationResult> validateAndAddBid(
       final SignedExecutionPayloadBid signedBid, final RemoteBidOrigin remoteBidOrigin) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+    final SafeFuture<InternalValidationResult> validationResult =
+        executionPayloadBidGossipValidator.validate(signedBid);
+    validationResult.thenAccept(
+        result -> {
+          switch (result.code()) {
+            case ACCEPT -> {}
+            case REJECT, SAVE_FOR_FUTURE, IGNORE -> {}
+          }
+        });
+    return validationResult;
   }
 
   @Override
