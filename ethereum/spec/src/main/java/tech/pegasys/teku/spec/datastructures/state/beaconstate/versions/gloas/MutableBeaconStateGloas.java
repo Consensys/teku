@@ -18,7 +18,7 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Bea
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.EXECUTION_PAYLOAD_AVAILABILITY;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.LATEST_BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.LATEST_EXECUTION_PAYLOAD_BID;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.LATEST_WITHDRAWALS_ROOT;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PAYLOAD_EXPECTED_WITHDRAWALS;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingP
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.MutableBeaconStateFulu;
 
@@ -98,8 +99,8 @@ public interface MutableBeaconStateGloas extends MutableBeaconStateFulu, BeaconS
     set(fieldIndex, SszBytes32.of(latestBlockHash));
   }
 
-  default void setLatestWithdrawalsRoot(final Bytes32 latestWithdrawalsRoot) {
-    final int fieldIndex = getSchema().getFieldIndex(LATEST_WITHDRAWALS_ROOT);
-    set(fieldIndex, SszBytes32.of(latestWithdrawalsRoot));
+  default void setPayloadExpectedWithdrawals(final SszList<Withdrawal> payloadExpectedWithdrawals) {
+    final int fieldIndex = getSchema().getFieldIndex(PAYLOAD_EXPECTED_WITHDRAWALS);
+    set(fieldIndex, payloadExpectedWithdrawals);
   }
 }

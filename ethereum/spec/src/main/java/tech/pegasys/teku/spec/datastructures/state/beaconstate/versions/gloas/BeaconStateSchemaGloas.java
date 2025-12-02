@@ -19,6 +19,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDIN
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_WITHDRAWALS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AVAILABILITY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_BID_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_SCHEMA;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
@@ -52,7 +54,7 @@ public class BeaconStateSchemaGloas
   public static final int BUILDER_PENDING_PAYMENTS_FIELD_INDEX = 39;
   public static final int BUILDER_PENDING_WITHDRAWALS_FIELD_INDEX = 40;
   public static final int LATEST_BLOCK_HASH_FIELD_INDEX = 41;
-  public static final int LATEST_WITHDRAWALS_ROOT_FIELD_INDEX = 42;
+  public static final int PAYLOAD_EXPECTED_WITHDRAWALS_FIELD_INDEX = 42;
 
   @VisibleForTesting
   BeaconStateSchemaGloas(final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
@@ -80,9 +82,9 @@ public class BeaconStateSchemaGloas
                 BeaconStateFields.LATEST_BLOCK_HASH,
                 () -> SszPrimitiveSchemas.BYTES32_SCHEMA),
             new SszField(
-                LATEST_WITHDRAWALS_ROOT_FIELD_INDEX,
-                BeaconStateFields.LATEST_WITHDRAWALS_ROOT,
-                () -> SszPrimitiveSchemas.BYTES32_SCHEMA));
+                PAYLOAD_EXPECTED_WITHDRAWALS_FIELD_INDEX,
+                BeaconStateFields.PAYLOAD_EXPECTED_WITHDRAWALS,
+                () -> schemaRegistry.get(EXECUTION_PAYLOAD_SCHEMA).getWithdrawalsSchemaRequired()));
 
     return Stream.concat(
             BeaconStateSchemaFulu.getUniqueFields(specConfig, schemaRegistry).stream()
@@ -158,6 +160,12 @@ public class BeaconStateSchemaGloas
   public SszListSchema<BuilderPendingWithdrawal, ?> getBuilderPendingWithdrawalsSchema() {
     return (SszListSchema<BuilderPendingWithdrawal, ?>)
         getChildSchema(getFieldIndex(BeaconStateFields.BUILDER_PENDING_WITHDRAWALS));
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<Withdrawal, ?> getPayloadExpectedWithdrawalsSchema() {
+    return (SszListSchema<Withdrawal, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.PAYLOAD_EXPECTED_WITHDRAWALS));
   }
 
   @Override
