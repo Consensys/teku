@@ -19,7 +19,6 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -173,31 +172,30 @@ class DasCustodyBackfillerTest {
     assertThat(cursorStore.get()).isPresent().hasValue(UInt64.valueOf(500));
   }
 
-    @Test
-    void shouldRunHeadsCustodyCheckAtFirstRound() {
-      cursorStore.set(Optional.of(UInt64.valueOf(90)));
+  @Test
+  void shouldRunHeadsCustodyCheckAtFirstRound() {
+    cursorStore.set(Optional.of(UInt64.valueOf(90)));
 
-      ProtoNodeData head1 = mock(ProtoNodeData.class);
-      when(head1.getSlot()).thenReturn(UInt64.valueOf(200));
-      ProtoNodeData head2 = mock(ProtoNodeData.class);
-      when(head2.getSlot()).thenReturn(UInt64.valueOf(202));
-      when(recentChainData.getChainHeads()).thenReturn(List.of(head1,  head2));
+    ProtoNodeData head1 = mock(ProtoNodeData.class);
+    when(head1.getSlot()).thenReturn(UInt64.valueOf(200));
+    ProtoNodeData head2 = mock(ProtoNodeData.class);
+    when(head2.getSlot()).thenReturn(UInt64.valueOf(202));
+    when(recentChainData.getChainHeads()).thenReturn(List.of(head1, head2));
 
-      backfiller.setFirstRoundAfterStartup(true);
+    backfiller.setFirstRoundAfterStartup(true);
 
-      when(combinedChainDataClient.getDataColumnIdentifiers(
-              any(), any(), any()))
-              .thenReturn(completedFuture(List.of()));
+    when(combinedChainDataClient.getDataColumnIdentifiers(any(), any(), any()))
+        .thenReturn(completedFuture(List.of()));
 
-      safeJoin(backfiller.start());
-      asyncRunner.executeQueuedActions();
+    safeJoin(backfiller.start());
+    asyncRunner.executeQueuedActions();
 
-      // We expect a batch to be created from most recent head
-      verify(combinedChainDataClient).getDataColumnIdentifiers(
-              eq(UInt64.valueOf(193)), eq(UInt64.valueOf(202)), any());
+    // We expect a batch to be created from most recent head
+    verify(combinedChainDataClient)
+        .getDataColumnIdentifiers(eq(UInt64.valueOf(193)), eq(UInt64.valueOf(202)), any());
 
-      assertThat(cursorStore.get()).contains(UInt64.valueOf(90));
-    }
+    assertThat(cursorStore.get()).contains(UInt64.valueOf(90));
+  }
 
   @Test
   void shouldInitializeCursorIfEmpty() {
