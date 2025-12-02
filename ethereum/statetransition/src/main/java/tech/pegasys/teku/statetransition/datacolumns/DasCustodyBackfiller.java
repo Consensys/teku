@@ -500,6 +500,7 @@ public class DasCustodyBackfiller extends Service
   private SafeFuture<Void> requestColumnSidecar(final DataColumnSlotAndIdentifier colId) {
 
     // this is a way to atomically allocate a pendingRequest for a given columnId
+    // avoiding concurrency issues using `containsKey` and later `put`
     if (pendingRequests.putIfAbsent(colId, REQUEST_PLACE_HOLDER) != null) {
       return SafeFuture.COMPLETE;
     }
