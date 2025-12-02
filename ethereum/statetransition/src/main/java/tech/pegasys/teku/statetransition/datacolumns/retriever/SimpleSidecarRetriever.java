@@ -200,8 +200,12 @@ public class SimpleSidecarRetriever
                 if (pendingRequest.activeRpcRequest != null) {
                   pendingRequest.activeRpcRequest.promise().cancel(true);
                 }
-                if(pendingRequest.result.isCancelled() || pendingRequest.result.isCompletedExceptionally()) {
-                  LOG.info("REMOVED (disposeCompletedRequests) {}: {}", pendingRequest.columnId, pendingRequest.result);
+                if (pendingRequest.result.isCancelled()
+                    || pendingRequest.result.isCompletedExceptionally()) {
+                  LOG.info(
+                      "REMOVED (disposeCompletedRequests) {}: {}",
+                      pendingRequest.columnId,
+                      pendingRequest.result);
                 }
                 return true;
               }

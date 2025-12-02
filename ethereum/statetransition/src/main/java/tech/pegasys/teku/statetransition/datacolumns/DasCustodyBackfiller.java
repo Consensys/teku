@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -134,6 +135,16 @@ public class DasCustodyBackfiller extends Service
     this.inSync = inSync;
   }
 
+  @VisibleForTesting
+  public void setFirstRoundAfterStartup(boolean firstRoundAfterStartup) {
+    this.isFirstRoundAfterStartup = firstRoundAfterStartup;
+  }
+
+  @VisibleForTesting
+  public boolean getRequiresResyncDueToCustodyGroupCountChange() {
+    return requiresResyncDueToCustodyGroupCountChange;
+  }
+
   @Override
   public void onGroupCountUpdate(final int custodyGroupCount, final int samplingGroupCount) {
     if (custodyGroupCount > currentSyncCustodyGroupCount) {
@@ -212,7 +223,7 @@ public class DasCustodyBackfiller extends Service
       return;
     }
 
-    if(!(inSync || isFirstRoundAfterStartup)) {
+    if (!(inSync || isFirstRoundAfterStartup)) {
       backfilling.set(false);
       LOG.info("syncing, skipping backfilling");
       return;
@@ -483,7 +494,8 @@ public class DasCustodyBackfiller extends Service
             });
   }
 
-  private static final SafeFuture<DataColumnSidecar> REQUEST_PLACE_HOLDER = SafeFuture.failedFuture(new IllegalStateException("This is not supposed to be consumed"));
+  private static final SafeFuture<DataColumnSidecar> REQUEST_PLACE_HOLDER =
+      SafeFuture.failedFuture(new IllegalStateException("This is not supposed to be consumed"));
 
   private SafeFuture<Void> requestColumnSidecar(final DataColumnSlotAndIdentifier colId) {
 
