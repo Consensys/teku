@@ -294,7 +294,7 @@ public class DasCustodyBackfiller extends Service
                         true)
                     .thenCompose(this::executeBatch)
                     .thenPeek(__ -> isFirstRoundAfterStartup = false))
-        .orElse(SafeFuture.completedFuture(true));
+        .orElse(SafeFuture.completedFuture(false));
   }
 
   private Optional<UInt64> getLatestChainHeadSlot() {
