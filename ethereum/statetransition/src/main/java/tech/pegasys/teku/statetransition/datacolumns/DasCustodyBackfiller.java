@@ -136,13 +136,8 @@ public class DasCustodyBackfiller extends Service
   }
 
   @VisibleForTesting
-  public void setFirstRoundAfterStartup(boolean firstRoundAfterStartup) {
+  public void setFirstRoundAfterStartup(final boolean firstRoundAfterStartup) {
     this.isFirstRoundAfterStartup = firstRoundAfterStartup;
-  }
-
-  @VisibleForTesting
-  public boolean getRequiresResyncDueToCustodyGroupCountChange() {
-    return requiresResyncDueToCustodyGroupCountChange;
   }
 
   @Override
@@ -150,7 +145,7 @@ public class DasCustodyBackfiller extends Service
     if (custodyGroupCount > currentSyncCustodyGroupCount) {
       currentSyncCustodyGroupCount = custodyGroupCount;
       requiresResyncDueToCustodyGroupCountChange = true;
-      LOG.info("DasCustodyBackfiller: custody increase detected");
+      LOG.debug("DasCustodyBackfiller: custody increase detected");
     }
   }
 
@@ -225,7 +220,7 @@ public class DasCustodyBackfiller extends Service
 
     if (!(inSync || isFirstRoundAfterStartup)) {
       backfilling.set(false);
-      LOG.info("syncing, skipping backfilling");
+      LOG.debug("DasCustodyBackfiller: syncing, skipping backfilling");
       return;
     }
 
@@ -258,7 +253,7 @@ public class DasCustodyBackfiller extends Service
             combinedChainDataClient.getCurrentSlot());
 
     if (minCustodyPeriodSlot.isEmpty()) {
-      LOG.debug("Fulu not yet enabled");
+      LOG.debug("DasCustodyBackfiller: Fulu not yet enabled");
       return SafeFuture.completedFuture(false);
     }
 
@@ -364,7 +359,7 @@ public class DasCustodyBackfiller extends Service
   }
 
   private SafeFuture<Boolean> executeBatch(final BatchData batchData) {
-    LOG.info("DasCustodyBackfiller: Executing batch {}", batchData);
+    LOG.debug("DasCustodyBackfiller: Executing batch {}", batchData);
 
     final Map<SlotAndBlockRoot, List<UInt64>> missingCustodyForKnownSlotAndRoot =
         calculateMissingColumns(batchData);
@@ -394,9 +389,9 @@ public class DasCustodyBackfiller extends Service
         .thenCompose(__ -> calculateAndUpdateEarliestAvailableCustodySlot(batchData))
         .thenPeek(
             cursorUpdated -> {
-              LOG.info("DasCustodyBackfiller: Batch completed: {}", batchData);
+              LOG.debug("DasCustodyBackfiller: Batch completed: {}", batchData);
               if (!cursorUpdated) {
-                LOG.info(
+                LOG.debug(
                     "DasCustodyBackfiller: No progress, waiting for blocks to be backfilled. Waiting next round.");
               }
             });
