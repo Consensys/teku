@@ -792,7 +792,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 stackSize);
         loaderThread.start();
         try {
-          loaderThread.join();
+          loaderThread.join(Duration.ofMinutes(5).toMillis());
+          if (loaderThread.isAlive()) {
+            loaderThread.interrupt();
+            throw new RuntimeException("KZG trusted setup loading timed out after five minutes");
+          }
         } catch (InterruptedException e) {
           Thread.currentThread().interrupt();
           throw new RuntimeException("KZG trusted setup loading was interrupted", e);
