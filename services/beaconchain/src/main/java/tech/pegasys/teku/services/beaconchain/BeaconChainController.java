@@ -769,7 +769,31 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     return DEFAULT_KZG_PRECOMPUTE;
                   });
 
-      kzg.loadTrustedSetup(trustedSetupFile, kzgPrecompute);
+      // Run loadTrustedSetup on a dedicated thread with a larger stack size.
+      final long stackSize = 8 * 1024 * 1024; // 8MB
+      final AtomicReference<Throwable> loadException = new AtomicReference<>();
+      final Thread loaderThread =
+          new Thread(
+              null,
+              () -> {
+                try {
+                  kzg.loadTrustedSetup(trustedSetupFile, kzgPrecompute);
+                } catch (final Throwable t) {
+                  loadException.set(t);
+                }
+              },
+              "kzg-loader",
+              stackSize);
+      loaderThread.start();
+      try {
+        loaderThread.join();
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new RuntimeException("KZG trusted setup loading was interrupted", e);
+      }
+      if (loadException.get() != null) {
+        throw new RuntimeException("Failed to load KZG trusted setup", loadException.get());
+      }
     } else {
       kzg = KZG.DISABLED;
     }
