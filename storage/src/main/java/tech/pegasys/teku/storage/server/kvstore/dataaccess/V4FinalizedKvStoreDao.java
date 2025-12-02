@@ -485,6 +485,11 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
+    public void setEarliestAvailableDataColumnSlot(final UInt64 slot) {
+      transaction.put(schema.getVariableEarliestBlobSidecarSlot(), slot);
+    }
+
+    @Override
     public void setEarliestBlockSlot(final UInt64 slot) {
       transaction.put(schema.getVariableEarliestBlockSlot(), slot);
     }

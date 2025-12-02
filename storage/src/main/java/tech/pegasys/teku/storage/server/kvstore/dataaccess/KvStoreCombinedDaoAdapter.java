@@ -320,6 +320,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public Optional<UInt64> getEarliestAvailableDataColumnSlot() {
+    return finalizedDao.getEarliestAvailableDataColumnSlot();
+  }
+
+  @Override
   @MustBeClosed
   public Stream<Map.Entry<Bytes32, UInt64>> getFinalizedStateRoots() {
     return finalizedDao.getFinalizedStateRoots();
@@ -668,6 +673,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void setEarliestBlobSidecarSlot(final UInt64 slot) {
       finalizedUpdater.setEarliestBlobSidecarSlot(slot);
+    }
+
+    @Override
+    public void setEarliestAvailableDataColumnSlot(final UInt64 slot) {
+      finalizedUpdater.setEarliestAvailableDataColumnSlot(slot);
     }
 
     @Override

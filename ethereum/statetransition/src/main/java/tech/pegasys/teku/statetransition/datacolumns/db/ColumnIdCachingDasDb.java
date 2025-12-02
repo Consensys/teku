@@ -128,4 +128,14 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
   public SafeFuture<Void> setFirstCustodyIncompleteSlot(final UInt64 slot) {
     return delegateDb.setFirstCustodyIncompleteSlot(slot);
   }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataSlot() {
+    return delegateDb.getEarliestAvailableDataSlot();
+  }
+
+  @Override
+  public SafeFuture<Void> setEarliestAvailableDataColumnSlot(final UInt64 slot) {
+    return delegateDb.setEarliestAvailableDataColumnSlot(slot);
+  }
 }

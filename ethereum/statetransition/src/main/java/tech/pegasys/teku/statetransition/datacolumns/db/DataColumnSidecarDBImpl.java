@@ -72,6 +72,16 @@ class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
         .thenRun(() -> detailLogger.logOnNewSidecar(sidecar));
   }
 
+  @Override
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataSlot() {
+    return combinedChainDataClient.getEarliestAvailableDataSlot();
+  }
+
+  @Override
+  public SafeFuture<Void> setEarliestAvailableDataColumnSlot(final UInt64 slot) {
+    return sidecarUpdateChannel.onEarliestAvailableDataColumnSlot(slot);
+  }
+
   private class DetailLogger {
     private final AtomicInteger addCounter = new AtomicInteger();
     private long maxAddedSlot = 0;

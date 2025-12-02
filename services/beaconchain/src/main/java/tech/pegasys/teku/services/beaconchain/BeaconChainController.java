@@ -509,6 +509,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             p2pNetwork.start(),
             blockManager.start(),
             syncService.start(),
+            dasCustodyBackfiller.isPresent()
+                ? dasCustodyBackfiller.get().start()
+                : SafeFuture.COMPLETE,
             SafeFuture.fromRunnable(
                 () -> {
                   terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start);
@@ -546,6 +549,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             p2pNetwork.stop(),
             timerService.stop(),
             ephemerySlotValidationService.doStop(),
+            dasCustodyBackfiller.isPresent()
+                ? dasCustodyBackfiller.get().stop()
+                : SafeFuture.COMPLETE,
             SafeFuture.fromRunnable(
                 () -> {
                   terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop);
@@ -934,7 +940,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
             minCustodyPeriodSlotCalculator,
             custodyGroupCountManager);
     eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarCustodyImpl);
-    eventChannels.subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarCustodyImpl);
+
+    if (!beaconConfig.p2pConfig().isReworkedSidecarSyncEnabled()) {
+      // during finalization DataColumnSidecarCustody maintains FirstIncompleteSlot variable, which
+      // is not needed on reworked custody backfiller
+      eventChannels.subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarCustodyImpl);
+    }
 
     final DataColumnSidecarByRootCustody dataColumnSidecarByRootCustody =
         new DataColumnSidecarByRootCustodyImpl(
@@ -1024,13 +1035,32 @@ public class BeaconChainController extends Service implements BeaconChainControl
               timeProvider,
               specConfigFulu.getNumberOfColumns());
     }
-    final DasCustodySync svc =
-        new DasCustodySync(
-            dataColumnSidecarRecoveringCustody,
-            recoveringSidecarRetriever,
-            minCustodyPeriodSlotCalculator);
-    dasCustodySync = Optional.of(svc);
-    eventChannels.subscribe(SlotEventsChannel.class, svc);
+
+    if (beaconConfig.p2pConfig().isReworkedSidecarSyncEnabled()) {
+      final DasCustodyBackfiller custodyBackfiller =
+          new DasCustodyBackfiller(
+              combinedChainDataClient,
+              Duration.ofSeconds(beaconConfig.p2pConfig().getReworkedSidecarSyncPollPeriod()),
+              dataColumnSidecarRecoveringCustody,
+              custodyGroupCountManager,
+              recoveringSidecarRetriever,
+              minCustodyPeriodSlotCalculator,
+              dasAsyncRunner,
+              sidecarDB::getEarliestAvailableDataSlot,
+              sidecarDB::setEarliestAvailableDataColumnSlot,
+              beaconConfig.p2pConfig().getReworkedSidecarSyncBatchSize());
+      eventChannels.subscribe(CustodyGroupCountChannel.class, custodyBackfiller);
+      eventChannels.subscribe(FinalizedCheckpointChannel.class, custodyBackfiller);
+      dasCustodyBackfiller = Optional.of(custodyBackfiller);
+    } else {
+      final DasCustodySync custodySync =
+          new DasCustodySync(
+              dataColumnSidecarRecoveringCustody,
+              recoveringSidecarRetriever,
+              minCustodyPeriodSlotCalculator);
+      dasCustodySync = Optional.of(custodySync);
+      eventChannels.subscribe(SlotEventsChannel.class, custodySync);
+    }
 
     final CurrentSlotProvider currentSlotProvider =
         CurrentSlotProvider.create(spec, recentChainData.getStore());
@@ -2135,6 +2165,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     syncService.subscribeToSyncStateChangesAndUpdate(
         event -> dataColumnSidecarELManager.onSyncingStatusChanged(event.isInSync()));
+
+    dasCustodyBackfiller.ifPresent(
+        backfiller ->
+            syncService.subscribeToSyncStateChangesAndUpdate(
+                syncState -> backfiller.onNodeSyncStateChanged(syncState.isInSync())));
   }
 
   protected void initOperationsReOrgManager() {

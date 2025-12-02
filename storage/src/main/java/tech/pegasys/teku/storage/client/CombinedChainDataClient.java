@@ -563,6 +563,10 @@ public class CombinedChainDataClient {
     return historicalChainData.getEarliestAvailableBlobSidecarSlot();
   }
 
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataSlot() {
+    return historicalChainData.getEarliestAvailableDataColumnSlot();
+  }
+
   /**
    * This is supposed to be consumed by RPC only, because it returns gossip-validated but not yet
    * imported sidecars from the blobSidecar pool.

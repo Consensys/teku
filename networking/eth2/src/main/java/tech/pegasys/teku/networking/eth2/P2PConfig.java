@@ -55,6 +55,10 @@ public class P2PConfig {
   public static final int DEFAULT_DAS_PUBLISH_WITHHOLD_COLUMNS_EVERY_SLOTS = -1;
   public static final int DEFAULT_RECOVERY_TIMEOUT_MS = 300_000;
   public static final int DEFAULT_DOWNLOAD_TIMEOUT_MS = 240_000;
+
+  public static final int DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS = 30;
+  public static final int DEFAULT_COLUMN_CUSTODY_BACKFILLER_BATCH_SIZE = 10;
+
   // RocksDB is configured with 6 background jobs and threads (DEFAULT_MAX_BACKGROUND_JOBS and
   // DEFAULT_BACKGROUND_THREAD_COUNT)
   // The storage query channel allows up to 10 parallel queries (STORAGE_QUERY_CHANNEL_PARALLELISM)
@@ -90,6 +94,9 @@ public class P2PConfig {
   private final int reworkedSidecarRecoveryTimeout;
   private final int reworkedSidecarDownloadTimeout;
   private final boolean reworkedSidecarRecoveryEnabled;
+  private final int reworkedSidecarSyncBatchSize;
+  private final int reworkedSidecarSyncPollPeriod;
+  private final boolean reworkedSidecarSyncEnabled;
   private final boolean executionProofTopicEnabled;
 
   private P2PConfig(
@@ -117,6 +124,9 @@ public class P2PConfig {
       final boolean reworkedSidecarRecoveryEnabled,
       final int reworkedSidecarRecoveryTimeout,
       final int reworkedSidecarDownloadTimeout,
+      final boolean reworkedSidecarSyncEnabled,
+      final Integer reworkedSidecarSyncBatchSize,
+      final Integer reworkedSidecarSyncPollPeriod,
       final boolean executionProofTopicEnabled) {
     this.spec = spec;
     this.networkConfig = networkConfig;
@@ -143,6 +153,9 @@ public class P2PConfig {
     this.reworkedSidecarRecoveryEnabled = reworkedSidecarRecoveryEnabled;
     this.reworkedSidecarDownloadTimeout = reworkedSidecarDownloadTimeout;
     this.reworkedSidecarRecoveryTimeout = reworkedSidecarRecoveryTimeout;
+    this.reworkedSidecarSyncEnabled = reworkedSidecarSyncEnabled;
+    this.reworkedSidecarSyncBatchSize = reworkedSidecarSyncBatchSize;
+    this.reworkedSidecarSyncPollPeriod = reworkedSidecarSyncPollPeriod;
     this.executionProofTopicEnabled = executionProofTopicEnabled;
   }
 
@@ -258,6 +271,18 @@ public class P2PConfig {
     return reworkedSidecarDownloadTimeout;
   }
 
+  public boolean isReworkedSidecarSyncEnabled() {
+    return reworkedSidecarSyncEnabled;
+  }
+
+  public int getReworkedSidecarSyncBatchSize() {
+    return reworkedSidecarSyncBatchSize;
+  }
+
+  public int getReworkedSidecarSyncPollPeriod() {
+    return reworkedSidecarSyncPollPeriod;
+  }
+
   public static class Builder {
     private final NetworkConfig.Builder networkConfig = NetworkConfig.builder();
     private final DiscoveryConfig.Builder discoveryConfig = DiscoveryConfig.builder();
@@ -290,6 +315,11 @@ public class P2PConfig {
     private boolean reworkedSidecarRecoveryEnabled = true;
     private Integer reworkedSidecarRecoveryTimeout = DEFAULT_RECOVERY_TIMEOUT_MS;
     private Integer reworkedSidecarDownloadTimeout = DEFAULT_DOWNLOAD_TIMEOUT_MS;
+
+    private boolean reworkedSidecarSyncEnabled = false;
+    private Integer reworkedSidecarSyncBatchSize = DEFAULT_COLUMN_CUSTODY_BACKFILLER_BATCH_SIZE;
+    private Integer reworkedSidecarSyncPollPeriod =
+        DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS;
 
     private Builder() {}
 
@@ -358,6 +388,9 @@ public class P2PConfig {
           reworkedSidecarRecoveryEnabled,
           reworkedSidecarRecoveryTimeout,
           reworkedSidecarDownloadTimeout,
+          reworkedSidecarSyncEnabled,
+          reworkedSidecarSyncBatchSize,
+          reworkedSidecarSyncPollPeriod,
           executionProofTopicEnabled);
     }
 
@@ -540,6 +573,21 @@ public class P2PConfig {
 
     public Builder reworkedSidecarRecoveryEnabled(final boolean reworkedSidecarRecoveryEnabled) {
       this.reworkedSidecarRecoveryEnabled = reworkedSidecarRecoveryEnabled;
+      return this;
+    }
+
+    public Builder reworkedSidecarSyncBatchSize(final Integer reworkedSidecarSyncBatchSize) {
+      this.reworkedSidecarRecoveryTimeout = reworkedSidecarSyncBatchSize;
+      return this;
+    }
+
+    public Builder reworkedSidecarSyncPollPeriod(final Integer reworkedSidecarSyncPollPeriod) {
+      this.reworkedSidecarSyncPollPeriod = reworkedSidecarSyncPollPeriod;
+      return this;
+    }
+
+    public Builder reworkedSidecarSyncEnabled(final boolean reworkedSidecarSyncEnabled) {
+      this.reworkedSidecarSyncEnabled = reworkedSidecarSyncEnabled;
       return this;
     }
   }

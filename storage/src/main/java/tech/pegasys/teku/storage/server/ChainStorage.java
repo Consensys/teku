@@ -462,6 +462,16 @@ public class ChainStorage
   }
 
   @Override
+  public SafeFuture<Void> onEarliestAvailableDataColumnSlot(final UInt64 slot) {
+    return SafeFuture.fromRunnable(() -> database.setEarliestAvailableDataColumnSlot(slot));
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot() {
+    return SafeFuture.of(database::getEarliestAvailableDataColumnSlot);
+  }
+
+  @Override
   public SafeFuture<Void> onNewSidecar(final DataColumnSidecar sidecar) {
     return SafeFuture.fromRunnable(() -> database.addSidecar(sidecar));
   }

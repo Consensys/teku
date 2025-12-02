@@ -94,6 +94,7 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   private final KvStoreVariable<UInt64> earliestBlobSidecarSlot;
   private final KvStoreVariable<UInt64> earliestBlockSlot;
   private final KvStoreVariable<UInt64> firstCustodyIncompleteSlot;
+  private final KvStoreVariable<UInt64> earliestAvailableDataColumnSlot;
 
   private final List<Bytes> deletedVariableIds;
 
@@ -114,6 +115,9 @@ public abstract class V6SchemaCombined implements SchemaCombined {
     earliestBlobSidecarSlot = KvStoreVariable.create(finalizedOffset + 2, UINT64_SERIALIZER);
     earliestBlockSlot = KvStoreVariable.create(finalizedOffset + 3, UINT64_SERIALIZER);
     firstCustodyIncompleteSlot = KvStoreVariable.create(finalizedOffset + 4, UINT64_SERIALIZER);
+    // finalizedOffset + 5 has been deleted
+    earliestAvailableDataColumnSlot =
+        KvStoreVariable.create(finalizedOffset + 6, UINT64_SERIALIZER);
 
     deletedVariableIds = List.of(asVariableId(finalizedOffset + 5));
   }
@@ -206,6 +210,11 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   @Override
   public KvStoreVariable<UInt64> getVariableEarliestBlobSidecarSlot() {
     return earliestBlobSidecarSlot;
+  }
+
+  @Override
+  public KvStoreVariable<UInt64> getVariableEarliestAvailableDataColumnSlot() {
+    return earliestAvailableDataColumnSlot;
   }
 
   @Override
