@@ -131,15 +131,15 @@ public class SyncingNodeManager {
 
     final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =
         eventChannels.getPublisher(ReceivedBlockEventsChannel.class);
-    final TimeProvider timeProvider = new SystemTimeProvider();
 
     final BlockGossipValidator blockGossipValidator =
         new BlockGossipValidator(
             spec,
-            new GossipValidationHelper(spec, recentChainData, metricsSystem, timeProvider),
+            new GossipValidationHelper(spec, recentChainData, metricsSystem),
             receivedBlockEventsChannelPublisher);
     final BlockValidator blockValidator = new BlockValidator(blockGossipValidator);
 
+    final TimeProvider timeProvider = new SystemTimeProvider();
     final PoolFactory poolFactory = new PoolFactory(new NoOpMetricsSystem());
     final PendingPool<SignedBeaconBlock> pendingBlocks =
         poolFactory.createPendingPoolForBlocks(spec);

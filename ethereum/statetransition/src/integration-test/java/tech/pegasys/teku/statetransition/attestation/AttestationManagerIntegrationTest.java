@@ -29,7 +29,6 @@ import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
-import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -104,10 +103,8 @@ class AttestationManagerIntegrationTest {
           "attestations");
   private final SignatureVerificationService signatureVerificationService =
       new SimpleSignatureVerificationService();
-  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private final GossipValidationHelper gossipValidationHelper =
-      new GossipValidationHelper(
-          spec, recentChainData, storageSystem.getMetricsSystem(), timeProvider);
+      new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem());
   private final AttestationValidator attestationValidator =
       new AttestationValidator(spec, signatureVerificationService, gossipValidationHelper);
   private final ActiveValidatorChannel activeValidatorChannel = mock(ActiveValidatorChannel.class);

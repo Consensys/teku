@@ -1258,8 +1258,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initGossipValidationHelper() {
     LOG.debug("BeaconChainController.initGossipValidationHelper()");
-    gossipValidationHelper =
-        new GossipValidationHelper(spec, recentChainData, metricsSystem, timeProvider);
+    gossipValidationHelper = new GossipValidationHelper(spec, recentChainData, metricsSystem);
   }
 
   protected void initPerformanceTracker() {
