@@ -23,7 +23,6 @@ import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -58,7 +57,8 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   private final CustodyGroupCountManager custodyGroupCountManager;
   private final Map<Bytes32, DataColumnSamplingTracker> recentlySampledColumnsByRoot =
       new ConcurrentHashMap<>(MAX_RECENTLY_SAMPLED_BLOCKS);
-  private final NavigableSet<SlotAndBlockRoot> orderedSidecarsTrackers = new ConcurrentSkipListSet<>();
+  private final NavigableSet<SlotAndBlockRoot> orderedSidecarsTrackers =
+      new ConcurrentSkipListSet<>();
 
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
@@ -174,30 +174,33 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
         .finishError(LOG);
   }
 
-  private synchronized DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {
+  private synchronized DataColumnSamplingTracker getOrCreateTracker(
+      final UInt64 slot, final Bytes32 blockRoot) {
     final DataColumnSamplingTracker tracker =
-            recentlySampledColumnsByRoot.computeIfAbsent(
-                blockRoot,
-                k -> {
-                    makeRoomForNewTracker();
-                  final DataColumnSamplingTracker newTracker =
-                      DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager);
-                  orderedSidecarsTrackers.add(new SlotAndBlockRoot(slot, blockRoot));
-                  LOG.debug("Created new DAS tracker for slot {} root {}", slot, blockRoot);
-                    onFirstSeen(slot, blockRoot, newTracker);
-                  return newTracker;
-                });
-        LOG.debug(
-            "Currently size of recently sampled blocks {} and orderedTracker {}",
-            recentlySampledColumnsByRoot.size(),
-            orderedSidecarsTrackers.size());
+        recentlySampledColumnsByRoot.computeIfAbsent(
+            blockRoot,
+            k -> {
+              makeRoomForNewTracker();
+              final DataColumnSamplingTracker newTracker =
+                  DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager);
+              orderedSidecarsTrackers.add(new SlotAndBlockRoot(slot, blockRoot));
+              LOG.debug("Created new DAS tracker for slot {} root {}", slot, blockRoot);
+              onFirstSeen(slot, blockRoot, newTracker);
+              return newTracker;
+            });
+    LOG.debug(
+        "Currently size of recently sampled blocks {} and orderedTracker {}",
+        recentlySampledColumnsByRoot.size(),
+        orderedSidecarsTrackers.size());
 
     return tracker;
   }
 
   private void makeRoomForNewTracker() {
     while (recentlySampledColumnsByRoot.size() > MAX_RECENTLY_SAMPLED_BLOCKS - 1) {
-      LOG.debug("Making room for new DAS tracker, removing oldest sampled block, current map size {}", recentlySampledColumnsByRoot.size());
+      LOG.debug(
+          "Making room for new DAS tracker, removing oldest sampled block, current map size {}",
+          recentlySampledColumnsByRoot.size());
       final SlotAndBlockRoot toRemove = orderedSidecarsTrackers.pollFirst();
       if (toRemove == null) {
         break;
