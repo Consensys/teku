@@ -85,7 +85,7 @@ public class CoreTypes {
   public static final StringValueTypeDefinition<Long> LONG_TYPE =
       DeserializableTypeDefinition.string(Long.class)
           .formatter(Object::toString)
-          .parser(Long::getLong)
+          .parser(Long::valueOf)
           .example("1")
           .description("long string")
           .format("long")

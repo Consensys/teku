@@ -98,6 +98,18 @@ class CoreTypesTest {
   }
 
   @Test
+  void long_shouldRoundTrip() throws Exception {
+    assertRoundTrip(123L, CoreTypes.LONG_TYPE);
+    assertRoundTrip(-1L, CoreTypes.LONG_TYPE);
+  }
+
+  @Test
+  void long_shouldRejectInvalidString() {
+    assertThatThrownBy(() -> CoreTypes.LONG_TYPE.deserializeFromString("abc"))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
   void stringListShouldAcceptBooleanAsString() throws Exception {
     final String input = "[\"a\", \"b\", true, \"c\"]";
     final List<String> result = JsonUtil.parse(input, stringListType);
