@@ -90,26 +90,22 @@ public class ExecutionPayloadBidGossipValidator {
         LOG.trace(
             "Already received a bid with a higher value {} for block with parent hash {}. Current bid's value is {}",
             existingBidValue,
-            bid.getBlockHash(),
+            bid.getParentBlockHash(),
             bid.getValue());
         return completedFuture(
             ignore(
                 "Already received a bid with a higher value %s for block with parent hash %s. Current bid's value is %s",
                 existingBidValue, bid.getParentBlockHash(), bid.getValue()));
-      } else {
-        highestBids.put(bid.getParentBlockHash(), bid.getValue());
       }
-    } else {
-      highestBids.put(bid.getParentBlockHash(), bid.getValue());
     }
 
     /*
      * [IGNORE] bid.slot is the current slot or the next slot.
      */
 
-    // This check take the gossip clock disparity allowance and hence accepts bids with current
+    // This check considers the gossip clock disparity allowance and hence accepts bids with current
     // slot, next slot but not too early, previous slot but not too late
-    if (!gossipValidationHelper.isSlotWithinGossipTimeWindow(bid.getSlot())) {
+    if (!gossipValidationHelper.isCurrentSlotWithGossipDisparityAllowance(bid.getSlot())) {
       LOG.trace("Bid must be for current or next slot but was for slot {}", bid.getSlot());
       return completedFuture(
           ignore("Bid must be for current or next slot but was for slot %s", bid.getSlot()));
@@ -201,6 +197,7 @@ public class ExecutionPayloadBidGossipValidator {
                 LOG.trace("Invalid payload execution bid signature");
                 return reject("Invalid payload execution bid signature");
               }
+              highestBids.put(bid.getParentBlockHash(), bid.getValue());
               seenExecutionPayloadBids.add(key);
               return ACCEPT;
             });

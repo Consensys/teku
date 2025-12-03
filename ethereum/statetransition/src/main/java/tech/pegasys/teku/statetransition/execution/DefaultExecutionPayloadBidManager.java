@@ -57,8 +57,8 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
     validationResult.thenAccept(
         result -> {
           switch (result.code()) {
-            case ACCEPT -> {}
-            case REJECT, SAVE_FOR_FUTURE, IGNORE -> {}
+            // TODO-GLOAS handle bids
+            case ACCEPT, REJECT, SAVE_FOR_FUTURE, IGNORE -> {}
           }
         });
     return validationResult;

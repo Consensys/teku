@@ -17,7 +17,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
@@ -71,7 +70,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
     parentBlockHash = bid.getParentBlockHash();
     postState = dataStructureUtil.randomBeaconState();
 
-    when(gossipValidationHelper.isSlotWithinGossipTimeWindow(slot)).thenReturn(true);
+    when(gossipValidationHelper.isCurrentSlotWithGossipDisparityAllowance(slot)).thenReturn(true);
     when(gossipValidationHelper.isBlockHashKnown(parentBlockHash, parentBlockRoot))
         .thenReturn(true);
     when(gossipValidationHelper.getSlotForBlockRoot(parentBlockRoot))
@@ -116,7 +115,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
 
   @TestTemplate
   void shouldIgnore_whenSlotIsNotWithinGossipWindow() {
-    when(gossipValidationHelper.isSlotWithinGossipTimeWindow(slot)).thenReturn(false);
+    when(gossipValidationHelper.isCurrentSlotWithGossipDisparityAllowance(slot)).thenReturn(false);
     assertThatSafeFuture(bidValidator.validate(signedBid))
         .isCompletedWithValue(
             ignore("Bid must be for current or next slot but was for slot %s", slot));
@@ -153,6 +152,89 @@ public class ExecutionPayloadBidGossipValidatorTest {
             ignore(
                 "Already received a bid with a higher value %s for block with parent hash %s. Current bid's value is %s",
                 bid.getValue(), parentBlockHash, lowerBidValue));
+  }
+
+  @TestTemplate
+  void shouldNotCacheHigherBidIfInvalid() {
+    // valid, lower value bid is accepted and cached
+    final UInt64 lowerValue = signedBid.getMessage().getValue();
+    assertThatSafeFuture(bidValidator.validate(signedBid)).isCompletedWithValue(ACCEPT);
+
+    // modified copy of the original bid with a higher value and different builder index
+    final UInt64 higherValue = lowerValue.plus(10);
+    final UInt64 differentBuilderIndex = builderIndex.plus(1);
+    final ExecutionPayloadBid originalBidMessage = signedBid.getMessage();
+    final ExecutionPayloadBid higherValueBidMessage =
+        originalBidMessage
+            .getSchema()
+            .create(
+                originalBidMessage.getParentBlockHash(),
+                originalBidMessage.getParentBlockRoot(),
+                originalBidMessage.getBlockHash(),
+                originalBidMessage.getPrevRandao(),
+                originalBidMessage.getFeeRecipient(),
+                originalBidMessage.getGasLimit(),
+                differentBuilderIndex,
+                originalBidMessage.getSlot(),
+                higherValue,
+                originalBidMessage.getExecutionPayment(),
+                originalBidMessage.getBlobKzgCommitmentsRoot());
+
+    final SignedExecutionPayloadBid higherValueInvalidBid =
+        dataStructureUtil.randomSignedExecutionPayloadBid(higherValueBidMessage);
+
+    when(gossipValidationHelper.isValidBuilderIndex(differentBuilderIndex, postState, slot))
+        .thenReturn(true);
+    when(gossipValidationHelper.builderHasEnoughBalanceForBid(
+            higherValue, differentBuilderIndex, postState, slot))
+        .thenReturn(true);
+    when(gossipValidationHelper.hasBuilderWithdrawalCredential(
+            differentBuilderIndex, postState, slot))
+        .thenReturn(true);
+    // bad signature to make it fail validation
+    when(gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
+            any(), eq(higherValueInvalidBid.getMessage().getBuilderIndex()), any(), any()))
+        .thenReturn(false);
+    // invalid, higher value bid is rejected
+    assertThatSafeFuture(bidValidator.validate(higherValueInvalidBid))
+        .isCompletedWithValue(reject("Invalid payload execution bid signature"));
+
+    // valid, intermediate value bid with a higher value that the initially cached one
+    final UInt64 intermediateValue = lowerValue.plus(5);
+    final UInt64 intermediateBidBuilderIndex = builderIndex.plus(2);
+    final SignedExecutionPayloadBid intermediateValueValidBid =
+        dataStructureUtil.randomSignedExecutionPayloadBid(
+            dataStructureUtil.randomExecutionPayloadBid(
+                parentBlockHash,
+                slot,
+                intermediateBidBuilderIndex,
+                intermediateValue,
+                UInt64.ZERO));
+
+    when(gossipValidationHelper.isBlockHashKnown(
+            parentBlockHash, intermediateValueValidBid.getMessage().getParentBlockRoot()))
+        .thenReturn(true);
+    when(gossipValidationHelper.isValidBuilderIndex(intermediateBidBuilderIndex, postState, slot))
+        .thenReturn(true);
+    when(gossipValidationHelper.getSlotForBlockRoot(
+            intermediateValueValidBid.getMessage().getParentBlockRoot()))
+        .thenReturn(Optional.of(slot));
+    when(gossipValidationHelper.builderHasEnoughBalanceForBid(
+            intermediateValue, intermediateBidBuilderIndex, postState, slot))
+        .thenReturn(true);
+    when(gossipValidationHelper.getParentStateInBlockEpoch(
+            slot, intermediateValueValidBid.getMessage().getParentBlockRoot(), slot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(postState)));
+    when(gossipValidationHelper.hasBuilderWithdrawalCredential(
+            intermediateBidBuilderIndex, postState, slot))
+        .thenReturn(true);
+    when(gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
+            any(), eq(intermediateValueValidBid.getMessage().getBuilderIndex()), any(), any()))
+        .thenReturn(true);
+
+    // the intermediate value bid is accepted
+    assertThatSafeFuture(bidValidator.validate(intermediateValueValidBid))
+        .isCompletedWithValue(ACCEPT);
   }
 
   @TestTemplate
@@ -217,7 +299,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldSkipExpensiveChecksForSeenBid() {
+  void shouldIgnoreSeenBid() {
     assertThatSafeFuture(bidValidator.validate(signedBid)).isCompletedWithValue(ACCEPT);
     verify(gossipValidationHelper).isBlockHashKnown(parentBlockHash, parentBlockRoot);
     verify(gossipValidationHelper).getParentStateInBlockEpoch(any(), any(), any());
@@ -230,10 +312,6 @@ public class ExecutionPayloadBidGossipValidatorTest {
             ignore(
                 "Already received a bid from builder with index %s at slot %s",
                 builderIndex, slot));
-    verify(gossipValidationHelper, never()).isBlockHashKnown(any(), any());
-    verify(gossipValidationHelper, never()).getParentStateInBlockEpoch(any(), any(), any());
-    verify(gossipValidationHelper, never())
-        .isSignatureValidWithRespectToBuilderIndex(any(), any(), any(), any());
   }
 
   @TestTemplate

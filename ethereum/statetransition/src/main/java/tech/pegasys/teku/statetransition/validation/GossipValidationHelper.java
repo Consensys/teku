@@ -154,7 +154,8 @@ public class GossipValidationHelper {
     }
     final Validator builder = state.getValidators().get(index);
     final boolean isActiveBuilder =
-        spec.getActiveValidatorIndices(state, slot).contains(builderIndex.intValue());
+        spec.getActiveValidatorIndices(state, spec.computeEpochAtSlot(slot))
+            .contains(builderIndex.intValue());
     return !builder.isSlashed() && isActiveBuilder;
   }
 
