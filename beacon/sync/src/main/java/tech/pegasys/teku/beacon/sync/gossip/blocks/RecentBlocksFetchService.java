@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beacon.sync.gossip.blocks;
 
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -113,8 +112,9 @@ public class RecentBlocksFetchService
       // We already have this block, waiting for blobs
       return;
     }
-    if (dasBasicSampler.containsBlock(blockRoot)) {
-      return;
+    if(dasBasicSampler.containsBlock(blockRoot)) {
+        // We already have this block in DAS sampler
+        return;
     }
     final FetchBlockTask task = createTask(blockRoot);
     if (allTasks.putIfAbsent(blockRoot, task) != null) {

@@ -167,6 +167,7 @@ import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManagerImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DasCustodySync;
 import tech.pegasys.teku.statetransition.datacolumns.DasPreSampler;
+import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasicImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
@@ -383,7 +384,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ExecutionPayloadBidManager executionPayloadBidManager;
   protected volatile ExecutionPayloadManager executionPayloadManager;
   protected volatile ExecutionProofManager executionProofManager;
-  protected volatile DasSamplerBasicImpl dasSamplerBasic;
+  protected volatile DasSamplerBasic dasSamplerBasic;
   ;
   protected volatile Optional<DasCustodySync> dasCustodySync = Optional.empty();
   protected volatile Optional<DataColumnSidecarRetriever> recoveringSidecarRetriever =
@@ -863,7 +864,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initDasCustody() {
     if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      dasSamplerBasic = DasSamplerBasicImpl.NOOP;
+      dasSamplerBasic = DasSamplerBasic.NOOP;
       return;
     }
     LOG.info("Activating DAS Custody for Fulu");

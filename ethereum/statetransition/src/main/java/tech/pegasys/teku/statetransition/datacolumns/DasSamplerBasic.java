@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public interface DasSamplerBasic extends DataAvailabilitySampler, SlotEventsChannel, SingleBlockProvider {
+public interface DasSamplerBasic extends DataAvailabilitySampler, SlotEventsChannel {
 
     DasSamplerBasic NOOP = new DasSamplerBasic() {
         @Override
@@ -44,7 +44,7 @@ public interface DasSamplerBasic extends DataAvailabilitySampler, SlotEventsChan
         }
 
         @Override
-        public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
+        public Optional<SignedBeaconBlock> getBlock(Bytes32 blockRoot){
             return Optional.empty();
         }
 
@@ -62,4 +62,6 @@ public interface DasSamplerBasic extends DataAvailabilitySampler, SlotEventsChan
     Map<Bytes32, DataColumnSamplingTracker> getRecentlySampledColumnsByRoot();
 
     boolean containsBlock(Bytes32 blockRoot);
+
+    Optional<SignedBeaconBlock> getBlock(Bytes32 blockRoot);
 }

@@ -15,8 +15,6 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
 
-import com.google.common.annotations.VisibleForTesting;
-
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -214,6 +213,8 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
                 recentlySampledColumnsByRoot.remove(slotAndBlockRoot.getBlockRoot());
 
         if (tracker != null) {
+            tracker.completionFuture()
+                    .completeExceptionally(new RuntimeException("DAS sampling expired"));
             orderedSidecarsTrackers.remove(slotAndBlockRoot);
             // TODO maybe we need something like
             // tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl.dropMissingContent
