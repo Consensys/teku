@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.Constants.HIGHEST_BID_SET_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.SEEN_EXECUTION_PAYLOAD_BID_SET_SIZE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
@@ -85,7 +86,7 @@ public class ExecutionPayloadBidGossipValidator {
      */
 
     if (highestBids.containsKey(bid.getParentBlockHash())) {
-      final UInt64 existingBidValue = highestBids.get(bid.getParentBlockHash());
+      final UInt64 existingBidValue = highestBids.getOrDefault(bid.getParentBlockHash(), ZERO);
       if (bid.getValue().isLessThan(existingBidValue)) {
         LOG.trace(
             "Already received a bid with a higher value {} for block with parent hash {}. Current bid's value is {}",
