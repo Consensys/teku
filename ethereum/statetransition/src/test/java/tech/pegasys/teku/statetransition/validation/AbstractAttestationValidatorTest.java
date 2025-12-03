@@ -23,7 +23,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
-import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -90,9 +89,8 @@ abstract class AbstractAttestationValidatorTest {
       new AttestationGenerator(spec, chainBuilder.getValidatorKeys());
   protected final AsyncBLSSignatureVerifier signatureVerifier =
       AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE);
-  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   protected final GossipValidationHelper gossipValidationHelper =
-      new GossipValidationHelper(spec, recentChainData, new StubMetricsSystem(), timeProvider);
+      new GossipValidationHelper(spec, recentChainData, new StubMetricsSystem());
   protected final AttestationValidator validator =
       new AttestationValidator(spec, signatureVerifier, gossipValidationHelper);
 

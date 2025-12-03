@@ -15,16 +15,19 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PROPOSER_LOOKAHEAD;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
@@ -33,7 +36,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableContainer;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
-import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -50,6 +52,7 @@ import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 @TestSpecContext(
     signatureVerifierNoop = true,
@@ -59,7 +62,6 @@ public class GossipValidationHelperTest {
   private RecentChainData recentChainData;
   private DataStructureUtil dataStructureUtil;
   private StorageSystem storageSystem;
-  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private GossipValidationHelper gossipValidationHelper;
   private int maximumGossipClockDisparity;
 
@@ -73,8 +75,7 @@ public class GossipValidationHelperTest {
     maximumGossipClockDisparity = spec.getNetworkingConfig().getMaximumGossipClockDisparity();
 
     gossipValidationHelper =
-        new GossipValidationHelper(
-            spec, recentChainData, storageSystem.getMetricsSystem(), timeProvider);
+        new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem());
   }
 
   @TestTemplate
@@ -242,7 +243,7 @@ public class GossipValidationHelperTest {
         storageSystem.chainUpdater().advanceChain(firstSlotAtEpoch1.minus(2));
 
     // should get parent state in same epoch
-    SafeFutureAssert.assertThatSafeFuture(
+    assertThatSafeFuture(
             gossipValidationHelper.getParentStateInBlockEpoch(
                 lastBlockStateInEpoch0.getSlot(),
                 lastBlockStateInEpoch0.getRoot(),
@@ -251,7 +252,7 @@ public class GossipValidationHelperTest {
             beaconState -> beaconState.orElseThrow().equals(lastBlockStateInEpoch0.getState()));
 
     // should generate a state for epoch 1
-    SafeFutureAssert.assertThatSafeFuture(
+    assertThatSafeFuture(
             gossipValidationHelper.getParentStateInBlockEpoch(
                 lastBlockStateInEpoch0.getSlot(),
                 lastBlockStateInEpoch0.getRoot(),
@@ -285,8 +286,7 @@ public class GossipValidationHelperTest {
     final ChainUpdater chainUpdater = new ChainUpdater(localRecentChainData, chainBuilder, spec);
 
     final GossipValidationHelper gossipValidationHelper =
-        new GossipValidationHelper(
-            spec, localRecentChainData, storageSystem.getMetricsSystem(), timeProvider);
+        new GossipValidationHelper(spec, localRecentChainData, storageSystem.getMetricsSystem());
     chainUpdater.initializeGenesis();
 
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(1));
@@ -312,53 +312,54 @@ public class GossipValidationHelperTest {
   }
 
   @TestTemplate
-  void isForCurrentSlot_shouldNotUnderflow() {
-    AssertionsForClassTypes.assertThat(
-            gossipValidationHelper.isSlotWithinGossipTimeWindow(UInt64.ZERO))
-        .isTrue();
-  }
-
-  @TestTemplate
   void isForCurrentSlot_shouldRejectOutsideLowerBound() {
     final UInt64 slot = UInt64.valueOf(1000);
-    final UInt64 slotStartTimeMillis =
-        spec.computeTimeAtSlot(slot, recentChainData.getGenesisTime()).times(1000);
-    timeProvider.advanceTimeByMillis(
-        slotStartTimeMillis.minus(maximumGossipClockDisparity).decrement().longValue());
-    AssertionsForClassTypes.assertThat(gossipValidationHelper.isSlotWithinGossipTimeWindow(slot))
-        .isFalse();
+    final UInt64 slotStartTimeMillis = getSlotStartTimeMillis(slot);
+    final UInt64 currentTime = slotStartTimeMillis.minus(maximumGossipClockDisparity).decrement();
+    assertIsCurrentSlot(slot, currentTime, false);
   }
 
   @TestTemplate
   void isForCurrentSlot_shouldAcceptLowerBound() {
     final UInt64 slot = UInt64.valueOf(1000);
-    final UInt64 slotStartTimeMillis =
-        spec.computeTimeAtSlot(slot, recentChainData.getGenesisTime()).times(1000);
-    timeProvider.advanceTimeByMillis(
-        slotStartTimeMillis.minus(maximumGossipClockDisparity).longValue());
-    AssertionsForClassTypes.assertThat(gossipValidationHelper.isSlotWithinGossipTimeWindow(slot))
-        .isTrue();
+    final UInt64 slotStartTimeMillis = getSlotStartTimeMillis(slot);
+    final UInt64 currentTime = slotStartTimeMillis.minus(maximumGossipClockDisparity);
+    assertIsCurrentSlot(slot, currentTime, true);
   }
 
   @TestTemplate
   void isForCurrentSlot_shouldAcceptUpperBound() {
     final UInt64 slot = UInt64.valueOf(1000);
-    final UInt64 nextSlotStartTimeMillis =
-        spec.computeTimeAtSlot(slot.increment(), recentChainData.getGenesisTime()).times(1000);
-    timeProvider.advanceTimeByMillis(
-        nextSlotStartTimeMillis.plus(maximumGossipClockDisparity).longValue());
-    AssertionsForClassTypes.assertThat(gossipValidationHelper.isSlotWithinGossipTimeWindow(slot))
-        .isTrue();
+    final UInt64 nextSlotStartTimeMillis = getSlotStartTimeMillis(slot.increment());
+    final UInt64 currentTime = nextSlotStartTimeMillis.plus(maximumGossipClockDisparity);
+    assertIsCurrentSlot(slot, currentTime, true);
   }
 
   @TestTemplate
   void isForCurrentSlot_shouldRejectOutsideUpperBound() {
     final UInt64 slot = UInt64.valueOf(1000);
-    final UInt64 nextSlotStartTimeMillis =
-        spec.computeTimeAtSlot(slot.increment(), recentChainData.getGenesisTime()).times(1000);
-    timeProvider.advanceTimeByMillis(
-        nextSlotStartTimeMillis.plus(maximumGossipClockDisparity).increment().longValue());
-    AssertionsForClassTypes.assertThat(gossipValidationHelper.isSlotWithinGossipTimeWindow(slot))
-        .isFalse();
+    final UInt64 nextSlotStartTimeMillis = getSlotStartTimeMillis(slot.increment());
+    final UInt64 currentTime =
+        nextSlotStartTimeMillis.plus(maximumGossipClockDisparity).increment();
+    assertIsCurrentSlot(slot, currentTime, false);
+  }
+
+  private UInt64 getSlotStartTimeMillis(final UInt64 slot) {
+    return spec.computeTimeAtSlot(slot, recentChainData.getGenesisTime()).times(1000);
+  }
+
+  private void assertIsCurrentSlot(
+      final UInt64 slot, final UInt64 currentTime, final boolean expectedResult) {
+    final RecentChainData recentChainDataMock = mock(RecentChainData.class);
+    final UpdatableStore storeMock = mock(UpdatableStore.class);
+    when(recentChainDataMock.getStore()).thenReturn(storeMock);
+    when(storeMock.getTimeInMillis()).thenReturn(currentTime);
+    when(recentChainDataMock.getCurrentSlot()).thenReturn(Optional.of(slot));
+    when(recentChainDataMock.getGenesisTimeMillis())
+        .thenReturn(recentChainData.getGenesisTimeMillis());
+    final GossipValidationHelper gossipValidationHelperMocked =
+        new GossipValidationHelper(spec, recentChainDataMock, storageSystem.getMetricsSystem());
+    assertThat(gossipValidationHelperMocked.isCurrentSlotWithGossipDisparityAllowance(slot))
+        .isEqualTo(expectedResult);
   }
 }

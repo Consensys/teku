@@ -20,7 +20,6 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -36,17 +35,12 @@ public class GossipValidationHelper {
   private final RecentChainData recentChainData;
   private final int maxOffsetTimeInMillis;
   private final AttestationStateSelector attestationStateSelector;
-  private final TimeProvider timeProvider;
 
   public GossipValidationHelper(
-      final Spec spec,
-      final RecentChainData recentChainData,
-      final MetricsSystem metricsSystem,
-      final TimeProvider timeProvider) {
+      final Spec spec, final RecentChainData recentChainData, final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.maxOffsetTimeInMillis = spec.getNetworkingConfig().getMaximumGossipClockDisparity();
-    this.timeProvider = timeProvider;
     this.attestationStateSelector =
         new AttestationStateSelector(spec, recentChainData, metricsSystem);
   }
@@ -139,7 +133,7 @@ public class GossipValidationHelper {
     return recentChainData.retrieveStateAtSlot(slotAndBlockRoot);
   }
 
-  public boolean isSlotWithinGossipTimeWindow(final UInt64 slot) {
+  public boolean isCurrentSlotWithGossipDisparityAllowance(final UInt64 slot) {
     final int maximumGossipClockDisparityMillis =
         spec.getNetworkingConfig().getMaximumGossipClockDisparity();
     return isTimeWithinSlotWindow(slot, maximumGossipClockDisparityMillis);
@@ -157,7 +151,7 @@ public class GossipValidationHelper {
     final UInt64 slotStartTimeMillis =
         spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
     final UInt64 slotEndTimeMillis = slotStartTimeMillis.plus(spec.getSlotDurationMillis(slot));
-    final UInt64 currentTimeMillis = timeProvider.getTimeInMillis();
+    final UInt64 currentTimeMillis = recentChainData.getStore().getTimeInMillis();
 
     return currentTimeMillis.isGreaterThanOrEqualTo(slotStartTimeMillis.minusMinZero(disparity))
         && currentTimeMillis.isLessThanOrEqualTo(slotEndTimeMillis.plus(disparity));

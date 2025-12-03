@@ -69,10 +69,7 @@ class SignedContributionAndProofValidatorTest {
             syncCommitteeStateUtils,
             new SimpleSignatureVerificationService(),
             new GossipValidationHelper(
-                spec,
-                storageSystem.recentChainData(),
-                storageSystem.getMetricsSystem(),
-                timeProvider));
+                spec, storageSystem.recentChainData(), storageSystem.getMetricsSystem()));
     return storageSystem.chainUpdater().initializeGenesis();
   }
 

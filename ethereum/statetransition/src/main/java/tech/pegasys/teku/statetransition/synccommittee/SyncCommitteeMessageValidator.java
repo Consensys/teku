@@ -85,7 +85,7 @@ public class SyncCommitteeMessageValidator {
     // [IGNORE] The message's slot is for the current slot(with a MAXIMUM_GOSSIP_CLOCK_DISPARITY
     // allowance),
     // i.e. sync_committee_message.slot == current_slot.
-    if (!gossipValidationHelper.isSlotWithinGossipTimeWindow(message.getSlot())) {
+    if (!gossipValidationHelper.isCurrentSlotWithGossipDisparityAllowance(message.getSlot())) {
       LOG.trace(
           "Ignoring sync committee message from validator {}, "
               + "because it is not from the current slot "

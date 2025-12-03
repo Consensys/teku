@@ -76,8 +76,7 @@ class SyncCommitteeMessageValidatorTest {
     chainBuilder = storageSystem.chainBuilder();
     recentChainData = storageSystem.recentChainData();
     metricsSystem = storageSystem.getMetricsSystem();
-    gossipValidationHelper =
-        new GossipValidationHelper(spec, recentChainData, metricsSystem, timeProvider);
+    gossipValidationHelper = new GossipValidationHelper(spec, recentChainData, metricsSystem);
 
     validator =
         new SyncCommitteeMessageValidator(

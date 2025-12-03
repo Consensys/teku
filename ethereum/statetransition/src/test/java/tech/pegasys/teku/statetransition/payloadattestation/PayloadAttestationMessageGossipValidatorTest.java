@@ -76,7 +76,7 @@ public class PayloadAttestationMessageGossipValidatorTest {
     blockRoot = payloadAttestationMessage.getData().getBeaconBlockRoot();
     postState = dataStructureUtil.randomBeaconState();
 
-    when(gossipValidationHelper.isSlotWithinGossipTimeWindow(slot)).thenReturn(true);
+    when(gossipValidationHelper.isCurrentSlotWithGossipDisparityAllowance(slot)).thenReturn(true);
     when(gossipValidationHelper.isBlockAvailable(blockRoot)).thenReturn(true);
     when(gossipValidationHelper.isValidatorInPayloadTimelinessCommittee(
             payloadAttestationMessage.getValidatorIndex(), postState, slot))
@@ -105,7 +105,7 @@ public class PayloadAttestationMessageGossipValidatorTest {
 
   @TestTemplate
   void shouldIgnore_whenSlotIsNotCurrent() {
-    when(gossipValidationHelper.isSlotWithinGossipTimeWindow(slot)).thenReturn(false);
+    when(gossipValidationHelper.isCurrentSlotWithGossipDisparityAllowance(slot)).thenReturn(false);
     assertThatSafeFuture(
             payloadAttestationMessageGossipValidator.validate(payloadAttestationMessage))
         .isCompletedWithValue(
