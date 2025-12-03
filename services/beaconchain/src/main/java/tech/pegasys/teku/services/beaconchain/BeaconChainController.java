@@ -144,7 +144,6 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.SimpleOperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
-import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPoolV1;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPoolV2;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.attestation.utils.AggregatingAttestationPoolProfiler;
@@ -1965,18 +1964,16 @@ public class BeaconChainController extends Service implements BeaconChainControl
             : AggregatingAttestationPoolProfiler.NOOP;
 
     attestationPool =
-        eth2NetworkConfiguration.isAggregatingAttestationPoolV2Enabled()
-            ? new AggregatingAttestationPoolV2(
-                spec,
-                recentChainData,
-                metricsSystem,
-                DEFAULT_MAXIMUM_ATTESTATION_COUNT,
-                profiler,
-                eth2NetworkConfiguration.getAggregatingAttestationPoolV2BlockAggregationTimeLimit(),
-                eth2NetworkConfiguration
-                    .getAggregatingAttestationPoolV2TotalBlockAggregationTimeLimit())
-            : new AggregatingAttestationPoolV1(
-                spec, recentChainData, metricsSystem, profiler, DEFAULT_MAXIMUM_ATTESTATION_COUNT);
+        new AggregatingAttestationPoolV2(
+            spec,
+            recentChainData,
+            metricsSystem,
+            DEFAULT_MAXIMUM_ATTESTATION_COUNT,
+            profiler,
+            eth2NetworkConfiguration.getAggregatingAttestationPoolV2BlockAggregationTimeLimit(),
+            eth2NetworkConfiguration
+                .getAggregatingAttestationPoolV2TotalBlockAggregationTimeLimit());
+
     eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
     blockImporter.subscribeToVerifiedBlockAttestations(
         attestationPool::onAttestationsIncludedInBlock);
