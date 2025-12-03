@@ -64,7 +64,7 @@ class SingleBlockProviderResolverTest {
     SignedBeaconBlock actualBlock = resolver.getBlock(expectedBlock.getRoot()).get();
 
     verify(dasBasicSampler).getBlock(expectedBlock.getRoot());
-    verify(blockBlobSidecarsTrackersPool, times(2)).getBlock(expectedBlock.getRoot());
+    verify(blockBlobSidecarsTrackersPool).getBlock(expectedBlock.getRoot());
     assertEquals(expectedBlock, actualBlock);
   }
 
@@ -82,7 +82,7 @@ class SingleBlockProviderResolverTest {
     Optional<SignedBeaconBlock> actualBlock = resolver.getBlock(expectedBlock.getRoot());
 
     verify(dasBasicSampler).getBlock(expectedBlock.getRoot());
-    verify(blockBlobSidecarsTrackersPool, times(2)).getBlock(expectedBlock.getRoot());
+    verify(blockBlobSidecarsTrackersPool).getBlock(expectedBlock.getRoot());
     assertEquals(Optional.empty(), actualBlock);
   }
 }
