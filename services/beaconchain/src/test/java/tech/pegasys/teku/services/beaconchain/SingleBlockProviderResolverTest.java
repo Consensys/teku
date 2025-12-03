@@ -26,11 +26,11 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
-import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
+import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasicImpl;
 
 class SingleBlockProviderResolverTest {
 
-  private final DasSamplerBasic dasBasicSampler = Mockito.mock(DasSamplerBasic.class);
+  private final DasSamplerBasicImpl dasBasicSampler = Mockito.mock(DasSamplerBasicImpl.class);
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool =
       Mockito.mock(BlockBlobSidecarsTrackersPool.class);
   private final Spec spec = TestSpecFactory.createMinimalFulu();

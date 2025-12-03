@@ -42,7 +42,7 @@ public class RecentBlocksFetchService
   private final PendingPool<SignedBeaconBlock> pendingBlockPool;
   private final PendingPool<ValidatableAttestation> pendingAttestationsPool;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
-  private final Optional<DasSamplerBasic> dasBasicSampler;
+  private final DasSamplerBasic dasBasicSampler;
   private final FetchTaskFactory fetchTaskFactory;
   private final Subscribers<BlockSubscriber> blockSubscribers = Subscribers.create(true);
 
@@ -51,7 +51,7 @@ public class RecentBlocksFetchService
       final PendingPool<SignedBeaconBlock> pendingBlockPool,
       final PendingPool<ValidatableAttestation> pendingAttestationsPool,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
-      final Optional<DasSamplerBasic> dasBasicSampler,
+      final DasSamplerBasic dasBasicSampler,
       final ForwardSync forwardSync,
       final FetchTaskFactory fetchTaskFactory,
       final int maxConcurrentRequests) {
@@ -69,7 +69,7 @@ public class RecentBlocksFetchService
       final PendingPool<SignedBeaconBlock> pendingBlocksPool,
       final PendingPool<ValidatableAttestation> pendingAttestations,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
-      final Optional<DasSamplerBasic> dasBasicSampler,
+      final DasSamplerBasic dasBasicSampler,
       final ForwardSync forwardSync,
       final FetchTaskFactory fetchTaskFactory) {
     return new RecentBlocksFetchService(
@@ -113,7 +113,7 @@ public class RecentBlocksFetchService
       // We already have this block, waiting for blobs
       return;
     }
-    if (dasBasicSampler.isPresent() && dasBasicSampler.get().containsBlock(blockRoot)) {
+    if (dasBasicSampler.containsBlock(blockRoot)) {
       return;
     }
     final FetchBlockTask task = createTask(blockRoot);

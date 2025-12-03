@@ -22,22 +22,17 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class SingleBlockProviderResolver implements SingleBlockProvider {
 
+  private final SingleBlockProvider blockProviderFallback;
   private final SingleBlockProvider blockProvider;
-  private final SingleBlockProvider blockProviderFulu;
-
-  private static final Logger LOG = LogManager.getLogger();
 
   public SingleBlockProviderResolver(
       final SingleBlockProvider blockProvider, final SingleBlockProvider blockProviderFulu) {
-    this.blockProvider = blockProvider;
-    this.blockProviderFulu = blockProviderFulu;
+    this.blockProviderFallback = blockProvider;
+    this.blockProvider = blockProviderFulu;
   }
 
   @Override
   public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
-    LOG.debug("Current state of things {} {}", blockProviderFulu, blockProvider);
-    return Optional.ofNullable(
-            blockProviderFulu.getBlock(blockRoot).or(() -> blockProvider.getBlock(blockRoot)))
-        .orElse(blockProvider.getBlock(blockRoot));
+    return blockProvider.getBlock(blockRoot).or(() -> blockProviderFallback.getBlock(blockRoot));
   }
 }

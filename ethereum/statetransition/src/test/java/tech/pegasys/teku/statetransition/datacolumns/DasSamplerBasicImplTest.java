@@ -50,7 +50,7 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecar
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class DasSamplerBasicTest {
+public class DasSamplerBasicImplTest {
   private static final Spec SPEC = TestSpecFactory.createMinimalFulu();
   private static final List<UInt64> SAMPLING_INDICES =
       List.of(UInt64.valueOf(5), UInt64.ZERO, UInt64.valueOf(2));
@@ -66,7 +66,7 @@ public class DasSamplerBasicTest {
   private CurrentSlotProvider currentSlotProvider;
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, SPEC);
 
-  private DasSamplerBasic sampler;
+  private DasSamplerBasicImpl sampler;
 
   @BeforeEach
   public void setUp() {
@@ -84,7 +84,7 @@ public class DasSamplerBasicTest {
     when(custody.onNewValidatedDataColumnSidecar(any(), any())).thenReturn(SafeFuture.COMPLETE);
 
     sampler =
-        new DasSamplerBasic(
+        new DasSamplerBasicImpl(
             SPEC,
             asyncRunner,
             currentSlotProvider,
