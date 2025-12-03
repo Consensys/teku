@@ -174,24 +174,30 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
 
   private synchronized DataColumnSamplingTracker getOrCreateTracker(
       final UInt64 slot, final Bytes32 blockRoot) {
-    final DataColumnSamplingTracker tracker =
-        recentlySampledColumnsByRoot.computeIfAbsent(
-            blockRoot,
-            k -> {
-              makeRoomForNewTracker();
-              final DataColumnSamplingTracker newTracker =
-                  DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager);
-              orderedSidecarsTrackers.add(new SlotAndBlockRoot(slot, blockRoot));
-              LOG.debug("Created new DAS tracker for slot {} root {}", slot, blockRoot);
-              onFirstSeen(slot, blockRoot, newTracker);
-              return newTracker;
-            });
-    LOG.debug(
-        "Currently size of recently sampled blocks {} and orderedTracker {}",
-        recentlySampledColumnsByRoot.size(),
-        orderedSidecarsTrackers.size());
+      DataColumnSamplingTracker tracker = recentlySampledColumnsByRoot.get(blockRoot);
 
-    return tracker;
+      if (tracker == null) {
+          synchronized (this) {
+              makeRoomForNewTracker();
+              tracker =
+                      recentlySampledColumnsByRoot.computeIfAbsent(
+                              blockRoot,
+                              k -> {
+                                  final DataColumnSamplingTracker newTracker =
+                                          DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager);
+                                  orderedSidecarsTrackers.add(new SlotAndBlockRoot(slot, blockRoot));
+                                  LOG.debug("Created new DAS tracker for slot {} root {}", slot, blockRoot);
+
+                                  return newTracker;
+                              });
+              LOG.debug(
+                      "Currently size of recently sampled blocks {} and orderedTracker {}",
+                      recentlySampledColumnsByRoot.size(),
+                      orderedSidecarsTrackers.size());
+          }
+          onFirstSeen(slot, blockRoot, tracker);
+      }
+      return tracker;
   }
 
   private void makeRoomForNewTracker() {
