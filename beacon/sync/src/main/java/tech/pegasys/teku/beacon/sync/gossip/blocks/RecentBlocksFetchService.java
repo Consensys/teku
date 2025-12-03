@@ -112,9 +112,9 @@ public class RecentBlocksFetchService
       // We already have this block, waiting for blobs
       return;
     }
-    if(dasBasicSampler.containsBlock(blockRoot)) {
-        // We already have this block in DAS sampler
-        return;
+    if (dasBasicSampler.containsBlock(blockRoot)) {
+      // We already have this block in DAS sampler
+      return;
     }
     final FetchBlockTask task = createTask(blockRoot);
     if (allTasks.putIfAbsent(blockRoot, task) != null) {

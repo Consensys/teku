@@ -14,8 +14,6 @@
 package tech.pegasys.teku.services.beaconchain;
 
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;

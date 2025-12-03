@@ -573,9 +573,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final ValidatorIsConnectedProvider validatorIsConnectedProvider =
         new ValidatorIsConnectedProviderReference(() -> proposersDataManager);
 
-    final SingleBlockProvider singleBlockProviderResolver = new SingleBlockProviderResolver(
-              (blockRoot) -> blockBlobSidecarsTrackersPool.getBlock(blockRoot)
-              ,(blockRoot) -> dasSamplerBasic.getBlock(blockRoot));
+    final SingleBlockProvider singleBlockProviderResolver =
+        new SingleBlockProviderResolver(
+            (blockRoot) -> blockBlobSidecarsTrackersPool.getBlock(blockRoot),
+            (blockRoot) -> dasSamplerBasic.getBlock(blockRoot));
 
     // Init other services
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
@@ -1017,16 +1018,16 @@ public class BeaconChainController extends Service implements BeaconChainControl
             DEFAULT_TARGET_WAIT_MILLIS);
 
     dasSamplerBasic =
-            new DasSamplerBasicImpl(
-                spec,
-                beaconAsyncRunner,
-                currentSlotProvider,
-                rpcFetchDelayProvider,
-                dataColumnSidecarRecoveringCustody,
-                recoveringSidecarRetriever,
-                custodyGroupCountManager,
-                recentChainData,
-                metricsSystem);
+        new DasSamplerBasicImpl(
+            spec,
+            beaconAsyncRunner,
+            currentSlotProvider,
+            rpcFetchDelayProvider,
+            dataColumnSidecarRecoveringCustody,
+            recoveringSidecarRetriever,
+            custodyGroupCountManager,
+            recentChainData,
+            metricsSystem);
     LOG.info(
         "DAS Basic Sampler initialized with {} groups to sample",
         custodyGroupCountManager.getSamplingGroupCount());
