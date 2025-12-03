@@ -104,9 +104,7 @@ public class ExecutionPayloadBidGossipValidator {
      * [IGNORE] bid.slot is the current slot or the next slot.
      */
 
-    // This check considers the gossip clock disparity allowance and hence accepts bids with current
-    // slot, next slot but not too early, previous slot but not too late
-    if (!gossipValidationHelper.isCurrentSlotWithGossipDisparityAllowance(bid.getSlot())) {
+    if (!gossipValidationHelper.isSlotCurrentOrNext(bid.getSlot())) {
       LOG.trace("Bid must be for current or next slot but was for slot {}", bid.getSlot());
       return completedFuture(
           ignore("Bid must be for current or next slot but was for slot %s", bid.getSlot()));

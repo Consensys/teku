@@ -70,7 +70,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
     parentBlockHash = bid.getParentBlockHash();
     postState = dataStructureUtil.randomBeaconState();
 
-    when(gossipValidationHelper.isCurrentSlotWithGossipDisparityAllowance(slot)).thenReturn(true);
+    when(gossipValidationHelper.isSlotCurrentOrNext(slot)).thenReturn(true);
     when(gossipValidationHelper.isBlockHashKnown(parentBlockHash, parentBlockRoot))
         .thenReturn(true);
     when(gossipValidationHelper.getSlotForBlockRoot(parentBlockRoot))
@@ -114,8 +114,8 @@ public class ExecutionPayloadBidGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldIgnore_whenSlotIsNotWithinGossipWindow() {
-    when(gossipValidationHelper.isCurrentSlotWithGossipDisparityAllowance(slot)).thenReturn(false);
+  void shouldIgnore_whenSlotIsNotCurrentOrNext() {
+    when(gossipValidationHelper.isSlotCurrentOrNext(slot)).thenReturn(false);
     assertThatSafeFuture(bidValidator.validate(signedBid))
         .isCompletedWithValue(
             ignore("Bid must be for current or next slot but was for slot %s", slot));
