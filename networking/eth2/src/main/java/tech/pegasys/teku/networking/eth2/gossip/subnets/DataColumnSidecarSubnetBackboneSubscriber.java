@@ -74,7 +74,7 @@ public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChan
         .ifPresent(
             miscHelpersFulu -> {
               LOG.debug(
-                  "Sampling group count for epoch {}:  {}",
+                  "Sampling group count for epoch {}: {}",
                   epoch,
                   custodyGroupCountManager.getSamplingGroupCount());
               final List<UInt64> subnets =
