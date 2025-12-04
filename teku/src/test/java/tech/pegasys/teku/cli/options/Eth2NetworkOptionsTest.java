@@ -110,22 +110,6 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(Boolean.valueOf(value));
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = {"true", "false"})
-  void shouldSetAggregatingAttestationPoolV2Enabled(final String value) {
-    final TekuConfiguration config =
-        getTekuConfigurationFromArguments("--Xaggregating-attestation-pool-v2-enabled", value);
-    assertThat(config.eth2NetworkConfiguration().isAggregatingAttestationPoolV2Enabled())
-        .isEqualTo(Boolean.valueOf(value));
-  }
-
-  @Test
-  void shouldAggregatingAttestationPoolV2EnabledEnabledByDefault() {
-    final TekuConfiguration config = getTekuConfigurationFromArguments();
-    assertThat(config.eth2NetworkConfiguration().isAggregatingAttestationPoolV2Enabled())
-        .isEqualTo(true);
-  }
-
   @Test
   void shouldAggregatingAttestationPoolProfilerDisabledByDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();

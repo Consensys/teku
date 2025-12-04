@@ -113,6 +113,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   }
 
   private PendingDuties createEpochDuties(final UInt64 epochNumber) {
+    LOG.trace("Creating epoch duties for epoch {}", epochNumber);
     return PendingDuties.calculateDuties(metricsSystem, epochDutiesScheduler, epochNumber);
   }
 

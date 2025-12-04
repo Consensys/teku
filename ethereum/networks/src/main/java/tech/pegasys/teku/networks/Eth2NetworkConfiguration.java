@@ -145,7 +145,6 @@ public class Eth2NetworkConfiguration {
   private final boolean rustKzgEnabled;
   private final OptionalInt kzgPrecompute;
   private final OptionalLong dataColumnSidecarRecoveryMaxDelayMillis;
-  private final boolean aggregatingAttestationPoolV2Enabled;
   private final boolean aggregatingAttestationPoolProfilingEnabled;
   private final int aggregatingAttestationPoolV2BlockAggregationTimeLimit;
   private final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit;
@@ -184,7 +183,6 @@ public class Eth2NetworkConfiguration {
       final boolean rustKzgEnabled,
       final OptionalInt kzgPrecompute,
       final OptionalLong dataColumnSidecarRecoveryMaxDelayMillis,
-      final boolean aggregatingAttestationPoolV2Enabled,
       final boolean aggregatingAttestationPoolProfilingEnabled,
       final int aggregatingAttestationPoolV2BlockAggregationTimeLimit,
       final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
@@ -225,7 +223,6 @@ public class Eth2NetworkConfiguration {
     this.rustKzgEnabled = rustKzgEnabled;
     this.kzgPrecompute = kzgPrecompute;
     this.dataColumnSidecarRecoveryMaxDelayMillis = dataColumnSidecarRecoveryMaxDelayMillis;
-    this.aggregatingAttestationPoolV2Enabled = aggregatingAttestationPoolV2Enabled;
     this.aggregatingAttestationPoolProfilingEnabled = aggregatingAttestationPoolProfilingEnabled;
     this.aggregatingAttestationPoolV2BlockAggregationTimeLimit =
         aggregatingAttestationPoolV2BlockAggregationTimeLimit;
@@ -357,10 +354,6 @@ public class Eth2NetworkConfiguration {
     return prepareBlockProductionEnabled;
   }
 
-  public boolean isAggregatingAttestationPoolV2Enabled() {
-    return aggregatingAttestationPoolV2Enabled;
-  }
-
   public boolean isAggregatingAttestationPoolProfilingEnabled() {
     return aggregatingAttestationPoolProfilingEnabled;
   }
@@ -415,7 +408,6 @@ public class Eth2NetworkConfiguration {
         && asyncP2pMaxQueue == that.asyncP2pMaxQueue
         && forkChoiceLateBlockReorgEnabled == that.forkChoiceLateBlockReorgEnabled
         && prepareBlockProductionEnabled == that.prepareBlockProductionEnabled
-        && aggregatingAttestationPoolV2Enabled == that.aggregatingAttestationPoolV2Enabled
         && aggregatingAttestationPoolProfilingEnabled
             == that.aggregatingAttestationPoolProfilingEnabled
         && aggregatingAttestationPoolV2BlockAggregationTimeLimit
@@ -521,8 +513,6 @@ public class Eth2NetworkConfiguration {
     private OptionalInt kzgPrecompute = OptionalInt.empty();
     private OptionalLong dataColumnSidecarRecoveryMaxDelayMillis = OptionalLong.empty();
     private boolean strictConfigLoadingEnabled;
-    private boolean aggregatingAttestationPoolV2Enabled =
-        DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED;
     private boolean aggregatingAttestationPoolProfilingEnabled =
         DEFAULT_AGGREGATING_ATTESTATION_POOL_PROFILING_ENABLED;
     private int aggregatingAttestationPoolV2BlockAggregationTimeLimit =
@@ -625,7 +615,6 @@ public class Eth2NetworkConfiguration {
           rustKzgEnabled,
           kzgPrecompute,
           dataColumnSidecarRecoveryMaxDelayMillis,
-          aggregatingAttestationPoolV2Enabled,
           aggregatingAttestationPoolProfilingEnabled,
           aggregatingAttestationPoolV2BlockAggregationTimeLimit,
           aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
@@ -1230,12 +1219,6 @@ public class Eth2NetworkConfiguration {
 
     public Builder prepareBlockProductionEnabled(final boolean prepareBlockProductionEnabled) {
       this.prepareBlockProductionEnabled = prepareBlockProductionEnabled;
-      return this;
-    }
-
-    public Builder aggregatingAttestationPoolV2Enabled(
-        final boolean aggregatingAttestationPoolV2Enabled) {
-      this.aggregatingAttestationPoolV2Enabled = aggregatingAttestationPoolV2Enabled;
       return this;
     }
 

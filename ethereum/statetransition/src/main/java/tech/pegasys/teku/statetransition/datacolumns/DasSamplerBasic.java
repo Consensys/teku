@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,6 +25,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -94,6 +96,10 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
       final UInt64 slot, final Bytes32 blockRoot) {
     final DataColumnSamplingTracker tracker = getOrCreateTracker(slot, blockRoot);
 
+    if (tracker.completionFuture().isDone()) {
+      return tracker.completionFuture();
+    }
+
     if (tracker.rpcFetchScheduled().compareAndSet(false, true)) {
       fetchMissingColumnsViaRPC(slot, blockRoot, tracker);
     }
@@ -148,8 +154,21 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
                         tracker.samplingRequirement().size()));
               }
             })
-        .ignoreCancelException()
-        .finishError(LOG);
+        // let's reset the fetched flag so that this tracker can reissue RPC requests on DA check
+        // retry
+        .alwaysRun(() -> tracker.rpcFetchScheduled().set(false))
+        .finish(
+            throwable -> {
+              if (ExceptionUtil.hasCause(throwable, CancellationException.class)) {
+                final String error = throwable.getMessage();
+                LOG.debug(
+                    "CancellationException in checkDataAvailability: {}",
+                    () -> error == null ? "<no message>" : error);
+
+              } else {
+                LOG.error("data availability check failed", throwable);
+              }
+            });
   }
 
   private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {

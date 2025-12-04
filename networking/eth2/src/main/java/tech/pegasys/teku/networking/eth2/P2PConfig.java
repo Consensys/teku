@@ -53,8 +53,8 @@ public class P2PConfig {
   // it's not allowed to set less than requirement which is > 0, so it's safe value
   public static final int DEFAULT_CUSTODY_GROUP_COUNT_OVERRIDE = 0;
   public static final int DEFAULT_DAS_PUBLISH_WITHHOLD_COLUMNS_EVERY_SLOTS = -1;
-  public static final int DEFAULT_RECOVERY_TIMEOUT_MS = 180_000;
-  public static final int DEFAULT_DOWNLOAD_TIMEOUT_MS = 40_000;
+  public static final int DEFAULT_RECOVERY_TIMEOUT_MS = 300_000;
+  public static final int DEFAULT_DOWNLOAD_TIMEOUT_MS = 240_000;
   // RocksDB is configured with 6 background jobs and threads (DEFAULT_MAX_BACKGROUND_JOBS and
   // DEFAULT_BACKGROUND_THREAD_COUNT)
   // The storage query channel allows up to 10 parallel queries (STORAGE_QUERY_CHANNEL_PARALLELISM)
@@ -287,7 +287,7 @@ public class P2PConfig {
         DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
     private boolean gossipBlobsAfterBlockEnabled = DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED;
     private boolean executionProofTopicEnabled = DEFAULT_EXECUTION_PROOF_GOSSIP_ENABLED;
-    private boolean reworkedSidecarRecoveryEnabled = true;
+    private boolean reworkedSidecarRecoveryEnabled = false;
     private Integer reworkedSidecarRecoveryTimeout = DEFAULT_RECOVERY_TIMEOUT_MS;
     private Integer reworkedSidecarDownloadTimeout = DEFAULT_DOWNLOAD_TIMEOUT_MS;
 
