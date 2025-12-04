@@ -176,9 +176,7 @@ public class DasSamplerBasicImplTest {
 
     final Map<UInt64, DataColumnSidecar> missingColumnSidecars =
         SAMPLING_INDICES.stream()
-            .map(
-                index ->
-                     dataStructureUtil.randomDataColumnSidecar(blockHeader, index))
+            .map(index -> dataStructureUtil.randomDataColumnSidecar(blockHeader, index))
             .collect(
                 Collectors.toUnmodifiableMap(DataColumnSidecar::getIndex, Function.identity()));
     final Map<UInt64, SafeFuture<DataColumnSidecar>> futureSidecarsByIndex =
@@ -239,15 +237,14 @@ public class DasSamplerBasicImplTest {
   @Test
   @SuppressWarnings("FutureReturnValueIgnored")
   void checkDataAvailability_shouldSetRPCFetchedToFalseOnFailureAndRPCFetchesAgain() {
-      final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
-      final SlotAndBlockRoot slotAndBlockRoot =
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
+    final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(block.getMessage().getSlot(), block.getMessage().getRoot());
 
     when(retriever.retrieve(any()))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("error")));
 
-    final SafeFuture<List<UInt64>> completionFuture =
-        sampler.checkDataAvailability(block);
+    final SafeFuture<List<UInt64>> completionFuture = sampler.checkDataAvailability(block);
 
     assertSamplerTracker(
         slotAndBlockRoot.getBlockRoot(), slotAndBlockRoot.getSlot(), SAMPLING_INDICES);
@@ -264,8 +261,7 @@ public class DasSamplerBasicImplTest {
 
     when(retriever.retrieve(any())).thenReturn(new SafeFuture<>());
 
-    final SafeFuture<List<UInt64>> secondCompletionFuture =
-        sampler.checkDataAvailability(block);
+    final SafeFuture<List<UInt64>> secondCompletionFuture = sampler.checkDataAvailability(block);
 
     assertSamplerTracker(
         slotAndBlockRoot.getBlockRoot(), slotAndBlockRoot.getSlot(), SAMPLING_INDICES);
