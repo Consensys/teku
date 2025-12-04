@@ -304,10 +304,6 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
 
   @Override
   public synchronized boolean containsBlock(final Bytes32 blockRoot) {
-    LOG.debug(
-        "Checking if DAS sampler contains block {}, {}",
-        blockRoot,
-        getBlock(blockRoot).isPresent());
     return getBlock(blockRoot).isPresent();
   }
 
