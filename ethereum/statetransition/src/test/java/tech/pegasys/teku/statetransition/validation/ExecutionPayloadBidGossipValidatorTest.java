@@ -136,7 +136,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
     // a higher value bid is accepted
     assertThatSafeFuture(bidValidator.validate(signedBid)).isCompletedWithValue(ACCEPT);
 
-    // a lower value bid from a different builder with the same parent block hash
+    // a lower value bid from a different builder with the same parent block hash and slot
     final UInt64 lowerBidValue = bid.getValue().minus(1);
     final SignedExecutionPayloadBid lowerValueBid =
         dataStructureUtil.randomSignedExecutionPayloadBid(

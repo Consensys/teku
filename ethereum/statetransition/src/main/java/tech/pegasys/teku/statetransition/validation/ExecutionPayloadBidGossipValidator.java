@@ -47,7 +47,7 @@ public class ExecutionPayloadBidGossipValidator {
 
   private final Set<BuilderIndexAndSlot> seenExecutionPayloadBids =
       LimitedSet.createSynchronized(SEEN_EXECUTION_PAYLOAD_BID_SET_SIZE);
-  private final Map<Bytes32, UInt64> highestBids =
+  private final Map<SlotAndBlockHash, UInt64> highestBids =
       LimitedMap.createSynchronizedLRU(HIGHEST_BID_SET_SIZE);
 
   public ExecutionPayloadBidGossipValidator(
@@ -84,9 +84,10 @@ public class ExecutionPayloadBidGossipValidator {
     /*
      * [IGNORE] this bid is the highest value bid seen for the corresponding slot and the given parent block hash.
      */
-
-    if (highestBids.containsKey(bid.getParentBlockHash())) {
-      final UInt64 existingBidValue = highestBids.getOrDefault(bid.getParentBlockHash(), ZERO);
+    final SlotAndBlockHash bidValueKey =
+        new SlotAndBlockHash(bid.getSlot(), bid.getParentBlockHash());
+    if (highestBids.containsKey(bidValueKey)) {
+      final UInt64 existingBidValue = highestBids.getOrDefault(bidValueKey, ZERO);
       if (bid.getValue().isLessThan(existingBidValue)) {
         LOG.trace(
             "Already received a bid with a higher value {} for block with parent hash {}. Current bid's value is {}",
@@ -196,7 +197,7 @@ public class ExecutionPayloadBidGossipValidator {
                 LOG.trace("Invalid payload execution bid signature");
                 return reject("Invalid payload execution bid signature");
               }
-              highestBids.merge(bid.getParentBlockHash(), bid.getValue(), UInt64::max);
+              highestBids.merge(bidValueKey, bid.getValue(), UInt64::max);
               seenExecutionPayloadBids.add(key);
               return ACCEPT;
             });
@@ -215,4 +216,6 @@ public class ExecutionPayloadBidGossipValidator {
   }
 
   record BuilderIndexAndSlot(UInt64 validatorIndex, UInt64 slot) {}
+
+  record SlotAndBlockHash(UInt64 slot, Bytes32 blockHash) {}
 }
