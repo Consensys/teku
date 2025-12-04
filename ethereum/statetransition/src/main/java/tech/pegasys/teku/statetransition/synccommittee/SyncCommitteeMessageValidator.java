@@ -30,7 +30,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
@@ -40,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.B
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
+import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -50,7 +50,7 @@ public class SyncCommitteeMessageValidator {
   private final Spec spec;
   private final SyncCommitteeStateUtils syncCommitteeStateUtils;
   private final AsyncBLSSignatureVerifier signatureVerifier;
-  private final SyncCommitteeCurrentSlotUtil slotUtil;
+  private final GossipValidationHelper gossipValidationHelper;
 
   private final RecentChainData recentChainData;
 
@@ -59,11 +59,11 @@ public class SyncCommitteeMessageValidator {
       final RecentChainData recentChainData,
       final SyncCommitteeStateUtils syncCommitteeStateUtils,
       final AsyncBLSSignatureVerifier signatureVerifier,
-      final TimeProvider timeProvider) {
+      final GossipValidationHelper gossipValidationHelper) {
     this.spec = spec;
     this.syncCommitteeStateUtils = syncCommitteeStateUtils;
     this.signatureVerifier = signatureVerifier;
-    this.slotUtil = new SyncCommitteeCurrentSlotUtil(recentChainData, spec, timeProvider);
+    this.gossipValidationHelper = gossipValidationHelper;
     this.recentChainData = recentChainData;
   }
 
@@ -85,7 +85,7 @@ public class SyncCommitteeMessageValidator {
     // [IGNORE] The message's slot is for the current slot(with a MAXIMUM_GOSSIP_CLOCK_DISPARITY
     // allowance),
     // i.e. sync_committee_message.slot == current_slot.
-    if (!slotUtil.isForCurrentSlot(message.getSlot())) {
+    if (!gossipValidationHelper.isCurrentSlotWithGossipDisparityAllowance(message.getSlot())) {
       LOG.trace(
           "Ignoring sync committee message from validator {}, "
               + "because it is not from the current slot "

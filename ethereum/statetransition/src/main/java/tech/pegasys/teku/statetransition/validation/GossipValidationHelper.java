@@ -127,4 +127,33 @@ public class GossipValidationHelper {
   public ReadOnlyForkChoiceStrategy getForkChoiceStrategy() {
     return recentChainData.getForkChoiceStrategy().orElseThrow();
   }
+
+  public SafeFuture<Optional<BeaconState>> getStateAtSlotAndBlockRoot(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return recentChainData.retrieveStateAtSlot(slotAndBlockRoot);
+  }
+
+  public boolean isCurrentSlotWithGossipDisparityAllowance(final UInt64 slot) {
+    final int maximumGossipClockDisparityMillis =
+        spec.getNetworkingConfig().getMaximumGossipClockDisparity();
+    return isTimeWithinSlotWindow(slot, maximumGossipClockDisparityMillis);
+  }
+
+  public boolean isValidatorInPayloadTimelinessCommittee(
+      final UInt64 validatorIndex, final BeaconState state, final UInt64 slot) {
+    return spec.getPtc(state, slot).contains(validatorIndex.intValue());
+  }
+
+  private boolean isTimeWithinSlotWindow(final UInt64 slot, final int disparity) {
+    if (recentChainData.getCurrentSlot().isEmpty()) {
+      return false;
+    }
+    final UInt64 slotStartTimeMillis =
+        spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
+    final UInt64 slotEndTimeMillis = slotStartTimeMillis.plus(spec.getSlotDurationMillis(slot));
+    final UInt64 currentTimeMillis = recentChainData.getStore().getTimeInMillis();
+
+    return currentTimeMillis.isGreaterThanOrEqualTo(slotStartTimeMillis.minusMinZero(disparity))
+        && currentTimeMillis.isLessThanOrEqualTo(slotEndTimeMillis.plus(disparity));
+  }
 }
