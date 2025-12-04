@@ -112,7 +112,6 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
     final Bytes32 blockRoot = beaconBlock.getRoot();
 
     final DataColumnSamplingTracker tracker = getOrCreateTracker(slot, blockRoot);
-    // TODO fix this as block might not be in tracker if we reached max recently sampled blocks
     tracker.setBlock(beaconBlock);
     if (tracker.rpcFetchScheduled().compareAndSet(false, true)) {
       fetchMissingColumnsViaRPC(slot, blockRoot, tracker);
@@ -187,13 +186,8 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
                       DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager);
                   orderedSidecarsTrackers.add(new SlotAndBlockRoot(slot, blockRoot));
                   LOG.debug("Created new DAS tracker for slot {} root {}", slot, blockRoot);
-
                   return newTracker;
                 });
-        LOG.debug(
-            "Currently size of recently sampled blocks {} and orderedTracker {}",
-            recentlySampledColumnsByRoot.size(),
-            orderedSidecarsTrackers.size());
       }
       onFirstSeen(slot, blockRoot, tracker);
     }
@@ -202,9 +196,6 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
 
   private void makeRoomForNewTracker() {
     while (recentlySampledColumnsByRoot.size() > MAX_RECENTLY_SAMPLED_BLOCKS - 1) {
-      LOG.debug(
-          "Making room for new DAS tracker, removing oldest sampled block, current map size {}",
-          recentlySampledColumnsByRoot.size());
       final SlotAndBlockRoot toRemove = orderedSidecarsTrackers.pollFirst();
       if (toRemove == null) {
         break;
@@ -216,14 +207,11 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   private synchronized void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {
     final DataColumnSamplingTracker tracker =
         recentlySampledColumnsByRoot.remove(slotAndBlockRoot.getBlockRoot());
-
     if (tracker != null) {
       tracker
           .completionFuture()
           .completeExceptionally(new RuntimeException("DAS sampling expired"));
       orderedSidecarsTrackers.remove(slotAndBlockRoot);
-      // TODO maybe we need something like
-      // tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl.dropMissingContent
     }
   }
 
