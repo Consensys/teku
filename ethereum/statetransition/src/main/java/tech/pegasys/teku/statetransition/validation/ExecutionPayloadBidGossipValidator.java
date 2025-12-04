@@ -196,7 +196,7 @@ public class ExecutionPayloadBidGossipValidator {
                 LOG.trace("Invalid payload execution bid signature");
                 return reject("Invalid payload execution bid signature");
               }
-              highestBids.put(bid.getParentBlockHash(), bid.getValue());
+              highestBids.merge(bid.getParentBlockHash(), bid.getValue(), UInt64::max);
               seenExecutionPayloadBids.add(key);
               return ACCEPT;
             });
