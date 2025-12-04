@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -27,6 +28,7 @@ import static org.mockito.Mockito.when;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -121,8 +123,11 @@ public class DasSamplerBasicImplTest {
 
     sampler.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC);
 
+    assertSamplerTrackerHasRPCFetchScheduled(sidecar.getBeaconBlockRoot(), true);
+
     assertRPCFetchInMillis(
         sidecar.getSlot(), sidecar.getBeaconBlockRoot(), remainingColumns, 1_000);
+    assertSamplerTrackerHasRPCFetchScheduled(sidecar.getBeaconBlockRoot(), false);
   }
 
   @Test
@@ -136,6 +141,7 @@ public class DasSamplerBasicImplTest {
     sampler.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC);
 
     assertThat(asyncRunner.countDelayedActions()).isZero();
+    assertSamplerTrackerHasRPCFetchScheduled(sidecar.getBeaconBlockRoot(), false);
   }
 
   @Test
@@ -157,6 +163,7 @@ public class DasSamplerBasicImplTest {
                 .get(slotAndBlockRoot.getBlockRoot())
                 .completionFuture())
         .isSameAs(completionFuture);
+    assertSamplerTrackerHasRPCFetchScheduled(slotAndBlockRoot.getBlockRoot(), true);
   }
 
   @Test
@@ -171,8 +178,9 @@ public class DasSamplerBasicImplTest {
         SAMPLING_INDICES.stream()
             .map(
                 index ->
-                    Map.entry(index, dataStructureUtil.randomDataColumnSidecar(blockHeader, index)))
-            .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+                     dataStructureUtil.randomDataColumnSidecar(blockHeader, index))
+            .collect(
+                Collectors.toUnmodifiableMap(DataColumnSidecar::getIndex, Function.identity()));
     final Map<UInt64, SafeFuture<DataColumnSidecar>> futureSidecarsByIndex =
         missingColumnSidecars.values().stream()
             .map(DataColumnSidecar::getIndex)
@@ -199,6 +207,8 @@ public class DasSamplerBasicImplTest {
     // da check is requested
     sampler.checkDataAvailability(block);
 
+    assertSamplerTrackerHasRPCFetchScheduled(slotAndBlockRoot.getBlockRoot(), true);
+
     assertRPCFetchInMillis(
         slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), SAMPLING_INDICES, 1_000);
 
@@ -208,6 +218,9 @@ public class DasSamplerBasicImplTest {
     // let the retriever complete all the futures
     futureSidecarsByIndex.forEach(
         (index, future) -> future.complete(missingColumnSidecars.get(index)));
+
+    // verify RPC fetch schedule is reset
+    assertSamplerTrackerHasRPCFetchScheduled(slotAndBlockRoot.getBlockRoot(), false);
 
     // verify we never called custody for the late arrived sidecar
     verify(custody, never()).onNewValidatedDataColumnSidecar(eq(lateArrivedSidecar), any());
@@ -221,6 +234,46 @@ public class DasSamplerBasicImplTest {
 
     verifyNoMoreInteractions(retriever);
     verifyNoMoreInteractions(custody);
+  }
+
+  @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
+  void checkDataAvailability_shouldSetRPCFetchedToFalseOnFailureAndRPCFetchesAgain() {
+      final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
+      final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(block.getMessage().getSlot(), block.getMessage().getRoot());
+
+    when(retriever.retrieve(any()))
+        .thenReturn(SafeFuture.failedFuture(new RuntimeException("error")));
+
+    final SafeFuture<List<UInt64>> completionFuture =
+        sampler.checkDataAvailability(block);
+
+    assertSamplerTracker(
+        slotAndBlockRoot.getBlockRoot(), slotAndBlockRoot.getSlot(), SAMPLING_INDICES);
+
+    assertThat(
+            sampler
+                .getRecentlySampledColumnsByRoot()
+                .get(slotAndBlockRoot.getBlockRoot())
+                .completionFuture())
+        .isSameAs(completionFuture);
+    assertSamplerTrackerHasRPCFetchScheduled(slotAndBlockRoot.getBlockRoot(), false);
+
+    verify(retriever, times(SAMPLING_INDICES.size())).retrieve(any());
+
+    when(retriever.retrieve(any())).thenReturn(new SafeFuture<>());
+
+    final SafeFuture<List<UInt64>> secondCompletionFuture =
+        sampler.checkDataAvailability(block);
+
+    assertSamplerTracker(
+        slotAndBlockRoot.getBlockRoot(), slotAndBlockRoot.getSlot(), SAMPLING_INDICES);
+
+    verify(retriever, times(SAMPLING_INDICES.size() * 2)).retrieve(any());
+
+    assertThat(secondCompletionFuture).isSameAs(completionFuture);
+    assertSamplerTrackerHasRPCFetchScheduled(slotAndBlockRoot.getBlockRoot(), true);
   }
 
   @Test
@@ -374,6 +427,14 @@ public class DasSamplerBasicImplTest {
                                   new DataColumnSlotAndIdentifier(slot, blockRoot, columnIndex))
                           .toList());
             });
+  }
+
+  private void assertSamplerTrackerHasRPCFetchScheduled(
+      final Bytes32 blockRoot, final boolean expected) {
+    assertThat(sampler.getRecentlySampledColumnsByRoot())
+        .hasEntrySatisfying(
+            blockRoot,
+            tracker -> assertThat(tracker.rpcFetchScheduled().get()).isEqualTo(expected));
   }
 
   private void assertRPCFetchInMillis(

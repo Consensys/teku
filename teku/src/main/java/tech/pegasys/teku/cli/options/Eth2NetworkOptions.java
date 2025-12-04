@@ -365,17 +365,6 @@ public class Eth2NetworkOptions {
   private String epochsStoreBlobs;
 
   @Option(
-      names = {"--Xaggregating-attestation-pool-v2-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Enable the new aggregating attestation pool.",
-      arity = "0..1",
-      fallbackValue = "true",
-      showDefaultValue = Visibility.ALWAYS,
-      hidden = true)
-  private boolean aggregatingAttestationPoolV2Enabled =
-      Eth2NetworkConfiguration.DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED;
-
-  @Option(
       names = {"--Xaggregating-attestation-pool-profiling-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Enable the profiler for the aggregating attestation pool",
@@ -503,7 +492,6 @@ public class Eth2NetworkOptions {
         .asyncBeaconChainMaxThreads(asyncBeaconChainMaxThreads)
         .forkChoiceLateBlockReorgEnabled(forkChoiceLateBlockReorgEnabled)
         .prepareBlockProductionEnabled(prepareBlockProductionEnabled)
-        .aggregatingAttestationPoolV2Enabled(aggregatingAttestationPoolV2Enabled)
         .aggregatingAttestationPoolProfilingEnabled(aggregatingAttestationPoolProfilingEnabled)
         .aggregatingAttestationPoolV2BlockAggregationTimeLimit(
             aggregatingAttestationPoolV2BlockAggregationTimeLimit)

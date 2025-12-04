@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.logic.versions.electra.execution.ExecutionRequests
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.VoluntaryExitValidatorElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.BlindBlockUtilFulu;
+import tech.pegasys.teku.spec.logic.versions.fulu.util.BlockProposalUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.block.BlockProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.execution.ExecutionPayloadProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.forktransition.GloasStateUpgrade;
@@ -212,7 +213,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
         new ForkChoiceUtilGloas(
             config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
-        new BlockProposalUtil(schemaDefinitions, blockProcessor);
+        new BlockProposalUtilFulu(schemaDefinitions, blockProcessor, config.getFuluForkEpoch());
 
     final BlindBlockUtilFulu blindBlockUtil = new BlindBlockUtilFulu(schemaDefinitions);
 

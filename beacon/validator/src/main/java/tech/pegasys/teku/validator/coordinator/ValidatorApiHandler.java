@@ -327,7 +327,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                   epoch.minus(currentEpoch).toString())));
     }
 
-    final UInt64 stateSlot = getStateSlotForProposerDuties(spec, epoch);
+    final UInt64 stateSlot =
+        spec.atEpoch(epoch).getBlockProposalUtil().getStateSlotForProposerDuties(spec, epoch);
     LOG.debug(
         "Retrieving proposer duties for epoch {}, current epoch {}, state query slot {}",
         epoch,
@@ -336,20 +337,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     return combinedChainDataClient
         .getStateAtSlotExact(stateSlot)
         .thenApply(maybeState -> maybeState.map(state -> getProposerDutiesFromState(state, epoch)));
-  }
-
-  // PRE: the distance between dutiesEpoch and currentEpoch is validated
-  static UInt64 getStateSlotForProposerDuties(final Spec spec, final UInt64 dutiesEpoch) {
-    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      final UInt64 fuluActivationEpoch =
-          spec.getForkSchedule().getFork(SpecMilestone.FULU).getEpoch();
-      if (dutiesEpoch.minusMinZero(1).isGreaterThanOrEqualTo(fuluActivationEpoch)) {
-        // on fulu boundary we have no context,
-        // but after fulu boundary our dependent root is previous epoch
-        return spec.computeStartSlotAtEpoch(dutiesEpoch.minusMinZero(1));
-      }
-    }
-    return spec.computeStartSlotAtEpoch(dutiesEpoch);
   }
 
   @Override
