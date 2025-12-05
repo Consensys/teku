@@ -95,20 +95,6 @@ public class ExecutionPayloadGossipValidator {
               }
 
               final BeaconBlock beaconBlock = maybeBeaconBlock.get();
-
-              /*
-               * [REJECT] block passes validation
-               */
-              if (invalidBlockRoots.containsKey(envelope.getBeaconBlockRoot())) {
-                LOG.trace(
-                    "Execution payload envelope block with root {} is invalid",
-                    envelope.getBeaconBlockRoot());
-                return Optional.of(
-                    reject(
-                        "Execution payload envelope block with root %s is invalid",
-                        envelope.getBeaconBlockRoot()));
-              }
-
               final Optional<ExecutionPayloadBid> maybeExecutionPayloadBid =
                   beaconBlock
                       .getBody()
@@ -176,6 +162,19 @@ public class ExecutionPayloadGossipValidator {
           ignore(
               "Already received execution payload envelope with block root %s from builder with index %s",
               key.blockRoot(), key.builderIndex()));
+    }
+
+    /*
+     * [REJECT] block passes validation
+     */
+    if (invalidBlockRoots.containsKey(envelope.getBeaconBlockRoot())) {
+      LOG.trace(
+          "Execution payload envelope block with root {} is invalid",
+          envelope.getBeaconBlockRoot());
+      return Optional.of(
+          reject(
+              "Execution payload envelope block with root %s is invalid",
+              envelope.getBeaconBlockRoot()));
     }
 
     final Optional<UInt64> maybeBeaconBlockSlot =
