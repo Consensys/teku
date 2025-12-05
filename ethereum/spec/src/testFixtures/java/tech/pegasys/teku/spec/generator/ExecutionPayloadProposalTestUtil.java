@@ -49,7 +49,7 @@ public class ExecutionPayloadProposalTestUtil {
                   executionPayloadProposalData.executionPayload(),
                   executionPayloadProposalData.executionRequests(),
                   proposerIndex,
-                  blockAndState.getBlock().getRoot(),
+                  blockAndState.getRoot(),
                   newSlot,
                   executionPayloadProposalData.kzgCommitments(),
                   blockAndState.getState().hashTreeRoot());
