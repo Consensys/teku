@@ -312,36 +312,26 @@ public class GossipValidationHelperTest {
   }
 
   @TestTemplate
-  void isForCurrentSlot_shouldRejectOutsideLowerBound() {
+  void isForCurrentSlotWithGossipDisparityAllowance() {
     final UInt64 slot = UInt64.valueOf(1000);
     final UInt64 slotStartTimeMillis = getSlotStartTimeMillis(slot);
-    final UInt64 currentTime = slotStartTimeMillis.minus(maximumGossipClockDisparity).decrement();
-    assertIsCurrentSlot(slot, currentTime, false);
-  }
-
-  @TestTemplate
-  void isForCurrentSlot_shouldAcceptLowerBound() {
-    final UInt64 slot = UInt64.valueOf(1000);
-    final UInt64 slotStartTimeMillis = getSlotStartTimeMillis(slot);
-    final UInt64 currentTime = slotStartTimeMillis.minus(maximumGossipClockDisparity);
-    assertIsCurrentSlot(slot, currentTime, true);
-  }
-
-  @TestTemplate
-  void isForCurrentSlot_shouldAcceptUpperBound() {
-    final UInt64 slot = UInt64.valueOf(1000);
+    assertIsCurrentSlot(
+        slot, slotStartTimeMillis.minus(maximumGossipClockDisparity).decrement(), false);
+    assertIsCurrentSlot(slot, slotStartTimeMillis.minus(maximumGossipClockDisparity), true);
     final UInt64 nextSlotStartTimeMillis = getSlotStartTimeMillis(slot.increment());
-    final UInt64 currentTime = nextSlotStartTimeMillis.plus(maximumGossipClockDisparity);
-    assertIsCurrentSlot(slot, currentTime, true);
+    assertIsCurrentSlot(slot, nextSlotStartTimeMillis.plus(maximumGossipClockDisparity), true);
+    assertIsCurrentSlot(
+        slot, nextSlotStartTimeMillis.plus(maximumGossipClockDisparity).increment(), false);
   }
 
   @TestTemplate
-  void isForCurrentSlot_shouldRejectOutsideUpperBound() {
-    final UInt64 slot = UInt64.valueOf(1000);
-    final UInt64 nextSlotStartTimeMillis = getSlotStartTimeMillis(slot.increment());
-    final UInt64 currentTime =
-        nextSlotStartTimeMillis.plus(maximumGossipClockDisparity).increment();
-    assertIsCurrentSlot(slot, currentTime, false);
+  void isCurrentOrNextSlot() {
+    final UInt64 currentSlot = UInt64.valueOf(10);
+    storageSystem.chainUpdater().setCurrentSlot(currentSlot);
+    assertThat(gossipValidationHelper.isSlotCurrentOrNext(currentSlot)).isTrue();
+    assertThat(gossipValidationHelper.isSlotCurrentOrNext(currentSlot.plus(ONE))).isTrue();
+    assertThat(gossipValidationHelper.isSlotCurrentOrNext(currentSlot.minus(ONE))).isFalse();
+    assertThat(gossipValidationHelper.isSlotCurrentOrNext(currentSlot.plus(2))).isFalse();
   }
 
   private UInt64 getSlotStartTimeMillis(final UInt64 slot) {
