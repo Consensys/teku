@@ -13,332 +13,231 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
-import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.collections.LimitedMap;
-import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelopeSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
-import tech.pegasys.teku.storage.client.ChainUpdater;
-import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
-import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@TestSpecContext(
-    milestone = {SpecMilestone.GLOAS},
-    signatureVerifierNoop = true)
+@TestSpecContext(milestone = {SpecMilestone.GLOAS})
 public class ExecutionPayloadGossipValidatorTest {
+  private final Spec spec = mock(Spec.class);
+  private final GossipValidationHelper gossipValidationHelper = mock(GossipValidationHelper.class);
+  private final Map<Bytes32, BlockImportResult> invalidBlockRoots = new HashMap<>();
+  private ExecutionPayloadGossipValidator validator;
+  private DataStructureUtil dataStructureUtil;
 
-  private Spec spec;
-  private RecentChainData recentChainData;
-  private StorageSystem storageSystem;
-  private ChainBuilder chainBuilder;
-  private ChainUpdater chainUpdater;
-  private GossipValidationHelper gossipValidationHelper;
-  private ExecutionPayloadGossipValidator executionPayloadGossipValidator;
-  private final Map<Bytes32, BlockImportResult> invalidBlockRoots =
-      LimitedMap.createSynchronizedLRU(50);
+  private SignedExecutionPayloadEnvelope signedEnvelope;
+  private ExecutionPayloadEnvelope envelope;
+  private UInt64 slot;
+  private Bytes32 blockRoot;
+  private BeaconBlock beaconBlock;
+  private BeaconState postState;
 
   @BeforeEach
   void setUp(final SpecContext specContext) {
-    spec = specContext.getSpec();
-    storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
-    storageSystem.chainUpdater().initializeGenesis(false);
-    chainBuilder = storageSystem.chainBuilder();
-    chainUpdater = storageSystem.chainUpdater();
-    recentChainData = storageSystem.recentChainData();
-    gossipValidationHelper =
-        new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem());
-    executionPayloadGossipValidator =
+    dataStructureUtil = specContext.getDataStructureUtil();
+    validator =
         new ExecutionPayloadGossipValidator(spec, gossipValidationHelper, invalidBlockRoots);
+
+    slot = dataStructureUtil.randomSlot();
+    signedEnvelope = dataStructureUtil.randomSignedExecutionPayloadEnvelope(slot.longValue());
+    envelope = signedEnvelope.getMessage();
+    slot = envelope.getSlot();
+    blockRoot = envelope.getBeaconBlockRoot();
+    postState = dataStructureUtil.randomBeaconState();
+
+    final SignedExecutionPayloadBid matchingBid =
+        dataStructureUtil.randomSignedExecutionPayloadBid(
+            dataStructureUtil.randomExecutionPayloadBid(
+                slot, envelope.getBuilderIndex(), envelope.getPayload().getBlockHash()));
+    beaconBlock =
+        dataStructureUtil.randomBeaconBlock(
+            slot,
+            dataStructureUtil.randomBeaconBlockBody(
+                builder -> builder.signedExecutionPayloadBid(matchingBid)));
+
+    when(gossipValidationHelper.getSlotForBlockRoot(envelope.getBeaconBlockRoot()))
+        .thenReturn(Optional.of(slot));
+    when(gossipValidationHelper.isBeforeFinalizedSlot(slot)).thenReturn(false);
+    when(gossipValidationHelper.retrieveBlockByRoot(blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconBlock)));
+    when(gossipValidationHelper.getStateAtSlotAndBlockRoot(any(SlotAndBlockRoot.class)))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(postState)));
+    final SpecVersion specVersion = mock(SpecVersion.class);
+    final MiscHelpers miscHelpers = mock(MiscHelpers.class);
+    final Bytes32 signingRoot = Bytes32.random();
+    when(miscHelpers.computeSigningRoot(eq(envelope), any())).thenReturn(signingRoot);
+    when(specVersion.miscHelpers()).thenReturn(miscHelpers);
+    when(spec.atSlot(slot)).thenReturn(specVersion);
+    when(gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
+            any(), any(), any(), any()))
+        .thenReturn(true);
   }
 
   @TestTemplate
   void shouldAcceptWhenValid() {
-    chainUpdater.advanceChain(ONE);
-    final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope =
-        chainBuilder.getExecutionPayloadAndStateAtSlot(ONE).executionPayload();
-    assertThat(executionPayloadGossipValidator.validate(signedExecutionPayloadEnvelope))
-        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+    assertThatSafeFuture(validator.validate(signedEnvelope)).isCompletedWithValue(ACCEPT);
   }
 
   @TestTemplate
   void shouldIgnoreIfAlreadySeen() {
-    chainUpdater.advanceChain(ONE);
-    final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope =
-        chainBuilder.getExecutionPayloadAndStateAtSlot(ONE).executionPayload();
-    assertThat(executionPayloadGossipValidator.validate(signedExecutionPayloadEnvelope))
-        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
-    assertThat(executionPayloadGossipValidator.validate(signedExecutionPayloadEnvelope))
-        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+    assertThatSafeFuture(validator.validate(signedEnvelope)).isCompletedWithValue(ACCEPT);
+    assertThatSafeFuture(validator.validate(signedEnvelope))
+        .isCompletedWithValue(
+            ignore(
+                "Already received execution payload envelope with block root %s from builder with index %s",
+                blockRoot, envelope.getBuilderIndex()));
   }
 
   @TestTemplate
   void shouldSaveForFutureIfBlockNotSeen() {
-    chainUpdater.advanceChain(ONE);
-    final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope =
-        chainBuilder.getExecutionPayloadAndStateAtSlot(ONE).executionPayload();
-    final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelopeWithBadBlockRoot =
-        createExecutionPayloadEnvelopeWithBlockRoot(
-            signedExecutionPayloadEnvelope, Bytes32.random());
-    assertThat(
-            executionPayloadGossipValidator.validate(
-                signedExecutionPayloadEnvelopeWithBadBlockRoot))
-        .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
+    when(gossipValidationHelper.getSlotForBlockRoot(blockRoot)).thenReturn(Optional.empty());
+    assertThatSafeFuture(validator.validate(signedEnvelope)).isCompletedWithValue(SAVE_FOR_FUTURE);
   }
 
   @TestTemplate
-  void shouldIgnoreIfSlotIsGreaterOrEqualToFinalized() {
-    final UInt64 finalizedEpoch = ONE;
-    final UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch);
-    chainUpdater.advanceChain(finalizedSlot);
-    chainUpdater.finalizeEpoch(finalizedEpoch);
-    final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope =
-        chainBuilder.getExecutionPayloadAndStateAtSlot(finalizedSlot).executionPayload();
-    assertThat(executionPayloadGossipValidator.validate(signedExecutionPayloadEnvelope))
-        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
-  }
-
-  @TestTemplate
-  void shouldRejectIfBlockItselfIsInvalid() {
-    chainUpdater.advanceChain(ONE);
-    final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope =
-        chainBuilder.getExecutionPayloadAndStateAtSlot(ONE).executionPayload();
-    final Bytes32 blockRoot = signedExecutionPayloadEnvelope.getBeaconBlockRoot();
-
-    invalidBlockRoots.put(blockRoot, BlockImportResult.FAILED_BROADCAST_VALIDATION);
-
-    assertThat(executionPayloadGossipValidator.validate(signedExecutionPayloadEnvelope))
+  void shouldIgnoreIfSlotIsBeforeFinalized() {
+    when(gossipValidationHelper.isBeforeFinalizedSlot(slot)).thenReturn(true);
+    assertThatSafeFuture(validator.validate(signedEnvelope))
         .isCompletedWithValue(
-            InternalValidationResult.reject(
-                "Execution payload envelope's block with root %s is invalid", blockRoot));
+            ignore("Signed execution payload envelope slot %s is before the finalized slot", slot));
+  }
+
+  @TestTemplate
+  void shouldRejectIfBlockIsMarkedInvalid() {
+    invalidBlockRoots.put(blockRoot, BlockImportResult.FAILED_INVALID_ANCESTRY);
+    assertThatSafeFuture(validator.validate(signedEnvelope))
+        .isCompletedWithValue(
+            reject("Execution payload envelope block with root %s is invalid", blockRoot));
   }
 
   @TestTemplate
   void shouldRejectIfPayloadSlotIsDifferentFromBlockSlot() {
-    chainUpdater.advanceChain(ONE);
-    final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope =
-        chainBuilder.getExecutionPayloadAndStateAtSlot(ONE).executionPayload();
-    final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelopeWithBadSlot =
-        createExecutionPayloadEnvelopeWithSlot(signedExecutionPayloadEnvelope, UInt64.valueOf(2));
-    assertThat(executionPayloadGossipValidator.validate(signedExecutionPayloadEnvelopeWithBadSlot))
-        .isCompletedWithValueMatching(
-            internalValidationResult ->
-                internalValidationResult.isReject()
-                    && internalValidationResult
-                        .getDescription()
-                        .orElseThrow()
-                        .contains(
-                            String.format(
-                                "SignedExecutionPayloadEnvelope slot %s does not match block slot %s.",
-                                signedExecutionPayloadEnvelopeWithBadSlot.getSlot(),
-                                signedExecutionPayloadEnvelope.getSlot())));
+    when(gossipValidationHelper.getSlotForBlockRoot(blockRoot))
+        .thenReturn(Optional.of(slot.plus(1)));
+    assertThatSafeFuture(validator.validate(signedEnvelope))
+        .isCompletedWithValue(
+            reject(
+                "Execution payload envelope slot %s does not match block slot %s",
+                slot, slot.plus(1)));
   }
 
   @TestTemplate
-  void shouldRejectIfPayloadBuilderIndexIsDifferentFromBlockBidBuilderIndex() {
-    chainUpdater.advanceChain(ONE);
-    final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope =
-        chainBuilder.getExecutionPayloadAndStateAtSlot(ONE).executionPayload();
-    final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelopeWithBadBuilderIndex =
-        createExecutionPayloadEnvelopeWithBuilderIndex(
-            signedExecutionPayloadEnvelope,
-            signedExecutionPayloadEnvelope.getMessage().getBuilderIndex().increment());
-    assertThat(
-            executionPayloadGossipValidator.validate(
-                signedExecutionPayloadEnvelopeWithBadBuilderIndex))
-        .isCompletedWithValueMatching(
-            internalValidationResult ->
-                internalValidationResult.isReject()
-                    && internalValidationResult
-                        .getDescription()
-                        .orElseThrow()
-                        .contains(
-                            String.format(
-                                "Invalid builder index. Execution Payload Envelope had %s but the block Execution Payload Bid had %s",
-                                signedExecutionPayloadEnvelopeWithBadBuilderIndex
-                                    .getMessage()
-                                    .getBuilderIndex(),
-                                signedExecutionPayloadEnvelope.getMessage().getBuilderIndex())));
+  void shouldRejectIfBuilderIndexMismatch() {
+    final SignedExecutionPayloadBid mismatchedBid =
+        dataStructureUtil.randomSignedExecutionPayloadBid(
+            dataStructureUtil.randomExecutionPayloadBid(
+                slot, envelope.getBuilderIndex().plus(1), envelope.getPayload().getBlockHash()));
+    final BeaconBlock blockWithMismatchedBid =
+        dataStructureUtil.randomBeaconBlock(
+            slot,
+            dataStructureUtil.randomBeaconBlockBody(
+                builder -> builder.signedExecutionPayloadBid(mismatchedBid)));
+    when(gossipValidationHelper.retrieveBlockByRoot(blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockWithMismatchedBid)));
+
+    assertThatSafeFuture(validator.validate(signedEnvelope))
+        .isCompletedWithValue(
+            reject(
+                "Invalid builder index. Execution payload envelope had %s but the block execution payload bid had %s",
+                envelope.getBuilderIndex(), envelope.getBuilderIndex().plus(1)));
   }
 
   @TestTemplate
-  void shouldRejectIfPayloadBlockHashIsDifferentFromBidBlockHash() {
-    chainUpdater.advanceChain(ONE);
-    final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope =
-        chainBuilder.getExecutionPayloadAndStateAtSlot(ONE).executionPayload();
-    final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelopeWithBadBlockHash =
-        createExecutionPayloadEnvelopeWithBlockHash(
-            signedExecutionPayloadEnvelope, Bytes32.random());
-    assertThat(
-            executionPayloadGossipValidator.validate(
-                signedExecutionPayloadEnvelopeWithBadBlockHash))
-        .isCompletedWithValueMatching(
-            internalValidationResult ->
-                internalValidationResult.isReject()
-                    && internalValidationResult
-                        .getDescription()
-                        .orElseThrow()
-                        .contains(
-                            String.format(
-                                "Invalid payload block hash. Execution Payload Envelope had %s but ExecutionPayload Bid had %s",
-                                signedExecutionPayloadEnvelopeWithBadBlockHash
-                                    .getMessage()
-                                    .getPayload()
-                                    .getBlockHash(),
-                                signedExecutionPayloadEnvelope
-                                    .getMessage()
-                                    .getPayload()
-                                    .getBlockHash())));
+  void shouldRejectIfPayloadHashMismatch() {
+    final SignedExecutionPayloadBid mismatchedBid =
+        dataStructureUtil.randomSignedExecutionPayloadBid(
+            dataStructureUtil.randomExecutionPayloadBid(
+                slot, envelope.getBuilderIndex(), dataStructureUtil.randomBytes32()));
+    final BeaconBlock blockWithMismatchedBid =
+        dataStructureUtil.randomBeaconBlock(
+            slot,
+            dataStructureUtil.randomBeaconBlockBody(
+                builder -> builder.signedExecutionPayloadBid(mismatchedBid)));
+    when(gossipValidationHelper.retrieveBlockByRoot(blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockWithMismatchedBid)));
+
+    assertThatSafeFuture(validator.validate(signedEnvelope))
+        .isCompletedWithValue(
+            reject(
+                "Invalid payload block hash. Execution Payload Envelope had %s but ExecutionPayload Bid had %s",
+                envelope.getPayload().getBlockHash(), mismatchedBid.getMessage().getBlockHash()));
   }
 
   @TestTemplate
-  void shouldRejectIfPayloadSignatureIsInvalid() {
-    chainUpdater.advanceChain(ONE);
-    final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope =
-        chainBuilder.getExecutionPayloadAndStateAtSlot(ONE).executionPayload();
-    final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelopeWithBadSignature =
-        createExecutionPayloadEnvelopeWithSignature(
-            signedExecutionPayloadEnvelope, BLSSignature.empty());
-    assertThat(
-            executionPayloadGossipValidator.validate(
-                signedExecutionPayloadEnvelopeWithBadSignature))
-        .isCompletedWithValueMatching(
-            internalValidationResult ->
-                internalValidationResult.isReject()
-                    && internalValidationResult
-                        .getDescription()
-                        .orElseThrow()
-                        .contains("Invalid SignedExecutionPayloadEnvelope signature"));
+  void shouldRejectIfSignatureIsInvalid() {
+    when(gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
+            any(), any(), any(), any()))
+        .thenReturn(false);
+    assertThatSafeFuture(validator.validate(signedEnvelope))
+        .isCompletedWithValue(reject("Invalid signed execution payload envelope signature"));
   }
 
-  private SignedExecutionPayloadEnvelope createModifiedExecutionPayloadEnvelope(
-      final SignedExecutionPayloadEnvelope original,
-      final Optional<ExecutionPayload> payload,
-      final Optional<UInt64> builderIndex,
-      final Optional<Bytes32> beaconBlockRoot,
-      final Optional<UInt64> slot,
-      final Optional<BLSSignature> signature) {
-    final SchemaDefinitionsGloas schemaDefinitions =
-        spec.getGenesisSchemaDefinitions().toVersionGloas().orElseThrow();
-    final ExecutionPayloadEnvelopeSchema envelopeSchema =
-        schemaDefinitions.getExecutionPayloadEnvelopeSchema();
-    final SignedExecutionPayloadEnvelopeSchema signedEnvelopeSchema =
-        schemaDefinitions.getSignedExecutionPayloadEnvelopeSchema();
-    final ExecutionPayloadEnvelope originalMessage = original.getMessage();
-    final ExecutionPayloadEnvelope modifiedMessage =
-        envelopeSchema.create(
-            payload.orElse(originalMessage.getPayload()),
-            originalMessage.getExecutionRequests(),
-            builderIndex.orElse(originalMessage.getBuilderIndex()),
-            beaconBlockRoot.orElse(originalMessage.getBeaconBlockRoot()),
-            slot.orElse(originalMessage.getSlot()),
-            originalMessage.getBlobKzgCommitments(),
-            originalMessage.getStateRoot());
-    return signedEnvelopeSchema.create(modifiedMessage, signature.orElse(original.getSignature()));
+  @TestTemplate
+  void shouldIgnoreIfStateIsUnavailable() {
+    when(gossipValidationHelper.getStateAtSlotAndBlockRoot(any(SlotAndBlockRoot.class)))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    assertThatSafeFuture(validator.validate(signedEnvelope))
+        .isCompletedWithValue(ignore("State for block root %s is unavailable", blockRoot));
   }
 
-  private SignedExecutionPayloadEnvelope createExecutionPayloadEnvelopeWithBuilderIndex(
-      final SignedExecutionPayloadEnvelope envelope, final UInt64 builderIndex) {
-    return createModifiedExecutionPayloadEnvelope(
-        envelope,
-        Optional.empty(),
-        Optional.of(builderIndex),
-        Optional.empty(),
-        Optional.empty(),
-        Optional.empty());
+  @TestTemplate
+  void shouldNotMarkAsSeenIfValidationFails() {
+    when(gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
+            any(), any(), any(), any()))
+        .thenReturn(false);
+    assertThatSafeFuture(validator.validate(signedEnvelope))
+        .isCompletedWithValue(reject("Invalid signed execution payload envelope signature"));
+
+    when(gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
+            any(), any(), any(), any()))
+        .thenReturn(true);
+
+    assertThatSafeFuture(validator.validate(signedEnvelope)).isCompletedWithValue(ACCEPT);
   }
 
-  private SignedExecutionPayloadEnvelope createExecutionPayloadEnvelopeWithSlot(
-      final SignedExecutionPayloadEnvelope envelope, final UInt64 slot) {
-    return createModifiedExecutionPayloadEnvelope(
-        envelope,
-        Optional.empty(),
-        Optional.empty(),
-        Optional.empty(),
-        Optional.of(slot),
-        Optional.empty());
-  }
+  @TestTemplate
+  void shouldSkipSeenPayload() {
+    assertThatSafeFuture(validator.validate(signedEnvelope)).isCompletedWithValue(ACCEPT);
+    verify(gossipValidationHelper).retrieveBlockByRoot(blockRoot);
+    clearInvocations(gossipValidationHelper);
 
-  private SignedExecutionPayloadEnvelope createExecutionPayloadEnvelopeWithBlockRoot(
-      final SignedExecutionPayloadEnvelope envelope, final Bytes32 blockRoot) {
-    return createModifiedExecutionPayloadEnvelope(
-        envelope,
-        Optional.empty(),
-        Optional.empty(),
-        Optional.of(blockRoot),
-        Optional.empty(),
-        Optional.empty());
-  }
-
-  private SignedExecutionPayloadEnvelope createExecutionPayloadEnvelopeWithSignature(
-      final SignedExecutionPayloadEnvelope envelope, final BLSSignature signature) {
-    return createModifiedExecutionPayloadEnvelope(
-        envelope,
-        Optional.empty(),
-        Optional.empty(),
-        Optional.empty(),
-        Optional.empty(),
-        Optional.of(signature));
-  }
-
-  private ExecutionPayload createExecutionPayloadWithBlockHash(
-      final ExecutionPayload original, final Bytes32 blockHash) {
-    final SchemaDefinitionsGloas schemaDefinitions =
-        spec.getGenesisSchemaDefinitions().toVersionGloas().orElseThrow();
-    return schemaDefinitions
-        .getExecutionPayloadSchema()
-        .createExecutionPayload(
-            builder ->
-                builder
-                    .parentHash(original.getParentHash())
-                    .feeRecipient(original.getFeeRecipient())
-                    .stateRoot(original.getStateRoot())
-                    .receiptsRoot(original.getReceiptsRoot())
-                    .logsBloom(original.getLogsBloom())
-                    .prevRandao(original.getPrevRandao())
-                    .blockNumber(original.getBlockNumber())
-                    .gasLimit(original.getGasLimit())
-                    .gasUsed(original.getGasUsed())
-                    .timestamp(original.getTimestamp())
-                    .extraData(original.getExtraData())
-                    .baseFeePerGas(original.getBaseFeePerGas())
-                    .blockHash(blockHash)
-                    .transactions(
-                        original.getTransactions().stream().map(SszByteListImpl::getBytes).toList())
-                    .withdrawals(() -> original.getOptionalWithdrawals().orElseThrow().asList())
-                    .blobGasUsed(() -> UInt64.ZERO)
-                    .excessBlobGas(() -> UInt64.ZERO));
-  }
-
-  private SignedExecutionPayloadEnvelope createExecutionPayloadEnvelopeWithBlockHash(
-      final SignedExecutionPayloadEnvelope envelope, final Bytes32 blockHash) {
-    final ExecutionPayload newPayload =
-        createExecutionPayloadWithBlockHash(envelope.getMessage().getPayload(), blockHash);
-    return createModifiedExecutionPayloadEnvelope(
-        envelope,
-        Optional.of(newPayload),
-        Optional.empty(),
-        Optional.empty(),
-        Optional.empty(),
-        Optional.empty());
+    assertThatSafeFuture(validator.validate(signedEnvelope))
+        .isCompletedWithValue(
+            ignore(
+                "Already received execution payload envelope with block root %s from builder with index %s",
+                blockRoot, envelope.getBuilderIndex()));
+    verify(gossipValidationHelper, never()).retrieveBlockByRoot(any());
   }
 }

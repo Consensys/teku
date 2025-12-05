@@ -52,6 +52,12 @@ public class GossipValidationHelper {
     return slot.isLessThanOrEqualTo(finalizedSlot);
   }
 
+  public boolean isBeforeFinalizedSlot(final UInt64 slot) {
+    final UInt64 finalizedSlot =
+        recentChainData.getStore().getFinalizedCheckpoint().getEpochStartSlot(spec);
+    return slot.isLessThan(finalizedSlot);
+  }
+
   public boolean isSlotFromFuture(final UInt64 slot) {
     final ReadOnlyStore store = recentChainData.getStore();
     final UInt64 maxTime = store.getTimeInMillis().plus(maxOffsetTimeInMillis);
@@ -145,5 +151,29 @@ public class GossipValidationHelper {
 
   public SafeFuture<Optional<BeaconBlock>> retrieveBlockByRoot(final Bytes32 root) {
     return recentChainData.retrieveBlockByRoot(root);
+  }
+
+  public boolean isCurrentSlotWithGossipDisparityAllowance(final UInt64 slot) {
+    final int maximumGossipClockDisparityMillis =
+        spec.getNetworkingConfig().getMaximumGossipClockDisparity();
+    return isTimeWithinSlotWindow(slot, maximumGossipClockDisparityMillis);
+  }
+
+  public boolean isValidatorInPayloadTimelinessCommittee(
+      final UInt64 validatorIndex, final BeaconState state, final UInt64 slot) {
+    return spec.getPtc(state, slot).contains(validatorIndex.intValue());
+  }
+
+  private boolean isTimeWithinSlotWindow(final UInt64 slot, final int disparity) {
+    if (recentChainData.getCurrentSlot().isEmpty()) {
+      return false;
+    }
+    final UInt64 slotStartTimeMillis =
+        spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
+    final UInt64 slotEndTimeMillis = slotStartTimeMillis.plus(spec.getSlotDurationMillis(slot));
+    final UInt64 currentTimeMillis = recentChainData.getStore().getTimeInMillis();
+
+    return currentTimeMillis.isGreaterThanOrEqualTo(slotStartTimeMillis.minusMinZero(disparity))
+        && currentTimeMillis.isLessThanOrEqualTo(slotEndTimeMillis.plus(disparity));
   }
 }

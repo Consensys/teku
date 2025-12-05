@@ -14,6 +14,8 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.spec.config.Constants.RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import java.util.Map;
@@ -86,8 +88,10 @@ public class ExecutionPayloadGossipValidator {
         .thenApply(
             maybeBeaconBlock -> {
               if (maybeBeaconBlock.isEmpty()) {
-                LOG.trace("Block with root {} is unavailable", envelope.getBeaconBlockRoot());
-                return Optional.of(InternalValidationResult.SAVE_FOR_FUTURE);
+                LOG.trace(
+                    "Block with root {} is unavailable. Saving the execution payload envelope for future processing",
+                    envelope.getBeaconBlockRoot());
+                return Optional.of(SAVE_FOR_FUTURE);
               }
 
               final BeaconBlock beaconBlock = maybeBeaconBlock.get();
@@ -95,10 +99,13 @@ public class ExecutionPayloadGossipValidator {
               /*
                * [REJECT] block passes validation
                */
-              if (invalidBlockRoots.containsKey(beaconBlock.getRoot())) {
+              if (invalidBlockRoots.containsKey(envelope.getBeaconBlockRoot())) {
+                LOG.trace(
+                    "Execution payload envelope block with root {} is invalid",
+                    envelope.getBeaconBlockRoot());
                 return Optional.of(
                     reject(
-                        "Execution payload envelope's block with root %s is invalid",
+                        "Execution payload envelope block with root %s is invalid",
                         envelope.getBeaconBlockRoot()));
               }
 
@@ -110,17 +117,46 @@ public class ExecutionPayloadGossipValidator {
 
               if (maybeExecutionPayloadBid.isEmpty()) {
                 LOG.trace(
-                    "Missing SignedExecutionPayloadBid in block with root {}",
+                    "Missing execution payload bid in block with root {}. Rejection the execution payload envelope",
                     beaconBlock.getRoot());
                 return Optional.of(
                     reject(
-                        "Missing SignedExecutionPayloadBid in block with root %s",
+                        "Missing execution payload bid in block with root %s",
                         beaconBlock.getRoot().toHexString()));
               }
 
-              final ExecutionPayloadBid executionPayloadBid = maybeExecutionPayloadBid.get();
-              return validateBuilderIndex(envelope, executionPayloadBid)
-                  .or(() -> validatePayloadHash(envelope, executionPayloadBid));
+              final ExecutionPayloadBid bid = maybeExecutionPayloadBid.get();
+
+              /*
+               * [REJECT] envelope.builder_index == bid.builder_index
+               */
+              if (!envelope.getBuilderIndex().equals(bid.getBuilderIndex())) {
+                LOG.trace(
+                    "Invalid builder index. Execution payload envelope had {} but the block execution payload bid had {}. Rejection the execution payload envelope",
+                    envelope.getBuilderIndex(),
+                    bid.getBuilderIndex());
+                return Optional.of(
+                    reject(
+                        "Invalid builder index. Execution payload envelope had %s but the block execution payload bid had %s",
+                        envelope.getBuilderIndex(), bid.getBuilderIndex()));
+              }
+              /*
+               * [REJECT] payload.block_hash == bid.block_hash
+               */
+              final ExecutionPayload payload = envelope.getPayload();
+              final Bytes32 payloadBlockHash = payload.getBlockHash();
+              final Bytes32 bidBlockHash = bid.getBlockHash();
+              if (!payloadBlockHash.equals(bidBlockHash)) {
+                LOG.trace(
+                    "Invalid payload block hash. Envelope had {} but bid had {}. Rejection the execution payload envelope",
+                    payloadBlockHash,
+                    bidBlockHash);
+                return Optional.of(
+                    reject(
+                        "Invalid payload block hash. Execution Payload Envelope had %s but ExecutionPayload Bid had %s",
+                        payloadBlockHash, bidBlockHash));
+              }
+              return Optional.empty();
             });
   }
 
@@ -133,10 +169,13 @@ public class ExecutionPayloadGossipValidator {
         new BlockRootAndBuilderIndex(envelope.getBeaconBlockRoot(), envelope.getBuilderIndex());
     if (seenPayloads.contains(key)) {
       LOG.trace(
-          "Already seen payload for block root {} from builder {}",
-          key.blockRoot,
-          key.builderIndex);
-      return Optional.of(InternalValidationResult.IGNORE);
+          "Already received execution payload envelope with block root {} from builder with index {}. Ignoring the execution payload envelope",
+          key.blockRoot(),
+          key.builderIndex());
+      return Optional.of(
+          ignore(
+              "Already received execution payload envelope with block root %s from builder with index %s",
+              key.blockRoot(), key.builderIndex()));
     }
 
     final Optional<UInt64> maybeBeaconBlockSlot =
@@ -148,19 +187,23 @@ public class ExecutionPayloadGossipValidator {
      */
     if (maybeBeaconBlockSlot.isEmpty()) {
       LOG.trace(
-          "Block for Execution Payload Envelope not yet seen (root: {}). Saving for future processing.",
+          "Block for execution Payload Envelope not yet seen (root: {}). Saving the execution payload envelope for future processing",
           envelope.getBeaconBlockRoot());
-      return Optional.of(InternalValidationResult.SAVE_FOR_FUTURE);
+      return Optional.of(SAVE_FOR_FUTURE);
     }
 
     /*
      * [IGNORE] The envelope is from a slot greater than or equal to the latest finalized slot
      * -- i.e. validate that envelope.slot >= compute_start_slot_at_epoch(store.finalized_checkpoint.epoch)
      */
-    if (gossipValidationHelper.isSlotFinalized(envelope.getSlot())) {
+    if (gossipValidationHelper.isBeforeFinalizedSlot(envelope.getSlot())) {
       LOG.trace(
-          "SignedExecutionPayloadEnvelope slot {} is finalized. Dropping.", envelope.getSlot());
-      return Optional.of(InternalValidationResult.IGNORE);
+          "Signed execution payload envelope slot {} is before the finalized slot. Ignoring the payload execution envelope",
+          envelope.getSlot());
+      return Optional.of(
+          ignore(
+              "Signed execution payload envelope slot %s is before the finalized slot",
+              envelope.getSlot()));
     }
 
     /*
@@ -169,54 +212,15 @@ public class ExecutionPayloadGossipValidator {
     final UInt64 beaconBlockSlot = maybeBeaconBlockSlot.get();
     if (!envelope.getSlot().equals(beaconBlockSlot)) {
       LOG.trace(
-          "SignedExecutionPayloadEnvelope slot {} does not match block slot {}.",
+          "Execution payload envelope slot {} does not match block slot {}. Rejecting the execution payload envelope",
           envelope.getSlot(),
           beaconBlockSlot);
       return Optional.of(
           reject(
-              "SignedExecutionPayloadEnvelope slot %s does not match block slot %s.",
+              "Execution payload envelope slot %s does not match block slot %s",
               envelope.getSlot(), beaconBlockSlot));
     }
 
-    return Optional.empty();
-  }
-
-  private Optional<InternalValidationResult> validateBuilderIndex(
-      final ExecutionPayloadEnvelope envelope, final ExecutionPayloadBid bid) {
-    /*
-     * [REJECT] envelope.builder_index == bid.builder_index
-     */
-    if (!envelope.getBuilderIndex().equals(bid.getBuilderIndex())) {
-      LOG.trace(
-          "Invalid builder index. Envelope had {} but block's bid had {}",
-          envelope.getBuilderIndex(),
-          bid.getBuilderIndex());
-      return Optional.of(
-          reject(
-              "Invalid builder index. Execution Payload Envelope had %s but the block Execution Payload Bid had %s",
-              envelope.getBuilderIndex(), bid.getBuilderIndex()));
-    }
-    return Optional.empty();
-  }
-
-  private Optional<InternalValidationResult> validatePayloadHash(
-      final ExecutionPayloadEnvelope envelope, final ExecutionPayloadBid bid) {
-    /*
-     * [REJECT] payload.block_hash == bid.block_hash
-     */
-    final ExecutionPayload payload = envelope.getPayload();
-    final Bytes32 payloadBlockHash = payload.getBlockHash();
-    final Bytes32 bidBlockHash = bid.getBlockHash();
-    if (!payloadBlockHash.equals(bidBlockHash)) {
-      LOG.trace(
-          "Invalid payload block hash. Envelope had {} but bid had {}",
-          payloadBlockHash,
-          bidBlockHash);
-      return Optional.of(
-          InternalValidationResult.reject(
-              "Invalid payload block hash. Execution Payload Envelope had %s but ExecutionPayload Bid had %s",
-              payloadBlockHash, bidBlockHash));
-    }
     return Optional.empty();
   }
 
@@ -227,14 +231,18 @@ public class ExecutionPayloadGossipValidator {
         .thenApply(
             maybeState -> {
               if (maybeState.isEmpty()) {
-                LOG.trace("State for block root {} is unavailable.", envelope.getBeaconBlockRoot());
-                return InternalValidationResult.IGNORE;
+                LOG.trace(
+                    "State for block root {} is unavailable. Ignoring the execution payload envelope",
+                    envelope.getBeaconBlockRoot());
+                return ignore(
+                    "State for block root %s is unavailable", envelope.getBeaconBlockRoot());
               }
               /*
                * [REJECT] signed_execution_payload_envelope.signature is valid with respect to the builder's public key
                */
               if (!isSignatureValid(envelope, maybeState.get())) {
-                return reject("Invalid SignedExecutionPayloadEnvelope signature");
+                LOG.trace("Invalid signed execution payload envelope signature. Rejecting");
+                return reject("Invalid signed execution payload envelope signature");
               }
               return InternalValidationResult.ACCEPT;
             });
