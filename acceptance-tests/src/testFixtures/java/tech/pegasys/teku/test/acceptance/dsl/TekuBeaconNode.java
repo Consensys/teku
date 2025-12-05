@@ -739,6 +739,16 @@ public class TekuBeaconNode extends TekuNode {
     return jsonNode.get("data").size();
   }
 
+  public void waitForCustodyBackfill(final UInt64 slot, final int expectedCustodyCount) {
+    waitFor(
+        () -> {
+          final Optional<SignedBeaconBlock> maybeBlock = getBlockAtSlot(slot);
+          assertThat(maybeBlock).isPresent();
+          assertThat(getDataColumnSidecarCount(maybeBlock.get().getRoot().toHexString()))
+              .isEqualTo(expectedCustodyCount);
+        });
+  }
+
   public void waitForValidators(final int numberOfValidators) {
     waitFor(
         () -> {
