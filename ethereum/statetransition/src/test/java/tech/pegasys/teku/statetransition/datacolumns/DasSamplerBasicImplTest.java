@@ -96,7 +96,7 @@ public class DasSamplerBasicImplTest {
             custodyGroupCountManager,
             recentChainData,
             metricsSystem,
-           64 );
+            64);
   }
 
   @Test

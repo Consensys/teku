@@ -54,7 +54,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   private final Spec spec;
   private final CurrentSlotProvider currentSlotProvider;
   private final CustodyGroupCountManager custodyGroupCountManager;
-    private final int maxRecentlySampledBlocks;
+  private final int maxRecentlySampledBlocks;
   private final Map<Bytes32, DataColumnSamplingTracker> recentlySampledColumnsByRoot;
 
   private final NavigableSet<SlotAndBlockRoot> orderedSidecarsTrackers =
@@ -63,7 +63,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
 
-    private final RPCFetchDelayProvider rpcFetchDelayProvider;
+  private final RPCFetchDelayProvider rpcFetchDelayProvider;
 
   public DasSamplerBasicImpl(
       final Spec spec,
@@ -84,9 +84,9 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
     this.retriever = retriever;
     this.custodyGroupCountManager = custodyGroupCountManager;
     this.recentChainData = recentChainData;
-      this.maxRecentlySampledBlocks = maxRecentlySampledBlocks;
-        recentlySampledColumnsByRoot = new ConcurrentHashMap<>(maxRecentlySampledBlocks);
-      metricsSystem.createGauge(
+    this.maxRecentlySampledBlocks = maxRecentlySampledBlocks;
+    recentlySampledColumnsByRoot = new ConcurrentHashMap<>(maxRecentlySampledBlocks);
+    metricsSystem.createGauge(
         BEACON,
         "das_recently_sampled_blocks_size",
         "DAS recently sampled blocks size",

@@ -830,11 +830,11 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(tekuConfiguration.p2p().getDasPublishWithholdColumnsEverySlots()).isEmpty();
   }
 
-    @Test
-    public void maxRecentlySampledBlocksOverrideCorrectly() {
-        final TekuConfiguration tekuConfiguration =
-                getTekuConfigurationFromArguments("--Xmax-recently-sampled-blocks", "100");
+  @Test
+  public void maxRecentlySampledBlocksOverrideCorrectly() {
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xmax-recently-sampled-blocks", "100");
 
-        assertThat(tekuConfiguration.sync().getMaxRecentlySampledBlocks()).isEqualTo(100);
-    }
+    assertThat(tekuConfiguration.sync().getMaxRecentlySampledBlocks()).isEqualTo(100);
+  }
 }

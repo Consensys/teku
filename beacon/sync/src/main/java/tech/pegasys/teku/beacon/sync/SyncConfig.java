@@ -34,7 +34,7 @@ public class SyncConfig {
   /** Aligned with {@link P2PConfig#DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT} */
   public static final int DEFAULT_FORWARD_SYNC_MAX_BLOB_SIDECARS_PER_MINUTE = 2000;
 
-    public static final int DEFAULT_MAX_RECENTLY_SAMPLED_BLOCKS = 64;
+  public static final int DEFAULT_MAX_RECENTLY_SAMPLED_BLOCKS = 64;
 
   private final boolean isEnabled;
   private final boolean isMultiPeerSyncEnabled;
@@ -49,16 +49,17 @@ public class SyncConfig {
   private final int maxRecentlySampledBlocks;
 
   private SyncConfig(
-          final boolean isEnabled,
-          final boolean isMultiPeerSyncEnabled,
-          final boolean reconstructHistoricStatesEnabled,
-          final boolean fetchAllHistoricBlocks,
-          final int historicalSyncBatchSize,
-          final int forwardSyncBatchSize,
-          final int forwardSyncMaxPendingBatches,
-          final int forwardSyncMaxBlocksPerMinute,
-          final int forwardSyncMaxBlobSidecarsPerMinute,
-          final OptionalInt forwardSyncMaxDistanceFromHead, final int maxRecentlySampledBlocks) {
+      final boolean isEnabled,
+      final boolean isMultiPeerSyncEnabled,
+      final boolean reconstructHistoricStatesEnabled,
+      final boolean fetchAllHistoricBlocks,
+      final int historicalSyncBatchSize,
+      final int forwardSyncBatchSize,
+      final int forwardSyncMaxPendingBatches,
+      final int forwardSyncMaxBlocksPerMinute,
+      final int forwardSyncMaxBlobSidecarsPerMinute,
+      final OptionalInt forwardSyncMaxDistanceFromHead,
+      final int maxRecentlySampledBlocks) {
     this.isEnabled = isEnabled;
     this.isMultiPeerSyncEnabled = isMultiPeerSyncEnabled;
     this.reconstructHistoricStatesEnabled = reconstructHistoricStatesEnabled;
@@ -69,7 +70,7 @@ public class SyncConfig {
     this.forwardSyncMaxBlocksPerMinute = forwardSyncMaxBlocksPerMinute;
     this.forwardSyncMaxBlobSidecarsPerMinute = forwardSyncMaxBlobSidecarsPerMinute;
     this.forwardSyncMaxDistanceFromHead = forwardSyncMaxDistanceFromHead;
-      this.maxRecentlySampledBlocks = maxRecentlySampledBlocks;
+    this.maxRecentlySampledBlocks = maxRecentlySampledBlocks;
   }
 
   public static Builder builder() {
@@ -116,9 +117,9 @@ public class SyncConfig {
     return forwardSyncMaxDistanceFromHead;
   }
 
-    public int getMaxRecentlySampledBlocks() {
-        return maxRecentlySampledBlocks;
-    }
+  public int getMaxRecentlySampledBlocks() {
+    return maxRecentlySampledBlocks;
+  }
 
   public static class Builder {
     private Boolean isEnabled;
@@ -149,7 +150,7 @@ public class SyncConfig {
           forwardSyncMaxBlocksPerMinute,
           forwardSyncMaxBlobSidecarsPerMinute,
           forwardSyncMaxDistanceFromHead,
-          maxRecentlySampledBlocks );
+          maxRecentlySampledBlocks);
     }
 
     private void initMissingDefaults() {
@@ -230,9 +231,9 @@ public class SyncConfig {
     }
 
     public Builder maxRecentlySampledBlocks(final Integer maxRecentlySampledBlocks) {
-        checkNotNull(maxRecentlySampledBlocks);
-        this.maxRecentlySampledBlocks = maxRecentlySampledBlocks;
-        return this;
+      checkNotNull(maxRecentlySampledBlocks);
+      this.maxRecentlySampledBlocks = maxRecentlySampledBlocks;
+      return this;
     }
   }
 }
