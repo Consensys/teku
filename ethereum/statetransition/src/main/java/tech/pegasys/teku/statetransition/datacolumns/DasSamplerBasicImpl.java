@@ -46,7 +46,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DasSamplerBasicImpl implements DasSamplerBasic {
 
-  private static final int MAX_RECENTLY_SAMPLED_BLOCKS = 128;
   private static final Logger LOG = LogManager.getLogger();
 
   private final DataColumnSidecarCustody custody;
@@ -55,14 +54,16 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   private final Spec spec;
   private final CurrentSlotProvider currentSlotProvider;
   private final CustodyGroupCountManager custodyGroupCountManager;
-  private final Map<Bytes32, DataColumnSamplingTracker> recentlySampledColumnsByRoot =
-      new ConcurrentHashMap<>(MAX_RECENTLY_SAMPLED_BLOCKS);
+    private final int maxRecentlySampledBlocks;
+  private final Map<Bytes32, DataColumnSamplingTracker> recentlySampledColumnsByRoot;
+
   private final NavigableSet<SlotAndBlockRoot> orderedSidecarsTrackers =
       new ConcurrentSkipListSet<>();
 
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
-  private final RPCFetchDelayProvider rpcFetchDelayProvider;
+
+    private final RPCFetchDelayProvider rpcFetchDelayProvider;
 
   public DasSamplerBasicImpl(
       final Spec spec,
@@ -73,7 +74,8 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
       final DataColumnSidecarRetriever retriever,
       final CustodyGroupCountManager custodyGroupCountManager,
       final RecentChainData recentChainData,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final int maxRecentlySampledBlocks) {
     this.currentSlotProvider = currentSlotProvider;
     this.rpcFetchDelayProvider = rpcFetchDelayProvider;
     this.spec = spec;
@@ -82,8 +84,9 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
     this.retriever = retriever;
     this.custodyGroupCountManager = custodyGroupCountManager;
     this.recentChainData = recentChainData;
-
-    metricsSystem.createGauge(
+      this.maxRecentlySampledBlocks = maxRecentlySampledBlocks;
+        recentlySampledColumnsByRoot = new ConcurrentHashMap<>(maxRecentlySampledBlocks);
+      metricsSystem.createGauge(
         BEACON,
         "das_recently_sampled_blocks_size",
         "DAS recently sampled blocks size",
@@ -214,7 +217,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   }
 
   private void makeRoomForNewTracker() {
-    while (recentlySampledColumnsByRoot.size() > MAX_RECENTLY_SAMPLED_BLOCKS - 1) {
+    while (recentlySampledColumnsByRoot.size() > maxRecentlySampledBlocks - 1) {
       final SlotAndBlockRoot toRemove = orderedSidecarsTrackers.pollFirst();
       if (toRemove == null) {
         break;

@@ -171,7 +171,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             // and fetching from the config would break when not in fulu
             DasCustodyStand.createCustodyGroupCountManager(4, 8),
             recentChainData,
-            storageSystem.getMetricsSystem());
+            storageSystem.getMetricsSystem(),
+                64);
     final StubDataColumnSidecarManager dataColumnSidecarManager =
         new StubDataColumnSidecarManager(spec, recentChainData, dasSampler);
     // forkChoiceLateBlockReorgEnabled is true here always because this is the reference test

@@ -1052,7 +1052,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recoveringSidecarRetriever,
             custodyGroupCountManager,
             recentChainData,
-            metricsSystem);
+            metricsSystem,
+            beaconConfig.syncConfig().getMaxRecentlySampledBlocks());
     LOG.info(
         "DAS Basic Sampler initialized with {} groups to sample",
         custodyGroupCountManager.getSamplingGroupCount());

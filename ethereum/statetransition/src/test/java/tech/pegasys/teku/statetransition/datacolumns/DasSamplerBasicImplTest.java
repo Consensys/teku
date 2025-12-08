@@ -95,7 +95,8 @@ public class DasSamplerBasicImplTest {
             retriever,
             custodyGroupCountManager,
             recentChainData,
-            metricsSystem);
+            metricsSystem,
+           64 );
   }
 
   @Test
