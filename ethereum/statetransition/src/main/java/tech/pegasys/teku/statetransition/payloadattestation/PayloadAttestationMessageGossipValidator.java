@@ -14,7 +14,7 @@
 package tech.pegasys.teku.statetransition.payloadattestation;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
-import static tech.pegasys.teku.spec.config.Constants.RECENT_SEEN_PAYLOAD_ATTESTATIONS_CACHE_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.VALID_PAYLOAD_ATTESTATION_SET_SIZE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
@@ -42,11 +42,13 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 public class PayloadAttestationMessageGossipValidator {
 
   private static final Logger LOG = LogManager.getLogger();
-  final GossipValidationHelper gossipValidationHelper;
-  final SigningRootUtil signingRootUtil;
+
+  private final GossipValidationHelper gossipValidationHelper;
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
+  private final SigningRootUtil signingRootUtil;
+
   private final Set<ValidatorIndexAndSlot> seenPayloadAttestations =
-      LimitedSet.createSynchronized(RECENT_SEEN_PAYLOAD_ATTESTATIONS_CACHE_SIZE);
+      LimitedSet.createSynchronized(VALID_PAYLOAD_ATTESTATION_SET_SIZE);
 
   public PayloadAttestationMessageGossipValidator(
       final Spec spec,
@@ -65,7 +67,7 @@ public class PayloadAttestationMessageGossipValidator {
      * [IGNORE] The message's slot is for the current slot (with a MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance),
      * i.e. data.slot == current_slot
      */
-    if (!gossipValidationHelper.isCurrentSlotWithGossipDisparityAllowance(data.getSlot())) {
+    if (!gossipValidationHelper.isSlotCurrent(data.getSlot())) {
       LOG.trace(
           "Ignoring payload attestation with slot {} from validator with index {} because it's not from the current slot",
           data.getSlot(),

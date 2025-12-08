@@ -114,8 +114,7 @@ class SignedContributionAndProofValidatorTest {
     final SignedContributionAndProof message =
         chainBuilder.createValidSignedContributionAndProofBuilder().build();
     final GossipValidationHelper gossipValidationHelperMock = mock(GossipValidationHelper.class);
-    when(gossipValidationHelperMock.isCurrentSlotWithGossipDisparityAllowance(
-            message.getMessage().getContribution().getSlot()))
+    when(gossipValidationHelperMock.isSlotCurrent(message.getMessage().getContribution().getSlot()))
         .thenReturn(false);
     final SignedContributionAndProofValidator signedContributionAndProofValidator =
         new SignedContributionAndProofValidator(
