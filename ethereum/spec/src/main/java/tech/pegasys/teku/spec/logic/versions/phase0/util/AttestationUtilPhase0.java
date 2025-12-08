@@ -122,11 +122,11 @@ public class AttestationUtilPhase0 extends AttestationUtil {
 
   private UInt64 minimumBroadcastTimeMillis(
       final UInt64 attestationSlot, final UInt64 genesisTime) {
-    final UInt64 lastAllowedTime =
-        genesisTime.plus(attestationSlot.times(specConfig.getSecondsPerSlot()));
-    final UInt64 lastAllowedTimeMillis = secondsToMillis(lastAllowedTime);
-    return lastAllowedTimeMillis.isGreaterThanOrEqualTo(specConfig.getMaximumGossipClockDisparity())
-        ? lastAllowedTimeMillis.minus(specConfig.getMaximumGossipClockDisparity())
+    final UInt64 genesisTimeMillis = secondsToMillis(genesisTime);
+    final UInt64 attestationSlotTimeMillis =
+        miscHelpers.computeTimeMillisAtSlot(genesisTimeMillis, attestationSlot);
+    return attestationSlotTimeMillis.isGreaterThan(specConfig.getMaximumGossipClockDisparity())
+        ? attestationSlotTimeMillis.minus(specConfig.getMaximumGossipClockDisparity())
         : ZERO;
   }
 }
