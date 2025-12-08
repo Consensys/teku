@@ -16,7 +16,6 @@ package tech.pegasys.teku.beacon.sync;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.OptionalInt;
-
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 
@@ -234,10 +233,10 @@ public class SyncConfig {
 
     public Builder maxRecentlySampledBlocks(final Integer maxRecentlySampledBlocks) {
       checkNotNull(maxRecentlySampledBlocks);
-        if (maxRecentlySampledBlocks <= 0) {
-            throw new InvalidConfigurationException(
-                    String.format("Invalid maxRecentlySampledBlocks: %d", maxRecentlySampledBlocks));
-        }
+      if (maxRecentlySampledBlocks <= 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid maxRecentlySampledBlocks: %d", maxRecentlySampledBlocks));
+      }
       this.maxRecentlySampledBlocks = maxRecentlySampledBlocks;
       return this;
     }
