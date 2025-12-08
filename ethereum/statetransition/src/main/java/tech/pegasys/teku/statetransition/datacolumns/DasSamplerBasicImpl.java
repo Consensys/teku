@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -93,8 +94,8 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
         () -> (long) recentlySampledColumnsByRoot.size());
   }
 
-  @Override
-  public Map<Bytes32, DataColumnSamplingTracker> getRecentlySampledColumnsByRoot() {
+  @VisibleForTesting
+  Map<Bytes32, DataColumnSamplingTracker> getRecentlySampledColumnsByRoot() {
     return recentlySampledColumnsByRoot;
   }
 

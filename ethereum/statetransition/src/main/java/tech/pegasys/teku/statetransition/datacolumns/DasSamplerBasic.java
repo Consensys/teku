@@ -13,9 +13,7 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -30,10 +28,6 @@ public interface DasSamplerBasic extends DataAvailabilitySampler, SlotEventsChan
 
   DasSamplerBasic NOOP =
       new DasSamplerBasic() {
-        @Override
-        public Map<Bytes32, DataColumnSamplingTracker> getRecentlySampledColumnsByRoot() {
-          return Map.of();
-        }
 
         @Override
         public void onNewValidatedDataColumnSidecar(
@@ -65,9 +59,6 @@ public interface DasSamplerBasic extends DataAvailabilitySampler, SlotEventsChan
         @Override
         public void flush() {}
       };
-
-  @VisibleForTesting
-  Map<Bytes32, DataColumnSamplingTracker> getRecentlySampledColumnsByRoot();
 
   boolean containsBlock(Bytes32 blockRoot);
 
