@@ -20,18 +20,18 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.statetransition.datacolumns.PrunedDataAvailabilitySampler;
+import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlobTrackerPool {
   final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
-  final Supplier<PrunedDataAvailabilitySampler> dasSamplerSupplier;
+  final Supplier<DataAvailabilitySampler> dasSamplerSupplier;
   final RecentChainData recentChainData;
   final Spec spec;
 
   public BlobTrackerPool(
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
-      final Supplier<PrunedDataAvailabilitySampler> dasSamplerSupplier,
+      final Supplier<DataAvailabilitySampler> dasSamplerSupplier,
       final RecentChainData recentChainData,
       final Spec spec) {
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
@@ -40,7 +40,7 @@ public class BlobTrackerPool {
     this.spec = spec;
   }
 
-  private BlockPrunedTrackerFactory getBlockPrunedTrackerFactory(final UInt64 slot) {
+  private DataSidecarBlockNotification getBlockPrunedTrackerFactory(final UInt64 slot) {
     final SpecMilestone blockMilestone = spec.atSlot(slot).getMilestone();
     if (blockMilestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
       return dasSamplerSupplier.get();
@@ -48,7 +48,7 @@ public class BlobTrackerPool {
       return blockBlobSidecarsTrackersPool;
     }
 
-    return BlockPrunedTrackerFactory.NOOP;
+    return DataSidecarBlockNotification.NOOP;
   }
 
   public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {

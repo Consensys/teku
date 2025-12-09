@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
@@ -38,8 +39,9 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class DasSamplerBasic implements PrunedDataAvailabilitySampler {
+public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final DataColumnSidecarCustody custody;
@@ -52,6 +54,7 @@ public class DasSamplerBasic implements PrunedDataAvailabilitySampler {
       new ConcurrentHashMap<>();
 
   private final AsyncRunner asyncRunner;
+  private final RecentChainData recentChainData;
   private final RPCFetchDelayProvider rpcFetchDelayProvider;
 
   public DasSamplerBasic(
@@ -61,7 +64,8 @@ public class DasSamplerBasic implements PrunedDataAvailabilitySampler {
       final RPCFetchDelayProvider rpcFetchDelayProvider,
       final DataColumnSidecarCustody custody,
       final DataColumnSidecarRetriever retriever,
-      final CustodyGroupCountManager custodyGroupCountManager) {
+      final CustodyGroupCountManager custodyGroupCountManager,
+      final RecentChainData recentChainData) {
     this.currentSlotProvider = currentSlotProvider;
     this.rpcFetchDelayProvider = rpcFetchDelayProvider;
     this.spec = spec;
@@ -69,6 +73,7 @@ public class DasSamplerBasic implements PrunedDataAvailabilitySampler {
     this.custody = custody;
     this.retriever = retriever;
     this.custodyGroupCountManager = custodyGroupCountManager;
+    this.recentChainData = recentChainData;
   }
 
   @VisibleForTesting
@@ -222,6 +227,28 @@ public class DasSamplerBasic implements PrunedDataAvailabilitySampler {
     } else {
       return SamplingEligibilityStatus.REQUIRED;
     }
+  }
+
+  @Override
+  public void onSlot(final UInt64 slot) {
+    final UInt64 firstNonFinalizedSlot =
+        spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch()).increment();
+    recentlySampledColumnsByRoot
+        .values()
+        .removeIf(
+            tracker -> {
+              if (tracker.slot().isLessThan(firstNonFinalizedSlot)
+                  || recentChainData.containsBlock(tracker.blockRoot())) {
+
+                // make sure the future releases any pending waiters
+                tracker
+                    .completionFuture()
+                    .completeExceptionally(new RuntimeException("DAS sampling expired"));
+                return true;
+              }
+
+              return false;
+            });
   }
 
   @Override

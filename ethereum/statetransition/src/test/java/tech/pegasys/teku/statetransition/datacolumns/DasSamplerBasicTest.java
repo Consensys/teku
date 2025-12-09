@@ -49,6 +49,7 @@ import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler.SamplingEligibilityStatus;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DasSamplerBasicTest {
   private static final Spec SPEC = TestSpecFactory.createMinimalFulu();
@@ -59,6 +60,7 @@ public class DasSamplerBasicTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(stubTimeProvider);
   private final RPCFetchDelayProvider rpcFetchDelayProvider = mock(RPCFetchDelayProvider.class);
 
+  private RecentChainData recentChainData;
   private DataColumnSidecarCustody custody;
   private DataColumnSidecarRetriever retriever;
   private CurrentSlotProvider currentSlotProvider;
@@ -70,6 +72,7 @@ public class DasSamplerBasicTest {
   public void setUp() {
     final CustodyGroupCountManager custodyGroupCountManager = mock(CustodyGroupCountManager.class);
     when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(SAMPLING_INDICES);
+    recentChainData = mock(RecentChainData.class);
     custody = mock(DataColumnSidecarCustody.class);
     retriever = mock(DataColumnSidecarRetriever.class);
     currentSlotProvider = mock(CurrentSlotProvider.class);
@@ -88,7 +91,8 @@ public class DasSamplerBasicTest {
             rpcFetchDelayProvider,
             custody,
             retriever,
-            custodyGroupCountManager);
+            custodyGroupCountManager,
+            recentChainData);
   }
 
   @Test
@@ -351,9 +355,14 @@ public class DasSamplerBasicTest {
 
   @Test
   void onSlot_shouldPruneTrackers() {
+    final UInt64 finalizedEpoch = UInt64.valueOf(1);
     final Bytes32 importedBlockRoot = dataStructureUtil.randomBytes32();
     final UInt64 lastFinalizedSlot = UInt64.valueOf(8);
     final UInt64 firstNonFinalizedSlot = UInt64.valueOf(9);
+
+    when(recentChainData.getFinalizedEpoch()).thenReturn(finalizedEpoch);
+    when(recentChainData.containsBlock(any())).thenReturn(false);
+    when(recentChainData.containsBlock(importedBlockRoot)).thenReturn(true);
 
     final DataColumnSamplingTracker completedTracker = mock(DataColumnSamplingTracker.class);
     when(completedTracker.completionFuture()).thenReturn(SafeFuture.completedFuture(null));
@@ -386,6 +395,8 @@ public class DasSamplerBasicTest {
     sampler
         .getRecentlySampledColumnsByRoot()
         .put(dataStructureUtil.randomBytes32(), expectedToRemainTracker);
+
+    sampler.onSlot(UInt64.valueOf(20));
 
     assertThat(sampler.getRecentlySampledColumnsByRoot()).containsValue(expectedToRemainTracker);
     assertThat(trackerForImportedBlockFuture).isCompletedExceptionally();

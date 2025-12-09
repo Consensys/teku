@@ -168,6 +168,7 @@ import tech.pegasys.teku.statetransition.datacolumns.DasCustodySync;
 import tech.pegasys.teku.statetransition.datacolumns.DasPreSampler;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
+import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustodyImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustodyImpl;
@@ -177,7 +178,6 @@ import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManagerImp
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecoveringCustody;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecoveringCustodyImpl;
 import tech.pegasys.teku.statetransition.datacolumns.MinCustodyPeriodSlotCalculator;
-import tech.pegasys.teku.statetransition.datacolumns.PrunedDataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipBatchLogger;
@@ -384,7 +384,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile Optional<DataColumnSidecarRetriever> recoveringSidecarRetriever =
       Optional.empty();
   protected volatile AvailabilityCheckerFactory<UInt64> dasSamplerManager;
-  protected volatile PrunedDataAvailabilitySampler dataAvailabilitySampler;
+  protected volatile DataAvailabilitySampler dataAvailabilitySampler;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile ProposersDataManager proposersDataManager;
   protected volatile KeyValueStore<String, Bytes> keyValueStore;
@@ -1041,10 +1041,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
             rpcFetchDelayProvider,
             dataColumnSidecarRecoveringCustody,
             recoveringSidecarRetriever,
-            custodyGroupCountManager);
+            custodyGroupCountManager,
+            recentChainData);
     LOG.info(
         "DAS Basic Sampler initialized with {} groups to sample",
         custodyGroupCountManager.getSamplingGroupCount());
+    eventChannels.subscribe(SlotEventsChannel.class, dasSampler);
 
     this.dataAvailabilitySampler = dasSampler;
     this.recoveringSidecarRetriever = Optional.of(recoveringSidecarRetriever);

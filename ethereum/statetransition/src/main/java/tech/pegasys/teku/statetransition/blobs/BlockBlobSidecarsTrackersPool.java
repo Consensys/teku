@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
 public interface BlockBlobSidecarsTrackersPool
-    extends BlockPrunedTrackerFactory, SlotEventsChannel {
+    extends DataSidecarBlockNotification, SlotEventsChannel {
 
   BlockBlobSidecarsTrackersPool NOOP =
       new BlockBlobSidecarsTrackersPool() {
