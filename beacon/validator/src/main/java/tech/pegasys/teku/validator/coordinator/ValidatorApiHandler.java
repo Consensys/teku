@@ -480,6 +480,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     final BlockProductionPerformance blockProductionPerformance =
         blockProductionContext.blockProductionPerformance;
 
+    blockProductionPerformance.validatorBlockRequested();
+
     return blockProductionContext
         .stateFuture
         .thenCompose(
