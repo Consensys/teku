@@ -70,6 +70,33 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  void shouldPrepareBlockProductionIsEnabledByDefaultOnMainnet() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    assertThat(config.eth2NetworkConfiguration().isPrepareBlockProductionEnabled()).isTrue();
+  }
+
+  @Test
+  void shouldPrepareBlockProductionIsEnabledByDefaultOnHoodi() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments("--network", "hoodi");
+    assertThat(config.eth2NetworkConfiguration().isPrepareBlockProductionEnabled()).isTrue();
+  }
+
+  @Test
+  void shouldDisablePrepareBlockProduction() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xprepare-block-production-enabled", "false");
+    assertThat(config.eth2NetworkConfiguration().isPrepareBlockProductionEnabled()).isFalse();
+  }
+
+  @Test
+  void shouldDisablePrepareBlockProductionForGnosis() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments(
+            "--network", "gnosis", "--Xprepare-block-production-enabled", "true");
+    assertThat(config.eth2NetworkConfiguration().isPrepareBlockProductionEnabled()).isFalse();
+  }
+
+  @Test
   void shouldUseBellatrixForkEpochIfSpecified() {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments(
