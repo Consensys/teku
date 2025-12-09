@@ -46,8 +46,7 @@ import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
-// TODO-GLOAS Fix test https://github.com/Consensys/teku/issues/9833
-@TestSpecContext(allMilestones = true, ignoredMilestones = SpecMilestone.GLOAS)
+@TestSpecContext(allMilestones = true)
 public class BlobSidecarSelectorFactoryTest {
 
   private final CombinedChainDataClient client = mock(CombinedChainDataClient.class);

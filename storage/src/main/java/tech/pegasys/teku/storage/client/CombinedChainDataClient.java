@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
@@ -539,6 +540,22 @@ public class CombinedChainDataClient {
                 return SafeFuture.completedFuture(maybeBlock);
               }
               return historicalChainData.getBlockByBlockRoot(blockRoot);
+            });
+  }
+
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> getExecutionPayloadByBlockRoot(
+      final Bytes32 blockRoot) {
+    return recentChainData
+        .retrieveSignedExecutionPayloadEnvelopeByBlockRoot(blockRoot)
+        .thenCompose(
+            maybeExecutionPayload -> {
+              if (maybeExecutionPayload.isPresent()) {
+                return SafeFuture.completedFuture(maybeExecutionPayload);
+              }
+              // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 query for an execution
+              // payload from the historical chain data
+              return SafeFuture.failedFuture(
+                  new UnsupportedOperationException("Not yet implemented"));
             });
   }
 
