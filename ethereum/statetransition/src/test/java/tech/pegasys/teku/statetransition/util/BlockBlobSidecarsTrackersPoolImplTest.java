@@ -288,26 +288,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   }
 
   @Test
-  public void onNewBlock_shouldIgnorePreDenebBlocks() {
-    final Spec spec = TestSpecFactory.createMainnetCapella();
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
-    blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
-
-    assertThat(blockBlobSidecarsTrackersPool.containsBlock(block.getRoot())).isFalse();
-    assertThat(requiredBlockRootEvents).isEmpty();
-    assertThat(requiredBlockRootDroppedEvents).isEmpty();
-    assertThat(requiredBlobSidecarEvents).isEmpty();
-    assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
-
-    assertBlobSidecarsCount(0);
-    assertBlobSidecarsTrackersCount(0);
-  }
-
-  @Test
-  public void
-      onNewBlobSidecar_onNewBlock_onCompletedBlockAndBlobSidecars_shouldIgnoreAlreadyImportedBlocks() {
+  public void onNewBlobSidecar_onCompletedBlockAndBlobSidecars_shouldIgnoreAlreadyImportedBlocks() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
     final BlobSidecar blobSidecar =
         dataStructureUtil
@@ -318,7 +299,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     when(recentChainData.containsBlock(blobSidecar.getBlockRoot())).thenReturn(true);
 
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar, RemoteOrigin.GOSSIP);
-    blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
     blockBlobSidecarsTrackersPool.onCompletedBlockAndBlobSidecars(block, List.of(blobSidecar));
 
     assertThat(blockBlobSidecarsTrackersPool.containsBlock(block.getRoot())).isFalse();
@@ -1201,33 +1181,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     blockBlobSidecarsTrackersPool.onNewBlock(block4, Optional.of(RemoteOrigin.GOSSIP));
 
     assertStats("block", "gossip", 2);
-  }
-
-  @Test
-  public void onNewBlock_shouldIgnoreFuluBlocks() {
-    final Spec specFulu = TestSpecFactory.createMainnetFulu();
-    final BlockBlobSidecarsTrackersPoolImpl blockBlobSidecarsTrackersPoolCustom =
-        new PoolFactory(new StubMetricsSystem())
-            .createPoolForBlockBlobSidecarsTrackers(
-                blockImportChannel,
-                specFulu,
-                asyncRunner,
-                recentChainData,
-                executionLayer,
-                () -> blobSidecarGossipValidator,
-                blobSidecarPublisher,
-                RPCFetchDelayProvider.NO_DELAY,
-                historicalTolerance,
-                futureTolerance,
-                maxItems,
-                BlockBlobSidecarsTracker::new);
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
-    blockBlobSidecarsTrackersPoolCustom.onSlot(currentSlot);
-    blockBlobSidecarsTrackersPoolCustom.onNewBlock(block, Optional.empty());
-
-    assertThat(blockBlobSidecarsTrackersPoolCustom.containsBlock(block.getRoot())).isFalse();
-    assertThat(blockBlobSidecarsTrackersPoolCustom.getTotalBlobSidecarsTrackers()).isEqualTo(0);
   }
 
   @Test
