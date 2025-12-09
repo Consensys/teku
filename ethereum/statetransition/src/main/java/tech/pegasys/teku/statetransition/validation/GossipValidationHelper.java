@@ -64,6 +64,16 @@ public class GossipValidationHelper {
     return slot.isGreaterThan(maxCurrSlot);
   }
 
+  public boolean isSlotCurrent(final UInt64 slot) {
+    final UInt64 slotStartTimeMillis =
+        spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
+    final UInt64 slotEndTimeMillis = slotStartTimeMillis.plus(spec.getSlotDurationMillis(slot));
+    final UInt64 currentTimeMillis = getCurrentTimeMillis();
+    return currentTimeMillis.isGreaterThanOrEqualTo(
+            slotStartTimeMillis.minusMinZero(maxOffsetTimeInMillis))
+        && currentTimeMillis.isLessThanOrEqualTo(slotEndTimeMillis.plus(maxOffsetTimeInMillis));
+  }
+
   public boolean isSignatureValidWithRespectToBuilderIndex(
       final Bytes signingRoot,
       final UInt64 builderIndex,
@@ -166,19 +176,16 @@ public class GossipValidationHelper {
     return recentChainData.retrieveStateAtSlot(slotAndBlockRoot);
   }
 
-  public boolean isCurrentSlotWithGossipDisparityAllowance(final UInt64 slot) {
-    return isTimeWithinSlotWindow(slot, maxOffsetTimeInMillis);
-  }
-
-  public boolean isSlotCurrentOrNext(final UInt64 slot) {
-    return getCurrentSlot()
-        .map(currentSlot -> slot.equals(currentSlot) || slot.equals(currentSlot.plus(ONE)))
-        .orElse(false);
-  }
-
   public boolean isValidatorInPayloadTimelinessCommittee(
       final UInt64 validatorIndex, final BeaconState state, final UInt64 slot) {
     return spec.getPtc(state, slot).contains(validatorIndex.intValue());
+  }
+
+  public boolean isSlotCurrentOrNext(final UInt64 slot) {
+    return recentChainData
+        .getCurrentSlot()
+        .map(currentSlot -> slot.equals(currentSlot) || slot.equals(currentSlot.plus(ONE)))
+        .orElse(false);
   }
 
   public boolean hasBuilderWithdrawalCredential(
@@ -200,22 +207,5 @@ public class GossipValidationHelper {
     final Optional<Bytes32> maybeBlockHash =
         recentChainData.getExecutionBlockHashForBlockRoot(blockRoot);
     return maybeBlockHash.isPresent() && blockHash.equals(maybeBlockHash.get());
-  }
-
-  private Optional<UInt64> getCurrentSlot() {
-    return recentChainData.getCurrentSlot();
-  }
-
-  private boolean isTimeWithinSlotWindow(final UInt64 slot, final int disparity) {
-    if (getCurrentSlot().isEmpty()) {
-      return false;
-    }
-    final UInt64 slotStartTimeMillis =
-        spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
-    final UInt64 slotEndTimeMillis = slotStartTimeMillis.plus(spec.getSlotDurationMillis(slot));
-    final UInt64 currentTimeMillis = recentChainData.getStore().getTimeInMillis();
-
-    return currentTimeMillis.isGreaterThanOrEqualTo(slotStartTimeMillis.minusMinZero(disparity))
-        && currentTimeMillis.isLessThanOrEqualTo(slotEndTimeMillis.plus(disparity));
   }
 }

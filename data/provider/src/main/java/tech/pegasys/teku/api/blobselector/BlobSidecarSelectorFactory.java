@@ -27,7 +27,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.metadata.BlobSidecarsAndMetaData;
 import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.ChainHead;
@@ -170,16 +169,27 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
     if (maybeBlock.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
-    final Optional<BeaconBlockBodyDeneb> maybeDenebBlock =
-        maybeBlock.get().getMessage().getBody().toVersionDeneb();
-    if (maybeDenebBlock.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.empty());
-    }
-    if (maybeDenebBlock.get().getBlobKzgCommitments().isEmpty()) {
-      return SafeFuture.completedFuture(Optional.of(Collections.emptyList()));
-    }
     final SignedBeaconBlock block = maybeBlock.get();
-    return getBlobSidecars(block.getSlotAndBlockRoot(), indices);
+    return block
+        .getMessage()
+        .getBody()
+        .toVersionDeneb()
+        .map(
+            blockBodyDeneb ->
+                blockBodyDeneb
+                    .getOptionalBlobKzgCommitments()
+                    .map(
+                        blobKzgCommitments -> {
+                          if (blobKzgCommitments.isEmpty()) {
+                            return SafeFuture.completedFuture(
+                                Optional.of(Collections.<BlobSidecar>emptyList()));
+                          }
+                          return getBlobSidecars(block.getSlotAndBlockRoot(), indices);
+                        })
+                    // in ePBS, we don't have commitments in the block (only the root) so for
+                    // simplicity just querying the data
+                    .orElseGet(() -> getBlobSidecars(block.getSlotAndBlockRoot(), indices)))
+        .orElse(SafeFuture.completedFuture(Optional.empty()));
   }
 
   private SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(
