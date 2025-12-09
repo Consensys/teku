@@ -17,12 +17,12 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
@@ -31,14 +31,15 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
-import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChannel {
+public class DasSamplerBasic implements PrunedDataAvailabilitySampler {
   private static final Logger LOG = LogManager.getLogger();
 
   private final DataColumnSidecarCustody custody;
@@ -51,7 +52,6 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
       new ConcurrentHashMap<>();
 
   private final AsyncRunner asyncRunner;
-  private final RecentChainData recentChainData;
   private final RPCFetchDelayProvider rpcFetchDelayProvider;
 
   public DasSamplerBasic(
@@ -61,8 +61,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
       final RPCFetchDelayProvider rpcFetchDelayProvider,
       final DataColumnSidecarCustody custody,
       final DataColumnSidecarRetriever retriever,
-      final CustodyGroupCountManager custodyGroupCountManager,
-      final RecentChainData recentChainData) {
+      final CustodyGroupCountManager custodyGroupCountManager) {
     this.currentSlotProvider = currentSlotProvider;
     this.rpcFetchDelayProvider = rpcFetchDelayProvider;
     this.spec = spec;
@@ -70,7 +69,6 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
     this.custody = custody;
     this.retriever = retriever;
     this.custodyGroupCountManager = custodyGroupCountManager;
-    this.recentChainData = recentChainData;
   }
 
   @VisibleForTesting
@@ -227,27 +225,30 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   }
 
   @Override
-  public void onSlot(final UInt64 slot) {
-    final UInt64 firstNonFinalizedSlot =
-        spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch()).increment();
-    recentlySampledColumnsByRoot
-        .values()
-        .removeIf(
-            tracker -> {
-              if (tracker.completionFuture().isDone()) {
-                return true;
-              }
-              if (tracker.slot().isLessThan(firstNonFinalizedSlot)
-                  || recentChainData.containsBlock(tracker.blockRoot())) {
+  public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
+    final DataColumnSamplingTracker tracker = getOrCreateTracker(block.getSlot(), block.getRoot());
 
-                // make sure the future releases any pending waiters
-                tracker
-                    .completionFuture()
-                    .completeExceptionally(new RuntimeException("DAS sampling expired"));
-                return true;
-              }
+    if (tracker.completionFuture().isDone()) {
+      return;
+    }
 
-              return false;
-            });
+    if (tracker.rpcFetchScheduled().compareAndSet(false, true)) {
+      fetchMissingColumnsViaRPC(block.getSlot(), block.getRoot(), tracker);
+    }
+  }
+
+  @Override
+  public void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {
+    final DataColumnSamplingTracker removed =
+        recentlySampledColumnsByRoot.remove(slotAndBlockRoot.getBlockRoot());
+    // TODO: cleanup
+    if (removed != null) {
+      LOG.debug("Removed data column sampling tracker {}", removed);
+    }
+  }
+
+  @Override
+  public void enableBlockImportOnCompletion(final SignedBeaconBlock block) {
+    // nothing to do
   }
 }

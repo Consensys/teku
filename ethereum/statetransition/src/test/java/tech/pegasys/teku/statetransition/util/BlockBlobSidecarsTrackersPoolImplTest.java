@@ -894,7 +894,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
 
-    blockBlobSidecarsTrackersPool.removeAllForBlock(block.getRoot());
+    blockBlobSidecarsTrackersPool.removeAllForBlock(block.getSlotAndBlockRoot());
 
     assertThat(requiredBlobSidecarDroppedEvents).containsExactlyElementsOf(missingBlobs);
 
@@ -981,7 +981,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
 
-    blockBlobSidecarsTrackersPool.removeAllForBlock(signedBeaconBlock.getRoot());
+    blockBlobSidecarsTrackersPool.removeAllForBlock(signedBeaconBlock.getSlotAndBlockRoot());
 
     assertThat(requiredBlockRootDroppedEvents).containsExactly(signedBeaconBlock.getRoot());
 
@@ -1016,7 +1016,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
 
-    blockBlobSidecarsTrackersPool.removeAllForBlock(signedBeaconBlock.getRoot());
+    blockBlobSidecarsTrackersPool.removeAllForBlock(signedBeaconBlock.getSlotAndBlockRoot());
 
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
     assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
