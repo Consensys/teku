@@ -78,7 +78,7 @@ public class ExecutionPayloadGossipValidator {
                     .orElseGet(
                         () ->
                             performWithStateValidation(signedExecutionPayloadEnvelope)
-                                .thenPeek(result -> markAsSeen(result, envelope))));
+                                .thenApply(result -> markAsSeen(result, envelope))));
   }
 
   private SafeFuture<Optional<InternalValidationResult>> performWithBlockValidation(
@@ -154,14 +154,7 @@ public class ExecutionPayloadGossipValidator {
     final BlockRootAndBuilderIndex key =
         new BlockRootAndBuilderIndex(envelope.getBeaconBlockRoot(), envelope.getBuilderIndex());
     if (seenPayloads.contains(key)) {
-      LOG.trace(
-          "Already received execution payload envelope with block root {} from builder with index {}. Ignoring the execution payload envelope",
-          key.blockRoot(),
-          key.builderIndex());
-      return Optional.of(
-          ignore(
-              "Already received execution payload envelope with block root %s from builder with index %s",
-              key.blockRoot(), key.builderIndex()));
+      return Optional.of(ignoreExecutionPayloadAlreadySeen(envelope));
     }
 
     /*
@@ -256,12 +249,27 @@ public class ExecutionPayloadGossipValidator {
         signingRoot, envelope.getMessage().getBuilderIndex(), envelope.getSignature(), postState);
   }
 
-  private void markAsSeen(
+  private InternalValidationResult markAsSeen(
       final InternalValidationResult result, final ExecutionPayloadEnvelope envelope) {
     if (result.isAccept()) {
-      seenPayloads.add(
-          new BlockRootAndBuilderIndex(envelope.getBeaconBlockRoot(), envelope.getBuilderIndex()));
+      final BlockRootAndBuilderIndex key =
+          new BlockRootAndBuilderIndex(envelope.getBeaconBlockRoot(), envelope.getBuilderIndex());
+      if (!seenPayloads.add(key)) {
+        return ignoreExecutionPayloadAlreadySeen(envelope);
+      }
     }
+    return result;
+  }
+
+  private InternalValidationResult ignoreExecutionPayloadAlreadySeen(
+      final ExecutionPayloadEnvelope envelope) {
+    LOG.trace(
+        "Already received execution payload envelope with block root {} from builder with index {}. Ignoring the execution payload envelope",
+        envelope.getBeaconBlockRoot(),
+        envelope.getBuilderIndex());
+    return ignore(
+        "Already received execution payload envelope with block root %s from builder with index %s",
+        envelope.getBeaconBlockRoot(), envelope.getBuilderIndex());
   }
 
   private record BlockRootAndBuilderIndex(Bytes32 blockRoot, UInt64 builderIndex) {}
