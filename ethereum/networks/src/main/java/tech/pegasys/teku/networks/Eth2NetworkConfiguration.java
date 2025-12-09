@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE;
 import static tech.pegasys.teku.spec.config.SpecConfigLoader.EPHEMERY_CONFIG_URL;
+import static tech.pegasys.teku.spec.config.SpecConfigReader.PRESET_KEY;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 import static tech.pegasys.teku.spec.networks.Eth2Network.CHIADO;
 import static tech.pegasys.teku.spec.networks.Eth2Network.GNOSIS;
@@ -58,12 +59,11 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
-  public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = false;
+  public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = true;
 
-  public static final boolean DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED = false;
+  public static final boolean DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED = true;
 
   public static final boolean DEFAULT_AGGREGATING_ATTESTATION_POOL_PROFILING_ENABLED = false;
-  public static final boolean DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED = true;
   public static final int
       DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS = 150;
   public static final int
@@ -609,7 +609,7 @@ public class Eth2NetworkConfiguration {
           asyncBeaconChainMaxThreads,
           asyncBeaconChainMaxQueue.orElse(DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE),
           forkChoiceLateBlockReorgEnabled,
-          prepareBlockProductionEnabled,
+          filterPrepareBlockProductionEnabledByNetPreset(prepareBlockProductionEnabled),
           forkChoiceUpdatedAlwaysSendPayloadAttributes,
           pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS),
           rustKzgEnabled,
@@ -619,6 +619,23 @@ public class Eth2NetworkConfiguration {
           aggregatingAttestationPoolV2BlockAggregationTimeLimit,
           aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
           attestationWaitLimitMillis);
+    }
+
+    private boolean filterPrepareBlockProductionEnabledByNetPreset(
+        final boolean prepareBlockProductionEnabled) {
+      if (!prepareBlockProductionEnabled) {
+        return false;
+      }
+
+      final Object networkPreset = spec.getGenesisSpecConfig().getRawConfig().get(PRESET_KEY);
+
+      if (networkPreset.equals(MAINNET.configName())) {
+        return true;
+      }
+
+      // We don't want to affect fast slot networks like GNOSIS
+      LOG.info("Disabling early block preparation on {} preset network", networkPreset);
+      return false;
     }
 
     private void validateCommandLineParameters() {
