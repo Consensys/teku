@@ -83,14 +83,7 @@ public class PayloadAttestationMessageGossipValidator {
     final ValidatorIndexAndSlot key =
         new ValidatorIndexAndSlot(payloadAttestationMessage.getValidatorIndex(), data.getSlot());
     if (seenPayloadAttestations.contains(key)) {
-      LOG.trace(
-          "Payload attestation for slot {} and validator index {} already seen",
-          key.slot(),
-          key.validatorIndex());
-      return completedFuture(
-          ignore(
-              "Payload attestation for slot %s and validator index %s already seen",
-              key.slot(), key.validatorIndex()));
+      return completedFuture(ignoreAttestationAlreadySeenValidationResult(key));
     }
 
     /*
@@ -149,9 +142,24 @@ public class PayloadAttestationMessageGossipValidator {
               if (!isSignatureValid(payloadAttestationMessage, state)) {
                 return reject("Invalid payload attestation signature");
               }
-              seenPayloadAttestations.add(key);
-              return ACCEPT;
+
+              if (!seenPayloadAttestations.add(key)) {
+                return ignoreAttestationAlreadySeenValidationResult(key);
+              } else {
+                return ACCEPT;
+              }
             });
+  }
+
+  private InternalValidationResult ignoreAttestationAlreadySeenValidationResult(
+      final ValidatorIndexAndSlot key) {
+    LOG.trace(
+        "Payload attestation for slot {} and validator index {} already seen",
+        key.slot(),
+        key.validatorIndex());
+    return ignore(
+        "Payload attestation for slot %s and validator index %s already seen",
+        key.slot(), key.validatorIndex());
   }
 
   private boolean isSignatureValid(
