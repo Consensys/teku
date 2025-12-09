@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.spec.networks.Eth2Presets;
 
 public class Eth2NetworkConfiguration {
 
@@ -609,7 +610,7 @@ public class Eth2NetworkConfiguration {
           asyncBeaconChainMaxThreads,
           asyncBeaconChainMaxQueue.orElse(DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE),
           forkChoiceLateBlockReorgEnabled,
-          filterPrepareBlockProductionEnabledByNetPreset(prepareBlockProductionEnabled),
+          resolvePrepareBlockProductionAbility(prepareBlockProductionEnabled),
           forkChoiceUpdatedAlwaysSendPayloadAttributes,
           pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS),
           rustKzgEnabled,
@@ -621,7 +622,7 @@ public class Eth2NetworkConfiguration {
           attestationWaitLimitMillis);
     }
 
-    private boolean filterPrepareBlockProductionEnabledByNetPreset(
+    private boolean resolvePrepareBlockProductionAbility(
         final boolean prepareBlockProductionEnabled) {
       if (!prepareBlockProductionEnabled) {
         return false;
@@ -630,7 +631,7 @@ public class Eth2NetworkConfiguration {
       final Object networkPreset =
           spec.getGenesisSpecConfig().getRawConfig().getOrDefault(PRESET_KEY, "");
 
-      if (networkPreset.equals(MAINNET.configName())) {
+      if (networkPreset.equals(Eth2Presets.MAINNET.presetName())) {
         return true;
       }
 
