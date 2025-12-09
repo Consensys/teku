@@ -160,14 +160,14 @@ public class GossipValidationHelper {
 
   public boolean isValidBuilderIndex(
       final UInt64 builderIndex, final BeaconState state, final UInt64 slot) {
-    final int index = builderIndex.intValue();
-    if (index >= state.getValidators().size()) {
+    if (builderIndex.isGreaterThanOrEqualTo(state.getValidators().size())
+        || builderIndex.longValue() < 0) {
       return false;
     }
+    final int index = builderIndex.intValue();
     final Validator builder = state.getValidators().get(index);
     final boolean isActiveBuilder =
-        spec.getActiveValidatorIndices(state, spec.computeEpochAtSlot(slot))
-            .contains(builderIndex.intValue());
+        spec.getActiveValidatorIndices(state, spec.computeEpochAtSlot(slot)).contains(index);
     return !builder.isSlashed() && isActiveBuilder;
   }
 
