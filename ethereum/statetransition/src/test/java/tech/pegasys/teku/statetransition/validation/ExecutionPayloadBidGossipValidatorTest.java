@@ -150,8 +150,30 @@ public class ExecutionPayloadBidGossipValidatorTest {
     assertThatSafeFuture(bidValidator.validate(lowerValueBid))
         .isCompletedWithValue(
             ignore(
-                "Already received a bid with a higher value %s for block with parent hash %s. Current bid's value is %s",
+                "Already received a bid with equal or higher value %s for block with parent hash %s. Current bid's value is %s",
                 bid.getValue(), parentBlockHash, lowerBidValue));
+  }
+
+  @TestTemplate
+  void shouldIgnore_whenBidWithSameValueIsSeen() {
+    // a first bid is accepted
+    assertThatSafeFuture(bidValidator.validate(signedBid)).isCompletedWithValue(ACCEPT);
+
+    // a same value bid from a different builder with the same parent block hash and slot
+    final SignedExecutionPayloadBid lowerValueBid =
+        dataStructureUtil.randomSignedExecutionPayloadBid(
+            dataStructureUtil.randomExecutionPayloadBid(
+                parentBlockHash,
+                slot,
+                builderIndex.plus(1),
+                bid.getValue(),
+                bid.getExecutionPayment()));
+
+    assertThatSafeFuture(bidValidator.validate(lowerValueBid))
+        .isCompletedWithValue(
+            ignore(
+                "Already received a bid with equal or higher value %s for block with parent hash %s. Current bid's value is %s",
+                bid.getValue(), parentBlockHash, bid.getValue()));
   }
 
   @TestTemplate

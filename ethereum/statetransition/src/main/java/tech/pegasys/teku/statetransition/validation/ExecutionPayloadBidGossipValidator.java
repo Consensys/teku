@@ -88,15 +88,15 @@ public class ExecutionPayloadBidGossipValidator {
         new SlotAndBlockHash(bid.getSlot(), bid.getParentBlockHash());
     if (highestBids.containsKey(bidValueKey)) {
       final UInt64 existingBidValue = highestBids.getOrDefault(bidValueKey, ZERO);
-      if (bid.getValue().isLessThan(existingBidValue)) {
+      if (bid.getValue().isLessThanOrEqualTo(existingBidValue)) {
         LOG.trace(
-            "Already received a bid with a higher value {} for block with parent hash {}. Current bid's value is {}",
+            "Already received a bid with a equal or higher value {} for block with parent hash {}. Current bid's value is {}",
             existingBidValue,
             bid.getParentBlockHash(),
             bid.getValue());
         return completedFuture(
             ignore(
-                "Already received a bid with a higher value %s for block with parent hash %s. Current bid's value is %s",
+                "Already received a bid with equal or higher value %s for block with parent hash %s. Current bid's value is %s",
                 existingBidValue, bid.getParentBlockHash(), bid.getValue()));
       }
     }
