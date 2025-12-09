@@ -22,8 +22,8 @@ public class Constants {
 
   // Teku Networking Specific
   public static final int VALID_BLOCK_SET_SIZE = 1000;
-  // Need to keep 2 slots worth of payload attestations
-  public static final int RECENT_SEEN_PAYLOAD_ATTESTATIONS_CACHE_SIZE = 512 * 2;
+  // Target holding 2 slots worth of payload attestations
+  public static final int VALID_PAYLOAD_ATTESTATION_SET_SIZE = 512 * 2;
   // The cache is used for the `payload_present` voting and gossip validation, so no need for a long
   // term caching
   public static final int RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE = 32;
