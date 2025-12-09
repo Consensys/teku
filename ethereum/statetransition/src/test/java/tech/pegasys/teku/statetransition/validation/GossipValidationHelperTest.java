@@ -63,7 +63,6 @@ public class GossipValidationHelperTest {
   private DataStructureUtil dataStructureUtil;
   private StorageSystem storageSystem;
   private GossipValidationHelper gossipValidationHelper;
-  private int maximumGossipClockDisparity;
 
   @BeforeEach
   void setUp(final SpecContext specContext) {
@@ -72,7 +71,6 @@ public class GossipValidationHelperTest {
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesis(false);
     recentChainData = storageSystem.recentChainData();
-    maximumGossipClockDisparity = spec.getNetworkingConfig().getMaximumGossipClockDisparity();
 
     gossipValidationHelper =
         new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem());
@@ -312,43 +310,46 @@ public class GossipValidationHelperTest {
   }
 
   @TestTemplate
-  void isForCurrentSlot_shouldRejectOutsideLowerBound() {
+  void isSlotCurrent_shouldRejectOutsideLowerBound() {
     final UInt64 slot = UInt64.valueOf(1000);
     final UInt64 slotStartTimeMillis = getSlotStartTimeMillis(slot);
-    final UInt64 currentTime = slotStartTimeMillis.minus(maximumGossipClockDisparity).decrement();
-    assertIsCurrentSlot(slot, currentTime, false);
+    final UInt64 currentTime =
+        slotStartTimeMillis.minus(gossipValidationHelper.getMaxOffsetTimeInMillis()).decrement();
+    assertIsSlotCurrent(slot, currentTime, false);
   }
 
   @TestTemplate
-  void isForCurrentSlot_shouldAcceptLowerBound() {
+  void isSlotCurrent_shouldAcceptLowerBound() {
     final UInt64 slot = UInt64.valueOf(1000);
     final UInt64 slotStartTimeMillis = getSlotStartTimeMillis(slot);
-    final UInt64 currentTime = slotStartTimeMillis.minus(maximumGossipClockDisparity);
-    assertIsCurrentSlot(slot, currentTime, true);
+    final UInt64 currentTime =
+        slotStartTimeMillis.minus(gossipValidationHelper.getMaxOffsetTimeInMillis());
+    assertIsSlotCurrent(slot, currentTime, true);
   }
 
   @TestTemplate
-  void isForCurrentSlot_shouldAcceptUpperBound() {
-    final UInt64 slot = UInt64.valueOf(1000);
-    final UInt64 nextSlotStartTimeMillis = getSlotStartTimeMillis(slot.increment());
-    final UInt64 currentTime = nextSlotStartTimeMillis.plus(maximumGossipClockDisparity);
-    assertIsCurrentSlot(slot, currentTime, true);
-  }
-
-  @TestTemplate
-  void isForCurrentSlot_shouldRejectOutsideUpperBound() {
+  void isSlotCurrent_shouldAcceptUpperBound() {
     final UInt64 slot = UInt64.valueOf(1000);
     final UInt64 nextSlotStartTimeMillis = getSlotStartTimeMillis(slot.increment());
     final UInt64 currentTime =
-        nextSlotStartTimeMillis.plus(maximumGossipClockDisparity).increment();
-    assertIsCurrentSlot(slot, currentTime, false);
+        nextSlotStartTimeMillis.plus(gossipValidationHelper.getMaxOffsetTimeInMillis());
+    assertIsSlotCurrent(slot, currentTime, true);
+  }
+
+  @TestTemplate
+  void isSlotCurrent_shouldRejectOutsideUpperBound() {
+    final UInt64 slot = UInt64.valueOf(1000);
+    final UInt64 nextSlotStartTimeMillis = getSlotStartTimeMillis(slot.increment());
+    final UInt64 currentTime =
+        nextSlotStartTimeMillis.plus(gossipValidationHelper.getMaxOffsetTimeInMillis()).increment();
+    assertIsSlotCurrent(slot, currentTime, false);
   }
 
   private UInt64 getSlotStartTimeMillis(final UInt64 slot) {
     return spec.computeTimeAtSlot(slot, recentChainData.getGenesisTime()).times(1000);
   }
 
-  private void assertIsCurrentSlot(
+  private void assertIsSlotCurrent(
       final UInt64 slot, final UInt64 currentTime, final boolean expectedResult) {
     final RecentChainData recentChainDataMock = mock(RecentChainData.class);
     final UpdatableStore storeMock = mock(UpdatableStore.class);
@@ -359,7 +360,6 @@ public class GossipValidationHelperTest {
         .thenReturn(recentChainData.getGenesisTimeMillis());
     final GossipValidationHelper gossipValidationHelperMocked =
         new GossipValidationHelper(spec, recentChainDataMock, storageSystem.getMetricsSystem());
-    assertThat(gossipValidationHelperMocked.isCurrentSlotWithGossipDisparityAllowance(slot))
-        .isEqualTo(expectedResult);
+    assertThat(gossipValidationHelperMocked.isSlotCurrent(slot)).isEqualTo(expectedResult);
   }
 }
