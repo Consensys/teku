@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.payloadattestation;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
@@ -27,6 +28,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -122,6 +124,31 @@ public class PayloadAttestationMessageGossipValidatorTest {
     assertThatSafeFuture(
             payloadAttestationMessageGossipValidator.validate(payloadAttestationMessage))
         .isCompletedWithValue(
+            ignore(
+                "Payload attestation for slot %s and validator index %s already seen",
+                slot, validatorIndex));
+  }
+
+  @TestTemplate
+  void shouldIgnore_whenAlreadySeen_AfterInitialCheck() {
+    final SafeFuture<Optional<BeaconState>> getStateFuture1 = new SafeFuture<>();
+    final SafeFuture<Optional<BeaconState>> getStateFuture2 = new SafeFuture<>();
+    when(gossipValidationHelper.getStateAtSlotAndBlockRoot(any()))
+        .thenReturn(getStateFuture1)
+        .thenReturn(getStateFuture2);
+
+    final SafeFuture<InternalValidationResult> validationFuture1 =
+        payloadAttestationMessageGossipValidator.validate(payloadAttestationMessage);
+    final SafeFuture<InternalValidationResult> validationFuture2 =
+        payloadAttestationMessageGossipValidator.validate(payloadAttestationMessage);
+
+    getStateFuture1.complete(Optional.of(postState));
+    assertThat(validationFuture1).succeedsWithin(Duration.ofSeconds(10)).isEqualTo(ACCEPT);
+
+    getStateFuture2.complete(Optional.of(postState));
+    assertThat(validationFuture2)
+        .succeedsWithin(Duration.ofSeconds(10))
+        .isEqualTo(
             ignore(
                 "Payload attestation for slot %s and validator index %s already seen",
                 slot, validatorIndex));
