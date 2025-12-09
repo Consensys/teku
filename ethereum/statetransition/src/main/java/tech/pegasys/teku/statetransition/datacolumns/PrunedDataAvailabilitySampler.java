@@ -31,40 +31,30 @@ public interface PrunedDataAvailabilitySampler
       new PrunedDataAvailabilitySampler() {
         @Override
         public void onNewBlock(
-            final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
-          PrunedDataAvailabilitySampler.NOOP.onNewBlock(block, remoteOrigin);
-        }
+            final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {}
 
         @Override
-        public void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {
-          PrunedDataAvailabilitySampler.NOOP.removeAllForBlock(slotAndBlockRoot);
-        }
+        public void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {}
 
         @Override
-        public void enableBlockImportOnCompletion(final SignedBeaconBlock block) {
-          PrunedDataAvailabilitySampler.NOOP.enableBlockImportOnCompletion(block);
-        }
+        public void enableBlockImportOnCompletion(final SignedBeaconBlock block) {}
 
         @Override
         public SafeFuture<List<UInt64>> checkDataAvailability(
             final UInt64 slot, final Bytes32 blockRoot) {
-          return DataAvailabilitySampler.NOOP.checkDataAvailability(slot, blockRoot);
+          return SafeFuture.completedFuture(List.of());
         }
 
         @Override
-        public void flush() {
-          DataAvailabilitySampler.NOOP.flush();
-        }
+        public void flush() {}
 
         @Override
         public SamplingEligibilityStatus checkSamplingEligibility(final BeaconBlock block) {
-          return DataAvailabilitySampler.NOOP.checkSamplingEligibility(block);
+          return SamplingEligibilityStatus.NOT_REQUIRED_OLD_EPOCH;
         }
 
         @Override
         public void onNewValidatedDataColumnSidecar(
-            final DataColumnSlotAndIdentifier columnId, final RemoteOrigin origin) {
-          DataAvailabilitySampler.NOOP.onNewValidatedDataColumnSidecar(columnId, origin);
-        }
+            final DataColumnSlotAndIdentifier columnId, final RemoteOrigin origin) {}
       };
 }
