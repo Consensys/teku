@@ -234,11 +234,12 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
         .values()
         .removeIf(
             tracker -> {
-              if (tracker.completionFuture().isDone()) {
-                return true;
-              }
               if (tracker.slot().isLessThan(firstNonFinalizedSlot)
                   || recentChainData.containsBlock(tracker.blockRoot())) {
+
+                if (tracker.completionFuture().isDone()) {
+                  return true;
+                }
 
                 // make sure the future releases any pending waiters
                 tracker
