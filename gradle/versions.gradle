@@ -123,7 +123,7 @@ dependencyManagement {
       entry 'jmh-generator-annprocess'
     }
     dependency 'org.quartz-scheduler:quartz:2.5.2'
-    dependency 'org.rocksdb:rocksdbjni:10.4.2'
+    dependency 'org.rocksdb:rocksdbjni:10.2.1'
     dependency 'org.fusesource.leveldbjni:leveldbjni-win64:1.8'
     dependency 'org.fusesource.leveldbjni:leveldbjni-win32:1.8'
     dependency 'tech.pegasys:leveldb-native:0.3.1'
