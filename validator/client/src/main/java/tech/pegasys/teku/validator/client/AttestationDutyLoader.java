@@ -54,4 +54,9 @@ public class AttestationDutyLoader
         .selectStrategy(duties.getDuties().size())
         .scheduleAllDuties(epoch, duties);
   }
+
+  @Override
+  public String getDutyType() {
+    return "Attestation";
+  }
 }

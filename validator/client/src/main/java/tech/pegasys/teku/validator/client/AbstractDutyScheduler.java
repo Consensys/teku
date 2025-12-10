@@ -29,9 +29,8 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final MetricsSystem metricsSystem;
   private final String dutyType;
-  private final Spec spec;
+  protected final Spec spec;
   private final DutyLoader<?> epochDutiesScheduler;
-  private final int lookAheadEpochs;
 
   private UInt64 lastProductionSlot;
 
@@ -42,12 +41,10 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
       final MetricsSystem metricsSystem,
       final String dutyType,
       final DutyLoader<?> epochDutiesScheduler,
-      final int lookAheadEpochs,
       final Spec spec) {
     this.metricsSystem = metricsSystem;
     this.dutyType = dutyType;
     this.epochDutiesScheduler = epochDutiesScheduler;
-    this.lookAheadEpochs = lookAheadEpochs;
     this.spec = spec;
   }
 
@@ -87,6 +84,8 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
                         dutyEpoch)));
   }
 
+  abstract int getLookAheadEpochs(UInt64 epoch);
+
   protected abstract Bytes32 getExpectedDependentRoot(
       Bytes32 headBlockRoot,
       Bytes32 previousDutyDependentRoot,
@@ -107,12 +106,14 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
 
   private void calculateDuties(final UInt64 epochNumber) {
     dutiesByEpoch.computeIfAbsent(epochNumber, this::createEpochDuties);
+    final int lookAheadEpochs = getLookAheadEpochs(epochNumber);
     for (int i = 1; i <= lookAheadEpochs; i++) {
       dutiesByEpoch.computeIfAbsent(epochNumber.plus(i), this::createEpochDuties);
     }
   }
 
   private PendingDuties createEpochDuties(final UInt64 epochNumber) {
+    LOG.trace("Creating epoch duties for epoch {}", epochNumber);
     return PendingDuties.calculateDuties(metricsSystem, epochDutiesScheduler, epochNumber);
   }
 
@@ -136,6 +137,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
     }
     final UInt64 signingEpoch = spec.computeEpochAtSlot(slot);
     final UInt64 epoch = currentEpoch.get();
+    final int lookAheadEpochs = getLookAheadEpochs(epoch);
     return !signingEpoch.isGreaterThan(epoch.plus(lookAheadEpochs + 1));
   }
 

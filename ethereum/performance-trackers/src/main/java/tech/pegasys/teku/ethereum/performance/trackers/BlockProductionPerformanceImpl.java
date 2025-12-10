@@ -29,6 +29,7 @@ public class BlockProductionPerformanceImpl implements BlockProductionPerformanc
   public static final String RETRIEVE_STATE = "retrieve_state";
   public static final String LATE_BLOCK_REORG_PREPARATION_COMPLETED =
       "late_block_reorg_preparation_completed";
+  public static final String VALIDATOR_BLOCK_REQUESTED = "validator_block_requested";
   public static final String LOCAL_GET_PAYLOAD = "local_get_payload";
   public static final String BUILDER_GET_HEADER = "builder_get_header";
   public static final String BUILDER_BID_VALIDATED = "builder_bid_validated";
@@ -98,6 +99,11 @@ public class BlockProductionPerformanceImpl implements BlockProductionPerformanc
   @Override
   public void lateBlockReorgPreparationCompleted() {
     performanceTracker.addEvent(LATE_BLOCK_REORG_PREPARATION_COMPLETED);
+  }
+
+  @Override
+  public void validatorBlockRequested() {
+    performanceTracker.addEvent(VALIDATOR_BLOCK_REQUESTED);
   }
 
   @Override

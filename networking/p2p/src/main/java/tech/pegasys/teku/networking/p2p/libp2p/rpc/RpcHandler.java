@@ -34,11 +34,15 @@ import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFuture.Interruptor;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler.Controller;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -67,11 +71,31 @@ public class RpcHandler<
   private final AsyncRunner asyncRunner;
   private final RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod;
 
+  final Counter rpcRequestsTotalCounter;
+  final Counter rpcRequestsFailedCounter;
+  final LabelledMetric<Counter> rpcRequestsSentCounter;
+
   public RpcHandler(
       final AsyncRunner asyncRunner,
-      final RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod) {
+      final RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod,
+      final MetricsSystem metricsSystem) {
     this.asyncRunner = asyncRunner;
     this.rpcMethod = rpcMethod;
+
+    rpcRequestsTotalCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.LIBP2P, "rpc_requests_total", "Total libp2p rpc requests");
+
+    rpcRequestsFailedCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.LIBP2P, "rpc_requests_failed", "Failed libp2p rpc requests");
+
+    rpcRequestsSentCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.LIBP2P,
+            "rpc_requests_sent",
+            "Submitted libp2p rpc requests, including a label for protocolId",
+            "protocolId");
   }
 
   public RpcMethod<TOutgoingHandler, TRequest, TRespHandler> getRpcMethod() {
@@ -88,6 +112,7 @@ public class RpcHandler<
       final Connection connection,
       final RpcRequestBodySelector<TRequest> bodySelector,
       final TRespHandler responseHandler) {
+    rpcRequestsTotalCounter.inc();
     final Interruptor closeInterruptor =
         SafeFuture.createInterruptor(connection.closeFuture(), PeerDisconnectedException::new);
     final Interruptor timeoutInterruptor =
@@ -130,10 +155,15 @@ public class RpcHandler<
                                 initialPayload =
                                     rpcMethod.encodeRequest(
                                         requiredRequestBodyForProtocolId(bodySelector, protocolId));
+
                               } catch (Exception e) {
                                 return SafeFuture.failedFuture(e);
                               }
-                              return controller.getRpcStream().writeBytes(initialPayload);
+                              return controller
+                                  .getRpcStream()
+                                  .writeBytes(initialPayload)
+                                  .thenPeek(
+                                      (__) -> rpcRequestsSentCounter.labels(protocolId).inc());
                             });
                       })
                   .orInterrupt(closeInterruptor, timeoutInterruptor)
@@ -142,6 +172,7 @@ public class RpcHandler<
             })
         .catchAndRethrow(
             err -> {
+              rpcRequestsFailedCounter.inc();
               if (ExceptionUtil.hasCause(err, ConnectionClosedException.class)) {
                 throw new PeerDisconnectedException(err);
               }

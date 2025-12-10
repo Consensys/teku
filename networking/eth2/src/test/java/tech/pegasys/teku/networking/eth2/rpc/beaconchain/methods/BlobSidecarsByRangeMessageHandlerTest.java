@@ -166,7 +166,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
                     maxRequestBlobSidecars)));
 
     final long countTooBigCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK,
             "rpc_blob_sidecars_by_range_requests_total",
             "count_too_big");
@@ -196,7 +196,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
                     maxRequestBlobSidecars)));
 
     final long countTooBigCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK,
             "rpc_blob_sidecars_by_range_requests_total",
             "count_too_big");
@@ -227,7 +227,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
                     maxRequestBlobSidecars)));
 
     final long countTooBigCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK,
             "rpc_blob_sidecars_by_range_requests_total",
             "count_too_big");
@@ -252,7 +252,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
     final long rateLimitedCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK,
             "rpc_blob_sidecars_by_range_requests_total",
             "rate_limited");

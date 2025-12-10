@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.Attest
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.OperationValidatorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.spec.logic.versions.phase0.util.AttestationUtilPhase0;
+import tech.pegasys.teku.spec.logic.versions.phase0.util.BlockProposalUtilPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class SpecLogicBellatrix extends AbstractSpecLogic {
@@ -173,7 +174,7 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
         new ForkChoiceUtil(
             config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
-        new BlockProposalUtil(schemaDefinitions, blockProcessor);
+        new BlockProposalUtilPhase0(schemaDefinitions, blockProcessor);
 
     final BlindBlockUtilBellatrix blindBlockUtil = new BlindBlockUtilBellatrix(schemaDefinitions);
 

@@ -260,6 +260,13 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withDiscoveryNetwork() {
+    mustBe(NodeType.BEACON_NODE);
+    LOG.debug("p2p-discovery-enabled: {}", true);
+    configMap.put("p2p-discovery-enabled", true);
+    return this;
+  }
+
   public TekuNodeConfigBuilder genesisTime(final int genesisTime) {
     mustBe(NodeType.BEACON_NODE);
     LOG.debug("Genesis time: {}", genesisTime);
@@ -636,9 +643,9 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
-  public TekuNodeConfigBuilder withDasExtraCustodyGroupCount(final int extraCustodySubnetCount) {
-    LOG.debug("Xdas-extra-custody-group-count: {}", extraCustodySubnetCount);
-    configMap.put("Xdas-extra-custody-group-count", extraCustodySubnetCount);
+  public TekuNodeConfigBuilder withCustodyGroupCountOverride(final int custodyGroupCount) {
+    LOG.debug("Xcustody-group-count-override: {}", custodyGroupCount);
+    configMap.put("Xcustody-group-count-override", custodyGroupCount);
     return this;
   }
 
@@ -651,6 +658,34 @@ public class TekuNodeConfigBuilder {
   public TekuNodeConfigBuilder withCheckpointSyncUrl(final String checkpointSyncUrl) {
     LOG.debug("checkpoint-sync-url: {}", checkpointSyncUrl);
     configMap.put("checkpoint-sync-url", checkpointSyncUrl);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withDasPublishWithholdColumnsEverySlots(
+      final int dasPublishWithholdColumnsEverySlots) {
+    LOG.debug("Xdas-publish-withhold-columns-every-slots: {}", dasPublishWithholdColumnsEverySlots);
+    configMap.put("Xdas-publish-withhold-columns-every-slots", dasPublishWithholdColumnsEverySlots);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withDasDisableElRecovery() {
+    LOG.debug("Xdas-disable-el-recovery: {}", true);
+    configMap.put("Xdas-disable-el-recovery", true);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withReworkedRecovery() {
+    LOG.debug("Xp2p-reworked-sidecar-recovery-enabled: {}", true);
+    configMap.put("Xp2p-reworked-sidecar-recovery-enabled", true);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withReworkedRecoveryTimeouts(
+      final int recoveryTimeout, final int downloadTimeout) {
+    LOG.debug("Xp2p-reworked-sidecar-cancel-timeout-ms: {}", recoveryTimeout);
+    configMap.put("Xp2p-reworked-sidecar-cancel-timeout-ms", recoveryTimeout);
+    LOG.debug("Xp2p-reworked-sidecar-download-timeout-ms: {}", downloadTimeout);
+    configMap.put("Xp2p-reworked-sidecar-download-timeout-ms", downloadTimeout);
     return this;
   }
 

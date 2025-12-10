@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE;
 import static tech.pegasys.teku.spec.config.SpecConfigLoader.EPHEMERY_CONFIG_URL;
+import static tech.pegasys.teku.spec.config.SpecConfigReader.PRESET_KEY;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 import static tech.pegasys.teku.spec.networks.Eth2Network.CHIADO;
 import static tech.pegasys.teku.spec.networks.Eth2Network.GNOSIS;
@@ -50,6 +51,7 @@ import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.spec.networks.Eth2Presets;
 
 public class Eth2NetworkConfiguration {
 
@@ -58,12 +60,11 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
-  public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = false;
+  public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = true;
 
-  public static final boolean DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED = false;
+  public static final boolean DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED = true;
 
   public static final boolean DEFAULT_AGGREGATING_ATTESTATION_POOL_PROFILING_ENABLED = false;
-  public static final boolean DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED = true;
   public static final int
       DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS = 150;
   public static final int
@@ -145,7 +146,6 @@ public class Eth2NetworkConfiguration {
   private final boolean rustKzgEnabled;
   private final OptionalInt kzgPrecompute;
   private final OptionalLong dataColumnSidecarRecoveryMaxDelayMillis;
-  private final boolean aggregatingAttestationPoolV2Enabled;
   private final boolean aggregatingAttestationPoolProfilingEnabled;
   private final int aggregatingAttestationPoolV2BlockAggregationTimeLimit;
   private final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit;
@@ -184,7 +184,6 @@ public class Eth2NetworkConfiguration {
       final boolean rustKzgEnabled,
       final OptionalInt kzgPrecompute,
       final OptionalLong dataColumnSidecarRecoveryMaxDelayMillis,
-      final boolean aggregatingAttestationPoolV2Enabled,
       final boolean aggregatingAttestationPoolProfilingEnabled,
       final int aggregatingAttestationPoolV2BlockAggregationTimeLimit,
       final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
@@ -225,7 +224,6 @@ public class Eth2NetworkConfiguration {
     this.rustKzgEnabled = rustKzgEnabled;
     this.kzgPrecompute = kzgPrecompute;
     this.dataColumnSidecarRecoveryMaxDelayMillis = dataColumnSidecarRecoveryMaxDelayMillis;
-    this.aggregatingAttestationPoolV2Enabled = aggregatingAttestationPoolV2Enabled;
     this.aggregatingAttestationPoolProfilingEnabled = aggregatingAttestationPoolProfilingEnabled;
     this.aggregatingAttestationPoolV2BlockAggregationTimeLimit =
         aggregatingAttestationPoolV2BlockAggregationTimeLimit;
@@ -357,10 +355,6 @@ public class Eth2NetworkConfiguration {
     return prepareBlockProductionEnabled;
   }
 
-  public boolean isAggregatingAttestationPoolV2Enabled() {
-    return aggregatingAttestationPoolV2Enabled;
-  }
-
   public boolean isAggregatingAttestationPoolProfilingEnabled() {
     return aggregatingAttestationPoolProfilingEnabled;
   }
@@ -415,7 +409,6 @@ public class Eth2NetworkConfiguration {
         && asyncP2pMaxQueue == that.asyncP2pMaxQueue
         && forkChoiceLateBlockReorgEnabled == that.forkChoiceLateBlockReorgEnabled
         && prepareBlockProductionEnabled == that.prepareBlockProductionEnabled
-        && aggregatingAttestationPoolV2Enabled == that.aggregatingAttestationPoolV2Enabled
         && aggregatingAttestationPoolProfilingEnabled
             == that.aggregatingAttestationPoolProfilingEnabled
         && aggregatingAttestationPoolV2BlockAggregationTimeLimit
@@ -521,8 +514,6 @@ public class Eth2NetworkConfiguration {
     private OptionalInt kzgPrecompute = OptionalInt.empty();
     private OptionalLong dataColumnSidecarRecoveryMaxDelayMillis = OptionalLong.empty();
     private boolean strictConfigLoadingEnabled;
-    private boolean aggregatingAttestationPoolV2Enabled =
-        DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED;
     private boolean aggregatingAttestationPoolProfilingEnabled =
         DEFAULT_AGGREGATING_ATTESTATION_POOL_PROFILING_ENABLED;
     private int aggregatingAttestationPoolV2BlockAggregationTimeLimit =
@@ -619,17 +610,34 @@ public class Eth2NetworkConfiguration {
           asyncBeaconChainMaxThreads,
           asyncBeaconChainMaxQueue.orElse(DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE),
           forkChoiceLateBlockReorgEnabled,
-          prepareBlockProductionEnabled,
+          resolvePrepareBlockProductionAbility(prepareBlockProductionEnabled),
           forkChoiceUpdatedAlwaysSendPayloadAttributes,
           pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS),
           rustKzgEnabled,
           kzgPrecompute,
           dataColumnSidecarRecoveryMaxDelayMillis,
-          aggregatingAttestationPoolV2Enabled,
           aggregatingAttestationPoolProfilingEnabled,
           aggregatingAttestationPoolV2BlockAggregationTimeLimit,
           aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
           attestationWaitLimitMillis);
+    }
+
+    private boolean resolvePrepareBlockProductionAbility(
+        final boolean prepareBlockProductionEnabled) {
+      if (!prepareBlockProductionEnabled) {
+        return false;
+      }
+
+      final Object networkPreset =
+          spec.getGenesisSpecConfig().getRawConfig().getOrDefault(PRESET_KEY, "");
+
+      if (networkPreset.equals(Eth2Presets.MAINNET.presetName())) {
+        return true;
+      }
+
+      // We don't want to affect fast slot networks like GNOSIS
+      LOG.info("Disabling early block preparation on {} preset network", networkPreset);
+      return false;
     }
 
     private void validateCommandLineParameters() {
@@ -1230,12 +1238,6 @@ public class Eth2NetworkConfiguration {
 
     public Builder prepareBlockProductionEnabled(final boolean prepareBlockProductionEnabled) {
       this.prepareBlockProductionEnabled = prepareBlockProductionEnabled;
-      return this;
-    }
-
-    public Builder aggregatingAttestationPoolV2Enabled(
-        final boolean aggregatingAttestationPoolV2Enabled) {
-      this.aggregatingAttestationPoolV2Enabled = aggregatingAttestationPoolV2Enabled;
       return this;
     }
 

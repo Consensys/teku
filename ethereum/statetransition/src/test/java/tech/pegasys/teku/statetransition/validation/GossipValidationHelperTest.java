@@ -15,12 +15,16 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PROPOSER_LOOKAHEAD;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -48,16 +52,16 @@ import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 @TestSpecContext(
     signatureVerifierNoop = true,
-    milestone = {SpecMilestone.PHASE0, SpecMilestone.FULU})
+    milestone = {SpecMilestone.PHASE0, SpecMilestone.FULU, SpecMilestone.GLOAS})
 public class GossipValidationHelperTest {
   private Spec spec;
   private RecentChainData recentChainData;
   private DataStructureUtil dataStructureUtil;
   private StorageSystem storageSystem;
-
   private GossipValidationHelper gossipValidationHelper;
 
   @BeforeEach
@@ -237,7 +241,7 @@ public class GossipValidationHelperTest {
         storageSystem.chainUpdater().advanceChain(firstSlotAtEpoch1.minus(2));
 
     // should get parent state in same epoch
-    SafeFutureAssert.assertThatSafeFuture(
+    assertThatSafeFuture(
             gossipValidationHelper.getParentStateInBlockEpoch(
                 lastBlockStateInEpoch0.getSlot(),
                 lastBlockStateInEpoch0.getRoot(),
@@ -246,7 +250,7 @@ public class GossipValidationHelperTest {
             beaconState -> beaconState.orElseThrow().equals(lastBlockStateInEpoch0.getState()));
 
     // should generate a state for epoch 1
-    SafeFutureAssert.assertThatSafeFuture(
+    assertThatSafeFuture(
             gossipValidationHelper.getParentStateInBlockEpoch(
                 lastBlockStateInEpoch0.getSlot(),
                 lastBlockStateInEpoch0.getRoot(),
@@ -303,5 +307,59 @@ public class GossipValidationHelperTest {
             gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
                 blockAndState.getSlot(), blockAndState.getParentRoot()))
         .isFalse();
+  }
+
+  @TestTemplate
+  void isSlotCurrent_shouldRejectOutsideLowerBound() {
+    final UInt64 slot = UInt64.valueOf(1000);
+    final UInt64 slotStartTimeMillis = getSlotStartTimeMillis(slot);
+    final UInt64 currentTime =
+        slotStartTimeMillis.minus(gossipValidationHelper.getMaxOffsetTimeInMillis()).decrement();
+    assertIsSlotCurrent(slot, currentTime, false);
+  }
+
+  @TestTemplate
+  void isSlotCurrent_shouldAcceptLowerBound() {
+    final UInt64 slot = UInt64.valueOf(1000);
+    final UInt64 slotStartTimeMillis = getSlotStartTimeMillis(slot);
+    final UInt64 currentTime =
+        slotStartTimeMillis.minus(gossipValidationHelper.getMaxOffsetTimeInMillis());
+    assertIsSlotCurrent(slot, currentTime, true);
+  }
+
+  @TestTemplate
+  void isSlotCurrent_shouldAcceptUpperBound() {
+    final UInt64 slot = UInt64.valueOf(1000);
+    final UInt64 nextSlotStartTimeMillis = getSlotStartTimeMillis(slot.increment());
+    final UInt64 currentTime =
+        nextSlotStartTimeMillis.plus(gossipValidationHelper.getMaxOffsetTimeInMillis());
+    assertIsSlotCurrent(slot, currentTime, true);
+  }
+
+  @TestTemplate
+  void isSlotCurrent_shouldRejectOutsideUpperBound() {
+    final UInt64 slot = UInt64.valueOf(1000);
+    final UInt64 nextSlotStartTimeMillis = getSlotStartTimeMillis(slot.increment());
+    final UInt64 currentTime =
+        nextSlotStartTimeMillis.plus(gossipValidationHelper.getMaxOffsetTimeInMillis()).increment();
+    assertIsSlotCurrent(slot, currentTime, false);
+  }
+
+  private UInt64 getSlotStartTimeMillis(final UInt64 slot) {
+    return spec.computeTimeAtSlot(slot, recentChainData.getGenesisTime()).times(1000);
+  }
+
+  private void assertIsSlotCurrent(
+      final UInt64 slot, final UInt64 currentTime, final boolean expectedResult) {
+    final RecentChainData recentChainDataMock = mock(RecentChainData.class);
+    final UpdatableStore storeMock = mock(UpdatableStore.class);
+    when(recentChainDataMock.getStore()).thenReturn(storeMock);
+    when(storeMock.getTimeInMillis()).thenReturn(currentTime);
+    when(recentChainDataMock.getCurrentSlot()).thenReturn(Optional.of(slot));
+    when(recentChainDataMock.getGenesisTimeMillis())
+        .thenReturn(recentChainData.getGenesisTimeMillis());
+    final GossipValidationHelper gossipValidationHelperMocked =
+        new GossipValidationHelper(spec, recentChainDataMock, storageSystem.getMetricsSystem());
+    assertThat(gossipValidationHelperMocked.isSlotCurrent(slot)).isEqualTo(expectedResult);
   }
 }

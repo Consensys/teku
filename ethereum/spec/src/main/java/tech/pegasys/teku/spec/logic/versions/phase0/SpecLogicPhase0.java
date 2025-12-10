@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.Volunt
 import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.EpochProcessorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.ValidatorStatusFactoryPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.util.AttestationUtilPhase0;
+import tech.pegasys.teku.spec.logic.versions.phase0.util.BlockProposalUtilPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class SpecLogicPhase0 extends AbstractSpecLogic {
@@ -147,7 +148,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         new ForkChoiceUtil(
             config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
-        new BlockProposalUtil(schemaDefinitions, blockProcessor);
+        new BlockProposalUtilPhase0(schemaDefinitions, blockProcessor);
 
     return new SpecLogicPhase0(
         predicates,

@@ -79,4 +79,9 @@ public class PtcDutyLoader extends AbstractDutyLoader<PtcDuties, SlotBasedSchedu
                       return null;
                     }));
   }
+
+  @Override
+  public String getDutyType() {
+    return "PTC";
+  }
 }

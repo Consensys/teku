@@ -17,6 +17,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -29,6 +31,7 @@ import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessor
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 
 public class BeaconStateAccessorsFulu extends BeaconStateAccessorsElectra {
+  private static final Logger LOG = LogManager.getLogger();
 
   public BeaconStateAccessorsFulu(
       final SpecConfig config,
@@ -37,21 +40,61 @@ public class BeaconStateAccessorsFulu extends BeaconStateAccessorsElectra {
     super(SpecConfigFulu.required(config), predicatesElectra, miscHelpers);
   }
 
+  /**
+   * get_beacon_proposer_index
+   *
+   * <p>Return the beacon proposer index at the current slot.
+   */
+  @Override
+  public int getBeaconProposerIndex(final BeaconState state) {
+    return getProposerLookaheadValue(
+        state, state.getSlot().mod(config.getSlotsPerEpoch()).intValue());
+  }
+
   @Override
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 requestedSlot) {
     validateStateCanCalculateProposerIndexAtSlot(state, requestedSlot);
-    final int lookaheadIndex = requestedSlot.mod(config.getSlotsPerEpoch()).intValue();
-    return BeaconStateFulu.required(state)
-        .getProposerLookahead()
-        .get(lookaheadIndex)
-        .get()
-        .intValue();
+    final UInt64 stateEpoch = miscHelpers.computeEpochAtSlot(state.getSlot());
+    final UInt64 requestedEpoch = miscHelpers.computeEpochAtSlot(requestedSlot);
+    final int epochOffset = stateEpoch.equals(requestedEpoch) ? 0 : config.getSlotsPerEpoch();
+    final int lookaheadIndex =
+        requestedSlot.mod(config.getSlotsPerEpoch()).intValue() + epochOffset;
+    final int proposerIndex = getProposerLookaheadValue(state, lookaheadIndex);
+    LOG.debug(
+        "get proposer index for slot {} from state at slot {}, will be lookahead index {} - proposer will be {}",
+        requestedSlot,
+        state.getSlot(),
+        lookaheadIndex,
+        proposerIndex);
+    return proposerIndex;
+  }
+
+  @Override
+  protected void validateStateCanCalculateProposerIndexAtSlot(
+      final BeaconState state, final UInt64 requestedSlot) {
+    final UInt64 epoch = miscHelpers.computeEpochAtSlot(requestedSlot);
+    final UInt64 stateEpoch = getCurrentEpoch(state);
+    checkArgument(
+        stateEpoch.equals(epoch) || stateEpoch.increment().equals(epoch),
+        "get_beacon_proposer_index is only used for requesting a slot in the current or next epoch. Requested slot %s (in epoch %s), state slot %s (in epoch %s)",
+        requestedSlot,
+        epoch,
+        state.getSlot(),
+        stateEpoch);
   }
 
   public List<Integer> getBeaconProposerIndices(final BeaconState state, final UInt64 epoch) {
     final IntList indices = getActiveValidatorIndices(state, epoch);
     final Bytes32 seed = getSeed(state, epoch, Domain.BEACON_PROPOSER);
     return miscHelpers.computeProposerIndices(state, epoch, seed, indices);
+  }
+
+  private int getProposerLookaheadValue(final BeaconState state, final int lookaheadIndex) {
+    return BeaconStateFulu.required(state)
+        .getProposerLookahead()
+        .get(lookaheadIndex)
+        .get()
+        .intValue();
   }
 
   public static BeaconStateAccessorsFulu required(final BeaconStateAccessors beaconStateAccessors) {

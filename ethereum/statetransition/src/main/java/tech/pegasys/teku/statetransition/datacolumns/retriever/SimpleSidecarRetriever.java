@@ -154,7 +154,7 @@ public class SimpleSidecarRetriever
               if (err != null) {
                 LOG.debug(
                     "SimpleSidecarRetriever.Request failed for {} due to: {}",
-                    () -> sidecar != null ? sidecar.toLogString() : "N/A",
+                    () -> match.request.columnId,
                     () -> ExceptionUtil.getMessageOrSimpleName(err));
               }
 

@@ -73,6 +73,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -115,6 +116,7 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
+import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -314,16 +316,26 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
-    if (epoch.isGreaterThan(combinedChainDataClient.getCurrentEpoch().plus(DUTY_EPOCH_TOLERANCE))) {
+    final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
+    final int tolerance = spec.getSpecConfig(epoch).getMinSeedLookahead() + DUTY_EPOCH_TOLERANCE;
+    LOG.trace("Proposer duty tolerance is {} epochs", tolerance);
+    if (epoch.isGreaterThan(currentEpoch.plus(tolerance))) {
       return SafeFuture.failedFuture(
           new IllegalArgumentException(
               String.format(
-                  "Proposer duties were requested for a future epoch (current: %s, requested: %s).",
-                  combinedChainDataClient.getCurrentEpoch().toString(), epoch)));
+                  "Proposer duties were requested %s epochs ahead, only 1 epoch in future is supported.",
+                  epoch.minus(currentEpoch).toString())));
     }
-    LOG.trace("Retrieving proposer duties from epoch {}", epoch);
+
+    final UInt64 stateSlot =
+        spec.atEpoch(epoch).getBlockProposalUtil().getStateSlotForProposerDuties(spec, epoch);
+    LOG.debug(
+        "Retrieving proposer duties for epoch {}, current epoch {}, state query slot {}",
+        epoch,
+        currentEpoch,
+        stateSlot);
     return combinedChainDataClient
-        .getStateAtSlotExact(spec.computeStartSlotAtEpoch(epoch))
+        .getStateAtSlotExact(stateSlot)
         .thenApply(maybeState -> maybeState.map(state -> getProposerDutiesFromState(state, epoch)));
   }
 
@@ -467,6 +479,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
         prepareBlockProductionInternal(slot);
     final BlockProductionPerformance blockProductionPerformance =
         blockProductionContext.blockProductionPerformance;
+
+    blockProductionPerformance.validatorBlockRequested();
 
     return blockProductionContext
         .stateFuture
@@ -981,9 +995,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   }
 
   @Override
-  public SafeFuture<Void> publishSignedExecutionPayload(
+  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
-    return executionPayloadPublisher.publishSignedExecutionPayload(signedExecutionPayload);
+    return executionPayloadPublisher
+        .publishSignedExecutionPayload(signedExecutionPayload)
+        .exceptionally(
+            ex -> {
+              final String reason = getRootCauseMessage(ex);
+              return PublishSignedExecutionPayloadResult.rejected(
+                  signedExecutionPayload.getBeaconBlockRoot(), reason);
+            });
   }
 
   private Optional<SubmitDataError> fromInternalValidationResult(
@@ -1004,10 +1025,18 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
 
   private ProposerDuties getProposerDutiesFromState(final BeaconState state, final UInt64 epoch) {
     final List<ProposerDuty> result = getProposalSlotsForEpoch(state, epoch);
+    if (spec.atEpoch(epoch).getMilestone().isLessThan(SpecMilestone.FULU)) {
+      return new ProposerDuties(
+          spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state),
+          result,
+          combinedChainDataClient.isChainHeadOptimistic());
+    }
+    final Bytes32 dependentRoot =
+        epoch.isGreaterThanOrEqualTo(spec.getCurrentEpoch(state))
+            ? spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state)
+            : spec.atEpoch(epoch).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
     return new ProposerDuties(
-        spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state),
-        result,
-        combinedChainDataClient.isChainHeadOptimistic());
+        dependentRoot, result, combinedChainDataClient.isChainHeadOptimistic());
   }
 
   private SafeFuture<Optional<BeaconState>> getStateForCommitteeDuties(

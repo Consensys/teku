@@ -934,7 +934,7 @@ class FailoverValidatorApiHandlerTest {
       final RemoteValidatorApiChannel apiChannel,
       final String methodLabel,
       final RequestOutcome outcome) {
-    return stubMetricsSystem.getCounterValue(
+    return stubMetricsSystem.getLabelledCounterValue(
         TekuMetricCategory.VALIDATOR,
         FailoverValidatorApiHandler.REMOTE_BEACON_NODES_REQUESTS_COUNTER_NAME,
         apiChannel.getEndpoint().toString(),

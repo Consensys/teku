@@ -52,6 +52,11 @@ public class RetryingDutyLoader<S extends ScheduledDuties> implements DutyLoader
     return duties;
   }
 
+  @Override
+  public String getDutyType() {
+    return delegate.getDutyType();
+  }
+
   private SafeFuture<Optional<S>> requestDuties(
       final UInt64 epoch, final SafeFuture<Optional<S>> cancellable) {
     LOG.trace("Request duties for epoch {}", epoch);

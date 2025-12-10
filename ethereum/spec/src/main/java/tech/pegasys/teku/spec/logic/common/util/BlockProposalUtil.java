@@ -13,108 +13,33 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
-import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
-public class BlockProposalUtil {
+public interface BlockProposalUtil {
+  int getProposerLookAheadEpochs();
 
-  private final BlockProcessor blockProcessor;
-  private final SchemaDefinitions schemaDefinitions;
+  Bytes32 getBlockProposalDependentRoot(
+      Bytes32 headBlockRoot,
+      Bytes32 previousTargetRoot,
+      Bytes32 currentTargetRoot,
+      UInt64 headEpoch,
+      UInt64 dutyEpoch);
 
-  public BlockProposalUtil(
-      final SchemaDefinitions schemaDefinitions, final BlockProcessor blockProcessor) {
-    this.schemaDefinitions = schemaDefinitions;
-    this.blockProcessor = blockProcessor;
-  }
+  SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
+      UInt64 proposalSlot,
+      int proposerIndex,
+      BeaconState blockSlotState,
+      Bytes32 parentBlockSigningRoot,
+      Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder,
+      BlockProductionPerformance blockProductionPerformance);
 
-  public SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
-      final UInt64 proposalSlot,
-      final int proposerIndex,
-      final BeaconState blockSlotState,
-      final Bytes32 parentBlockSigningRoot,
-      final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder,
-      final BlockProductionPerformance blockProductionPerformance) {
-    checkArgument(
-        blockSlotState.getSlot().equals(proposalSlot),
-        "Block slot state from incorrect slot. Expected %s but got %s",
-        proposalSlot,
-        blockSlotState.getSlot());
-
-    // Create block body
-    final SafeFuture<? extends BeaconBlockBody> beaconBlockBody = createBlockBody(bodyBuilder);
-
-    // Create initial block with some stubs
-    final Bytes32 tmpStateRoot = Bytes32.ZERO;
-    final SafeFuture<BeaconBlock> newBlock =
-        beaconBlockBody.thenApply(
-            body -> {
-              final BeaconBlockSchema beaconBlockSchema =
-                  body.isBlinded()
-                      ? schemaDefinitions.getBlindedBeaconBlockSchema()
-                      : schemaDefinitions.getBeaconBlockSchema();
-              return beaconBlockSchema.create(
-                  proposalSlot,
-                  UInt64.valueOf(proposerIndex),
-                  parentBlockSigningRoot,
-                  tmpStateRoot,
-                  body);
-            });
-
-    return newBlock
-        .thenApplyChecked(
-            block -> {
-              blockProductionPerformance.beaconBlockCreated();
-              // Run state transition and set state root
-              // Skip verifying signatures as all operations are coming from our own pools.
-
-              final BeaconState newState =
-                  blockProcessor.processUnsignedBlock(
-                      blockSlotState,
-                      block,
-                      IndexedAttestationCache.NOOP,
-                      BLSSignatureVerifier.NO_OP,
-                      Optional.empty());
-
-              blockProductionPerformance.stateTransition();
-
-              final Bytes32 stateRoot = newState.hashTreeRoot();
-
-              blockProductionPerformance.stateHashing();
-              final BeaconBlock newCompleteBlock = block.withStateRoot(stateRoot);
-
-              return new BeaconBlockAndState(newCompleteBlock, newState);
-            })
-        .exceptionallyCompose(
-            error -> {
-              if (ExceptionUtil.hasCause(error, BlockProcessingException.class)) {
-                return SafeFuture.failedFuture(new StateTransitionException(error));
-              }
-              return SafeFuture.failedFuture(error);
-            });
-  }
-
-  private SafeFuture<? extends BeaconBlockBody> createBlockBody(
-      final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder) {
-    final BeaconBlockBodyBuilder builder = schemaDefinitions.createBeaconBlockBodyBuilder();
-    return bodyBuilder.apply(builder).thenApply(__ -> builder.build());
-  }
+  UInt64 getStateSlotForProposerDuties(Spec spec, UInt64 dutiesEpoch);
 }

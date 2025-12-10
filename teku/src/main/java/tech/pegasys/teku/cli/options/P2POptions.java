@@ -516,12 +516,36 @@ public class P2POptions {
       GossipConfig.DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
 
   @Option(
-      names = {"--Xdas-extra-custody-group-count"},
+      names = {"--Xcustody-group-count-override"},
       paramLabel = "<NUMBER>",
-      description = "Number of extra custody groups",
+      description =
+          "Override the number of custody groups. If it's lower than node configuration requirement, "
+              + "the value is ignored. If it's higher than maximum number of custody groups, the value is set to "
+              + "allowed maximum.",
       arity = "1",
       hidden = true)
-  private int dasExtraCustodyGroupCount = P2PConfig.DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT;
+  private int custodyGroupCountOverride = P2PConfig.DEFAULT_CUSTODY_GROUP_COUNT_OVERRIDE;
+
+  @Option(
+      names = {"--Xdas-publish-withhold-columns-every-slots"},
+      hidden = true,
+      paramLabel = "<NUMBER>",
+      description =
+          "If set will not publish non-custodied DataColumnSidecars on block production once in configured number of slots",
+      arity = "1")
+  private int dasPublishWithholdColumnsEverySlots =
+      P2PConfig.DEFAULT_DAS_PUBLISH_WITHHOLD_COLUMNS_EVERY_SLOTS;
+
+  @Option(
+      names = {"--Xdas-disable-el-recovery"},
+      hidden = true,
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "If set will disable attempts to recover blobs from EL to build DataColumnSidecars",
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean dasDisableElRecovery = P2PConfig.DEFAULT_DAS_DISABLE_EL_RECOVERY;
 
   @Option(
       names = {"--Xp2p-historical-data-max-concurrent-queries"},
@@ -630,7 +654,9 @@ public class P2POptions {
                   .peerRequestLimit(peerRequestLimit)
                   .floodPublishMaxMessageSizeThreshold(floodPublishMaxMessageSizeThreshold)
                   .gossipBlobsAfterBlockEnabled(gossipBlobsAfterBlockEnabled)
-                  .dasExtraCustodyGroupCount(dasExtraCustodyGroupCount)
+                  .custodyGroupCountOverride(custodyGroupCountOverride)
+                  .dasPublishWithholdColumnsEverySlots(dasPublishWithholdColumnsEverySlots)
+                  .dasDisableElRecovery(dasDisableElRecovery)
                   .historicalDataMaxConcurrentQueries(historicalDataMaxConcurrentQueries)
                   .historicalDataMaxQueryQueueSize(historicalDataMaxQueryQueueSize)
                   .executionProofTopicEnabled(executionProofTopicEnabled)

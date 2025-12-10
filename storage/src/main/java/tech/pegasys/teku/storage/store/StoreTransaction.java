@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -104,6 +105,12 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       this.maybeEarliestBlobSidecarTransactionSlot = maybeEarliestBlobSidecarSlot;
     }
     putStateRoot(state.hashTreeRoot(), block.getSlotAndBlockRoot());
+  }
+
+  @Override
+  public void putExecutionPayloadAndState(
+      final SignedExecutionPayloadEnvelope executionPayload, final BeaconState state) {
+    // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878
   }
 
   private boolean needToUpdateEarliestBlobSidecarSlot(

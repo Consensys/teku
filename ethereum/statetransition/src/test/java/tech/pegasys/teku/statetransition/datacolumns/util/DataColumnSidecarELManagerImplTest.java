@@ -68,6 +68,7 @@ import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELManager;
 import tech.pegasys.teku.statetransition.datacolumns.ValidDataColumnSidecarsListener;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
+import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DataColumnSidecarELManagerImplTest {
@@ -79,6 +80,8 @@ public class DataColumnSidecarELManagerImplTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final ExecutionLayerChannel executionLayer = mock(ExecutionLayerChannel.class);
+  private final DataColumnSidecarGossipValidator dataColumnSidecarGossipValidator =
+      mock(DataColumnSidecarGossipValidator.class);
   private final KZG kzg = mock(KZG.class);
   private final int custodyGroupCount = 4;
   private final int sampleGroupCount = 8;
@@ -107,6 +110,7 @@ public class DataColumnSidecarELManagerImplTest {
               recentChainData,
               executionLayer,
               dataColumnSidecarPublisher,
+              dataColumnSidecarGossipValidator,
               custodyGroupCountManager,
               metricsSystem,
               timeProvider);
@@ -145,6 +149,7 @@ public class DataColumnSidecarELManagerImplTest {
                 recentChainData,
                 executionLayer,
                 dataColumnSidecarPublisher,
+                dataColumnSidecarGossipValidator,
                 custodyGroupCountManager,
                 metricsSystem,
                 timeProvider);
@@ -287,6 +292,32 @@ public class DataColumnSidecarELManagerImplTest {
   }
 
   @Test
+  public void shouldMarkForEquivocation_AllColumnsRebuiltFromRetrievedFromEL() {
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+    dataColumnSidecarELManager.onSlot(currentSlot);
+    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
+    final List<BlobAndCellProofs> blobAndCellProofs =
+        blobSidecars.stream()
+            .map(
+                blobSidecar ->
+                    new BlobAndCellProofs(
+                        blobSidecar.getBlob(),
+                        IntStream.range(0, 128)
+                            .mapToObj(__ -> dataStructureUtil.randomKZGProof())
+                            .toList()))
+            .toList();
+    when(executionLayer.engineGetBlobAndCellProofsList(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(blobAndCellProofs));
+    dataColumnSidecarELManager.onNewBlock(block, Optional.empty());
+
+    assertThat(asyncRunner.hasDelayedActions()).isFalse();
+
+    verifyRecovery(true);
+    verify(dataColumnSidecarGossipValidator, times(1)).markForEquivocation(any(), any());
+  }
+
+  @Test
   public void shouldRetry_whenElBlobsFetchingFails() {
     final DataColumnSidecarELManager dataColumnSidecarELRecoveryManager =
         new DataColumnSidecarELManagerImpl(
@@ -302,7 +333,8 @@ public class DataColumnSidecarELManagerImplTest {
             metricsSystem,
             timeProvider,
             EL_BLOBS_FETCHING_DELAY,
-            EL_BLOBS_FETCHING_MAX_RETRIES);
+            EL_BLOBS_FETCHING_MAX_RETRIES,
+            dataColumnSidecarGossipValidator);
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     dataColumnSidecarELRecoveryManager.onSlot(currentSlot);
@@ -335,7 +367,8 @@ public class DataColumnSidecarELManagerImplTest {
             metricsSystem,
             timeProvider,
             EL_BLOBS_FETCHING_DELAY,
-            EL_BLOBS_FETCHING_MAX_RETRIES);
+            EL_BLOBS_FETCHING_MAX_RETRIES,
+            dataColumnSidecarGossipValidator);
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     dataColumnSidecarELRecoveryManager.onSlot(currentSlot);
@@ -383,7 +416,8 @@ public class DataColumnSidecarELManagerImplTest {
             metricsSystem,
             timeProvider,
             EL_BLOBS_FETCHING_DELAY,
-            EL_BLOBS_FETCHING_MAX_RETRIES);
+            EL_BLOBS_FETCHING_MAX_RETRIES,
+            dataColumnSidecarGossipValidator);
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     dataColumnSidecarELRecoveryManager.onSlot(currentSlot);
@@ -419,7 +453,8 @@ public class DataColumnSidecarELManagerImplTest {
             metricsSystem,
             timeProvider,
             EL_BLOBS_FETCHING_DELAY,
-            EL_BLOBS_FETCHING_MAX_RETRIES);
+            EL_BLOBS_FETCHING_MAX_RETRIES,
+            dataColumnSidecarGossipValidator);
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     dataColumnSidecarELRecoveryManager.onSlot(currentSlot);
@@ -477,7 +512,8 @@ public class DataColumnSidecarELManagerImplTest {
             metricsSystem,
             timeProvider,
             EL_BLOBS_FETCHING_DELAY,
-            EL_BLOBS_FETCHING_MAX_RETRIES);
+            EL_BLOBS_FETCHING_MAX_RETRIES,
+            dataColumnSidecarGossipValidator);
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     dataColumnSidecarELRecoveryManager.onSlot(currentSlot);
@@ -518,7 +554,8 @@ public class DataColumnSidecarELManagerImplTest {
             metricsSystem,
             timeProvider,
             EL_BLOBS_FETCHING_DELAY,
-            EL_BLOBS_FETCHING_MAX_RETRIES);
+            EL_BLOBS_FETCHING_MAX_RETRIES,
+            dataColumnSidecarGossipValidator);
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     dataColumnSidecarELRecoveryManager.onSlot(currentSlot);

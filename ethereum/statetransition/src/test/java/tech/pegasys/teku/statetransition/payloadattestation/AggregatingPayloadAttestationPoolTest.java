@@ -49,8 +49,8 @@ class AggregatingPayloadAttestationPoolTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  private final PayloadAttestationMessageValidator validator =
-      mock(PayloadAttestationMessageValidator.class);
+  private final PayloadAttestationMessageGossipValidator validator =
+      mock(PayloadAttestationMessageGossipValidator.class);
 
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
@@ -99,35 +99,44 @@ class AggregatingPayloadAttestationPoolTest {
   @Test
   public void getsAggregatedPayloadAttestationsForBlock() {
     final UInt64 blockSlot = dataStructureUtil.randomSlot();
-    final int validatorCount = 32;
+    final int validatorCount = 8192;
     final BeaconState state =
         dataStructureUtil.randomBeaconStateWithActiveValidators(validatorCount, blockSlot);
     final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
     final UInt64 slot = blockSlot.minusMinZero(1);
+
+    final IntList ptc = spec.getPtc(state, slot);
 
     final PayloadAttestationData payloadPresentData =
         createPayloadAttestationData(parentRoot, slot, true);
     final PayloadAttestationData payloadAbsentData =
         createPayloadAttestationData(parentRoot, slot, false);
 
-    // Validators (0-28) vote for payload to be present
-    // Validators (29-31) vote for payload to be absent
-    UInt64.range(UInt64.ZERO, UInt64.valueOf(validatorCount))
+    // ~80% vote for payload to be present
+    // ~20% vote for payload to be absent
+    final List<Integer> payloadPresentVoters = new ArrayList<>();
+    final List<Integer> payloadAbsentVoters = new ArrayList<>();
+    ptc.intStream()
+        .distinct()
         .forEach(
             validatorIndex -> {
+              final boolean voteForPayloadPresent = Math.random() < 0.8;
               final PayloadAttestationMessage payloadAttestationMessage =
                   createPayloadAttestationMessage(
-                      validatorIndex,
-                      validatorIndex.isLessThanOrEqualTo(28)
-                          ? payloadPresentData
-                          : payloadAbsentData);
+                      UInt64.valueOf(validatorIndex),
+                      voteForPayloadPresent ? payloadPresentData : payloadAbsentData);
+              if (voteForPayloadPresent) {
+                payloadPresentVoters.add(validatorIndex);
+              } else {
+                payloadAbsentVoters.add(validatorIndex);
+              }
               SafeFutureAssert.safeJoin(
                   payloadAttestationPool.addRemote(payloadAttestationMessage, Optional.empty()));
             });
 
     // Not applicable votes
     final PayloadAttestationData differentSlotData =
-        createPayloadAttestationData(parentRoot, slot.plus(42), true);
+        createPayloadAttestationData(parentRoot, slot.minus(1), true);
     final PayloadAttestationData differentBeaconBlockRootData =
         createPayloadAttestationData(dataStructureUtil.randomBytes32(), slot, true);
     SafeFutureAssert.safeJoin(
@@ -138,23 +147,34 @@ class AggregatingPayloadAttestationPoolTest {
             createPayloadAttestationMessage(UInt64.valueOf(1), differentBeaconBlockRootData),
             Optional.empty()));
 
-    assertThat(getPoolSizeFromMetric()).isEqualTo(34);
+    assertThat(getPoolSizeFromMetric())
+        .isEqualTo(payloadPresentVoters.size() + payloadAbsentVoters.size() + 2);
 
     final SszList<PayloadAttestation> payloadAttestations =
         payloadAttestationPool.getPayloadAttestationsForBlock(state, parentRoot);
 
     assertThat(payloadAttestations).hasSize(2);
 
-    final IntList ptc = spec.getPtc(state, slot);
-
     // more validators voted, so it should be first in the list
     assertThat(payloadAttestations.get(0).getData()).isEqualTo(payloadPresentData);
-    assertThat(payloadAttestations.get(0).getAggregationBits().streamAllSetBits())
-        .allMatch(i -> ptc.getInt(i) <= 28);
+    assertThat(
+            payloadAttestations
+                .get(0)
+                .getAggregationBits()
+                .streamAllSetBits()
+                .map(ptc::getInt)
+                .distinct())
+        .containsExactlyInAnyOrderElementsOf(payloadPresentVoters);
 
     assertThat(payloadAttestations.get(1).getData()).isEqualTo(payloadAbsentData);
-    assertThat(payloadAttestations.get(1).getAggregationBits().streamAllSetBits())
-        .allMatch(i -> ptc.getInt(i) > 28);
+    assertThat(
+            payloadAttestations
+                .get(1)
+                .getAggregationBits()
+                .streamAllSetBits()
+                .map(ptc::getInt)
+                .distinct())
+        .containsExactlyInAnyOrderElementsOf(payloadAbsentVoters);
   }
 
   @Test

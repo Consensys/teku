@@ -111,4 +111,9 @@ public class SyncCommitteeDutyLoader
                 dutyBuilder.committeeAssignments(
                     validator, duty.getValidatorIndex(), duty.getValidatorSyncCommitteeIndices()));
   }
+
+  @Override
+  public String getDutyType() {
+    return "Sync Committee";
+  }
 }

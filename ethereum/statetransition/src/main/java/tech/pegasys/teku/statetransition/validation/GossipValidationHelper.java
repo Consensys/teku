@@ -59,6 +59,16 @@ public class GossipValidationHelper {
     return slot.isGreaterThan(maxCurrSlot);
   }
 
+  public boolean isSlotCurrent(final UInt64 slot) {
+    final UInt64 slotStartTimeMillis =
+        spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
+    final UInt64 slotEndTimeMillis = slotStartTimeMillis.plus(spec.getSlotDurationMillis(slot));
+    final UInt64 currentTimeMillis = getCurrentTimeMillis();
+    return currentTimeMillis.isGreaterThanOrEqualTo(
+            slotStartTimeMillis.minusMinZero(maxOffsetTimeInMillis))
+        && currentTimeMillis.isLessThanOrEqualTo(slotEndTimeMillis.plus(maxOffsetTimeInMillis));
+  }
+
   public boolean isSignatureValidWithRespectToProposerIndex(
       final Bytes signingRoot,
       final UInt64 proposerIndex,
@@ -126,5 +136,15 @@ public class GossipValidationHelper {
 
   public ReadOnlyForkChoiceStrategy getForkChoiceStrategy() {
     return recentChainData.getForkChoiceStrategy().orElseThrow();
+  }
+
+  public SafeFuture<Optional<BeaconState>> getStateAtSlotAndBlockRoot(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return recentChainData.retrieveStateAtSlot(slotAndBlockRoot);
+  }
+
+  public boolean isValidatorInPayloadTimelinessCommittee(
+      final UInt64 validatorIndex, final BeaconState state, final UInt64 slot) {
+    return spec.getPtc(state, slot).contains(validatorIndex.intValue());
   }
 }

@@ -178,7 +178,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     verify(peer, never()).adjustDataColumnSidecarsRequest(any(), anyLong());
 
     final long rateLimitedCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK,
             "rpc_data_column_sidecars_by_root_requests_total",
             "rate_limited");

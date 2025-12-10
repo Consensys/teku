@@ -50,6 +50,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.operations.validation.Attesta
 import tech.pegasys.teku.spec.logic.versions.deneb.util.AttestationUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.VoluntaryExitValidator;
+import tech.pegasys.teku.spec.logic.versions.phase0.util.BlockProposalUtilPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class SpecLogicDeneb extends AbstractSpecLogic {
@@ -181,7 +182,7 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
         new ForkChoiceUtilDeneb(
             config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
-        new BlockProposalUtil(schemaDefinitions, blockProcessor);
+        new BlockProposalUtilPhase0(schemaDefinitions, blockProcessor);
 
     final BlindBlockUtilBellatrix blindBlockUtil = new BlindBlockUtilBellatrix(schemaDefinitions);
 

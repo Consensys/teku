@@ -70,4 +70,9 @@ public class BlockProductionDutyLoader
         .getValidator(duty.getPublicKey())
         .ifPresent(validator -> scheduledDuties.scheduleProduction(duty.getSlot(), validator));
   }
+
+  @Override
+  public String getDutyType() {
+    return "Block Production";
+  }
 }

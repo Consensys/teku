@@ -144,7 +144,6 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.SimpleOperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
-import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPoolV1;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPoolV2;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.attestation.utils.AggregatingAttestationPoolProfiler;
@@ -183,9 +182,7 @@ import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAcces
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipBatchLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
-import tech.pegasys.teku.statetransition.datacolumns.log.rpc.LoggingBatchDataColumnsByRangeReqResp;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.LoggingBatchDataColumnsByRootReqResp;
-import tech.pegasys.teku.statetransition.datacolumns.retriever.BatchDataColumnsByRangeReqResp;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.BatchDataColumnsByRootReqResp;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DasPeerCustodyCountSupplier;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqResp;
@@ -215,7 +212,7 @@ import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.payloadattestation.AggregatingPayloadAttestationPool;
-import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationMessageValidator;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationMessageGossipValidator;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -377,6 +374,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile KZG kzg;
   protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile BlobSidecarGossipValidator blobSidecarValidator;
+  protected volatile DataColumnSidecarGossipValidator dataColumnSidecarGossipValidator;
   protected volatile DataColumnSidecarManager dataColumnSidecarManager;
   protected volatile ExecutionPayloadBidManager executionPayloadBidManager;
   protected volatile ExecutionPayloadManager executionPayloadManager;
@@ -770,7 +768,42 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     return DEFAULT_KZG_PRECOMPUTE;
                   });
 
-      kzg.loadTrustedSetup(trustedSetupFile, kzgPrecompute);
+      if (kzgPrecompute <= DEFAULT_KZG_PRECOMPUTE_SUPERNODE) {
+        // By default, run loadTrustedSetup on the current thread with a 1MB stack
+        kzg.loadTrustedSetup(trustedSetupFile, kzgPrecompute);
+      } else {
+        // Higher kzgPrecompute values require a larger stack. If the --Xkzg-precompute flag
+        // is used to specify a higher kzgPrecompute value, run loadTrustedSetup on a
+        // dedicated thread with an 8MB stack.
+        final long stackSize = 8 * 1024 * 1024; // 8MB
+        final AtomicReference<Throwable> loadException = new AtomicReference<>();
+        final Thread loaderThread =
+            new Thread(
+                null,
+                () -> {
+                  try {
+                    kzg.loadTrustedSetup(trustedSetupFile, kzgPrecompute);
+                  } catch (final Throwable t) {
+                    loadException.set(t);
+                  }
+                },
+                "kzg-loader",
+                stackSize);
+        loaderThread.start();
+        try {
+          loaderThread.join(Duration.ofMinutes(5).toMillis());
+          if (loaderThread.isAlive()) {
+            loaderThread.interrupt();
+            throw new RuntimeException("KZG trusted setup loading timed out after five minutes");
+          }
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new RuntimeException("KZG trusted setup loading was interrupted", e);
+        }
+        if (loadException.get() != null) {
+          throw new RuntimeException("Failed to load KZG trusted setup", loadException.get());
+        }
+      }
     } else {
       kzg = KZG.DISABLED;
     }
@@ -816,7 +849,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initDataColumnSidecarManager() {
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      final DataColumnSidecarGossipValidator dataColumnSidecarGossipValidator =
+      dataColumnSidecarGossipValidator =
           DataColumnSidecarGossipValidator.create(
               spec,
               invalidBlockRoots,
@@ -927,8 +960,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final DataColumnPeerManagerImpl dasPeerManager = new DataColumnPeerManagerImpl();
     p2pNetwork.subscribeConnect(dasPeerManager);
 
-    final BatchDataColumnsByRangeReqResp loggingByRangeReqResp =
-        new LoggingBatchDataColumnsByRangeReqResp(dasPeerManager, dasReqRespLogger);
     final BatchDataColumnsByRootReqResp loggingByRootReqResp =
         new LoggingBatchDataColumnsByRootReqResp(dasPeerManager, dasReqRespLogger);
     final SchemaDefinitionsFulu schemaDefinitionsFulu =
@@ -936,11 +967,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     final DataColumnReqResp dasRpc =
         new DataColumnReqRespBatchingImpl(
-            spec,
-            recentChainData,
-            loggingByRangeReqResp,
-            loggingByRootReqResp,
-            schemaDefinitionsFulu.getDataColumnsByRootIdentifierSchema());
+            loggingByRootReqResp, schemaDefinitionsFulu.getDataColumnsByRootIdentifierSchema());
 
     final MetadataDasPeerCustodyTracker peerCustodyTracker = new MetadataDasPeerCustodyTracker();
     p2pNetwork.subscribeConnect(peerCustodyTracker);
@@ -1201,7 +1228,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initDataColumnSidecarELManager() {
     LOG.debug("BeaconChainController.initDataColumnSidecarELManager()");
-    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+    if (beaconConfig.p2pConfig().isDasDisableElRecovery()) {
+      LOG.warn(
+          "DataColumnSidecarELRecoveryManager is NOOP: blobs recovery from local EL is disabled.");
+    }
+    if (spec.isMilestoneSupported(SpecMilestone.FULU)
+        && !beaconConfig.p2pConfig().isDasDisableElRecovery()) {
 
       final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel =
           eventChannels.getPublisher(DataColumnSidecarGossipChannel.class);
@@ -1213,6 +1245,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               recentChainData,
               executionLayer,
               dataColumnSidecarGossipChannel::publishDataColumnSidecars,
+              dataColumnSidecarGossipValidator,
               custodyGroupCountManager,
               metricsSystem,
               timeProvider);
@@ -1335,7 +1368,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initPayloadAttestationPool() {
     LOG.debug("BeaconChainController.initPayloadAttestationPool()");
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
-      final PayloadAttestationMessageValidator validator = new PayloadAttestationMessageValidator();
+      final PayloadAttestationMessageGossipValidator validator =
+          new PayloadAttestationMessageGossipValidator(
+              spec, gossipValidationHelper, invalidBlockRoots);
       final AggregatingPayloadAttestationPool aggregatingPayloadAttestationPool =
           new AggregatingPayloadAttestationPool(spec, validator, metricsSystem);
       payloadAttestationPool = aggregatingPayloadAttestationPool;
@@ -1618,6 +1653,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blobSidecarGossipChannel,
             dataColumnSidecarGossipChannel,
             dutyMetrics,
+            custodyGroupCountManager,
+            beaconConfig.p2pConfig().getDasPublishWithholdColumnsEverySlots(),
             beaconConfig.p2pConfig().isGossipBlobsAfterBlockEnabled());
 
     final ExecutionPayloadFactory executionPayloadFactory;
@@ -1757,8 +1794,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 spec,
                 recentChainData,
                 syncCommitteeStateUtils,
-                timeProvider,
-                signatureVerificationService));
+                signatureVerificationService,
+                gossipValidationHelper));
 
     syncCommitteeMessagePool =
         new SyncCommitteeMessagePool(
@@ -1768,7 +1805,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 recentChainData,
                 syncCommitteeStateUtils,
                 signatureVerificationService,
-                timeProvider));
+                gossipValidationHelper));
     eventChannels
         .subscribe(SlotEventsChannel.class, syncCommitteeContributionPool)
         .subscribe(SlotEventsChannel.class, syncCommitteeMessagePool);
@@ -1929,18 +1966,16 @@ public class BeaconChainController extends Service implements BeaconChainControl
             : AggregatingAttestationPoolProfiler.NOOP;
 
     attestationPool =
-        eth2NetworkConfiguration.isAggregatingAttestationPoolV2Enabled()
-            ? new AggregatingAttestationPoolV2(
-                spec,
-                recentChainData,
-                metricsSystem,
-                DEFAULT_MAXIMUM_ATTESTATION_COUNT,
-                profiler,
-                eth2NetworkConfiguration.getAggregatingAttestationPoolV2BlockAggregationTimeLimit(),
-                eth2NetworkConfiguration
-                    .getAggregatingAttestationPoolV2TotalBlockAggregationTimeLimit())
-            : new AggregatingAttestationPoolV1(
-                spec, recentChainData, metricsSystem, profiler, DEFAULT_MAXIMUM_ATTESTATION_COUNT);
+        new AggregatingAttestationPoolV2(
+            spec,
+            recentChainData,
+            metricsSystem,
+            DEFAULT_MAXIMUM_ATTESTATION_COUNT,
+            profiler,
+            eth2NetworkConfiguration.getAggregatingAttestationPoolV2BlockAggregationTimeLimit(),
+            eth2NetworkConfiguration
+                .getAggregatingAttestationPoolV2TotalBlockAggregationTimeLimit());
+
     eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
     blockImporter.subscribeToVerifiedBlockAttestations(
         attestationPool::onAttestationsIncludedInBlock);
