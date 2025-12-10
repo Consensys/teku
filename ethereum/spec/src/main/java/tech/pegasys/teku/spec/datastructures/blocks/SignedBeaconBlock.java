@@ -111,7 +111,8 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
       final TreeNode replacement = unblindedData.get(i);
       checkState(
           expectedRoot.equals(replacement.hashTreeRoot()),
-          "Root at index %s in blinded block does not match provided replacement root", blindedNodeIndex);
+          "Root at index %s in blinded block does not match provided replacement root",
+          blindedNodeIndex);
       updatesList.add(new TreeUpdates.Update(blindedNodeIndex, replacement));
     }
     return backingNode.updated(new TreeUpdates(updatesList));

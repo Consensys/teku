@@ -107,9 +107,7 @@ public class DepositSender implements AutoCloseable {
     final String reply =
         consoleAdapter.readLine(
             "You are about to submit %s of %s Eth to contract address [%s].\nThis is irreversible, please make sure you understand the consequences. Are you sure you want to continue? [y/n]",
-                transactionPart,
-                eth,
-            contractAddress);
+            transactionPart, eth, contractAddress);
     if ("y".equalsIgnoreCase(reply)) {
       return;
     }

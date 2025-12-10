@@ -458,8 +458,8 @@ public class BlockOperationSelectorFactory {
       final BlockProductionPerformance blockProductionPerformance) {
     checkState(
         executionPayloadContext.isPresent(),
-        "ExecutionPayloadContext is not provided for production of post-merge block at slot %s"
-            , blockSlotState.getSlot());
+        "ExecutionPayloadContext is not provided for production of post-merge block at slot %s",
+        blockSlotState.getSlot());
     final ExecutionPayloadResult executionPayloadResult =
         executionLayerBlockProductionManager.initiateBlockProduction(
             executionPayloadContext.get(),
@@ -478,8 +478,8 @@ public class BlockOperationSelectorFactory {
                 signedBid -> {
                   checkState(
                       signedBid.isPresent(),
-                      "No execution payload bid has been prepared for production of block at slot %s"
-                          , blockSlotState.getSlot());
+                      "No execution payload bid has been prepared for production of block at slot %s",
+                      blockSlotState.getSlot());
                   bodyBuilder.signedExecutionPayloadBid(signedBid.get());
                 });
     return SafeFuture.allOf(

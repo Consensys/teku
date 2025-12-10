@@ -100,7 +100,8 @@ public class EraFile {
     if (!stateIndices.getEntry().isIndexType()) {
       throw new RuntimeException(
           String.format(
-              " -- State e2store record type (i2) was not found at starting position %s", recordStart));
+              " -- State e2store record type (i2) was not found at starting position %s",
+              recordStart));
     }
     System.out.println("\tState slot: " + stateIndices.getStartSlot());
     System.out.println("\tState index start: " + recordStart);
@@ -177,13 +178,17 @@ public class EraFile {
         currentSlot = currentSlot.increment();
         Preconditions.checkArgument(
             spec.getBlockRootAtSlot(verifiedState, currentSlot).equals(lastRoot),
-            "Block at slot %s did not match the root stored in the reference state.",currentSlot);
+            "Block at slot %s did not match the root stored in the reference state.",
+            currentSlot);
         ++emptySlots;
         continue;
       }
       Preconditions.checkArgument(
           blockIndices.getRecordStart() + offset > 0,
-          "Offset for block goes beyond length of file - start: %s; offset requested: %s; pos: %s" ,blockIndices.getRecordStart(),offset,i);
+          "Offset for block goes beyond length of file - start: %s; offset requested: %s; pos: %s",
+          blockIndices.getRecordStart(),
+          offset,
+          i);
       final ReadEntry entry =
           new ReadEntry(byteBuffer, (int) blockIndices.getRecordStart() + offset);
       final SignedBeaconBlock block = getBlock(entry);
@@ -192,11 +197,13 @@ public class EraFile {
       currentSlot = block.getSlot();
       Preconditions.checkArgument(
           spec.getBlockRootAtSlot(verifiedState, block.getSlot()).equals(block.getRoot()),
-          "Block at slot %s did not match the root stored in the reference state.", block.getSlot());
+          "Block at slot %s did not match the root stored in the reference state.",
+          block.getSlot());
       if (!lastRoot.isZero()) {
         Preconditions.checkArgument(
             block.getParentRoot().equals(lastRoot),
-            "Parent root did not match at slot %s", currentSlot);
+            "Parent root did not match at slot %s",
+            currentSlot);
       }
       lastRoot = block.getRoot();
       if (populatedSlots == 0 && previousArchiveLastBlock != null) {

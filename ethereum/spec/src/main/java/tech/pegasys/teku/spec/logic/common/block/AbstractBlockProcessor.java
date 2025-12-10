@@ -307,7 +307,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         beaconStateAccessors.getBeaconCommittee(state, data.getSlot(), data.getIndex());
     checkArgument(
         attestation.getAggregationBits().size() == committee.size(),
-        "process_attestations: Attestation aggregation bits and committee don't have the same length - committee %s, aggregation bits %s",committee.size(), attestation.getAggregationBits().size());
+        "process_attestations: Attestation aggregation bits and committee don't have the same length - committee %s, aggregation bits %s",
+        committee.size(),
+        attestation.getAggregationBits().size());
   }
 
   @Override

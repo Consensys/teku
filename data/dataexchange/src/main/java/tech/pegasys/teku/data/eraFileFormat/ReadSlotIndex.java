@@ -49,7 +49,8 @@ class ReadSlotIndex {
 
     checkArgument(
         data.length >= startOffset + 8,
-        "buffer length is not sufficient to read a long from position %s", startOffset);
+        "buffer length is not sufficient to read a long from position %s",
+        startOffset);
     return Longs.fromBytes(
         data[startOffset + 7],
         data[startOffset + 6],

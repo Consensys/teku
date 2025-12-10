@@ -97,7 +97,7 @@ public class LibP2PGossipNetworkBuilder {
   }
 
   private void assertNotNull(final String fieldName, final Object fieldValue) {
-    checkState(fieldValue != null, "Field %s must be set.",fieldName);
+    checkState(fieldValue != null, "Field %s must be set.", fieldName);
   }
 
   protected GossipRouter createGossipRouter(
@@ -132,7 +132,8 @@ public class LibP2PGossipNetworkBuilder {
         msg -> {
           Preconditions.checkArgument(
               msg.getTopicIDsCount() == 1,
-              "Unexpected number of topics for a single message: %s", msg.getTopicIDsCount());
+              "Unexpected number of topics for a single message: %s",
+              msg.getTopicIDsCount());
           final Optional<UInt64> arrivalTimestamp;
           if (recordArrivalTime) {
             arrivalTimestamp = Optional.of(timeProvider.getTimeInMillis());
