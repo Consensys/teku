@@ -136,7 +136,7 @@ public class RepeatingTaskScheduler {
     public void execute(final UInt64 actualTime) {
       checkArgument(
           actualTime.isGreaterThanOrEqualTo(nextDue),
-          "Executing task before it is due. Scheduled " + nextDue + " currently " + actualTime);
+          "Executing task before it is due. Scheduled %s currently %s", nextDue, actualTime);
       try {
         action.execute(nextDue, actualTime);
       } finally {

@@ -50,7 +50,7 @@ public class SerializableObjectTypeDefinitionBuilder<TObject> {
       final Function<TObject, TField> getter) {
     checkArgument(
         !this.fields.containsKey(name),
-        "Field " + name + " was already defined, attempting to add twice.");
+        "Field %s was already defined, attempting to add twice.", name);
     this.fields.put(name, new RequiredSerializableFieldDefinition<>(name, getter, type));
     return this;
   }
@@ -61,7 +61,7 @@ public class SerializableObjectTypeDefinitionBuilder<TObject> {
       final Function<TObject, Optional<TField>> getter) {
     checkArgument(
         !this.fields.containsKey(name),
-        "Field " + name + " was already defined, attempting to add twice.");
+        "Field %s was already defined, attempting to add twice.", name);
     this.fields.put(name, new OptionalSerializableFieldDefinition<>(name, getter, type));
     return this;
   }

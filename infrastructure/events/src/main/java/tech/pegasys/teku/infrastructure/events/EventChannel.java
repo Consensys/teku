@@ -105,9 +105,7 @@ class EventChannel<T> {
             .collect(joining(", "));
     checkArgument(
         illegalMethods.isEmpty(),
-        "All methods must have a return type that is void or compatible with SafeFuture and no exceptions but "
-            + illegalMethods
-            + " did not");
+        "All methods must have a return type that is void or compatible with SafeFuture and no exceptions but %s did not", illegalMethods);
     final boolean hasReturnValues =
         Stream.of(channelInterface.getMethods())
             .anyMatch(method -> hasAllowedAsyncReturnValue(method.getReturnType()));

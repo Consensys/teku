@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.subcommand.internal.validator.tools;
 
+import com.google.errorprone.annotations.FormatMethod;
+
 import java.io.Console;
 
 public class ConsoleAdapter {
@@ -30,10 +32,12 @@ public class ConsoleAdapter {
     }
   }
 
+  @FormatMethod
   public char[] readPassword(final String fmt, final Object... args) {
     return console.readPassword(fmt, args);
   }
 
+  @FormatMethod
   public String readLine(final String fmt, final Object... args) {
     return console.readLine(fmt, args);
   }
