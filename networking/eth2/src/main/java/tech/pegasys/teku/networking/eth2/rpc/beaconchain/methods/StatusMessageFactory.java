@@ -15,12 +15,14 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -117,8 +119,23 @@ public class StatusMessageFactory implements SlotEventsChannel {
   }
 
   private void updateEarliestAvailableSlot() {
-    combinedChainDataClient
-        .getEarliestAvailableBlockSlot()
+    final SafeFuture<Optional<UInt64>> earliestAvailableBlockSlotFuture =
+        combinedChainDataClient.getEarliestAvailableBlockSlot();
+    final SafeFuture<Optional<UInt64>> earliestDataColumnSidecarSlotFuture =
+        combinedChainDataClient.getEarliestDataColumnSidecarSlot();
+
+    final BiFunction<Optional<UInt64>, Optional<UInt64>, Optional<UInt64>>
+        combineEarliestSlotFunction =
+            (a, b) -> {
+              if (a.isPresent() && b.isPresent()) {
+                return Optional.ofNullable(a.get().max(b.get()));
+              } else {
+                return Optional.empty();
+              }
+            };
+
+    earliestAvailableBlockSlotFuture
+        .thenCombine(earliestDataColumnSidecarSlotFuture, combineEarliestSlotFunction)
         .thenAccept(
             maybeSlot -> {
               maybeSlot.ifPresent(
