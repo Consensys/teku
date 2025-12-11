@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
@@ -31,6 +32,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
@@ -250,5 +253,33 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
 
               return false;
             });
+  }
+
+  @Override
+  public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
+    final DataColumnSamplingTracker tracker = getOrCreateTracker(block.getSlot(), block.getRoot());
+
+    if (tracker.completionFuture().isDone()) {
+      return;
+    }
+
+    if (tracker.rpcFetchScheduled().compareAndSet(false, true)) {
+      fetchMissingColumnsViaRPC(block.getSlot(), block.getRoot(), tracker);
+    }
+  }
+
+  @Override
+  public void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {
+    final DataColumnSamplingTracker removed =
+        recentlySampledColumnsByRoot.remove(slotAndBlockRoot.getBlockRoot());
+    // TODO: cleanup
+    if (removed != null) {
+      LOG.debug("Removed data column sampling tracker {}", removed);
+    }
+  }
+
+  @Override
+  public void enableBlockImportOnCompletion(final SignedBeaconBlock block) {
+    // nothing to do
   }
 }
