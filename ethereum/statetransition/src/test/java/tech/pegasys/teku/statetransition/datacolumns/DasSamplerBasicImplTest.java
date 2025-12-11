@@ -370,6 +370,8 @@ public class DasSamplerBasicImplTest {
 
     final DataColumnSamplingTracker completedTracker = mock(DataColumnSamplingTracker.class);
     when(completedTracker.completionFuture()).thenReturn(SafeFuture.completedFuture(null));
+    when(completedTracker.blockRoot()).thenReturn(dataStructureUtil.randomBytes32());
+    when(completedTracker.slot()).thenReturn(lastFinalizedSlot.decrement());
 
     final SafeFuture<List<UInt64>> trackerForFinalizedSlotFuture = new SafeFuture<>();
     final DataColumnSamplingTracker trackerForFinalizedSlot = mock(DataColumnSamplingTracker.class);
