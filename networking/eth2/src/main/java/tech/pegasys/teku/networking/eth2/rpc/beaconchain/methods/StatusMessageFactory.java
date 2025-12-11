@@ -46,6 +46,7 @@ public class StatusMessageFactory implements SlotEventsChannel {
   private final CombinedChainDataClient combinedChainDataClient;
   private final AtomicReference<Optional<UInt64>> maybeEarliestAvailableSlot =
       new AtomicReference<>(Optional.empty());
+  private final boolean supportsEarliestAvailableSlot;
 
   public StatusMessageFactory(
       final Spec spec,
@@ -53,6 +54,8 @@ public class StatusMessageFactory implements SlotEventsChannel {
       final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.combinedChainDataClient = recentChainData;
+
+    supportsEarliestAvailableSlot = spec.isMilestoneSupported(SpecMilestone.FULU);
 
     metricsSystem.createGauge(
         TekuMetricCategory.BEACON,
@@ -113,7 +116,9 @@ public class StatusMessageFactory implements SlotEventsChannel {
 
   @Override
   public void onSlot(final UInt64 slot) {
-    if (spec.computeStartSlotAtEpoch(combinedChainDataClient.getCurrentEpoch()).equals(slot)) {
+    final boolean isStartOfEpoch =
+        spec.computeStartSlotAtEpoch(combinedChainDataClient.getCurrentEpoch()).equals(slot);
+    if (isStartOfEpoch && supportsEarliestAvailableSlot) {
       updateEarliestAvailableSlot();
     }
   }
@@ -126,9 +131,11 @@ public class StatusMessageFactory implements SlotEventsChannel {
 
     final BiFunction<Optional<UInt64>, Optional<UInt64>, Optional<UInt64>>
         combineEarliestSlotFunction =
-            (a, b) -> {
-              if (a.isPresent() && b.isPresent()) {
-                return Optional.ofNullable(a.get().max(b.get()));
+            (blockEarliestAvailableSlot, dataColumnEarliestAvailableSlot) -> {
+              if (blockEarliestAvailableSlot.isPresent()
+                  && dataColumnEarliestAvailableSlot.isPresent()) {
+                return Optional.ofNullable(
+                    blockEarliestAvailableSlot.get().max(dataColumnEarliestAvailableSlot.get()));
               } else {
                 return Optional.empty();
               }

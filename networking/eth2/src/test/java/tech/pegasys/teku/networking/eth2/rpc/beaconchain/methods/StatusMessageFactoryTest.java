@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -48,8 +49,8 @@ class StatusMessageFactoryTest {
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
-  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private StatusMessageFactory statusMessageFactory;
 
   @BeforeEach
@@ -184,6 +185,18 @@ class StatusMessageFactoryTest {
         Arguments.of(Optional.empty(), Optional.of(UInt64.valueOf(1)), Optional.empty()),
         Arguments.of(Optional.of(UInt64.valueOf(1)), Optional.empty(), Optional.empty()),
         Arguments.of(Optional.empty(), Optional.empty(), Optional.empty()));
+  }
+
+  @Test
+  public void onSlotShouldNotUpdateEarliestAvailableSlotIfFuluIsNotSupported() {
+    final Spec preFuluSpec = TestSpecFactory.createMinimalElectra();
+    statusMessageFactory =
+        new StatusMessageFactory(preFuluSpec, combinedChainDataClient, new StubMetricsSystem());
+
+    statusMessageFactory.onSlot(UInt64.ZERO);
+
+    verify(combinedChainDataClient, never()).getEarliestAvailableBlockSlot();
+    verify(combinedChainDataClient, never()).getEarliestDataColumnSidecarSlot();
   }
 
   private void tickOnSlotAndUpdatedEarliestSlotAvailable(final UInt64 earliestAvailableSlot) {
