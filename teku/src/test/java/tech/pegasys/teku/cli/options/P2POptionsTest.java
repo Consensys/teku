@@ -833,7 +833,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void maxRecentlySampledBlocksOverrideCorrectly() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--Xmax-recently-sampled-blocks", "100");
+        getTekuConfigurationFromArguments("--Xrecently-sampled-blocks-limit", "100");
 
     assertThat(tekuConfiguration.sync().getMaxRecentlySampledBlocks()).isEqualTo(100);
   }
