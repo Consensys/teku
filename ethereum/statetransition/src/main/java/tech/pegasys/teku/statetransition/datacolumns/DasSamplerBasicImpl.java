@@ -294,7 +294,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
                 final SlotAndBlockRoot slotAndBlockRoot =
                     new SlotAndBlockRoot(tracker.slot(), tracker.blockRoot());
                 if (tracker.slot().isLessThan(firstNonFinalizedSlot)
-                        || recentChainData.containsBlock(tracker.blockRoot())) {
+                    || recentChainData.containsBlock(tracker.blockRoot())) {
 
                   if (tracker.completionFuture().isDone()) {
                     return true;
@@ -302,8 +302,8 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
 
                   // make sure the future releases any pending waiters
                   tracker
-                          .completionFuture()
-                          .completeExceptionally(new RuntimeException("DAS sampling expired"));
+                      .completionFuture()
+                      .completeExceptionally(new RuntimeException("DAS sampling expired"));
                   return true;
                 }
                 return false;
