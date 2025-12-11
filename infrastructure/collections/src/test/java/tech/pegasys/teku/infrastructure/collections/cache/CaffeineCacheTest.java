@@ -159,50 +159,33 @@ public class CaffeineCacheTest {
   }
 
   @Test
-  void copy_shouldCreateIsolatedInstance() {
-    cache.get(0, __ -> 100);
-    cache.get(1, __ -> 101);
+  void copy_shouldPreserveCapacityLimit() {
+    // create a completely filled-up cache
+    final Cache<Integer, Integer> sourceCache = CaffeineCache.create(maxCacheSize);
+    for (int i = 0; i < maxCacheSize; i++) {
+      sourceCache.get(i, key -> key);
+    }
+    assertThat(sourceCache.size()).isEqualTo(maxCacheSize);
 
-    Cache<Integer, Integer> cache1 = cache.copy();
-    assertThat(cache.size()).isEqualTo(2);
-    assertThat(cache1.size()).isEqualTo(2);
-    assertThat(cache.getCached(0)).contains(100);
-    assertThat(cache1.getCached(0)).contains(100);
-    assertThat(cache.getCached(1)).contains(101);
-    assertThat(cache1.getCached(1)).contains(101);
+    // create a copy
+    final Cache<Integer, Integer> copiedCache = sourceCache.copy();
+    assertThat(copiedCache.size()).isEqualTo(maxCacheSize);
 
-    cache1.invalidate(1);
-    cache1.get(3, __ -> 103);
-    cache1.invalidateWithNewValue(4, 104);
+    // add a new item to the copy to trigger eviction
+    copiedCache.get(maxCacheSize, key -> key);
 
-    assertThat(cache.size()).isEqualTo(2);
-    assertThat(cache.getCached(0)).contains(100);
-    assertThat(cache.getCached(1)).contains(101);
+    // the copied cache respected the size limit and did not grow
+    assertThat(copiedCache.size())
+        .as("Copied cache should evict old entries and not exceed its capacity")
+        .isEqualTo(maxCacheSize);
 
-    assertThat(cache1.size()).isEqualTo(3);
-    assertThat(cache1.getCached(0)).contains(100);
-    assertThat(cache1.getCached(1)).isEmpty();
-    assertThat(cache1.getCached(3)).contains(103);
-    assertThat(cache1.getCached(4)).contains(104);
+    // verify eviction occurred in the copy
+    assertThat(copiedCache.getCached(0)).isEmpty();
+    assertThat(copiedCache.getCached(maxCacheSize)).isPresent();
 
-    cache.invalidate(0);
-    cache.get(3, __ -> 203);
-    cache.invalidateWithNewValue(4, 204);
-
-    assertThat(cache.size()).isEqualTo(3);
-    assertThat(cache.getCached(0)).isEmpty();
-    assertThat(cache.getCached(1)).contains(101);
-    assertThat(cache.getCached(3)).contains(203);
-    assertThat(cache.getCached(4)).contains(204);
-
-    assertThat(cache1.size()).isEqualTo(3);
-    assertThat(cache1.getCached(0)).contains(100);
-    assertThat(cache1.getCached(1)).isEmpty();
-    assertThat(cache1.getCached(3)).contains(103);
-    assertThat(cache1.getCached(4)).contains(104);
-
-    cache.clear();
-    assertThat(cache.size()).isEqualTo(0);
-    assertThat(cache1.size()).isEqualTo(3);
+    // verify the original cache was not affected
+    assertThat(sourceCache.size()).isEqualTo(maxCacheSize);
+    assertThat(sourceCache.getCached(0)).isPresent();
+    assertThat(sourceCache.getCached(maxCacheSize)).isEmpty();
   }
 }

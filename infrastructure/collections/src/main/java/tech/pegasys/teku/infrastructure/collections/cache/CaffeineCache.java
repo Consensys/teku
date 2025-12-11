@@ -86,17 +86,21 @@ public final class CaffeineCache<K, V> implements Cache<K, V> {
 
   @Override
   public Cache<K, V> copy() {
+    final Caffeine<Object, Object> builder = Caffeine.newBuilder();
+    cache
+        .policy()
+        .eviction()
+        .ifPresent(
+            eviction -> {
+              builder.maximumSize(eviction.getMaximum());
+            });
     final LoadingCache<K, V> newCacheInstance =
-        Caffeine.newBuilder()
-            .maximumSize(cache.policy().eviction().orElseThrow().getMaximum())
-            .build(
-                key -> {
-                  throw new UnsupportedOperationException(
-                      "Fallback function must be provided to get()");
-                });
-
+        builder.build(
+            key -> {
+              throw new UnsupportedOperationException(
+                  "Fallback function must be provided to get()");
+            });
     newCacheInstance.putAll(this.cache.asMap());
-
     return new CaffeineCache<>(newCacheInstance);
   }
 
