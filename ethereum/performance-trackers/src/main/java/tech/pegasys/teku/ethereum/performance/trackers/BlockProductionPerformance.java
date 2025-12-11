@@ -31,7 +31,8 @@ package tech.pegasys.teku.ethereum.performance.trackers;
  *       retrieve_state
  *    (which set slotTime too)
  *         |
- *         v
+ *         |        <-     validatorBlockRequested (VC triggers block production continuation,
+ *         |                           after prepareBlockProductionInternal has been processed)
  *         |
  *         v
  *    beaconBlockPrepared (attestations_for_block is part of the process of beaconBlockPrepared)
@@ -81,6 +82,9 @@ public interface BlockProductionPerformance {
         public void lateBlockReorgPreparationCompleted() {}
 
         @Override
+        public void validatorBlockRequested() {}
+
+        @Override
         public void getState() {}
 
         @Override
@@ -119,6 +123,8 @@ public interface BlockProductionPerformance {
   void beaconBlockBodyPrepared();
 
   void lateBlockReorgPreparationCompleted();
+
+  void validatorBlockRequested();
 
   void getState();
 
