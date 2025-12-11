@@ -297,6 +297,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
                     || recentChainData.containsBlock(tracker.blockRoot())) {
 
                   if (tracker.completionFuture().isDone()) {
+                    orderedSidecarsTrackers.remove(slotAndBlockRoot);
                     return true;
                   }
 
@@ -304,6 +305,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
                   tracker
                       .completionFuture()
                       .completeExceptionally(new RuntimeException("DAS sampling expired"));
+                  orderedSidecarsTrackers.remove(slotAndBlockRoot);
                   return true;
                 }
                 return false;
