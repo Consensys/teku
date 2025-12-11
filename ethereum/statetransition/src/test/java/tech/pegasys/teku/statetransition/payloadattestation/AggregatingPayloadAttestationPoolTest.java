@@ -49,8 +49,8 @@ class AggregatingPayloadAttestationPoolTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  private final PayloadAttestationMessageValidator validator =
-      mock(PayloadAttestationMessageValidator.class);
+  private final PayloadAttestationMessageGossipValidator validator =
+      mock(PayloadAttestationMessageGossipValidator.class);
 
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 

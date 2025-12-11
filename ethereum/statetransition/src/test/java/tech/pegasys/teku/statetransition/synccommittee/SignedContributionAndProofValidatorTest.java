@@ -14,6 +14,8 @@
 package tech.pegasys.teku.statetransition.synccommittee;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 
@@ -21,7 +23,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -32,13 +33,13 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.signatures.SimpleSignatureVerificationService;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 class SignedContributionAndProofValidatorTest {
-  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private Spec spec;
   private SpecConfigAltair config;
   private DataStructureUtil dataStructureUtil;
@@ -66,8 +67,9 @@ class SignedContributionAndProofValidatorTest {
             spec,
             storageSystem.recentChainData(),
             syncCommitteeStateUtils,
-            timeProvider,
-            new SimpleSignatureVerificationService());
+            new SimpleSignatureVerificationService(),
+            new GossipValidationHelper(
+                spec, storageSystem.recentChainData(), storageSystem.getMetricsSystem()));
     return storageSystem.chainUpdater().initializeGenesis();
   }
 
@@ -91,7 +93,6 @@ class SignedContributionAndProofValidatorTest {
     final UInt64 period2StartSlot = spec.computeStartSlotAtEpoch(period2StartEpoch);
     final UInt64 period3StartSlot = spec.computeStartSlotAtEpoch(period3StartEpoch);
     final UInt64 lastSlotOfPeriod = period3StartSlot.minus(1);
-    timeProvider.advanceTimeByMillis(lastSlotOfPeriod.times(spec.getSlotDurationMillis(ZERO)));
 
     // The first two sync committees are the same so advance the chain into the second period
     // so we can test going into the third period which is actually different
@@ -112,15 +113,21 @@ class SignedContributionAndProofValidatorTest {
     setupWithDefaultSpec();
     final SignedContributionAndProof message =
         chainBuilder.createValidSignedContributionAndProofBuilder().build();
-    final UInt64 slot = message.getMessage().getContribution().getSlot().plus(1);
-    // disparity is 500 millis, so 501 millis will be minimum
-    timeProvider.advanceTimeByMillis(slot.times(spec.getSlotDurationMillis(slot)).plus(501));
-
+    final GossipValidationHelper gossipValidationHelperMock = mock(GossipValidationHelper.class);
+    when(gossipValidationHelperMock.isSlotCurrent(message.getMessage().getContribution().getSlot()))
+        .thenReturn(false);
+    final SignedContributionAndProofValidator signedContributionAndProofValidator =
+        new SignedContributionAndProofValidator(
+            spec,
+            storageSystem.recentChainData(),
+            syncCommitteeStateUtils,
+            new SimpleSignatureVerificationService(),
+            gossipValidationHelperMock);
     storageSystem
         .chainUpdater()
         .setCurrentSlot(message.getMessage().getContribution().getSlot().plus(1));
 
-    assertThat(validator.validate(message))
+    assertThat(signedContributionAndProofValidator.validate(message))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
   }
 
@@ -213,7 +220,6 @@ class SignedContributionAndProofValidatorTest {
 
     assertThat(validator.validate(message)).isCompletedWithValue(ACCEPT);
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
-    timeProvider.advanceTimeByMillis(spec.getSlotDurationMillis(nextSlot));
     assertThat(validator.validate(nextSlotMessage)).isCompletedWithValue(ACCEPT);
   }
 
@@ -304,7 +310,6 @@ class SignedContributionAndProofValidatorTest {
     final Bytes32 blockRoot = chainBuilder.getLatestBlockAndState().getRoot();
     final UInt64 slot =
         UInt64.valueOf(config.getEpochsPerSyncCommitteePeriod() * config.getSlotsPerEpoch() + 1);
-    timeProvider.advanceTimeByMillis(slot.times(spec.getSlotDurationMillis(slot)));
     storageSystem.chainUpdater().advanceChain(slot);
 
     final SignedContributionAndProof message =
@@ -341,10 +346,6 @@ class SignedContributionAndProofValidatorTest {
             TestSpecFactory.createMinimalWithAltairAndBellatrixForkEpoch(ZERO, UInt64.ONE));
     final UInt64 bellatrixStartSlot = spec.computeStartSlotAtEpoch(UInt64.ONE);
     storageSystem.chainUpdater().setCurrentSlot(bellatrixStartSlot);
-    timeProvider.advanceTimeBySeconds(
-        spec.computeTimeAtSlot(genesis.getState(), bellatrixStartSlot)
-            .minus(timeProvider.getTimeInSeconds())
-            .longValue());
 
     final SignedContributionAndProof message =
         storageSystem
@@ -364,10 +365,6 @@ class SignedContributionAndProofValidatorTest {
             TestSpecFactory.createMinimalWithAltairAndBellatrixForkEpoch(ZERO, UInt64.ONE));
     final UInt64 lastAltairSlot = spec.computeStartSlotAtEpoch(UInt64.ONE).minus(1);
     storageSystem.chainUpdater().setCurrentSlot(lastAltairSlot);
-    timeProvider.advanceTimeBySeconds(
-        spec.computeTimeAtSlot(genesis.getState(), lastAltairSlot)
-            .minus(timeProvider.getTimeInSeconds())
-            .longValue());
 
     final SignedContributionAndProof message =
         storageSystem
