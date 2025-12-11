@@ -17,6 +17,7 @@ dependencyManagement {
     dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.1.1'
 
     dependency 'com.google.guava:guava:33.1.0-jre'
+    dependency 'com.github.ben-manes.caffeine:caffeine:3.2.3'
 
     dependency 'org.yaml:snakeyaml:2.4'
 

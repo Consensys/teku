@@ -18,7 +18,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
-import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
+import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
 import tech.pegasys.teku.infrastructure.collections.cache.NoOpCache;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -40,7 +40,7 @@ public class ValidatorIndexCache {
   }
 
   public ValidatorIndexCache() {
-    this.validatorIndices = LRUCache.create(Integer.MAX_VALUE - 1);
+    this.validatorIndices = CaffeineCache.create(Integer.MAX_VALUE - 1);
     this.lastCachedIndex = new AtomicInteger(INDEX_NONE);
   }
 

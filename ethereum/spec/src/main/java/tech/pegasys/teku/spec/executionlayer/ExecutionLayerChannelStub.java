@@ -38,7 +38,8 @@ import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanc
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
-import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
+import tech.pegasys.teku.infrastructure.collections.cache.Cache;
+import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -89,7 +90,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private final TimeProvider timeProvider;
   private final Map<Bytes32, PowBlock> knownBlocks = new ConcurrentHashMap<>();
   private final Map<Bytes32, PayloadStatus> knownPosBlocks = new ConcurrentHashMap<>();
-  private final LRUCache<Bytes8, HeadAndAttributes> payloadIdToHeadAndAttrsCache;
+  private final Cache<Bytes8, HeadAndAttributes> payloadIdToHeadAndAttrsCache;
   private final AtomicLong payloadIdCounter = new AtomicLong(0);
   private final Set<Bytes32> requestedPowBlocks = new HashSet<>();
   private final Spec spec;
@@ -122,7 +123,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       final TimeProvider timeProvider,
       final List<String> additionalConfigs,
       final boolean enableTransitionEmulation) {
-    this.payloadIdToHeadAndAttrsCache = LRUCache.create(10);
+    this.payloadIdToHeadAndAttrsCache = CaffeineCache.create(10);
     this.spec = spec;
     this.timeProvider = timeProvider;
     this.transitionEmulationEnabled = enableTransitionEmulation;

@@ -14,63 +14,45 @@
 package tech.pegasys.teku.infrastructure.collections.cache;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class LRUCacheTest {
+public class CaffeineCacheTest {
 
   private final int maxCacheSize = 16;
-  private final LRUCache<Integer, Integer> cache = LRUCache.create(maxCacheSize);
+  private final Cache<Integer, Integer> cache = CaffeineCache.create(maxCacheSize);
 
   @Test
   void concurrencyTest() {
-    Random random = new Random();
-    int threadsCount = 16;
-    int cacheMaxSize = 256;
-    LRUCache<Integer, Integer> cache = LRUCache.create(cacheMaxSize);
-    ExecutorService executor = Executors.newFixedThreadPool(threadsCount);
+    final Cache<Integer, Integer> cache = CaffeineCache.create(256);
+    final int threadsCount = 16;
+    final ExecutorService executor = Executors.newFixedThreadPool(threadsCount);
 
-    CompletableFuture<?>[] futures =
+    final CompletableFuture<?>[] futures =
         Stream.generate(
                 () ->
                     CompletableFuture.runAsync(
                         () -> {
-                          while (!Thread.interrupted()) {
-                            for (int i = 0; i < cacheMaxSize * 16; i++) {
-                              int key = random.nextInt(cacheMaxSize * 2);
+                          Random random = new Random();
+                          for (int iteration = 0; iteration < 100; iteration++) {
+                            for (int i = 0; i < 256 * 16; i++) {
+                              int key = random.nextInt(256 * 2);
                               Integer value = cache.get(key, idx -> idx);
                               assertThat(value).isEqualTo(key);
                             }
-                            assertThat(cache.size()).isLessThanOrEqualTo(cacheMaxSize);
-                            for (int i = 0; i < cacheMaxSize; i++) {
-                              int key = random.nextInt(cacheMaxSize * 2);
+                            for (int i = 0; i < 256; i++) {
+                              int key = random.nextInt(256 * 2);
                               cache.invalidate(key);
                             }
-                            assertThat(cache.size()).isLessThanOrEqualTo(cacheMaxSize);
-
                             if (random.nextInt(threadsCount * 2) == 0) {
                               cache.clear();
-                            }
-
-                            Cache<Integer, Integer> cache1 = cache.copy();
-                            for (int i = 0; i < cacheMaxSize * 16; i++) {
-                              int key = random.nextInt(cacheMaxSize * 2);
-                              Integer value = cache1.get(key, idx -> idx);
-                              assertThat(value).isEqualTo(key);
-                            }
-                            assertThat(cache1.size()).isLessThanOrEqualTo(cacheMaxSize);
-                            for (int i = 0; i < cacheMaxSize; i++) {
-                              int key = random.nextInt(cacheMaxSize * 2);
-                              cache1.invalidate(key);
-                              assertThat(cache1.size()).isLessThanOrEqualTo(cacheMaxSize);
                             }
                           }
                         },
@@ -78,12 +60,13 @@ public class LRUCacheTest {
             .limit(threadsCount)
             .toArray(CompletableFuture[]::new);
 
-    CompletableFuture<Object> any = CompletableFuture.anyOf(futures);
-
-    System.out.println("Waiting if any thread fails...");
-    assertThatThrownBy(() -> any.get(5, TimeUnit.SECONDS)).isInstanceOf(TimeoutException.class);
-    System.out.println("Shutting down...");
-    executor.shutdownNow();
+    try {
+      CompletableFuture.allOf(futures).get(5, TimeUnit.SECONDS);
+    } catch (Exception e) {
+      Assertions.fail("Concurrency test failed with exception", e);
+    } finally {
+      executor.shutdownNow();
+    }
   }
 
   @Test
@@ -102,15 +85,26 @@ public class LRUCacheTest {
   }
 
   @Test
-  void get_shouldEvictOldValues() {
-    cache.get(0, __ -> 100);
-    cache.get(1, __ -> 101);
+  void get_shouldEvictLeastRecentlyAccessedValue() {
+    // fill the cache completely with keys 0 to 15
     for (int i = 0; i < maxCacheSize; i++) {
-      cache.get(i + 1, key -> 102 + key);
+      cache.get(i, key -> 100 + key);
     }
+    // at this point, the access order is 0, 1, 2, ..., 15
+    // the least recently used item is 0
+
+    // access key 0 again to make it the most recently used
+    cache.get(0, __ -> 100);
+
+    // now, the least recently used item is 1
+    // add a new item to force an eviction
+    cache.get(maxCacheSize, key -> 100 + key);
     assertThat(cache.size()).isEqualTo(maxCacheSize);
-    assertThat(cache.getCached(0)).isEmpty();
-    assertThat(cache.getCached(1)).contains(101);
+
+    // verify that the new least recently used item 1 is evicted
+    assertThat(cache.getCached(1)).isEmpty();
+    assertThat(cache.getCached(0)).contains(100);
+    assertThat(cache.getCached(2)).contains(102);
   }
 
   @Test
@@ -136,27 +130,15 @@ public class LRUCacheTest {
   }
 
   @Test
-  void invalidate_shouldNotAffectMaxCapacity() {
-    cache.get(0, __ -> 100);
-    cache.get(1, __ -> 101);
-    cache.get(2, __ -> 102);
-    cache.invalidate(1);
-    for (int i = 3; i < maxCacheSize + 1; i++) {
-      cache.get(i, key -> 100 + key);
+  void get_shouldHonorMaxCapacityAfterEviction() {
+    final Cache<Integer, Integer> cache = CaffeineCache.create(maxCacheSize);
+    for (int i = 0; i < maxCacheSize; i++) {
+      cache.get(i, key -> key);
     }
     assertThat(cache.size()).isEqualTo(maxCacheSize);
-    assertThat(cache.getCached(0)).contains(100);
-    assertThat(cache.getCached(1)).isEmpty();
-    assertThat(cache.getCached(2)).contains(102);
-    for (int i = 3; i < maxCacheSize + 1; i++) {
-      assertThat(cache.getCached(i)).contains(100 + i);
-    }
-
-    cache.get(maxCacheSize + 1, key -> 100 + key);
+    cache.get(maxCacheSize, key -> key);
     assertThat(cache.size()).isEqualTo(maxCacheSize);
-    assertThat(cache.getCached(0)).isEmpty();
-    assertThat(cache.getCached(1)).isEmpty();
-    assertThat(cache.getCached(2)).contains(102);
+    assertThat(cache.getCached(maxCacheSize)).isPresent();
   }
 
   @Test
