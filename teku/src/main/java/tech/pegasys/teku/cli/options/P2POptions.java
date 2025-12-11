@@ -570,7 +570,7 @@ public class P2POptions {
   private int historicalDataMaxQueryQueueSize = P2PConfig.DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE;
 
   @Option(
-      names = {"--Xmax-recently-sampled-blocks"},
+      names = {"--Xrecently-sampled-blocks-limit"},
       hidden = true,
       paramLabel = "<NUMBER>",
       description =
