@@ -81,11 +81,6 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
     final int expectedCustodyCount = specConfigFulu.getCustodyRequirement();
     secondaryNode.waitForCustodyBackfill(firstFuluSlot, expectedCustodyCount);
 
-    primaryNode.waitForBlockAtSlot(primaryNode.getHeadBlock().getSlot().plus(3));
-    primaryNode.waitForBlockAtSlot(primaryNode.getHeadBlock().getSlot().plus(3));
-    primaryNode.waitForBlockAtSlot(primaryNode.getHeadBlock().getSlot().plus(3));
-    primaryNode.waitForBlockAtSlot(primaryNode.getHeadBlock().getSlot().plus(3));
-
     final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
     final int checkpointSlot = checkpointFinalizedBlock.getSlot().intValue();
     final int endSlot = blockAtHead.getSlot().intValue();
