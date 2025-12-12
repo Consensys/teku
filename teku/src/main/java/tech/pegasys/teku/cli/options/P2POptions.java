@@ -342,10 +342,10 @@ public class P2POptions {
 
   @Option(
       names = {"--Xp2p-reworked-sidecar-custody-sync-batch-size"},
-      paramLabel = "<BOOLEAN>",
+      paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
       description = "backfill sync custody batch size in slots",
-      arity = "0..1",
+      arity = "1",
       hidden = true)
   private Integer reworkedSidecarCustodySyncBatchSize =
       DEFAULT_COLUMN_CUSTODY_BACKFILLER_BATCH_SIZE;
@@ -355,7 +355,7 @@ public class P2POptions {
       paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
       description = "backfill sync custody poll period",
-      arity = "0..1",
+      arity = "1",
       hidden = true)
   private Integer reworkedSidecarCustodySyncPollPeriodSeconds =
       DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS;
