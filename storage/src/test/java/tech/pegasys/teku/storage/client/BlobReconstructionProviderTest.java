@@ -61,7 +61,7 @@ public class BlobReconstructionProviderTest {
   private final Spec spec = TestSpecFactory.createMinimalFulu();
 
   private final BlobReconstructionProvider blobReconstructionProvider =
-      new BlobReconstructionProvider(client, spec);
+      new BlobReconstructionProvider(client, Optional.empty(), spec);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SlotAndBlockRoot slotAndBlockRoot = dataStructureUtil.randomSlotAndBlockRoot();
