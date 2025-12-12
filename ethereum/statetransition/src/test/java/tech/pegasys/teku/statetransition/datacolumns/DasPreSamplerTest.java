@@ -82,8 +82,7 @@ public class DasPreSamplerTest {
 
     // Setup for the block that will be sampled
     when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(List.of());
-    when(sampler.checkDataAvailability(blockToSample.getSlot(), blockToSample.getRoot()))
-        .thenReturn(SafeFuture.completedFuture(null));
+    when(sampler.checkDataAvailability(blockToSample)).thenReturn(SafeFuture.completedFuture(null));
 
     dasPreSampler.onNewPreImportBlocks(List.of(blockToSample, blockToSkip));
 
@@ -92,10 +91,10 @@ public class DasPreSamplerTest {
     verify(sampler).checkSamplingEligibility(blockToSkip.getMessage());
 
     // Verify processing for the required block
-    verify(sampler).checkDataAvailability(blockToSample.getSlot(), blockToSample.getRoot());
+    verify(sampler).checkDataAvailability(blockToSample);
 
     // Verify no processing for the skipped block
-    verify(sampler, never()).checkDataAvailability(eq(blockToSkip.getSlot()), any());
+    verify(sampler, never()).checkDataAvailability(eq(blockToSkip));
 
     verify(sampler).flush();
   }
@@ -112,8 +111,7 @@ public class DasPreSamplerTest {
     when(sampler.checkSamplingEligibility(block.getMessage())).thenReturn(REQUIRED);
     when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(columnIndices);
     when(custody.hasCustodyDataColumnSidecar(any())).thenReturn(SafeFuture.completedFuture(false));
-    when(sampler.checkDataAvailability(block.getSlot(), block.getRoot()))
-        .thenReturn(SafeFuture.completedFuture(null));
+    when(sampler.checkDataAvailability(block)).thenReturn(SafeFuture.completedFuture(null));
 
     dasPreSampler.onNewPreImportBlocks(List.of(block));
 
@@ -121,7 +119,7 @@ public class DasPreSamplerTest {
     verify(custody).hasCustodyDataColumnSidecar(col5);
     verify(sampler, never())
         .onNewValidatedDataColumnSidecar(any(DataColumnSlotAndIdentifier.class), any());
-    verify(sampler).checkDataAvailability(block.getSlot(), block.getRoot());
+    verify(sampler).checkDataAvailability(block);
     verify(sampler).flush();
   }
 
@@ -141,8 +139,7 @@ public class DasPreSamplerTest {
     when(custody.hasCustodyDataColumnSidecar(col2)).thenReturn(SafeFuture.completedFuture(true));
     when(custody.hasCustodyDataColumnSidecar(col4)).thenReturn(SafeFuture.completedFuture(false));
 
-    when(sampler.checkDataAvailability(block.getSlot(), block.getRoot()))
-        .thenReturn(SafeFuture.completedFuture(null));
+    when(sampler.checkDataAvailability(block)).thenReturn(SafeFuture.completedFuture(null));
 
     dasPreSampler.onNewPreImportBlocks(List.of(block));
 
@@ -154,7 +151,7 @@ public class DasPreSamplerTest {
                 id -> id.columnIndex().equals(UInt64.valueOf(4))),
             any());
 
-    verify(sampler).checkDataAvailability(block.getSlot(), block.getRoot());
+    verify(sampler).checkDataAvailability(block);
     verify(sampler).flush();
   }
 }

@@ -35,6 +35,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -51,7 +52,7 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecar
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class DasSamplerBasicTest {
+public class DasSamplerBasicImplTest {
   private static final Spec SPEC = TestSpecFactory.createMinimalFulu();
   private static final List<UInt64> SAMPLING_INDICES =
       List.of(UInt64.valueOf(5), UInt64.ZERO, UInt64.valueOf(2));
@@ -59,6 +60,7 @@ public class DasSamplerBasicTest {
   private final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(0);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(stubTimeProvider);
   private final RPCFetchDelayProvider rpcFetchDelayProvider = mock(RPCFetchDelayProvider.class);
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private RecentChainData recentChainData;
   private DataColumnSidecarCustody custody;
@@ -66,7 +68,7 @@ public class DasSamplerBasicTest {
   private CurrentSlotProvider currentSlotProvider;
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, SPEC);
 
-  private DasSamplerBasic sampler;
+  private DasSamplerBasicImpl sampler;
 
   @BeforeEach
   public void setUp() {
@@ -84,7 +86,7 @@ public class DasSamplerBasicTest {
     when(custody.onNewValidatedDataColumnSidecar(any(), any())).thenReturn(SafeFuture.COMPLETE);
 
     sampler =
-        new DasSamplerBasic(
+        new DasSamplerBasicImpl(
             SPEC,
             asyncRunner,
             currentSlotProvider,
@@ -92,7 +94,9 @@ public class DasSamplerBasicTest {
             custody,
             retriever,
             custodyGroupCountManager,
-            recentChainData);
+            recentChainData,
+            metricsSystem,
+            64);
   }
 
   @Test
@@ -143,13 +147,13 @@ public class DasSamplerBasicTest {
 
   @Test
   void checkDataAvailability_shouldAddToTrackerAndReturnCompletionFuture() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
     final SlotAndBlockRoot slotAndBlockRoot =
-        new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
+        new SlotAndBlockRoot(block.getSlot(), block.getRoot());
 
     when(retriever.retrieve(any())).thenReturn(new SafeFuture<>());
 
-    final SafeFuture<List<UInt64>> completionFuture =
-        sampler.checkDataAvailability(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
+    final SafeFuture<List<UInt64>> completionFuture = sampler.checkDataAvailability(block);
 
     assertSamplerTracker(
         slotAndBlockRoot.getBlockRoot(), slotAndBlockRoot.getSlot(), SAMPLING_INDICES);
@@ -166,13 +170,14 @@ public class DasSamplerBasicTest {
   @Test
   @SuppressWarnings("FutureReturnValueIgnored")
   void checkDataAvailability_shouldCallRetrieverForMissingColumnsAndCallCustodyOnRetrieval() {
-    final SignedBeaconBlockHeader block = dataStructureUtil.randomSignedBeaconBlockHeader();
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
+    final SignedBeaconBlockHeader blockHeader = block.asHeader();
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(block.getMessage().getSlot(), block.getMessage().getRoot());
 
     final Map<UInt64, DataColumnSidecar> missingColumnSidecars =
         SAMPLING_INDICES.stream()
-            .map(index -> dataStructureUtil.randomDataColumnSidecar(block, index))
+            .map(index -> dataStructureUtil.randomDataColumnSidecar(blockHeader, index))
             .collect(
                 Collectors.toUnmodifiableMap(DataColumnSidecar::getIndex, Function.identity()));
     final Map<UInt64, SafeFuture<DataColumnSidecar>> futureSidecarsByIndex =
@@ -199,7 +204,7 @@ public class DasSamplerBasicTest {
         .thenReturn(Duration.ofSeconds(1));
 
     // da check is requested
-    sampler.checkDataAvailability(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
+    sampler.checkDataAvailability(block);
 
     assertSamplerTrackerHasRPCFetchScheduled(slotAndBlockRoot.getBlockRoot(), true);
 
@@ -233,14 +238,14 @@ public class DasSamplerBasicTest {
   @Test
   @SuppressWarnings("FutureReturnValueIgnored")
   void checkDataAvailability_shouldSetRPCFetchedToFalseOnFailureAndRPCFetchesAgain() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
     final SlotAndBlockRoot slotAndBlockRoot =
-        new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
+        new SlotAndBlockRoot(block.getMessage().getSlot(), block.getMessage().getRoot());
 
     when(retriever.retrieve(any()))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("error")));
 
-    final SafeFuture<List<UInt64>> completionFuture =
-        sampler.checkDataAvailability(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
+    final SafeFuture<List<UInt64>> completionFuture = sampler.checkDataAvailability(block);
 
     assertSamplerTracker(
         slotAndBlockRoot.getBlockRoot(), slotAndBlockRoot.getSlot(), SAMPLING_INDICES);
@@ -257,8 +262,7 @@ public class DasSamplerBasicTest {
 
     when(retriever.retrieve(any())).thenReturn(new SafeFuture<>());
 
-    final SafeFuture<List<UInt64>> secondCompletionFuture =
-        sampler.checkDataAvailability(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
+    final SafeFuture<List<UInt64>> secondCompletionFuture = sampler.checkDataAvailability(block);
 
     assertSamplerTracker(
         slotAndBlockRoot.getBlockRoot(), slotAndBlockRoot.getSlot(), SAMPLING_INDICES);
@@ -272,14 +276,15 @@ public class DasSamplerBasicTest {
   @Test
   @SuppressWarnings("FutureReturnValueIgnored")
   void checkDataAvailability_shouldRPCFetchImmediatelyIfNotPreviouslyScheduled() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
     final SlotAndBlockRoot slotAndBlockRoot =
-        new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
+        new SlotAndBlockRoot(block.getMessage().getSlot(), block.getMessage().getRoot());
 
     when(retriever.retrieve(any())).thenReturn(new SafeFuture<>());
 
     when(rpcFetchDelayProvider.calculate(slotAndBlockRoot.getSlot())).thenReturn(Duration.ZERO);
 
-    sampler.checkDataAvailability(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
+    sampler.checkDataAvailability(block);
 
     assertRPCFetchInMillis(
         slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), SAMPLING_INDICES, 0);
@@ -296,17 +301,16 @@ public class DasSamplerBasicTest {
     final DataColumnSidecar source2 =
         dataStructureUtil.randomDataColumnSidecar(
             dataStructureUtil.randomSignedBeaconBlockHeader(), dataStructureUtil.randomUInt64());
-    final SlotAndBlockRoot source3 =
-        new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
 
     sampler.onNewValidatedDataColumnSidecar(source1, RemoteOrigin.CUSTODY);
     sampler.onNewValidatedDataColumnSidecar(source2, RemoteOrigin.RPC);
-    sampler.checkDataAvailability(source3.getSlot(), source3.getBlockRoot());
+    sampler.checkDataAvailability(block);
 
     assertThat(sampler.getRecentlySampledColumnsByRoot())
         .containsKey(source1.blockRoot())
         .containsKey(source2.getBeaconBlockRoot())
-        .containsKey(source3.getBlockRoot());
+        .containsKey(block.getRoot());
   }
 
   @Test

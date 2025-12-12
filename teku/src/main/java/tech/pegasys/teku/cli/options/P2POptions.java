@@ -569,6 +569,16 @@ public class P2POptions {
       arity = "1")
   private int historicalDataMaxQueryQueueSize = P2PConfig.DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE;
 
+  @Option(
+      names = {"--Xrecently-sampled-blocks-limit"},
+      hidden = true,
+      paramLabel = "<NUMBER>",
+      description =
+          "Maximum number of recently sampled blocks to keep in cache of the DAS sampler.",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "1")
+  private int maxRecentlySampledBlocks = SyncConfig.DEFAULT_MAX_RECENTLY_SAMPLED_BLOCKS;
+
   private OptionalInt getP2pLowerBound() {
     if (p2pUpperBound.isPresent() && p2pLowerBound.isPresent()) {
       return p2pLowerBound.getAsInt() < p2pUpperBound.getAsInt() ? p2pLowerBound : p2pUpperBound;
@@ -741,7 +751,8 @@ public class P2POptions {
                     .forwardSyncMaxBlobSidecarsPerMinute(forwardSyncBlobSidecarsRateLimit)
                     .forwardSyncBatchSize(forwardSyncBatchSize)
                     .forwardSyncMaxPendingBatches(forwardSyncMaxPendingBatches)
-                    .forwardSyncMaxDistanceFromHead(forwardSyncMaxDistanceFromHead));
+                    .forwardSyncMaxDistanceFromHead(forwardSyncMaxDistanceFromHead)
+                    .maxRecentlySampledBlocks(maxRecentlySampledBlocks));
 
     if (subscribeAllSubnetsEnabled) {
       builder

@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
+import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -72,6 +73,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final PendingPool<ValidatableAttestation> pendingAttestations;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
+  private final DasSamplerBasic dasBasicSampler;
   private final int getStartupTargetPeerCount;
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final Duration startupTimeout;
@@ -94,6 +96,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final PendingPool<ValidatableAttestation> pendingAttestations,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final DasSamplerBasic dasBasicSampler,
       final int getStartupTargetPeerCount,
       final SignatureVerificationService signatureVerifier,
       final Duration startupTimeout,
@@ -114,6 +117,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     this.pendingBlocks = pendingBlocks;
     this.pendingAttestations = pendingAttestations;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
+    this.dasBasicSampler = dasBasicSampler;
     this.getStartupTargetPeerCount = getStartupTargetPeerCount;
     this.signatureVerifier = signatureVerifier;
     this.startupTimeout = startupTimeout;
@@ -136,6 +140,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
             pendingBlocks,
             pendingAttestations,
             blockBlobSidecarsTrackersPool,
+            dasBasicSampler,
             forwardSyncService,
             fetchTaskFactory);
     final RecentBlobSidecarsFetcher recentBlobSidecarsFetcher =
