@@ -15,13 +15,15 @@ package tech.pegasys.teku.storage.client;
 
 import static java.util.Collections.emptyList;
 
-import java.util.HashSet;
+import com.google.common.collect.Streams;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -33,17 +35,24 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
 
 /** Blob provider for post-FULU, reconstructs Blobs from DataColumnSidecars */
 public class BlobReconstructionProvider {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final CombinedChainDataClient combinedChainDataClient;
   private final Spec spec;
   private final Supplier<BlobSchema> blobSchemaSupplier;
+  private final DataColumnSidecarNetworkRetriever networkRetriever;
 
   public BlobReconstructionProvider(
-      final CombinedChainDataClient combinedChainDataClient, final Spec spec) {
+      final CombinedChainDataClient combinedChainDataClient,
+      final DataColumnSidecarNetworkRetriever networkRetriever,
+      final Spec spec) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.spec = spec;
+    this.networkRetriever = networkRetriever;
     this.blobSchemaSupplier =
         () ->
             SchemaDefinitionsDeneb.required(
@@ -55,43 +64,27 @@ public class BlobReconstructionProvider {
       final SlotAndBlockRoot slotAndBlockRoot,
       final List<UInt64> blobIndices,
       final boolean isCanonical) {
-    final SafeFuture<List<DataColumnSlotAndIdentifier>> dataColumnIdentifiersFuture =
-        isCanonical
-            ? combinedChainDataClient.getDataColumnIdentifiers(slotAndBlockRoot.getSlot())
-            : combinedChainDataClient.getNonCanonicalDataColumnIdentifiers(
-                slotAndBlockRoot.getSlot());
-    return dataColumnIdentifiersFuture.thenCompose(
-        dataColumnIdentifiers -> {
-          if (dataColumnIdentifiers.isEmpty()) {
-            return SafeFuture.completedFuture(emptyList());
-          }
-          final Set<DataColumnSlotAndIdentifier> dbIdentifiers =
-              new HashSet<>(dataColumnIdentifiers);
-          final List<DataColumnSlotAndIdentifier> requiredIdentifiers =
-              Stream.iterate(
-                      UInt64.ZERO,
-                      // We need the first 50% for reconstruction
-                      index -> index.isLessThan(spec.getNumberOfDataColumns().orElseThrow() / 2),
-                      UInt64::increment)
-                  .map(
-                      index ->
-                          new DataColumnSlotAndIdentifier(
-                              slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), index))
-                  .toList();
-          if (requiredIdentifiers.stream()
-              .anyMatch(identifier -> !dbIdentifiers.contains(identifier))) {
-            // We do not have the data columns required for reconstruction
-            return SafeFuture.completedFuture(emptyList());
-          }
-          return reconstructBlobSidecarsForIdentifiers(
-              requiredIdentifiers, blobIndices, isCanonical);
-        });
+
+    final List<DataColumnSlotAndIdentifier> requiredIdentifiers =
+        Stream.iterate(
+                UInt64.ZERO,
+                // We need the first 50% for reconstruction
+                index -> index.isLessThan(spec.getNumberOfDataColumns().orElseThrow() / 2),
+                UInt64::increment)
+            .map(
+                index ->
+                    new DataColumnSlotAndIdentifier(
+                        slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), index))
+            .toList();
+
+    return reconstructBlobSidecarsForIdentifiers(requiredIdentifiers, blobIndices, isCanonical);
   }
 
   private SafeFuture<List<Blob>> reconstructBlobSidecarsForIdentifiers(
       final List<DataColumnSlotAndIdentifier> slotAndIdentifiers,
       final List<UInt64> blobIndices,
       final boolean isCanonical) {
+
     return SafeFuture.collectAll(
             slotAndIdentifiers.stream()
                 .map(
@@ -99,16 +92,37 @@ public class BlobReconstructionProvider {
                         isCanonical
                             ? combinedChainDataClient.getSidecar(identifier)
                             : combinedChainDataClient.getNonCanonicalSidecar(identifier)))
-        .thenApply(
+        .thenCompose(
             sidecarOptionals -> {
-              if (sidecarOptionals.stream().anyMatch(Optional::isEmpty)) {
-                // We will not be able to reconstruct if there is a gap
-                return emptyList();
-              }
-              final List<DataColumnSidecar> dataColumnSidecars =
-                  sidecarOptionals.stream().map(Optional::orElseThrow).toList();
+              final List<DataColumnSlotAndIdentifier> missingSidecars =
+                  IntStream.range(0, slotAndIdentifiers.size())
+                      .filter(idx -> sidecarOptionals.get(idx).isEmpty())
+                      .mapToObj(slotAndIdentifiers::get)
+                      .toList();
 
-              return reconstructBlobsFromDataColumns(dataColumnSidecars, blobIndices);
+              if (!missingSidecars.isEmpty() && !networkRetriever.isEnabled()) {
+                // We will not be able to reconstruct if there is a gap
+                return SafeFuture.completedFuture(emptyList());
+              }
+
+              return networkRetriever
+                  .retrieveDataColumnSidecars(missingSidecars)
+                  .thenApply(
+                      retrievedDataColumnSidecars -> {
+                        if (missingSidecars.size() != retrievedDataColumnSidecars.size()) {
+                          // Not able to retrieve all columns, return nothing
+                          return emptyList();
+                        }
+                        var completeDataColumns =
+                            Streams.concat(
+                                    retrievedDataColumnSidecars.stream(),
+                                    sidecarOptionals.stream()
+                                        .filter(Optional::isPresent)
+                                        .map(Optional::get))
+                                .sorted(Comparator.comparing(DataColumnSidecar::getIndex))
+                                .toList();
+                        return reconstructBlobsFromDataColumns(completeDataColumns, blobIndices);
+                      });
             });
   }
 

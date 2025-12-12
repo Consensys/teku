@@ -55,13 +55,14 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
 
 public class BlobReconstructionProviderTest {
   private final CombinedChainDataClient client = mock(CombinedChainDataClient.class);
   private final Spec spec = TestSpecFactory.createMinimalFulu();
 
   private final BlobReconstructionProvider blobReconstructionProvider =
-      new BlobReconstructionProvider(client, spec);
+      new BlobReconstructionProvider(client, DataColumnSidecarNetworkRetriever.DISABLED, spec);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SlotAndBlockRoot slotAndBlockRoot = dataStructureUtil.randomSlotAndBlockRoot();
