@@ -566,7 +566,7 @@ public class CombinedChainDataClient {
     return historicalChainData.getEarliestAvailableBlobSidecarSlot();
   }
 
-  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataSlot() {
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot() {
     return historicalChainData.getEarliestAvailableDataColumnSlot();
   }
 
@@ -840,7 +840,7 @@ public class CombinedChainDataClient {
     return historicalChainData.getDataColumnIdentifiers(startSlot, endSlot, limit);
   }
 
-  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot() {
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlotWithFallback() {
     if (isEarliestAvailableDataColumnSlotSupported) {
       return historicalChainData.getEarliestAvailableDataColumnSlot();
     }

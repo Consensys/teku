@@ -1046,7 +1046,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               recoveringSidecarRetriever,
               minCustodyPeriodSlotCalculator,
               dasAsyncRunner,
-              sidecarDB::getEarliestAvailableDataSlot,
+              sidecarDB::getEarliestAvailableDataColumnSlot,
               sidecarDB::setEarliestAvailableDataColumnSlot,
               beaconConfig.p2pConfig().getReworkedSidecarSyncBatchSize());
       eventChannels.subscribe(CustodyGroupCountChannel.class, custodyBackfiller);

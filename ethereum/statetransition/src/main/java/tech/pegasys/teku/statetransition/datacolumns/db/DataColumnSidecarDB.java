@@ -34,7 +34,7 @@ public interface DataColumnSidecarDB extends DataColumnSidecarCoreDB {
 
   SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot();
 
-  SafeFuture<Optional<UInt64>> getEarliestAvailableDataSlot();
+  SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot();
 
   @Override
   SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnSlotAndIdentifier identifier);

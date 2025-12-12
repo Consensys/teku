@@ -73,8 +73,8 @@ class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataSlot() {
-    return combinedChainDataClient.getEarliestAvailableDataSlot();
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot() {
+    return combinedChainDataClient.getEarliestAvailableDataColumnSlot();
   }
 
   @Override

@@ -70,8 +70,8 @@ public class DelayedDasDb implements DataColumnSidecarDB {
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataSlot() {
-    return delay(delegate::getEarliestAvailableDataSlot);
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot() {
+    return delay(delegate::getEarliestAvailableDataColumnSlot);
   }
 
   @Override

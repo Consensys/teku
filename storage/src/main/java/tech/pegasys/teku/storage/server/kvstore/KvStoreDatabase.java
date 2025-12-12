@@ -1165,7 +1165,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void setEarliestAvailableDataColumnSlot(final UInt64 slot) {
-    try (final CombinedUpdater updater = combinedUpdater()) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.setEarliestAvailableDataColumnSlot(slot);
       updater.commit();
     }

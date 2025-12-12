@@ -353,8 +353,8 @@ class CombinedChainDataClientTest {
 
   @Test
   @SuppressWarnings("FutureReturnValueIgnored")
-  void getEarliestAvailableDataColumnSlot_shouldRespectConfig() {
-    client.getEarliestAvailableDataColumnSlot();
+  void getEarliestAvailableDataColumnSlot_WithFallback_shouldRespectConfig() {
+    client.getEarliestAvailableDataColumnSlotWithFallback();
 
     verify(historicalChainData).getEarliestDataColumnSidecarSlot();
 
@@ -362,7 +362,8 @@ class CombinedChainDataClientTest {
         new CombinedChainDataClient(
             recentChainData, historicalChainData, spec, lateBlockReorgPreparationHandler, true);
 
-    clientWithEarliestAvailableDataColumnSlotSupport.getEarliestAvailableDataColumnSlot();
+    clientWithEarliestAvailableDataColumnSlotSupport
+        .getEarliestAvailableDataColumnSlotWithFallback();
     verify(historicalChainData).getEarliestAvailableDataColumnSlot();
 
     verifyNoMoreInteractions(historicalChainData);

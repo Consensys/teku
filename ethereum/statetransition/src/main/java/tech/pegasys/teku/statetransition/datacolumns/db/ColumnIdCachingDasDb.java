@@ -130,8 +130,8 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataSlot() {
-    return delegateDb.getEarliestAvailableDataSlot();
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot() {
+    return delegateDb.getEarliestAvailableDataColumnSlot();
   }
 
   @Override

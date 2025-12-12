@@ -76,7 +76,7 @@ public class DataColumnSidecarDBStub implements DataColumnSidecarDB {
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataSlot() {
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot() {
     dbReadCounter.incrementAndGet();
     return SafeFuture.completedFuture(earliestAvailableDataSlot);
   }

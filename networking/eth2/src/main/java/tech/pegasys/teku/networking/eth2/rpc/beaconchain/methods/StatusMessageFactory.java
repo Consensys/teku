@@ -127,7 +127,7 @@ public class StatusMessageFactory implements SlotEventsChannel {
     final SafeFuture<Optional<UInt64>> earliestAvailableBlockSlotFuture =
         combinedChainDataClient.getEarliestAvailableBlockSlot();
     final SafeFuture<Optional<UInt64>> earliestDataColumnSidecarSlotFuture =
-        combinedChainDataClient.getEarliestAvailableDataColumnSlot();
+        combinedChainDataClient.getEarliestAvailableDataColumnSlotWithFallback();
 
     final BiFunction<Optional<UInt64>, Optional<UInt64>, Optional<UInt64>>
         combineEarliestSlotFunction =
