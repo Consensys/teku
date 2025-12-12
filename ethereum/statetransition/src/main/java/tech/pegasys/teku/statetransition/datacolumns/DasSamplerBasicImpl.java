@@ -228,7 +228,6 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
 
       if (tracker != null) {
         completeExpiredTracker(tracker);
-        orderedSidecarsTrackers.remove(toRemove);
       }
     }
   }
