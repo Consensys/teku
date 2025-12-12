@@ -29,7 +29,7 @@ import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 
-@Disabled("until DataColumnSidecars backfill is fixed")
+@Disabled("until new DasCustodyBackfiller is enabled by default")
 public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
   @Test
   public void shouldBeAbleToCheckpointSyncAndBackfillCustody() throws Exception {
@@ -72,13 +72,18 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
 
     final UInt64 firstFuluSlot =
         primaryNode.getSpec().computeStartSlotAtEpoch(specConfigFulu.getFuluForkEpoch());
-    // Wait until block backfill is completed, it starts after forward sync
-    secondaryNode.waitForBlockAtSlot(firstFuluSlot);
+
+    // Wait until custody is backfilled is completed.
+    // It will require:
+    // - forward sync to catch up
+    // - backfill to complete
+    // - custody fully backfilled up to first fulu slot
+    final int expectedCustodyCount = specConfigFulu.getCustodyRequirement();
+    secondaryNode.waitForCustodyBackfill(firstFuluSlot, expectedCustodyCount);
 
     final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
     final int checkpointSlot = checkpointFinalizedBlock.getSlot().intValue();
     final int endSlot = blockAtHead.getSlot().intValue();
-    final int expectedCustodyCount = specConfigFulu.getCustodyRequirement();
 
     // after checkpoint is synced with sidecars
     final int afterCheckpointSidecars =
@@ -132,7 +137,7 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
   private TekuNodeConfigBuilder createConfigBuilder() throws Exception {
     return TekuNodeConfigBuilder.createBeaconNode()
         .withNetwork(Resources.getResource("fulu-minimal.yaml"))
-        .withStubExecutionEngine()
+        .withStubExecutionEngine(3)
         .withLogLevel("DEBUG");
   }
 }
