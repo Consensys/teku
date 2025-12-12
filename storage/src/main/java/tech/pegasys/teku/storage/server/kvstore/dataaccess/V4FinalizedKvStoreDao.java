@@ -246,9 +246,12 @@ public class V4FinalizedKvStoreDao {
   }
 
   public Optional<UInt64> getEarliestAvailableDataColumnSlot() {
-    return db.getFirstEntry(schema.getColumnSidecarByColumnSlotAndIdentifier())
-        .map(ColumnEntry::getKey)
-        .map(DataColumnSlotAndIdentifier::slot);
+    return db.get(schema.getVariableEarliestAvailableDataColumnSlot())
+        .or(
+            () ->
+                db.getFirstEntry(schema.getColumnSidecarByColumnSlotAndIdentifier())
+                    .map(ColumnEntry::getKey)
+                    .map(DataColumnSlotAndIdentifier::slot));
   }
 
   public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
@@ -486,7 +489,7 @@ public class V4FinalizedKvStoreDao {
 
     @Override
     public void setEarliestAvailableDataColumnSlot(final UInt64 slot) {
-      transaction.put(schema.getVariableEarliestBlobSidecarSlot(), slot);
+      transaction.put(schema.getVariableEarliestAvailableDataColumnSlot(), slot);
     }
 
     @Override

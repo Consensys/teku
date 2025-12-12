@@ -276,6 +276,7 @@ public abstract class V6SchemaCombined implements SchemaCombined {
         .put("LATEST_CANONICAL_BLOCK_ROOT", getVariableLatestCanonicalBlockRoot())
         .put("CUSTODY_GROUP_COUNT", getVariableCustodyGroupCount())
         .put("FIRST_CUSTODY_INCOMPLETE_SLOT", getVariableFirstCustodyIncompleteSlot())
+        .put("EARLIEST_AVAILABLE_DATA_COLUMN_SLOT", getVariableEarliestAvailableDataColumnSlot())
         .build();
   }
 

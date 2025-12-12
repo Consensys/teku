@@ -459,11 +459,11 @@ public class DasCustodyBackfiller extends Service
     pendingRequests.put(colId, req);
 
     return req.thenPeek(
-            __ -> LOG.debug("DasCustodyBackfiller: Data column sidecar {} retrieved.", colId))
+            __ -> LOG.trace("DasCustodyBackfiller: Data column sidecar {} retrieved.", colId))
         .thenCompose(
             sidecar ->
                 dataColumnSidecarCustody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC))
-        .thenPeek(__ -> LOG.debug("DasCustodyBackfiller: Data column sidecar {} stored.", colId))
+        .thenPeek(__ -> LOG.trace("DasCustodyBackfiller: Data column sidecar {} stored.", colId))
         .ignoreCancelException()
         .catchAndRethrow(
             err ->
