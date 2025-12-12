@@ -19,4 +19,5 @@
 
 ### Bug Fixes
 - Fixed a storage issue which sometimes caused Teku to crash during shut down.
-- Fixed `peer_count` metric when using `--metrics-publish-endpoint` feature. 
+- Fixed `peer_count` metric when using `--metrics-publish-endpoint` feature.
+- Fixed `earliest_available_slot` calculation.
