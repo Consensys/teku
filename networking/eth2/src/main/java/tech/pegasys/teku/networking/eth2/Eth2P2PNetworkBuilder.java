@@ -634,7 +634,7 @@ public class Eth2P2PNetworkBuilder {
   }
 
   private void assertNotNull(final String fieldName, final Object fieldValue) {
-    checkState(fieldValue != null, "Field " + fieldName + " must be set.");
+    checkState(fieldValue != null, "Field %s must be set.", fieldName);
   }
 
   public Eth2P2PNetworkBuilder config(final P2PConfig config) {
