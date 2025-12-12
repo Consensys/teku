@@ -746,7 +746,9 @@ public class TekuBeaconNode extends TekuNode {
           assertThat(maybeBlock).isPresent();
           assertThat(getDataColumnSidecarCount(maybeBlock.get().getRoot().toHexString()))
               .isEqualTo(expectedCustodyCount);
-        });
+        },
+        3,
+        MINUTES);
   }
 
   public void waitForValidators(final int numberOfValidators) {
