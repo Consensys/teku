@@ -1480,7 +1480,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             (slot, blockRoot) ->
                 beaconAsyncRunner.runAsync(
-                    () -> operationsReOrgManager.onLateBlockReorgPreparation(slot, blockRoot)));
+                    () -> operationsReOrgManager.onLateBlockReorgPreparation(slot, blockRoot)),
+            beaconConfig.p2pConfig().isReworkedSidecarSyncEnabled());
   }
 
   protected SafeFuture<Void> initWeakSubjectivity(
@@ -1887,7 +1888,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   recentChainData,
                   throttlingStorageQueryChannel,
                   spec,
-                  LateBlockReorgPreparationHandler.NOOP));
+                  LateBlockReorgPreparationHandler.NOOP,
+                  beaconConfig.p2pConfig().isReworkedSidecarSyncEnabled()));
     }
 
     this.p2pNetwork =

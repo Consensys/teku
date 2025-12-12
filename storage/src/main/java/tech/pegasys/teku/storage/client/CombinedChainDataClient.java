@@ -71,16 +71,19 @@ public class CombinedChainDataClient {
   private final Spec spec;
 
   private final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler;
+  private final boolean isEarliestAvailableDataColumnSlotSupported;
 
   public CombinedChainDataClient(
       final RecentChainData recentChainData,
       final StorageQueryChannel historicalChainData,
       final Spec spec,
-      final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler) {
+      final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler,
+      final boolean isEarliestAvailableDataColumnSlotSupported) {
     this.recentChainData = recentChainData;
     this.historicalChainData = historicalChainData;
     this.spec = spec;
     this.lateBlockReorgPreparationHandler = lateBlockReorgPreparationHandler;
+    this.isEarliestAvailableDataColumnSlotSupported = isEarliestAvailableDataColumnSlotSupported;
   }
 
   /**
@@ -837,7 +840,11 @@ public class CombinedChainDataClient {
     return historicalChainData.getDataColumnIdentifiers(startSlot, endSlot, limit);
   }
 
-  public SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot() {
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot() {
+    if (isEarliestAvailableDataColumnSlotSupported) {
+      return historicalChainData.getEarliestAvailableDataColumnSlot();
+    }
+
     return historicalChainData.getEarliestDataColumnSidecarSlot();
   }
 

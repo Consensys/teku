@@ -245,13 +245,14 @@ public class V4FinalizedKvStoreDao {
     }
   }
 
+  public Optional<UInt64> getEarliestDataSidecarColumnSlot() {
+    return db.getFirstEntry(schema.getColumnSidecarByColumnSlotAndIdentifier())
+        .map(ColumnEntry::getKey)
+        .map(DataColumnSlotAndIdentifier::slot);
+  }
+
   public Optional<UInt64> getEarliestAvailableDataColumnSlot() {
-    return db.get(schema.getVariableEarliestAvailableDataColumnSlot())
-        .or(
-            () ->
-                db.getFirstEntry(schema.getColumnSidecarByColumnSlotAndIdentifier())
-                    .map(ColumnEntry::getKey)
-                    .map(DataColumnSlotAndIdentifier::slot));
+    return db.get(schema.getVariableEarliestAvailableDataColumnSlot());
   }
 
   public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
