@@ -1,5 +1,6 @@
 import com.github.jk1.license.filter.LicenseBundleNormalizer
 import groovy.json.JsonSlurper
+import net.ltgt.gradle.errorprone.CheckSeverity
 import tech.pegasys.internal.license.reporter.GroupedLicenseHtmlRenderer
 import tech.pegasys.teku.depcheck.DepCheckPlugin
 
@@ -137,7 +138,8 @@ allprojects {
 
   version = rootProject.version
 
-  task sourcesJar(type: Jar, dependsOn: classes) {
+  tasks.register('sourcesJar', Jar) {
+    dependsOn classes
     archiveClassifier = 'sources'
     from sourceSets.main.allSource
     jar.reproducibleFileOrder = true
@@ -202,21 +204,21 @@ allprojects {
     }
   }
 
-  tasks.withType(JavaCompile) {
+  tasks.withType(JavaCompile).configureEach {
     options.compilerArgs += [
-      '-Xlint:unchecked',
-      '-Xlint:cast',
-      '-Xlint:rawtypes',
-      '-Xlint:overloads',
-      '-Xlint:divzero',
-      '-Xlint:finally',
-      '-Xlint:static',
-      '-Werror',
+            '-Xlint:unchecked',
+            '-Xlint:cast',
+            '-Xlint:rawtypes',
+            '-Xlint:overloads',
+            '-Xlint:divzero',
+            '-Xlint:finally',
+            '-Xlint:static',
+            '-Werror',
     ]
     options.forkOptions.jvmArgs += [
-        '--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED',
-        '--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED',
-        '--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED'
+            '--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED',
+            '--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED',
+            '--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED'
     ]
 
     options.errorprone {
@@ -224,57 +226,57 @@ allprojects {
       disableWarningsInGeneratedCode
 
       // Our equals need to be symmetric, this checker doesn't respect that
-      check('EqualsGetClass', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+      checks["EqualsGetClass"] = CheckSeverity.OFF
       // We use the JSR-305 annotations instead of the Google annotations
-      check('ImmutableEnumChecker', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+      checks["ImmutableEnumChecker"] = CheckSeverity.OFF
       // Storing a lambda to avoid code duplication is not a bad thing
-      check('UnnecessaryLambda', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+      checks["UnnecessaryLambda"] = CheckSeverity.OFF
       // Generates a ton of false alarms for no real value
-      check('LongDoubleConversion', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('InlineMeSuggester', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('CanIgnoreReturnValueSuggester', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('DirectInvocationOnMock', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('DistinctVarargsChecker', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+      checks["LongDoubleConversion"] = CheckSeverity.OFF
+      checks["InlineMeSuggester"] = CheckSeverity.OFF
+      checks["CanIgnoreReturnValueSuggester"] = CheckSeverity.OFF
+      checks["DirectInvocationOnMock"] = CheckSeverity.OFF
+      checks["DistinctVarargsChecker"] = CheckSeverity.OFF
 
       // We don't apply strict javadoc requirements yet
-      check('EmptyBlockTag', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('MissingSummary', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+      checks["EmptyBlockTag"] = CheckSeverity.OFF
+      checks["MissingSummary"] = CheckSeverity.OFF
 
       // Force strict compliance with Java naming conventions
-      check('JavaCase', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      checks["JavaCase"] = CheckSeverity.OFF
 
       // Check for uses of == that should probably be .equals
-      check('ReferenceComparison', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      checks["ReferenceComparison"] = CheckSeverity.OFF
 
       // These checks are imported from errorprone-checks dependency but not required in Teku
-      check('BannedMethod', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('ExperimentalCliOptionMustBeCorrectlyDisplayed', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+      checks["BannedMethod"] = CheckSeverity.OFF
+      checks["ExperimentalCliOptionMustBeCorrectlyDisplayed"] = CheckSeverity.OFF
 
       // ignore PatternMatchingInstanceof for now
-      check("PatternMatchingInstanceof", net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+      checks["PatternMatchingInstanceof"] = CheckSeverity.OFF
 
       // ignore EffectivelyPrivate for now
-      check("EffectivelyPrivate", net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+      checks["EffectivelyPrivate"] = CheckSeverity.OFF
 
       // These are experimental checks that we want enabled
-      check('ClassName', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('DeduplicateConstants', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('FieldCanBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('InitializeInline', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('InsecureCryptoUsage', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('InterfaceWithOnlyStatics', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('MissingBraces', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('NonFinalStaticField', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('PackageLocation', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('RedundantOverride', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('RedundantThrows', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('StringFormatWithLiteral', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('TruthContainsExactlyElementsInUsage', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('UnnecessarilyFullyQualified', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('UnnecessaryTestMethodPrefix', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('UseCorrectAssertInTests', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('WildcardImport', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      checks["ClassName"] = CheckSeverity.WARN
+      checks["DeduplicateConstants"] = CheckSeverity.WARN
+      checks["FieldCanBeFinal"] = CheckSeverity.WARN
+      checks["InitializeInline"] = CheckSeverity.WARN
+      checks["InsecureCryptoUsage"] = CheckSeverity.WARN
+      checks["InterfaceWithOnlyStatics"] = CheckSeverity.WARN
+      checks["MethodInputParametersMustBeFinal"] = CheckSeverity.WARN
+      checks["MissingBraces"] = CheckSeverity.WARN
+      checks["NonFinalStaticField"] = CheckSeverity.WARN
+      checks["PackageLocation"] = CheckSeverity.WARN
+      checks["RedundantOverride"] = CheckSeverity.WARN
+      checks["RedundantThrows"] = CheckSeverity.WARN
+      checks["StringFormatWithLiteral"] = CheckSeverity.WARN
+      checks["TruthContainsExactlyElementsInUsage"] = CheckSeverity.WARN
+      checks["UnnecessarilyFullyQualified"] = CheckSeverity.WARN
+      checks["UnnecessaryTestMethodPrefix"] = CheckSeverity.WARN
+      checks["UseCorrectAssertInTests"] = CheckSeverity.WARN
+      checks["WildcardImport"] = CheckSeverity.WARN
     }
     options.encoding = 'UTF-8'
 
@@ -330,6 +332,7 @@ allprojects {
   }
 }
 
+def buildDir = layout.buildDirectory.get()
 def nightly = System.getenv("NIGHTLY") != null
 def refTestVersion = nightly ? "nightly" : "v1.6.1"
 def blsRefTestVersion = 'v0.1.2'
@@ -344,7 +347,7 @@ def refTestExpandDir = "${project.rootDir}/eth-reference-tests/src/referenceTest
 
 def downloadFile(String url, String token, File outputFile) {
   println "Download ${outputFile.getName()} (${url})"
-  def connection = new URL(url).openConnection()
+  def connection = new URI(url).toURL().openConnection()
   connection.setRequestProperty("Authorization", "token ${token}")
   connection.getInputStream().withCloseable { inputStream ->
     outputFile.withOutputStream { outputStream ->
@@ -355,7 +358,7 @@ def downloadFile(String url, String token, File outputFile) {
 
 def downloadArtifacts(String repo, Long runId, String token, String downloadDir) {
   def artifactsApiUrl = "https://api.github.com/repos/${repo}/actions/runs/${runId}/artifacts"
-  def connection = new URL(artifactsApiUrl).openConnection()
+  def connection = new URI(artifactsApiUrl).toURL().openConnection()
   connection.setRequestProperty("Authorization", "token ${token}")
   connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
 
@@ -368,7 +371,8 @@ def downloadArtifacts(String repo, Long runId, String token, String downloadDir)
       }
 
       def fileOutput = new File(downloadDir, "${artifact.name}.zip")
-      downloadFile(artifact.archive_download_url, token, fileOutput)
+      String url = artifact.archive_download_url
+      downloadFile(url, token, fileOutput)
       ant.unzip(src: fileOutput, dest: downloadDir)
       fileOutput.delete()
     }
@@ -379,7 +383,7 @@ def downloadArtifacts(String repo, Long runId, String token, String downloadDir)
 
 static def getLatestRunId(String repo, String workflow, String branch, String token) {
   def apiUrl = "https://api.github.com/repos/${repo}/actions/workflows/${workflow}/runs?branch=${branch}&status=success&per_page=1"
-  def connection = new URL(apiUrl).openConnection()
+  def connection = new URI(apiUrl).toURL().openConnection()
   connection.setRequestProperty("Authorization", "token ${token}")
   connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
 
@@ -391,7 +395,7 @@ static def getLatestRunId(String repo, String workflow, String branch, String to
   return null
 }
 
-task downloadEthRefTestsNightly {
+tasks.register('downloadEthRefTestsNightly') {
   doLast {
     def repo = "ethereum/consensus-specs"
     def workflowFileName = "generate_vectors.yml"
@@ -422,83 +426,88 @@ task downloadEthRefTestsNightly {
   }
 }
 
-task downloadEthRefTestsStable(type: Download) {
+tasks.register('downloadEthRefTestsStable', Download) {
   src([
-      "${refTestBaseUrl}/${refTestVersion}/general.tar.gz",
-      "${refTestBaseUrl}/${refTestVersion}/minimal.tar.gz",
-      "${refTestBaseUrl}/${refTestVersion}/mainnet.tar.gz"
+          "${refTestBaseUrl}/${refTestVersion}/general.tar.gz",
+          "${refTestBaseUrl}/${refTestVersion}/minimal.tar.gz",
+          "${refTestBaseUrl}/${refTestVersion}/mainnet.tar.gz"
   ])
   dest "${refTestDownloadDir}"
   overwrite false
 }
 
-task downloadEthRefTests {
+tasks.register("downloadEthRefTests") {
   if (nightly) {
-    dependsOn tasks.findByName("downloadEthRefTestsNightly")
+    dependsOn(tasks.named("downloadEthRefTestsNightly"))
   } else {
-    dependsOn tasks.findByName("downloadEthRefTestsStable")
+    dependsOn(tasks.named("downloadEthRefTestsStable"))
   }
 }
 
-task downloadBlsRefTests(type: Download) {
+tasks.register('downloadBlsRefTests', Download) {
   src([
-      "${blsRefTestBaseUrl}/${blsRefTestVersion}/bls_tests_yaml.tar.gz"
+          "${blsRefTestBaseUrl}/${blsRefTestVersion}/bls_tests_yaml.tar.gz"
   ])
   dest "${blsRefTestDownloadDir}/bls_tests_yaml.tar.gz"
   overwrite false
 }
 
-task downloadSlashingProtectionInterchangeRefTests(type: Download) {
+tasks.register('downloadSlashingProtectionInterchangeRefTests', Download) {
   src([
-      "${slashingProtectionInterchangeRefTestBaseUrl}/${slashingProtectionInterchangeRefTestVersion}.tar.gz"
+          "${slashingProtectionInterchangeRefTestBaseUrl}/${slashingProtectionInterchangeRefTestVersion}.tar.gz"
   ])
   dest "${slashingProtectionInterchangeRefTestDownloadDir}/slashing-protection-interchange-tests.tar.gz"
   overwrite false
 }
 
-task downloadRefTests(dependsOn: [downloadEthRefTests, downloadBlsRefTests, downloadSlashingProtectionInterchangeRefTests])
+tasks.register('downloadRefTests') { dependsOn(downloadEthRefTests, downloadBlsRefTests, downloadSlashingProtectionInterchangeRefTests) }
 
-task cleanRefTestsGeneral(type: Delete) {
+tasks.register('cleanRefTestsGeneral', Delete) {
   delete "${refTestExpandDir}/tests/general"
 }
 
-task expandRefTestsGeneral(type: Copy, dependsOn: [cleanRefTestsGeneral, downloadEthRefTests]) {
+tasks.register('expandRefTestsGeneral', Copy) {
+  dependsOn(cleanRefTestsGeneral, downloadEthRefTests)
   from tarTree("${refTestDownloadDir}/general.tar.gz")
   into refTestExpandDir
 }
 
-task cleanRefTestsMainnet(type: Delete) {
+tasks.register('cleanRefTestsMainnet', Delete) {
   delete "${refTestExpandDir}/tests/mainnet"
 }
 
-task expandRefTestsMainnet(type: Copy, dependsOn: [cleanRefTestsMainnet, downloadEthRefTests]) {
+tasks.register('expandRefTestsMainnet', Copy) {
+  dependsOn(cleanRefTestsMainnet, downloadEthRefTests)
   from tarTree("${refTestDownloadDir}/mainnet.tar.gz")
   into refTestExpandDir
 }
 
-task cleanRefTestsMinimal(type: Delete) {
+tasks.register('cleanRefTestsMinimal', Delete) {
   delete "${refTestExpandDir}/tests/minimal"
 }
 
-task expandRefTestsMinimal(type: Copy, dependsOn: [cleanRefTestsMinimal, downloadEthRefTests]) {
+tasks.register('expandRefTestsMinimal', Copy) {
+  dependsOn(cleanRefTestsMinimal, downloadEthRefTests)
   from tarTree("${refTestDownloadDir}/minimal.tar.gz")
   into refTestExpandDir
 }
 
-task cleanRefTestsBls(type: Delete) {
+tasks.register('cleanRefTestsBls', Delete) {
   delete "${refTestExpandDir}/tests/bls"
 }
 
-task expandRefTestsBls(type: Copy, dependsOn: [cleanRefTestsBls, downloadBlsRefTests]) {
+tasks.register('expandRefTestsBls', Copy) {
+  dependsOn(cleanRefTestsBls, downloadBlsRefTests)
   from tarTree("${blsRefTestDownloadDir}/bls_tests_yaml.tar.gz")
   into "${refTestExpandDir}/tests/bls"
 }
 
-task cleanRefTestsSlashingProtectionInterchange(type: Delete) {
+tasks.register('cleanRefTestsSlashingProtectionInterchange', Delete) {
   delete "${refTestExpandDir}/tests/slashing-protection-interchange"
 }
 
-task expandRefTestsSlashingProtectionInterchange(type: Copy, dependsOn: [cleanRefTestsSlashingProtectionInterchange, downloadSlashingProtectionInterchangeRefTests]) {
+tasks.register('expandRefTestsSlashingProtectionInterchange', Copy) {
+  dependsOn(cleanRefTestsSlashingProtectionInterchange, downloadSlashingProtectionInterchangeRefTests)
   from {
     tarTree("${slashingProtectionInterchangeRefTestDownloadDir}/slashing-protection-interchange-tests.tar.gz").matching {
       include "**/tests/generated/*.json"
@@ -511,10 +520,10 @@ task expandRefTestsSlashingProtectionInterchange(type: Copy, dependsOn: [cleanRe
   into "${refTestExpandDir}/tests/slashing-protection-interchange"
 }
 
-task expandRefTests(dependsOn: [expandRefTestsGeneral, expandRefTestsMainnet, expandRefTestsMinimal, expandRefTestsBls, expandRefTestsSlashingProtectionInterchange])
-task cleanRefTests(dependsOn: [cleanRefTestsGeneral, cleanRefTestsMainnet, cleanRefTestsMinimal, cleanRefTestsBls, cleanRefTestsSlashingProtectionInterchange])
+tasks.register('expandRefTests') { dependsOn(expandRefTestsGeneral, expandRefTestsMainnet, expandRefTestsMinimal, expandRefTestsBls, expandRefTestsSlashingProtectionInterchange) }
+tasks.register('cleanRefTests') { dependsOn(cleanRefTestsGeneral, cleanRefTestsMainnet, cleanRefTestsMinimal, cleanRefTestsBls, cleanRefTestsSlashingProtectionInterchange) }
 
-task deploy() {}
+tasks.register('deploy') {}
 
 licenseReport {
   configurations = ['runtimeClasspath']
@@ -534,7 +543,7 @@ licenseReport {
   renderers = [new GroupedLicenseHtmlRenderer(includeTimestamp: false)]
 }
 
-task checkMavenCoordinateCollisions {
+tasks.register('checkMavenCoordinateCollisions') {
   doLast {
     def coordinates = [:]
     getAllprojects().forEach {
@@ -542,8 +551,8 @@ task checkMavenCoordinateCollisions {
         def coordinate = it.publishing?.publications[0].coordinates
         if (coordinates.containsKey(coordinate)) {
           throw new GradleException("Duplicate maven coordinates detected, ${coordinate} is used by " +
-              "both ${coordinates[coordinate]} and ${it.path}.\n" +
-              "Please add a `publishing` script block to one or both subprojects.")
+                  "both ${coordinates[coordinate]} and ${it.path}.\n" +
+                  "Please add a `publishing` script block to one or both subprojects.")
         }
         coordinates[coordinate] = it.path
       }
@@ -571,7 +580,7 @@ application {
   ]
 }
 
-task autocomplete(type: JavaExec) {
+tasks.register('autocomplete', JavaExec) {
   dependsOn compileJava
   outputs.file "build/teku.autocomplete.sh"
 
@@ -656,7 +665,7 @@ def localDockerImage = "local/teku"
 
 def executableAndArg = System.getProperty('os.name').toLowerCase().contains('windows') ? ["cmd", "/c"] : ["sh", "-c"]
 
-task localDocker {
+tasks.register('localDocker') {
   dependsOn dockerDistUntar
   def dockerBuildVersion = 'develop'
   doLast {
@@ -666,26 +675,26 @@ task localDocker {
       from file("${projectDir}/docker/${dockerJdkVariants[0]}/Dockerfile")
       into(dockerBuildDir)
     }
-    exec {
+    providers.exec {
       def image = "${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag}"
       workingDir dockerBuildDir
       executable executableAndArg[0]
       args executableAndArg[1], "docker build --pull --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
     }
     // tag the "default" (which is the variant in the zero position)
-    exec {
+    providers.exec {
       executable executableAndArg[0]
       args executableAndArg[1], "docker tag ${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag} ${localDockerImage}:${dockerBuildVersion}${commitHashTag}"
     }
   }
 }
 
-task localDockerClean {
+tasks.register('localDockerClean') {
   def dockerBuildVersion = 'develop'
   def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
   def commitHashTag = includeCommitHashInDockerTag ? '-' + grgit.head().getAbbreviatedId() : ''
   doLast {
-    exec {
+    providers.exec {
       executable executableAndArg[0]
       args executableAndArg[1], "docker rmi ${localDockerImage}:${dockerBuildVersion} ${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag}"
     }
@@ -694,7 +703,7 @@ task localDockerClean {
 
 def dockerImage = "consensys/teku"
 
-task distDocker  {
+tasks.register('distDocker') {
   dependsOn dockerDistUntar
   def dockerBuildVersion = 'develop'
   doLast {
@@ -705,7 +714,7 @@ task distDocker  {
         from file("${projectDir}/docker/${variant}/Dockerfile")
         into(dockerBuildDir)
       }
-      exec {
+      providers.exec {
         def image = "${dockerImage}:${dockerBuildVersion}-${variant}${commitHashTag}"
         workingDir dockerBuildDir
         executable executableAndArg[0]
@@ -713,14 +722,14 @@ task distDocker  {
       }
     }
     // tag the "default" (which is the variant in the zero position)
-    exec {
+    providers.exec {
       executable executableAndArg[0]
       args executableAndArg[1], "docker tag ${dockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag} ${dockerImage}:${dockerBuildVersion}${commitHashTag}"
     }
   }
 }
 
-task uploadDocker {
+tasks.register('uploadDocker') {
   dependsOn([distDocker])
   def dockerBuildVersion = "${rootProject.version}".replace('+', '-')
   def architecture = System.getenv('architecture')
@@ -741,10 +750,10 @@ task uploadDocker {
     def commitHashTag = includeCommitHashInDockerTag ? '-' + grgit.head().getAbbreviatedId() : ''
     for (def variant in dockerJdkVariants) {
       def tags = ""
-      versionPrefixes.forEach { prefix -> tags += "-t ${dockerImage}:${prefix.trim()}-${variant}-${architecture}${commitHashTag} "}
+      versionPrefixes.forEach { prefix -> tags += "-t ${dockerImage}:${prefix.trim()}-${variant}-${architecture}${commitHashTag} " }
 
       if (variant == dockerJdkVariants[0]) {
-        versionPrefixes.forEach { prefix -> tags += "-t ${dockerImage}:${prefix.trim()}-${architecture}${commitHashTag} "}
+        versionPrefixes.forEach { prefix -> tags += "-t ${dockerImage}:${prefix.trim()}-${architecture}${commitHashTag} " }
       }
 
       copy {
@@ -752,16 +761,16 @@ task uploadDocker {
         into(dockerBuildDir)
       }
 
-      exec {
+      providers.exec {
         workingDir dockerBuildDir
         executable executableAndArg[0]
         args executableAndArg[1], "docker build --pull --platform ${platform} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} ${tags} ."
       }
 
       //docker trust sign runs one image at a time, so we have to remove the '-t' in the string and split into a list we can use
-      def trustTags = tags.replaceAll( '-t ', '' ).trim().split(' ')
+      def trustTags = tags.replaceAll('-t ', '').trim().split(' ')
       for (def t in trustTags) {
-        exec {
+        providers.exec {
           workingDir dockerBuildDir
           executable executableAndArg[0]
           args executableAndArg[1], "docker push ${t} "
@@ -771,7 +780,7 @@ task uploadDocker {
   }
 }
 
-task manifestDocker {
+tasks.register('manifestDocker') {
   def dockerBuildVersion = "${rootProject.version}".replace('+', '-')
   def versionPrefixes = [dockerBuildVersion]
   def platforms = ["arm64", "amd64"]
@@ -799,7 +808,7 @@ task manifestDocker {
 
       for (def tag in tags) {
         platforms.forEach { platform -> cmd += "${tag}-${platform}${commitHashTag} " }
-        exec {
+        providers.exec {
           executable executableAndArg[0]
           args executableAndArg[1], "docker manifest create ${tag}${commitHashTag} ${cmd} && docker manifest push ${tag}${commitHashTag}"
         }
@@ -809,7 +818,7 @@ task manifestDocker {
 }
 
 subprojects {
-  tasks.withType(Test) {
+  tasks.withType(Test).configureEach {
     // If GRADLE_MAX_TEST_FORKS is not set, use half the available processors
     maxParallelForks = (System.getenv('GRADLE_MAX_TEST_FORKS') ?: (Runtime.runtime.availableProcessors().intdiv(2) ?: 1)).toInteger()
     useJUnitPlatform()
@@ -823,7 +832,7 @@ subprojects {
     }
   }
 
-  tasks.withType(JavaCompile) {
+  tasks.withType(JavaCompile).configureEach {
     options.fork = true
     options.incremental = true
   }
@@ -870,16 +879,16 @@ subprojects {
   apply plugin: 'idea'
   idea {
     module {
-      testSourceDirs += project.sourceSets.testFixtures.java.srcDirs
-      testSourceDirs += project.sourceSets.testFixtures.resources.srcDirs
-      testSourceDirs += project.sourceSets.integrationTest.java.srcDirs
-      testSourceDirs += project.sourceSets.integrationTest.resources.srcDirs
-      testSourceDirs += project.sourceSets.acceptanceTest.java.srcDirs
-      testSourceDirs += project.sourceSets.acceptanceTest.resources.srcDirs
-      testSourceDirs += project.sourceSets.propertyTest.java.srcDirs
-      testSourceDirs += project.sourceSets.propertyTest.resources.srcDirs
-      testSourceDirs += project.sourceSets.referenceTest.java.srcDirs
-      testSourceDirs += project.sourceSets.referenceTest.resources.srcDirs
+      testSources.from(project.sourceSets.testFixtures.java.srcDirs)
+      testSources.from(project.sourceSets.testFixtures.resources.srcDirs)
+      testSources.from(project.sourceSets.integrationTest.java.srcDirs)
+      testSources.from(project.sourceSets.integrationTest.resources.srcDirs)
+      testSources.from(project.sourceSets.acceptanceTest.java.srcDirs)
+      testSources.from(project.sourceSets.acceptanceTest.resources.srcDirs)
+      testSources.from(project.sourceSets.propertyTest.java.srcDirs)
+      testSources.from(project.sourceSets.propertyTest.resources.srcDirs)
+      testSources.from(project.sourceSets.referenceTest.java.srcDirs)
+      testSources.from(project.sourceSets.referenceTest.resources.srcDirs)
     }
   }
 
@@ -951,7 +960,7 @@ subprojects {
       }
     }
 
-    tasks.getByName("compileJmhJava") {
+    tasks.named("compileJmhJava") {
 
       options.compilerArgs = []
 
@@ -967,7 +976,8 @@ subprojects {
 
     classes.finalizedBy(jmhClasses)
 
-    task jmh(type: JavaExec, dependsOn: jmhClasses) {
+    tasks.register('jmh', JavaExec) {
+      dependsOn jmhClasses
       mainClass = 'org.openjdk.jmh.Main'
       classpath = sourceSets.jmh.compileClasspath + sourceSets.jmh.runtimeClasspath
       systemProperty("jmh.blackhole.mode", "COMPILER")
@@ -1044,7 +1054,8 @@ subprojects {
     dependencies.testRuntimeOnly(dependencies.testFixtures(project(':infrastructure:logging')))
   }
 
-  task integrationTest(type: Test, dependsOn:["compileIntegrationTestJava"]){
+  tasks.register('integrationTest', Test) {
+    dependsOn["compileIntegrationTestJava"]
     group = "verification"
     description = "Runs the Teku integration tests"
 
@@ -1052,16 +1063,18 @@ subprojects {
     classpath = sourceSets.integrationTest.runtimeClasspath
   }
 
-  task acceptanceTest(type: Test, dependsOn:["compileAcceptanceTestJava", rootProject.distDocker]){
+  tasks.register('acceptanceTest', Test) {
+    dependsOn(tasks.named("compileAcceptanceTestJava"), rootProject.distDocker)
     group = "verification"
     description = "Runs the Teku acceptance tests"
 
-    systemProperty "teku.testArtifactDir", new File(project.buildDir, "test-artifacts").getAbsolutePath()
+    systemProperty "teku.testArtifactDir", new File(buildDir.asFile, "test-artifacts").getAbsolutePath()
     testClassesDirs = sourceSets.acceptanceTest.output.classesDirs
     classpath = sourceSets.acceptanceTest.runtimeClasspath
   }
 
-  task propertyTest(type: Test, dependsOn:["compilePropertyTestJava"]){
+  tasks.register('propertyTest', Test) {
+    dependsOn["compilePropertyTestJava"]
     group = "verification"
     description = "Runs the Teku property tests"
 
@@ -1069,12 +1082,12 @@ subprojects {
     classpath = sourceSets.propertyTest.runtimeClasspath
   }
 
-  task referenceTest(type: Test, dependsOn:["compileReferenceTestJava"]){
+  tasks.register('referenceTest', Test) {
+    dependsOn("compileReferenceTestJava")
     group = "verification"
     description = "Runs the Teku reference tests"
-
-    testClassesDirs = sourceSets.referenceTest.output.classesDirs
-    classpath = sourceSets.referenceTest.runtimeClasspath
+    testClassesDirs = sourceSets.named("referenceTest").get().output.classesDirs
+    classpath = sourceSets.named("referenceTest").get().runtimeClasspath
   }
 }
 
@@ -1104,15 +1117,15 @@ dependencies {
 }
 
 distributions {
-  main {
+  named("main") {
     contents {
       from("LICENSE")
       from("build/reports/licenses") {
-        into "licenses"
-        exclude "**/dependencies-without-allowed-license.json"
-        exclude "**/project-licenses-for-check-license-task.json"
+        into("licenses")
+        exclude("**/dependencies-without-allowed-license.json")
+        exclude("**/project-licenses-for-check-license-task.json")
       }
-      from("libs") { into "native" }
+      from("libs") { into("native") }
       from("build/teku.autocomplete.sh")
     }
   }
@@ -1120,7 +1133,7 @@ distributions {
 
 // http://label-schema.org/rc1/
 // using the RFC3339 format "2016-04-12T23:20:50.52Z"
-def buildTime() {
+static def buildTime() {
   def df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'")
   df.setTimeZone(TimeZone.getTimeZone("UTC"))
   return df.format(new Date())
@@ -1170,7 +1183,7 @@ def calculateVersion() {
   return version
 }
 
-task printVersion() {
+tasks.register('printVersion') {
   doFirst {
     print "Specific version: ${specificVersion}  Publish version: ${project.version}"
   }
@@ -1188,10 +1201,10 @@ def getCheckedOutGitCommitHash() {
   grgit ? grgit.head().id.take(takeFromHash) : 'UNKNOWN'
 }
 
-task cloudsmithUpload {
+tasks.register('cloudsmithUpload') {
   dependsOn([distTar, distZip])
   doLast {
-    exec {
+    providers.exec {
       executable project.file("scripts/cloudsmith-upload.sh")
       args rootProject.version, distTar.archiveFile.get(), distZip.archiveFile.get()
     }
