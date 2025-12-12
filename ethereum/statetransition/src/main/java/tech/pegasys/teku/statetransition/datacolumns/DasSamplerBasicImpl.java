@@ -24,8 +24,6 @@ import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.TreeSet;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListSet;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -60,8 +58,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   private final int maxRecentlySampledBlocks;
   private final Map<Bytes32, DataColumnSamplingTracker> recentlySampledColumnsByRoot;
 
-  private final NavigableSet<SlotAndBlockRoot> orderedSidecarsTrackers =
-      new TreeSet<>();
+  private final NavigableSet<SlotAndBlockRoot> orderedSidecarsTrackers = new TreeSet<>();
 
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
@@ -196,22 +193,22 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
             });
   }
 
-  private DataColumnSamplingTracker getOrCreateTracker(
-      final UInt64 slot, final Bytes32 blockRoot) {
+  private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {
     final DataColumnSamplingTracker tracker;
     final boolean created;
     synchronized (this) {
       makeRoomForNewTracker();
       created = !recentlySampledColumnsByRoot.containsKey(blockRoot);
-      tracker = recentlySampledColumnsByRoot.computeIfAbsent(
-                blockRoot,
-                k -> {
-                  final DataColumnSamplingTracker newTracker =
-                          DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager);
-                  orderedSidecarsTrackers.add(new SlotAndBlockRoot(slot, blockRoot));
-                  LOG.debug("Created new DAS tracker for slot {} root {}", slot, blockRoot);
-                  return newTracker;
-                });
+      tracker =
+          recentlySampledColumnsByRoot.computeIfAbsent(
+              blockRoot,
+              k -> {
+                final DataColumnSamplingTracker newTracker =
+                    DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager);
+                orderedSidecarsTrackers.add(new SlotAndBlockRoot(slot, blockRoot));
+                LOG.debug("Created new DAS tracker for slot {} root {}", slot, blockRoot);
+                return newTracker;
+              });
     }
     if (created) {
       onFirstSeen(slot, blockRoot, tracker);
@@ -226,7 +223,8 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
         break;
       }
 
-      final DataColumnSamplingTracker tracker = recentlySampledColumnsByRoot.remove(toRemove.getBlockRoot());
+      final DataColumnSamplingTracker tracker =
+          recentlySampledColumnsByRoot.remove(toRemove.getBlockRoot());
 
       if (tracker != null) {
         completeExpiredTracker(tracker);
@@ -320,8 +318,6 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   }
 
   private void completeExpiredTracker(final DataColumnSamplingTracker tracker) {
-    tracker
-            .completionFuture()
-            .completeExceptionally(new RuntimeException("DAS sampling expired"));
+    tracker.completionFuture().completeExceptionally(new RuntimeException("DAS sampling expired"));
   }
 }
