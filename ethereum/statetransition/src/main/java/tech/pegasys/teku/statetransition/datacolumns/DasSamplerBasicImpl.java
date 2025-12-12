@@ -90,7 +90,11 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
         BEACON,
         "das_recently_sampled_blocks_size",
         "DAS recently sampled blocks size",
-        () -> (long) recentlySampledColumnsByRoot.size());
+        () -> {
+          synchronized (this) {
+            return (long) recentlySampledColumnsByRoot.size();
+          }
+        });
   }
 
   @VisibleForTesting
