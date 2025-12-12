@@ -385,6 +385,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile Optional<DasCustodySync> dasCustodySync = Optional.empty();
   protected volatile Optional<DataColumnSidecarRetriever> recoveringSidecarRetriever =
       Optional.empty();
+  protected volatile Optional<DataColumnSidecarRetriever> simpleSidecarRetriever = Optional.empty();
   protected volatile AvailabilityCheckerFactory<UInt64> dasSamplerManager;
   protected volatile DataAvailabilitySampler dataAvailabilitySampler;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
@@ -994,6 +995,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dasAsyncRunner,
             Duration.ofSeconds(1));
 
+    simpleSidecarRetriever = Optional.of(sidecarRetriever);
+
     final DataColumnSidecarRetriever recoveringSidecarRetriever;
     if (beaconConfig.p2pConfig().isReworkedSidecarRecoveryEnabled()) {
       recoveringSidecarRetriever =
@@ -1400,7 +1403,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initBlobReconstructionProvider() {
     LOG.debug("BeaconChainController.initBlobReconstructionProvider()");
-    this.blobReconstructionProvider = new BlobReconstructionProvider(combinedChainDataClient, spec);
+    this.blobReconstructionProvider =
+        new BlobReconstructionProvider(
+            combinedChainDataClient,
+            simpleSidecarRetriever.map(
+                dataColumnSidecarRetriever -> dataColumnSidecarRetriever::retrieve),
+            spec);
   }
 
   protected void initDataProvider() {
