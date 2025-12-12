@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +36,8 @@ public class BeaconRestApiConfig {
       List.of("127.0.0.1", "localhost");
   public static final List<String> DEFAULT_REST_API_CORS_ALLOWED_ORIGINS = new ArrayList<>();
   public static final boolean DEFAULT_BEACON_LIVENESS_TRACKING_ENABLED = false;
+  public static final boolean DEFAULT_GET_BLOBS_TRIGGER_MISSING_SIDECAR_DOWNLOAD_ENABLED = false;
+  public static final Duration DEFAULT_GET_BLOBS_SIDECAR_DOWNLOAD_TIMEOUT = Duration.ofSeconds(5);
   public static final int DEFAULT_TARGET_VALIDATORS_API_THREADS = 10;
 
   // Beacon REST API
@@ -43,6 +46,8 @@ public class BeaconRestApiConfig {
   private final boolean restApiEnabled;
   private final boolean restApiLightClientEnabled;
   private final boolean beaconLivenessTrackingEnabled;
+  private final boolean getBlobsTriggerMissingSidecarDownloadEnabled;
+  private final Duration getBlobsSidecarDownloadTimeout;
   private final String restApiInterface;
   private final List<String> restApiHostAllowlist;
   private final List<String> restApiCorsAllowedOrigins;
@@ -63,7 +68,9 @@ public class BeaconRestApiConfig {
       final int maxUrlLength,
       final int maxPendingEvents,
       final Optional<Integer> validatorThreads,
-      final boolean beaconLivenessTrackingEnabled) {
+      final boolean beaconLivenessTrackingEnabled,
+      final boolean getBlobsTriggerMissingSidecarDownloadEnabled,
+      final Duration getBlobsSidecarDownloadTimeout) {
     this.restApiPort = restApiPort;
     this.restApiDocsEnabled = restApiDocsEnabled;
     this.restApiEnabled = restApiEnabled;
@@ -76,6 +83,9 @@ public class BeaconRestApiConfig {
     this.maxPendingEvents = maxPendingEvents;
     this.validatorThreads = validatorThreads;
     this.beaconLivenessTrackingEnabled = beaconLivenessTrackingEnabled;
+    this.getBlobsTriggerMissingSidecarDownloadEnabled =
+        getBlobsTriggerMissingSidecarDownloadEnabled;
+    this.getBlobsSidecarDownloadTimeout = getBlobsSidecarDownloadTimeout;
   }
 
   public int getRestApiPort() {
@@ -96,6 +106,14 @@ public class BeaconRestApiConfig {
 
   public boolean isBeaconLivenessTrackingEnabled() {
     return beaconLivenessTrackingEnabled;
+  }
+
+  public boolean isGetBlobsTriggerMissingSidecarDownloadEnabled() {
+    return getBlobsTriggerMissingSidecarDownloadEnabled;
+  }
+
+  public Duration getGetBlobsSidecarDownloadTimeout() {
+    return getBlobsSidecarDownloadTimeout;
   }
 
   public String getRestApiInterface() {
@@ -148,6 +166,9 @@ public class BeaconRestApiConfig {
     private boolean restApiEnabled = false;
     private boolean restApiLightClientEnabled = false;
     private boolean beaconLivenessTrackingEnabled = DEFAULT_BEACON_LIVENESS_TRACKING_ENABLED;
+    private boolean getBlobsTriggerMissingSidecarDownloadEnabled =
+        DEFAULT_GET_BLOBS_TRIGGER_MISSING_SIDECAR_DOWNLOAD_ENABLED;
+    private Duration getBlobsSidecarDownloadTimeout = DEFAULT_GET_BLOBS_SIDECAR_DOWNLOAD_TIMEOUT;
     private String restApiInterface = DEFAULT_REST_API_INTERFACE;
     private List<String> restApiHostAllowlist = DEFAULT_REST_API_HOST_ALLOWLIST;
     private List<String> restApiCorsAllowedOrigins = DEFAULT_REST_API_CORS_ALLOWED_ORIGINS;
@@ -230,6 +251,20 @@ public class BeaconRestApiConfig {
       return this;
     }
 
+    public BeaconRestApiConfigBuilder getBlobsTriggerMissingSidecarDownloadEnabled(
+        final boolean getBlobsTriggerMissingSidecarDownloadEnabled) {
+      this.getBlobsTriggerMissingSidecarDownloadEnabled =
+          getBlobsTriggerMissingSidecarDownloadEnabled;
+      return this;
+    }
+
+    public BeaconRestApiConfigBuilder getBlobsSidecarDownloadTimeoutSeconds(
+        final long getBlobsSidecarDownloadTimeoutSeconds) {
+      this.getBlobsSidecarDownloadTimeout =
+          Duration.ofSeconds(getBlobsSidecarDownloadTimeoutSeconds);
+      return this;
+    }
+
     public BeaconRestApiConfigBuilder validatorThreads(final Optional<Integer> validatorThreads) {
       validatorThreads.ifPresent(
           threads -> {
@@ -261,7 +296,9 @@ public class BeaconRestApiConfig {
           maxUrlLength,
           maxPendingEvents,
           validatorThreads,
-          beaconLivenessTrackingEnabled);
+          beaconLivenessTrackingEnabled,
+          getBlobsTriggerMissingSidecarDownloadEnabled,
+          getBlobsSidecarDownloadTimeout);
     }
 
     public BeaconRestApiConfigBuilder maxUrlLength(final int maxUrlLength) {
