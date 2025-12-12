@@ -577,7 +577,7 @@ public class P2PConfig {
     }
 
     public Builder reworkedSidecarSyncBatchSize(final Integer reworkedSidecarSyncBatchSize) {
-      this.reworkedSidecarRecoveryTimeout = reworkedSidecarSyncBatchSize;
+      this.reworkedSidecarSyncBatchSize = reworkedSidecarSyncBatchSize;
       return this;
     }
 
