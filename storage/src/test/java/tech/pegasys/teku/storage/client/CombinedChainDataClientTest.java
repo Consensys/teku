@@ -19,6 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -60,7 +61,7 @@ class CombinedChainDataClientTest {
   private final UpdatableStore store = mock(UpdatableStore.class);
   private final CombinedChainDataClient client =
       new CombinedChainDataClient(
-          recentChainData, historicalChainData, spec, lateBlockReorgPreparationHandler);
+          recentChainData, historicalChainData, spec, lateBlockReorgPreparationHandler, false);
   private final ChainHead chainHead = mock(ChainHead.class);
 
   final List<SignedBeaconBlock> nonCanonicalBlocks = new ArrayList<>();
@@ -348,6 +349,24 @@ class CombinedChainDataClientTest {
     when(recentChainData.getStore()).thenReturn(null);
     final SafeFuture<Optional<BeaconState>> maybeFinalizedState = client.getBestFinalizedState();
     assertThat(maybeFinalizedState.get()).isEmpty();
+  }
+
+  @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
+  void getEarliestAvailableDataColumnSlot_WithFallback_shouldRespectConfig() {
+    client.getEarliestAvailableDataColumnSlotWithFallback();
+
+    verify(historicalChainData).getEarliestDataColumnSidecarSlot();
+
+    final CombinedChainDataClient clientWithEarliestAvailableDataColumnSlotSupport =
+        new CombinedChainDataClient(
+            recentChainData, historicalChainData, spec, lateBlockReorgPreparationHandler, true);
+
+    clientWithEarliestAvailableDataColumnSlotSupport
+        .getEarliestAvailableDataColumnSlotWithFallback();
+    verify(historicalChainData).getEarliestAvailableDataColumnSlot();
+
+    verifyNoMoreInteractions(historicalChainData);
   }
 
   private void setupGetBlobSidecar(

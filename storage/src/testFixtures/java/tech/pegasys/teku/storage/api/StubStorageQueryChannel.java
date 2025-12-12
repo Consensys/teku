@@ -244,4 +244,9 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   public SafeFuture<Optional<List<List<KZGProof>>>> getDataColumnSidecarsProofs(final UInt64 slot) {
     return SafeFuture.completedFuture(Optional.empty());
   }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot() {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
 }

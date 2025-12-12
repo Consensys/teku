@@ -232,7 +232,11 @@ public class Eth2P2PNetworkFactory {
             new SubnetSubscriptionService();
         final CombinedChainDataClient combinedChainDataClient =
             new CombinedChainDataClient(
-                recentChainData, historicalChainData, spec, LateBlockReorgPreparationHandler.NOOP);
+                recentChainData,
+                historicalChainData,
+                spec,
+                LateBlockReorgPreparationHandler.NOOP,
+                config.isReworkedSidecarSyncEnabled());
         final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider =
             new DataColumnSidecarSubnetTopicProvider(
                 combinedChainDataClient.getRecentChainData(), gossipEncoding);

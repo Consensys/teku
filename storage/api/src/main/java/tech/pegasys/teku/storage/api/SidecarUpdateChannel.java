@@ -22,6 +22,8 @@ public interface SidecarUpdateChannel extends ChannelInterface {
 
   SafeFuture<Void> onFirstCustodyIncompleteSlot(UInt64 slot);
 
+  SafeFuture<Void> onEarliestAvailableDataColumnSlot(UInt64 slot);
+
   SafeFuture<Void> onNewSidecar(DataColumnSidecar sidecar);
 
   SafeFuture<Void> onNewNonCanonicalSidecar(DataColumnSidecar sidecar);

@@ -2362,6 +2362,18 @@ public class DatabaseTest {
   }
 
   @TestTemplate
+  public void setEarliestAvailableDataColumnSlot_isOperative(final DatabaseContext context)
+      throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+    assertThat(database.getEarliestAvailableDataColumnSlot().isEmpty()).isTrue();
+
+    final UInt64 earliestSlot = UInt64.valueOf(123);
+    database.setEarliestAvailableDataColumnSlot(UInt64.valueOf(123));
+    assertThat(database.getEarliestAvailableDataColumnSlot()).contains(earliestSlot);
+  }
+
+  @TestTemplate
   public void streamDataColumnIdentifiers_isOperative(final DatabaseContext context)
       throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalFulu());

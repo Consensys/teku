@@ -120,7 +120,11 @@ public class StorageSystem implements AutoCloseable {
     // Create combined client
     final CombinedChainDataClient combinedChainDataClient =
         new CombinedChainDataClient(
-            recentChainData, chainStorageServer, spec, LateBlockReorgPreparationHandler.NOOP);
+            recentChainData,
+            chainStorageServer,
+            spec,
+            LateBlockReorgPreparationHandler.NOOP,
+            false);
 
     final BlobSidecarManager blobSidecarManager = BlobSidecarManager.NOOP;
 

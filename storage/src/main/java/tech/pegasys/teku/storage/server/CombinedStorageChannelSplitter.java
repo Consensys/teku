@@ -226,6 +226,11 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot() {
+    return asyncRunner.runAsync(queryDelegate::getEarliestAvailableDataColumnSlot);
+  }
+
+  @Override
   public SafeFuture<Optional<BlobSidecar>> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
     return asyncRunner.runAsync(() -> queryDelegate.getBlobSidecar(key));
   }

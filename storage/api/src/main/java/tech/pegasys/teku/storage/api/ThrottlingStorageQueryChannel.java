@@ -228,6 +228,11 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot() {
+    return taskQueue.queueTask(delegate::getEarliestAvailableDataColumnSlot);
+  }
+
+  @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
       final DataColumnSlotAndIdentifier identifier) {
     return taskQueue.queueTask(() -> delegate.getSidecar(identifier));
