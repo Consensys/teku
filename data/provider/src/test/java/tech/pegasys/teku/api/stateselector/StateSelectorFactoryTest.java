@@ -142,7 +142,11 @@ public class StateSelectorFactoryTest {
     final RecentChainData recentChainData = mock(RecentChainData.class);
     final CombinedChainDataClient client1 =
         new CombinedChainDataClient(
-            recentChainData, historicalChainData, spec, LateBlockReorgPreparationHandler.NOOP);
+            recentChainData,
+            historicalChainData,
+            spec,
+            LateBlockReorgPreparationHandler.NOOP,
+            false);
     final StateSelectorFactory factory = new StateSelectorFactory(spec, client1);
     when(recentChainData.isPreGenesis()).thenReturn(false);
     when(recentChainData.isPreForkChoice()).thenReturn(true);
