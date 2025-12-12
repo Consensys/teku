@@ -170,6 +170,7 @@ import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasicImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustodyImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustodyImpl;
@@ -1858,6 +1859,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   LateBlockReorgPreparationHandler.NOOP));
     }
 
+    // TODO: Implementation + subscription
+    final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor =
+        DataColumnSidecarArchiveReconstructor.NOOP;
+
     this.p2pNetwork =
         createEth2P2PNetworkBuilder()
             .config(beaconConfig.p2pConfig())
@@ -1887,6 +1892,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 (signedBid, arrivalTimestamp) ->
                     executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.P2P))
             .gossipDasLogger(dasGossipLogger)
+            .dataColumnSidecarArchiveReconstructor(dataColumnSidecarArchiveReconstructor)
             .reqRespDasLogger(dasReqRespLogger)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
