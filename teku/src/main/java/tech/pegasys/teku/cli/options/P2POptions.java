@@ -344,7 +344,7 @@ public class P2POptions {
       names = {"--Xp2p-reworked-sidecar-custody-sync-batch-size"},
       paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
-      description = "backfill sync custody batch size in slots",
+      description = "Backfill sync custody batch size in slots",
       arity = "1",
       hidden = true)
   private Integer reworkedSidecarCustodySyncBatchSize =
@@ -354,7 +354,7 @@ public class P2POptions {
       names = {"--Xp2p-reworked-sidecar-custody-sync-poll-period-seconds"},
       paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
-      description = "backfill sync custody poll period",
+      description = "Backfill sync custody poll period",
       arity = "1",
       hidden = true)
   private Integer reworkedSidecarCustodySyncPollPeriodSeconds =
