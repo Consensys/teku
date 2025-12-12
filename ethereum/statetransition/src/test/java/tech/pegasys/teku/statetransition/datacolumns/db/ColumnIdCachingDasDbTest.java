@@ -17,9 +17,11 @@ import static java.time.Duration.ofMillis;
 import static java.time.Duration.ofSeconds;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -158,5 +160,96 @@ public class ColumnIdCachingDasDbTest {
     // the first cache entry (for slot 777) should be evicted and a query to underlying db should be
     // done
     assertThat(reads1).isGreaterThan(reads0);
+  }
+
+  @Test
+  void shouldCacheInflightSidecars() {
+    final DataColumnSidecar sidecar = createSidecar(777, 77);
+
+    final SafeFuture<Void> addCompleteFuture = columnIdCachingDb.addSidecar(sidecar);
+
+    final SafeFuture<Optional<DataColumnSidecar>> getCompleteFuture =
+        columnIdCachingDb.getSidecar(DataColumnSlotAndIdentifier.fromDataColumn(sidecar));
+
+    assertThatSafeFuture(getCompleteFuture).isCompletedWithValue(Optional.of(sidecar));
+    assertThat(addCompleteFuture).isNotCompleted();
+
+    assertThat(db.getDbReadCounter()).hasValue(0);
+
+    stubAsync.advanceTimeGraduallyUntilAllDone(ofSeconds(1));
+
+    assertThat(addCompleteFuture).isCompleted();
+
+    final SafeFuture<Optional<DataColumnSidecar>> getCompleteFuture2 =
+        columnIdCachingDb.getSidecar(DataColumnSlotAndIdentifier.fromDataColumn(sidecar));
+
+    stubAsync.advanceTimeGraduallyUntilAllDone(ofSeconds(1));
+
+    assertThatSafeFuture(getCompleteFuture2).isCompletedWithValue(Optional.of(sidecar));
+    assertThat(db.getDbReadCounter()).hasValue(1);
+  }
+
+  @Test
+  void shouldIncludeInflightSidecarsInGetColumnIdentifiers() {
+    final DataColumnSidecar sidecar1 = createSidecar(777, 10);
+    final DataColumnSidecar sidecar2 = createSidecar(777, 20);
+
+    // Start async writes but don't complete them
+    final SafeFuture<Void> addFuture1 = columnIdCachingDb.addSidecar(sidecar1);
+    final SafeFuture<Void> addFuture2 = columnIdCachingDb.addSidecar(sidecar2);
+
+    // Writes should still be in progress
+    assertThat(addFuture1).isNotCompleted();
+    assertThat(addFuture2).isNotCompleted();
+
+    // getColumnIdentifiers should include inflight sidecars
+    final SafeFuture<List<DataColumnSlotAndIdentifier>> identifiersFuture =
+        columnIdCachingDb.getColumnIdentifiers(UInt64.valueOf(777));
+
+    stubAsync.advanceTimeGradually(dbDelay);
+
+    assertThatSafeFuture(identifiersFuture)
+        .isCompletedWithValueMatching(
+            ids ->
+                ids.size() == 2
+                    && ids.contains(DataColumnSlotAndIdentifier.fromDataColumn(sidecar1))
+                    && ids.contains(DataColumnSlotAndIdentifier.fromDataColumn(sidecar2)));
+
+    // DB should not have been read for sidecars (only for column identifiers which returns empty)
+    assertThat(db.getDbReadCounter()).hasValue(1);
+
+    // Complete the writes
+    stubAsync.advanceTimeGraduallyUntilAllDone(ofSeconds(1));
+
+    assertThat(addFuture1).isCompleted();
+    assertThat(addFuture2).isCompleted();
+  }
+
+  @Test
+  void shouldMergeInflightWithPersistedInGetColumnIdentifiers() {
+    // First, persist a sidecar to DB
+    final DataColumnSidecar persistedSidecar = createSidecar(888, 5);
+    columnIdCachingDb.addSidecar(persistedSidecar);
+    stubAsync.advanceTimeGraduallyUntilAllDone(ofSeconds(1));
+
+    // Now start an inflight write
+    final DataColumnSidecar inflightSidecar = createSidecar(888, 15);
+    final SafeFuture<Void> inflightFuture = columnIdCachingDb.addSidecar(inflightSidecar);
+    assertThat(inflightFuture).isNotCompleted();
+
+    // getColumnIdentifiers should return both
+    final SafeFuture<List<DataColumnSlotAndIdentifier>> identifiersFuture =
+        columnIdCachingDb.getColumnIdentifiers(UInt64.valueOf(888));
+
+    stubAsync.advanceTimeGradually(dbDelay);
+
+    assertThatSafeFuture(identifiersFuture)
+        .isCompletedWithValueMatching(
+            ids ->
+                ids.size() == 2
+                    && ids.contains(DataColumnSlotAndIdentifier.fromDataColumn(persistedSidecar))
+                    && ids.contains(DataColumnSlotAndIdentifier.fromDataColumn(inflightSidecar)));
+
+    stubAsync.advanceTimeGraduallyUntilAllDone(ofSeconds(1));
   }
 }

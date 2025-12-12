@@ -15,10 +15,12 @@ package tech.pegasys.teku.statetransition.datacolumns.db;
 
 import java.util.BitSet;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -35,6 +37,9 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
 
   private final Map<UInt64, SlotCache> readSlotCaches;
   private final Set<DataColumnSlotAndIdentifier> latestAdded;
+
+  private final Map<DataColumnSlotAndIdentifier, DataColumnSidecar> inflightColumns =
+      new ConcurrentHashMap<>();
 
   public ColumnIdCachingDasDb(
       final DataColumnSidecarDB delegateDb,
@@ -61,16 +66,37 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
 
   @Override
   public SafeFuture<List<DataColumnSlotAndIdentifier>> getColumnIdentifiers(final UInt64 slot) {
-    return getOrCreateSlotCache(slot).generateColumnIdentifiers(slot);
+    // Get inflight column identifiers for this slot
+    final List<DataColumnSlotAndIdentifier> inflightIdentifiers =
+        inflightColumns.keySet().stream().filter(id -> id.slot().equals(slot)).toList();
+
+    return getOrCreateSlotCache(slot)
+        .generateColumnIdentifiers(slot)
+        .thenApply(
+            dbIdentifiers -> {
+              if (inflightIdentifiers.isEmpty()) {
+                return dbIdentifiers;
+              }
+              // Merge DB identifiers with inflight, avoiding duplicates
+              final Set<DataColumnSlotAndIdentifier> merged = new LinkedHashSet<>(dbIdentifiers);
+              merged.addAll(inflightIdentifiers);
+              return List.copyOf(merged);
+            });
   }
 
   @Override
   public SafeFuture<Void> addSidecar(final DataColumnSidecar sidecar) {
-    if (!latestAdded.add(DataColumnSlotAndIdentifier.fromDataColumn(sidecar))) {
+    final DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier =
+        DataColumnSlotAndIdentifier.fromDataColumn(sidecar);
+
+    if (!latestAdded.add(dataColumnSlotAndIdentifier)) {
       return SafeFuture.COMPLETE;
     }
     invalidateSlotCache(sidecar.getSlot());
-    return delegateDb.addSidecar(sidecar);
+    inflightColumns.put(dataColumnSlotAndIdentifier, sidecar);
+    return delegateDb
+        .addSidecar(sidecar)
+        .alwaysRun(() -> inflightColumns.remove(dataColumnSlotAndIdentifier));
   }
 
   private static class SlotCache {
@@ -121,6 +147,13 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
   @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
       final DataColumnSlotAndIdentifier identifier) {
+    final Optional<DataColumnSidecar> maybeInflightSidecar =
+        Optional.ofNullable(inflightColumns.get(identifier));
+
+    if (maybeInflightSidecar.isPresent()) {
+      return SafeFuture.completedFuture(maybeInflightSidecar);
+    }
+
     return delegateDb.getSidecar(identifier);
   }
 
