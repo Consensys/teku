@@ -126,7 +126,11 @@ public class HistoricalBatchFetcherTest {
     final RecentChainData recentChainData = storageSystem.recentChainData();
     chainDataClient =
         new CombinedChainDataClient(
-            recentChainData, historicalChainData, spec, LateBlockReorgPreparationHandler.NOOP, false);
+            recentChainData,
+            historicalChainData,
+            spec,
+            LateBlockReorgPreparationHandler.NOOP,
+            false);
 
     peer = RespondingEth2Peer.create(spec, chainBuilder);
     fetcher =
