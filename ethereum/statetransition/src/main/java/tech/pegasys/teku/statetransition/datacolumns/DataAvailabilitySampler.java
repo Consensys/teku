@@ -14,11 +14,11 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
@@ -34,7 +34,7 @@ public interface DataAvailabilitySampler {
   DataAvailabilitySampler NOOP =
       new DataAvailabilitySampler() {
         @Override
-        public SafeFuture<List<UInt64>> checkDataAvailability(final SignedBeaconBlock beaconBlock) {
+        public SafeFuture<List<UInt64>> checkDataAvailability(UInt64 slot, Bytes32 blockRoot) {
           return SafeFuture.completedFuture(List.of());
         }
 
@@ -55,7 +55,7 @@ public interface DataAvailabilitySampler {
    * Schedules availability check. To initiate all scheduled availability checks immediately call
    * the {@link #flush()} method
    */
-  SafeFuture<List<UInt64>> checkDataAvailability(final SignedBeaconBlock beaconBlock);
+  SafeFuture<List<UInt64>> checkDataAvailability(UInt64 slot, Bytes32 blockRoot);
 
   /**
    * Immediately initiates sampling. When doing batch sampling it would be more effective to invoke
