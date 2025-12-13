@@ -87,7 +87,7 @@ public enum BeaconStateFields implements SszFieldName {
   BUILDER_PENDING_PAYMENTS,
   BUILDER_PENDING_WITHDRAWALS,
   LATEST_BLOCK_HASH,
-  LATEST_WITHDRAWALS_ROOT;
+  PAYLOAD_EXPECTED_WITHDRAWALS;
 
   private final String sszFieldName;
 
