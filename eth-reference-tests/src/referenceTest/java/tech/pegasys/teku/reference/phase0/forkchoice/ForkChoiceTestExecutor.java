@@ -77,7 +77,7 @@ import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.datacolumns.CurrentSlotProvider;
 import tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand;
-import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasicImpl;
+import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecoveringCustody;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetrieverStub;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -159,8 +159,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final StubBlobSidecarManager blobSidecarManager = new StubBlobSidecarManager(kzg);
     final CurrentSlotProvider currentSlotProvider =
         CurrentSlotProvider.create(spec, recentChainData.getStore());
-    final DasSamplerBasicImpl dasSampler =
-        new DasSamplerBasicImpl(
+    final DasSamplerBasic dasSampler =
+        new DasSamplerBasic(
             spec,
             asyncRunnerFactory.create("das", 1),
             currentSlotProvider,
@@ -170,9 +170,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             // using a const for the custody group count here, the test doesn't care
             // and fetching from the config would break when not in fulu
             DasCustodyStand.createCustodyGroupCountManager(4, 8),
-            recentChainData,
-            storageSystem.getMetricsSystem(),
-            64);
+            recentChainData);
     final StubDataColumnSidecarManager dataColumnSidecarManager =
         new StubDataColumnSidecarManager(spec, recentChainData, dasSampler);
     // forkChoiceLateBlockReorgEnabled is true here always because this is the reference test
