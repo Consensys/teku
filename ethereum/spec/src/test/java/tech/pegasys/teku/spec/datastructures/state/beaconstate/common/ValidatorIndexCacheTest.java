@@ -59,7 +59,7 @@ public class ValidatorIndexCacheTest {
     when(cache.getCached(missingPublicKey)).thenReturn(Optional.empty());
     final Optional<Integer> index = validatorIndexCache.getValidatorIndex(state, missingPublicKey);
     verify(cache).getCached(missingPublicKey);
-    verify(cache, times(5)).invalidateWithNewValue(any(), any());
+    verify(cache, times(4)).invalidateWithNewValue(any(), any());
     assertThat(index).isEmpty();
   }
 
