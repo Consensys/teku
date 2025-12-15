@@ -21,3 +21,4 @@
 - Fixed a storage issue which sometimes caused Teku to crash during shut down.
 - Fixed `peer_count` metric when using `--metrics-publish-endpoint` feature.
 - Fixed `earliest_available_slot` calculation.
+- Changed the default database version from leveldb2 to v6. Existing databases will not be changed, only new databases that are created.
