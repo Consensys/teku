@@ -132,6 +132,10 @@ public class DasCustodySyncTest {
 
   @Test
   void doesNothingWhenNotInSync() {
+    custodyStand.setCurrentSlot(0);
+    custodyStand.subscribeToSlotEvents(dasCustodySync);
+    dasCustodySync.start();
+
     dasCustodySync.onNodeSyncStateChanged(false);
     assertThat(retrieverStub.requests).isEmpty();
 
