@@ -362,9 +362,9 @@ public class DasSamplerBasicTest {
 
     final SafeFuture<List<UInt64>> completionFuture = new SafeFuture<>();
     final DataColumnSamplingTracker nonCompletedTracker = mock(DataColumnSamplingTracker.class);
-    when(completedTracker.completionFuture()).thenReturn(completionFuture);
-    when(completedTracker.blockRoot()).thenReturn(slotAndBlockRootAdded.getBlockRoot());
-    when(completedTracker.slot()).thenReturn(slotAndBlockRootAdded.getSlot());
+    when(nonCompletedTracker.completionFuture()).thenReturn(completionFuture);
+    when(nonCompletedTracker.blockRoot()).thenReturn(slotAndBlockRootAdded.getBlockRoot());
+    when(nonCompletedTracker.slot()).thenReturn(slotAndBlockRootAdded.getSlot());
 
     sampler
         .getRecentlySampledColumnsByRoot()
