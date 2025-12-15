@@ -124,7 +124,6 @@ public class DasCustodySync implements SlotEventsChannel {
         && pendingRequests.size() <= minPendingColumnRequests
         && !coolDownTillNextSlot
         && !fillingUp
-        // TODO: add test
         && inSync) {
       fillUp();
     }

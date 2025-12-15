@@ -94,6 +94,7 @@ public class DasCustodySyncTest {
   public void setup() {
     when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any()))
         .thenReturn(Optional.of(UInt64.ZERO));
+    dasCustodySync.onNodeSyncStateChanged(true);
   }
 
   @Test
@@ -121,6 +122,27 @@ public class DasCustodySyncTest {
 
     printAndResetStats();
     assertThat(retrieverStub.requests).isNotEmpty();
+
+    advanceTimeGraduallyUntilAllDone();
+
+    custodyStand.setCurrentSlot(7);
+
+    printAndResetStats();
+  }
+
+  @Test
+  void doesNothingWhenNotInSync() {
+    dasCustodySync.onNodeSyncStateChanged(false);
+    assertThat(retrieverStub.requests).isEmpty();
+
+    final SignedBeaconBlock block = custodyStand.createBlockWithBlobs(1);
+    custodyStand.blockResolver.addBlock(block.getMessage());
+    custodyStand.setCurrentSlot(6);
+
+    advanceTimeGraduallyUntilAllDone();
+
+    printAndResetStats();
+    assertThat(retrieverStub.requests).isEmpty();
 
     advanceTimeGraduallyUntilAllDone();
 
