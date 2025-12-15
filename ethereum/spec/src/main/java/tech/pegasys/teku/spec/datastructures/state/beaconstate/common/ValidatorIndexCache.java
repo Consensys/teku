@@ -29,24 +29,19 @@ public class ValidatorIndexCache {
   private final AtomicInteger lastCachedIndex;
 
   private static final int INDEX_NONE = -1;
-  private final AtomicInteger latestFinalizedIndex;
   public static final ValidatorIndexCache NO_OP_INSTANCE =
-      new ValidatorIndexCache(NoOpCache.getNoOpCache(), INDEX_NONE, INDEX_NONE);
+      new ValidatorIndexCache(NoOpCache.getNoOpCache(), INDEX_NONE);
 
   @VisibleForTesting
   ValidatorIndexCache(
-      final Cache<BLSPublicKey, Integer> validatorIndices,
-      final int latestFinalizedIndex,
-      final int lastCachedIndex) {
+      final Cache<BLSPublicKey, Integer> validatorIndices, final int lastCachedIndex) {
     this.validatorIndices = validatorIndices;
-    this.latestFinalizedIndex = new AtomicInteger(latestFinalizedIndex);
     this.lastCachedIndex = new AtomicInteger(lastCachedIndex);
   }
 
   public ValidatorIndexCache() {
     this.validatorIndices = LRUCache.create(Integer.MAX_VALUE - 1);
     this.lastCachedIndex = new AtomicInteger(INDEX_NONE);
-    latestFinalizedIndex = new AtomicInteger(INDEX_NONE);
   }
 
   public Optional<Integer> getValidatorIndex(
@@ -63,16 +58,6 @@ public class ValidatorIndexCache {
     validatorIndices.invalidateWithNewValue(pubKey, updatedIndex);
   }
 
-  public void updateLatestFinalizedIndex(final BeaconState finalizedState) {
-    latestFinalizedIndex.updateAndGet(
-        curr -> Math.max(curr, finalizedState.getValidators().size() - 1));
-  }
-
-  @VisibleForTesting
-  public int getLatestFinalizedIndex() {
-    return latestFinalizedIndex.get();
-  }
-
   @VisibleForTesting
   int getLastCachedIndex() {
     return lastCachedIndex.get();
@@ -85,6 +70,11 @@ public class ValidatorIndexCache {
 
   private void updateLastIndex(final int i) {
     lastCachedIndex.updateAndGet(curr -> Math.max(curr, i));
+  }
+
+  @VisibleForTesting
+  Cache<BLSPublicKey, Integer> getValidatorIndices() {
+    return validatorIndices;
   }
 
   private Optional<Integer> findIndexFromState(
