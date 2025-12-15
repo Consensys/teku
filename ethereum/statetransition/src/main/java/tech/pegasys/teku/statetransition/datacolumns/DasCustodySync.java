@@ -203,7 +203,7 @@ public class DasCustodySync implements SlotEventsChannel {
 
   public void start() {
     started = true;
-    fillUp();
+    fillUpIfNeeded();
   }
 
   public synchronized void stop() {
