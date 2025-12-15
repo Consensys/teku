@@ -14,11 +14,8 @@
 package tech.pegasys.teku.benchmarks;
 
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
@@ -27,99 +24,127 @@ import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.benchmarks.gen.LegacyLRUCache;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
+import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 
-@Fork(1)
-@State(Scope.Thread)
-@Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-@Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+@Threads(Threads.MAX)
+@Fork(2)
+@Warmup(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
 public class TransitionCachesBenchmark {
 
-  private static final IntList SOME_INT_LIST = IntList.of(1, 2, 3, 43, 4, 5);
+  private static final IntList SOME_INT_LIST = IntList.of(1, 2, 3, 4, 5);
+  private static final TekuPair<UInt64, UInt64> CONTENDED_MISS_KEY =
+      TekuPair.of(UInt64.MAX_VALUE, UInt64.MAX_VALUE);
 
-  @Param({"1048576"})
-  int validatorsCount;
+  public enum CacheType {
+    CAFFEINE(CaffeineCache::create),
+    LEGACY_LRU(LegacyLRUCache::create);
 
-  long counter;
+    private final TransitionCaches.CacheFactory cacheFactory;
 
-  private final TransitionCaches fullCache = TransitionCaches.createNewEmpty();
+    CacheType(final TransitionCaches.CacheFactory cacheFactory) {
+      this.cacheFactory = cacheFactory;
+    }
 
-  @Setup(Level.Trial)
-  public void init() {
+    public TransitionCaches createCaches() {
+      return new TransitionCaches(cacheFactory);
+    }
+  }
 
-    for (int slot = 10000; slot < 10064; slot++) {
-      for (int committeeIndex = 0; committeeIndex < 64; committeeIndex++) {
-        fullCache
-            .getBeaconCommittee()
-            .invalidateWithNewValue(
-                TekuPair.of(UInt64.valueOf(slot), UInt64.valueOf(committeeIndex)), SOME_INT_LIST);
+  @State(Scope.Benchmark)
+  public static class BenchmarkState {
+
+    @Param({"CAFFEINE", "LEGACY_LRU"})
+    private CacheType cacheType;
+
+    @Param({"0", "5"})
+    public long fallbackDelayMs;
+
+    private static final int KEY_SPACE = 4096;
+
+    private TekuPair<UInt64, UInt64>[] hitKeys;
+    private TekuPair<UInt64, UInt64>[] missKeys;
+
+    TransitionCaches caches;
+
+    @Setup(Level.Trial)
+    public void init() {
+      caches = cacheType.createCaches();
+      final Cache<TekuPair<UInt64, UInt64>, IntList> committeeCache = caches.getBeaconCommittee();
+
+      // hit keys
+      hitKeys = new TekuPair[KEY_SPACE];
+      for (int i = 0; i < KEY_SPACE; i++) {
+        hitKeys[i] = TekuPair.of(UInt64.valueOf(i), UInt64.ZERO);
+        committeeCache.invalidateWithNewValue(hitKeys[i], SOME_INT_LIST);
+      }
+
+      // miss keys
+      missKeys = new TekuPair[KEY_SPACE];
+      for (int i = 0; i < KEY_SPACE; i++) {
+        missKeys[i] = TekuPair.of(UInt64.valueOf(KEY_SPACE * 2 + i), UInt64.ZERO);
       }
     }
 
-    for (int slot = 0; slot < 4096; slot++) {
-      fullCache
-          .getAttestersTotalBalance()
-          .invalidateWithNewValue(UInt64.valueOf(slot), UInt64.ZERO);
+    private IntList slowFallback(final TekuPair<UInt64, UInt64> key) {
+      if (fallbackDelayMs > 0) {
+        try {
+          TimeUnit.MILLISECONDS.sleep(fallbackDelayMs);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      }
+      return SOME_INT_LIST;
     }
-
-    for (int epoch = 0; epoch < 8; epoch++) {
-      fullCache.getActiveValidators().invalidateWithNewValue(UInt64.valueOf(epoch), SOME_INT_LIST);
-    }
-
-    for (int validatorIdx = 0; validatorIdx < validatorsCount; validatorIdx++) {
-      BLSPublicKey publicKey =
-          BLSPublicKey.fromBytesCompressed(Bytes48.leftPad(Bytes.ofUnsignedInt(validatorIdx)));
-      fullCache
-          .getValidatorsPubKeys()
-          .invalidateWithNewValue(UInt64.valueOf(validatorIdx), publicKey);
-      fullCache.getValidatorIndexCache().invalidateWithNewValue(publicKey, validatorIdx);
-    }
-
-    fullCache.getBeaconProposerIndex().invalidateWithNewValue(UInt64.ONE, 0x777);
-    fullCache.getTotalActiveBalance().invalidateWithNewValue(UInt64.ZERO, UInt64.ZERO);
-    fullCache.getTotalActiveBalance().invalidateWithNewValue(UInt64.ONE, UInt64.ZERO);
-    fullCache.getCommitteeShuffle().invalidateWithNewValue(Bytes32.random(), SOME_INT_LIST);
-    fullCache.getCommitteeShuffle().invalidateWithNewValue(Bytes32.random(), SOME_INT_LIST);
-    fullCache.getEffectiveBalances().invalidateWithNewValue(UInt64.ONE, List.of(UInt64.ONE));
   }
 
+  /**
+   * Simulates a realistic workload with a high cache hit rate (90% hits, 10% misses). This
+   * benchmark measures general throughput under normal conditions. When `fallbackDelayMs` is 0, it
+   * shows raw performance. When > 0, it shows how occasional slow operations affect overall
+   * throughput.
+   */
   @Benchmark
-  public void getCommitteeHitBench(Blackhole bh) {
-    counter++;
-    if (counter >= 10064) {
-      counter = 10000;
+  public void realisticWorkload(final BenchmarkState state, final Blackhole bh) {
+    final Cache<TekuPair<UInt64, UInt64>, IntList> cache = state.caches.getBeaconCommittee();
+    final TekuPair<UInt64, UInt64> key;
+
+    // 90% chance of a cache hit
+    if (ThreadLocalRandom.current().nextInt(10) < 9) {
+      key = state.hitKeys[ThreadLocalRandom.current().nextInt(BenchmarkState.KEY_SPACE)];
+    } else {
+      key = state.missKeys[ThreadLocalRandom.current().nextInt(BenchmarkState.KEY_SPACE)];
     }
-    Cache<TekuPair<UInt64, UInt64>, IntList> cache = fullCache.getBeaconCommittee();
-    List<Integer> res =
-        cache.get(TekuPair.of(UInt64.valueOf(counter), UInt64.ZERO), __ -> SOME_INT_LIST);
-    bh.consume(res);
+
+    final IntList result = cache.get(key, state::slowFallback);
+    bh.consume(result);
   }
 
+  /**
+   * A targeted stress test where ALL threads request the SAME missing key concurrently. This is
+   * designed to expose the contention caused by the `synchronized` block in `LegacyLRUCache` when a
+   * slow fallback is executed.
+   */
   @Benchmark
-  public void getCommitteeMissBench(Blackhole bh) {
-    if (counter < 10064) {
-      counter = 10064;
-    }
-    counter++;
-    Cache<TekuPair<UInt64, UInt64>, IntList> cache = fullCache.getBeaconCommittee();
-    List<Integer> res =
-        cache.get(TekuPair.of(UInt64.valueOf(counter), UInt64.ZERO), __ -> SOME_INT_LIST);
-    bh.consume(res);
+  public void contendedMissWithSlowFallback(final BenchmarkState state, final Blackhole bh) {
+    // all threads contend on the exact same missing key.
+    final Cache<TekuPair<UInt64, UInt64>, IntList> cache = state.caches.getBeaconCommittee();
+    final IntList result = cache.get(CONTENDED_MISS_KEY, state::slowFallback);
+    bh.consume(result);
   }
 
+  /** Measures the performance of creating a copy of the caches */
   @Benchmark
-  public void copyBeaconCommitteeCacheBench(Blackhole bh) {
-    bh.consume(fullCache.getBeaconCommittee().copy());
-  }
-
-  @Benchmark
-  public void copyCachesBench(Blackhole bh) {
-    bh.consume(fullCache.copy());
+  public void copyCaches(final BenchmarkState state, final Blackhole bh) {
+    final TransitionCaches copy = state.caches.copy();
+    bh.consume(copy);
   }
 }

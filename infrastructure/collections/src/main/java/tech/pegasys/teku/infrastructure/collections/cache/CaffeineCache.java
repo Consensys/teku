@@ -30,9 +30,11 @@ import java.util.function.Function;
 public final class CaffeineCache<K, V> implements Cache<K, V> {
 
   private final LoadingCache<K, V> cache;
+  private final Caffeine<Object, Object> builder;
 
-  private CaffeineCache(final LoadingCache<K, V> cache) {
+  private CaffeineCache(final LoadingCache<K, V> cache, final Caffeine<Object, Object> builder) {
     this.cache = cache;
+    this.builder = builder;
   }
 
   /**
@@ -42,15 +44,14 @@ public final class CaffeineCache<K, V> implements Cache<K, V> {
    * @return A new instance of CaffeineCache.
    */
   public static <K, V> CaffeineCache<K, V> create(final int capacity) {
+    final Caffeine<Object, Object> builder = Caffeine.newBuilder().maximumSize(capacity);
     final LoadingCache<K, V> caffeineCache =
-        Caffeine.newBuilder()
-            .maximumSize(capacity)
-            .build(
-                key -> {
-                  throw new UnsupportedOperationException(
-                      "Fallback function must be provided to get()");
-                });
-    return new CaffeineCache<>(caffeineCache);
+        builder.build(
+            key -> {
+              throw new UnsupportedOperationException(
+                  "Fallback function must be provided to get()");
+            });
+    return new CaffeineCache<>(caffeineCache, builder);
   }
 
   @Override
@@ -80,28 +81,19 @@ public final class CaffeineCache<K, V> implements Cache<K, V> {
 
   @Override
   public int size() {
-    cache.cleanUp();
     return (int) cache.estimatedSize();
   }
 
   @Override
   public Cache<K, V> copy() {
-    final Caffeine<Object, Object> builder = Caffeine.newBuilder();
-    cache
-        .policy()
-        .eviction()
-        .ifPresent(
-            eviction -> {
-              builder.maximumSize(eviction.getMaximum());
-            });
     final LoadingCache<K, V> newCacheInstance =
-        builder.build(
+        this.builder.build(
             key -> {
               throw new UnsupportedOperationException(
                   "Fallback function must be provided to get()");
             });
     newCacheInstance.putAll(this.cache.asMap());
-    return new CaffeineCache<>(newCacheInstance);
+    return new CaffeineCache<>(newCacheInstance, this.builder);
   }
 
   @Override

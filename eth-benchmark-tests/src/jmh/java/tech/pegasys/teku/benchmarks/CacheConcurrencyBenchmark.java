@@ -34,6 +34,7 @@ import tech.pegasys.teku.benchmarks.gen.LegacyLRUCache;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
 
+/** Benchmark comparing Caffeine Cache to a legacy LRU cache implementation */
 @State(Scope.Group)
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -43,7 +44,6 @@ import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
     value = 3,
     jvmArgs = {"-Xms2G", "-Xmx2G"})
 public class CacheConcurrencyBenchmark {
-
   @Param({"LEGACY_LRU", "CAFFEINE"})
   public String cacheType;
 
@@ -52,6 +52,9 @@ public class CacheConcurrencyBenchmark {
 
   @Param({"2048"})
   public int keySpace;
+
+  @Param({"50"})
+  public long fallbackDelayMs;
 
   private Cache<Integer, String> cache;
 
@@ -67,31 +70,98 @@ public class CacheConcurrencyBenchmark {
       default:
         throw new IllegalStateException("Unknown cache type: " + cacheType);
     }
-    for (int i = 0; i < cacheSize; i++) {
+
+    // populate 80% of the cache
+    for (int i = 0; i < cacheSize * 0.8; i++) {
       cache.get(i, key -> "Value:" + key);
     }
   }
 
-  // real-world 5:1 workload
-  // 6 threads for get() and 2 for invalidate()
+  /**
+   * Pure read performance test with only cached values. Demonstrates basic throughput for cache
+   * hits
+   */
   @Benchmark
-  @Group("realWorldWorkload")
-  @GroupThreads(6)
-  public void getOperation(final Blackhole bh) {
-    // 5 operations per call
-    for (int i = 0; i < 5; i++) {
-      int key = ThreadLocalRandom.current().nextInt(keySpace);
-      String value = cache.get(key, k -> "Value:" + k);
-      bh.consume(value);
-    }
+  @Group("pureReadPerformance")
+  @GroupThreads(8)
+  public void cachedReads(final Blackhole bh) {
+    // Only access keys that are guaranteed to be in cache
+    int key = ThreadLocalRandom.current().nextInt((int) (cacheSize * 0.8));
+    String value =
+        cache.get(
+            key,
+            k -> {
+              throw new IllegalStateException("Should not be called - key should be cached");
+            });
+    bh.consume(value);
+  }
+
+  /**
+   * Test non-blocking reads. One thread performs slow fallback operations that would block all
+   * others in a synchronized cache
+   */
+  @Benchmark
+  @Group("concurrentReadsWithSlowFallbacks")
+  @GroupThreads(7)
+  public void concurrentReads(final Blackhole bh) {
+    // access only keys that are guaranteed to be in cache
+    int key = ThreadLocalRandom.current().nextInt((int) (cacheSize * 0.8));
+    String value =
+        cache.get(
+            key,
+            k -> {
+              throw new IllegalStateException("Should not be called - key should be cached");
+            });
+    bh.consume(value);
   }
 
   @Benchmark
-  @Group("realWorldWorkload")
-  @GroupThreads(2)
-  public void invalidateOperation() {
-    // 1 operation per call
+  @Group("concurrentReadsWithSlowFallbacks")
+  @GroupThreads()
+  public void slowFallbacks(final Blackhole bh) {
+    // access keys that always require fallback
+    int key = cacheSize + ThreadLocalRandom.current().nextInt(keySpace - cacheSize);
+    String value =
+        cache.get(
+            key,
+            k -> {
+              // slow fallback
+              try {
+                Thread.sleep(fallbackDelayMs);
+              } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+              }
+              return "SlowValue:" + k;
+            });
+    bh.consume(value);
+  }
+
+  /**
+   * Real world scenario with mixed operations. Most reads hit the cache but occasionally require
+   * fallbacks
+   */
+  @Benchmark
+  @Group("realWorldScenario")
+  @GroupThreads(8)
+  public void mixedReadOperations(final Blackhole bh) {
     int key = ThreadLocalRandom.current().nextInt(keySpace);
-    cache.invalidateWithNewValue(key, "NewValue:" + key);
+
+    // 90% of reads should hit the cache, 10% require fallback
+    String value =
+        cache.get(
+            key,
+            k -> {
+              // If it's a miss, 20% of the time it's a slow fallback
+              if (ThreadLocalRandom.current().nextInt(5) == 0) {
+                try {
+                  Thread.sleep(fallbackDelayMs);
+                } catch (InterruptedException e) {
+                  Thread.currentThread().interrupt();
+                }
+              }
+              return "Value:" + k;
+            });
+
+    bh.consume(value);
   }
 }

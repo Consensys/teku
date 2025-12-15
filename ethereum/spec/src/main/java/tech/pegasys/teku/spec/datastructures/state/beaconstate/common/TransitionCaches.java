@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 
+import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
@@ -66,7 +67,7 @@ public class TransitionCaches {
 
   /** Creates new instance with clean caches */
   public static TransitionCaches createNewEmpty() {
-    return new TransitionCaches();
+    return new TransitionCaches(CaffeineCache::create);
   }
 
   /** Returns the instance which doesn't cache anything */
@@ -91,19 +92,25 @@ public class TransitionCaches {
   private volatile Optional<TotalBalances> latestTotalBalances = Optional.empty();
   private volatile ProgressiveTotalBalancesUpdates progressiveTotalBalances;
 
-  private TransitionCaches() {
-    activeValidators = CaffeineCache.create(MAX_ACTIVE_VALIDATORS_CACHE);
-    beaconProposerIndex = CaffeineCache.create(MAX_BEACON_PROPOSER_INDEX_CACHE);
-    beaconCommittee = CaffeineCache.create(MAX_BEACON_COMMITTEE_CACHE);
-    beaconCommitteesSize = CaffeineCache.create(MAX_BEACON_COMMITTEES_SIZE_CACHE);
-    attestersTotalBalance = CaffeineCache.create(MAX_BEACON_COMMITTEE_CACHE);
-    totalActiveBalance = CaffeineCache.create(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
-    validatorsPubKeys = CaffeineCache.create(Integer.MAX_VALUE - 1);
+  @FunctionalInterface
+  public interface CacheFactory {
+    <K, V> Cache<K, V> create(int capacity);
+  }
+
+  @VisibleForTesting
+  public TransitionCaches(final CacheFactory cacheFactory) {
+    activeValidators = cacheFactory.create(MAX_ACTIVE_VALIDATORS_CACHE);
+    beaconProposerIndex = cacheFactory.create(MAX_BEACON_PROPOSER_INDEX_CACHE);
+    beaconCommittee = cacheFactory.create(MAX_BEACON_COMMITTEE_CACHE);
+    beaconCommitteesSize = cacheFactory.create(MAX_BEACON_COMMITTEES_SIZE_CACHE);
+    attestersTotalBalance = cacheFactory.create(MAX_BEACON_COMMITTEE_CACHE);
+    totalActiveBalance = cacheFactory.create(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
+    validatorsPubKeys = cacheFactory.create(Integer.MAX_VALUE - 1);
     validatorIndexCache = new ValidatorIndexCache();
-    committeeShuffle = CaffeineCache.create(MAX_COMMITTEE_SHUFFLE_CACHE);
-    effectiveBalances = CaffeineCache.create(MAX_EFFECTIVE_BALANCE_CACHE);
-    syncCommitteeCache = CaffeineCache.create(MAX_SYNC_COMMITTEE_CACHE);
-    baseRewardPerIncrement = CaffeineCache.create(MAX_BASE_REWARD_PER_INCREMENT_CACHE);
+    committeeShuffle = cacheFactory.create(MAX_COMMITTEE_SHUFFLE_CACHE);
+    effectiveBalances = cacheFactory.create(MAX_EFFECTIVE_BALANCE_CACHE);
+    syncCommitteeCache = cacheFactory.create(MAX_SYNC_COMMITTEE_CACHE);
+    baseRewardPerIncrement = cacheFactory.create(MAX_BASE_REWARD_PER_INCREMENT_CACHE);
     progressiveTotalBalances = ProgressiveTotalBalancesUpdates.NOOP;
   }
 
@@ -225,7 +232,7 @@ public class TransitionCaches {
   }
 
   /**
-   * Makes an independent copy which contains all the data in this instance Modifications to
+   * Makes an independent copy which contains all the data in this instance. Modifications to the
    * returned caches shouldn't affect caches from this instance
    */
   public TransitionCaches copy() {
