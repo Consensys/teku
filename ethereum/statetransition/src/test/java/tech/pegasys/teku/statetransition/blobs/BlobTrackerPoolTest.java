@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.util;
+package tech.pegasys.teku.statetransition.blobs;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -27,10 +27,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobTrackerPool;
-import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
-import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
+import tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlobTrackerPoolTest {
