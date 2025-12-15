@@ -240,6 +240,10 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
               if (tracker.slot().isLessThan(firstNonFinalizedSlot)
                   || recentChainData.containsBlock(tracker.blockRoot())) {
 
+                if (tracker.completionFuture().isDone()) {
+                  return true;
+                }
+
                 // make sure the future releases any pending waiters
                 tracker
                     .completionFuture()

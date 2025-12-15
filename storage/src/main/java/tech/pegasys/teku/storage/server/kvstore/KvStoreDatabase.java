@@ -1159,6 +1159,19 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public Optional<UInt64> getEarliestAvailableDataColumnSlot() {
+    return dao.getEarliestAvailableDataColumnSlot();
+  }
+
+  @Override
+  public void setEarliestAvailableDataColumnSlot(final UInt64 slot) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.setEarliestAvailableDataColumnSlot(slot);
+      updater.commit();
+    }
+  }
+
+  @Override
   public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
     return dao.getLastDataColumnSidecarsProofsSlot();
   }

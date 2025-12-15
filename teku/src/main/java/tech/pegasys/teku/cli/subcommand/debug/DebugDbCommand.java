@@ -51,12 +51,14 @@ import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
@@ -575,6 +577,82 @@ public class DebugDbCommand implements Runnable {
       }
 
       System.out.println("Wrote " + index + " blob sidecars to " + outputFile.toAbsolutePath());
+    }
+    return 0;
+  }
+
+  @Command(
+      name = "dump-data-columns",
+      description = "Writes all data column sidecars in the database as a zip of SSZ files",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int dumpDataColumnSidecars(
+      @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions,
+      @Option(
+              names = {"--from-slot"},
+              description = "Dump data-columns starting from a given slot (inclusive)")
+          final Long fromSlot,
+      @Option(
+              names = {"--to-slot"},
+              description = "Dump data-columns up to a given slot (inclusive)")
+          final Long toSlot,
+      @Option(
+              required = true,
+              names = {"--output", "-o"},
+              description = "File to write data-columns to")
+          final Path outputFile)
+      throws Exception {
+
+    final UInt64 from = Optional.ofNullable(fromSlot).map(UInt64::valueOf).orElse(UInt64.ZERO);
+    final UInt64 to = Optional.ofNullable(toSlot).map(UInt64::valueOf).orElse(UInt64.MAX_VALUE);
+
+    if (from.isGreaterThan(to)) {
+      throw new InvalidConfigurationException("--from-slot must less then or equal to --to-slot");
+    }
+
+    int index = 0;
+    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions);
+        final ZipOutputStream out =
+            new ZipOutputStream(
+                Files.newOutputStream(
+                    outputFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING))) {
+
+      try (final Stream<DataColumnSlotAndIdentifier> keyStream =
+          database.streamDataColumnIdentifiers(from, to)) {
+
+        for (final Iterator<DataColumnSlotAndIdentifier> it = keyStream.iterator();
+            it.hasNext(); ) {
+          final DataColumnSlotAndIdentifier key = it.next();
+          final Optional<DataColumnSidecar> column = database.getSidecar(key);
+          if (column.isPresent()) {
+            try {
+              out.putNextEntry(
+                  new ZipEntry(
+                      column.get().getSlot()
+                          + "_"
+                          + key.getSlotAndBlockRoot().getBlockRoot()
+                          + "_"
+                          + key.columnIndex()
+                          + ".ssz"));
+              column.get().sszSerialize(out);
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+            index++;
+          }
+        }
+      }
+
+      System.out.println(
+          "Wrote " + index + " data-column-sidecars to " + outputFile.toAbsolutePath());
     }
     return 0;
   }
