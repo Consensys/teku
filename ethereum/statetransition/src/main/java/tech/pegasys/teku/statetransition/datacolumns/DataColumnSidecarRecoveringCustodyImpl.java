@@ -133,7 +133,10 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
         .runAfterDelay(
             () -> {
               LOG.debug("Check if recovery needed for slot: {}", slot);
-              final Set<SlotAndBlockRoot> recoveryTaskKeys = new HashSet<>(recoveryTasks.keySet());
+              final Set<SlotAndBlockRoot> recoveryTaskKeys;
+              synchronized (recoveryTasks) {
+                recoveryTaskKeys = new HashSet<>(recoveryTasks.keySet());
+              }
               recoveryTaskKeys.stream()
                   .filter(key -> key.getSlot().isLessThanOrEqualTo(slot))
                   .map(key -> Optional.ofNullable(recoveryTasks.get(key)))
