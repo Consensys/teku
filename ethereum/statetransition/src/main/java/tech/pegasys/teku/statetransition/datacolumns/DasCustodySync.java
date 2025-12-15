@@ -59,6 +59,7 @@ public class DasCustodySync implements SlotEventsChannel {
   private volatile boolean fillingUp = false;
   private final AtomicLong syncedColumnCount = new AtomicLong();
   private final AtomicReference<UInt64> currentSlot = new AtomicReference<>(ZERO);
+  private volatile boolean inSync = false;
 
   DasCustodySync(
       final DataColumnSidecarCustody custody,
@@ -83,6 +84,10 @@ public class DasCustodySync implements SlotEventsChannel {
         minCustodyPeriodSlotCalculator,
         MIN_PENDING_COLUMN_REQUESTS,
         MAX_PENDING_COLUMN_REQUESTS);
+  }
+
+  public synchronized void onNodeSyncStateChanged(final boolean inSync) {
+    this.inSync = inSync;
   }
 
   private void onRequestComplete(final PendingRequest request, final DataColumnSidecar response) {
@@ -118,7 +123,9 @@ public class DasCustodySync implements SlotEventsChannel {
     if (started
         && pendingRequests.size() <= minPendingColumnRequests
         && !coolDownTillNextSlot
-        && !fillingUp) {
+        && !fillingUp
+        // TODO: add test
+        && inSync) {
       fillUp();
     }
   }

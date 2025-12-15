@@ -2159,6 +2159,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
         backfiller ->
             syncService.subscribeToSyncStateChangesAndUpdate(
                 syncState -> backfiller.onNodeSyncStateChanged(syncState.isInSync())));
+
+    dasCustodySync.ifPresent(
+        custodySync ->
+            syncService.subscribeToSyncStateChangesAndUpdate(
+                syncState -> custodySync.onNodeSyncStateChanged(syncState.isInSync())));
   }
 
   protected void initOperationsReOrgManager() {
