@@ -357,7 +357,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
     if (removedTracker != null) {
       orderedBlobSidecarsTrackers.remove(removedTracker.getSlotAndBlockRoot());
-      removedTracker.getCompletionFuture().cancel(true);
 
       dropMissingContent(removedTracker);
 
