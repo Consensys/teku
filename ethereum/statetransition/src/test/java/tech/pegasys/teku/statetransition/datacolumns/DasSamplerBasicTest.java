@@ -49,7 +49,6 @@ import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler.SamplingEligibilityStatus;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
-import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DasSamplerBasicTest {
   private static final Spec SPEC = TestSpecFactory.createMinimalFulu();
@@ -60,7 +59,6 @@ public class DasSamplerBasicTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(stubTimeProvider);
   private final RPCFetchDelayProvider rpcFetchDelayProvider = mock(RPCFetchDelayProvider.class);
 
-  private RecentChainData recentChainData;
   private DataColumnSidecarCustody custody;
   private DataColumnSidecarRetriever retriever;
   private CurrentSlotProvider currentSlotProvider;
@@ -72,7 +70,6 @@ public class DasSamplerBasicTest {
   public void setUp() {
     final CustodyGroupCountManager custodyGroupCountManager = mock(CustodyGroupCountManager.class);
     when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(SAMPLING_INDICES);
-    recentChainData = mock(RecentChainData.class);
     custody = mock(DataColumnSidecarCustody.class);
     retriever = mock(DataColumnSidecarRetriever.class);
     currentSlotProvider = mock(CurrentSlotProvider.class);
@@ -91,8 +88,7 @@ public class DasSamplerBasicTest {
             rpcFetchDelayProvider,
             custody,
             retriever,
-            custodyGroupCountManager,
-            recentChainData);
+            custodyGroupCountManager);
   }
 
   @Test
@@ -354,55 +350,39 @@ public class DasSamplerBasicTest {
   }
 
   @Test
-  void onSlot_shouldPruneTrackers() {
-    final UInt64 finalizedEpoch = UInt64.valueOf(1);
-    final Bytes32 importedBlockRoot = dataStructureUtil.randomBytes32();
-    final UInt64 lastFinalizedSlot = UInt64.valueOf(8);
-    final UInt64 firstNonFinalizedSlot = UInt64.valueOf(9);
-
-    when(recentChainData.getFinalizedEpoch()).thenReturn(finalizedEpoch);
-    when(recentChainData.containsBlock(any())).thenReturn(false);
-    when(recentChainData.containsBlock(importedBlockRoot)).thenReturn(true);
+  void onRemoveAllForBlock_shouldPruneTrackers() {
+    final SlotAndBlockRoot slotAndBlockRoot = dataStructureUtil.randomSlotAndBlockRoot();
+    final SlotAndBlockRoot slotAndBlockRootAdded = dataStructureUtil.randomSlotAndBlockRoot();
+    final SlotAndBlockRoot slotAndBlockRootRemaining = dataStructureUtil.randomSlotAndBlockRoot();
 
     final DataColumnSamplingTracker completedTracker = mock(DataColumnSamplingTracker.class);
     when(completedTracker.completionFuture()).thenReturn(SafeFuture.completedFuture(null));
-    when(completedTracker.blockRoot()).thenReturn(dataStructureUtil.randomBytes32());
-    when(completedTracker.slot()).thenReturn(lastFinalizedSlot.decrement());
+    when(completedTracker.blockRoot()).thenReturn(slotAndBlockRootRemaining.getBlockRoot());
+    when(completedTracker.slot()).thenReturn(slotAndBlockRootRemaining.getSlot());
 
-    final SafeFuture<List<UInt64>> trackerForFinalizedSlotFuture = new SafeFuture<>();
-    final DataColumnSamplingTracker trackerForFinalizedSlot = mock(DataColumnSamplingTracker.class);
-    when(trackerForFinalizedSlot.completionFuture()).thenReturn(trackerForFinalizedSlotFuture);
-    when(trackerForFinalizedSlot.slot()).thenReturn(lastFinalizedSlot);
-
-    final SafeFuture<List<UInt64>> trackerForImportedBlockFuture = new SafeFuture<>();
-    final DataColumnSamplingTracker trackerForImportedBlock = mock(DataColumnSamplingTracker.class);
-    when(trackerForImportedBlock.completionFuture()).thenReturn(trackerForImportedBlockFuture);
-    when(trackerForImportedBlock.slot()).thenReturn(firstNonFinalizedSlot);
-    when(trackerForImportedBlock.blockRoot()).thenReturn(importedBlockRoot);
-
-    final DataColumnSamplingTracker expectedToRemainTracker = mock(DataColumnSamplingTracker.class);
-    when(expectedToRemainTracker.completionFuture()).thenReturn(new SafeFuture<>());
-    when(expectedToRemainTracker.slot()).thenReturn(firstNonFinalizedSlot);
-    when(expectedToRemainTracker.blockRoot()).thenReturn(dataStructureUtil.randomBytes32());
+    final SafeFuture<List<UInt64>> completionFuture = new SafeFuture<>();
+    final DataColumnSamplingTracker nonCompletedTracker = mock(DataColumnSamplingTracker.class);
+    when(completedTracker.completionFuture()).thenReturn(completionFuture);
+    when(completedTracker.blockRoot()).thenReturn(slotAndBlockRootAdded.getBlockRoot());
+    when(completedTracker.slot()).thenReturn(slotAndBlockRootAdded.getSlot());
 
     sampler
         .getRecentlySampledColumnsByRoot()
-        .put(dataStructureUtil.randomBytes32(), completedTracker);
+        .put(slotAndBlockRootRemaining.getBlockRoot(), completedTracker);
     sampler
         .getRecentlySampledColumnsByRoot()
-        .put(dataStructureUtil.randomBytes32(), trackerForFinalizedSlot);
-    sampler
-        .getRecentlySampledColumnsByRoot()
-        .put(dataStructureUtil.randomBytes32(), trackerForImportedBlock);
-    sampler
-        .getRecentlySampledColumnsByRoot()
-        .put(dataStructureUtil.randomBytes32(), expectedToRemainTracker);
+        .put(slotAndBlockRootAdded.getBlockRoot(), nonCompletedTracker);
 
-    sampler.onSlot(UInt64.valueOf(20));
+    assertThat(sampler.getRecentlySampledColumnsByRoot())
+        .containsValues(completedTracker, nonCompletedTracker);
 
-    assertThat(sampler.getRecentlySampledColumnsByRoot()).containsValue(expectedToRemainTracker);
-    assertThat(trackerForImportedBlockFuture).isCompletedExceptionally();
-    assertThat(trackerForFinalizedSlotFuture).isCompletedExceptionally();
+    sampler.removeAllForBlock(slotAndBlockRootAdded);
+
+    assertThat(sampler.getRecentlySampledColumnsByRoot()).containsValues(completedTracker);
+    assertThat(nonCompletedTracker.completionFuture()).isCancelled();
+
+    // Non-existing - doesn't throw
+    sampler.removeAllForBlock(slotAndBlockRoot);
   }
 
   private void assertSamplerTracker(

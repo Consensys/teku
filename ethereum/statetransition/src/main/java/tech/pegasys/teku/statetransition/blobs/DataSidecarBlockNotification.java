@@ -31,9 +31,9 @@ public interface DataSidecarBlockNotification {
         public void enableBlockImportOnCompletion(final SignedBeaconBlock block) {}
       };
 
-  public void onNewBlock(SignedBeaconBlock block, Optional<RemoteOrigin> remoteOrigin);
+  void onNewBlock(SignedBeaconBlock block, Optional<RemoteOrigin> remoteOrigin);
 
-  public void removeAllForBlock(SlotAndBlockRoot slotAndBlockRoot);
+  void removeAllForBlock(SlotAndBlockRoot slotAndBlockRoot);
 
-  public void enableBlockImportOnCompletion(SignedBeaconBlock block);
+  void enableBlockImportOnCompletion(SignedBeaconBlock block);
 }

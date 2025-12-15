@@ -292,8 +292,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   @Override
   public synchronized void onNewBlock(
       final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
-    // TODO: move to universal pool this one and maybe something more
-
     if (shouldIgnoreItemAtSlot(block.getSlot())) {
       return;
     }
@@ -359,6 +357,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
     if (removedTracker != null) {
       orderedBlobSidecarsTrackers.remove(removedTracker.getSlotAndBlockRoot());
+      removedTracker.getCompletionFuture().cancel(true);
 
       dropMissingContent(removedTracker);
 
