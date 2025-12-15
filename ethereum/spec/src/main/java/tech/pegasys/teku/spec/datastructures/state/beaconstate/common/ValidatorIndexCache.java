@@ -29,48 +29,19 @@ public class ValidatorIndexCache {
   private final AtomicInteger lastCachedIndex;
 
   private static final int INDEX_NONE = -1;
-  private final AtomicInteger latestFinalizedIndex;
   public static final ValidatorIndexCache NO_OP_INSTANCE =
-      new ValidatorIndexCache(NoOpCache.getNoOpCache(), INDEX_NONE, INDEX_NONE);
+      new ValidatorIndexCache(NoOpCache.getNoOpCache(), INDEX_NONE);
 
   @VisibleForTesting
   ValidatorIndexCache(
-      final Cache<BLSPublicKey, Integer> validatorIndices,
-      final int latestFinalizedIndex,
-      final int lastCachedIndex) {
+      final Cache<BLSPublicKey, Integer> validatorIndices, final int lastCachedIndex) {
     this.validatorIndices = validatorIndices;
-    this.latestFinalizedIndex = new AtomicInteger(latestFinalizedIndex);
     this.lastCachedIndex = new AtomicInteger(lastCachedIndex);
   }
 
   public ValidatorIndexCache() {
     this.validatorIndices = LRUCache.create(Integer.MAX_VALUE - 1);
     this.lastCachedIndex = new AtomicInteger(INDEX_NONE);
-    latestFinalizedIndex = new AtomicInteger(INDEX_NONE);
-  }
-
-  public Optional<Integer> getValidatorIndex(
-      final BeaconState state, final BLSPublicKey publicKey) {
-    final Optional<Integer> validatorIndex = validatorIndices.getCached(publicKey);
-    if (validatorIndex.isPresent()) {
-      return validatorIndex.filter(index -> index < state.getValidators().size());
-    }
-
-    return findIndexFromState(state.getValidators(), publicKey);
-  }
-
-  public void invalidateWithNewValue(final BLSPublicKey pubKey, final int updatedIndex) {
-    validatorIndices.invalidateWithNewValue(pubKey, updatedIndex);
-  }
-
-  public void updateLatestFinalizedIndex(final BeaconState finalizedState) {
-    latestFinalizedIndex.updateAndGet(
-        curr -> Math.max(curr, finalizedState.getValidators().size() - 1));
-  }
-
-  @VisibleForTesting
-  public int getLatestFinalizedIndex() {
-    return latestFinalizedIndex.get();
   }
 
   @VisibleForTesting
@@ -79,30 +50,47 @@ public class ValidatorIndexCache {
   }
 
   @VisibleForTesting
-  int getCacheSize() {
-    return validatorIndices.size();
+  Cache<BLSPublicKey, Integer> getValidatorIndices() {
+    return validatorIndices;
+  }
+
+  public void invalidateWithNewValue(final BLSPublicKey pubKey, final int updatedIndex) {
+    validatorIndices.invalidateWithNewValue(pubKey, updatedIndex);
+  }
+
+  public Optional<Integer> getValidatorIndex(
+      final BeaconState state, final BLSPublicKey publicKey) {
+    // Store lastIndex here in case we need to scan keys from the state.
+    // This ensures we're adding from a point that we're confident the cache is at
+    // when we scan for more keys through the state later.
+    final int lastIndexSnapshot = lastCachedIndex.get();
+
+    final Optional<Integer> validatorIndex = validatorIndices.getCached(publicKey);
+    if (validatorIndex.isPresent()) {
+      return validatorIndex.filter(index -> index < state.getValidators().size());
+    }
+
+    return findIndexFromState(state.getValidators(), publicKey, lastIndexSnapshot);
+  }
+
+  private Optional<Integer> findIndexFromState(
+      final SszList<Validator> validatorList,
+      final BLSPublicKey publicKey,
+      final int lastIndexSnapshot) {
+    for (int i = Math.max(lastIndexSnapshot, 0); i < validatorList.size(); i++) {
+      BLSPublicKey pubKey = validatorList.get(i).getPublicKey();
+      validatorIndices.invalidateWithNewValue(pubKey, i);
+      if (pubKey.equals(publicKey)) {
+        updateLastIndex(i);
+        return Optional.of(i);
+      }
+    }
+
+    updateLastIndex(validatorList.size());
+    return Optional.empty();
   }
 
   private void updateLastIndex(final int i) {
     lastCachedIndex.updateAndGet(curr -> Math.max(curr, i));
-  }
-
-  private Optional<Integer> findIndexFromState(
-      final SszList<Validator> validatorList, final BLSPublicKey publicKey) {
-    final int initialCacheSize = getCacheSize();
-    for (int i = Math.max(lastCachedIndex.get() + 1, 0); i < validatorList.size(); i++) {
-      final BLSPublicKey pubKey = validatorList.get(i).getPublicKey();
-      validatorIndices.invalidateWithNewValue(pubKey, i);
-      if (pubKey.equals(publicKey)) {
-        if (initialCacheSize < getCacheSize()) {
-          updateLastIndex(i);
-        }
-        return Optional.of(i);
-      }
-    }
-    if (initialCacheSize < getCacheSize()) {
-      updateLastIndex(getCacheSize() - 1);
-    }
-    return Optional.empty();
   }
 }
