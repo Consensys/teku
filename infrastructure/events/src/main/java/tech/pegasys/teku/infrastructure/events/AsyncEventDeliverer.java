@@ -107,8 +107,9 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
                   || err instanceof CancellationException
                   || err instanceof InterruptedException) {
                 LOG.debug("shutdown exception", err);
+              } else {
+                LOG.warn("Error while trying to stop event deliverer", err);
               }
-              LOG.warn("Error while trying to stop event deliverer", err);
               return null;
             });
   }
