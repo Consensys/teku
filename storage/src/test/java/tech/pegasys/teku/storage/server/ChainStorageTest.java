@@ -52,13 +52,14 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystemArgumentsProvider;
 
 public class ChainStorageTest {
   private static final Logger LOG = LogManager.getLogger();
+  private static final long CHAIN_LENGTH_EPOCHS = 3;
   @TempDir Path dataDirectory;
   private StorageSystem storageSystem;
   private ChainBuilder chainBuilder;
   private ChainStorage chainStorage;
 
-  private final Spec spec = TestSpecFactory.createMinimalDeneb();
-  private static final int DATA_COLUMN_SIDECAR_COUNT = 128;
+  private final Spec spec =
+      TestSpecFactory.createMinimalWithFuluForkEpoch(UInt64.valueOf(CHAIN_LENGTH_EPOCHS));
 
   private void setup(
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
@@ -189,7 +190,7 @@ public class ChainStorageTest {
 
     // Build small chain
     chainBuilder.generateBlocksUpToSlot(
-        spec.slotsPerEpoch(ZERO) * 3L,
+        spec.slotsPerEpoch(ZERO) * CHAIN_LENGTH_EPOCHS,
         ChainBuilder.BlockOptions.create().setGenerateRandomBlobs(true));
 
     // Retrieve anchor data
@@ -249,7 +250,7 @@ public class ChainStorageTest {
               .map(entry -> entry.getValue().get(0).getSlot());
     }
 
-    final int dataColumnSidecars = DATA_COLUMN_SIDECAR_COUNT;
+    final int dataColumnSidecars = spec.getNumberOfDataColumns().orElse(128);
     final Map<SlotAndBlockRoot, List<DataColumnSidecar>> missingHistoricalDataColumnSidecars =
         chainBuilder
             .streamDataColumnSidecars(
@@ -264,15 +265,13 @@ public class ChainStorageTest {
     for (Map.Entry<SlotAndBlockRoot, List<DataColumnSidecar>> missingDataColumnSidecar :
         missingHistoricalDataColumnSidecars.entrySet()) {
       for (DataColumnSidecar dataColumnSidecar : missingDataColumnSidecar.getValue()) {
-        for (int i = 0; i < dataColumnSidecars; i++) {
-          final DataColumnSlotAndIdentifier key =
-              new DataColumnSlotAndIdentifier(
-                  missingDataColumnSidecar.getKey().getSlot(),
-                  DataColumnIdentifier.createFromSidecar(dataColumnSidecar));
-          final SafeFuture<Optional<DataColumnSidecar>> dataColumnSidecarResult =
-              chainStorage.getSidecar(key);
-          assertThatSafeFuture(dataColumnSidecarResult).isCompletedWithEmptyOptional();
-        }
+        final DataColumnSlotAndIdentifier key =
+            new DataColumnSlotAndIdentifier(
+                missingDataColumnSidecar.getKey().getSlot(),
+                DataColumnIdentifier.createFromSidecar(dataColumnSidecar));
+        final SafeFuture<Optional<DataColumnSidecar>> dataColumnSidecarResult =
+            chainStorage.getSidecar(key);
+        assertThatSafeFuture(dataColumnSidecarResult).isCompletedWithEmptyOptional();
       }
     }
 
