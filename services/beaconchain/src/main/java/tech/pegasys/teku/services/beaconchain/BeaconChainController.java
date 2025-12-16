@@ -283,7 +283,6 @@ import tech.pegasys.teku.validator.coordinator.GraffitiBuilder;
 import tech.pegasys.teku.validator.coordinator.MilestoneBasedBlockFactory;
 import tech.pegasys.teku.validator.coordinator.StoredLatestCanonicalBlockUpdater;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
-import tech.pegasys.teku.validator.coordinator.ValidatorIndexCacheTracker;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.NoOpPerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
@@ -699,7 +698,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initValidatorApiHandler();
     initRestAPI();
     initOperationsReOrgManager();
-    initValidatorIndexCacheTracker();
     initStoredLatestCanonicalBlockUpdater();
   }
 
@@ -2181,13 +2179,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new StoredLatestCanonicalBlockUpdater(recentChainData, spec);
 
     eventChannels.subscribe(SlotEventsChannel.class, storedLatestCanonicalBlockUpdater);
-  }
-
-  protected void initValidatorIndexCacheTracker() {
-    LOG.debug("BeaconChainController.initValidatorIndexCacheTracker()");
-    final ValidatorIndexCacheTracker validatorIndexCacheTracker =
-        new ValidatorIndexCacheTracker(recentChainData);
-    eventChannels.subscribe(FinalizedCheckpointChannel.class, validatorIndexCacheTracker);
   }
 
   protected void initForkChoiceStateProvider() {
