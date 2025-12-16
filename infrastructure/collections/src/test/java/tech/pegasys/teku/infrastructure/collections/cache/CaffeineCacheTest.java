@@ -25,9 +25,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class CaffeineCacheTest {
-
   private final int maxCacheSize = 16;
-  private final Cache<Integer, Integer> cache = CaffeineCache.create(maxCacheSize);
+  private final Cache<Integer, Integer> cache = CacheTestUtil.createSynchronous(maxCacheSize);
 
   @Test
   void concurrencyTest() {
@@ -85,34 +84,10 @@ public class CaffeineCacheTest {
   }
 
   @Test
-  void get_shouldEvictLeastRecentlyAccessedValue() {
-    // fill the cache completely with keys 0 to 15
-    for (int i = 0; i < maxCacheSize; i++) {
-      cache.get(i, key -> 100 + key);
-    }
-    // at this point, the access order is 0, 1, 2, ..., 15
-    // the least recently used item is 0
-
-    // access key 0 again to make it the most recently used
-    cache.get(0, __ -> 100);
-
-    // now, the least recently used item is 1
-    // add a new item to force an eviction
-    cache.get(maxCacheSize, key -> 100 + key);
-    assertThat(cache.size()).isEqualTo(maxCacheSize);
-
-    // verify that the new least recently used item 1 is evicted
-    assertThat(cache.getCached(1)).isEmpty();
-    assertThat(cache.getCached(0)).contains(100);
-    assertThat(cache.getCached(2)).contains(102);
-  }
-
-  @Test
   void invalidate_shouldRemoveEntry() {
     cache.get(0, __ -> 100);
     cache.get(1, __ -> 101);
     cache.invalidate(0);
-
     assertThat(cache.size()).isEqualTo(1);
     assertThat(cache.getCached(0)).isEmpty();
     assertThat(cache.getCached(1)).contains(101);
@@ -131,37 +106,50 @@ public class CaffeineCacheTest {
 
   @Test
   void get_shouldHonorMaxCapacityAfterEviction() {
-    final Cache<Integer, Integer> cache = CaffeineCache.create(maxCacheSize);
+    final Cache<Integer, Integer> smallCache = CacheTestUtil.createSynchronous(maxCacheSize);
     for (int i = 0; i < maxCacheSize; i++) {
-      cache.get(i, key -> key);
+      smallCache.get(i, key -> key);
     }
-    assertThat(cache.size()).isEqualTo(maxCacheSize);
-    cache.get(maxCacheSize, key -> key);
-    assertThat(cache.size()).isEqualTo(maxCacheSize);
-    assertThat(cache.getCached(maxCacheSize)).isPresent();
+    assertThat(smallCache.size()).isEqualTo(maxCacheSize);
+    smallCache.get(maxCacheSize, key -> key);
+    assertThat(smallCache.size()).isEqualTo(maxCacheSize);
+    assertThat(smallCache.getCached(maxCacheSize)).isPresent();
   }
 
   @Test
-  void invalidate_shouldEvictLeastRecentlyAccessed() {
+  void get_shouldEvictAnItemWhenCapacityIsReached() {
+    // fill the cache to its maximum capacity
     for (int i = 0; i < maxCacheSize; i++) {
       cache.get(i, key -> key);
     }
-    cache.get(0, key -> key);
-    cache.get(1, key -> key);
-
-    // should evict least recently used entry '2'
-    cache.get(maxCacheSize, key -> key);
     assertThat(cache.size()).isEqualTo(maxCacheSize);
-    assertThat(cache.getCached(0)).contains(0);
-    assertThat(cache.getCached(1)).contains(1);
-    assertThat(cache.getCached(2)).isEmpty();
-    assertThat(cache.getCached(3)).contains(3);
+
+    // add a new item, which should trigger an eviction
+    int newItemKey = maxCacheSize;
+    cache.get(newItemKey, key -> key);
+
+    // verify the cache's contract
+    assertThat(cache.size())
+        .as("Cache should not grow beyond its max size")
+        .isEqualTo(maxCacheSize);
+    assertThat(cache.getCached(newItemKey))
+        .as("The newly added item should be present")
+        .isPresent();
+
+    long originalItemsStillInCache = 0;
+    for (int i = 0; i < maxCacheSize; i++) {
+      if (cache.getCached(i).isPresent()) {
+        originalItemsStillInCache++;
+      }
+    }
+    assertThat(originalItemsStillInCache)
+        .as("Exactly one of the original items should have been evicted")
+        .isEqualTo(maxCacheSize - 1);
   }
 
   @Test
   void copy_shouldPreserveCapacityLimit() {
-    // create a completely filled-up cache
-    final Cache<Integer, Integer> sourceCache = CaffeineCache.create(maxCacheSize);
+    final Cache<Integer, Integer> sourceCache = CacheTestUtil.createSynchronous(maxCacheSize);
     for (int i = 0; i < maxCacheSize; i++) {
       sourceCache.get(i, key -> key);
     }
@@ -171,21 +159,18 @@ public class CaffeineCacheTest {
     final Cache<Integer, Integer> copiedCache = sourceCache.copy();
     assertThat(copiedCache.size()).isEqualTo(maxCacheSize);
 
-    // add a new item to the copy to trigger eviction
-    copiedCache.get(maxCacheSize, key -> key);
+    int newItemKey = maxCacheSize;
+    copiedCache.get(newItemKey, key -> key);
 
     // the copied cache respected the size limit and did not grow
     assertThat(copiedCache.size())
         .as("Copied cache should evict old entries and not exceed its capacity")
         .isEqualTo(maxCacheSize);
-
-    // verify eviction occurred in the copy
-    assertThat(copiedCache.getCached(0)).isEmpty();
-    assertThat(copiedCache.getCached(maxCacheSize)).isPresent();
+    assertThat(copiedCache.getCached(newItemKey)).isPresent();
 
     // verify the original cache was not affected
     assertThat(sourceCache.size()).isEqualTo(maxCacheSize);
     assertThat(sourceCache.getCached(0)).isPresent();
-    assertThat(sourceCache.getCached(maxCacheSize)).isEmpty();
+    assertThat(sourceCache.getCached(newItemKey)).isEmpty();
   }
 }

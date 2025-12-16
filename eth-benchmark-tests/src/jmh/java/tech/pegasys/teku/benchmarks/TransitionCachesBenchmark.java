@@ -65,7 +65,7 @@ public class TransitionCachesBenchmark {
     @Param({"CAFFEINE", "LEGACY_LRU"})
     private CacheType cacheType;
 
-    @Param({"0", "5"})
+    @Param({"0", "50"})
     public long fallbackDelayMs;
 
     private static final int KEY_SPACE = 4096;
@@ -128,14 +128,10 @@ public class TransitionCachesBenchmark {
     bh.consume(result);
   }
 
-  /**
-   * A targeted stress test where ALL threads request the SAME missing key concurrently. This is
-   * designed to expose the contention caused by the `synchronized` block in `LegacyLRUCache` when a
-   * slow fallback is executed.
-   */
+  /** A targeted stress test where all threads request the SAME missing key concurrently */
   @Benchmark
-  public void contendedMissWithSlowFallback(final BenchmarkState state, final Blackhole bh) {
-    // all threads contend on the exact same missing key.
+  public void contendedMissWithFallback(final BenchmarkState state, final Blackhole bh) {
+    // all threads contend on the exact same missing key
     final Cache<TekuPair<UInt64, UInt64>, IntList> cache = state.caches.getBeaconCommittee();
     final IntList result = cache.get(CONTENDED_MISS_KEY, state::slowFallback);
     bh.consume(result);

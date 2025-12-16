@@ -2,5 +2,6 @@ dependencies {
   implementation 'com.google.guava:guava'
   implementation 'com.github.ben-manes.caffeine:caffeine'
 
+  testFixturesImplementation 'com.github.ben-manes.caffeine:caffeine'
   testFixturesImplementation 'it.unimi.dsi:fastutil'
 }

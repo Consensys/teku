@@ -32,7 +32,7 @@ public final class CaffeineCache<K, V> implements Cache<K, V> {
   private final LoadingCache<K, V> cache;
   private final Caffeine<Object, Object> builder;
 
-  private CaffeineCache(final LoadingCache<K, V> cache, final Caffeine<Object, Object> builder) {
+  CaffeineCache(final LoadingCache<K, V> cache, final Caffeine<Object, Object> builder) {
     this.cache = cache;
     this.builder = builder;
   }
