@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Duration;
 import java.util.stream.Stream;
@@ -71,6 +72,15 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
     final BeaconRestApiConfig config = getConfig(tekuConfiguration);
     assertThat(config.getGetBlobsApiP2pSidecarDownloadTimeoutSeconds())
         .isEqualTo(Duration.ofSeconds(12));
+  }
+
+  @Test
+  public void getBlobsApiP2pSidecarDownloadTimeoutSeconds_wrongValues() {
+    assertThatThrownBy(
+        () -> getTekuConfigurationFromArguments("--get-blobs-sidecars-download-timeout", "0"));
+
+    assertThatThrownBy(
+        () -> getTekuConfigurationFromArguments("--get-blobs-sidecars-download-timeout", "-2"));
   }
 
   @Test

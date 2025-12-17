@@ -260,6 +260,12 @@ public class BeaconRestApiConfig {
 
     public BeaconRestApiConfigBuilder getBlobsApiP2pSidecarDownloadTimeoutSeconds(
         final long getBlobsApiP2pSidecarDownloadTimeoutSeconds) {
+      if (getBlobsApiP2pSidecarDownloadTimeoutSeconds <= 0) {
+        throw new InvalidConfigurationException(
+            String.format(
+                "Invalid getBlobsApiP2pSidecarDownloadTimeoutSeconds: %d",
+                getBlobsApiP2pSidecarDownloadTimeoutSeconds));
+      }
       this.getBlobsApiP2pSidecarDownloadTimeoutSeconds =
           Duration.ofSeconds(getBlobsApiP2pSidecarDownloadTimeoutSeconds);
       return this;
