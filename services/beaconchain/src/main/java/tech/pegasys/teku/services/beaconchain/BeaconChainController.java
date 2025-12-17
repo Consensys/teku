@@ -262,6 +262,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
 import tech.pegasys.teku.storage.client.ValidatorIsConnectedProvider;
+import tech.pegasys.teku.storage.server.DataColumnSidecarNetworkRetrieverImpl;
 import tech.pegasys.teku.storage.store.FileKeyValueStore;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.storage.store.StoreConfig;
@@ -1429,7 +1430,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (simpleSidecarRetriever.isPresent()
         && beaconConfig.beaconRestApiConfig().isGetBlobsApiP2pSidecarDownloadEnabled()) {
       networkRetriever =
-          DataColumnSidecarNetworkRetriever.create(
+          new DataColumnSidecarNetworkRetrieverImpl(
               simpleSidecarRetriever.get()::retrieve,
               simpleSidecarRetriever.get()::flush,
               sidecarDB.orElseThrow()::addSidecar,

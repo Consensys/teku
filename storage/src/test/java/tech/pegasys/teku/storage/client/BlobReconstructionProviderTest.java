@@ -61,8 +61,10 @@ public class BlobReconstructionProviderTest {
   private final CombinedChainDataClient client = mock(CombinedChainDataClient.class);
   private final Spec spec = TestSpecFactory.createMinimalFulu();
 
+  private final DataColumnSidecarNetworkRetriever networkRetriever =
+      mock(DataColumnSidecarNetworkRetriever.class);
   private final BlobReconstructionProvider blobReconstructionProvider =
-      new BlobReconstructionProvider(client, DataColumnSidecarNetworkRetriever.DISABLED, spec);
+      new BlobReconstructionProvider(client, networkRetriever, spec);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SlotAndBlockRoot slotAndBlockRoot = dataStructureUtil.randomSlotAndBlockRoot();

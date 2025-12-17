@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.api;
+package tech.pegasys.teku.storage.server;
 
 import static java.util.Collections.emptyList;
 
@@ -24,16 +24,17 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
 
 public class DataColumnSidecarNetworkRetrieverImpl implements DataColumnSidecarNetworkRetriever {
-  static final Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger();
 
   final Function<DataColumnSlotAndIdentifier, SafeFuture<DataColumnSidecar>> retriever;
   final Runnable retrieverFlusher;
   final Function<DataColumnSidecar, SafeFuture<Void>> dbWriter;
   final Duration retrievalTimeout;
 
-  DataColumnSidecarNetworkRetrieverImpl(
+  public DataColumnSidecarNetworkRetrieverImpl(
       final Function<DataColumnSlotAndIdentifier, SafeFuture<DataColumnSidecar>> retriever,
       final Runnable retrieverFlusher,
       final Function<DataColumnSidecar, SafeFuture<Void>> dbWriter,
@@ -49,11 +50,26 @@ public class DataColumnSidecarNetworkRetrieverImpl implements DataColumnSidecarN
       final List<DataColumnSlotAndIdentifier> requiredIdentifiers) {
 
     final List<SafeFuture<DataColumnSidecar>> requests =
-        requiredIdentifiers.stream().map(retriever).toList();
+        requiredIdentifiers.stream()
+            .map(
+                columnId -> {
+                  var rpcRequest = retriever.apply(columnId);
+                  rpcRequest
+                      .thenCompose(dbWriter)
+                      .finish(
+                          error ->
+                              LOG.debug(
+                                  "Failed to retrieve data column sidecars for column {}",
+                                  columnId));
+                  return rpcRequest;
+                })
+            .toList();
 
     if (!requests.isEmpty()) {
       retrieverFlusher.run();
     }
+
+    requests.forEach(request -> {});
 
     LOG.debug("Retrieved {} additional sidecars from for the network", requests.size());
 

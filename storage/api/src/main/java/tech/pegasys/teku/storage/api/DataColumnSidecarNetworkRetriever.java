@@ -13,9 +13,7 @@
 
 package tech.pegasys.teku.storage.api;
 
-import java.time.Duration;
 import java.util.List;
-import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
@@ -36,15 +34,6 @@ public interface DataColumnSidecarNetworkRetriever {
           return false;
         }
       };
-
-  static DataColumnSidecarNetworkRetriever create(
-      final Function<DataColumnSlotAndIdentifier, SafeFuture<DataColumnSidecar>> retriever,
-      final Runnable retrieverFlusher,
-      final Function<DataColumnSidecar, SafeFuture<Void>> dbWriter,
-      final Duration retrievalTimeout) {
-    return new DataColumnSidecarNetworkRetrieverImpl(
-        retriever, retrieverFlusher, dbWriter, retrievalTimeout);
-  }
 
   SafeFuture<List<DataColumnSidecar>> retrieveDataColumnSidecars(
       List<DataColumnSlotAndIdentifier> requiredIdentifiers);
