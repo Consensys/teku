@@ -15,11 +15,12 @@ package tech.pegasys.teku.storage.client;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -33,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
@@ -71,54 +71,12 @@ public class BlobReconstructionProviderTest {
   private static final String VALID_BLOBS_AND_CELLS_FILENAMES = "valid_blobs_and_cells.json";
 
   @Test
-  public void shouldGiveUpIfDataColumnIdentifiersNotFound() {
-    when(client.getDataColumnIdentifiers(any()))
-        .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
-    final SafeFuture<List<Blob>> result =
-        blobReconstructionProvider.reconstructBlobs(
-            slotAndBlockRoot, Collections.emptyList(), true);
-    assertThat(result).isCompletedWithValueMatching(List::isEmpty);
-    verify(client, never()).getSidecar(any(DataColumnSlotAndIdentifier.class));
-  }
-
-  @Test
-  public void shouldGiveUpIfAnyDataColumnIdentifiersMissing() {
-    final Integer numberOfColumns = spec.getNumberOfDataColumns().orElseThrow();
-    final List<DataColumnSlotAndIdentifier> allButLast50Percent =
-        IntStream.range(0, numberOfColumns / 2 - 1)
-            .mapToObj(
-                index ->
-                    new DataColumnSlotAndIdentifier(
-                        slotAndBlockRoot.getSlot(),
-                        slotAndBlockRoot.getBlockRoot(),
-                        UInt64.valueOf(index)))
-            .toList();
-    when(client.getDataColumnIdentifiers(any()))
-        .thenReturn(SafeFuture.completedFuture(allButLast50Percent));
-    final SafeFuture<List<Blob>> result =
-        blobReconstructionProvider.reconstructBlobs(
-            slotAndBlockRoot, Collections.emptyList(), true);
-    assertThat(result).isCompletedWithValueMatching(List::isEmpty);
-    verify(client, never()).getSidecar(any(DataColumnSlotAndIdentifier.class));
-  }
-
-  @Test
-  public void shouldGiveUpIfAnySidecarsMissing() {
+  public void shouldGiveUpIfAnySidecarsMissingAndNetworkRetrieverIsDisabled() {
+    when(networkRetriever.isEnabled()).thenReturn(false);
     final int numberOfColumns = spec.getNumberOfDataColumns().orElseThrow();
-    final List<DataColumnSlotAndIdentifier> all50Percent =
-        IntStream.range(0, numberOfColumns / 2)
-            .mapToObj(
-                index ->
-                    new DataColumnSlotAndIdentifier(
-                        slotAndBlockRoot.getSlot(),
-                        slotAndBlockRoot.getBlockRoot(),
-                        UInt64.valueOf(index)))
-            .toList();
     final SignedBeaconBlockHeader header =
         dataStructureUtil.randomSignedBeaconBlockHeader(slotAndBlockRoot.getSlot());
 
-    when(client.getDataColumnIdentifiers(any()))
-        .thenReturn(SafeFuture.completedFuture(all50Percent));
     when(client.getSidecar(any(DataColumnSlotAndIdentifier.class)))
         .thenAnswer(
             invocationOnMock -> {
@@ -141,17 +99,10 @@ public class BlobReconstructionProviderTest {
   }
 
   @Test
-  public void shouldReturnBlobs() {
+  public void shouldReturnBlobsUsingNetworkRetrieverWhenSidecarsAreMissingAndIsEnabled() {
     final int numberOfColumns = spec.getNumberOfDataColumns().orElseThrow();
-    final List<DataColumnSlotAndIdentifier> all50Percent =
-        IntStream.range(0, numberOfColumns / 2)
-            .mapToObj(
-                index ->
-                    new DataColumnSlotAndIdentifier(
-                        slotAndBlockRoot.getSlot(),
-                        slotAndBlockRoot.getBlockRoot(),
-                        UInt64.valueOf(index)))
-            .toList();
+    when(networkRetriever.isEnabled()).thenReturn(true);
+
     final BeaconBlockBody beaconBlockBody =
         dataStructureUtil.randomBeaconBlockBodyWithCommitments(2);
     final SignedBeaconBlock block =
@@ -166,8 +117,106 @@ public class BlobReconstructionProviderTest {
         miscHelpersFulu.constructDataColumnSidecars(
             block.getMessage(), block.asHeader(), blobsAndMatrix.extendedMatrix);
 
-    when(client.getDataColumnIdentifiers(any()))
-        .thenReturn(SafeFuture.completedFuture(all50Percent));
+    var missingIndices = List.of(UInt64.valueOf(10), UInt64.valueOf(12));
+    var missingDataColumnSlotAndIdentifiers =
+        List.of(
+            DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecars.get(10)),
+            DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecars.get(12)));
+    var missingDataColumn = List.of(dataColumnSidecars.get(10), dataColumnSidecars.get(12));
+
+    when(client.getSidecar(any(DataColumnSlotAndIdentifier.class)))
+        .thenAnswer(
+            invocationOnMock -> {
+              final DataColumnSlotAndIdentifier identifier = invocationOnMock.getArgument(0);
+              if (missingIndices.contains(identifier.columnIndex())) {
+                return SafeFuture.completedFuture(Optional.empty());
+              }
+              return SafeFuture.completedFuture(
+                  Optional.of(dataColumnSidecars.get(identifier.columnIndex().intValue())));
+            });
+
+    when(networkRetriever.retrieveDataColumnSidecars(missingDataColumnSlotAndIdentifiers))
+        .thenReturn(SafeFuture.completedFuture(missingDataColumn));
+
+    final SafeFuture<List<Blob>> result =
+        blobReconstructionProvider.reconstructBlobs(
+            block.getSlotAndBlockRoot(), Collections.emptyList(), true);
+
+    assertThat(result)
+        .isCompletedWithValueMatching(
+            list ->
+                list.size() == 2
+                    && list.getFirst().equals(blobsAndMatrix.blobs.getFirst())
+                    && list.get(1).equals(blobsAndMatrix.blobs.get(1)));
+    verify(client, times(numberOfColumns / 2)).getSidecar(any(DataColumnSlotAndIdentifier.class));
+    verify(networkRetriever).retrieveDataColumnSidecars(missingDataColumnSlotAndIdentifiers);
+  }
+
+  @Test
+  public void shouldFailWhenNetworkRetrieverReturnsNoSidecars() {
+    final int numberOfColumns = spec.getNumberOfDataColumns().orElseThrow();
+    when(networkRetriever.isEnabled()).thenReturn(true);
+
+    final BeaconBlockBody beaconBlockBody =
+        dataStructureUtil.randomBeaconBlockBodyWithCommitments(2);
+    final SignedBeaconBlock block =
+        dataStructureUtil.signedBlock(
+            dataStructureUtil.randomBeaconBlock(slotAndBlockRoot.getSlot(), beaconBlockBody));
+
+    final BlobsAndMatrix blobsAndMatrix = loadBlobsAndMatrixFixture();
+    final MiscHelpersFulu miscHelpersFulu =
+        MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
+
+    final List<DataColumnSidecar> dataColumnSidecars =
+        miscHelpersFulu.constructDataColumnSidecars(
+            block.getMessage(), block.asHeader(), blobsAndMatrix.extendedMatrix);
+
+    var missingIndices = List.of(UInt64.valueOf(10), UInt64.valueOf(12));
+    var missingDataColumnSlotAndIdentifiers =
+        List.of(
+            DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecars.get(10)),
+            DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecars.get(12)));
+
+    when(client.getSidecar(any(DataColumnSlotAndIdentifier.class)))
+        .thenAnswer(
+            invocationOnMock -> {
+              final DataColumnSlotAndIdentifier identifier = invocationOnMock.getArgument(0);
+              if (missingIndices.contains(identifier.columnIndex())) {
+                return SafeFuture.completedFuture(Optional.empty());
+              }
+              return SafeFuture.completedFuture(
+                  Optional.of(dataColumnSidecars.get(identifier.columnIndex().intValue())));
+            });
+
+    when(networkRetriever.retrieveDataColumnSidecars(missingDataColumnSlotAndIdentifiers))
+        .thenReturn(SafeFuture.completedFuture(List.of()));
+
+    final SafeFuture<List<Blob>> result =
+        blobReconstructionProvider.reconstructBlobs(
+            block.getSlotAndBlockRoot(), Collections.emptyList(), true);
+
+    assertThat(result).isCompletedWithValueMatching(List::isEmpty);
+    verify(client, times(numberOfColumns / 2)).getSidecar(any(DataColumnSlotAndIdentifier.class));
+    verify(networkRetriever).retrieveDataColumnSidecars(missingDataColumnSlotAndIdentifiers);
+  }
+
+  @Test
+  public void shouldReturnBlobsWithoutNetworkRetriever() {
+    final int numberOfColumns = spec.getNumberOfDataColumns().orElseThrow();
+    final BeaconBlockBody beaconBlockBody =
+        dataStructureUtil.randomBeaconBlockBodyWithCommitments(2);
+    final SignedBeaconBlock block =
+        dataStructureUtil.signedBlock(
+            dataStructureUtil.randomBeaconBlock(slotAndBlockRoot.getSlot(), beaconBlockBody));
+
+    final BlobsAndMatrix blobsAndMatrix = loadBlobsAndMatrixFixture();
+    final MiscHelpersFulu miscHelpersFulu =
+        MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
+
+    final List<DataColumnSidecar> dataColumnSidecars =
+        miscHelpersFulu.constructDataColumnSidecars(
+            block.getMessage(), block.asHeader(), blobsAndMatrix.extendedMatrix);
+
     when(client.getSidecar(any(DataColumnSlotAndIdentifier.class)))
         .thenAnswer(
             invocationOnMock -> {
@@ -188,20 +237,13 @@ public class BlobReconstructionProviderTest {
                     && list.getFirst().equals(blobsAndMatrix.blobs.getFirst())
                     && list.get(1).equals(blobsAndMatrix.blobs.get(1)));
     verify(client, times(numberOfColumns / 2)).getSidecar(any(DataColumnSlotAndIdentifier.class));
+    verifyNoMoreInteractions(networkRetriever);
   }
 
   @Test
   public void shouldReturnNonCanonicalBlobs() {
     final int numberOfColumns = spec.getNumberOfDataColumns().orElseThrow();
-    final List<DataColumnSlotAndIdentifier> all50Percent =
-        IntStream.range(0, numberOfColumns / 2)
-            .mapToObj(
-                index ->
-                    new DataColumnSlotAndIdentifier(
-                        slotAndBlockRoot.getSlot(),
-                        slotAndBlockRoot.getBlockRoot(),
-                        UInt64.valueOf(index)))
-            .toList();
+
     final BeaconBlockBody beaconBlockBody =
         dataStructureUtil.randomBeaconBlockBodyWithCommitments(2);
     final SignedBeaconBlock block =
@@ -216,8 +258,6 @@ public class BlobReconstructionProviderTest {
         miscHelpersFulu.constructDataColumnSidecars(
             block.getMessage(), block.asHeader(), blobsAndMatrix.extendedMatrix);
 
-    when(client.getNonCanonicalDataColumnIdentifiers(any()))
-        .thenReturn(SafeFuture.completedFuture(all50Percent));
     when(client.getNonCanonicalSidecar(any(DataColumnSlotAndIdentifier.class)))
         .thenAnswer(
             invocationOnMock -> {
@@ -244,15 +284,6 @@ public class BlobReconstructionProviderTest {
   @Test
   public void shouldReturnBlobsFiltered() {
     final int numberOfColumns = spec.getNumberOfDataColumns().orElseThrow();
-    final List<DataColumnSlotAndIdentifier> all50Percent =
-        IntStream.range(0, numberOfColumns / 2)
-            .mapToObj(
-                index ->
-                    new DataColumnSlotAndIdentifier(
-                        slotAndBlockRoot.getSlot(),
-                        slotAndBlockRoot.getBlockRoot(),
-                        UInt64.valueOf(index)))
-            .toList();
     final BeaconBlockBody beaconBlockBody =
         dataStructureUtil.randomBeaconBlockBodyWithCommitments(2);
     final SignedBeaconBlock block =
@@ -267,8 +298,6 @@ public class BlobReconstructionProviderTest {
         miscHelpersFulu.constructDataColumnSidecars(
             block.getMessage(), block.asHeader(), blobsAndMatrix.extendedMatrix);
 
-    when(client.getDataColumnIdentifiers(any()))
-        .thenReturn(SafeFuture.completedFuture(all50Percent));
     when(client.getSidecar(any(DataColumnSlotAndIdentifier.class)))
         .thenAnswer(
             invocationOnMock -> {
@@ -325,7 +354,6 @@ public class BlobReconstructionProviderTest {
   }
 
   private record BlobsAndMatrix(List<Blob> blobs, List<List<MatrixEntry>> extendedMatrix) {}
-  ;
 
   private List<CellData> loadJson() {
     final URL jsonUrl =

@@ -70,7 +70,7 @@ public class DataColumnSidecarNetworkRetrieverImpl implements DataColumnSidecarN
       retrieverFlusher.run();
     }
 
-    LOG.debug("Retrieved {} additional sidecars from for the network", requests.size());
+    LOG.debug("Retrieving {} additional sidecars from RPC", requests.size());
 
     return SafeFuture.collectAll(requests.stream())
         .orTimeout(retrievalTimeout)
