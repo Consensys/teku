@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Duration;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -44,6 +45,32 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
     assertThat(config.getRestApiCorsAllowedOrigins())
         .containsExactly("127.1.2.3", "origin.allowed.com");
     assertThat(config.getMaxUrlLength()).isEqualTo(65535);
+  }
+
+  @Test
+  public void getBlobsApiRelatedConfig_defaultsAreCorrect() {
+    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.isGetBlobsApiP2pSidecarDownloadEnabled()).isFalse();
+    assertThat(config.getGetBlobsApiP2pSidecarDownloadTimeoutSeconds())
+        .isGreaterThanOrEqualTo(Duration.ZERO);
+  }
+
+  @Test
+  public void getBlobsApiP2pSidecarDownloadEnabled_canBeEnabled() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--get-blobs-api-p2p-sidecars-download-enabled");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.isGetBlobsApiP2pSidecarDownloadEnabled()).isTrue();
+  }
+
+  @Test
+  public void getBlobsApiP2pSidecarDownloadTimeoutSeconds_canChanged() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--get-blobs-sidecars-download-timeout", "12");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.getGetBlobsApiP2pSidecarDownloadTimeoutSeconds())
+        .isEqualTo(Duration.ofSeconds(12));
   }
 
   @Test
