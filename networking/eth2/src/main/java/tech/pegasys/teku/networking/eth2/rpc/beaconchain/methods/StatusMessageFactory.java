@@ -15,12 +15,14 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -44,6 +46,7 @@ public class StatusMessageFactory implements SlotEventsChannel {
   private final CombinedChainDataClient combinedChainDataClient;
   private final AtomicReference<Optional<UInt64>> maybeEarliestAvailableSlot =
       new AtomicReference<>(Optional.empty());
+  private final boolean supportsEarliestAvailableSlot;
 
   public StatusMessageFactory(
       final Spec spec,
@@ -51,6 +54,8 @@ public class StatusMessageFactory implements SlotEventsChannel {
       final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.combinedChainDataClient = recentChainData;
+
+    supportsEarliestAvailableSlot = spec.isMilestoneSupported(SpecMilestone.FULU);
 
     metricsSystem.createGauge(
         TekuMetricCategory.BEACON,
@@ -111,14 +116,33 @@ public class StatusMessageFactory implements SlotEventsChannel {
 
   @Override
   public void onSlot(final UInt64 slot) {
-    if (spec.computeStartSlotAtEpoch(combinedChainDataClient.getCurrentEpoch()).equals(slot)) {
+    final boolean isStartOfEpoch =
+        spec.computeStartSlotAtEpoch(combinedChainDataClient.getCurrentEpoch()).equals(slot);
+    if (isStartOfEpoch && supportsEarliestAvailableSlot) {
       updateEarliestAvailableSlot();
     }
   }
 
   private void updateEarliestAvailableSlot() {
-    combinedChainDataClient
-        .getEarliestAvailableBlockSlot()
+    final SafeFuture<Optional<UInt64>> earliestAvailableBlockSlotFuture =
+        combinedChainDataClient.getEarliestAvailableBlockSlot();
+    final SafeFuture<Optional<UInt64>> earliestDataColumnSidecarSlotFuture =
+        combinedChainDataClient.getEarliestAvailableDataColumnSlotWithFallback();
+
+    final BiFunction<Optional<UInt64>, Optional<UInt64>, Optional<UInt64>>
+        combineEarliestSlotFunction =
+            (blockEarliestAvailableSlot, dataColumnEarliestAvailableSlot) -> {
+              if (blockEarliestAvailableSlot.isPresent()
+                  && dataColumnEarliestAvailableSlot.isPresent()) {
+                return Optional.ofNullable(
+                    blockEarliestAvailableSlot.get().max(dataColumnEarliestAvailableSlot.get()));
+              } else {
+                return Optional.empty();
+              }
+            };
+
+    earliestAvailableBlockSlotFuture
+        .thenCombine(earliestDataColumnSidecarSlotFuture, combineEarliestSlotFunction)
         .thenAccept(
             maybeSlot -> {
               maybeSlot.ifPresent(

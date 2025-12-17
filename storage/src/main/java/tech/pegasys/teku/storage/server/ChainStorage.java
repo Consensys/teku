@@ -440,7 +440,10 @@ public class ChainStorage
     return SafeFuture.of(
         () -> {
           try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
-              database.streamDataColumnIdentifiers(startSlot, endSlot).limit(limit.longValue())) {
+              database
+                  .streamDataColumnIdentifiers(startSlot, endSlot)
+                  .limit(
+                      limit.isGreaterThan(Long.MAX_VALUE) ? Long.MAX_VALUE : limit.longValue())) {
             return dataColumnIdentifiersStream.toList();
           }
         });
@@ -459,6 +462,16 @@ public class ChainStorage
   @Override
   public SafeFuture<Void> onFirstCustodyIncompleteSlot(final UInt64 slot) {
     return SafeFuture.fromRunnable(() -> database.setFirstCustodyIncompleteSlot(slot));
+  }
+
+  @Override
+  public SafeFuture<Void> onEarliestAvailableDataColumnSlot(final UInt64 slot) {
+    return SafeFuture.fromRunnable(() -> database.setEarliestAvailableDataColumnSlot(slot));
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot() {
+    return SafeFuture.of(database::getEarliestAvailableDataColumnSlot);
   }
 
   @Override

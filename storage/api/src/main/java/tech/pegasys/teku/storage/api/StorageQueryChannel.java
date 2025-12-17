@@ -100,6 +100,8 @@ public interface StorageQueryChannel extends ChannelInterface {
    */
   SafeFuture<Optional<UInt64>> getEarliestAvailableBlobSidecarSlot();
 
+  SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot();
+
   SafeFuture<Optional<BlobSidecar>> getBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
   SafeFuture<Optional<BlobSidecar>> getNonCanonicalBlobSidecar(SlotAndBlockRootAndBlobIndex key);
