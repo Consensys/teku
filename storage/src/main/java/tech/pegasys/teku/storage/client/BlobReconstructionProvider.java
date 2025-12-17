@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.client;
 
+import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.emptyList;
 
 import com.google.common.collect.Streams;
@@ -90,33 +91,45 @@ public class BlobReconstructionProvider {
                             : combinedChainDataClient.getNonCanonicalSidecar(identifier)))
         .thenCompose(
             sidecarOptionals -> {
+              final List<DataColumnSidecar> locallyFoundSidecars =
+                  sidecarOptionals.stream().filter(Optional::isPresent).map(Optional::get).toList();
+
+              if (locallyFoundSidecars.size() == slotAndIdentifiers.size()) {
+                // we have all we need from local DB
+                return SafeFuture.completedFuture(
+                    reconstructBlobsFromDataColumns(
+                        sidecarOptionals.stream().map(Optional::orElseThrow).toList(),
+                        blobIndices));
+              }
+
+              if (!networkRetriever.isEnabled()) {
+                // We can't attempt to get missing sidecars from network
+                return SafeFuture.completedFuture(emptyList());
+              }
+
               final List<DataColumnSlotAndIdentifier> missingSidecars =
                   IntStream.range(0, slotAndIdentifiers.size())
                       .filter(idx -> sidecarOptionals.get(idx).isEmpty())
                       .mapToObj(slotAndIdentifiers::get)
                       .toList();
 
-              if (!missingSidecars.isEmpty() && !networkRetriever.isEnabled()) {
-                // We will not be able to reconstruct if there is a gap
-                return SafeFuture.completedFuture(emptyList());
-              }
-
               return networkRetriever
                   .retrieveDataColumnSidecars(missingSidecars)
                   .thenApply(
                       retrievedDataColumnSidecars -> {
                         if (missingSidecars.size() != retrievedDataColumnSidecars.size()) {
-                          // Not able to retrieve all columns, return nothing
+                          // Not able to retrieve all requested columns
                           return emptyList();
                         }
                         var completeDataColumns =
                             Streams.concat(
                                     retrievedDataColumnSidecars.stream(),
-                                    sidecarOptionals.stream()
-                                        .filter(Optional::isPresent)
-                                        .map(Optional::get))
+                                    locallyFoundSidecars.stream())
                                 .sorted(Comparator.comparing(DataColumnSidecar::getIndex))
                                 .toList();
+                        checkState(
+                            completeDataColumns.size() == slotAndIdentifiers.size(),
+                            "Wrong number of columns");
                         return reconstructBlobsFromDataColumns(completeDataColumns, blobIndices);
                       });
             });
