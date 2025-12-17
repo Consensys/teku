@@ -39,8 +39,6 @@ import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
 
 /** Blob provider for post-FULU, reconstructs Blobs from DataColumnSidecars */
 public class BlobReconstructionProvider {
-  private static final Logger LOG = LogManager.getLogger();
-
   private final CombinedChainDataClient combinedChainDataClient;
   private final Spec spec;
   private final Supplier<BlobSchema> blobSchemaSupplier;
