@@ -31,23 +31,30 @@ record DataColumnSamplingTracker(
     List<UInt64> samplingRequirement,
     Set<UInt64> missingColumns,
     AtomicBoolean rpcFetchScheduled,
-    SafeFuture<List<UInt64>> completionFuture) {
+    SafeFuture<List<UInt64>> completionFuture,
+    SafeFuture<List<UInt64>> fetchCompletionFuture,
+    int halfColumnCount) {
   private static final Logger LOG = LogManager.getLogger();
 
   static DataColumnSamplingTracker create(
       final UInt64 slot,
       final Bytes32 blockRoot,
-      final CustodyGroupCountManager custodyGroupCountManager) {
+      final CustodyGroupCountManager custodyGroupCountManager,
+      final int halfColumnCount) {
     final List<UInt64> samplingRequirement = custodyGroupCountManager.getSamplingColumnIndices();
     final Set<UInt64> missingColumns = ConcurrentHashMap.newKeySet(samplingRequirement.size());
     missingColumns.addAll(samplingRequirement);
+    final SafeFuture<List<UInt64>> completionFuture = new SafeFuture<>();
+    final SafeFuture<List<UInt64>> fetchCompletionFuture = new SafeFuture<>();
     return new DataColumnSamplingTracker(
         slot,
         blockRoot,
         samplingRequirement,
         missingColumns,
         new AtomicBoolean(false),
-        new SafeFuture<>());
+        completionFuture,
+        fetchCompletionFuture,
+        halfColumnCount);
   }
 
   boolean add(final DataColumnSlotAndIdentifier columnIdentifier, final RemoteOrigin origin) {
@@ -61,19 +68,32 @@ record DataColumnSamplingTracker(
     if (!removed) {
       LOG.debug("Column {} was already marked as received, origin: {}", columnIdentifier, origin);
       return false;
-    }
-
-    if (missingColumns.isEmpty()) {
+    } else {
       LOG.debug(
           "Sampling complete for slot {} root {} via column {} received via {}",
           slot,
           blockRoot,
           columnIdentifier.columnIndex(),
           origin);
+      if (!completionFuture.isDone()
+          && (samplingRequirement.size() - missingColumns().size()) >= halfColumnCount) {
+        completionFuture.complete(
+            samplingRequirement.stream().filter(idx -> !missingColumns.contains(idx)).toList());
+      }
+    }
+
+    if (missingColumns.isEmpty()) {
+      LOG.debug(
+          "Fetching complete for slot {} root {} via column {} received via {}",
+          slot,
+          blockRoot,
+          columnIdentifier.columnIndex(),
+          origin);
       completionFuture.complete(samplingRequirement);
+      fetchCompletionFuture.complete(samplingRequirement);
     } else {
       LOG.debug(
-          "Sampling still pending for slot {} root {}, remaining columns: {}",
+          "Fetching still pending for slot {} root {}, remaining columns: {}",
           slot,
           blockRoot,
           missingColumns);

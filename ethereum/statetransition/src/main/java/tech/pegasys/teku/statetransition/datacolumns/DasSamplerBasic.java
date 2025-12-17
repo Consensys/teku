@@ -29,6 +29,7 @@ import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
@@ -53,6 +54,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
   private final RPCFetchDelayProvider rpcFetchDelayProvider;
+  private final int halfColumnCount;
 
   public DasSamplerBasic(
       final Spec spec,
@@ -71,6 +73,10 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
     this.retriever = retriever;
     this.custodyGroupCountManager = custodyGroupCountManager;
     this.recentChainData = recentChainData;
+    this.halfColumnCount =
+        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
+                .getNumberOfColumns()
+            / 2;
   }
 
   @VisibleForTesting
@@ -176,7 +182,8 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
         blockRoot,
         k -> {
           final DataColumnSamplingTracker tracker =
-              DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager);
+              DataColumnSamplingTracker.create(
+                  slot, blockRoot, custodyGroupCountManager, halfColumnCount);
           onFirstSeen(slot, blockRoot, tracker);
           return tracker;
         });
@@ -237,15 +244,19 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
               if (tracker.slot().isLessThan(firstNonFinalizedSlot)
                   || recentChainData.containsBlock(tracker.blockRoot())) {
 
-                if (tracker.completionFuture().isDone()) {
+                // outdated, should clean up
+                if (!tracker.completionFuture().isDone()) {
+                  // make sure the future releases any pending waiters
+                  tracker
+                      .completionFuture()
+                      .completeExceptionally(new RuntimeException("DAS sampling expired"));
                   return true;
                 }
 
-                // make sure the future releases any pending waiters
-                tracker
-                    .completionFuture()
-                    .completeExceptionally(new RuntimeException("DAS sampling expired"));
-                return true;
+                // fetch is completed, should clean up
+                if (tracker.fetchCompletionFuture().isDone()) {
+                  return true;
+                }
               }
 
               return false;

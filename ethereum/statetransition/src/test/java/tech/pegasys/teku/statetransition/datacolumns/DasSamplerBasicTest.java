@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import static java.util.Map.entry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -178,7 +179,7 @@ public class DasSamplerBasicTest {
     final Map<UInt64, SafeFuture<DataColumnSidecar>> futureSidecarsByIndex =
         missingColumnSidecars.values().stream()
             .map(DataColumnSidecar::getIndex)
-            .map(index -> Map.entry(index, new SafeFuture<DataColumnSidecar>()))
+            .map(index -> entry(index, new SafeFuture<DataColumnSidecar>()))
             .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
 
     final DataColumnSidecar lateArrivedSidecar =
@@ -366,43 +367,49 @@ public class DasSamplerBasicTest {
 
     final DataColumnSamplingTracker completedTracker = mock(DataColumnSamplingTracker.class);
     when(completedTracker.completionFuture()).thenReturn(SafeFuture.completedFuture(null));
+    when(completedTracker.fetchCompletionFuture()).thenReturn(new SafeFuture<>());
     when(completedTracker.blockRoot()).thenReturn(dataStructureUtil.randomBytes32());
     when(completedTracker.slot()).thenReturn(lastFinalizedSlot.decrement());
 
-    final SafeFuture<List<UInt64>> trackerForFinalizedSlotFuture = new SafeFuture<>();
-    final DataColumnSamplingTracker trackerForFinalizedSlot = mock(DataColumnSamplingTracker.class);
-    when(trackerForFinalizedSlot.completionFuture()).thenReturn(trackerForFinalizedSlotFuture);
-    when(trackerForFinalizedSlot.slot()).thenReturn(lastFinalizedSlot);
+    final DataColumnSamplingTracker fetchCompletedTracker = mock(DataColumnSamplingTracker.class);
+    when(fetchCompletedTracker.completionFuture()).thenReturn(SafeFuture.completedFuture(null));
+    when(fetchCompletedTracker.fetchCompletionFuture())
+        .thenReturn(SafeFuture.completedFuture(null));
+    when(fetchCompletedTracker.blockRoot()).thenReturn(dataStructureUtil.randomBytes32());
+    when(fetchCompletedTracker.slot()).thenReturn(lastFinalizedSlot.decrement());
 
-    final SafeFuture<List<UInt64>> trackerForImportedBlockFuture = new SafeFuture<>();
-    final DataColumnSamplingTracker trackerForImportedBlock = mock(DataColumnSamplingTracker.class);
-    when(trackerForImportedBlock.completionFuture()).thenReturn(trackerForImportedBlockFuture);
-    when(trackerForImportedBlock.slot()).thenReturn(firstNonFinalizedSlot);
-    when(trackerForImportedBlock.blockRoot()).thenReturn(importedBlockRoot);
+    final DataColumnSamplingTracker incompleteTracker = mock(DataColumnSamplingTracker.class);
+    final SafeFuture<List<UInt64>> incompleteTrackerFuture = new SafeFuture<>();
+    when(incompleteTracker.completionFuture()).thenReturn(incompleteTrackerFuture);
+    when(incompleteTracker.fetchCompletionFuture()).thenReturn(new SafeFuture<>());
+    when(incompleteTracker.blockRoot()).thenReturn(dataStructureUtil.randomBytes32());
+    when(incompleteTracker.slot()).thenReturn(lastFinalizedSlot);
 
-    final DataColumnSamplingTracker expectedToRemainTracker = mock(DataColumnSamplingTracker.class);
-    when(expectedToRemainTracker.completionFuture()).thenReturn(new SafeFuture<>());
-    when(expectedToRemainTracker.slot()).thenReturn(firstNonFinalizedSlot);
-    when(expectedToRemainTracker.blockRoot()).thenReturn(dataStructureUtil.randomBytes32());
+    final SafeFuture<List<UInt64>> incompleteTrackerForImportedBlockFuture = new SafeFuture<>();
+    final DataColumnSamplingTracker incompleteTrackerForImportedBlock =
+        mock(DataColumnSamplingTracker.class);
+    when(incompleteTrackerForImportedBlock.completionFuture())
+        .thenReturn(incompleteTrackerForImportedBlockFuture);
+    when(incompleteTrackerForImportedBlock.fetchCompletionFuture()).thenReturn(new SafeFuture<>());
+    when(incompleteTrackerForImportedBlock.slot()).thenReturn(firstNonFinalizedSlot);
+    when(incompleteTrackerForImportedBlock.blockRoot()).thenReturn(importedBlockRoot);
 
+    sampler.getRecentlySampledColumnsByRoot().put(completedTracker.blockRoot(), completedTracker);
     sampler
         .getRecentlySampledColumnsByRoot()
-        .put(dataStructureUtil.randomBytes32(), completedTracker);
+        .put(fetchCompletedTracker.blockRoot(), fetchCompletedTracker);
+    sampler.getRecentlySampledColumnsByRoot().put(incompleteTracker.blockRoot(), incompleteTracker);
     sampler
         .getRecentlySampledColumnsByRoot()
-        .put(dataStructureUtil.randomBytes32(), trackerForFinalizedSlot);
-    sampler
-        .getRecentlySampledColumnsByRoot()
-        .put(dataStructureUtil.randomBytes32(), trackerForImportedBlock);
-    sampler
-        .getRecentlySampledColumnsByRoot()
-        .put(dataStructureUtil.randomBytes32(), expectedToRemainTracker);
+        .put(incompleteTrackerForImportedBlock.blockRoot(), incompleteTrackerForImportedBlock);
 
     sampler.onSlot(UInt64.valueOf(20));
 
-    assertThat(sampler.getRecentlySampledColumnsByRoot()).containsValue(expectedToRemainTracker);
-    assertThat(trackerForImportedBlockFuture).isCompletedExceptionally();
-    assertThat(trackerForFinalizedSlotFuture).isCompletedExceptionally();
+    // DA check is completed but fetch is not yet completed for this one
+    assertThat(sampler.getRecentlySampledColumnsByRoot())
+        .containsExactly(entry(completedTracker.blockRoot(), completedTracker));
+    assertThat(incompleteTrackerForImportedBlockFuture).isCompletedExceptionally();
+    assertThat(incompleteTrackerFuture).isCompletedExceptionally();
   }
 
   private void assertSamplerTracker(
