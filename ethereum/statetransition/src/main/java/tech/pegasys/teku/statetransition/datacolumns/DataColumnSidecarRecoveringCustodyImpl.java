@@ -291,15 +291,18 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   }
 
   private void createOrUpdateRecoveryTaskForDataColumnSidecar(final DataColumnSidecar sidecar) {
-    final RecoveryTask task =
-        recoveryTasks.computeIfAbsent(
-            sidecar.getSlotAndBlockRoot(),
-            __ ->
-                new RecoveryTask(
-                    sidecar.getSlotAndBlockRoot(),
-                    new ConcurrentHashMap<>(),
-                    new AtomicBoolean(false),
-                    new AtomicBoolean(false)));
+    final RecoveryTask task;
+    synchronized (recoveryTasks) {
+      task =
+          recoveryTasks.computeIfAbsent(
+              sidecar.getSlotAndBlockRoot(),
+              __ ->
+                  new RecoveryTask(
+                      sidecar.getSlotAndBlockRoot(),
+                      new ConcurrentHashMap<>(),
+                      new AtomicBoolean(false),
+                      new AtomicBoolean(false)));
+    }
     task.existingSidecars().put(DataColumnSlotAndIdentifier.fromDataColumn(sidecar), sidecar);
     maybeStartRecovery(task);
   }
