@@ -55,21 +55,38 @@ public class DataColumnSidecarNetworkRetrieverImplTest {
 
   @Test
   void shouldReturnSidecarsWhenSuccessful() {
+    var pendingSidecar2 = new SafeFuture<DataColumnSidecar>();
     when(retriever.apply(id1)).thenReturn(SafeFuture.completedFuture(sidecar1));
-    when(retriever.apply(id2)).thenReturn(SafeFuture.completedFuture(sidecar2));
+    when(retriever.apply(id2)).thenReturn(pendingSidecar2);
 
     final SafeFuture<List<DataColumnSidecar>> result =
         networkRetriever.retrieveDataColumnSidecars(List.of(id1, id2));
 
-    assertThat(result).isCompleted();
-    assertThat(result.join()).containsExactly(sidecar1, sidecar2);
-
-    // Verify flusher was called to trigger the batch
     verify(retrieverFlusher).run();
 
-    // verify sidecars written
     verify(dbWriter).apply(sidecar1);
+
+    assertThat(result).isNotCompleted();
+
+    pendingSidecar2.complete(sidecar2);
     verify(dbWriter).apply(sidecar2);
+
+    assertThat(result).isCompleted();
+    assertThat(result.join()).containsExactly(sidecar1, sidecar2);
+  }
+
+  @Test
+  void shouldNotFailIfDbWriteFails() {
+    when(retriever.apply(id1)).thenReturn(SafeFuture.completedFuture(sidecar1));
+    when(dbWriter.apply(sidecar1)).thenReturn(SafeFuture.failedFuture(new RuntimeException()));
+
+    final SafeFuture<List<DataColumnSidecar>> result =
+        networkRetriever.retrieveDataColumnSidecars(List.of(id1));
+
+    verify(dbWriter).apply(sidecar1);
+
+    assertThat(result).isCompleted();
+    assertThat(result.join()).containsExactly(sidecar1);
   }
 
   @Test
@@ -98,7 +115,8 @@ public class DataColumnSidecarNetworkRetrieverImplTest {
     assertThat(result).isCompleted();
     assertThat(result.join()).isEmpty();
 
-    verify(retrieverFlusher).run();
+    // sidecar1 has been written anyway
+    verify(dbWriter).apply(sidecar1);
   }
 
   @Test
@@ -125,5 +143,10 @@ public class DataColumnSidecarNetworkRetrieverImplTest {
   @Test
   void isEnabled() {
     assertThat(networkRetriever.isEnabled()).isTrue();
+  }
+
+  @Test
+  void disabledIsDisabled() {
+    assertThat(DataColumnSidecarNetworkRetriever.DISABLED.isEnabled()).isFalse();
   }
 }

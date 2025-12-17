@@ -59,8 +59,9 @@ public class DataColumnSidecarNetworkRetrieverImpl implements DataColumnSidecarN
                       .finish(
                           error ->
                               LOG.debug(
-                                  "Failed to retrieve data column sidecars for column {}",
-                                  columnId));
+                                  "Failed to write data column sidecars for column {}",
+                                  columnId,
+                                  error));
                   return rpcRequest;
                 })
             .toList();
