@@ -131,7 +131,7 @@ public class BeaconRestApiOptions {
   private Integer validatorThreads;
 
   @Option(
-      names = {"--get-blobs-api-p2p-sidecars-download-enabled"},
+      names = {"--rest-api-get-blobs-sidecars-download-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
       description =
@@ -142,7 +142,7 @@ public class BeaconRestApiOptions {
       BeaconRestApiConfig.DEFAULT_GET_BLOBS_API_P2P_SIDECAR_DOWNLOAD_ENABLED;
 
   @Option(
-      names = {"--get-blobs-sidecars-download-timeout"},
+      names = {"--rest-api-get-blobs-sidecars-download-timeout"},
       paramLabel = "<INTEGER>",
       description = "Sidecars download timeout in seconds",
       arity = "1")
