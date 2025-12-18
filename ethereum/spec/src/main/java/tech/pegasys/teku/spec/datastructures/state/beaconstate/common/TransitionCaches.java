@@ -51,8 +51,7 @@ public class TransitionCaches {
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
-          NoOpCache.getNoOpCache(),
-          ValidatorIndexCache.NO_OP_INSTANCE,
+          SharedBeaconStateCaches.NO_OP_INSTANCE,
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
@@ -81,8 +80,7 @@ public class TransitionCaches {
   private final Cache<UInt64, Int2IntMap> beaconCommitteesSize;
   private final Cache<UInt64, UInt64> attestersTotalBalance;
   private final Cache<UInt64, UInt64> totalActiveBalance;
-  private final Cache<UInt64, BLSPublicKey> validatorsPubKeys;
-  private final ValidatorIndexCache validatorIndexCache;
+  private final SharedBeaconStateCaches sharedBeaconStateCaches;
   private final Cache<Bytes32, IntList> committeeShuffle;
   private final Cache<UInt64, List<UInt64>> effectiveBalances;
   private final Cache<UInt64, UInt64> baseRewardPerIncrement;
@@ -105,8 +103,7 @@ public class TransitionCaches {
     beaconCommitteesSize = cacheFactory.create(MAX_BEACON_COMMITTEES_SIZE_CACHE);
     attestersTotalBalance = cacheFactory.create(MAX_BEACON_COMMITTEE_CACHE);
     totalActiveBalance = cacheFactory.create(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
-    validatorsPubKeys = cacheFactory.create(Integer.MAX_VALUE - 1);
-    validatorIndexCache = new ValidatorIndexCache();
+    sharedBeaconStateCaches = SharedBeaconStateCaches.DEFAULT_INSTANCE;
     committeeShuffle = cacheFactory.create(MAX_COMMITTEE_SHUFFLE_CACHE);
     effectiveBalances = cacheFactory.create(MAX_EFFECTIVE_BALANCE_CACHE);
     syncCommitteeCache = cacheFactory.create(MAX_SYNC_COMMITTEE_CACHE);
@@ -121,8 +118,7 @@ public class TransitionCaches {
       final Cache<UInt64, Int2IntMap> beaconCommitteesSize,
       final Cache<UInt64, UInt64> attestersTotalBalance,
       final Cache<UInt64, UInt64> totalActiveBalance,
-      final Cache<UInt64, BLSPublicKey> validatorsPubKeys,
-      final ValidatorIndexCache validatorIndexCache,
+      final SharedBeaconStateCaches sharedBeaconStateCaches,
       final Cache<Bytes32, IntList> committeeShuffle,
       final Cache<UInt64, List<UInt64>> effectiveBalances,
       final Cache<UInt64, Map<UInt64, SyncSubcommitteeAssignments>> syncCommitteeCache,
@@ -134,8 +130,7 @@ public class TransitionCaches {
     this.beaconCommitteesSize = beaconCommitteesSize;
     this.attestersTotalBalance = attestersTotalBalance;
     this.totalActiveBalance = totalActiveBalance;
-    this.validatorsPubKeys = validatorsPubKeys;
-    this.validatorIndexCache = validatorIndexCache;
+    this.sharedBeaconStateCaches = sharedBeaconStateCaches;
     this.committeeShuffle = committeeShuffle;
     this.effectiveBalances = effectiveBalances;
     this.syncCommitteeCache = syncCommitteeCache;
@@ -192,7 +187,7 @@ public class TransitionCaches {
 
   /** (validator index) -> (validator pub key) cache */
   public Cache<UInt64, BLSPublicKey> getValidatorsPubKeys() {
-    return validatorsPubKeys;
+    return sharedBeaconStateCaches.getValidatorsPubKeys();
   }
 
   /**
@@ -204,7 +199,7 @@ public class TransitionCaches {
    * index {@literal < } total validator count before looking up the cache.
    */
   public ValidatorIndexCache getValidatorIndexCache() {
-    return validatorIndexCache;
+    return sharedBeaconStateCaches.getValidatorIndexCache();
   }
 
   /** (epoch committee seed) -> (validators shuffle for epoch) cache */
@@ -243,8 +238,7 @@ public class TransitionCaches {
         beaconCommitteesSize.copy(),
         attestersTotalBalance.copy(),
         totalActiveBalance.copy(),
-        validatorsPubKeys,
-        validatorIndexCache,
+        sharedBeaconStateCaches,
         committeeShuffle.copy(),
         effectiveBalances.copy(),
         syncCommitteeCache.copy(),
