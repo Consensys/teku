@@ -257,6 +257,9 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
                   tracker
                       .completionFuture()
                       .completeExceptionally(new RuntimeException("DAS sampling expired"));
+                  tracker
+                      .fetchCompletionFuture()
+                      .completeExceptionally(new RuntimeException("DAS sampling expired"));
                   return true;
                 }
 

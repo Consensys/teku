@@ -69,25 +69,22 @@ record DataColumnSamplingTracker(
     if (!removed) {
       LOG.debug("Column {} was already marked as received, origin: {}", columnIdentifier, origin);
       return false;
-    } else {
+    }
+
+    if (isCompletedEarly()) {
+      completionFuture.complete(
+          samplingRequirement.stream().filter(idx -> !missingColumns.contains(idx)).toList());
       LOG.debug(
-          "Sampling complete for slot {} root {} via column {} received via {}",
+          "Partial sampling complete for slot {} root {} via column {} received via {}",
           slot,
           blockRoot,
           columnIdentifier.columnIndex(),
           origin);
-      if (completionColumnCount().isPresent()
-          && !completionFuture.isDone()
-          && (samplingRequirement.size() - missingColumns().size())
-              >= completionColumnCount.get()) {
-        completionFuture.complete(
-            samplingRequirement.stream().filter(idx -> !missingColumns.contains(idx)).toList());
-      }
     }
 
     if (missingColumns.isEmpty()) {
       LOG.debug(
-          "Fetching complete for slot {} root {} via column {} received via {}",
+          "Sampling complete for slot {} root {} via column {} received via {}",
           slot,
           blockRoot,
           columnIdentifier.columnIndex(),
@@ -96,13 +93,28 @@ record DataColumnSamplingTracker(
       fetchCompletionFuture.complete(samplingRequirement);
     } else {
       LOG.debug(
-          "Fetching still pending for slot {} root {}, remaining columns: {}",
+          "Sampling still pending for slot {} root {}, remaining columns: {}",
           slot,
           blockRoot,
           missingColumns);
     }
 
     return true;
+  }
+
+  private boolean isCompletedEarly() {
+    if (completionColumnCount().isEmpty()) {
+      // Possibility of early completion is disabled
+      return false;
+    }
+
+    if (completionFuture.isDone()) {
+      // Already completed
+      return false;
+    }
+
+    final int alreadySampledColumnCount = samplingRequirement.size() - missingColumns().size();
+    return alreadySampledColumnCount >= completionColumnCount.get();
   }
 
   List<DataColumnSlotAndIdentifier> getMissingColumnIdentifiers() {
