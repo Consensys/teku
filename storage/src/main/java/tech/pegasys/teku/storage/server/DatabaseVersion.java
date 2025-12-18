@@ -32,7 +32,11 @@ public enum DatabaseVersion {
   public static final DatabaseVersion DEFAULT_VERSION = V6;
   private final String value;
 
-  public static boolean isLevelDbSupported() {
+  static {
+    tryLoadLeveldbNativeLibrary();
+  }
+
+  public static boolean tryLoadLeveldbNativeLibrary() {
     // Use JNI to load as the native library is loaded in a static block
     try {
       LevelDbJniLoader.loadNativeLibrary();
@@ -46,7 +50,7 @@ public enum DatabaseVersion {
     }
   }
 
-  public static boolean isRocksDbSupported() {
+  public static boolean tryLoadRocksdbLibrary() {
     try {
       RocksDB.loadLibrary();
       return true;

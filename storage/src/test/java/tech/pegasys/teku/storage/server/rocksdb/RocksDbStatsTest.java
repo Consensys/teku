@@ -36,7 +36,7 @@ class RocksDbStatsTest {
 
   @BeforeAll
   static void setUp() {
-    assumeThat(DatabaseVersion.isRocksDbSupported())
+    assumeThat(DatabaseVersion.tryLoadRocksdbLibrary())
         .describedAs("RocksDB support required")
         .isTrue();
   }
