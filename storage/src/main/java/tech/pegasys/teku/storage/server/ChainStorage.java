@@ -440,7 +440,10 @@ public class ChainStorage
     return SafeFuture.of(
         () -> {
           try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
-              database.streamDataColumnIdentifiers(startSlot, endSlot).limit(limit.longValue())) {
+              database
+                  .streamDataColumnIdentifiers(startSlot, endSlot)
+                  .limit(
+                      limit.isGreaterThan(Long.MAX_VALUE) ? Long.MAX_VALUE : limit.longValue())) {
             return dataColumnIdentifiersStream.toList();
           }
         });

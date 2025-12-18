@@ -39,7 +39,7 @@ public class AsyncRunnerEventThread implements EventThread {
 
   @Override
   public void checkOnEventThread() {
-    checkState(isEventThread(), "Attempting to access " + name + " resource from non-event thread");
+    checkState(isEventThread(), "Attempting to access %s resource from non-event thread", name);
   }
 
   private boolean isEventThread() {

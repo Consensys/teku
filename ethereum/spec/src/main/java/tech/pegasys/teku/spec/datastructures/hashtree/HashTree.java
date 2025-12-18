@@ -128,7 +128,7 @@ public class HashTree {
    */
   public void processHashesInChainWhile(
       final Bytes32 head, final HaltableNodeProcessor nodeProcessor) {
-    checkArgument(contains(head), "Unknown root supplied: " + head);
+    checkArgument(contains(head), "Unknown root supplied: %s", head);
 
     Optional<Bytes32> currentRoot = Optional.of(head);
     Optional<Bytes32> parentRoot = currentRoot.flatMap(this::getParent);

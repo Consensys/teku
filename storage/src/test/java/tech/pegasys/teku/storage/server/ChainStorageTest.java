@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -35,12 +36,14 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -48,15 +51,18 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystemArgumentsProvider;
 
 public class ChainStorageTest {
   private static final Logger LOG = LogManager.getLogger();
+  private static final long CHAIN_LENGTH_EPOCHS = 3;
   @TempDir Path dataDirectory;
   private StorageSystem storageSystem;
   private ChainBuilder chainBuilder;
   private ChainStorage chainStorage;
 
-  private final Spec spec = TestSpecFactory.createMinimalDeneb();
+  private final Spec spec =
+      TestSpecFactory.createMinimalWithFuluForkEpoch(UInt64.valueOf(CHAIN_LENGTH_EPOCHS));
 
   private void setup(
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
+
     storageSystem = storageSystemSupplier.get(dataDirectory, spec);
     chainStorage = storageSystem.chainStorage();
     chainBuilder = storageSystem.chainBuilder();
@@ -127,26 +133,63 @@ public class ChainStorageTest {
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier,
       final boolean initializeWithAnchorStateAlone,
       final boolean executeInBatches) {
-    testOnFinalized(storageSystemSupplier, initializeWithAnchorStateAlone, executeInBatches, false);
+    testOnFinalized(
+        storageSystemSupplier, initializeWithAnchorStateAlone, executeInBatches, false, false);
   }
 
   public void testOnFinalizedBlocksAndBlobSidecars(
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier,
       final boolean initializeWithAnchorStateAlone,
       final boolean executeInBatches) {
-    testOnFinalized(storageSystemSupplier, initializeWithAnchorStateAlone, executeInBatches, true);
+    testOnFinalized(
+        storageSystemSupplier, initializeWithAnchorStateAlone, executeInBatches, true, false);
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  public void
+      onFinalizedBlocksAndDataColumnSidecars_shouldAcceptValidBlocks_startFromAnchorWithBlock(
+          final String storageType,
+          final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
+    testOnFinalizedBlocksAndDataColumnSidecars(storageSystemSupplier, false, false);
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  public void
+      onFinalizedBlocksAndDataColumnSidecars_shouldAcceptValidBlocks_startFromAnchorWithoutBlock(
+          final String storageType,
+          final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
+    testOnFinalizedBlocksAndDataColumnSidecars(storageSystemSupplier, true, false);
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  public void onFinalizedBlocksAndDataColumnSidecars_shouldAcceptValidBlocks_inBatches(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
+    testOnFinalizedBlocksAndDataColumnSidecars(storageSystemSupplier, true, true);
+  }
+
+  public void testOnFinalizedBlocksAndDataColumnSidecars(
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier,
+      final boolean initializeWithAnchorStateAlone,
+      final boolean executeInBatches) {
+    testOnFinalized(
+        storageSystemSupplier, initializeWithAnchorStateAlone, executeInBatches, false, true);
   }
 
   public void testOnFinalized(
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier,
       final boolean initializeWithAnchorStateAlone,
       final boolean executeInBatches,
-      final boolean testBlobSidecars) {
+      final boolean testBlobSidecars,
+      final boolean testDataColumnSidecars) {
     setup(storageSystemSupplier);
 
     // Build small chain
     chainBuilder.generateBlocksUpToSlot(
-        spec.slotsPerEpoch(ZERO) * 3L,
+        spec.slotsPerEpoch(ZERO) * CHAIN_LENGTH_EPOCHS,
         ChainBuilder.BlockOptions.create().setGenerateRandomBlobs(true));
 
     // Retrieve anchor data
@@ -169,30 +212,13 @@ public class ChainStorageTest {
       firstMissingBlockSlot = anchorBlockAndState.getSlot().minus(1).longValue();
     }
 
-    // Now try to store missing historical blocks and blob sidecars
+    // Collect missing ChainStorage Blocks
     final List<SignedBeaconBlock> missingHistoricalBlocks =
-        chainBuilder
-            .streamBlocksAndStates(0, firstMissingBlockSlot)
-            .map(SignedBlockAndState::getBlock)
-            .collect(Collectors.toList());
+        getMissingHistoricalBlocks(firstMissingBlockSlot);
 
+    // Collect missing ChainStorage BlobSidecars
     final Map<SlotAndBlockRoot, List<BlobSidecar>> missingHistoricalBlobSidecars =
-        chainBuilder
-            .streamBlobSidecars(0, firstMissingBlockSlot)
-            .flatMap(entry -> entry.getValue().stream())
-            .collect(Collectors.groupingBy(BlobSidecar::getSlotAndBlockRoot));
-
-    // Sanity check - blocks and blob sidecars should be unavailable initially
-    for (SignedBeaconBlock missingHistoricalBlock : missingHistoricalBlocks) {
-      final SafeFuture<Optional<SignedBeaconBlock>> blockResult =
-          chainStorage.getBlockByBlockRoot(missingHistoricalBlock.getRoot());
-      assertThatSafeFuture(blockResult).isCompletedWithEmptyOptional();
-      final SafeFuture<List<SlotAndBlockRootAndBlobIndex>> sidecarKeysResult =
-          chainStorage.getBlobSidecarKeys(
-              missingHistoricalBlock.getSlot(), missingHistoricalBlock.getSlot(), Long.MAX_VALUE);
-      assertThatSafeFuture(sidecarKeysResult).isCompletedWithValueMatching(List::isEmpty);
-    }
-
+        getMissingHistoricalBlobSidecars(missingHistoricalBlocks, firstMissingBlockSlot);
     final Map<SlotAndBlockRoot, List<BlobSidecar>> finalizedBlobSidecars =
         testBlobSidecars ? missingHistoricalBlobSidecars : Map.of();
     assertThat(chainStorage.getEarliestAvailableBlobSidecarSlot())
@@ -204,9 +230,27 @@ public class ChainStorageTest {
               .sorted(Map.Entry.comparingByKey())
               .filter(entry -> !entry.getValue().isEmpty())
               .findFirst()
-              .map(entry -> entry.getValue().get(0).getSlot());
+              .map(entry -> entry.getValue().getFirst().getSlot());
     }
 
+    // Collect missing ChainStorage DataColumnSidecars
+    final Map<SlotAndBlockRoot, List<DataColumnSidecar>> missingHistoricalDataColumnSidecars =
+        getMissingHistoricalDataColumnSidecars(firstMissingBlockSlot);
+    final Map<SlotAndBlockRoot, List<DataColumnSidecar>> finalizedDataColumnSidecars =
+        testDataColumnSidecars ? missingHistoricalDataColumnSidecars : Map.of();
+    assertThat(chainStorage.getEarliestAvailableDataColumnSlot())
+        .isCompletedWithValueMatching(Optional::isEmpty);
+    Optional<UInt64> maybeEarliestDataColumnSidecarSlot = Optional.empty();
+    if (!finalizedDataColumnSidecars.isEmpty()) {
+      maybeEarliestDataColumnSidecarSlot =
+          finalizedDataColumnSidecars.entrySet().stream()
+              .sorted(Map.Entry.comparingByKey())
+              .filter(entry -> !entry.getValue().isEmpty())
+              .findFirst()
+              .map(entry -> entry.getValue().getFirst().getSlot());
+    }
+
+    // Store Block and BlobSidecars
     if (executeInBatches) {
       final int batchSize = missingHistoricalBlocks.size() / 3;
       final List<List<SignedBeaconBlock>> batches =
@@ -223,13 +267,22 @@ public class ChainStorageTest {
               missingHistoricalBlocks, finalizedBlobSidecars, maybeEarliestBlobSidecarSlot)
           .finishDebug(LOG);
     }
+    // Store DataColumnSidecars
+    maybeEarliestDataColumnSidecarSlot.ifPresent(
+        uInt64 -> chainStorage.onEarliestAvailableDataColumnSlot(uInt64).finishDebug(LOG));
+    finalizedDataColumnSidecars
+        .values()
+        .forEach(
+            listOfSidecars ->
+                listOfSidecars.forEach(
+                    sidecar -> chainStorage.onNewSidecar(sidecar).finishDebug(LOG)));
 
     // Verify blocks and blob sidecars are now available
     for (SignedBeaconBlock missingHistoricalBlock : missingHistoricalBlocks) {
       final SafeFuture<Optional<SignedBeaconBlock>> blockResult =
           chainStorage.getBlockByBlockRoot(missingHistoricalBlock.getRoot());
       assertThatSafeFuture(blockResult).isCompletedWithOptionalContaining(missingHistoricalBlock);
-      final SafeFuture<List<BlobSidecar>> sidecarsResult =
+      final SafeFuture<List<BlobSidecar>> blobSidecarsResult =
           chainStorage
               .getBlobSidecarKeys(
                   missingHistoricalBlock.getSlot(),
@@ -245,9 +298,10 @@ public class ChainStorageTest {
                                       .filter(Optional::isPresent)
                                       .map(Optional::get)
                                       .collect(Collectors.toList())));
+
       if (testBlobSidecars) {
         // verify blob sidecars for a block are available
-        assertThatSafeFuture(sidecarsResult)
+        assertThatSafeFuture(blobSidecarsResult)
             .isCompletedWithValueMatching(
                 list ->
                     list.equals(
@@ -258,11 +312,109 @@ public class ChainStorageTest {
         assertThat(chainStorage.getEarliestAvailableBlobSidecarSlot())
             .isCompletedWithValue(maybeEarliestBlobSidecarSlot);
       } else {
-        assertThatSafeFuture(sidecarsResult).isCompletedWithValueMatching(List::isEmpty);
+        assertThatSafeFuture(blobSidecarsResult).isCompletedWithValueMatching(List::isEmpty);
         assertThat(chainStorage.getEarliestAvailableBlobSidecarSlot())
             .isCompletedWithValueMatching(Optional::isEmpty);
       }
     }
+
+    // Verify DataColumnSidecars are now available
+    for (Map.Entry<SlotAndBlockRoot, List<DataColumnSidecar>> missingDataColumnSidecar :
+        missingHistoricalDataColumnSidecars.entrySet()) {
+
+      final SafeFuture<List<DataColumnSidecar>> dataColumnSidecarsResult =
+          chainStorage
+              .getDataColumnIdentifiers(
+                  missingDataColumnSidecar.getKey().getSlot(),
+                  missingDataColumnSidecar.getKey().getSlot(),
+                  UInt64.MAX_VALUE)
+              .thenCompose(
+                  list ->
+                      SafeFuture.collectAll(list.stream().map(key -> chainStorage.getSidecar(key)))
+                          .thenApply(
+                              listOfOptionals ->
+                                  listOfOptionals.stream()
+                                      .filter(Optional::isPresent)
+                                      .map(Optional::get)
+                                      .collect(Collectors.toList())));
+
+      if (testDataColumnSidecars) {
+        // verify data column sidecars for a block are available
+        assertThatSafeFuture(dataColumnSidecarsResult)
+            .isCompletedWithValueMatching(
+                list ->
+                    list.equals(
+                        missingHistoricalDataColumnSidecars.getOrDefault(
+                            missingDataColumnSidecar.getKey(), Collections.emptyList())));
+        assertThat(maybeEarliestDataColumnSidecarSlot).isNotEmpty();
+        assertThat(chainStorage.getEarliestAvailableDataColumnSlot())
+            .isCompletedWithValue(maybeEarliestDataColumnSidecarSlot);
+      } else {
+        assertThatSafeFuture(dataColumnSidecarsResult).isCompletedWithValueMatching(List::isEmpty);
+        assertThat(chainStorage.getEarliestAvailableDataColumnSlot())
+            .isCompletedWithValueMatching(Optional::isEmpty);
+      }
+    }
+  }
+
+  private List<SignedBeaconBlock> getMissingHistoricalBlocks(final long firstMissingBlockSlot) {
+    final List<SignedBeaconBlock> missingHistoricalBlocks =
+        chainBuilder
+            .streamBlocksAndStates(0, firstMissingBlockSlot)
+            .map(SignedBlockAndState::getBlock)
+            .toList();
+    for (SignedBeaconBlock missingHistoricalBlock : missingHistoricalBlocks) {
+      final SafeFuture<Optional<SignedBeaconBlock>> blockResult =
+          chainStorage.getBlockByBlockRoot(missingHistoricalBlock.getRoot());
+      assertThatSafeFuture(blockResult).isCompletedWithEmptyOptional();
+    }
+
+    return missingHistoricalBlocks;
+  }
+
+  private Map<SlotAndBlockRoot, List<BlobSidecar>> getMissingHistoricalBlobSidecars(
+      final List<SignedBeaconBlock> missingHistoricalBlocks, final long firstMissingBlockSlot) {
+    final Map<SlotAndBlockRoot, List<BlobSidecar>> missingHistoricalBlobSidecars =
+        chainBuilder
+            .streamBlobSidecars(0, firstMissingBlockSlot)
+            .flatMap(entry -> entry.getValue().stream())
+            .collect(Collectors.groupingBy(BlobSidecar::getSlotAndBlockRoot));
+    for (SignedBeaconBlock missingHistoricalBlock : missingHistoricalBlocks) {
+      final SafeFuture<List<SlotAndBlockRootAndBlobIndex>> sidecarKeysResult =
+          chainStorage.getBlobSidecarKeys(
+              missingHistoricalBlock.getSlot(), missingHistoricalBlock.getSlot(), Long.MAX_VALUE);
+      assertThatSafeFuture(sidecarKeysResult).isCompletedWithValueMatching(List::isEmpty);
+    }
+
+    return missingHistoricalBlobSidecars;
+  }
+
+  private Map<SlotAndBlockRoot, List<DataColumnSidecar>> getMissingHistoricalDataColumnSidecars(
+      final long firstMissingBlockSlot) {
+    final int dataColumnSidecars = spec.getNumberOfDataColumns().orElse(128);
+    final Map<SlotAndBlockRoot, List<DataColumnSidecar>> missingHistoricalDataColumnSidecars =
+        chainBuilder
+            .streamDataColumnSidecars(
+                0,
+                firstMissingBlockSlot,
+                IntStream.range(0, dataColumnSidecars)
+                    .mapToObj(UInt64::valueOf)
+                    .collect(Collectors.toList()))
+            .flatMap(entry -> entry.getValue().stream())
+            .collect(Collectors.groupingBy(DataColumnSidecar::getSlotAndBlockRoot));
+
+    for (Map.Entry<SlotAndBlockRoot, List<DataColumnSidecar>> missingDataColumnSidecar :
+        missingHistoricalDataColumnSidecars.entrySet()) {
+      for (DataColumnSidecar dataColumnSidecar : missingDataColumnSidecar.getValue()) {
+        final DataColumnSlotAndIdentifier key =
+            DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar);
+        final SafeFuture<Optional<DataColumnSidecar>> dataColumnSidecarResult =
+            chainStorage.getSidecar(key);
+        assertThatSafeFuture(dataColumnSidecarResult).isCompletedWithEmptyOptional();
+      }
+    }
+
+    return missingHistoricalDataColumnSidecars;
   }
 
   @ParameterizedTest(name = "{0}")

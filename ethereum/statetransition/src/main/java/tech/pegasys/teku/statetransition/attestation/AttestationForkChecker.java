@@ -38,11 +38,6 @@ public class AttestationForkChecker {
     }
   }
 
-  public boolean areAttestationsFromCorrectFork(
-      final MatchingDataAttestationGroup attestationGroup) {
-    return attestationGroup.matchesCommitteeShufflingSeed(validCommitteeShufflingSeeds);
-  }
-
   public boolean areAttestationsFromCorrectForkV2(
       final MatchingDataAttestationGroupV2 attestationGroup) {
     return attestationGroup.matchesCommitteeShufflingSeed(validCommitteeShufflingSeeds);

@@ -52,7 +52,7 @@ public abstract class AbstractTypeDefRequest {
       final ValidatorApiMethod apiMethod, final Map<String, String> urlParams) {
     checkNotNull(apiMethod, "apiMethod not defined");
     final HttpUrl httpUrl = baseEndpoint.resolve(apiMethod.getPath(urlParams));
-    checkNotNull(httpUrl, "Could not create endpoint builder from baseEndpoint: " + apiMethod);
+    checkNotNull(httpUrl, "Could not create endpoint builder from baseEndpoint: %s", apiMethod);
     return httpUrl.newBuilder();
   }
 
