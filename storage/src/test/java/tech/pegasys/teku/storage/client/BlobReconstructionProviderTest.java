@@ -117,12 +117,12 @@ public class BlobReconstructionProviderTest {
         miscHelpersFulu.constructDataColumnSidecars(
             block.getMessage(), block.asHeader(), blobsAndMatrix.extendedMatrix);
 
-    var missingIndices = List.of(UInt64.valueOf(10), UInt64.valueOf(12));
-    var missingDataColumnSlotAndIdentifiers =
+    final var missingIndices = List.of(UInt64.valueOf(10), UInt64.valueOf(12));
+    final var missingDataColumnSlotAndIdentifiers =
         List.of(
             DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecars.get(10)),
             DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecars.get(12)));
-    var missingDataColumn = List.of(dataColumnSidecars.get(10), dataColumnSidecars.get(12));
+    final var missingDataColumn = List.of(dataColumnSidecars.get(10), dataColumnSidecars.get(12));
 
     when(client.getSidecar(any(DataColumnSlotAndIdentifier.class)))
         .thenAnswer(
@@ -171,8 +171,8 @@ public class BlobReconstructionProviderTest {
         miscHelpersFulu.constructDataColumnSidecars(
             block.getMessage(), block.asHeader(), blobsAndMatrix.extendedMatrix);
 
-    var missingIndices = List.of(UInt64.valueOf(10), UInt64.valueOf(12));
-    var missingDataColumnSlotAndIdentifiers =
+    final var missingIndices = List.of(UInt64.valueOf(10), UInt64.valueOf(12));
+    final var missingDataColumnSlotAndIdentifiers =
         List.of(
             DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecars.get(10)),
             DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecars.get(12)));
