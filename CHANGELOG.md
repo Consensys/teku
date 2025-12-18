@@ -13,3 +13,4 @@
 ### Bug Fixes
 
 - added `DOMAIN_BLS_TO_EXECUTION_CHANGE` to spec api output.
+
