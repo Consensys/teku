@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.client;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -24,6 +23,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -316,6 +317,31 @@ public class BlobReconstructionProviderTest {
     verify(client, times(numberOfColumns / 2)).getSidecar(any(DataColumnSlotAndIdentifier.class));
   }
 
+  @Test
+  @Disabled
+  @SuppressWarnings("deprecation")
+  public void regenerateValidBlobsAndCellsFile() {
+    final var block = dataStructureUtil.randomSignedBeaconBlock();
+    final var blobs = List.of(dataStructureUtil.randomValidBlob(), dataStructureUtil.randomValidBlob());
+
+
+    final MiscHelpersFulu miscHelpers =
+            MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
+
+//    List<DataColumnSidecar> sidecars =
+//            miscHelpers.constructDataColumnSidecarsOld(block, blobs);
+
+    final var celldata = blobs.stream().map(b -> {
+      final var sidecars = miscHelpers.constructDataColumnSidecarsOld(block, List.of(b));
+      return new CellData(b.getBytes().toHexString(), sidecars.stream()
+              .map(s -> s.getColumn().get(0).getBytes().toHexString())
+              .toList());
+    }).toList();
+
+    final var result = generateJson(celldata);
+
+  }
+
   private BlobsAndMatrix loadBlobsAndMatrixFixture() {
     final List<CellData> cellData = loadJson();
     final SchemaDefinitionsFulu schemaDefinitionsFulu =
@@ -366,11 +392,26 @@ public class BlobReconstructionProviderTest {
     }
   }
 
+  private String generateJson(final List<CellData> data) {
+    try {
+      return new ObjectMapper()
+              .writerWithDefaultPrettyPrinter() // Optional: makes the JSON human-readable
+              .writeValueAsString(data);
+    } catch (final JsonProcessingException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
   private static class CellData {
     @JsonProperty(value = "blob", required = true)
     private String blob;
 
     @JsonProperty(value = "cells", required = true)
     private List<String> cells;
+
+    public CellData(final String blob, final List<String> cells) {
+      this.blob = blob;
+      this.cells = cells;
+    }
   }
 }
