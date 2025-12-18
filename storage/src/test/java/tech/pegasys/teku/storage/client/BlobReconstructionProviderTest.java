@@ -40,7 +40,9 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -52,6 +54,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
@@ -321,25 +324,38 @@ public class BlobReconstructionProviderTest {
   @Disabled
   @SuppressWarnings("deprecation")
   public void regenerateValidBlobsAndCellsFile() {
-    final var block = dataStructureUtil.randomSignedBeaconBlock();
-    final var blobs = List.of(dataStructureUtil.randomValidBlob(), dataStructureUtil.randomValidBlob());
+    var kzg = KZG.getInstance(false);
+    kzg.loadTrustedSetup(
+        Eth2NetworkConfiguration.class.getResource("mainnet-trusted-setup.txt").toExternalForm(),
+        0);
 
+    spec.reinitializeForTesting(
+        AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
+        AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
+        kzg);
+
+    final var block = dataStructureUtil.randomSignedBeaconBlock();
+    final var blobs =
+        List.of(dataStructureUtil.randomValidBlob(), dataStructureUtil.randomValidBlob());
 
     final MiscHelpersFulu miscHelpers =
-            MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
+        MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
 
-//    List<DataColumnSidecar> sidecars =
-//            miscHelpers.constructDataColumnSidecarsOld(block, blobs);
-
-    final var celldata = blobs.stream().map(b -> {
-      final var sidecars = miscHelpers.constructDataColumnSidecarsOld(block, List.of(b));
-      return new CellData(b.getBytes().toHexString(), sidecars.stream()
-              .map(s -> s.getColumn().get(0).getBytes().toHexString())
-              .toList());
-    }).toList();
+    final var celldata =
+        blobs.stream()
+            .map(
+                b -> {
+                  final var sidecars =
+                      miscHelpers.constructDataColumnSidecarsOld(block, List.of(b));
+                  return new CellData(
+                      b.getBytes().toHexString(),
+                      sidecars.stream()
+                          .map(s -> s.getColumn().get(0).getBytes().toHexString())
+                          .toList());
+                })
+            .toList();
 
     final var result = generateJson(celldata);
-
   }
 
   private BlobsAndMatrix loadBlobsAndMatrixFixture() {
@@ -395,8 +411,8 @@ public class BlobReconstructionProviderTest {
   private String generateJson(final List<CellData> data) {
     try {
       return new ObjectMapper()
-              .writerWithDefaultPrettyPrinter() // Optional: makes the JSON human-readable
-              .writeValueAsString(data);
+          .writerWithDefaultPrettyPrinter() // Optional: makes the JSON human-readable
+          .writeValueAsString(data);
     } catch (final JsonProcessingException e) {
       throw new UncheckedIOException(e);
     }
@@ -413,5 +429,7 @@ public class BlobReconstructionProviderTest {
       this.blob = blob;
       this.cells = cells;
     }
+
+    public CellData() {}
   }
 }
