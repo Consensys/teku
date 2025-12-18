@@ -27,6 +27,7 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
@@ -122,6 +123,7 @@ public class DataProvider {
     private BlobSidecarReconstructionProvider blobSidecarReconstructionProvider;
     private BlobReconstructionProvider blobReconstructionProvider;
     private DataColumnSidecarManager dataColumnSidecarManager;
+    private CustodyGroupCountManager custodyGroupCountManager;
 
     public Builder recentChainData(final RecentChainData recentChainData) {
       this.recentChainData = recentChainData;
@@ -260,6 +262,7 @@ public class DataProvider {
               forkChoiceNotifier,
               recentChainData,
               dataColumnSidecarManager,
+              custodyGroupCountManager,
               spec);
       final ChainDataProvider chainDataProvider =
           new ChainDataProvider(
@@ -294,6 +297,12 @@ public class DataProvider {
 
     public Builder rejectedExecutionSupplier(final IntSupplier rejectedExecutionCountSupplier) {
       this.rejectedExecutionSupplier = rejectedExecutionCountSupplier;
+      return this;
+    }
+
+    public Builder custodyGroupCountManager(
+        final CustodyGroupCountManager custodyGroupCountManager) {
+      this.custodyGroupCountManager = custodyGroupCountManager;
       return this;
     }
   }
