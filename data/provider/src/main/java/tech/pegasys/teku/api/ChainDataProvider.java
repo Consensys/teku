@@ -950,7 +950,6 @@ public class ChainDataProvider {
                   .toVersionDeneb()
                   .map(BeaconBlockBodyDeneb::getBlobKzgCommitments)
                   .map(SszList::size);
-          LOG.debug("PJH root {}, blobCount {}", root, blobCount);
           final Optional<List<UInt64>> columns =
               maybeDataColumnSidecars.map(
                   dataColumnSidecarsAndMetaData ->
