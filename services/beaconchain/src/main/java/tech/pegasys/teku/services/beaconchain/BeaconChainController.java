@@ -247,6 +247,7 @@ import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
+import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
@@ -261,6 +262,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
 import tech.pegasys.teku.storage.client.ValidatorIsConnectedProvider;
+import tech.pegasys.teku.storage.server.DataColumnSidecarNetworkRetrieverImpl;
 import tech.pegasys.teku.storage.store.FileKeyValueStore;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.storage.store.StoreConfig;
@@ -379,10 +381,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ExecutionPayloadBidManager executionPayloadBidManager;
   protected volatile ExecutionPayloadManager executionPayloadManager;
   protected volatile ExecutionProofManager executionProofManager;
+  protected volatile Optional<DataColumnSidecarDB> sidecarDB = Optional.empty();
   protected volatile Optional<DasCustodyBackfiller> dasCustodyBackfiller = Optional.empty();
   protected volatile Optional<DasCustodySync> dasCustodySync = Optional.empty();
   protected volatile Optional<DataColumnSidecarRetriever> recoveringSidecarRetriever =
       Optional.empty();
+  protected volatile Optional<DataColumnSidecarRetriever> simpleSidecarRetriever = Optional.empty();
   protected volatile AvailabilityCheckerFactory<UInt64> dasSamplerManager;
   protected volatile DataAvailabilitySampler dataAvailabilitySampler;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
@@ -906,6 +910,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         DataColumnSidecarDB.create(
             combinedChainDataClient,
             eventChannels.getPublisher(SidecarUpdateChannel.class, beaconAsyncRunner));
+    this.sidecarDB = Optional.of(sidecarDB);
     final DataColumnSidecarDbAccessor dbAccessor =
         DataColumnSidecarDbAccessor.builder(sidecarDB).spec(spec).build();
     final CanonicalBlockResolver canonicalBlockResolver =
@@ -994,6 +999,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dasRpc,
             dasAsyncRunner,
             Duration.ofSeconds(1));
+
+    simpleSidecarRetriever = Optional.of(sidecarRetriever);
 
     final DataColumnSidecarRetriever recoveringSidecarRetriever;
     if (beaconConfig.p2pConfig().isReworkedSidecarRecoveryEnabled()) {
@@ -1418,7 +1425,22 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initBlobReconstructionProvider() {
     LOG.debug("BeaconChainController.initBlobReconstructionProvider()");
-    this.blobReconstructionProvider = new BlobReconstructionProvider(combinedChainDataClient, spec);
+
+    final DataColumnSidecarNetworkRetriever networkRetriever;
+    if (simpleSidecarRetriever.isPresent()
+        && beaconConfig.beaconRestApiConfig().isGetBlobsApiP2pSidecarDownloadEnabled()) {
+      networkRetriever =
+          new DataColumnSidecarNetworkRetrieverImpl(
+              simpleSidecarRetriever.get()::retrieve,
+              simpleSidecarRetriever.get()::flush,
+              sidecarDB.orElseThrow()::addSidecar,
+              beaconConfig.beaconRestApiConfig().getGetBlobsApiP2pSidecarDownloadTimeoutSeconds());
+    } else {
+      networkRetriever = DataColumnSidecarNetworkRetriever.DISABLED;
+    }
+
+    this.blobReconstructionProvider =
+        new BlobReconstructionProvider(combinedChainDataClient, networkRetriever, spec);
   }
 
   protected void initDataProvider() {
@@ -1448,6 +1470,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .proposersDataManager(proposersDataManager)
             .forkChoiceNotifier(forkChoiceNotifier)
             .rejectedExecutionSupplier(rejectedExecutionCountSupplier)
+            .custodyGroupCountManager(custodyGroupCountManager)
             .dataColumnSidecarManager(dataColumnSidecarManager)
             .build();
   }
