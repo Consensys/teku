@@ -347,6 +347,7 @@ public class BlobReconstructionProviderTest {
                 })
             .toList();
 
+    @SuppressWarnings("UnusedVariable")
     final var result = generateJson(celldata);
   }
 
