@@ -285,7 +285,8 @@ public class StubMetricsSystem implements MetricsSystem {
       final String labelValuesString = String.join(",", labelValues);
       Preconditions.checkArgument(
           !labelValuesCache.contains(labelValuesString),
-          "Received label values that were already in use " + labelValuesString);
+          "Received label values that were already in use %s",
+          labelValuesString);
       Preconditions.checkArgument(
           labelValues.length == labelCount,
           "The count of labels used must match the count of labels expected.");
