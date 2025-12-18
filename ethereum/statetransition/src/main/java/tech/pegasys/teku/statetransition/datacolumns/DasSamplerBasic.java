@@ -54,7 +54,6 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
   private final RPCFetchDelayProvider rpcFetchDelayProvider;
-  private final int halfColumnCount;
 
   public DasSamplerBasic(
       final Spec spec,
@@ -73,10 +72,6 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
     this.retriever = retriever;
     this.custodyGroupCountManager = custodyGroupCountManager;
     this.recentChainData = recentChainData;
-    this.halfColumnCount =
-        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
-                .getNumberOfColumns()
-            / 2;
   }
 
   @VisibleForTesting
@@ -183,7 +178,10 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
         k -> {
           final DataColumnSamplingTracker tracker =
               DataColumnSamplingTracker.create(
-                  slot, blockRoot, custodyGroupCountManager, halfColumnCount);
+                  slot,
+                  blockRoot,
+                  custodyGroupCountManager,
+                  SpecConfigFulu.required(spec.atSlot(slot).getConfig()).getNumberOfColumns() / 2);
           onFirstSeen(slot, blockRoot, tracker);
           return tracker;
         });
