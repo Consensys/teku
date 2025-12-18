@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
@@ -54,6 +55,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
   private final RPCFetchDelayProvider rpcFetchDelayProvider;
+  private final boolean halfColumnsSamplingCompletionEnabled;
 
   public DasSamplerBasic(
       final Spec spec,
@@ -63,7 +65,8 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
       final DataColumnSidecarCustody custody,
       final DataColumnSidecarRetriever retriever,
       final CustodyGroupCountManager custodyGroupCountManager,
-      final RecentChainData recentChainData) {
+      final RecentChainData recentChainData,
+      final boolean halfColumnsSamplingCompletionEnabled) {
     this.currentSlotProvider = currentSlotProvider;
     this.rpcFetchDelayProvider = rpcFetchDelayProvider;
     this.spec = spec;
@@ -72,6 +75,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
     this.retriever = retriever;
     this.custodyGroupCountManager = custodyGroupCountManager;
     this.recentChainData = recentChainData;
+    this.halfColumnsSamplingCompletionEnabled = halfColumnsSamplingCompletionEnabled;
   }
 
   @VisibleForTesting
@@ -181,7 +185,12 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
                   slot,
                   blockRoot,
                   custodyGroupCountManager,
-                  SpecConfigFulu.required(spec.atSlot(slot).getConfig()).getNumberOfColumns() / 2);
+                  halfColumnsSamplingCompletionEnabled
+                      ? Optional.of(
+                          SpecConfigFulu.required(spec.atSlot(slot).getConfig())
+                                  .getNumberOfColumns()
+                              / 2)
+                      : Optional.empty());
           onFirstSeen(slot, blockRoot, tracker);
           return tracker;
         });

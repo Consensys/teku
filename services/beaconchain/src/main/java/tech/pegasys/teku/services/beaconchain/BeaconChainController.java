@@ -1078,7 +1078,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dataColumnSidecarRecoveringCustody,
             recoveringSidecarRetriever,
             custodyGroupCountManager,
-            recentChainData);
+            recentChainData,
+            beaconConfig.p2pConfig().isColumnsDataAvailabilityHalfCheckEnabled());
     LOG.info(
         "DAS Basic Sampler initialized with {} groups to sample",
         custodyGroupCountManager.getSamplingGroupCount());

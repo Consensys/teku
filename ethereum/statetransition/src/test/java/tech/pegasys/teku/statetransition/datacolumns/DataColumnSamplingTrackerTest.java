@@ -18,6 +18,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -47,7 +48,7 @@ class DataColumnSamplingTrackerTest {
 
     tracker =
         DataColumnSamplingTracker.create(
-            SLOT, BLOCK_ROOT, custodyGroupCountManager, HALF_COLUMN_COUNT);
+            SLOT, BLOCK_ROOT, custodyGroupCountManager, Optional.of(HALF_COLUMN_COUNT));
   }
 
   @Test
@@ -100,13 +101,13 @@ class DataColumnSamplingTrackerTest {
   }
 
   @Test
-  void add_shouldCompleteFutureWhenHalfColumnsAreAdded() {
+  void add_shouldCompleteEarly_whenHalfColumnsSamplingCompletionIsSet() {
     final List<UInt64> samplingRequirement =
         Stream.iterate(UInt64.ZERO, UInt64::increment).limit(128).toList();
     when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(samplingRequirement);
     tracker =
         DataColumnSamplingTracker.create(
-            SLOT, BLOCK_ROOT, custodyGroupCountManager, HALF_COLUMN_COUNT);
+            SLOT, BLOCK_ROOT, custodyGroupCountManager, Optional.of(HALF_COLUMN_COUNT));
 
     for (int i = 0; i < HALF_COLUMN_COUNT - 1; i++) {
       tracker.add(
@@ -129,6 +130,32 @@ class DataColumnSamplingTrackerTest {
     }
     assertThat(tracker.missingColumns()).isEmpty();
     assertThat(tracker.completionFuture()).isDone();
+  }
+
+  @Test
+  void add_shouldNotCompleteEarly_whenHalfColumnsSamplingCompletionDisabled() {
+    final List<UInt64> samplingRequirement =
+        Stream.iterate(UInt64.ZERO, UInt64::increment).limit(128).toList();
+    when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(samplingRequirement);
+    tracker =
+        DataColumnSamplingTracker.create(
+            SLOT, BLOCK_ROOT, custodyGroupCountManager, Optional.empty());
+
+    for (int i = 0; i < HALF_COLUMN_COUNT * 2 - 1; i++) {
+      tracker.add(
+          new DataColumnSlotAndIdentifier(SLOT, BLOCK_ROOT, UInt64.valueOf(i)), MOCK_ORIGIN);
+    }
+    assertThat(tracker.missingColumns()).hasSize(1);
+    assertThat(tracker.completionFuture()).isNotDone();
+    assertThat(tracker.fetchCompletionFuture()).isNotDone();
+
+    tracker.add(
+        new DataColumnSlotAndIdentifier(
+            SLOT, BLOCK_ROOT, UInt64.valueOf(HALF_COLUMN_COUNT * 2 - 1)),
+        MOCK_ORIGIN);
+    assertThat(tracker.missingColumns()).isEmpty();
+    assertThat(tracker.completionFuture()).isDone();
+    assertThat(tracker.fetchCompletionFuture()).isDone();
   }
 
   @Test

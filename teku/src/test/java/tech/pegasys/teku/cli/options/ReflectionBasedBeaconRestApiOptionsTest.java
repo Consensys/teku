@@ -235,4 +235,17 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
     final int validatorThreads = getConfig(tekuConfiguration).getValidatorThreads();
     assertThat(validatorThreads).isEqualTo(15);
   }
+
+  @Test
+  void columnsDataAvailabilityHalfCheckEnabled_disabledByDefault() {
+    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+    assertThat(tekuConfiguration.p2p().isColumnsDataAvailabilityHalfCheckEnabled()).isFalse();
+  }
+
+  @Test
+  void columnsDataAvailabilityHalfCheckEnabled_toggles() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xcolumns-data-availability-half-check-enabled");
+    assertThat(tekuConfiguration.p2p().isColumnsDataAvailabilityHalfCheckEnabled()).isTrue();
+  }
 }

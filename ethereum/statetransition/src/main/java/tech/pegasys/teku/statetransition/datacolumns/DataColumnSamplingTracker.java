@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,14 +34,14 @@ record DataColumnSamplingTracker(
     AtomicBoolean rpcFetchScheduled,
     SafeFuture<List<UInt64>> completionFuture,
     SafeFuture<List<UInt64>> fetchCompletionFuture,
-    int halfColumnCount) {
+    Optional<Integer> completionColumnCount) {
   private static final Logger LOG = LogManager.getLogger();
 
   static DataColumnSamplingTracker create(
       final UInt64 slot,
       final Bytes32 blockRoot,
       final CustodyGroupCountManager custodyGroupCountManager,
-      final int halfColumnCount) {
+      final Optional<Integer> completionColumnCount) {
     final List<UInt64> samplingRequirement = custodyGroupCountManager.getSamplingColumnIndices();
     final Set<UInt64> missingColumns = ConcurrentHashMap.newKeySet(samplingRequirement.size());
     missingColumns.addAll(samplingRequirement);
@@ -54,7 +55,7 @@ record DataColumnSamplingTracker(
         new AtomicBoolean(false),
         completionFuture,
         fetchCompletionFuture,
-        halfColumnCount);
+        completionColumnCount);
   }
 
   boolean add(final DataColumnSlotAndIdentifier columnIdentifier, final RemoteOrigin origin) {
@@ -75,8 +76,10 @@ record DataColumnSamplingTracker(
           blockRoot,
           columnIdentifier.columnIndex(),
           origin);
-      if (!completionFuture.isDone()
-          && (samplingRequirement.size() - missingColumns().size()) >= halfColumnCount) {
+      if (completionColumnCount().isPresent()
+          && !completionFuture.isDone()
+          && (samplingRequirement.size() - missingColumns().size())
+              >= completionColumnCount.get()) {
         completionFuture.complete(
             samplingRequirement.stream().filter(idx -> !missingColumns.contains(idx)).toList());
       }

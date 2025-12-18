@@ -93,7 +93,8 @@ public class DasSamplerBasicTest {
             custody,
             retriever,
             custodyGroupCountManager,
-            recentChainData);
+            recentChainData,
+            true);
   }
 
   @Test
