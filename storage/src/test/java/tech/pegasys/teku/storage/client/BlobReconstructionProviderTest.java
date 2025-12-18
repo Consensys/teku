@@ -324,15 +324,7 @@ public class BlobReconstructionProviderTest {
   @Disabled
   @SuppressWarnings("deprecation")
   public void regenerateValidBlobsAndCellsFile() {
-    var kzg = KZG.getInstance(false);
-    kzg.loadTrustedSetup(
-        Eth2NetworkConfiguration.class.getResource("mainnet-trusted-setup.txt").toExternalForm(),
-        0);
-
-    spec.reinitializeForTesting(
-        AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
-        AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
-        kzg);
+    reinitializeSpecWithProductionKZG();
 
     final var block = dataStructureUtil.randomSignedBeaconBlock();
     final var blobs =
@@ -356,6 +348,18 @@ public class BlobReconstructionProviderTest {
             .toList();
 
     final var result = generateJson(celldata);
+  }
+
+  private void reinitializeSpecWithProductionKZG() {
+    var kzg = KZG.getInstance(false);
+    kzg.loadTrustedSetup(
+        Eth2NetworkConfiguration.class.getResource("mainnet-trusted-setup.txt").toExternalForm(),
+        0);
+
+    spec.reinitializeForTesting(
+        AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
+        AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
+        kzg);
   }
 
   private BlobsAndMatrix loadBlobsAndMatrixFixture() {
