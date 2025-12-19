@@ -68,7 +68,7 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
   @Test
   public void getBlobsApiP2pSidecarDownloadTimeoutSeconds_canChanged() {
     TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--rest-api-get-blobs-sidecars-download-timeout", "12");
+        getTekuConfigurationFromArguments("--rest-api-getblobs-sidecars-download-timeout", "12");
     final BeaconRestApiConfig config = getConfig(tekuConfiguration);
     assertThat(config.getGetBlobsSidecarsDownloadTimeoutSeconds())
         .isEqualTo(Duration.ofSeconds(12));
@@ -79,12 +79,12 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
     assertThatThrownBy(
         () ->
             getTekuConfigurationFromArguments(
-                "--rest-api-get-blobs-sidecars-download-timeout", "0"));
+                "--rest-api-getblobs-sidecars-download-timeout", "0"));
 
     assertThatThrownBy(
         () ->
             getTekuConfigurationFromArguments(
-                "--rest-api-get-blobs-sidecars-download-timeout", "-2"));
+                "--rest-api-getblobs-sidecars-download-timeout", "-2"));
   }
 
   @Test
