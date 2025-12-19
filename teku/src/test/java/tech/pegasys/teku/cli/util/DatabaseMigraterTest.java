@@ -50,11 +50,11 @@ public class DatabaseMigraterTest {
 
   @BeforeEach
   void setUp() {
-    assumeThat(DatabaseVersion.isLevelDbSupported())
+    assumeThat(DatabaseVersion.tryLoadLeveldbNativeLibrary())
         .describedAs("LevelDB support required")
         .isTrue();
 
-    assumeThat(DatabaseVersion.isRocksDbSupported())
+    assumeThat(DatabaseVersion.tryLoadRocksdbLibrary())
         .describedAs("RocksDB support required")
         .isTrue();
   }
