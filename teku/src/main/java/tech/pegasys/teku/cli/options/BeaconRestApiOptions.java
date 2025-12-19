@@ -131,23 +131,23 @@ public class BeaconRestApiOptions {
   private Integer validatorThreads;
 
   @Option(
-      names = {"--rest-api-get-blobs-sidecars-download-enabled"},
+      names = {"--rest-api-getblobs-sidecars-download-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
       description =
           "Enables Get Blobs API ability to reconstruct blobs via on-demand p2p columns downloading",
       arity = "0..1",
       fallbackValue = "true")
-  private Boolean getBlobsApiP2pSidecarDownloadEnabled =
-      BeaconRestApiConfig.DEFAULT_GET_BLOBS_API_P2P_SIDECAR_DOWNLOAD_ENABLED;
+  private Boolean getBlobsSidecarsDownloadEnabled =
+      BeaconRestApiConfig.DEFAULT_GETBLOBS_SIDECARS_DOWNLOAD_ENABLED;
 
   @Option(
-      names = {"--rest-api-get-blobs-sidecars-download-timeout"},
+      names = {"--rest-api-getblobs-sidecars-download-timeout"},
       paramLabel = "<INTEGER>",
       description = "Sidecars download timeout in seconds",
       arity = "1")
-  private long getBlobsApiP2pSidecarDownloadTimeoutSeconds =
-      BeaconRestApiConfig.DEFAULT_GET_BLOBS_API_P2P_SIDECAR_DOWNLOAD_TIMEOUT.toSeconds();
+  private long getBlobsSidecarsDownloadTimeoutSeconds =
+      BeaconRestApiConfig.DEFAULT_GETBLOBS_SIDECARS_DOWNLOAD_TIMEOUT.toSeconds();
 
   public void configure(final TekuConfiguration.Builder builder) {
     // Set defaults
@@ -172,9 +172,8 @@ public class BeaconRestApiOptions {
                 .restApiCorsAllowedOrigins(restApiCorsAllowedOrigins)
                 .maxUrlLength(maxUrlLength)
                 .beaconLivenessTrackingEnabled(beaconLivenessTrackingEnabled)
-                .getBlobsApiP2pSidecarDownloadEnabled(getBlobsApiP2pSidecarDownloadEnabled)
-                .getBlobsApiP2pSidecarDownloadTimeoutSeconds(
-                    getBlobsApiP2pSidecarDownloadTimeoutSeconds)
+                .getBlobsSidecarsDownloadEnabled(getBlobsSidecarsDownloadEnabled)
+                .getBlobsSidecarsDownloadTimeoutSeconds(getBlobsSidecarsDownloadTimeoutSeconds)
                 .maxPendingEvents(maxPendingEvents)
                 .validatorThreads(Optional.ofNullable(validatorThreads)));
   }

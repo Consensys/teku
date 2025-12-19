@@ -52,8 +52,8 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
   public void getBlobsApiRelatedConfig_defaultsAreCorrect() {
     TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
     final BeaconRestApiConfig config = getConfig(tekuConfiguration);
-    assertThat(config.isGetBlobsApiP2pSidecarDownloadEnabled()).isFalse();
-    assertThat(config.getGetBlobsApiP2pSidecarDownloadTimeoutSeconds())
+    assertThat(config.isGetBlobsSidecarsDownloadEnabled()).isFalse();
+    assertThat(config.getGetBlobsSidecarsDownloadTimeoutSeconds())
         .isGreaterThanOrEqualTo(Duration.ZERO);
   }
 
@@ -62,7 +62,7 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
     TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--rest-api-get-blobs-sidecars-download-enabled");
     final BeaconRestApiConfig config = getConfig(tekuConfiguration);
-    assertThat(config.isGetBlobsApiP2pSidecarDownloadEnabled()).isTrue();
+    assertThat(config.isGetBlobsSidecarsDownloadEnabled()).isTrue();
   }
 
   @Test
@@ -70,7 +70,7 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
     TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--rest-api-get-blobs-sidecars-download-timeout", "12");
     final BeaconRestApiConfig config = getConfig(tekuConfiguration);
-    assertThat(config.getGetBlobsApiP2pSidecarDownloadTimeoutSeconds())
+    assertThat(config.getGetBlobsSidecarsDownloadTimeoutSeconds())
         .isEqualTo(Duration.ofSeconds(12));
   }
 
