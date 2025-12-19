@@ -60,7 +60,7 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
   @Test
   public void getBlobsApiP2pSidecarDownloadEnabled_canBeEnabled() {
     TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--rest-api-get-blobs-sidecars-download-enabled");
+        getTekuConfigurationFromArguments("--rest-api-getblobs-sidecars-download-enabled");
     final BeaconRestApiConfig config = getConfig(tekuConfiguration);
     assertThat(config.isGetBlobsSidecarsDownloadEnabled()).isTrue();
   }
