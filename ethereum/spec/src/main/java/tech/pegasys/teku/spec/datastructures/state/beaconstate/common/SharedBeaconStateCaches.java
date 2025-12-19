@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 
+import com.google.common.annotations.VisibleForTesting;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
@@ -28,8 +29,6 @@ public class SharedBeaconStateCaches {
   public static final SharedBeaconStateCaches DEFAULT_INSTANCE =
       new SharedBeaconStateCaches(
           CaffeineCache.create(Integer.MAX_VALUE - 1), new ValidatorIndexCache());
-
-  // The no-op instance for states that don't need caching.
   public static final SharedBeaconStateCaches NO_OP_INSTANCE =
       new SharedBeaconStateCaches(NoOpCache.getNoOpCache(), ValidatorIndexCache.NO_OP_INSTANCE);
 
@@ -53,5 +52,11 @@ public class SharedBeaconStateCaches {
 
   public ValidatorIndexCache getValidatorIndexCache() {
     return validatorIndexCache;
+  }
+
+  @VisibleForTesting
+  public void clear() {
+    validatorsPubKeys.clear();
+    validatorIndexCache.clear();
   }
 }

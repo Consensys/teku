@@ -58,6 +58,11 @@ public class ValidatorIndexCache {
     validatorIndices.invalidateWithNewValue(pubKey, updatedIndex);
   }
 
+  public void clear() {
+    validatorIndices.clear();
+    lastCachedIndex.set(INDEX_NONE);
+  }
+
   @VisibleForTesting
   int getLastCachedIndex() {
     return lastCachedIndex.get();
