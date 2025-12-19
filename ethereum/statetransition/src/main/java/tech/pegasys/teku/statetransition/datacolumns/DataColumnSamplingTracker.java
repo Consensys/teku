@@ -114,7 +114,8 @@ record DataColumnSamplingTracker(
       return false;
     }
 
-    return missingColumns().size() < earlyCompletionRequirementCount.get();
+    final int alreadySampledColumnCount = samplingRequirement.size() - missingColumns().size();
+    return alreadySampledColumnCount >= earlyCompletionRequirementCount.get();
   }
 
   List<DataColumnSlotAndIdentifier> getMissingColumnIdentifiers() {
