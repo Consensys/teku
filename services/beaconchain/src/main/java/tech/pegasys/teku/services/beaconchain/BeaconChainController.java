@@ -1428,13 +1428,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     final DataColumnSidecarNetworkRetriever networkRetriever;
     if (simpleSidecarRetriever.isPresent()
-        && beaconConfig.beaconRestApiConfig().isGetBlobsApiP2pSidecarDownloadEnabled()) {
+        && beaconConfig.beaconRestApiConfig().isGetBlobsSidecarsDownloadEnabled()) {
       networkRetriever =
           new DataColumnSidecarNetworkRetrieverImpl(
               simpleSidecarRetriever.get()::retrieve,
               simpleSidecarRetriever.get()::flush,
               sidecarDB.orElseThrow()::addSidecar,
-              beaconConfig.beaconRestApiConfig().getGetBlobsApiP2pSidecarDownloadTimeoutSeconds());
+              beaconConfig.beaconRestApiConfig().getGetBlobsSidecarsDownloadTimeoutSeconds());
     } else {
       networkRetriever = DataColumnSidecarNetworkRetriever.DISABLED;
     }

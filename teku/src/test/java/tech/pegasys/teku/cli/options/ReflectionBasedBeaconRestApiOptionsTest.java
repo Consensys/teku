@@ -52,35 +52,39 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
   public void getBlobsApiRelatedConfig_defaultsAreCorrect() {
     TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
     final BeaconRestApiConfig config = getConfig(tekuConfiguration);
-    assertThat(config.isGetBlobsApiP2pSidecarDownloadEnabled()).isFalse();
-    assertThat(config.getGetBlobsApiP2pSidecarDownloadTimeoutSeconds())
+    assertThat(config.isGetBlobsSidecarsDownloadEnabled()).isFalse();
+    assertThat(config.getGetBlobsSidecarsDownloadTimeoutSeconds())
         .isGreaterThanOrEqualTo(Duration.ZERO);
   }
 
   @Test
   public void getBlobsApiP2pSidecarDownloadEnabled_canBeEnabled() {
     TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--get-blobs-api-p2p-sidecars-download-enabled");
+        getTekuConfigurationFromArguments("--rest-api-getblobs-sidecars-download-enabled");
     final BeaconRestApiConfig config = getConfig(tekuConfiguration);
-    assertThat(config.isGetBlobsApiP2pSidecarDownloadEnabled()).isTrue();
+    assertThat(config.isGetBlobsSidecarsDownloadEnabled()).isTrue();
   }
 
   @Test
   public void getBlobsApiP2pSidecarDownloadTimeoutSeconds_canChanged() {
     TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--get-blobs-sidecars-download-timeout", "12");
+        getTekuConfigurationFromArguments("--rest-api-getblobs-sidecars-download-timeout", "12");
     final BeaconRestApiConfig config = getConfig(tekuConfiguration);
-    assertThat(config.getGetBlobsApiP2pSidecarDownloadTimeoutSeconds())
+    assertThat(config.getGetBlobsSidecarsDownloadTimeoutSeconds())
         .isEqualTo(Duration.ofSeconds(12));
   }
 
   @Test
   public void getBlobsApiP2pSidecarDownloadTimeoutSeconds_wrongValues() {
     assertThatThrownBy(
-        () -> getTekuConfigurationFromArguments("--get-blobs-sidecars-download-timeout", "0"));
+        () ->
+            getTekuConfigurationFromArguments(
+                "--rest-api-getblobs-sidecars-download-timeout", "0"));
 
     assertThatThrownBy(
-        () -> getTekuConfigurationFromArguments("--get-blobs-sidecars-download-timeout", "-2"));
+        () ->
+            getTekuConfigurationFromArguments(
+                "--rest-api-getblobs-sidecars-download-timeout", "-2"));
   }
 
   @Test
