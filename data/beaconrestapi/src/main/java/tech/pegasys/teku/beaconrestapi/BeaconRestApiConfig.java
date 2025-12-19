@@ -36,9 +36,8 @@ public class BeaconRestApiConfig {
       List.of("127.0.0.1", "localhost");
   public static final List<String> DEFAULT_REST_API_CORS_ALLOWED_ORIGINS = new ArrayList<>();
   public static final boolean DEFAULT_BEACON_LIVENESS_TRACKING_ENABLED = false;
-  public static final boolean DEFAULT_GET_BLOBS_API_P2P_SIDECAR_DOWNLOAD_ENABLED = false;
-  public static final Duration DEFAULT_GET_BLOBS_API_P2P_SIDECAR_DOWNLOAD_TIMEOUT =
-      Duration.ofSeconds(5);
+  public static final boolean DEFAULT_GETBLOBS_SIDECARS_DOWNLOAD_ENABLED = false;
+  public static final Duration DEFAULT_GETBLOBS_SIDECARS_DOWNLOAD_TIMEOUT = Duration.ofSeconds(5);
   public static final int DEFAULT_TARGET_VALIDATORS_API_THREADS = 10;
 
   // Beacon REST API
@@ -47,8 +46,8 @@ public class BeaconRestApiConfig {
   private final boolean restApiEnabled;
   private final boolean restApiLightClientEnabled;
   private final boolean beaconLivenessTrackingEnabled;
-  private final boolean getBlobsApiP2pSidecarDownloadEnabled;
-  private final Duration getBlobsApiP2pSidecarDownloadTimeoutSeconds;
+  private final boolean getBlobsSidecarsDownloadEnabled;
+  private final Duration getBlobsSidecarsDownloadTimeoutSeconds;
   private final String restApiInterface;
   private final List<String> restApiHostAllowlist;
   private final List<String> restApiCorsAllowedOrigins;
@@ -70,8 +69,8 @@ public class BeaconRestApiConfig {
       final int maxPendingEvents,
       final Optional<Integer> validatorThreads,
       final boolean beaconLivenessTrackingEnabled,
-      final boolean getBlobsApiP2pSidecarDownloadEnabled,
-      final Duration getBlobsApiP2pSidecarDownloadTimeoutSeconds) {
+      final boolean getBlobsSidecarsDownloadEnabled,
+      final Duration getBlobsSidecarsDownloadTimeoutSeconds) {
     this.restApiPort = restApiPort;
     this.restApiDocsEnabled = restApiDocsEnabled;
     this.restApiEnabled = restApiEnabled;
@@ -84,8 +83,8 @@ public class BeaconRestApiConfig {
     this.maxPendingEvents = maxPendingEvents;
     this.validatorThreads = validatorThreads;
     this.beaconLivenessTrackingEnabled = beaconLivenessTrackingEnabled;
-    this.getBlobsApiP2pSidecarDownloadEnabled = getBlobsApiP2pSidecarDownloadEnabled;
-    this.getBlobsApiP2pSidecarDownloadTimeoutSeconds = getBlobsApiP2pSidecarDownloadTimeoutSeconds;
+    this.getBlobsSidecarsDownloadEnabled = getBlobsSidecarsDownloadEnabled;
+    this.getBlobsSidecarsDownloadTimeoutSeconds = getBlobsSidecarsDownloadTimeoutSeconds;
   }
 
   public int getRestApiPort() {
@@ -108,12 +107,12 @@ public class BeaconRestApiConfig {
     return beaconLivenessTrackingEnabled;
   }
 
-  public boolean isGetBlobsApiP2pSidecarDownloadEnabled() {
-    return getBlobsApiP2pSidecarDownloadEnabled;
+  public boolean isGetBlobsSidecarsDownloadEnabled() {
+    return getBlobsSidecarsDownloadEnabled;
   }
 
-  public Duration getGetBlobsApiP2pSidecarDownloadTimeoutSeconds() {
-    return getBlobsApiP2pSidecarDownloadTimeoutSeconds;
+  public Duration getGetBlobsSidecarsDownloadTimeoutSeconds() {
+    return getBlobsSidecarsDownloadTimeoutSeconds;
   }
 
   public String getRestApiInterface() {
@@ -166,10 +165,9 @@ public class BeaconRestApiConfig {
     private boolean restApiEnabled = false;
     private boolean restApiLightClientEnabled = false;
     private boolean beaconLivenessTrackingEnabled = DEFAULT_BEACON_LIVENESS_TRACKING_ENABLED;
-    private boolean getBlobsApiP2pSidecarDownloadEnabled =
-        DEFAULT_GET_BLOBS_API_P2P_SIDECAR_DOWNLOAD_ENABLED;
-    private Duration getBlobsApiP2pSidecarDownloadTimeoutSeconds =
-        DEFAULT_GET_BLOBS_API_P2P_SIDECAR_DOWNLOAD_TIMEOUT;
+    private boolean getBlobsSidecarsDownloadEnabled = DEFAULT_GETBLOBS_SIDECARS_DOWNLOAD_ENABLED;
+    private Duration getBlobsSidecarsDownloadTimeoutSeconds =
+        DEFAULT_GETBLOBS_SIDECARS_DOWNLOAD_TIMEOUT;
     private String restApiInterface = DEFAULT_REST_API_INTERFACE;
     private List<String> restApiHostAllowlist = DEFAULT_REST_API_HOST_ALLOWLIST;
     private List<String> restApiCorsAllowedOrigins = DEFAULT_REST_API_CORS_ALLOWED_ORIGINS;
@@ -252,22 +250,22 @@ public class BeaconRestApiConfig {
       return this;
     }
 
-    public BeaconRestApiConfigBuilder getBlobsApiP2pSidecarDownloadEnabled(
-        final boolean getBlobsApiP2pSidecarDownloadEnabled) {
-      this.getBlobsApiP2pSidecarDownloadEnabled = getBlobsApiP2pSidecarDownloadEnabled;
+    public BeaconRestApiConfigBuilder getBlobsSidecarsDownloadEnabled(
+        final boolean getBlobsSidecarsDownloadEnabled) {
+      this.getBlobsSidecarsDownloadEnabled = getBlobsSidecarsDownloadEnabled;
       return this;
     }
 
-    public BeaconRestApiConfigBuilder getBlobsApiP2pSidecarDownloadTimeoutSeconds(
-        final long getBlobsApiP2pSidecarDownloadTimeoutSeconds) {
-      if (getBlobsApiP2pSidecarDownloadTimeoutSeconds <= 0) {
+    public BeaconRestApiConfigBuilder getBlobsSidecarsDownloadTimeoutSeconds(
+        final long getBlobsSidecarsDownloadTimeoutSeconds) {
+      if (getBlobsSidecarsDownloadTimeoutSeconds <= 0) {
         throw new InvalidConfigurationException(
             String.format(
-                "Invalid getBlobsApiP2pSidecarDownloadTimeoutSeconds: %d",
-                getBlobsApiP2pSidecarDownloadTimeoutSeconds));
+                "Invalid getBlobsSidecarsDownloadTimeoutSeconds: %d",
+                getBlobsSidecarsDownloadTimeoutSeconds));
       }
-      this.getBlobsApiP2pSidecarDownloadTimeoutSeconds =
-          Duration.ofSeconds(getBlobsApiP2pSidecarDownloadTimeoutSeconds);
+      this.getBlobsSidecarsDownloadTimeoutSeconds =
+          Duration.ofSeconds(getBlobsSidecarsDownloadTimeoutSeconds);
       return this;
     }
 
@@ -303,8 +301,8 @@ public class BeaconRestApiConfig {
           maxPendingEvents,
           validatorThreads,
           beaconLivenessTrackingEnabled,
-          getBlobsApiP2pSidecarDownloadEnabled,
-          getBlobsApiP2pSidecarDownloadTimeoutSeconds);
+          getBlobsSidecarsDownloadEnabled,
+          getBlobsSidecarsDownloadTimeoutSeconds);
     }
 
     public BeaconRestApiConfigBuilder maxUrlLength(final int maxUrlLength) {
