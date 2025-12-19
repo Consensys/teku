@@ -29,6 +29,7 @@ import static org.mockito.Mockito.when;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -366,40 +367,58 @@ public class DasSamplerBasicTest {
     when(recentChainData.containsBlock(any())).thenReturn(false);
     when(recentChainData.containsBlock(importedBlockRoot)).thenReturn(true);
 
-    final DataColumnSamplingTracker completedTracker = mock(DataColumnSamplingTracker.class);
-    when(completedTracker.completionFuture()).thenReturn(SafeFuture.completedFuture(null));
-    when(completedTracker.fetchCompletionFuture()).thenReturn(new SafeFuture<>());
-    when(completedTracker.blockRoot()).thenReturn(dataStructureUtil.randomBytes32());
-    when(completedTracker.slot()).thenReturn(lastFinalizedSlot.decrement());
-
-    final DataColumnSamplingTracker fetchCompletedTracker = mock(DataColumnSamplingTracker.class);
-    when(fetchCompletedTracker.completionFuture()).thenReturn(SafeFuture.completedFuture(null));
-    when(fetchCompletedTracker.fetchCompletionFuture())
+    final DataColumnSamplingTracker partiallyCompletedTrackerNonCanonicalBeforeFinalized =
+        mock(DataColumnSamplingTracker.class);
+    when(partiallyCompletedTrackerNonCanonicalBeforeFinalized.completionFuture())
         .thenReturn(SafeFuture.completedFuture(null));
-    when(fetchCompletedTracker.blockRoot()).thenReturn(dataStructureUtil.randomBytes32());
-    when(fetchCompletedTracker.slot()).thenReturn(lastFinalizedSlot.decrement());
+    when(partiallyCompletedTrackerNonCanonicalBeforeFinalized.fullySampled())
+        .thenReturn(new AtomicBoolean(false));
+    when(partiallyCompletedTrackerNonCanonicalBeforeFinalized.blockRoot())
+        .thenReturn(dataStructureUtil.randomBytes32());
+    when(partiallyCompletedTrackerNonCanonicalBeforeFinalized.slot())
+        .thenReturn(lastFinalizedSlot.decrement());
 
-    final DataColumnSamplingTracker incompleteTracker = mock(DataColumnSamplingTracker.class);
+    final DataColumnSamplingTracker fullyCompletedTrackerFinalized =
+        mock(DataColumnSamplingTracker.class);
+    when(fullyCompletedTrackerFinalized.completionFuture())
+        .thenReturn(SafeFuture.completedFuture(null));
+    when(fullyCompletedTrackerFinalized.fullySampled()).thenReturn(new AtomicBoolean(true));
+    when(fullyCompletedTrackerFinalized.blockRoot()).thenReturn(dataStructureUtil.randomBytes32());
+    when(fullyCompletedTrackerFinalized.slot()).thenReturn(lastFinalizedSlot.decrement());
+
+    final DataColumnSamplingTracker incompleteTrackerNonCanonicalBeforeFinalized =
+        mock(DataColumnSamplingTracker.class);
     final SafeFuture<List<UInt64>> incompleteTrackerFuture = new SafeFuture<>();
-    when(incompleteTracker.completionFuture()).thenReturn(incompleteTrackerFuture);
-    when(incompleteTracker.fetchCompletionFuture()).thenReturn(new SafeFuture<>());
-    when(incompleteTracker.blockRoot()).thenReturn(dataStructureUtil.randomBytes32());
-    when(incompleteTracker.slot()).thenReturn(lastFinalizedSlot);
+    when(incompleteTrackerNonCanonicalBeforeFinalized.completionFuture())
+        .thenReturn(incompleteTrackerFuture);
+    when(incompleteTrackerNonCanonicalBeforeFinalized.fullySampled())
+        .thenReturn(new AtomicBoolean(false));
+    when(incompleteTrackerNonCanonicalBeforeFinalized.blockRoot())
+        .thenReturn(dataStructureUtil.randomBytes32());
+    when(incompleteTrackerNonCanonicalBeforeFinalized.slot()).thenReturn(lastFinalizedSlot);
 
     final SafeFuture<List<UInt64>> incompleteTrackerForImportedBlockFuture = new SafeFuture<>();
     final DataColumnSamplingTracker incompleteTrackerForImportedBlock =
         mock(DataColumnSamplingTracker.class);
     when(incompleteTrackerForImportedBlock.completionFuture())
         .thenReturn(incompleteTrackerForImportedBlockFuture);
-    when(incompleteTrackerForImportedBlock.fetchCompletionFuture()).thenReturn(new SafeFuture<>());
+    when(incompleteTrackerForImportedBlock.fullySampled()).thenReturn(new AtomicBoolean(false));
     when(incompleteTrackerForImportedBlock.slot()).thenReturn(firstNonFinalizedSlot);
     when(incompleteTrackerForImportedBlock.blockRoot()).thenReturn(importedBlockRoot);
 
-    sampler.getRecentlySampledColumnsByRoot().put(completedTracker.blockRoot(), completedTracker);
     sampler
         .getRecentlySampledColumnsByRoot()
-        .put(fetchCompletedTracker.blockRoot(), fetchCompletedTracker);
-    sampler.getRecentlySampledColumnsByRoot().put(incompleteTracker.blockRoot(), incompleteTracker);
+        .put(
+            partiallyCompletedTrackerNonCanonicalBeforeFinalized.blockRoot(),
+            partiallyCompletedTrackerNonCanonicalBeforeFinalized);
+    sampler
+        .getRecentlySampledColumnsByRoot()
+        .put(fullyCompletedTrackerFinalized.blockRoot(), fullyCompletedTrackerFinalized);
+    sampler
+        .getRecentlySampledColumnsByRoot()
+        .put(
+            incompleteTrackerNonCanonicalBeforeFinalized.blockRoot(),
+            incompleteTrackerNonCanonicalBeforeFinalized);
     sampler
         .getRecentlySampledColumnsByRoot()
         .put(incompleteTrackerForImportedBlock.blockRoot(), incompleteTrackerForImportedBlock);
@@ -408,9 +427,15 @@ public class DasSamplerBasicTest {
 
     // DA check is completed but fetch is not yet completed for this one
     assertThat(sampler.getRecentlySampledColumnsByRoot())
-        .containsExactly(entry(completedTracker.blockRoot(), completedTracker));
-    assertThat(incompleteTrackerForImportedBlockFuture).isCompletedExceptionally();
-    assertThat(incompleteTrackerFuture).isCompletedExceptionally();
+        .containsExactly(
+            entry(
+                incompleteTrackerForImportedBlock.blockRoot(), incompleteTrackerForImportedBlock));
+    assertThat(incompleteTrackerNonCanonicalBeforeFinalized.completionFuture())
+        .isCompletedExceptionally();
+    // pruned but not fully sampled
+    assertThat(partiallyCompletedTrackerNonCanonicalBeforeFinalized.completionFuture())
+        .isCompleted();
+    assertThat(fullyCompletedTrackerFinalized.completionFuture()).isCompleted();
   }
 
   private void assertSamplerTracker(

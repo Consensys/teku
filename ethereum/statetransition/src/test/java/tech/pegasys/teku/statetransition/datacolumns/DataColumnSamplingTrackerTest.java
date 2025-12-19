@@ -58,7 +58,7 @@ class DataColumnSamplingTrackerTest {
     assertThat(tracker.samplingRequirement()).isEqualTo(SAMPLING_REQUIREMENT);
     assertThat(tracker.missingColumns()).containsExactlyInAnyOrderElementsOf(SAMPLING_REQUIREMENT);
     assertThat(tracker.completionFuture()).isNotDone();
-    assertThat(tracker.fetchCompletionFuture()).isNotDone();
+    assertThat(tracker.fullySampled()).isFalse();
     assertThat(tracker.rpcFetchInProgress().get()).isFalse();
   }
 
@@ -96,8 +96,7 @@ class DataColumnSamplingTrackerTest {
     assertThat(tracker.missingColumns()).isEmpty();
     assertThat(tracker.completionFuture()).isCompleted();
     assertThat(tracker.completionFuture().get()).isEqualTo(SAMPLING_REQUIREMENT);
-    assertThat(tracker.fetchCompletionFuture()).isCompleted();
-    assertThat(tracker.fetchCompletionFuture().get()).isEqualTo(SAMPLING_REQUIREMENT);
+    assertThat(tracker.fullySampled()).isTrue();
   }
 
   @Test
@@ -115,14 +114,14 @@ class DataColumnSamplingTrackerTest {
     }
     assertThat(tracker.missingColumns()).hasSize(HALF_COLUMN_COUNT + 1);
     assertThat(tracker.completionFuture()).isNotDone();
-    assertThat(tracker.fetchCompletionFuture()).isNotDone();
+    assertThat(tracker.fullySampled()).isFalse();
 
     tracker.add(
         new DataColumnSlotAndIdentifier(SLOT, BLOCK_ROOT, UInt64.valueOf(HALF_COLUMN_COUNT - 1)),
         MOCK_ORIGIN);
     assertThat(tracker.missingColumns()).hasSize(HALF_COLUMN_COUNT);
     assertThat(tracker.completionFuture()).isDone();
-    assertThat(tracker.fetchCompletionFuture()).isNotDone();
+    assertThat(tracker.fullySampled()).isFalse();
 
     for (int i = HALF_COLUMN_COUNT; i < HALF_COLUMN_COUNT * 2; i++) {
       tracker.add(
@@ -147,7 +146,7 @@ class DataColumnSamplingTrackerTest {
     }
     assertThat(tracker.missingColumns()).hasSize(1);
     assertThat(tracker.completionFuture()).isNotDone();
-    assertThat(tracker.fetchCompletionFuture()).isNotDone();
+    assertThat(tracker.fullySampled()).isFalse();
 
     tracker.add(
         new DataColumnSlotAndIdentifier(
@@ -155,7 +154,7 @@ class DataColumnSamplingTrackerTest {
         MOCK_ORIGIN);
     assertThat(tracker.missingColumns()).isEmpty();
     assertThat(tracker.completionFuture()).isDone();
-    assertThat(tracker.fetchCompletionFuture()).isDone();
+    assertThat(tracker.fullySampled()).isTrue();
   }
 
   @Test
