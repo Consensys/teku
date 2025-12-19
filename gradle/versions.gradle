@@ -64,7 +64,7 @@ dependencyManagement {
       entry 'oshi-core-java11'
     }
 
-    dependencySet(group: 'io.netty', version: '4.2.7.Final') {
+    dependencySet(group: 'io.netty', version: '4.2.9.Final') {
       entry 'netty-handler'
       entry 'netty-codec-http'
     }
