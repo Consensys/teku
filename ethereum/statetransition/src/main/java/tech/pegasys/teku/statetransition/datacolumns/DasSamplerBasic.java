@@ -105,7 +105,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
       return tracker.completionFuture();
     }
 
-    if (tracker.rpcFetchScheduled().compareAndSet(false, true)) {
+    if (tracker.rpcFetchInProgress().compareAndSet(false, true)) {
       fetchMissingColumnsViaRPC(slot, blockRoot, tracker);
     }
 
@@ -122,7 +122,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
       // wait eventual known columns to be added via onAlreadyKnownDataColumn before fetching.
       return;
     }
-    tracker.rpcFetchScheduled().set(true);
+    tracker.rpcFetchInProgress().set(true);
     asyncRunner
         .getDelayedFuture(delay)
         .always(() -> fetchMissingColumnsViaRPC(slot, blockRoot, tracker));
@@ -161,7 +161,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
             })
         // let's reset the fetched flag so that this tracker can reissue RPC requests on DA check
         // retry
-        .alwaysRun(() -> tracker.rpcFetchScheduled().set(false))
+        .alwaysRun(() -> tracker.rpcFetchInProgress().set(false))
         .finish(
             throwable -> {
               if (ExceptionUtil.hasCause(throwable, CancellationException.class)) {
@@ -248,25 +248,30 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
         .values()
         .removeIf(
             tracker -> {
-              if (tracker.slot().isLessThan(firstNonFinalizedSlot)
-                  || recentChainData.containsBlock(tracker.blockRoot())) {
+              if (tracker.slot().isLessThan(firstNonFinalizedSlot)) {
+                if (!tracker.completionFuture().isDone()) {
+                  // make sure the future releases any pending waiters
+                  tracker
+                      .completionFuture()
+                      .completeExceptionally(
+                          new RuntimeException("DAS sampling expired while slot finalized"));
+                }
+                return true;
+              }
+
+              if (recentChainData.containsBlock(tracker.blockRoot())) {
 
                 // outdated, should clean up
                 if (!tracker.completionFuture().isDone()) {
                   // make sure the future releases any pending waiters
                   tracker
                       .completionFuture()
-                      .completeExceptionally(new RuntimeException("DAS sampling expired"));
-                  tracker
-                      .fetchCompletionFuture()
-                      .completeExceptionally(new RuntimeException("DAS sampling expired"));
-                  return true;
+                      .completeExceptionally(
+                          new RuntimeException("DAS sampling expired but block has been imported"));
                 }
 
-                // fetch is completed, should clean up
-                if (tracker.fetchCompletionFuture().isDone()) {
-                  return true;
-                }
+                // cleanup only if fully sampler
+                return tracker.fullySampled().get();
               }
 
               return false;

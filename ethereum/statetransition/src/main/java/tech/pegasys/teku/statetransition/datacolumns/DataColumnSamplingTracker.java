@@ -31,10 +31,10 @@ record DataColumnSamplingTracker(
     Bytes32 blockRoot,
     List<UInt64> samplingRequirement,
     Set<UInt64> missingColumns,
-    AtomicBoolean rpcFetchScheduled,
+    AtomicBoolean rpcFetchInProgress,
     SafeFuture<List<UInt64>> completionFuture,
-    SafeFuture<List<UInt64>> fetchCompletionFuture,
-    Optional<Integer> completionColumnCount) {
+    AtomicBoolean fullySampled,
+    Optional<Integer> earlyCompletionRequirementCount) {
   private static final Logger LOG = LogManager.getLogger();
 
   static DataColumnSamplingTracker create(
@@ -46,7 +46,6 @@ record DataColumnSamplingTracker(
     final Set<UInt64> missingColumns = ConcurrentHashMap.newKeySet(samplingRequirement.size());
     missingColumns.addAll(samplingRequirement);
     final SafeFuture<List<UInt64>> completionFuture = new SafeFuture<>();
-    final SafeFuture<List<UInt64>> fetchCompletionFuture = new SafeFuture<>();
     return new DataColumnSamplingTracker(
         slot,
         blockRoot,
@@ -54,7 +53,7 @@ record DataColumnSamplingTracker(
         missingColumns,
         new AtomicBoolean(false),
         completionFuture,
-        fetchCompletionFuture,
+        new AtomicBoolean(false),
         completionColumnCount);
   }
 
@@ -71,6 +70,18 @@ record DataColumnSamplingTracker(
       return false;
     }
 
+    if (missingColumns.isEmpty()) {
+      LOG.debug(
+          "Sampling complete for slot {} root {} via column {} received via {}",
+          slot,
+          blockRoot,
+          columnIdentifier.columnIndex(),
+          origin);
+      completionFuture.complete(samplingRequirement);
+      fullySampled.set(true);
+      return true;
+    }
+
     if (isCompletedEarly()) {
       completionFuture.complete(
           samplingRequirement.stream().filter(idx -> !missingColumns.contains(idx)).toList());
@@ -80,30 +91,20 @@ record DataColumnSamplingTracker(
           blockRoot,
           columnIdentifier.columnIndex(),
           origin);
+      return true;
     }
 
-    if (missingColumns.isEmpty()) {
-      LOG.debug(
-          "Sampling complete for slot {} root {} via column {} received via {}",
-          slot,
-          blockRoot,
-          columnIdentifier.columnIndex(),
-          origin);
-      completionFuture.complete(samplingRequirement);
-      fetchCompletionFuture.complete(samplingRequirement);
-    } else {
-      LOG.debug(
-          "Sampling still pending for slot {} root {}, remaining columns: {}",
-          slot,
-          blockRoot,
-          missingColumns);
-    }
+    LOG.debug(
+        "Sampling still pending for slot {} root {}, remaining columns: {}",
+        slot,
+        blockRoot,
+        missingColumns);
 
     return true;
   }
 
   private boolean isCompletedEarly() {
-    if (completionColumnCount().isEmpty()) {
+    if (earlyCompletionRequirementCount().isEmpty()) {
       // Possibility of early completion is disabled
       return false;
     }
@@ -113,8 +114,7 @@ record DataColumnSamplingTracker(
       return false;
     }
 
-    final int alreadySampledColumnCount = samplingRequirement.size() - missingColumns().size();
-    return alreadySampledColumnCount >= completionColumnCount.get();
+    return missingColumns().size() < earlyCompletionRequirementCount.get();
   }
 
   List<DataColumnSlotAndIdentifier> getMissingColumnIdentifiers() {

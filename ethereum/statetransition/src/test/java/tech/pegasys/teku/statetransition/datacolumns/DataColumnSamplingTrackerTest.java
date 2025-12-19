@@ -59,7 +59,7 @@ class DataColumnSamplingTrackerTest {
     assertThat(tracker.missingColumns()).containsExactlyInAnyOrderElementsOf(SAMPLING_REQUIREMENT);
     assertThat(tracker.completionFuture()).isNotDone();
     assertThat(tracker.fetchCompletionFuture()).isNotDone();
-    assertThat(tracker.rpcFetchScheduled().get()).isFalse();
+    assertThat(tracker.rpcFetchInProgress().get()).isFalse();
   }
 
   @Test

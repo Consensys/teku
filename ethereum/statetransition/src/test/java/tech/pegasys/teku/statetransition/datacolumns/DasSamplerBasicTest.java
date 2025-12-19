@@ -437,7 +437,7 @@ public class DasSamplerBasicTest {
     assertThat(sampler.getRecentlySampledColumnsByRoot())
         .hasEntrySatisfying(
             blockRoot,
-            tracker -> assertThat(tracker.rpcFetchScheduled().get()).isEqualTo(expected));
+            tracker -> assertThat(tracker.rpcFetchInProgress().get()).isEqualTo(expected));
   }
 
   private void assertRPCFetchInMillis(
