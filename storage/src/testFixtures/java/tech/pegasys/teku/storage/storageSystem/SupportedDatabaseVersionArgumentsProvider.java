@@ -29,12 +29,12 @@ public class SupportedDatabaseVersionArgumentsProvider implements ArgumentsProvi
 
   public static Collection<DatabaseVersion> supportedDatabaseVersions() {
     final List<DatabaseVersion> supportedVersions = new ArrayList<>();
-    if (DatabaseVersion.isRocksDbSupported()) {
+    if (DatabaseVersion.tryLoadRocksdbLibrary()) {
       supportedVersions.add(DatabaseVersion.V4);
       supportedVersions.add(DatabaseVersion.V5);
       supportedVersions.add(DatabaseVersion.V6);
     }
-    if (DatabaseVersion.isLevelDbSupported()) {
+    if (DatabaseVersion.tryLoadLeveldbNativeLibrary()) {
       supportedVersions.add(DatabaseVersion.LEVELDB1);
       supportedVersions.add(DatabaseVersion.LEVELDB2);
       supportedVersions.add(DatabaseVersion.LEVELDB_TREE);
