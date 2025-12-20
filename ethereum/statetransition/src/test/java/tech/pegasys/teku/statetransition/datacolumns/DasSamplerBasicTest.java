@@ -386,6 +386,16 @@ public class DasSamplerBasicTest {
         .thenReturn(dataStructureUtil.randomBytes32());
     when(fullyCompletedTrackerBeforeFinalized.slot()).thenReturn(lastFinalizedSlot.decrement());
 
+    // But not imported yet!
+    final DataColumnSamplingTracker fullyCompletedTrackerAfterFinalized =
+        mock(DataColumnSamplingTracker.class);
+    when(fullyCompletedTrackerAfterFinalized.completionFuture())
+        .thenReturn(SafeFuture.completedFuture(null));
+    when(fullyCompletedTrackerAfterFinalized.fullySampled()).thenReturn(new AtomicBoolean(true));
+    when(fullyCompletedTrackerAfterFinalized.blockRoot())
+        .thenReturn(dataStructureUtil.randomBytes32());
+    when(fullyCompletedTrackerAfterFinalized.slot()).thenReturn(lastFinalizedSlot.increment());
+
     final DataColumnSamplingTracker incompleteTrackerBeforeFinalized =
         mock(DataColumnSamplingTracker.class);
     final SafeFuture<List<UInt64>> incompleteTrackerFuture = new SafeFuture<>();
@@ -415,6 +425,9 @@ public class DasSamplerBasicTest {
             fullyCompletedTrackerBeforeFinalized.blockRoot(), fullyCompletedTrackerBeforeFinalized);
     sampler
         .getRecentlySampledColumnsByRoot()
+        .put(fullyCompletedTrackerAfterFinalized.blockRoot(), fullyCompletedTrackerAfterFinalized);
+    sampler
+        .getRecentlySampledColumnsByRoot()
         .put(incompleteTrackerBeforeFinalized.blockRoot(), incompleteTrackerBeforeFinalized);
     sampler
         .getRecentlySampledColumnsByRoot()
@@ -427,7 +440,10 @@ public class DasSamplerBasicTest {
         .containsExactly(
             entry(
                 partiallyCompletedTrackerBeforeFinalized.blockRoot(),
-                partiallyCompletedTrackerBeforeFinalized));
+                partiallyCompletedTrackerBeforeFinalized),
+            entry(
+                fullyCompletedTrackerAfterFinalized.blockRoot(),
+                fullyCompletedTrackerAfterFinalized));
     assertThat(incompleteTrackerBeforeFinalized.completionFuture()).isCompletedExceptionally();
     assertThat(incompleteTrackerForImportedBlock.completionFuture()).isCompletedExceptionally();
     assertThat(partiallyCompletedTrackerBeforeFinalized.completionFuture()).isCompleted();

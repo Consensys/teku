@@ -259,10 +259,11 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
                           new RuntimeException("DAS sampling expired while slot finalized"));
                   return true;
                 }
+                // cleanup only if fully sampled
+                return tracker.fullySampled().get();
               }
 
-              // cleanup only if fully sampled
-              return tracker.fullySampled().get();
+              return false;
             });
   }
 }
