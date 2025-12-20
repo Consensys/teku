@@ -248,33 +248,21 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
         .values()
         .removeIf(
             tracker -> {
-              if (tracker.slot().isLessThan(firstNonFinalizedSlot)) {
+              if (tracker.slot().isLessThan(firstNonFinalizedSlot)
+                  || recentChainData.containsBlock(tracker.blockRoot())) {
+                // Outdated
                 if (!tracker.completionFuture().isDone()) {
                   // make sure the future releases any pending waiters
                   tracker
                       .completionFuture()
                       .completeExceptionally(
                           new RuntimeException("DAS sampling expired while slot finalized"));
+                  return true;
                 }
-                return true;
               }
 
-              if (recentChainData.containsBlock(tracker.blockRoot())) {
-
-                // outdated, should clean up
-                if (!tracker.completionFuture().isDone()) {
-                  // make sure the future releases any pending waiters
-                  tracker
-                      .completionFuture()
-                      .completeExceptionally(
-                          new RuntimeException("DAS sampling expired but block has been imported"));
-                }
-
-                // cleanup only if fully sampler
-                return tracker.fullySampled().get();
-              }
-
-              return false;
+              // cleanup only if fully sampled
+              return tracker.fullySampled().get();
             });
   }
 }
