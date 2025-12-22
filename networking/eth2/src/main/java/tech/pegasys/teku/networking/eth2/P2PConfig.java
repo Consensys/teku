@@ -45,6 +45,7 @@ public class P2PConfig {
   public static final boolean DEFAULT_GOSSIP_SCORING_ENABLED = true;
   public static final boolean DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED = true;
   public static final boolean DEFAULT_DAS_DISABLE_EL_RECOVERY = false;
+  public static final boolean DEFAULT_COLUMNS_DATA_AVAILABILITY_HALF_CHECK_ENABLED = false;
   public static final int DEFAULT_BATCH_VERIFY_MAX_THREADS =
       Math.max(4, Runtime.getRuntime().availableProcessors() / 2);
   public static final int DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY = 30_000;
@@ -97,6 +98,7 @@ public class P2PConfig {
   private final int reworkedSidecarSyncBatchSize;
   private final int reworkedSidecarSyncPollPeriod;
   private final boolean reworkedSidecarSyncEnabled;
+  private final boolean columnsDataAvailabilityHalfCheckEnabled;
   private final boolean executionProofTopicEnabled;
 
   private P2PConfig(
@@ -127,6 +129,7 @@ public class P2PConfig {
       final boolean reworkedSidecarSyncEnabled,
       final Integer reworkedSidecarSyncBatchSize,
       final Integer reworkedSidecarSyncPollPeriod,
+      final boolean columnsDataAvailabilityHalfCheckEnabled,
       final boolean executionProofTopicEnabled) {
     this.spec = spec;
     this.networkConfig = networkConfig;
@@ -156,6 +159,7 @@ public class P2PConfig {
     this.reworkedSidecarSyncEnabled = reworkedSidecarSyncEnabled;
     this.reworkedSidecarSyncBatchSize = reworkedSidecarSyncBatchSize;
     this.reworkedSidecarSyncPollPeriod = reworkedSidecarSyncPollPeriod;
+    this.columnsDataAvailabilityHalfCheckEnabled = columnsDataAvailabilityHalfCheckEnabled;
     this.executionProofTopicEnabled = executionProofTopicEnabled;
   }
 
@@ -283,6 +287,10 @@ public class P2PConfig {
     return reworkedSidecarSyncPollPeriod;
   }
 
+  public boolean isColumnsDataAvailabilityHalfCheckEnabled() {
+    return columnsDataAvailabilityHalfCheckEnabled;
+  }
+
   public static class Builder {
     private final NetworkConfig.Builder networkConfig = NetworkConfig.builder();
     private final DiscoveryConfig.Builder discoveryConfig = DiscoveryConfig.builder();
@@ -317,6 +325,7 @@ public class P2PConfig {
     private Integer reworkedSidecarDownloadTimeout = DEFAULT_DOWNLOAD_TIMEOUT_MS;
 
     private boolean reworkedSidecarSyncEnabled = false;
+    private boolean columnsDataAvailabilityHalfCheckEnabled = false;
     private Integer reworkedSidecarSyncBatchSize = DEFAULT_COLUMN_CUSTODY_BACKFILLER_BATCH_SIZE;
     private Integer reworkedSidecarSyncPollPeriod =
         DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS;
@@ -391,6 +400,7 @@ public class P2PConfig {
           reworkedSidecarSyncEnabled,
           reworkedSidecarSyncBatchSize,
           reworkedSidecarSyncPollPeriod,
+          columnsDataAvailabilityHalfCheckEnabled,
           executionProofTopicEnabled);
     }
 
@@ -588,6 +598,12 @@ public class P2PConfig {
 
     public Builder reworkedSidecarSyncEnabled(final boolean reworkedSidecarSyncEnabled) {
       this.reworkedSidecarSyncEnabled = reworkedSidecarSyncEnabled;
+      return this;
+    }
+
+    public Builder columnsDataAvailabilityHalfCheckEnabled(
+        final boolean columnsDataAvailabilityHalfCheckEnabled) {
+      this.columnsDataAvailabilityHalfCheckEnabled = columnsDataAvailabilityHalfCheckEnabled;
       return this;
     }
   }
