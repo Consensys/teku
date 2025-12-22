@@ -109,31 +109,27 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
         break;
       }
       final Validator validator = validators.get(validatorIndex);
-      if (predicates.hasExecutionWithdrawalCredential(validator)) {
-        final UInt64 partiallyWithdrawnBalance =
-            WithdrawalsHelpers.getPartiallyWithdrawnBalance(
-                withdrawals, UInt64.valueOf(validatorIndex));
-        final UInt64 balance =
-            balances.get(validatorIndex).get().minusMinZero(partiallyWithdrawnBalance);
+      final UInt64 withdrawn =
+          WithdrawalsHelpers.getWithdrawnAmount(withdrawals, UInt64.valueOf(validatorIndex));
+      final UInt64 balance = balances.get(validatorIndex).get().minusMinZero(withdrawn);
 
-        if (predicates.isFullyWithdrawableValidatorCredentialsChecked(validator, balance, epoch)) {
-          withdrawals.add(
-              withdrawalSchema.create(
-                  withdrawalIndex,
-                  UInt64.valueOf(validatorIndex),
-                  WithdrawalsHelpers.getEthAddressFromWithdrawalCredentials(validator),
-                  balance));
-          withdrawalIndex = withdrawalIndex.increment();
-        } else if (predicates.isPartiallyWithdrawableValidatorEth1CredentialsChecked(
-            validator, balance)) {
-          withdrawals.add(
-              withdrawalSchema.create(
-                  withdrawalIndex,
-                  UInt64.valueOf(validatorIndex),
-                  WithdrawalsHelpers.getEthAddressFromWithdrawalCredentials(validator),
-                  balance.minusMinZero(miscHelpers.getMaxEffectiveBalance(validator))));
-          withdrawalIndex = withdrawalIndex.increment();
-        }
+      if (predicates.isFullyWithdrawableValidatorCredentialsChecked(validator, balance, epoch)) {
+        withdrawals.add(
+            withdrawalSchema.create(
+                withdrawalIndex,
+                UInt64.valueOf(validatorIndex),
+                WithdrawalsHelpers.getEthAddressFromWithdrawalCredentials(validator),
+                balance));
+        withdrawalIndex = withdrawalIndex.increment();
+      } else if (predicates.isPartiallyWithdrawableValidatorEth1CredentialsChecked(
+          validator, balance)) {
+        withdrawals.add(
+            withdrawalSchema.create(
+                withdrawalIndex,
+                UInt64.valueOf(validatorIndex),
+                WithdrawalsHelpers.getEthAddressFromWithdrawalCredentials(validator),
+                balance.minusMinZero(miscHelpers.getMaxEffectiveBalance(validator))));
+        withdrawalIndex = withdrawalIndex.increment();
       }
 
       validatorIndex = (validatorIndex + 1) % validatorCount;

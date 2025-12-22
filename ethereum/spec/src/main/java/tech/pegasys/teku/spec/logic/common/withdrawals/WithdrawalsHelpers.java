@@ -41,7 +41,7 @@ public interface WithdrawalsHelpers {
       int processedPartialWithdrawalsCount,
       int processedValidatorsSweepCount) {}
 
-  static UInt64 getPartiallyWithdrawnBalance(
+  static UInt64 getWithdrawnAmount(
       final List<Withdrawal> withdrawals, final UInt64 validatorIndex) {
     return withdrawals.stream()
         .filter(withdrawal -> withdrawal.getValidatorIndex().equals(validatorIndex))

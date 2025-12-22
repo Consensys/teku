@@ -75,14 +75,9 @@ public class WithdrawalsHelpersGloas extends WithdrawalsHelpersElectra {
       if (isBuilderPaymentWithdrawable(state, withdrawal)) {
         final UInt64 builderIndex = withdrawal.getBuilderIndex();
         final Validator builder = state.getValidators().get(builderIndex.intValue());
-        final UInt64 partiallyWithdrawnBalance =
-            WithdrawalsHelpers.getPartiallyWithdrawnBalance(withdrawals, builderIndex);
+        final UInt64 withdrawn = WithdrawalsHelpers.getWithdrawnAmount(withdrawals, builderIndex);
         final UInt64 remainingBalance =
-            state
-                .getBalances()
-                .get(builderIndex.intValue())
-                .get()
-                .minusMinZero(partiallyWithdrawnBalance);
+            state.getBalances().get(builderIndex.intValue()).get().minusMinZero(withdrawn);
         final UInt64 withdrawableBalance;
         if (builder.isSlashed()) {
           withdrawableBalance = remainingBalance.min(withdrawal.getAmount());
