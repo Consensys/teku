@@ -18,7 +18,6 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
@@ -92,7 +91,6 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
     final WithdrawalSchema withdrawalSchema = schemaDefinitions.getWithdrawalSchema();
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(state.getSlot());
     final SszList<Validator> validators = state.getValidators();
-    final SszUInt64List balances = state.getBalances();
     final int validatorCount = validators.size();
     final int withdrawalsLimit = specConfig.getMaxWithdrawalsPerPayload();
 
@@ -106,7 +104,7 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
 
     for (int i = 0; i < validatorsLimit; i++) {
       if (withdrawals.size() == withdrawalsLimit) {
-        return processedValidatorsSweepCount;
+        break;
       }
       final Validator validator = validators.get(validatorIndex.intValue());
       if (predicates.hasExecutionWithdrawalCredential(validator)) {
