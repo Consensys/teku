@@ -61,14 +61,11 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
   public ExpectedWithdrawals getExpectedWithdrawals(final BeaconState state) {
     final List<Withdrawal> withdrawals = new ArrayList<>();
 
-    // Process builder withdrawals
     final int processedBuilderWithdrawalsCount = processBuilderWithdrawals(state, withdrawals);
 
-    // Process partial withdrawals
     final int processedPartialWithdrawalsCount =
         processPendingPartialWithdrawals(state, withdrawals);
 
-    // Process validators sweep withdrawals
     final int processedValidatorsSweepCount = processValidatorsSweepWithdrawals(state, withdrawals);
 
     return new ExpectedWithdrawals(
@@ -214,13 +211,17 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
     applyWithdrawals(state, withdrawals);
 
     updateNextWithdrawalIndex(state, withdrawals);
+
     updatePayloadExpectedWithdrawals(state, withdrawals);
+
     if (processedBuilderWithdrawalsCount > 0) {
       updateBuilderPendingWithdrawals(state, processedBuilderWithdrawalsCount);
     }
+
     if (processedPartialWithdrawalsCount > 0) {
       updatePendingPartialWithdrawals(state, processedPartialWithdrawalsCount);
     }
+
     updateNextWithdrawalValidatorIndex(state, processedValidatorsSweepCount);
   }
 
