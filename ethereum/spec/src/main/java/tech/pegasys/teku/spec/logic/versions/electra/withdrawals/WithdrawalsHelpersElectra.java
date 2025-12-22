@@ -65,22 +65,19 @@ public class WithdrawalsHelpersElectra extends WithdrawalsHelpersCapella {
       if (withdrawal.getWithdrawableEpoch().isGreaterThan(epoch) || withdrawals.size() == bound) {
         break;
       }
-      final int validatorIndex = withdrawal.getValidatorIndex();
-      final Validator validator = state.getValidators().get(validatorIndex);
-      final UInt64 withdrawn =
-          WithdrawalsHelpers.getTotalWithdrawn(withdrawals, UInt64.valueOf(validatorIndex));
-      final UInt64 remainingBalance =
-          state.getBalances().get(withdrawal.getValidatorIndex()).get().minusMinZero(withdrawn);
+      final UInt64 validatorIndex = withdrawal.getValidatorIndex();
+      final Validator validator = state.getValidators().get(validatorIndex.intValue());
+      final UInt64 balance = getBalanceAfterWithdrawals(state, validatorIndex, withdrawals);
       final boolean hasSufficientEffectiveBalance =
           validator
               .getEffectiveBalance()
               .isGreaterThanOrEqualTo(specConfigElectra.getMinActivationBalance());
       final boolean hasExcessBalance =
-          remainingBalance.isGreaterThan(specConfigElectra.getMinActivationBalance());
+          balance.isGreaterThan(specConfigElectra.getMinActivationBalance());
       LOG.trace(
           "pending withdrawal validator index {}, remaining balance {}, requested amount {}; exitEpoch {}, hasSufficientEffectiveBalance {}, hasExcessBalance {}",
           withdrawal.getValidatorIndex(),
-          remainingBalance,
+          balance,
           withdrawal.getAmount(),
           validator.getExitEpoch(),
           hasSufficientEffectiveBalance,
@@ -92,13 +89,13 @@ public class WithdrawalsHelpersElectra extends WithdrawalsHelpersCapella {
         final UInt64 withdrawableBalance =
             withdrawal
                 .getAmount()
-                .min(remainingBalance.minusMinZero(specConfigElectra.getMinActivationBalance()));
+                .min(balance.minusMinZero(specConfigElectra.getMinActivationBalance()));
         withdrawals.add(
             schemaDefinitions
                 .getWithdrawalSchema()
                 .create(
                     withdrawalIndex,
-                    UInt64.valueOf(withdrawal.getValidatorIndex()),
+                    withdrawal.getValidatorIndex(),
                     WithdrawalsHelpers.getEthAddressFromWithdrawalCredentials(validator),
                     withdrawableBalance));
         withdrawalIndex = withdrawalIndex.increment();

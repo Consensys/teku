@@ -69,6 +69,8 @@ public class ReferenceTestFinder {
                 return Stream.of(
                         new BlsTestFinder(),
                         new KzgTestFinder(),
+                        // TODO-GLOAS: not running these reference tests until the upcoming specs
+                        // have been implemented
                         // new SszTestFinder("ssz_generic"),
                         // new SszTestFinder("ssz_static"),
                         new ShufflingTestFinder(),
