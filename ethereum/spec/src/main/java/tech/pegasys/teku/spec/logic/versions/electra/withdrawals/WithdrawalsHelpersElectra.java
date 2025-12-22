@@ -68,7 +68,7 @@ public class WithdrawalsHelpersElectra extends WithdrawalsHelpersCapella {
       final int validatorIndex = withdrawal.getValidatorIndex();
       final Validator validator = state.getValidators().get(validatorIndex);
       final UInt64 withdrawn =
-          WithdrawalsHelpers.getWithdrawnAmount(withdrawals, UInt64.valueOf(validatorIndex));
+          WithdrawalsHelpers.getTotalWithdrawn(withdrawals, UInt64.valueOf(validatorIndex));
       final UInt64 remainingBalance =
           state.getBalances().get(withdrawal.getValidatorIndex()).get().minusMinZero(withdrawn);
       final boolean hasSufficientEffectiveBalance =

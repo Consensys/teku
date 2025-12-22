@@ -37,28 +37,28 @@ public class WithdrawalHelpersTest {
   private static final UInt64 ONE_ETH = UInt64.valueOf(1_000_000_000L);
 
   @Test
-  void getWithdrawnAmount_returnsZeroIfNotSet() {
+  void getTotalWithdrawn_returnsZeroIfNoWithdrawals() {
     final List<Withdrawal> withdrawalList = List.of();
-    assertThat(WithdrawalsHelpers.getWithdrawnAmount(withdrawalList, ZERO)).isEqualTo(ZERO);
+    assertThat(WithdrawalsHelpers.getTotalWithdrawn(withdrawalList, ZERO)).isEqualTo(ZERO);
   }
 
   @Test
-  void getWithdrawnAmount_returnsCurrentValue() {
+  void getTotalWithdrawn_returnsSummedValue() {
     final List<Withdrawal> withdrawalList =
         List.of(
             dataStructureUtil.randomWithdrawal(ZERO, ONE_ETH),
             dataStructureUtil.randomWithdrawal(ZERO, ONE_ETH));
-    assertThat(WithdrawalsHelpers.getWithdrawnAmount(withdrawalList, ZERO))
+    assertThat(WithdrawalsHelpers.getTotalWithdrawn(withdrawalList, ZERO))
         .isEqualTo(ONE_ETH.times(2));
   }
 
   @Test
-  void getWithdrawnAmount_returnsCurrentValueSpecificToValidator() {
+  void getTotalWithdrawn_returnsValueSpecificToValidator() {
     final List<Withdrawal> withdrawalList =
         List.of(
             dataStructureUtil.randomWithdrawal(ZERO, ONE_ETH),
             dataStructureUtil.randomWithdrawal(ONE, ONE_ETH));
-    assertThat(WithdrawalsHelpers.getWithdrawnAmount(withdrawalList, ZERO)).isEqualTo(ONE_ETH);
+    assertThat(WithdrawalsHelpers.getTotalWithdrawn(withdrawalList, ZERO)).isEqualTo(ONE_ETH);
   }
 
   @Test
