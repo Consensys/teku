@@ -257,6 +257,9 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
                       .completionFuture()
                       .completeExceptionally(
                           new RuntimeException("DAS sampling expired while slot finalized"));
+                  // Slot less than finalized slot, but we didn't complete DA check, means it's
+                  // probably orphaned block with data never available - we must prune this
+                  // RecentChainData contains block, but we are here - shouldn't happen
                   return true;
                 }
                 // cleanup only if fully sampled
