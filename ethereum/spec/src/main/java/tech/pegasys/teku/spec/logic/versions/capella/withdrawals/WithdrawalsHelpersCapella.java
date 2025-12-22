@@ -94,7 +94,7 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
     final SszList<Validator> validators = state.getValidators();
     final SszUInt64List balances = state.getBalances();
     final int validatorCount = validators.size();
-    final int maxWithdrawalsPerPayload = specConfig.getMaxWithdrawalsPerPayload();
+    final int withdrawalsLimit = specConfig.getMaxWithdrawalsPerPayload();
 
     UInt64 withdrawalIndex = getNextWithdrawalIndex(state, withdrawals);
     int validatorIndex =
@@ -102,10 +102,10 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
 
     int processedValidatorsSweepCount = 0;
 
-    final int bound = Math.min(validatorCount, specConfig.getMaxValidatorsPerWithdrawalSweep());
+    final int validatorsLimit = Math.min(validatorCount, specConfig.getMaxValidatorsPerWithdrawalSweep());
 
-    for (int i = 0; i < bound; i++) {
-      if (withdrawals.size() == maxWithdrawalsPerPayload) {
+    for (int i = 0; i < validatorsLimit; i++) {
+      if (withdrawals.size() == withdrawalsLimit) {
         return processedValidatorsSweepCount;
       }
       final Validator validator = validators.get(validatorIndex);
