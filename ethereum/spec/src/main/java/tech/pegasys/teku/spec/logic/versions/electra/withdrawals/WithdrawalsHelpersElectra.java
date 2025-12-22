@@ -52,7 +52,7 @@ public class WithdrawalsHelpersElectra extends WithdrawalsHelpersCapella {
   }
 
   @Override
-  protected int sweepForPendingPartialWithdrawals(
+  protected int processPendingPartialWithdrawals(
       final BeaconState state, final List<Withdrawal> withdrawals) {
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(state.getSlot());
     UInt64 withdrawalIndex = getNextWithdrawalIndex(state, withdrawals);

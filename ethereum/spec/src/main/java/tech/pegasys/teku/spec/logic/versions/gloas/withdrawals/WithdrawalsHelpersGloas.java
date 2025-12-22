@@ -58,7 +58,7 @@ public class WithdrawalsHelpersGloas extends WithdrawalsHelpersElectra {
   }
 
   @Override
-  protected int sweepForBuilderPayments(
+  protected int processBuilderWithdrawals(
       final BeaconState state, final List<Withdrawal> withdrawals) {
     UInt64 withdrawalIndex = getNextWithdrawalIndex(state, withdrawals);
 
@@ -131,7 +131,7 @@ public class WithdrawalsHelpersGloas extends WithdrawalsHelpersElectra {
   }
 
   @Override
-  protected void updatePendingBuilderWithdrawals(
+  protected void updateBuilderPendingWithdrawals(
       final MutableBeaconState state, final int processedBuilderWithdrawalsCount) {
     final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
     final SszListSchema<BuilderPendingWithdrawal, ?> schema =
@@ -163,7 +163,7 @@ public class WithdrawalsHelpersGloas extends WithdrawalsHelpersElectra {
       final BeaconState state, final BuilderPendingWithdrawal withdrawal) {
     final Validator builder = state.getValidators().get(withdrawal.getBuilderIndex().intValue());
     final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(state.getSlot());
-    return builder.getWithdrawableEpoch().isGreaterThanOrEqualTo(currentEpoch)
+    return currentEpoch.isGreaterThanOrEqualTo(builder.getWithdrawableEpoch())
         || !builder.isSlashed();
   }
 }

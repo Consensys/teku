@@ -70,7 +70,8 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
    * <p>Return the indexed payload attestation corresponding to ``payload_attestation``.
    */
   public IndexedPayloadAttestation getIndexedPayloadAttestation(
-      final BeaconState state, final UInt64 slot, final PayloadAttestation payloadAttestation) {
+      final BeaconState state, final PayloadAttestation payloadAttestation) {
+    final UInt64 slot = payloadAttestation.getData().getSlot();
     final IntList ptc = getPtc(state, slot);
     final SszBitvector aggregationBits = payloadAttestation.getAggregationBits();
     final IntList attestingIndices = new IntArrayList();

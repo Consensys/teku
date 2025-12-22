@@ -376,8 +376,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       }
       // Verify signature
       final IndexedPayloadAttestation indexedPayloadAttestation =
-          beaconStateAccessorsGloas.getIndexedPayloadAttestation(
-              state, data.getSlot(), payloadAttestation);
+          beaconStateAccessorsGloas.getIndexedPayloadAttestation(state, payloadAttestation);
 
       if (!attestationUtilGloas.isValidIndexedPayloadAttestation(
           state, indexedPayloadAttestation)) {

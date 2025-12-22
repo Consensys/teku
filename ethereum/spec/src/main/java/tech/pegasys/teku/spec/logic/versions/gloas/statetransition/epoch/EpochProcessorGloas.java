@@ -76,7 +76,7 @@ public class EpochProcessorGloas extends EpochProcessorFulu {
         .forEach(
             i -> {
               final BuilderPendingPayment payment = builderPendingPayments.get(i);
-              if (payment.getWeight().isGreaterThan(quorum)) {
+              if (payment.getWeight().isGreaterThanOrEqualTo(quorum)) {
                 final UInt64 amount = payment.getWithdrawal().getAmount();
                 final UInt64 exitQueueEpoch =
                     BeaconStateMutatorsElectra.required(beaconStateMutators)
