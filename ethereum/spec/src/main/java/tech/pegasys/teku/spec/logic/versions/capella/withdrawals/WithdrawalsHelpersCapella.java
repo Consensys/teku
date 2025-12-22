@@ -108,6 +108,9 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
     final int bound = Math.min(validatorCount, specConfig.getMaxValidatorsPerWithdrawalSweep());
 
     for (int i = 0; i < bound; i++) {
+      if (withdrawals.size() == maxWithdrawalsPerPayload) {
+        break;
+      }
       final Validator validator = validators.get(validatorIndex);
       if (predicates.hasExecutionWithdrawalCredential(validator)) {
         final UInt64 partiallyWithdrawnBalance =
@@ -133,10 +136,6 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
                   WithdrawalsHelpers.getEthAddressFromWithdrawalCredentials(validator),
                   balance.minusMinZero(miscHelpers.getMaxEffectiveBalance(validator))));
           withdrawalIndex = withdrawalIndex.increment();
-        }
-
-        if (withdrawals.size() == maxWithdrawalsPerPayload) {
-          return processedValidatorsSweepCount;
         }
       }
 
