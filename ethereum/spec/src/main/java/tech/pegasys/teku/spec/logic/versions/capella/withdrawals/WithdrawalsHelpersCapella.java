@@ -106,7 +106,7 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
 
     for (int i = 0; i < bound; i++) {
       if (withdrawals.size() == maxWithdrawalsPerPayload) {
-        break;
+        return processedValidatorsSweepCount;
       }
       final Validator validator = validators.get(validatorIndex);
       final UInt64 withdrawn =
