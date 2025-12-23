@@ -19,6 +19,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -132,10 +133,14 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
         .runAfterDelay(
             () -> {
               LOG.debug("Check if recovery needed for slot: {}", slot);
-
-              recoveryTasks.keySet().stream()
+              final Set<SlotAndBlockRoot> recoveryTaskKeys;
+              synchronized (recoveryTasks) {
+                recoveryTaskKeys = new HashSet<>(recoveryTasks.keySet());
+              }
+              recoveryTaskKeys.stream()
                   .filter(key -> key.getSlot().isLessThanOrEqualTo(slot))
-                  .map(recoveryTasks::get)
+                  .map(key -> Optional.ofNullable(recoveryTasks.get(key)))
+                  .flatMap(Optional::stream)
                   .forEach(
                       recoveryTask -> {
                         if (recoveryTask.timedOut().compareAndSet(false, true)) {
@@ -286,15 +291,18 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   }
 
   private void createOrUpdateRecoveryTaskForDataColumnSidecar(final DataColumnSidecar sidecar) {
-    final RecoveryTask task =
-        recoveryTasks.computeIfAbsent(
-            sidecar.getSlotAndBlockRoot(),
-            __ ->
-                new RecoveryTask(
-                    sidecar.getSlotAndBlockRoot(),
-                    new ConcurrentHashMap<>(),
-                    new AtomicBoolean(false),
-                    new AtomicBoolean(false)));
+    final RecoveryTask task;
+    synchronized (recoveryTasks) {
+      task =
+          recoveryTasks.computeIfAbsent(
+              sidecar.getSlotAndBlockRoot(),
+              __ ->
+                  new RecoveryTask(
+                      sidecar.getSlotAndBlockRoot(),
+                      new ConcurrentHashMap<>(),
+                      new AtomicBoolean(false),
+                      new AtomicBoolean(false)));
+    }
     task.existingSidecars().put(DataColumnSlotAndIdentifier.fromDataColumn(sidecar), sidecar);
     maybeStartRecovery(task);
   }
