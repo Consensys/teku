@@ -100,6 +100,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
@@ -158,6 +159,7 @@ public class Eth2P2PNetworkBuilder {
   protected DebugDataDumper debugDataDumper;
   private DasGossipLogger dasGossipLogger;
   private DasReqRespLogger dasReqRespLogger;
+  private DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor;
 
   protected Eth2P2PNetworkBuilder() {}
 
@@ -206,6 +208,7 @@ public class Eth2P2PNetworkBuilder {
             config.getPeerRequestLimit(),
             spec,
             discoveryNodeIdExtractor,
+            dataColumnSidecarArchiveReconstructor,
             dasReqRespLogger);
     final Collection<RpcMethod<?, ?, ?>> eth2RpcMethods =
         eth2PeerManager.getBeaconChainMethods().all();
@@ -877,6 +880,12 @@ public class Eth2P2PNetworkBuilder {
 
   public Eth2P2PNetworkBuilder reqRespDasLogger(final DasReqRespLogger dasReqRespLogger) {
     this.dasReqRespLogger = dasReqRespLogger;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder dataColumnSidecarArchiveReconstructor(
+      final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor) {
+    this.dataColumnSidecarArchiveReconstructor = dataColumnSidecarArchiveReconstructor;
     return this;
   }
 }
