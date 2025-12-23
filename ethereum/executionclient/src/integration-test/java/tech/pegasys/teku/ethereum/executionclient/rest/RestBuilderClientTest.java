@@ -364,7 +364,8 @@ class RestBuilderClientTest {
     // Mock asyncPost with ssz to fail
     doReturn(SafeFuture.failedFuture(new ConnectException()))
         .when(okHttpRestClient)
-        .postAsync(eq(BuilderApiMethod.REGISTER_VALIDATOR.getPath()), any(), eq(true), any());
+        .postAsync(
+            eq(BuilderApiMethod.REGISTER_VALIDATOR.getPath()), any(), any(), eq(true), any());
     restBuilderClient =
         new RestBuilderClient(restBuilderClientOptions, okHttpRestClient, timeProvider, spec, true);
 
