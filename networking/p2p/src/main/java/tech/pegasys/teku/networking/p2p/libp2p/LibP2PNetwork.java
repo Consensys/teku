@@ -166,7 +166,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     if (!state.compareAndSet(State.RUNNING, State.STOPPED)) {
       return SafeFuture.COMPLETE;
     }
-    LOG.debug("JvmLibP2PNetwork.stop()");
+    LOG.debug("Stopping libp2p network...");
     return SafeFuture.of(host.stop());
   }
 
