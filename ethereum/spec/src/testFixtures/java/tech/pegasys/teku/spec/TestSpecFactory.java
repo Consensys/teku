@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.SharedBeaconStateCaches;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
@@ -366,6 +367,7 @@ public class TestSpecFactory {
   public static Spec create(
       final SpecConfigAndParent<? extends SpecConfig> config,
       final SpecMilestone highestSupportedMilestone) {
+    SharedBeaconStateCaches.get().clear();
     final Spec spec = Spec.create(config, highestSupportedMilestone);
 
     spec.initialize(
