@@ -103,12 +103,12 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
     assertThat(resultAsJsonNode.get("message").asText())
         .isEqualTo("Some items failed to publish, refer to errors for details");
     assertThat(resultAsJsonNode.get("failures").size()).isEqualTo(2);
-    assertThat(resultAsJsonNode.get("failures").get(0).get("index").asText())
-        .isEqualTo(firstSubmitDataError.index().toString());
+    assertThat(resultAsJsonNode.get("failures").get(0).get("index").asLong())
+        .isEqualTo(firstSubmitDataError.index().longValue());
     assertThat(resultAsJsonNode.get("failures").get(0).get("message").asText())
         .isEqualTo(firstSubmitDataError.message());
-    assertThat(resultAsJsonNode.get("failures").get(1).get("index").asText())
-        .isEqualTo(secondSubmitDataError.index().toString());
+    assertThat(resultAsJsonNode.get("failures").get(1).get("index").asLong())
+        .isEqualTo(secondSubmitDataError.index().longValue());
     assertThat(resultAsJsonNode.get("failures").get(1).get("message").asText())
         .isEqualTo(secondSubmitDataError.message());
   }
