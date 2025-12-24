@@ -18,7 +18,7 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Bea
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.EXECUTION_PAYLOAD_AVAILABILITY;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.LATEST_BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.LATEST_EXECUTION_PAYLOAD_BID;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.LATEST_WITHDRAWALS_ROOT;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PAYLOAD_EXPECTED_WITHDRAWALS;
 
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingP
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
 
@@ -71,7 +72,7 @@ public interface BeaconStateGloas extends BeaconStateFulu {
     addItems(stringBuilder, "builder_pending_payments", state.getBuilderPendingPayments());
     addItems(stringBuilder, "builder_pending_withdrawals", state.getBuilderPendingWithdrawals());
     stringBuilder.add("latest_block_hash", state.getLatestBlockHash());
-    stringBuilder.add("latest_withdrawals_root", state.getLatestWithdrawalsRoot());
+    stringBuilder.add("payload_expected_withdrawals", state.getPayloadExpectedWithdrawals());
   }
 
   @Override
@@ -115,8 +116,8 @@ public interface BeaconStateGloas extends BeaconStateFulu {
     return ((SszBytes32) getAny(index)).get();
   }
 
-  default Bytes32 getLatestWithdrawalsRoot() {
-    final int index = getSchema().getFieldIndex(LATEST_WITHDRAWALS_ROOT);
-    return ((SszBytes32) getAny(index)).get();
+  default SszList<Withdrawal> getPayloadExpectedWithdrawals() {
+    final int index = getSchema().getFieldIndex(PAYLOAD_EXPECTED_WITHDRAWALS);
+    return getAny(index);
   }
 }
