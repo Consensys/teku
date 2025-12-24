@@ -61,6 +61,9 @@ public class CoreTypes {
           .format("uint64")
           .build();
 
+  public static final StringValueTypeDefinition<UInt64> UINT64_NUMERIC_TYPE =
+      new UInt64NumericTypeDefinition();
+
   public static final DeserializableTypeDefinition<UInt256> UINT256_TYPE =
       DeserializableTypeDefinition.string(UInt256.class)
           .formatter(value -> value.toBigInteger().toString(10))
