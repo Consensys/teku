@@ -201,6 +201,7 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
         expectedWithdrawals.processedValidatorsSweepCount());
   }
 
+  @SuppressWarnings("unused")
   private void processWithdrawalsUnchecked(
       final MutableBeaconState state,
       final List<Withdrawal> withdrawals,
