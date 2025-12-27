@@ -23,7 +23,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   private final int contributionDueBps;
   private final long builderRegistryLimit;
   private final long builderPendingWithdrawalsLimit;
-  private final int maxBuildersPerWithdrawalSweep;
+  private final int maxBuildersPerWithdrawalsSweep;
   private final int maxPayloadAttestations;
   private final int maxRequestPayloads;
   private final int minBuilderWithdrawabilityDelay;
@@ -38,7 +38,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
       final int contributionDueBps,
       final long builderRegistryLimit,
       final long builderPendingWithdrawalsLimit,
-      final int maxBuildersPerWithdrawalSweep,
+      final int maxBuildersPerWithdrawalsSweep,
       final int maxPayloadAttestations,
       final int maxRequestPayloads,
       final int minBuilderWithdrawabilityDelay,
@@ -51,7 +51,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
     this.contributionDueBps = contributionDueBps;
     this.builderRegistryLimit = builderRegistryLimit;
     this.builderPendingWithdrawalsLimit = builderPendingWithdrawalsLimit;
-    this.maxBuildersPerWithdrawalSweep = maxBuildersPerWithdrawalSweep;
+    this.maxBuildersPerWithdrawalsSweep = maxBuildersPerWithdrawalsSweep;
     this.maxPayloadAttestations = maxPayloadAttestations;
     this.maxRequestPayloads = maxRequestPayloads;
     this.ptcSize = ptcSize;
@@ -111,8 +111,8 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   }
 
   @Override
-  public int getMaxBuildersPerWithdrawalSweep() {
-    return maxBuildersPerWithdrawalSweep;
+  public int getMaxBuildersPerWithdrawalsSweep() {
+    return maxBuildersPerWithdrawalsSweep;
   }
 
   @Override
@@ -150,7 +150,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
         && syncMessageDueBps == that.syncMessageDueBps
         && builderRegistryLimit == that.builderRegistryLimit
         && builderPendingWithdrawalsLimit == that.builderPendingWithdrawalsLimit
-        && maxBuildersPerWithdrawalSweep == that.maxBuildersPerWithdrawalSweep;
+        && maxBuildersPerWithdrawalsSweep == that.maxBuildersPerWithdrawalsSweep;
   }
 
   @Override
@@ -162,7 +162,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
         contributionDueBps,
         builderRegistryLimit,
         builderPendingWithdrawalsLimit,
-        maxBuildersPerWithdrawalSweep,
+        maxBuildersPerWithdrawalsSweep,
         maxPayloadAttestations,
         maxRequestPayloads,
         minBuilderWithdrawabilityDelay,
