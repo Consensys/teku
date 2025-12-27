@@ -38,7 +38,7 @@ public class SpecBuilderUtil {
           Integer.class,
           0,
           Long.class,
-          0,
+          0L,
           Bytes4.class,
           Bytes4.leftPad(Bytes.EMPTY),
           Bytes32.class,
