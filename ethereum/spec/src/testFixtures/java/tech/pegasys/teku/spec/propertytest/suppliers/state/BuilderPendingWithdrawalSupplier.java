@@ -11,9 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
+package tech.pegasys.teku.spec.propertytest.suppliers.state;
 
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 

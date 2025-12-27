@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
+package tech.pegasys.teku.spec.datastructures.state.versions.gloas;
 
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
