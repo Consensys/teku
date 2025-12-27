@@ -19,8 +19,8 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.propertytest.suppliers.state.BuilderPendingWithdrawalSupplier;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingWithdrawal;
+import tech.pegasys.teku.spec.propertytest.suppliers.state.BuilderPendingWithdrawalSupplier;
 
 public class BuilderPendingWithdrawalPropertyTest {
 

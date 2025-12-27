@@ -549,7 +549,10 @@ public final class DataStructureUtil {
     return UInt64.valueOf(randomInt(3_000_000));
   }
 
-  /** builders are non-validating staked actors in ePBS */
+  /**
+   * builders are non-validating staked actors in ePBS, using the same bound as {@link
+   * #randomValidatorIndex()} because it also applies to builders
+   */
   public UInt64 randomBuilderIndex() {
     return UInt64.valueOf(randomInt(3_000_000));
   }
