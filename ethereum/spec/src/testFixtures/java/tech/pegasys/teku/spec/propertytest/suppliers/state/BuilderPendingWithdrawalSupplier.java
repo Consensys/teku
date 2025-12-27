@@ -11,17 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
+package tech.pegasys.teku.spec.propertytest.suppliers.state;
 
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class BuilderPendingPaymentSupplier
-    extends DataStructureUtilSupplier<BuilderPendingPayment> {
+public class BuilderPendingWithdrawalSupplier
+    extends DataStructureUtilSupplier<BuilderPendingWithdrawal> {
 
-  public BuilderPendingPaymentSupplier() {
-    super(DataStructureUtil::randomBuilderPendingPayment, SpecMilestone.GLOAS);
+  public BuilderPendingWithdrawalSupplier() {
+    super(DataStructureUtil::randomBuilderPendingWithdrawal, SpecMilestone.GLOAS);
   }
 }
