@@ -19,8 +19,8 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.propertytest.suppliers.state.BuilderPendingPaymentSupplier;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
+import tech.pegasys.teku.spec.propertytest.suppliers.state.BuilderPendingPaymentSupplier;
 
 public class BuilderPendingPaymentPropertyTest {
 
