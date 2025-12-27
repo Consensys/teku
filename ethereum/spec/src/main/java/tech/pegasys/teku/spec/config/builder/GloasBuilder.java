@@ -38,7 +38,7 @@ public class GloasBuilder extends BaseForkBuilder
   private Integer maxPayloadAttestations;
   private Long builderRegistryLimit;
   private Long builderPendingWithdrawalsLimit;
-  private Integer maxBuildersPerWithdrawalSweep;
+  private Integer maxBuildersPerWithdrawalsSweep;
 
   GloasBuilder() {}
 
@@ -53,7 +53,7 @@ public class GloasBuilder extends BaseForkBuilder
             contributionDueBpsGloas,
             builderRegistryLimit,
             builderPendingWithdrawalsLimit,
-            maxBuildersPerWithdrawalSweep,
+            maxBuildersPerWithdrawalsSweep,
             maxPayloadAttestations,
             maxRequestPayloads,
             minBuilderWithdrawabilityDelay,
@@ -129,9 +129,9 @@ public class GloasBuilder extends BaseForkBuilder
     return this;
   }
 
-  public GloasBuilder maxBuildersPerWithdrawalSweep(final Integer maxBuildersPerWithdrawalSweep) {
-    checkNotNull(maxBuildersPerWithdrawalSweep);
-    this.maxBuildersPerWithdrawalSweep = maxBuildersPerWithdrawalSweep;
+  public GloasBuilder maxBuildersPerWithdrawalsSweep(final Integer maxBuildersPerWithdrawalsSweep) {
+    checkNotNull(maxBuildersPerWithdrawalsSweep);
+    this.maxBuildersPerWithdrawalsSweep = maxBuildersPerWithdrawalsSweep;
     return this;
   }
 
@@ -154,7 +154,7 @@ public class GloasBuilder extends BaseForkBuilder
 
     constants.put("builderRegistryLimit", builderRegistryLimit);
     constants.put("builderPendingWithdrawalsLimit", builderPendingWithdrawalsLimit);
-    constants.put("maxBuildersPerWithdrawalSweep", maxBuildersPerWithdrawalSweep);
+    constants.put("maxBuildersPerWithdrawalsSweep", maxBuildersPerWithdrawalsSweep);
     constants.put("ptcSize", ptcSize);
     constants.put("maxPayloadAttestations", maxPayloadAttestations);
 

@@ -74,8 +74,8 @@ public class DelegatingSpecConfigGloas extends DelegatingSpecConfigFulu implemen
   }
 
   @Override
-  public int getMaxBuildersPerWithdrawalSweep() {
-    return delegate.getMaxBuildersPerWithdrawalSweep();
+  public int getMaxBuildersPerWithdrawalsSweep() {
+    return delegate.getMaxBuildersPerWithdrawalsSweep();
   }
 
   @Override

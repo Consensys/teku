@@ -46,7 +46,7 @@ public interface SpecConfigGloas extends SpecConfigFulu, NetworkingSpecConfigGlo
 
   long getBuilderPendingWithdrawalsLimit();
 
-  int getMaxBuildersPerWithdrawalSweep();
+  int getMaxBuildersPerWithdrawalsSweep();
 
   @Override
   Optional<SpecConfigGloas> toVersionGloas();
