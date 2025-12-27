@@ -36,9 +36,9 @@ public class GloasBuilder extends BaseForkBuilder
   // gloas preset
   private Integer ptcSize;
   private Integer maxPayloadAttestations;
-  private long builderRegistryLimit;
-  private long builderPendingWithdrawalsLimit;
-  private int maxBuildersPerWithdrawalSweep;
+  private Long builderRegistryLimit;
+  private Long builderPendingWithdrawalsLimit;
+  private Integer maxBuildersPerWithdrawalSweep;
 
   GloasBuilder() {}
 
