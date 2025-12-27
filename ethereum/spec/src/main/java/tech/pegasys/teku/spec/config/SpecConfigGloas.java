@@ -17,7 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface SpecConfigGloas extends SpecConfigFulu, NetworkingSpecConfigGloas {
-
+  UInt64 BUILDER_INDEX_SELF_BUILD = UInt64.MAX_VALUE;
   UInt64 BUILDER_PAYMENT_THRESHOLD_NUMERATOR = UInt64.valueOf(6);
   UInt64 BUILDER_PAYMENT_THRESHOLD_DENOMINATOR = UInt64.valueOf(10);
 
@@ -31,13 +31,19 @@ public interface SpecConfigGloas extends SpecConfigFulu, NetworkingSpecConfigGlo
                         + specConfig.getClass().getSimpleName()));
   }
 
+  int getMinBuilderWithdrawabilityDelay();
+
   int getPayloadAttestationDueBps();
 
   int getPtcSize();
 
   int getMaxPayloadAttestations();
 
+  long getBuilderRegistryLimit();
+
   long getBuilderPendingWithdrawalsLimit();
+
+  int getMaxBuildersPerWithdrawalSweep();
 
   @Override
   Optional<SpecConfigGloas> toVersionGloas();
