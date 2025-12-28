@@ -11,55 +11,38 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.collections.cache;
+package tech.pegasys.teku.benchmarks.gen;
 
 import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
+import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 
-/**
- * Cache made around LRU-map with fixed size, removing eldest entries (by added) when the space is
- * over
- *
- * @param <K> Keys type
- * @param <V> Values type
- */
-public class LRUCache<K, V> implements Cache<K, V> {
-
-  public static <K, V> LRUCache<K, V> create(final int capacity) {
-    return new LRUCache<>(LimitedMap.createNonSynchronized(capacity));
+public class LegacyLRUCache<K, V> implements Cache<K, V> {
+  public static <K, V> LegacyLRUCache<K, V> create(final int capacity) {
+    return new LegacyLRUCache<>(LimitedMap.createNonSynchronized(capacity));
   }
 
   private final LimitedMap<K, V> cacheData;
 
-  private LRUCache(final LimitedMap<K, V> cacheData) {
+  private LegacyLRUCache(final LimitedMap<K, V> cacheData) {
     this.cacheData = cacheData;
   }
 
   @Override
   public synchronized Cache<K, V> copy() {
-    return new LRUCache<>(cacheData.copy());
+    return new LegacyLRUCache<>(cacheData.copy());
   }
 
-  /**
-   * Queries value from the cache. If it's not found there, fallback function is used to calculate
-   * value. After calculation result is put in cache and returned.
-   *
-   * @param key Key to query
-   * @param fallback Fallback function for calculation of the result in case of missed cache entry
-   * @return expected value result for provided key
-   */
   @Override
   public synchronized V get(final K key, final Function<K, V> fallback) {
     V result = cacheData.get(key);
-
     if (result == null) {
       result = fallback.apply(key);
       if (result != null) {
         cacheData.put(key, result);
       }
     }
-
     return result;
   }
 
