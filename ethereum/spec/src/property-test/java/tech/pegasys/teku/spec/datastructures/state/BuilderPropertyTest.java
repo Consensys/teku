@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
+package tech.pegasys.teku.spec.datastructures.state;
 
 import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
 import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertRoundTrip;
@@ -19,22 +19,20 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
+import tech.pegasys.teku.spec.propertytest.suppliers.state.BuilderSupplier;
 
-public class BuilderPendingWithdrawalPropertyTest {
+public class BuilderPropertyTest {
 
   @Property
-  void roundTrip(
-      @ForAll(supplier = BuilderPendingWithdrawalSupplier.class)
-          final BuilderPendingWithdrawal builderPendingWithdrawal)
+  void roundTrip(@ForAll(supplier = BuilderSupplier.class) final Builder builder)
       throws JsonProcessingException {
-    assertRoundTrip(builderPendingWithdrawal);
+    assertRoundTrip(builder);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = BuilderPendingWithdrawalSupplier.class)
-          final BuilderPendingWithdrawal builderPendingWithdrawal,
-      @ForAll final int seed) {
-    assertDeserializeMutatedThrowsExpected(builderPendingWithdrawal, seed);
+      @ForAll(supplier = BuilderSupplier.class) final Builder builder, @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(builder, seed);
   }
 }
