@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 public class BuilderBuilder {
 
   private BLSPublicKey publicKey;
+  private Byte version;
   private Eth1Address executionAddress;
   private UInt64 balance;
   private UInt64 depositEpoch = FAR_FUTURE_EPOCH;
@@ -31,12 +32,18 @@ public class BuilderBuilder {
 
   public BuilderBuilder(final Spec spec, final DataStructureUtil dataStructureUtil) {
     this.publicKey = dataStructureUtil.randomPublicKey();
+    this.version = dataStructureUtil.randomByte();
     this.executionAddress = dataStructureUtil.randomEth1Address();
     this.balance = spec.getGenesisSpec().getConfig().getMaxEffectiveBalance();
   }
 
   public BuilderBuilder publicKey(final BLSPublicKey publicKey) {
     this.publicKey = publicKey;
+    return this;
+  }
+
+  public BuilderBuilder version(final Byte version) {
+    this.version = version;
     return this;
   }
 
@@ -61,6 +68,7 @@ public class BuilderBuilder {
   }
 
   public Builder build() {
-    return new Builder(publicKey, executionAddress, balance, depositEpoch, withdrawableEpoch);
+    return new Builder(
+        publicKey, version, executionAddress, balance, depositEpoch, withdrawableEpoch);
   }
 }

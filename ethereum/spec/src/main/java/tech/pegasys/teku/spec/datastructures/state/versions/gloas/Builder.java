@@ -17,8 +17,9 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container5;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema5;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container6;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema6;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
@@ -28,16 +29,18 @@ import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
 
 public class Builder
-    extends Container5<Builder, SszPublicKey, SszByteVector, SszUInt64, SszUInt64, SszUInt64> {
+    extends Container6<
+        Builder, SszPublicKey, SszByte, SszByteVector, SszUInt64, SszUInt64, SszUInt64> {
 
   public static class BuilderSchema
-      extends ContainerSchema5<
-          Builder, SszPublicKey, SszByteVector, SszUInt64, SszUInt64, SszUInt64> {
+      extends ContainerSchema6<
+          Builder, SszPublicKey, SszByte, SszByteVector, SszUInt64, SszUInt64, SszUInt64> {
 
     public BuilderSchema() {
       super(
           "Builder",
           namedSchema("pubkey", SszPublicKeySchema.INSTANCE),
+          namedSchema("version", SszPrimitiveSchemas.BYTE_SCHEMA),
           namedSchema("execution_address", SszByteVectorSchema.create(Bytes20.SIZE)),
           namedSchema("balance", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("deposit_epoch", SszPrimitiveSchemas.UINT64_SCHEMA),
@@ -58,6 +61,7 @@ public class Builder
 
   public Builder(
       final BLSPublicKey pubkey,
+      final Byte version,
       final Eth1Address executionAddress,
       final UInt64 balance,
       final UInt64 depositEpoch,
@@ -65,6 +69,7 @@ public class Builder
     super(
         SSZ_SCHEMA,
         new SszPublicKey(pubkey),
+        SszByte.of(version),
         SszByteVector.fromBytes(executionAddress.getWrappedBytes()),
         SszUInt64.of(balance),
         SszUInt64.of(depositEpoch),
@@ -75,20 +80,24 @@ public class Builder
     return getField0().getBLSPublicKey();
   }
 
+  public Byte getVersion() {
+    return getField1().get();
+  }
+
   public Eth1Address getExecutionAddress() {
-    return Eth1Address.fromBytes(getField1().getBytes());
+    return Eth1Address.fromBytes(getField2().getBytes());
   }
 
   public UInt64 getBalance() {
-    return getField2().get();
-  }
-
-  public UInt64 getDepositEpoch() {
     return getField3().get();
   }
 
-  public UInt64 getWithdrawableEpoch() {
+  public UInt64 getDepositEpoch() {
     return getField4().get();
+  }
+
+  public UInt64 getWithdrawableEpoch() {
+    return getField5().get();
   }
 
   @Override
