@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateSchemaGloas;
@@ -70,7 +71,7 @@ public class BeaconStateBuilderGloas
   private SszVector<BuilderPendingPayment> builderPendingPayments;
   private SszList<BuilderPendingWithdrawal> builderPendingWithdrawals;
   private Bytes32 latestBlockHash;
-  private Bytes32 latestWithdrawalsRoot;
+  private SszList<Withdrawal> payloadExpectedWithdrawals;
 
   protected BeaconStateBuilderGloas(
       final SpecVersion spec,
@@ -112,7 +113,7 @@ public class BeaconStateBuilderGloas
     state.setBuilderPendingPayments(builderPendingPayments);
     state.setBuilderPendingWithdrawals(builderPendingWithdrawals);
     state.setLatestBlockHash(latestBlockHash);
-    state.setLatestWithdrawalsRoot(latestWithdrawalsRoot);
+    state.setPayloadExpectedWithdrawals(payloadExpectedWithdrawals);
   }
 
   public static BeaconStateBuilderGloas create(
@@ -219,9 +220,10 @@ public class BeaconStateBuilderGloas
     return this;
   }
 
-  public BeaconStateBuilderGloas latestWithdrawalsRoot(final Bytes32 latestWithdrawalsRoot) {
-    checkNotNull(latestWithdrawalsRoot);
-    this.latestWithdrawalsRoot = latestWithdrawalsRoot;
+  public BeaconStateBuilderGloas payloadExpectedWithdrawals(
+      final SszList<Withdrawal> payloadExpectedWithdrawals) {
+    checkNotNull(payloadExpectedWithdrawals);
+    this.payloadExpectedWithdrawals = payloadExpectedWithdrawals;
     return this;
   }
 
@@ -287,6 +289,7 @@ public class BeaconStateBuilderGloas
     this.builderPendingWithdrawals =
         schema.getBuilderPendingWithdrawalsSchema().createFromElements(List.of());
     this.latestBlockHash = Bytes32.ZERO;
-    this.latestWithdrawalsRoot = Bytes32.ZERO;
+    this.payloadExpectedWithdrawals =
+        schema.getPayloadExpectedWithdrawalsSchema().createFromElements(List.of());
   }
 }
