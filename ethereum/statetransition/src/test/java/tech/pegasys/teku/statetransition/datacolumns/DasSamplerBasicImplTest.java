@@ -97,6 +97,7 @@ public class DasSamplerBasicImplTest {
             retriever,
             custodyGroupCountManager,
             recentChainData,
+            metricsSystem,
             64,
             true);
   }

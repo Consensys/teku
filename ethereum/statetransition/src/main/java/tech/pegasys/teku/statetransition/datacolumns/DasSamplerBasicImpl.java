@@ -24,6 +24,8 @@ import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.TreeSet;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -34,6 +36,7 @@ import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -65,6 +68,8 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
 
   private final RPCFetchDelayProvider rpcFetchDelayProvider;
 
+  private final boolean halfColumnsSamplingCompletionEnabled;
+
   public DasSamplerBasicImpl(
       final Spec spec,
       final AsyncRunner asyncRunner,
@@ -75,7 +80,8 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
       final CustodyGroupCountManager custodyGroupCountManager,
       final RecentChainData recentChainData,
       final MetricsSystem metricsSystem,
-      final int maxRecentlySampledBlocks) {
+      final int maxRecentlySampledBlocks,
+      final boolean halfColumnsSamplingCompletionEnabled) {
     this.currentSlotProvider = currentSlotProvider;
     this.rpcFetchDelayProvider = rpcFetchDelayProvider;
     this.spec = spec;
@@ -85,7 +91,8 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
     this.custodyGroupCountManager = custodyGroupCountManager;
     this.recentChainData = recentChainData;
     this.maxRecentlySampledBlocks = maxRecentlySampledBlocks;
-    recentlySampledColumnsByRoot = new HashMap<>(maxRecentlySampledBlocks);
+    this.halfColumnsSamplingCompletionEnabled = halfColumnsSamplingCompletionEnabled;
+    recentlySampledColumnsByRoot = new ConcurrentHashMap<>(maxRecentlySampledBlocks);
     metricsSystem.createGauge(
         BEACON,
         "das_recently_sampled_blocks_size",
@@ -126,7 +133,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
     if (tracker.completionFuture().isDone()) {
       return tracker.completionFuture();
     }
-    if (tracker.rpcFetchScheduled().compareAndSet(false, true)) {
+    if (tracker.rpcFetchInProgress().compareAndSet(false, true)) {
       fetchMissingColumnsViaRPC(slot, blockRoot, tracker);
     }
 
@@ -143,7 +150,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
       // wait eventual known columns to be added via onAlreadyKnownDataColumn before fetching.
       return;
     }
-    tracker.rpcFetchScheduled().set(true);
+    tracker.rpcFetchInProgress().set(true);
     asyncRunner
         .getDelayedFuture(delay)
         .always(() -> fetchMissingColumnsViaRPC(slot, blockRoot, tracker));
@@ -182,7 +189,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
             })
         // let's reset the fetched flag so that this tracker can reissue RPC requests on DA check
         // retry
-        .alwaysRun(() -> tracker.rpcFetchScheduled().set(false))
+        .alwaysRun(() -> tracker.rpcFetchInProgress().set(false))
         .finish(
             throwable -> {
               if (ExceptionUtil.hasCause(throwable, CancellationException.class)) {
@@ -208,7 +215,12 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
               blockRoot,
               k -> {
                 final DataColumnSamplingTracker newTracker =
-                    DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager);
+                    DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager, halfColumnsSamplingCompletionEnabled
+                            ? Optional.of(
+                            SpecConfigFulu.required(spec.atSlot(slot).getConfig())
+                                    .getNumberOfColumns()
+                                    / 2)
+                            : Optional.empty());
                 orderedSidecarsTrackers.add(new SlotAndBlockRoot(slot, blockRoot));
                 LOG.debug("Created new DAS tracker for slot {} root {}", slot, blockRoot);
                 return newTracker;
@@ -292,17 +304,22 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
                 final SlotAndBlockRoot slotAndBlockRoot =
                     new SlotAndBlockRoot(tracker.slot(), tracker.blockRoot());
                 if (tracker.slot().isLessThan(firstNonFinalizedSlot)
-                    || recentChainData.containsBlock(tracker.blockRoot())) {
-
-                  if (tracker.completionFuture().isDone()) {
+                        || recentChainData.containsBlock(tracker.blockRoot())) {
+                  // Outdated
+                  if (!tracker.completionFuture().isDone()) {
+                    // make sure the future releases any pending waiters
+                    tracker
+                            .completionFuture()
+                            .completeExceptionally(
+                                    new RuntimeException("DAS sampling expired while slot finalized"));
+                    // Slot less than finalized slot, but we didn't complete DA check, means it's
+                    // probably orphaned block with data never available - we must prune this
+                    // RecentChainData contains block, but we are here - shouldn't happen
                     orderedSidecarsTrackers.remove(slotAndBlockRoot);
                     return true;
                   }
-
-                  // make sure the future releases any pending waiters
-                  completeExpiredTracker(tracker);
-                  orderedSidecarsTrackers.remove(slotAndBlockRoot);
-                  return true;
+                  // cleanup only if fully sampled
+                  return tracker.fullySampled().get();
                 }
                 return false;
               });
