@@ -17,7 +17,6 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON
 
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
@@ -25,7 +24,6 @@ import java.util.Optional;
 import java.util.TreeSet;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -215,10 +213,14 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
               blockRoot,
               k -> {
                 final DataColumnSamplingTracker newTracker =
-                    DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager, halfColumnsSamplingCompletionEnabled
+                    DataColumnSamplingTracker.create(
+                        slot,
+                        blockRoot,
+                        custodyGroupCountManager,
+                        halfColumnsSamplingCompletionEnabled
                             ? Optional.of(
-                            SpecConfigFulu.required(spec.atSlot(slot).getConfig())
-                                    .getNumberOfColumns()
+                                SpecConfigFulu.required(spec.atSlot(slot).getConfig())
+                                        .getNumberOfColumns()
                                     / 2)
                             : Optional.empty());
                 orderedSidecarsTrackers.add(new SlotAndBlockRoot(slot, blockRoot));
@@ -304,14 +306,14 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
                 final SlotAndBlockRoot slotAndBlockRoot =
                     new SlotAndBlockRoot(tracker.slot(), tracker.blockRoot());
                 if (tracker.slot().isLessThan(firstNonFinalizedSlot)
-                        || recentChainData.containsBlock(tracker.blockRoot())) {
+                    || recentChainData.containsBlock(tracker.blockRoot())) {
                   // Outdated
                   if (!tracker.completionFuture().isDone()) {
                     // make sure the future releases any pending waiters
                     tracker
-                            .completionFuture()
-                            .completeExceptionally(
-                                    new RuntimeException("DAS sampling expired while slot finalized"));
+                        .completionFuture()
+                        .completeExceptionally(
+                            new RuntimeException("DAS sampling expired while slot finalized"));
                     // Slot less than finalized slot, but we didn't complete DA check, means it's
                     // probably orphaned block with data never available - we must prune this
                     // RecentChainData contains block, but we are here - shouldn't happen

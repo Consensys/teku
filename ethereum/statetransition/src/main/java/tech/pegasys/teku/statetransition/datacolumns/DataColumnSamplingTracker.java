@@ -64,22 +64,22 @@ record DataColumnSamplingTracker(
         new AtomicReference<>(Optional.empty()));
   }
 
-public Optional<SignedBeaconBlock> getBlock() {
+  public Optional<SignedBeaconBlock> getBlock() {
     return block.get();
-}
+  }
 
-public boolean setBlock(final SignedBeaconBlock block) {
+  public boolean setBlock(final SignedBeaconBlock block) {
     final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(slot, blockRoot);
     checkArgument(block.getSlotAndBlockRoot().equals(slotAndBlockRoot), "Wrong block");
     final Optional<SignedBeaconBlock> oldBlock = this.block.getAndSet(Optional.of(block));
     if (oldBlock.isPresent()) {
-        return false;
+      return false;
     }
 
     LOG.debug("Block received for {}", slotAndBlockRoot::toLogString);
 
     return true;
-}
+  }
 
   boolean add(final DataColumnSlotAndIdentifier columnIdentifier, final RemoteOrigin origin) {
     if (!slot.equals(columnIdentifier.slot()) || !blockRoot.equals(columnIdentifier.blockRoot())) {
