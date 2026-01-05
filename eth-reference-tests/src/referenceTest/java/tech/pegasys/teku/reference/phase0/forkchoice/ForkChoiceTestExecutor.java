@@ -172,7 +172,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             DasCustodyStand.createCustodyGroupCountManager(4, 8),
             recentChainData,
             storageSystem.getMetricsSystem(),
-            64);
+            64,
+            false);
     final StubDataColumnSidecarManager dataColumnSidecarManager =
         new StubDataColumnSidecarManager(spec, recentChainData, dasSampler);
     // forkChoiceLateBlockReorgEnabled is true here always because this is the reference test

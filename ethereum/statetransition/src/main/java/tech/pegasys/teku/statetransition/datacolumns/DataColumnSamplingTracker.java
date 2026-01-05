@@ -36,44 +36,50 @@ record DataColumnSamplingTracker(
     Bytes32 blockRoot,
     List<UInt64> samplingRequirement,
     Set<UInt64> missingColumns,
-    AtomicBoolean rpcFetchScheduled,
+    AtomicBoolean rpcFetchInProgress,
     SafeFuture<List<UInt64>> completionFuture,
+    AtomicBoolean fullySampled,
+    Optional<Integer> earlyCompletionRequirementCount,
     AtomicReference<Optional<SignedBeaconBlock>> block) {
   private static final Logger LOG = LogManager.getLogger();
 
   static DataColumnSamplingTracker create(
       final UInt64 slot,
       final Bytes32 blockRoot,
-      final CustodyGroupCountManager custodyGroupCountManager) {
+      final CustodyGroupCountManager custodyGroupCountManager,
+      final Optional<Integer> completionColumnCount) {
     final List<UInt64> samplingRequirement = custodyGroupCountManager.getSamplingColumnIndices();
     final Set<UInt64> missingColumns = ConcurrentHashMap.newKeySet(samplingRequirement.size());
     missingColumns.addAll(samplingRequirement);
+    final SafeFuture<List<UInt64>> completionFuture = new SafeFuture<>();
     return new DataColumnSamplingTracker(
         slot,
         blockRoot,
         samplingRequirement,
         missingColumns,
         new AtomicBoolean(false),
-        new SafeFuture<>(),
+        completionFuture,
+        new AtomicBoolean(false),
+        completionColumnCount,
         new AtomicReference<>(Optional.empty()));
   }
 
-  public Optional<SignedBeaconBlock> getBlock() {
+public Optional<SignedBeaconBlock> getBlock() {
     return block.get();
-  }
+}
 
-  public boolean setBlock(final SignedBeaconBlock block) {
+public boolean setBlock(final SignedBeaconBlock block) {
     final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(slot, blockRoot);
     checkArgument(block.getSlotAndBlockRoot().equals(slotAndBlockRoot), "Wrong block");
     final Optional<SignedBeaconBlock> oldBlock = this.block.getAndSet(Optional.of(block));
     if (oldBlock.isPresent()) {
-      return false;
+        return false;
     }
 
     LOG.debug("Block received for {}", slotAndBlockRoot::toLogString);
 
     return true;
-  }
+}
 
   boolean add(final DataColumnSlotAndIdentifier columnIdentifier, final RemoteOrigin origin) {
     if (!slot.equals(columnIdentifier.slot()) || !blockRoot.equals(columnIdentifier.blockRoot())) {
@@ -96,15 +102,44 @@ record DataColumnSamplingTracker(
           columnIdentifier.columnIndex(),
           origin);
       completionFuture.complete(samplingRequirement);
-    } else {
-      LOG.debug(
-          "Sampling still pending for slot {} root {}, remaining columns: {}",
-          slot,
-          blockRoot,
-          missingColumns);
+      fullySampled.set(true);
+      return true;
     }
 
+    if (isCompletedEarly()) {
+      completionFuture.complete(
+          samplingRequirement.stream().filter(idx -> !missingColumns.contains(idx)).toList());
+      LOG.debug(
+          "Partial sampling complete for slot {} root {} via column {} received via {}",
+          slot,
+          blockRoot,
+          columnIdentifier.columnIndex(),
+          origin);
+      return true;
+    }
+
+    LOG.debug(
+        "Sampling still pending for slot {} root {}, remaining columns: {}",
+        slot,
+        blockRoot,
+        missingColumns);
+
     return true;
+  }
+
+  private boolean isCompletedEarly() {
+    if (earlyCompletionRequirementCount().isEmpty()) {
+      // Possibility of early completion is disabled
+      return false;
+    }
+
+    if (completionFuture.isDone()) {
+      // Already completed
+      return false;
+    }
+
+    final int alreadySampledColumnCount = samplingRequirement.size() - missingColumns().size();
+    return alreadySampledColumnCount >= earlyCompletionRequirementCount.get();
   }
 
   List<DataColumnSlotAndIdentifier> getMissingColumnIdentifiers() {

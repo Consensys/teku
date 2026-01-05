@@ -14,6 +14,8 @@
 package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS;
+import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_COLUMN_CUSTODY_BACKFILLER_BATCH_SIZE;
+import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS;
 import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_DOWNLOAD_TIMEOUT_MS;
 import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_RECOVERY_TIMEOUT_MS;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND;
@@ -329,6 +331,36 @@ public class P2POptions {
       SyncConfig.DEFAULT_FORWARD_SYNC_MAX_BLOB_SIDECARS_PER_MINUTE;
 
   @Option(
+      names = {"--Xp2p-reworked-sidecar-custody-sync-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "",
+      arity = "0..1",
+      hidden = true,
+      fallbackValue = "true")
+  private boolean reworkedSidecarCustodySyncEnabled = false;
+
+  @Option(
+      names = {"--Xp2p-reworked-sidecar-custody-sync-batch-size"},
+      paramLabel = "<NUMBER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Backfill sync custody batch size in slots",
+      arity = "1",
+      hidden = true)
+  private Integer reworkedSidecarCustodySyncBatchSize =
+      DEFAULT_COLUMN_CUSTODY_BACKFILLER_BATCH_SIZE;
+
+  @Option(
+      names = {"--Xp2p-reworked-sidecar-custody-sync-poll-period-seconds"},
+      paramLabel = "<NUMBER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Backfill sync custody poll period",
+      arity = "1",
+      hidden = true)
+  private Integer reworkedSidecarCustodySyncPollPeriodSeconds =
+      DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS;
+
+  @Option(
       names = {"--Xp2p-reworked-sidecar-recovery-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -548,6 +580,20 @@ public class P2POptions {
   private boolean dasDisableElRecovery = P2PConfig.DEFAULT_DAS_DISABLE_EL_RECOVERY;
 
   @Option(
+      names = {"--Xcolumns-data-availability-half-check-enabled"},
+      hidden = true,
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Enables faster block import when 50% of all sidecar columns available without waiting "
+              + "to obtain the remaining columns, which continue to download in the background. "
+              + "Works only on nodes with 50%+ columns custody requirements.",
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean columnsDataAvailabilityHalfCheckEnabled =
+      P2PConfig.DEFAULT_COLUMNS_DATA_AVAILABILITY_HALF_CHECK_ENABLED;
+
+  @Option(
       names = {"--Xp2p-historical-data-max-concurrent-queries"},
       hidden = true,
       paramLabel = "<NUMBER>",
@@ -672,7 +718,11 @@ public class P2POptions {
                   .executionProofTopicEnabled(executionProofTopicEnabled)
                   .reworkedSidecarRecoveryTimeout(sidecarCancelTimeoutMs)
                   .reworkedSidecarDownloadTimeout(sidecarDownloadTimeoutMs)
-                  .reworkedSidecarRecoveryEnabled(reworkedSidecarRecoveryEnabled);
+                  .reworkedSidecarRecoveryEnabled(reworkedSidecarRecoveryEnabled)
+                  .reworkedSidecarSyncPollPeriod(reworkedSidecarCustodySyncPollPeriodSeconds)
+                  .reworkedSidecarSyncBatchSize(reworkedSidecarCustodySyncBatchSize)
+                  .reworkedSidecarSyncEnabled(reworkedSidecarCustodySyncEnabled)
+                  .columnsDataAvailabilityHalfCheckEnabled(columnsDataAvailabilityHalfCheckEnabled);
               batchVerifyQueueCapacity.ifPresent(b::batchVerifyQueueCapacity);
             })
         .discovery(

@@ -2945,6 +2945,13 @@ public final class DataStructureUtil {
         .toList();
   }
 
+  public List<DataColumnSidecar> randomDataColumnSidecars(final UInt64 slot, final int columns) {
+    final SignedBeaconBlockHeader header = randomSignedBeaconBlockHeader(slot);
+    return IntStream.range(0, columns)
+        .mapToObj(index -> randomDataColumnSidecar(header, UInt64.valueOf(index)))
+        .toList();
+  }
+
   public List<Bytes32> randomKzgCommitmentInclusionProof() {
     final int depth =
         SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())

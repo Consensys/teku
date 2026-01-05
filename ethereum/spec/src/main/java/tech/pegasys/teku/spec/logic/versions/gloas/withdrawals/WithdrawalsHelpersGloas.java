@@ -58,20 +58,8 @@ public class WithdrawalsHelpersGloas extends WithdrawalsHelpersElectra {
   }
 
   @Override
-  protected void setLatestWithdrawalsRoot(
-      final List<Withdrawal> expectedWithdrawals, final MutableBeaconState state) {
-    MutableBeaconStateGloas.required(state)
-        .setLatestWithdrawalsRoot(
-            schemaDefinitionsGloas
-                .getExecutionPayloadSchema()
-                .getWithdrawalsSchemaRequired()
-                .createFromElements(expectedWithdrawals)
-                .hashTreeRoot());
-  }
-
-  @Override
-  protected int sweepForBuilderPayments(
-      final List<Withdrawal> withdrawals, final BeaconState state) {
+  protected int processBuilderWithdrawals(
+      final BeaconState state, final List<Withdrawal> withdrawals) {
     UInt64 withdrawalIndex = getNextWithdrawalIndex(state, withdrawals);
 
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(state.getSlot());
@@ -87,14 +75,9 @@ public class WithdrawalsHelpersGloas extends WithdrawalsHelpersElectra {
       if (isBuilderPaymentWithdrawable(state, withdrawal)) {
         final UInt64 builderIndex = withdrawal.getBuilderIndex();
         final Validator builder = state.getValidators().get(builderIndex.intValue());
-        final UInt64 partiallyWithdrawnBalance =
-            WithdrawalsHelpers.getPartiallyWithdrawnBalance(withdrawals, builderIndex);
+        final UInt64 withdrawn = WithdrawalsHelpers.getTotalWithdrawn(withdrawals, builderIndex);
         final UInt64 remainingBalance =
-            state
-                .getBalances()
-                .get(builderIndex.intValue())
-                .get()
-                .minusMinZero(partiallyWithdrawnBalance);
+            state.getBalances().get(builderIndex.intValue()).get().minusMinZero(withdrawn);
         final UInt64 withdrawableBalance;
         if (builder.isSlashed()) {
           withdrawableBalance = remainingBalance.min(withdrawal.getAmount());
@@ -132,7 +115,18 @@ public class WithdrawalsHelpersGloas extends WithdrawalsHelpersElectra {
   }
 
   @Override
-  protected void updatePendingBuilderWithdrawals(
+  protected void updatePayloadExpectedWithdrawals(
+      final MutableBeaconState state, final List<Withdrawal> withdrawals) {
+    MutableBeaconStateGloas.required(state)
+        .setPayloadExpectedWithdrawals(
+            schemaDefinitionsGloas
+                .getExecutionPayloadSchema()
+                .getWithdrawalsSchemaRequired()
+                .createFromElements(withdrawals));
+  }
+
+  @Override
+  protected void updateBuilderPendingWithdrawals(
       final MutableBeaconState state, final int processedBuilderWithdrawalsCount) {
     final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
     final SszListSchema<BuilderPendingWithdrawal, ?> schema =
@@ -164,7 +158,7 @@ public class WithdrawalsHelpersGloas extends WithdrawalsHelpersElectra {
       final BeaconState state, final BuilderPendingWithdrawal withdrawal) {
     final Validator builder = state.getValidators().get(withdrawal.getBuilderIndex().intValue());
     final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(state.getSlot());
-    return builder.getWithdrawableEpoch().isGreaterThanOrEqualTo(currentEpoch)
+    return currentEpoch.isGreaterThanOrEqualTo(builder.getWithdrawableEpoch())
         || !builder.isSlashed();
   }
 }

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static io.libp2p.crypto.keys.Secp256k1Kt.unmarshalSecp256k1PrivateKey;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -613,8 +614,18 @@ public class TekuNodeConfigBuilder {
 
   public TekuNodeConfigBuilder withStubExecutionEngine() {
     mustBe(NodeType.BEACON_NODE);
+
     LOG.debug("ee-endpoint={}", "unsafe-test-stub");
     configMap.put("ee-endpoint", "unsafe-test-stub");
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withStubExecutionEngine(final int fixedBlobNumber) {
+    mustBe(NodeType.BEACON_NODE);
+    checkArgument(fixedBlobNumber >= 0, "fixed-blob-number must be >= 0");
+    final String endpoint = "unsafe-test-stub:blobs=" + fixedBlobNumber;
+    LOG.debug("ee-endpoint={}", endpoint);
+    configMap.put("ee-endpoint", endpoint);
     return this;
   }
 
@@ -677,6 +688,12 @@ public class TekuNodeConfigBuilder {
   public TekuNodeConfigBuilder withReworkedRecovery() {
     LOG.debug("Xp2p-reworked-sidecar-recovery-enabled: {}", true);
     configMap.put("Xp2p-reworked-sidecar-recovery-enabled", true);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withReworkedCustodySync() {
+    LOG.debug("Xp2p-reworked-sidecar-custody-sync-enabled: {}", true);
+    configMap.put("Xp2p-reworked-sidecar-custody-sync-enabled", true);
     return this;
   }
 
