@@ -58,11 +58,15 @@ public class WithdrawalsHelpersElectra extends WithdrawalsHelpersCapella {
     UInt64 withdrawalIndex = getNextWithdrawalIndex(state, withdrawals);
     int processedPartialWithdrawalsCount = 0;
 
-    final int bound = getBoundForPendingPartialWithdrawals(withdrawals);
+    final int withdrawalsLimit =
+        Math.min(
+            withdrawals.size() + specConfigElectra.getMaxPendingPartialsPerWithdrawalsSweep(),
+            specConfig.getMaxWithdrawalsPerPayload() - 1);
 
     for (final PendingPartialWithdrawal withdrawal :
         BeaconStateElectra.required(state).getPendingPartialWithdrawals()) {
-      if (withdrawal.getWithdrawableEpoch().isGreaterThan(epoch) || withdrawals.size() == bound) {
+      if (withdrawal.getWithdrawableEpoch().isGreaterThan(epoch)
+          || withdrawals.size() == withdrawalsLimit) {
         break;
       }
       final UInt64 validatorIndex = withdrawal.getValidatorIndex();
@@ -103,10 +107,6 @@ public class WithdrawalsHelpersElectra extends WithdrawalsHelpersCapella {
       processedPartialWithdrawalsCount++;
     }
     return processedPartialWithdrawalsCount;
-  }
-
-  protected int getBoundForPendingPartialWithdrawals(final List<Withdrawal> withdrawals) {
-    return specConfigElectra.getMaxPendingPartialsPerWithdrawalsSweep();
   }
 
   @Override

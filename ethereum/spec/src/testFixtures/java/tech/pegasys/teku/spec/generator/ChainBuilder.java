@@ -751,7 +751,6 @@ public class ChainBuilder {
                 executionPayloadProposalTestUtil.createExecutionPayload(
                     signer,
                     slot,
-                    UInt64.valueOf(proposerIndex),
                     nextBlockAndState.toUnsigned(),
                     executionPayloadProposalData.get(),
                     options.isSkipStateTransitionEnabled()));

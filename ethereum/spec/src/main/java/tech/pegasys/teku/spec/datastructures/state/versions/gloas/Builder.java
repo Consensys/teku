@@ -100,6 +100,26 @@ public class Builder
     return getField5().get();
   }
 
+  public Builder copyWithNewWithdrawableEpoch(final UInt64 withdrawableEpoch) {
+    return new Builder(
+        getPublicKey(),
+        getVersion(),
+        getExecutionAddress(),
+        getBalance(),
+        getDepositEpoch(),
+        withdrawableEpoch);
+  }
+
+  public Builder copyWithNewBalance(final UInt64 balance) {
+    return new Builder(
+        getPublicKey(),
+        getVersion(),
+        getExecutionAddress(),
+        balance,
+        getDepositEpoch(),
+        getWithdrawableEpoch());
+  }
+
   @Override
   public BuilderSchema getSchema() {
     return (BuilderSchema) super.getSchema();
