@@ -68,8 +68,6 @@ public class BeaconStateBuilderGloas
   private SszUInt64Vector proposerLookahead;
 
   private ExecutionPayloadBid latestExecutionPayloadBid;
-  // same as defaultValidatorCount;
-  private int defaultBuilderCount = 10;
   private SszList<Builder> builders;
   private UInt64 nextWithdrawalBuilderIndex;
   private SszBitvector executionPayloadAvailability;
@@ -82,8 +80,14 @@ public class BeaconStateBuilderGloas
       final SpecVersion spec,
       final DataStructureUtil dataStructureUtil,
       final int defaultValidatorCount,
+      final int defaultBuilderCount,
       final int defaultItemsInSSZLists) {
-    super(spec, dataStructureUtil, defaultValidatorCount, defaultItemsInSSZLists);
+    super(
+        spec,
+        dataStructureUtil,
+        defaultValidatorCount,
+        defaultBuilderCount,
+        defaultItemsInSSZLists);
   }
 
   @Override
@@ -127,11 +131,13 @@ public class BeaconStateBuilderGloas
       final DataStructureUtil dataStructureUtil,
       final Spec spec,
       final int defaultValidatorCount,
+      final int defaultBuilderCount,
       final int defaultItemsInSSZLists) {
     return new BeaconStateBuilderGloas(
         spec.forMilestone(SpecMilestone.GLOAS),
         dataStructureUtil,
         defaultValidatorCount,
+        defaultBuilderCount,
         defaultItemsInSSZLists);
   }
 
@@ -197,12 +203,6 @@ public class BeaconStateBuilderGloas
       final ExecutionPayloadBid latestExecutionPayloadBid) {
     checkNotNull(latestExecutionPayloadBid);
     this.latestExecutionPayloadBid = latestExecutionPayloadBid;
-    return this;
-  }
-
-  public BeaconStateBuilderGloas defaultBuilderCount(final Integer defaultBuilderCount) {
-    checkNotNull(defaultBuilderCount);
-    this.defaultBuilderCount = defaultBuilderCount;
     return this;
   }
 
