@@ -95,11 +95,8 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
         BEACON,
         "das_recently_sampled_blocks_size",
         "DAS recently sampled blocks size",
-        () -> {
-          synchronized (this) {
-            return (long) recentlySampledColumnsByRoot.size();
-          }
-        });
+        () -> (long) recentlySampledColumnsByRoot.size()
+          );
   }
 
   @VisibleForTesting
@@ -205,7 +202,6 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {
     final DataColumnSamplingTracker tracker;
     final boolean created;
-    synchronized (this) {
       makeRoomForNewTracker();
       created = !recentlySampledColumnsByRoot.containsKey(blockRoot);
       tracker =
@@ -227,14 +223,14 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
                 LOG.debug("Created new DAS tracker for slot {} root {}", slot, blockRoot);
                 return newTracker;
               });
-    }
+
     if (created) {
       onFirstSeen(slot, blockRoot, tracker);
     }
     return tracker;
   }
 
-  private synchronized void makeRoomForNewTracker() {
+  private void makeRoomForNewTracker() {
     while (recentlySampledColumnsByRoot.size() >= maxRecentlySampledBlocks) {
       final SlotAndBlockRoot toRemove = orderedSidecarsTrackers.pollFirst();
       if (toRemove == null) {
@@ -298,7 +294,6 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   public void onSlot(final UInt64 slot) {
     final UInt64 firstNonFinalizedSlot =
         spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch()).increment();
-    synchronized (this) {
       recentlySampledColumnsByRoot
           .values()
           .removeIf(
@@ -325,16 +320,16 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
                 }
                 return false;
               });
-    }
+
   }
 
   @Override
-  public synchronized boolean containsBlock(final Bytes32 blockRoot) {
+  public boolean containsBlock(final Bytes32 blockRoot) {
     return getBlock(blockRoot).isPresent();
   }
 
   @Override
-  public synchronized Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
+  public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
     return Optional.ofNullable(recentlySampledColumnsByRoot.get(blockRoot))
         .flatMap(DataColumnSamplingTracker::getBlock);
   }
