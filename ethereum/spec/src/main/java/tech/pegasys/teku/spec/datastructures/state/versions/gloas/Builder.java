@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.state.versions.gloas;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
@@ -40,7 +42,7 @@ public class Builder
       super(
           "Builder",
           namedSchema("pubkey", SszPublicKeySchema.INSTANCE),
-          namedSchema("version", SszPrimitiveSchemas.BYTE_SCHEMA),
+          namedSchema("version", SszPrimitiveSchemas.UINT8_SCHEMA),
           namedSchema("execution_address", SszByteVectorSchema.create(Bytes20.SIZE)),
           namedSchema("balance", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("deposit_epoch", SszPrimitiveSchemas.UINT64_SCHEMA),
@@ -61,7 +63,7 @@ public class Builder
 
   public Builder(
       final BLSPublicKey pubkey,
-      final Byte version,
+      final int version,
       final Eth1Address executionAddress,
       final UInt64 balance,
       final UInt64 depositEpoch,
@@ -69,18 +71,19 @@ public class Builder
     super(
         SSZ_SCHEMA,
         new SszPublicKey(pubkey),
-        SszByte.of(version),
+        SszByte.asUInt8(version),
         SszByteVector.fromBytes(executionAddress.getWrappedBytes()),
         SszUInt64.of(balance),
         SszUInt64.of(depositEpoch),
         SszUInt64.of(withdrawableEpoch));
+    checkArgument(version >= 0 && version <= 255, "version must be in uint8 range (0–255)");
   }
 
   public BLSPublicKey getPublicKey() {
     return getField0().getBLSPublicKey();
   }
 
-  public Byte getVersion() {
+  public int getVersion() {
     return getField1().get();
   }
 

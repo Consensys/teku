@@ -16,6 +16,8 @@ package tech.pegasys.teku.spec.logic.versions.gloas.helpers;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -32,6 +34,8 @@ import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutators
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class BeaconStateMutatorsGloas extends BeaconStateMutatorsElectra {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final SpecConfigGloas specConfigGloas;
   private final BeaconStateAccessorsGloas beaconStateAccessorsGloas;
@@ -86,6 +90,7 @@ public class BeaconStateMutatorsGloas extends BeaconStateMutatorsElectra {
             state, pubkey, withdrawalCredentials, amount);
     final SszMutableList<Builder> builders = MutableBeaconStateGloas.required(state).getBuilders();
     if (index.isGreaterThanOrEqualTo(builders.size())) {
+      LOG.debug("Adding new builder with index {} to state", builders.size());
       builders.append(builder);
     } else {
       // the index is reassigned to a new builder, so updating the caches
@@ -94,6 +99,7 @@ public class BeaconStateMutatorsGloas extends BeaconStateMutatorsElectra {
       caches.getBuilderIndexCache().invalidateWithNewValue(pubkey, index.intValue());
       // remove the pubkey mapping for the old builder
       caches.getBuilderIndexCache().invalidate(builders.get(index.intValue()).getPublicKey());
+      LOG.debug("Adding new builder to an existing index {} in the state", index.intValue());
       builders.set(index.intValue(), builder);
     }
   }

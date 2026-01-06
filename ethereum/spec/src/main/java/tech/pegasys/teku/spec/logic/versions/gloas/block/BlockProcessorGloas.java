@@ -200,7 +200,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
                   UInt64.ZERO,
                   schemaDefinitionsGloas
                       .getBuilderPendingWithdrawalSchema()
-                      .create(bid.getFeeRecipient(), amount, builderIndex, UInt64.ZERO));
+                      .create(bid.getFeeRecipient(), amount, builderIndex));
 
       stateGloas
           .getBuilderPendingPayments()
