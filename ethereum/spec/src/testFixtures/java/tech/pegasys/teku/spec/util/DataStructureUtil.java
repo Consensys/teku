@@ -3149,7 +3149,7 @@ public final class DataStructureUtil {
   public BuilderPendingWithdrawal randomBuilderPendingWithdrawal() {
     return getGloasSchemaDefinitions()
         .getBuilderPendingWithdrawalSchema()
-        .create(randomEth1Address(), randomUInt64(), randomUInt64(), randomEpoch());
+        .create(randomEth1Address(), randomUInt64(), randomUInt64());
   }
 
   public BuilderPendingPayment randomBuilderPendingPayment() {
