@@ -43,7 +43,7 @@ public class OperationSignatureVerifier {
   private static final Logger LOG = LogManager.getLogger();
 
   private final MiscHelpers miscHelpers;
-  private final BeaconStateAccessors beaconStateAccessors;
+  protected final BeaconStateAccessors beaconStateAccessors;
 
   public OperationSignatureVerifier(
       final MiscHelpers miscHelpers, final BeaconStateAccessors beaconStateAccessors) {

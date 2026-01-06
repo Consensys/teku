@@ -65,12 +65,15 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
     final int processedPartialWithdrawalsCount =
         processPendingPartialWithdrawals(state, withdrawals);
 
+    final int processedBuildersSweepCount = processBuildersSweepWithdrawals(state, withdrawals);
+
     final int processedValidatorsSweepCount = processValidatorsSweepWithdrawals(state, withdrawals);
 
     return new ExpectedWithdrawals(
         withdrawals,
         processedBuilderWithdrawalsCount,
         processedPartialWithdrawalsCount,
+        processedBuildersSweepCount,
         processedValidatorsSweepCount);
   }
 
@@ -82,6 +85,12 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
 
   // NO-OP
   protected int processPendingPartialWithdrawals(
+      final BeaconState state, final List<Withdrawal> withdrawals) {
+    return 0;
+  }
+
+  // NO-OP
+  protected int processBuildersSweepWithdrawals(
       final BeaconState state, final List<Withdrawal> withdrawals) {
     return 0;
   }
@@ -161,7 +170,8 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
         state,
         expectedWithdrawals.withdrawals(),
         expectedWithdrawals.processedBuilderWithdrawalsCount(),
-        expectedWithdrawals.processedPartialWithdrawalsCount());
+        expectedWithdrawals.processedPartialWithdrawalsCount(),
+        expectedWithdrawals.processedBuildersSweepCount());
   }
 
   private void assertWithdrawalsInExecutionPayloadMatchExpected(
@@ -196,14 +206,16 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
         state,
         expectedWithdrawals.withdrawals(),
         expectedWithdrawals.processedBuilderWithdrawalsCount(),
-        expectedWithdrawals.processedPartialWithdrawalsCount());
+        expectedWithdrawals.processedPartialWithdrawalsCount(),
+        expectedWithdrawals.processedBuildersSweepCount());
   }
 
   private void processWithdrawalsUnchecked(
       final MutableBeaconState state,
       final List<Withdrawal> withdrawals,
       final int processedBuilderWithdrawalsCount,
-      final int processedPartialWithdrawalsCount) {
+      final int processedPartialWithdrawalsCount,
+      final int processedBuildersSweepCount) {
 
     applyWithdrawals(state, withdrawals);
 
@@ -217,6 +229,10 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
 
     if (processedPartialWithdrawalsCount > 0) {
       updatePendingPartialWithdrawals(state, processedPartialWithdrawalsCount);
+    }
+
+    if (processedBuildersSweepCount > 0) {
+      updateNextWithdrawalBuilderIndex(state, processedBuildersSweepCount);
     }
 
     updateNextWithdrawalValidatorIndex(state, withdrawals);
@@ -251,6 +267,10 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
   // NO-OP
   protected void updatePendingPartialWithdrawals(
       final MutableBeaconState state, final int processedPartialWithdrawalsCount) {}
+
+  // NO-OP
+  protected void updateNextWithdrawalBuilderIndex(
+      final MutableBeaconState state, final int processedBuildersSweepCount) {}
 
   protected void updateNextWithdrawalValidatorIndex(
       final MutableBeaconState state, final List<Withdrawal> withdrawals) {
