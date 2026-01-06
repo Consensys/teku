@@ -95,8 +95,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
         BEACON,
         "das_recently_sampled_blocks_size",
         "DAS recently sampled blocks size",
-        () -> (long) recentlySampledColumnsByRoot.size()
-          );
+        () -> (long) recentlySampledColumnsByRoot.size());
   }
 
   @VisibleForTesting
@@ -202,27 +201,27 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {
     final DataColumnSamplingTracker tracker;
     final boolean created;
-      makeRoomForNewTracker();
-      created = !recentlySampledColumnsByRoot.containsKey(blockRoot);
-      tracker =
-          recentlySampledColumnsByRoot.computeIfAbsent(
-              blockRoot,
-              k -> {
-                final DataColumnSamplingTracker newTracker =
-                    DataColumnSamplingTracker.create(
-                        slot,
-                        blockRoot,
-                        custodyGroupCountManager,
-                        halfColumnsSamplingCompletionEnabled
-                            ? Optional.of(
-                                SpecConfigFulu.required(spec.atSlot(slot).getConfig())
-                                        .getNumberOfColumns()
-                                    / 2)
-                            : Optional.empty());
-                orderedSidecarsTrackers.add(new SlotAndBlockRoot(slot, blockRoot));
-                LOG.debug("Created new DAS tracker for slot {} root {}", slot, blockRoot);
-                return newTracker;
-              });
+    makeRoomForNewTracker();
+    created = !recentlySampledColumnsByRoot.containsKey(blockRoot);
+    tracker =
+        recentlySampledColumnsByRoot.computeIfAbsent(
+            blockRoot,
+            k -> {
+              final DataColumnSamplingTracker newTracker =
+                  DataColumnSamplingTracker.create(
+                      slot,
+                      blockRoot,
+                      custodyGroupCountManager,
+                      halfColumnsSamplingCompletionEnabled
+                          ? Optional.of(
+                              SpecConfigFulu.required(spec.atSlot(slot).getConfig())
+                                      .getNumberOfColumns()
+                                  / 2)
+                          : Optional.empty());
+              orderedSidecarsTrackers.add(new SlotAndBlockRoot(slot, blockRoot));
+              LOG.debug("Created new DAS tracker for slot {} root {}", slot, blockRoot);
+              return newTracker;
+            });
 
     if (created) {
       onFirstSeen(slot, blockRoot, tracker);
@@ -294,33 +293,32 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   public void onSlot(final UInt64 slot) {
     final UInt64 firstNonFinalizedSlot =
         spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch()).increment();
-      recentlySampledColumnsByRoot
-          .values()
-          .removeIf(
-              tracker -> {
-                final SlotAndBlockRoot slotAndBlockRoot =
-                    new SlotAndBlockRoot(tracker.slot(), tracker.blockRoot());
-                if (tracker.slot().isLessThan(firstNonFinalizedSlot)
-                    || recentChainData.containsBlock(tracker.blockRoot())) {
-                  // Outdated
-                  if (!tracker.completionFuture().isDone()) {
-                    // make sure the future releases any pending waiters
-                    tracker
-                        .completionFuture()
-                        .completeExceptionally(
-                            new RuntimeException("DAS sampling expired while slot finalized"));
-                    // Slot less than finalized slot, but we didn't complete DA check, means it's
-                    // probably orphaned block with data never available - we must prune this
-                    // RecentChainData contains block, but we are here - shouldn't happen
-                    orderedSidecarsTrackers.remove(slotAndBlockRoot);
-                    return true;
-                  }
-                  // cleanup only if fully sampled
-                  return tracker.fullySampled().get();
+    recentlySampledColumnsByRoot
+        .values()
+        .removeIf(
+            tracker -> {
+              final SlotAndBlockRoot slotAndBlockRoot =
+                  new SlotAndBlockRoot(tracker.slot(), tracker.blockRoot());
+              if (tracker.slot().isLessThan(firstNonFinalizedSlot)
+                  || recentChainData.containsBlock(tracker.blockRoot())) {
+                // Outdated
+                if (!tracker.completionFuture().isDone()) {
+                  // make sure the future releases any pending waiters
+                  tracker
+                      .completionFuture()
+                      .completeExceptionally(
+                          new RuntimeException("DAS sampling expired while slot finalized"));
+                  // Slot less than finalized slot, but we didn't complete DA check, means it's
+                  // probably orphaned block with data never available - we must prune this
+                  // RecentChainData contains block, but we are here - shouldn't happen
+                  orderedSidecarsTrackers.remove(slotAndBlockRoot);
+                  return true;
                 }
-                return false;
-              });
-
+                // cleanup only if fully sampled
+                return tracker.fullySampled().get();
+              }
+              return false;
+            });
   }
 
   @Override
