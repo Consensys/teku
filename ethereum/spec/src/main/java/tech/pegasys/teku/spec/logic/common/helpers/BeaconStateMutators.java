@@ -35,7 +35,7 @@ public class BeaconStateMutators {
 
   protected final SpecConfig specConfig;
   protected final MiscHelpers miscHelpers;
-  protected final BeaconStateAccessors beaconStateAccessors;
+  private final BeaconStateAccessors beaconStateAccessors;
 
   public BeaconStateMutators(
       final SpecConfig specConfig,

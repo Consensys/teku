@@ -73,7 +73,7 @@ public class BeaconStateMutatorsGloas extends BeaconStateMutatorsElectra {
     }
     // Set builder exit epoch
     final UInt64 exitEpoch =
-        beaconStateAccessors
+        beaconStateAccessorsGloas
             .getCurrentEpoch(state)
             .plus(specConfigGloas.getMinBuilderWithdrawabilityDelay());
     builders.set(builderIndex.intValue(), builder.copyWithNewWithdrawableEpoch(exitEpoch));
