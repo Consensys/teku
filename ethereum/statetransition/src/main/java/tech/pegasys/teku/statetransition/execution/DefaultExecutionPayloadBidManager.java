@@ -88,7 +88,7 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
             .getBlobKzgCommitmentsSchema()
             .createFromBlobsBundle(getPayloadResponse.getBlobsBundle().orElseThrow())
             .hashTreeRoot();
-    // for self-builds, use `BUILDER_INDEX_SELF_BUILD`
+    // For self-builds, use `BUILDER_INDEX_SELF_BUILD`
     final ExecutionPayloadBid bid =
         schemaDefinitions
             .getExecutionPayloadBidSchema()

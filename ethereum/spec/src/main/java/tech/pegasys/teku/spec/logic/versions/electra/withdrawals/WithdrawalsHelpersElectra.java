@@ -18,7 +18,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
@@ -113,17 +113,14 @@ public class WithdrawalsHelpersElectra extends WithdrawalsHelpersCapella {
   protected void updatePendingPartialWithdrawals(
       final MutableBeaconState state, final int processedPartialWithdrawalsCount) {
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
-    final SszListSchema<PendingPartialWithdrawal, ?> schema =
-        stateElectra.getPendingPartialWithdrawals().getSchema();
-    if (stateElectra.getPendingPartialWithdrawals().size() == processedPartialWithdrawalsCount) {
-      stateElectra.setPendingPartialWithdrawals(schema.createFromElements(List.of()));
-    } else {
-      final List<PendingPartialWithdrawal> pendingPartialWithdrawals =
-          stateElectra.getPendingPartialWithdrawals().asList();
-      stateElectra.setPendingPartialWithdrawals(
-          schema.createFromElements(
-              pendingPartialWithdrawals.subList(
-                  processedPartialWithdrawalsCount, pendingPartialWithdrawals.size())));
-    }
+    final SszList<PendingPartialWithdrawal> pendingPartialWithdrawals =
+        stateElectra.getPendingPartialWithdrawals();
+    stateElectra.setPendingPartialWithdrawals(
+        pendingPartialWithdrawals
+            .getSchema()
+            .createFromElements(
+                pendingPartialWithdrawals
+                    .asList()
+                    .subList(processedPartialWithdrawalsCount, pendingPartialWithdrawals.size())));
   }
 }

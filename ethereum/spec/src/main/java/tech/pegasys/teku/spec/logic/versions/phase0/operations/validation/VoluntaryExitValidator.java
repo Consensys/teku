@@ -121,7 +121,7 @@ public class VoluntaryExitValidator
 
     public static OperationInvalidReason pendingWithdrawalsInQueueForBuilder() {
       return () ->
-          "Builder cannot be exited while there are pending withdrawals in the withdrawal queue";
+          "Builder cannot be exited while it has pending withdrawals in the withdrawal queue";
     }
   }
 }
