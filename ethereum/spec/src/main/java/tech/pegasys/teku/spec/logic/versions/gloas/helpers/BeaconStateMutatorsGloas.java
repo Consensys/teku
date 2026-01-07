@@ -93,13 +93,15 @@ public class BeaconStateMutatorsGloas extends BeaconStateMutatorsElectra {
       LOG.debug("Adding new builder with index {} to state", builders.size());
       builders.append(builder);
     } else {
-      // the index is reassigned to a new builder, so updating the caches
+      // The index is reassigned to a new builder, so updating the caches
       final TransitionCaches caches = BeaconStateCache.getTransitionCaches(state);
       caches.getBuildersPubKeys().invalidateWithNewValue(index, pubkey);
       caches.getBuilderIndexCache().invalidateWithNewValue(pubkey, index.intValue());
-      // remove the pubkey mapping for the old builder
+      // Remove the pubkey mapping for the old builder
       caches.getBuilderIndexCache().invalidate(builders.get(index.intValue()).getPublicKey());
-      LOG.debug("Adding new builder to an existing index {} in the state", index.intValue());
+      LOG.debug(
+          "Adding new builder to an existing index {} (builder has exited) in the state",
+          index.intValue());
       builders.set(index.intValue(), builder);
     }
   }
