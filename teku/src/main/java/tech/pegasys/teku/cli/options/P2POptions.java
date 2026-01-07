@@ -615,6 +615,18 @@ public class P2POptions {
       arity = "1")
   private int historicalDataMaxQueryQueueSize = P2PConfig.DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE;
 
+  @Option(
+      names = {"--p2p-partial-messages-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable gossipsub partial messages for data column distribution",
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean partialMessagesEnabled = false;
+
+  public boolean isPartialMessagesEnabled() {
+    return partialMessagesEnabled;
+  }
+
   private OptionalInt getP2pLowerBound() {
     if (p2pUpperBound.isPresent() && p2pLowerBound.isPresent()) {
       return p2pLowerBound.getAsInt() < p2pUpperBound.getAsInt() ? p2pLowerBound : p2pUpperBound;

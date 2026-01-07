@@ -20,6 +20,7 @@ import io.libp2p.core.pubsub.Topic;
 import io.libp2p.pubsub.PubsubRouterMessageValidator;
 import io.libp2p.pubsub.gossip.Gossip;
 import io.libp2p.pubsub.gossip.GossipTopicScoreParams;
+import io.libp2p.pubsub.partial.PartialMessage;
 import io.netty.buffer.Unpooled;
 import java.util.Collection;
 import java.util.HashMap;
@@ -68,6 +69,11 @@ public class LibP2PGossipNetwork implements GossipNetwork {
   public SafeFuture<?> gossip(final String topic, final Bytes data) {
     return SafeFuture.of(
         publisher.publish(Unpooled.wrappedBuffer(data.toArrayUnsafe()), new Topic(topic)));
+  }
+
+  @Override
+  public SafeFuture<?> publishPartial(final String topic, final PartialMessage partialMessage) {
+    return SafeFuture.of(gossip.publishPartial(partialMessage, new Topic(topic)));
   }
 
   @Override
