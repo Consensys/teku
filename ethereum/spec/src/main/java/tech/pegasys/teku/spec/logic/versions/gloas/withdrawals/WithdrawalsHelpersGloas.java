@@ -146,7 +146,9 @@ public class WithdrawalsHelpersGloas extends WithdrawalsHelpersElectra {
             MutableBeaconStateGloas.required(state).getBuilders();
         final Builder builder = builders.get(builderIndex.intValue());
         final UInt64 builderBalance = builder.getBalance();
-        state.set(builderIndex.intValue(), builder.copyWithNewBalance(builderBalance));
+        builders.set(
+            builderIndex.intValue(),
+            builder.copyWithNewBalance(builderBalance.minusMinZero(withdrawal.getAmount())));
       } else {
         beaconStateMutators.decreaseBalance(
             state, validatorIndex.intValue(), withdrawal.getAmount());
