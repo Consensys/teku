@@ -1,4 +1,4 @@
-version: v1.6.1
+version: v1.7.0-alpha.0
 style: full
 
 specrefs:
@@ -19,7 +19,6 @@ specrefs:
       - BASIS_POINTS#phase0
       - DOMAIN_APPLICATION_MASK
       - ENDIANNESS
-      - INTERVALS_PER_SLOT#phase0
 
       # Constants for max values, defined elsewhere
       - UINT256_MAX
