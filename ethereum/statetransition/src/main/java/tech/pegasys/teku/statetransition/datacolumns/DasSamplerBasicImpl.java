@@ -200,9 +200,8 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
 
   private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {
 
-    final boolean created;
     makeRoomForNewTracker();
-    created = !recentlySampledColumnsByRoot.containsKey(blockRoot);
+    final boolean created = !recentlySampledColumnsByRoot.containsKey(blockRoot);
     final DataColumnSamplingTracker tracker =
         recentlySampledColumnsByRoot.computeIfAbsent(
             blockRoot,
