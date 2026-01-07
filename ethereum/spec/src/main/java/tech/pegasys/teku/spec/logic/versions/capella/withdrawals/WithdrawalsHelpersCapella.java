@@ -234,9 +234,7 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
       updatePendingPartialWithdrawals(state, processedPartialWithdrawalsCount);
     }
 
-    if (processedBuildersSweepCount > 0) {
-      updateNextWithdrawalBuilderIndex(state, processedBuildersSweepCount);
-    }
+    updateNextWithdrawalBuilderIndex(state, processedBuildersSweepCount);
 
     updateNextWithdrawalValidatorIndex(state, processedValidatorsSweepCount);
   }
