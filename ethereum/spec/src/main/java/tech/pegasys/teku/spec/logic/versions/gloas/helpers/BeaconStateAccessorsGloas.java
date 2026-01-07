@@ -279,7 +279,6 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
         BeaconStateCache.getTransitionCaches(state).getBuilderIndexCache();
     return builderIndexCache
         .getCached(publicKey)
-        .filter(index -> index < builders.size())
         .or(
             () -> {
               for (int i = 0; i < builders.size(); i++) {
