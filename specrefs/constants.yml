@@ -150,8 +150,8 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
       search: BEACON_BUILDER =
   spec: |
-    <spec constant_var="DOMAIN_BEACON_BUILDER" fork="gloas" hash="31821111">
-    DOMAIN_BEACON_BUILDER: DomainType = '0x1B000000'
+    <spec constant_var="DOMAIN_BEACON_BUILDER" fork="gloas" hash="76709e39">
+    DOMAIN_BEACON_BUILDER: DomainType = '0x0B000000'
     </spec>
 
 - name: DOMAIN_BEACON_PROPOSER#phase0
@@ -324,13 +324,6 @@
   spec: |
     <spec constant_var="GENESIS_SLOT" fork="phase0" hash="2d6f8884">
     GENESIS_SLOT: Slot = 0
-    </spec>
-
-- name: INTERVALS_PER_SLOT#phase0
-  sources: []
-  spec: |
-    <spec constant_var="INTERVALS_PER_SLOT" fork="phase0" hash="3352e419">
-    INTERVALS_PER_SLOT: uint64 = 3
     </spec>
 
 - name: JUSTIFICATION_BITS_LENGTH#phase0

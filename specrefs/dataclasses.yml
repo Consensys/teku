@@ -256,10 +256,17 @@
 - name: Store#gloas
   sources: []
   spec: |
-    <spec dataclass="Store" fork="gloas" style="diff" hash="d979eb1c">
+    <spec dataclass="Store" fork="gloas" style="diff" hash="4dbfec46">
     --- phase0
     +++ gloas
-    @@ -13,3 +13,5 @@
+    @@ -9,7 +9,11 @@
+         equivocating_indices: Set[ValidatorIndex]
+         blocks: Dict[Root, BeaconBlock] = field(default_factory=dict)
+         block_states: Dict[Root, BeaconState] = field(default_factory=dict)
+    -    block_timeliness: Dict[Root, boolean] = field(default_factory=dict)
+    +    block_timeliness: Dict[Root, Vector[boolean, NUM_BLOCK_TIMELINESS_DEADLINES]] = field(
+    +        default_factory=dict
+    +    )
          checkpoint_states: Dict[Checkpoint, BeaconState] = field(default_factory=dict)
          latest_messages: Dict[ValidatorIndex, LatestMessage] = field(default_factory=dict)
          unrealized_justifications: Dict[Root, Checkpoint] = field(default_factory=dict)
