@@ -20,14 +20,9 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NavigableSet;
 import java.util.Optional;
-import java.util.TreeSet;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentSkipListMap;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -61,9 +56,11 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   private final CurrentSlotProvider currentSlotProvider;
   private final CustodyGroupCountManager custodyGroupCountManager;
   private final int maxRecentlySampledBlocks;
-  private final ConcurrentHashMap<Bytes32, DataColumnSamplingTracker> recentlySampledColumnsByRoot = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<Bytes32, DataColumnSamplingTracker> recentlySampledColumnsByRoot =
+      new ConcurrentHashMap<>();
 
-  private final LinkedHashMap<Bytes32, SignedBeaconBlock> orderedSidecarsTrackers = new LinkedHashMap<>();
+  private final LinkedHashMap<Bytes32, SignedBeaconBlock> orderedSidecarsTrackers =
+      new LinkedHashMap<>();
 
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
@@ -121,10 +118,11 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
 
   @Override
   public SafeFuture<List<UInt64>> checkDataAvailability(final SignedBeaconBlock beaconBlock) {
-    final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(
-        beaconBlock.getSlot(), beaconBlock.getMessage().hashTreeRoot());
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(beaconBlock.getSlot(), beaconBlock.getMessage().hashTreeRoot());
 
-    final DataColumnSamplingTracker tracker = getOrCreateTracker(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
+    final DataColumnSamplingTracker tracker =
+        getOrCreateTracker(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
     makeRoomForNewBlock();
     orderedSidecarsTrackers.put(slotAndBlockRoot.getBlockRoot(), beaconBlock);
 
@@ -132,7 +130,8 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
       return tracker.completionFuture();
     }
     if (tracker.rpcFetchInProgress().compareAndSet(false, true)) {
-      fetchMissingColumnsViaRPC(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), tracker);
+      fetchMissingColumnsViaRPC(
+          slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), tracker);
     }
 
     return tracker.completionFuture();
@@ -204,7 +203,6 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
 
   private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {
 
-
     final boolean created = !recentlySampledColumnsByRoot.containsKey(blockRoot);
     final DataColumnSamplingTracker tracker =
         recentlySampledColumnsByRoot.computeIfAbsent(
@@ -233,7 +231,9 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
 
   private void makeRoomForNewBlock() {
     while (orderedSidecarsTrackers.size() >= maxRecentlySampledBlocks) {
-      LOG.debug("Making room for new block in DAS sampler, current size: {}", orderedSidecarsTrackers.size());
+      LOG.debug(
+          "Making room for new block in DAS sampler, current size: {}",
+          orderedSidecarsTrackers.size());
 
       final Bytes32 toRemove = orderedSidecarsTrackers.firstEntry().getKey();
       LOG.debug("Removing block {}", toRemove);
@@ -332,5 +332,4 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
     return Optional.ofNullable(orderedSidecarsTrackers.get(blockRoot));
   }
-
 }
