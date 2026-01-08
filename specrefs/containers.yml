@@ -699,10 +699,24 @@
         kzg_commitment_inclusion_proof: Vector[Bytes32, KZG_COMMITMENT_INCLUSION_PROOF_DEPTH]
     </spec>
 
+- name: Builder#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/gloas/Builder.java
+  spec: |
+    <spec container="Builder" fork="gloas" hash="ae177179">
+    class Builder(Container):
+        pubkey: BLSPubkey
+        version: uint8
+        execution_address: ExecutionAddress
+        balance: Gwei
+        deposit_epoch: Epoch
+        withdrawable_epoch: Epoch
+    </spec>
+
 - name: BuilderPendingPayment#gloas
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/BuilderPendingPayment.java
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/BuilderPendingPaymentSchema.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/gloas/BuilderPendingPayment.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/gloas/BuilderPendingPaymentSchema.java
   spec: |
     <spec container="BuilderPendingPayment" fork="gloas" hash="73cf1649">
     class BuilderPendingPayment(Container):
@@ -712,8 +726,8 @@
 
 - name: BuilderPendingWithdrawal#gloas
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/BuilderPendingWithdrawal.java
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/BuilderPendingWithdrawalSchema.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/gloas/BuilderPendingWithdrawal.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/gloas/BuilderPendingWithdrawalSchema.java
   spec: |
     <spec container="BuilderPendingWithdrawal" fork="gloas" hash="0579f0ac">
     class BuilderPendingWithdrawal(Container):
