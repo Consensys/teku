@@ -1311,6 +1311,15 @@
         ]
     </spec>
 
+- name: compute_proposer_score#phase0
+  sources: []
+  spec: |
+    <spec fn="compute_proposer_score" fork="phase0" hash="43ff8b01">
+    def compute_proposer_score(state: BeaconState) -> Gwei:
+        committee_weight = get_total_active_balance(state) // SLOTS_PER_EPOCH
+        return (committee_weight * PROPOSER_SCORE_BOOST) // 100
+    </spec>
+
 - name: compute_pulled_up_tip#phase0
   sources: []
   spec: |
@@ -2585,6 +2594,61 @@
             participation_flag_indices.append(TIMELY_HEAD_FLAG_INDEX)
 
         return participation_flag_indices
+    </spec>
+
+- name: get_attestation_score#phase0
+  sources: []
+  spec: |
+    <spec fn="get_attestation_score" fork="phase0" hash="da969f50">
+    def get_attestation_score(store: Store, root: Root, state: BeaconState) -> Gwei:
+        unslashed_and_active_indices = [
+            i
+            for i in get_active_validator_indices(state, get_current_epoch(state))
+            if not state.validators[i].slashed
+        ]
+        return Gwei(
+            sum(
+                state.validators[i].effective_balance
+                for i in unslashed_and_active_indices
+                if (
+                    i in store.latest_messages
+                    and i not in store.equivocating_indices
+                    and get_ancestor(store, store.latest_messages[i].root, store.blocks[root].slot)
+                    == root
+                )
+            )
+        )
+    </spec>
+
+- name: get_attestation_score#gloas
+  sources: []
+  spec: |
+    <spec fn="get_attestation_score" fork="gloas" hash="8a2e4701">
+    def get_attestation_score(
+        store: Store,
+        # [Modified in Gloas:EIP7732]
+        # Removed `root`
+        # [New in Gloas:EIP7732]
+        node: ForkChoiceNode,
+        state: BeaconState,
+    ) -> Gwei:
+        unslashed_and_active_indices = [
+            i
+            for i in get_active_validator_indices(state, get_current_epoch(state))
+            if not state.validators[i].slashed
+        ]
+        return Gwei(
+            sum(
+                state.validators[i].effective_balance
+                for i in unslashed_and_active_indices
+                if (
+                    i in store.latest_messages
+                    and i not in store.equivocating_indices
+                    # [Modified in Gloas:EIP7732]
+                    and is_supporting_vote(store, node, store.latest_messages[i])
+                )
+            )
+        )
     </spec>
 
 - name: get_attestation_signature#phase0
@@ -4595,6 +4659,20 @@
             return head_root
     </spec>
 
+- name: get_proposer_preferences_signature#gloas
+  sources: []
+  spec: |
+    <spec fn="get_proposer_preferences_signature" fork="gloas" hash="6a34cb73">
+    def get_proposer_preferences_signature(
+        state: BeaconState, preferences: ProposerPreferences, privkey: int
+    ) -> BLSSignature:
+        domain = get_domain(
+            state, DOMAIN_PROPOSER_PREFERENCES, compute_epoch_at_slot(preferences.proposal_slot)
+        )
+        signing_root = compute_signing_root(preferences, domain)
+        return bls.Sign(privkey, signing_root)
+    </spec>
+
 - name: get_proposer_reorg_cutoff_ms#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
@@ -4957,6 +5035,23 @@
             i for i in active_validator_indices if has_flag(epoch_participation[i], flag_index)
         ]
         return set(filter(lambda index: not state.validators[index].slashed, participating_indices))
+    </spec>
+
+- name: get_upcoming_proposal_slots#gloas
+  sources: []
+  spec: |
+    <spec fn="get_upcoming_proposal_slots" fork="gloas" hash="802ba480">
+    def get_upcoming_proposal_slots(
+        state: BeaconState, validator_index: ValidatorIndex
+    ) -> Sequence[Slot]:
+        """
+        Get the slots in the next epoch for which ``validator_index`` is proposing.
+        """
+        return [
+            Slot(compute_start_slot_at_epoch(get_current_epoch(state) + Epoch(1)) + offset)
+            for offset, proposer_index in enumerate(state.proposer_lookahead[SLOTS_PER_EPOCH:])
+            if validator_index == proposer_index
+        ]
     </spec>
 
 - name: get_validator_activation_churn_limit#deneb
@@ -5804,6 +5899,23 @@
         )
     </spec>
 
+- name: is_eligible_for_partial_withdrawals#electra
+  sources: []
+  spec: |
+    <spec fn="is_eligible_for_partial_withdrawals" fork="electra" hash="c8d29720">
+    def is_eligible_for_partial_withdrawals(validator: Validator, balance: Gwei) -> bool:
+        """
+        Check if ``validator`` can process a pending partial withdrawal.
+        """
+        has_sufficient_effective_balance = validator.effective_balance >= MIN_ACTIVATION_BALANCE
+        has_excess_balance = balance > MIN_ACTIVATION_BALANCE
+        return (
+            validator.exit_epoch == FAR_FUTURE_EPOCH
+            and has_sufficient_effective_balance
+            and has_excess_balance
+        )
+    </spec>
+
 - name: is_execution_block#bellatrix
   sources: []
   spec: |
@@ -5896,6 +6008,14 @@
         return not store.block_timeliness[head_root]
     </spec>
 
+- name: is_head_late#gloas
+  sources: []
+  spec: |
+    <spec fn="is_head_late" fork="gloas" hash="dd4c9308">
+    def is_head_late(store: Store, head_root: Root) -> bool:
+        return not store.block_timeliness[head_root][ATTESTATION_TIMELINESS_INDEX]
+    </spec>
+
 - name: is_head_weak#phase0
   sources:
     - file: storage/src/main/java/tech/pegasys/teku/storage/store/Store.java
@@ -5906,6 +6026,34 @@
         justified_state = store.checkpoint_states[store.justified_checkpoint]
         reorg_threshold = calculate_committee_fraction(justified_state, REORG_HEAD_WEIGHT_THRESHOLD)
         head_weight = get_weight(store, head_root)
+        return head_weight < reorg_threshold
+    </spec>
+
+- name: is_head_weak#gloas
+  sources: []
+  spec: |
+    <spec fn="is_head_weak" fork="gloas" hash="a763a3db">
+    def is_head_weak(store: Store, head_root: Root) -> bool:
+        # Calculate weight threshold for weak head
+        justified_state = store.checkpoint_states[store.justified_checkpoint]
+        reorg_threshold = calculate_committee_fraction(justified_state, REORG_HEAD_WEIGHT_THRESHOLD)
+
+        # Compute head weight including equivocations
+        head_state = store.block_states[head_root]
+        head_block = store.blocks[head_root]
+        epoch = compute_epoch_at_slot(head_block.slot)
+        head_node = ForkChoiceNode(root=head_root, payload_status=PAYLOAD_STATUS_PENDING)
+        head_weight = get_attestation_score(store, head_node, justified_state)
+        for index in range(get_committee_count_per_slot(head_state, epoch)):
+            committee = get_beacon_committee(head_state, head_block.slot, CommitteeIndex(index))
+            head_weight += Gwei(
+                sum(
+                    justified_state.validators[i].effective_balance
+                    for i in committee
+                    if i in store.equivocating_indices
+                )
+            )
+
         return head_weight < reorg_threshold
     </spec>
 
@@ -6013,6 +6161,20 @@
         return parent_weight > parent_threshold
     </spec>
 
+- name: is_parent_strong#gloas
+  sources: []
+  spec: |
+    <spec fn="is_parent_strong" fork="gloas" hash="37089462">
+    def is_parent_strong(store: Store, root: Root) -> bool:
+        justified_state = store.checkpoint_states[store.justified_checkpoint]
+        parent_threshold = calculate_committee_fraction(justified_state, REORG_PARENT_WEIGHT_THRESHOLD)
+        block = store.blocks[root]
+        parent_payload_status = get_parent_payload_status(store, block)
+        parent_node = ForkChoiceNode(root=block.parent_root, payload_status=parent_payload_status)
+        parent_weight = get_attestation_score(store, parent_node, justified_state)
+        return parent_weight > parent_threshold
+    </spec>
+
 - name: is_partially_withdrawable_validator#capella
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/helpers/PredicatesElectra.java
@@ -6092,6 +6254,23 @@
     <spec fn="is_proposer" fork="phase0" hash="d9e66d76">
     def is_proposer(state: BeaconState, validator_index: ValidatorIndex) -> bool:
         return get_beacon_proposer_index(state) == validator_index
+    </spec>
+
+- name: is_proposer_equivocation#phase0
+  sources: []
+  spec: |
+    <spec fn="is_proposer_equivocation" fork="phase0" hash="8e90bb33">
+    def is_proposer_equivocation(store: Store, root: Root) -> bool:
+        block = store.blocks[root]
+        proposer_index = block.proposer_index
+        slot = block.slot
+        # roots from the same slot and proposer
+        matching_roots = [
+            root
+            for root, block in store.blocks.items()
+            if (block.proposer_index == proposer_index and block.slot == slot)
+        ]
+        return len(matching_roots) > 1
     </spec>
 
 - name: is_proposing_on_time#phase0
@@ -6376,6 +6555,18 @@
             if branch[i] != Bytes32():
                 return False
         return is_valid_merkle_branch(leaf, branch[num_extra:], depth, index, root)
+    </spec>
+
+- name: is_valid_proposal_slot#gloas
+  sources: []
+  spec: |
+    <spec fn="is_valid_proposal_slot" fork="gloas" hash="55b8762f">
+    def is_valid_proposal_slot(state: BeaconState, preferences: ProposerPreferences) -> bool:
+        """
+        Check if the validator is the proposer for the given slot in the next epoch.
+        """
+        index = SLOTS_PER_EPOCH + preferences.proposal_slot % SLOTS_PER_EPOCH
+        return state.proposer_lookahead[index] == preferences.validator_index
     </spec>
 
 - name: is_valid_switch_to_compounding_request#electra

@@ -1,3 +1,10 @@
+- name: ATTESTATION_TIMELINESS_INDEX#gloas
+  sources: []
+  spec: |
+    <spec constant_var="ATTESTATION_TIMELINESS_INDEX" fork="gloas" hash="7d373fc8">
+    ATTESTATION_TIMELINESS_INDEX = 0
+    </spec>
+
 - name: BASE_REWARDS_PER_EPOCH#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigPhase0.java
@@ -208,6 +215,13 @@
     DOMAIN_DEPOSIT: DomainType = '0x03000000'
     </spec>
 
+- name: DOMAIN_PROPOSER_PREFERENCES#gloas
+  sources: []
+  spec: |
+    <spec constant_var="DOMAIN_PROPOSER_PREFERENCES" fork="gloas" hash="9377ecfb">
+    DOMAIN_PROPOSER_PREFERENCES: DomainType = '0x0D000000'
+    </spec>
+
 - name: DOMAIN_PTC_ATTESTER#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
@@ -399,6 +413,13 @@
     NODE_ID_BITS = 256
     </spec>
 
+- name: NUM_BLOCK_TIMELINESS_DEADLINES#gloas
+  sources: []
+  spec: |
+    <spec constant_var="NUM_BLOCK_TIMELINESS_DEADLINES" fork="gloas" hash="c4e721d9">
+    NUM_BLOCK_TIMELINESS_DEADLINES = 2
+    </spec>
+
 - name: PARTICIPATION_FLAG_WEIGHTS#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/altair/helpers/MiscHelpersAltair.java
@@ -443,6 +464,13 @@
   spec: |
     <spec constant_var="PROPOSER_WEIGHT" fork="altair" hash="4dcb6f6c">
     PROPOSER_WEIGHT: uint64 = 8
+    </spec>
+
+- name: PTC_TIMELINESS_INDEX#gloas
+  sources: []
+  spec: |
+    <spec constant_var="PTC_TIMELINESS_INDEX" fork="gloas" hash="ffca13bd">
+    PTC_TIMELINESS_INDEX = 1
     </spec>
 
 - name: RANDOM_CHALLENGE_KZG_BATCH_DOMAIN#deneb
