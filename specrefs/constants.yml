@@ -32,6 +32,24 @@
     BLS_WITHDRAWAL_PREFIX: Bytes1 = '0x00'
     </spec>
 
+- name: BUILDER_INDEX_FLAG#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigGloas.java
+      search: BUILDER_INDEX_FLAG =
+  spec: |
+    <spec constant_var="BUILDER_INDEX_FLAG" fork="gloas" hash="e9dca70d">
+    BUILDER_INDEX_FLAG: uint64 = 2**40
+    </spec>
+
+- name: BUILDER_INDEX_SELF_BUILD#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigGloas.java
+      search: BUILDER_INDEX_SELF_BUILD =
+  spec: |
+    <spec constant_var="BUILDER_INDEX_SELF_BUILD" fork="gloas" hash="622fd1b5">
+    BUILDER_INDEX_SELF_BUILD: BuilderIndex = UINT64_MAX
+    </spec>
+
 - name: BUILDER_PAYMENT_THRESHOLD_DENOMINATOR#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigGloas.java

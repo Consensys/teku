@@ -42,6 +42,10 @@ specrefs:
       - RANDOM_CHALLENGE_KZG_CELL_BATCH_DOMAIN
 
       # Not implemented: gloas
+      - PTC_TIMELINESS_INDEX#gloas
+      - NUM_BLOCK_TIMELINESS_DEADLINES#gloas
+      - DOMAIN_PROPOSER_PREFERENCES#gloas
+      - ATTESTATION_TIMELINESS_INDEX#gloas
       - PAYLOAD_STATUS_EMPTY#gloas
       - PAYLOAD_STATUS_FULL#gloas
       - PAYLOAD_STATUS_PENDING#gloas
@@ -59,6 +63,8 @@ specrefs:
 
       # Not implemented: gloas
       - ForkChoiceNode#gloas
+      - ProposerPreferences#gloas
+      - SignedProposerPreferences#gloas
 
     dataclasses:
       # Not defined, implemented differently
@@ -205,6 +211,11 @@ specrefs:
       - update_unrealized_checkpoints#phase0
       - validate_target_epoch_against_current_time#phase0
       - xor#phase0
+      - compute_proposer_score#phase0
+      - get_attestation_score#phase0
+      - is_proposer_equivocation#phase0
+      - record_block_timeliness#phase0
+      - update_proposer_boost_root#phase0
 
       # Not implemented: altair
       - compute_subnets_for_sync_committee#altair
@@ -252,6 +263,8 @@ specrefs:
       - prepare_execution_payload#electra
       - process_execution_payload#electra
       - process_voluntary_exit#electra
+      - is_eligible_for_partial_withdrawals#electra
+      - get_validators_sweep_withdrawals#electra
 
       # Not implemented: fulu
       - compute_matrix#fulu
@@ -300,3 +313,14 @@ specrefs:
       - validate_merge_block#gloas
       - validate_on_attestation#gloas
       - verify_data_column_sidecar#gloas
+      - get_attestation_score#gloas
+      - get_proposer_preferences_signature#gloas
+      - get_upcoming_proposal_slots#gloas
+      - is_head_late#gloas
+      - is_head_weak#gloas
+      - is_parent_strong#gloas
+      - is_valid_proposal_slot#gloas
+      - process_voluntary_exit#gloas
+      - record_block_timeliness#gloas
+      - should_apply_proposer_boost#gloas
+      - update_proposer_boost_root#gloas
