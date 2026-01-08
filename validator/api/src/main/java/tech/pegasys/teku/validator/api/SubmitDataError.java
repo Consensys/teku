@@ -14,7 +14,7 @@
 package tech.pegasys.teku.validator.api;
 
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_NUMERIC_TYPE;
 
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -26,7 +26,7 @@ public record SubmitDataError(UInt64 index, String message) {
         .name("SubmitDataError")
         .initializer(SubmitDataErrorBuilder::new)
         .finisher(SubmitDataErrorBuilder::build)
-        .withField("index", UINT64_TYPE, SubmitDataError::index, SubmitDataErrorBuilder::index)
+        .withField("index", UINT64_NUMERIC_TYPE, SubmitDataError::index, SubmitDataErrorBuilder::index)
         .withField(
             "message", STRING_TYPE, SubmitDataError::message, SubmitDataErrorBuilder::message)
         .build();
