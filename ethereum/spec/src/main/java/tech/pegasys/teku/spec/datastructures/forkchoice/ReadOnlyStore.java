@@ -135,7 +135,10 @@ public interface ReadOnlyStore extends TimeProvider {
   boolean isHeadWeak(Bytes32 root);
 
   // implements is_parent_strong from fork-choice Consensus Spec
-  boolean isParentStrong(Bytes32 parentRoot);
+  boolean isParentStrong(Bytes32 root);
+
+  // implements is_proposer_equivocation from fork-choice Consensus Spec
+  boolean isProposerEquivocation(Bytes32 root);
 
   void computeBalanceThresholds(BeaconState justifiedState);
 

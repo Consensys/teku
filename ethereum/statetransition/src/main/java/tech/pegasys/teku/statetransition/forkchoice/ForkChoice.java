@@ -663,7 +663,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         blobSidecars,
         earliestBlobSidecarsSlot);
 
-    final boolean shouldApplyProposerBoost = shouldApplyProposerBoost(block, transaction);
+    final UInt64 currentSlot = spec.getCurrentSlot(transaction);
+
+    final boolean shouldApplyProposerBoost =
+        shouldApplyProposerBoost(block, transaction, currentSlot);
     if (shouldApplyProposerBoost) {
       transaction.setProposerBoostRoot(block.getRoot());
     }
@@ -674,7 +677,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     blockImportPerformance.ifPresent(BlockImportPerformance::transactionCommitted);
     forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult, true);
 
-    final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
 
     // We only need to apply attestations from the current or previous epoch. If the block is from
     // before that, none of the attestations will be applicable so just skip the whole step.
@@ -747,8 +750,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   // from consensus-specs/fork-choice:
+  //
+  // Add proposer score boost if the block is timely, not conflicting with an existing block, with
+  // the same the proposer as the canonical chain.
   private boolean shouldApplyProposerBoost(
-      final SignedBeaconBlock block, final StoreTransaction transaction) {
+      final SignedBeaconBlock block, final StoreTransaction transaction, final UInt64 currentSlot) {
     // get_current_slot(store) == block.slot
     if (!spec.getCurrentSlot(transaction).equals(block.getSlot())) {
       return false;
@@ -760,7 +766,27 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       return false;
     }
     // is_first_block
-    return transaction.getProposerBoostRoot().isEmpty();
+    if (transaction.getProposerBoostRoot().isPresent()) {
+      return false;
+    }
+    return recentChainData
+        .getChainHead()
+        .map(
+            chainHead -> {
+              // TODO-GLOAS: join hmmmm
+              BeaconState headState = chainHead.getState().join();
+              if (headState.getSlot().isLessThan(currentSlot)) {
+                try {
+                  headState = spec.processSlots(headState, currentSlot);
+                } catch (Exception ex) {
+                  return false;
+                }
+              }
+              // Only update if the proposer is the same as on the canonical chain
+              return block.getProposerIndex().intValue()
+                  == spec.getBeaconProposerIndex(headState, currentSlot);
+            })
+        .orElse(false);
   }
 
   private Optional<List<BlobSidecar>> extractBlobSidecarsFromValidationResults(

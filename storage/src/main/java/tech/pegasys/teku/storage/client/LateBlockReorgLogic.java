@@ -171,13 +171,20 @@ public class LateBlockReorgLogic {
       return headRoot;
     }
     final boolean isHeadWeak = getStore().isHeadWeak(headRoot);
-    final boolean isParentStrong = getStore().isParentStrong(head.getParentRoot());
-    // finally, the parent must be strong, and the current head must be weak.
+    final boolean isParentStrong = getStore().isParentStrong(headRoot);
+    // the parent must be strong, and the current head must be weak.
     if (isHeadWeak && isParentStrong) {
       LOG.debug("getProposerHead - return parentRoot - isHeadWeak true && isParentStrong true");
       return head.getParentRoot();
     }
-
+    // finally, the current head must be weak, current time is ok and proposer equivocation is true
+    final boolean isCurrentTimeOk = head.getSlot().increment().equals(slot);
+    final boolean isProposerEquivocation = getStore().isProposerEquivocation(headRoot);
+    if (isHeadWeak && isCurrentTimeOk && isProposerEquivocation) {
+      LOG.debug(
+          "getProposerHead - return parentRoot - isHeadWeak true && isCurrentTimeOk && isProposerEquivocation true");
+      return head.getParentRoot();
+    }
     LOG.debug("getProposerHead - return headRoot");
     return headRoot;
   }

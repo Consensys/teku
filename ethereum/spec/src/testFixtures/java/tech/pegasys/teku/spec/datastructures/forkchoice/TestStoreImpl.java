@@ -271,7 +271,12 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public boolean isParentStrong(final Bytes32 parentRoot) {
+  public boolean isParentStrong(final Bytes32 root) {
+    return false;
+  }
+
+  @Override
+  public boolean isProposerEquivocation(final Bytes32 root) {
     return false;
   }
 
