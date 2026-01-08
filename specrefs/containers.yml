@@ -1408,6 +1408,17 @@
         total_difficulty: uint256
     </spec>
 
+- name: ProposerPreferences#gloas
+  sources: []
+  spec: |
+    <spec container="ProposerPreferences" fork="gloas" hash="2a38b149">
+    class ProposerPreferences(Container):
+        proposal_slot: Slot
+        validator_index: ValidatorIndex
+        fee_recipient: ExecutionAddress
+        gas_limit: uint64
+    </spec>
+
 - name: ProposerSlashing#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/ProposerSlashing.java
@@ -1502,6 +1513,15 @@
     <spec container="SignedExecutionPayloadEnvelope" fork="gloas" hash="ab8f3404">
     class SignedExecutionPayloadEnvelope(Container):
         message: ExecutionPayloadEnvelope
+        signature: BLSSignature
+    </spec>
+
+- name: SignedProposerPreferences#gloas
+  sources: []
+  spec: |
+    <spec container="SignedProposerPreferences" fork="gloas" hash="2142774c">
+    class SignedProposerPreferences(Container):
+        message: ProposerPreferences
         signature: BLSSignature
     </spec>
 
