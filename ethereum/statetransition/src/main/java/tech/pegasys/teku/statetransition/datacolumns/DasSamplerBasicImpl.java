@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON
 
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
@@ -24,6 +25,7 @@ import java.util.Optional;
 import java.util.TreeSet;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import org.apache.logging.log4j.LogManager;
@@ -59,9 +61,9 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   private final CurrentSlotProvider currentSlotProvider;
   private final CustodyGroupCountManager custodyGroupCountManager;
   private final int maxRecentlySampledBlocks;
-  private final Map<Bytes32, DataColumnSamplingTracker> recentlySampledColumnsByRoot = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<Bytes32, DataColumnSamplingTracker> recentlySampledColumnsByRoot = new ConcurrentHashMap<>();
 
-  private final ConcurrentSkipListMap<Bytes32, SignedBeaconBlock> orderedSidecarsTrackers = new ConcurrentSkipListMap<>();
+  private final LinkedHashMap<Bytes32, SignedBeaconBlock> orderedSidecarsTrackers = new LinkedHashMap<>();
 
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
@@ -112,7 +114,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   @Override
   public void onNewValidatedDataColumnSidecar(
       final DataColumnSlotAndIdentifier columnId, final RemoteOrigin remoteOrigin) {
-    LOG.debug("Sampler received data column {} - origin: {}", columnId, remoteOrigin);
+    LOG.trace("Sampler received data column {} - origin: {}", columnId, remoteOrigin);
 
     getOrCreateTracker(columnId.slot(), columnId.blockRoot()).add(columnId, remoteOrigin);
   }
@@ -155,7 +157,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   private void fetchMissingColumnsViaRPC(
       final UInt64 slot, final Bytes32 blockRoot, final DataColumnSamplingTracker tracker) {
     final List<DataColumnSlotAndIdentifier> missingColumns = tracker.getMissingColumnIdentifiers();
-    LOG.debug(
+    LOG.trace(
         "checkDataAvailability(): missing columns for slot {} root {}: {}",
         slot,
         blockRoot,
@@ -166,7 +168,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
         .thenAccept(
             retrievedColumns -> {
               if (retrievedColumns.size() == missingColumns.size()) {
-                LOG.debug(
+                LOG.trace(
                     "checkDataAvailability(): retrieved remaining {} (of {}) columns via Req/Resp for block {} ({})",
                     retrievedColumns.size(),
                     tracker.samplingRequirement().size(),
@@ -232,11 +234,13 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   private void makeRoomForNewBlock() {
     while (orderedSidecarsTrackers.size() >= maxRecentlySampledBlocks) {
       LOG.debug("Making room for new block in DAS sampler, current size: {}", orderedSidecarsTrackers.size());
-      final Bytes32 toRemove = orderedSidecarsTrackers.pollLastEntry().getKey();
+
+      final Bytes32 toRemove = orderedSidecarsTrackers.firstEntry().getKey();
       LOG.debug("Removing block {}", toRemove);
       if (toRemove == null) {
         break;
       }
+      orderedSidecarsTrackers.remove(toRemove);
     }
   }
 
@@ -318,8 +322,10 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
 
   @Override
   public boolean containsBlock(final Bytes32 blockRoot) {
-    LOG.debug("Checking if we have block {}", blockRoot);
-    return getBlock(blockRoot).isPresent();
+
+    final boolean present = getBlock(blockRoot).isPresent();
+    LOG.debug("Checking if we have block {}, {}", blockRoot, present);
+    return present;
   }
 
   @Override
