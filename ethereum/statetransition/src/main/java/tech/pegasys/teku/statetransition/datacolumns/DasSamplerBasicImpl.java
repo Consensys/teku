@@ -59,7 +59,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   private final ConcurrentHashMap<Bytes32, DataColumnSamplingTracker> recentlySampledColumnsByRoot =
       new ConcurrentHashMap<>();
 
-  private final LinkedHashMap<Bytes32, SignedBeaconBlock> orderedSidecarsTrackers =
+  private final LinkedHashMap<Bytes32, SignedBeaconBlock> orderedRecentBlocksTracked =
       new LinkedHashMap<>();
 
   private final AsyncRunner asyncRunner;
@@ -124,7 +124,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
     final DataColumnSamplingTracker tracker =
         getOrCreateTracker(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
     makeRoomForNewBlock();
-    orderedSidecarsTrackers.put(slotAndBlockRoot.getBlockRoot(), beaconBlock);
+    orderedRecentBlocksTracked.put(slotAndBlockRoot.getBlockRoot(), beaconBlock);
 
     if (tracker.completionFuture().isDone()) {
       return tracker.completionFuture();
@@ -203,44 +203,34 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
 
   private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {
 
-    final boolean created = !recentlySampledColumnsByRoot.containsKey(blockRoot);
-    final DataColumnSamplingTracker tracker =
-        recentlySampledColumnsByRoot.computeIfAbsent(
+    return recentlySampledColumnsByRoot.computeIfAbsent(
             blockRoot,
             k -> {
-              final DataColumnSamplingTracker newTracker =
-                  DataColumnSamplingTracker.create(
-                      slot,
-                      blockRoot,
-                      custodyGroupCountManager,
-                      halfColumnsSamplingCompletionEnabled
-                          ? Optional.of(
-                              SpecConfigFulu.required(spec.atSlot(slot).getConfig())
-                                      .getNumberOfColumns()
-                                  / 2)
-                          : Optional.empty());
-              LOG.debug("Created new DAS tracker for slot {} root {}", slot, blockRoot);
-              return newTracker;
+              final DataColumnSamplingTracker tracker =
+                      DataColumnSamplingTracker.create(
+                              slot,
+                              blockRoot,
+                              custodyGroupCountManager,
+                              halfColumnsSamplingCompletionEnabled
+                                      ? Optional.of(
+                                      SpecConfigFulu.required(spec.atSlot(slot).getConfig())
+                                              .getNumberOfColumns()
+                                              / 2)
+                                      : Optional.empty());
+              onFirstSeen(slot, blockRoot, tracker);
+              return tracker;
             });
-
-    if (created) {
-      onFirstSeen(slot, blockRoot, tracker);
-    }
-    return tracker;
   }
 
   private void makeRoomForNewBlock() {
-    while (orderedSidecarsTrackers.size() >= maxRecentlySampledBlocks) {
+    while (orderedRecentBlocksTracked.size() >= maxRecentlySampledBlocks) {
       LOG.debug(
           "Making room for new block in DAS sampler, current size: {}",
-          orderedSidecarsTrackers.size());
+          orderedRecentBlocksTracked.size());
 
-      final Bytes32 toRemove = orderedSidecarsTrackers.firstEntry().getKey();
+      final Bytes32 toRemove = orderedRecentBlocksTracked.pollFirstEntry().getKey();
       LOG.debug("Removing block {}", toRemove);
-      if (toRemove == null) {
-        break;
-      }
-      orderedSidecarsTrackers.remove(toRemove);
+
     }
   }
 
@@ -310,7 +300,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
                   // Slot less than finalized slot, but we didn't complete DA check, means it's
                   // probably orphaned block with data never available - we must prune this
                   // RecentChainData contains block, but we are here - shouldn't happen
-                  orderedSidecarsTrackers.remove(slotAndBlockRoot.getBlockRoot());
+                  orderedRecentBlocksTracked.remove(slotAndBlockRoot.getBlockRoot());
                   return true;
                 }
                 // cleanup only if fully sampled
@@ -330,6 +320,6 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
 
   @Override
   public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
-    return Optional.ofNullable(orderedSidecarsTrackers.get(blockRoot));
+    return Optional.ofNullable(orderedRecentBlocksTracked.get(blockRoot));
   }
 }
