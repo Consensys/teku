@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.SharedBeaconStateCaches;
 import tech.pegasys.teku.spec.util.BeaconStateBuilderAltair;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.BlobReconstructionProvider;
@@ -111,6 +112,7 @@ public abstract class AbstractChainDataProviderTest {
 
   protected ChainDataProvider setupBySpec(
       final Spec spec, final DataStructureUtil dataStructureUtil, final int validatorCount) {
+    SharedBeaconStateCaches.get().clear();
     this.blockSelectorFactory = spy(new BlockSelectorFactory(spec, mockCombinedChainDataClient));
     this.stateSelectorFactory = spy(new StateSelectorFactory(spec, mockCombinedChainDataClient));
     this.blobSidecarSelectorFactory =
