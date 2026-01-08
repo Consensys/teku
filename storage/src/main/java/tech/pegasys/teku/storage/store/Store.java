@@ -613,9 +613,9 @@ class Store extends CacheableStore {
   }
 
   @Override
-  public boolean isParentStrong(final Bytes32 parentRoot) {
-    final Optional<ProtoNodeData> maybeBlockData = getBlockDataFromForkChoiceStrategy(parentRoot);
-    return maybeBlockData
+  public boolean isParentStrong(final Bytes32 root) {
+    return getBlockIfAvailable(root)
+        .flatMap(block -> getBlockDataFromForkChoiceStrategy(block.getParentRoot()))
         .map(
             blockData -> {
               final UInt64 parentWeight = blockData.getWeight();
@@ -623,13 +623,40 @@ class Store extends CacheableStore {
 
               LOG.debug(
                   "isParentStrong {}: parentWeight: {}, parentThreshold: {}, result: {}",
-                  parentRoot,
+                  root,
                   parentWeight,
                   parentThreshold,
                   result);
               return result;
             })
         .orElse(true);
+  }
+
+  @Override
+  public boolean isProposerEquivocation(final Bytes32 root) {
+    return getBlockIfAvailable(root)
+        .map(
+            blockData -> {
+              final UInt64 proposerIndex = blockData.getProposerIndex();
+              final UInt64 slot = blockData.getSlot();
+              readLock.lock();
+              try {
+                // roots from the same slot and proposer
+                final boolean result =
+                    blocks.values().stream()
+                            .filter(
+                                block ->
+                                    block.getProposerIndex().equals(proposerIndex)
+                                        && block.getSlot().equals(slot))
+                            .count()
+                        > 1;
+                LOG.debug("isProposerEquivocation {}: {}", root, result);
+                return result;
+              } finally {
+                readLock.unlock();
+              }
+            })
+        .orElse(false);
   }
 
   @Override

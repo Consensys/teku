@@ -149,7 +149,7 @@ class StoreTest extends AbstractStoreTest {
   public void isParentStrong_withoutNodeData() {
     processChainHeadWithMockForkChoiceStrategy(
         (store, blockAndState) -> {
-          final Bytes32 root = blockAndState.getBlock().getParentRoot();
+          final Bytes32 root = blockAndState.getBlock().getRoot();
           store.computeBalanceThresholds(justifiedState(store));
           assertThat(store.isParentStrong(root)).isTrue();
         });
@@ -159,7 +159,7 @@ class StoreTest extends AbstractStoreTest {
   public void isParentStrong_withSufficientWeight() {
     processChainHeadWithMockForkChoiceStrategy(
         (store, blockAndState) -> {
-          final Bytes32 root = blockAndState.getBlock().getParentRoot();
+          final Bytes32 root = blockAndState.getBlock().getRoot();
           setProtoNodeDataForBlock(blockAndState, UInt64.ZERO, UInt64.valueOf("19200000001"));
           store.computeBalanceThresholds(justifiedState(store));
           assertThat(store.isParentStrong(root)).isTrue();
@@ -170,7 +170,7 @@ class StoreTest extends AbstractStoreTest {
   public void isParentStrong_wityBoundaryWeight() {
     processChainHeadWithMockForkChoiceStrategy(
         (store, blockAndState) -> {
-          final Bytes32 root = blockAndState.getBlock().getParentRoot();
+          final Bytes32 root = blockAndState.getBlock().getRoot();
           setProtoNodeDataForBlock(blockAndState, UInt64.ZERO, UInt64.valueOf("19200000000"));
           store.computeBalanceThresholds(justifiedState(store));
           assertThat(store.isParentStrong(root)).isFalse();
@@ -178,10 +178,10 @@ class StoreTest extends AbstractStoreTest {
   }
 
   @Test
-  public void isParentStrong_wityZeroWeight() {
+  public void isParentStrong_withZeroWeight() {
     processChainHeadWithMockForkChoiceStrategy(
         (store, blockAndState) -> {
-          final Bytes32 root = blockAndState.getBlock().getParentRoot();
+          final Bytes32 root = blockAndState.getBlock().getRoot();
           setProtoNodeDataForBlock(blockAndState, UInt64.ZERO, UInt64.ZERO);
           store.computeBalanceThresholds(justifiedState(store));
           assertThat(store.isParentStrong(root)).isFalse();

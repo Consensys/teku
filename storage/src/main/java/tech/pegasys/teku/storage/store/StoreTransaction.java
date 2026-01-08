@@ -482,8 +482,13 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public boolean isParentStrong(final Bytes32 parentRoot) {
-    return store.isParentStrong(parentRoot);
+  public boolean isParentStrong(final Bytes32 root) {
+    return store.isParentStrong(root);
+  }
+
+  @Override
+  public boolean isProposerEquivocation(final Bytes32 root) {
+    return store.isProposerEquivocation(root);
   }
 
   @Override
