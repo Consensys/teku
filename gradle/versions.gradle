@@ -85,7 +85,7 @@ dependencyManagement {
     dependency 'commons-io:commons-io:2.21.0'
     dependency 'org.commonjava.mimeparse:mimeparse:0.1.3.3'
 
-    dependencySet(group: 'org.apache.logging.log4j', version: '2.25.2') {
+    dependencySet(group: 'org.apache.logging.log4j', version: '2.25.3') {
       entry 'log4j-api'
       entry 'log4j-core'
       entry 'log4j-slf4j-impl'

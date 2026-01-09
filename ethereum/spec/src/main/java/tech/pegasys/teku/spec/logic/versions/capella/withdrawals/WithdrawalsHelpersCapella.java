@@ -254,12 +254,9 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
 
   protected void updateNextWithdrawalValidatorIndex(
       final MutableBeaconState state, final List<Withdrawal> withdrawals) {
-    final int maxWithdrawalsPerPayload = specConfig.getMaxWithdrawalsPerPayload();
-    final int maxValidatorsPerWithdrawalsSweep = specConfig.getMaxValidatorsPerWithdrawalSweep();
-
     final MutableBeaconStateCapella stateCapella = MutableBeaconStateCapella.required(state);
 
-    if (withdrawals.size() == maxWithdrawalsPerPayload) {
+    if (withdrawals.size() == specConfig.getMaxWithdrawalsPerPayload()) {
       // Update the next validator index to start the next withdrawal sweep
       final Withdrawal latestWithdrawal = withdrawals.getLast();
       final int nextWithdrawalValidatorIndex = latestWithdrawal.getValidatorIndex().intValue() + 1;
@@ -269,7 +266,7 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
       // Advance sweep by the max length of the sweep if there was not a full set of withdrawals
       final int nextWithdrawalValidatorIndex =
           stateCapella.getNextWithdrawalValidatorIndex().intValue()
-              + maxValidatorsPerWithdrawalsSweep;
+              + specConfig.getMaxValidatorsPerWithdrawalSweep();
       stateCapella.setNextWithdrawalValidatorIndex(
           UInt64.valueOf(nextWithdrawalValidatorIndex % state.getValidators().size()));
     }
