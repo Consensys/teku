@@ -16,6 +16,7 @@ package tech.pegasys.teku.beacon.sync;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.OptionalInt;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 
 public class SyncConfig {
@@ -34,6 +35,8 @@ public class SyncConfig {
   /** Aligned with {@link P2PConfig#DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT} */
   public static final int DEFAULT_FORWARD_SYNC_MAX_BLOB_SIDECARS_PER_MINUTE = 2000;
 
+  public static final int DEFAULT_MAX_RECENTLY_SAMPLED_BLOCKS = 64;
+
   private final boolean isEnabled;
   private final boolean isMultiPeerSyncEnabled;
   private final boolean reconstructHistoricStatesEnabled;
@@ -44,6 +47,7 @@ public class SyncConfig {
   private final int forwardSyncMaxBlocksPerMinute;
   private final int forwardSyncMaxBlobSidecarsPerMinute;
   private final OptionalInt forwardSyncMaxDistanceFromHead;
+  private final int maxRecentlySampledBlocks;
 
   private SyncConfig(
       final boolean isEnabled,
@@ -55,7 +59,8 @@ public class SyncConfig {
       final int forwardSyncMaxPendingBatches,
       final int forwardSyncMaxBlocksPerMinute,
       final int forwardSyncMaxBlobSidecarsPerMinute,
-      final OptionalInt forwardSyncMaxDistanceFromHead) {
+      final OptionalInt forwardSyncMaxDistanceFromHead,
+      final int maxRecentlySampledBlocks) {
     this.isEnabled = isEnabled;
     this.isMultiPeerSyncEnabled = isMultiPeerSyncEnabled;
     this.reconstructHistoricStatesEnabled = reconstructHistoricStatesEnabled;
@@ -66,6 +71,7 @@ public class SyncConfig {
     this.forwardSyncMaxBlocksPerMinute = forwardSyncMaxBlocksPerMinute;
     this.forwardSyncMaxBlobSidecarsPerMinute = forwardSyncMaxBlobSidecarsPerMinute;
     this.forwardSyncMaxDistanceFromHead = forwardSyncMaxDistanceFromHead;
+    this.maxRecentlySampledBlocks = maxRecentlySampledBlocks;
   }
 
   public static Builder builder() {
@@ -112,6 +118,10 @@ public class SyncConfig {
     return forwardSyncMaxDistanceFromHead;
   }
 
+  public int getMaxRecentlySampledBlocks() {
+    return maxRecentlySampledBlocks;
+  }
+
   public static class Builder {
     private Boolean isEnabled;
     private Boolean isMultiPeerSyncEnabled = DEFAULT_MULTI_PEER_SYNC_ENABLED;
@@ -124,6 +134,7 @@ public class SyncConfig {
     private Integer forwardSyncMaxBlobSidecarsPerMinute =
         DEFAULT_FORWARD_SYNC_MAX_BLOB_SIDECARS_PER_MINUTE;
     private OptionalInt forwardSyncMaxDistanceFromHead = OptionalInt.empty();
+    private Integer maxRecentlySampledBlocks = DEFAULT_MAX_RECENTLY_SAMPLED_BLOCKS;
 
     private Builder() {}
 
@@ -139,7 +150,8 @@ public class SyncConfig {
           forwardSyncMaxPendingBatches,
           forwardSyncMaxBlocksPerMinute,
           forwardSyncMaxBlobSidecarsPerMinute,
-          forwardSyncMaxDistanceFromHead);
+          forwardSyncMaxDistanceFromHead,
+          maxRecentlySampledBlocks);
     }
 
     private void initMissingDefaults() {
@@ -216,6 +228,16 @@ public class SyncConfig {
 
     public Builder fetchAllHistoricBlocks(final boolean fetchAllHistoricBlocks) {
       this.fetchAllHistoricBlocks = fetchAllHistoricBlocks;
+      return this;
+    }
+
+    public Builder maxRecentlySampledBlocks(final Integer maxRecentlySampledBlocks) {
+      checkNotNull(maxRecentlySampledBlocks);
+      if (maxRecentlySampledBlocks <= 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid maxRecentlySampledBlocks: %d", maxRecentlySampledBlocks));
+      }
+      this.maxRecentlySampledBlocks = maxRecentlySampledBlocks;
       return this;
     }
   }

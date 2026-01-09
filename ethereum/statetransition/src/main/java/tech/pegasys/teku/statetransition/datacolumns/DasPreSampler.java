@@ -86,7 +86,7 @@ public class DasPreSampler {
         .always(
             () ->
                 sampler
-                    .checkDataAvailability(block.getSlot(), block.getRoot())
+                    .checkDataAvailability(block)
                     .finish(
                         succ ->
                             LOG.debug(
