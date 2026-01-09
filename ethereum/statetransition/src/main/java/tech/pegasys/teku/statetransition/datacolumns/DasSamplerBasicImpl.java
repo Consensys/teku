@@ -204,22 +204,22 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {
 
     return recentlySampledColumnsByRoot.computeIfAbsent(
-            blockRoot,
-            k -> {
-              final DataColumnSamplingTracker tracker =
-                      DataColumnSamplingTracker.create(
-                              slot,
-                              blockRoot,
-                              custodyGroupCountManager,
-                              halfColumnsSamplingCompletionEnabled
-                                      ? Optional.of(
-                                      SpecConfigFulu.required(spec.atSlot(slot).getConfig())
-                                              .getNumberOfColumns()
-                                              / 2)
-                                      : Optional.empty());
-              onFirstSeen(slot, blockRoot, tracker);
-              return tracker;
-            });
+        blockRoot,
+        k -> {
+          final DataColumnSamplingTracker tracker =
+              DataColumnSamplingTracker.create(
+                  slot,
+                  blockRoot,
+                  custodyGroupCountManager,
+                  halfColumnsSamplingCompletionEnabled
+                      ? Optional.of(
+                          SpecConfigFulu.required(spec.atSlot(slot).getConfig())
+                                  .getNumberOfColumns()
+                              / 2)
+                      : Optional.empty());
+          onFirstSeen(slot, blockRoot, tracker);
+          return tracker;
+        });
   }
 
   private void makeRoomForNewBlock() {
@@ -230,7 +230,6 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
 
       final Bytes32 toRemove = orderedRecentBlocksTracked.pollFirstEntry().getKey();
       LOG.debug("Removing block {}", toRemove);
-
     }
   }
 
