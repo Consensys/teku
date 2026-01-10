@@ -55,11 +55,11 @@ public class ExecutionRequestsProcessorElectra implements ExecutionRequestsProce
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final SchemaDefinitionsElectra schemaDefinitions;
+  protected final SchemaDefinitionsElectra schemaDefinitions;
   private final MiscHelpers miscHelpers;
   private final SpecConfigElectra specConfig;
   private final PredicatesElectra predicates;
-  private final ValidatorsUtil validatorsUtil;
+  protected final ValidatorsUtil validatorsUtil;
   private final BeaconStateMutatorsElectra beaconStateMutators;
   private final BeaconStateAccessorsElectra beaconStateAccessors;
 
@@ -86,28 +86,32 @@ public class ExecutionRequestsProcessorElectra implements ExecutionRequestsProce
   @Override
   public void processDepositRequests(
       final MutableBeaconState state, final List<DepositRequest> depositRequests) {
-    final MutableBeaconStateElectra electraState = MutableBeaconStateElectra.required(state);
-    final SszMutableList<PendingDeposit> pendingDeposits =
-        MutableBeaconStateElectra.required(state).getPendingDeposits();
     for (DepositRequest depositRequest : depositRequests) {
-      // process_deposit_request
-      if (electraState
-          .getDepositRequestsStartIndex()
-          .equals(SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX)) {
-        electraState.setDepositRequestsStartIndex(depositRequest.getIndex());
-      }
-
-      final PendingDeposit deposit =
-          schemaDefinitions
-              .getPendingDepositSchema()
-              .create(
-                  new SszPublicKey(depositRequest.getPubkey()),
-                  SszBytes32.of(depositRequest.getWithdrawalCredentials()),
-                  SszUInt64.of(depositRequest.getAmount()),
-                  new SszSignature(depositRequest.getSignature()),
-                  SszUInt64.of(state.getSlot()));
-      pendingDeposits.append(deposit);
+      processDepositRequest(state, depositRequest);
     }
+  }
+
+  // process_deposit_request
+  protected void processDepositRequest(
+      final MutableBeaconState state, final DepositRequest depositRequest) {
+    final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
+    final SszMutableList<PendingDeposit> pendingDeposits = stateElectra.getPendingDeposits();
+    if (stateElectra
+        .getDepositRequestsStartIndex()
+        .equals(SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX)) {
+      stateElectra.setDepositRequestsStartIndex(depositRequest.getIndex());
+    }
+
+    final PendingDeposit deposit =
+        schemaDefinitions
+            .getPendingDepositSchema()
+            .create(
+                new SszPublicKey(depositRequest.getPubkey()),
+                SszBytes32.of(depositRequest.getWithdrawalCredentials()),
+                SszUInt64.of(depositRequest.getAmount()),
+                new SszSignature(depositRequest.getSignature()),
+                SszUInt64.of(state.getSlot()));
+    pendingDeposits.append(deposit);
   }
 
   /** Implements process_withdrawal_request from consensus-specs (EIP-7002 & EIP-7251). */
