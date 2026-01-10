@@ -171,8 +171,7 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
         expectedWithdrawals.withdrawals(),
         expectedWithdrawals.processedBuilderWithdrawalsCount(),
         expectedWithdrawals.processedPartialWithdrawalsCount(),
-        expectedWithdrawals.processedBuildersSweepCount(),
-        expectedWithdrawals.processedValidatorsSweepCount());
+        expectedWithdrawals.processedBuildersSweepCount());
   }
 
   private void assertWithdrawalsInExecutionPayloadMatchExpected(
@@ -208,8 +207,7 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
         expectedWithdrawals.withdrawals(),
         expectedWithdrawals.processedBuilderWithdrawalsCount(),
         expectedWithdrawals.processedPartialWithdrawalsCount(),
-        expectedWithdrawals.processedBuildersSweepCount(),
-        expectedWithdrawals.processedValidatorsSweepCount());
+        expectedWithdrawals.processedBuildersSweepCount());
   }
 
   private void processWithdrawalsUnchecked(
@@ -217,8 +215,7 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
       final List<Withdrawal> withdrawals,
       final int processedBuilderWithdrawalsCount,
       final int processedPartialWithdrawalsCount,
-      final int processedBuildersSweepCount,
-      final int processedValidatorsSweepCount) {
+      final int processedBuildersSweepCount) {
 
     applyWithdrawals(state, withdrawals);
 
@@ -236,7 +233,7 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
 
     updateNextWithdrawalBuilderIndex(state, processedBuildersSweepCount);
 
-    updateNextWithdrawalValidatorIndex(state, processedValidatorsSweepCount);
+    updateNextWithdrawalValidatorIndex(state, withdrawals);
   }
 
   protected void applyWithdrawals(
@@ -274,12 +271,22 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
       final MutableBeaconState state, final int processedBuildersSweepCount) {}
 
   protected void updateNextWithdrawalValidatorIndex(
-      final MutableBeaconState state, final int processedValidatorsSweepCount) {
+      final MutableBeaconState state, final List<Withdrawal> withdrawals) {
     final MutableBeaconStateCapella stateCapella = MutableBeaconStateCapella.required(state);
-    // Update the next validator index to start the next withdrawal sweep
-    final UInt64 nextIndex =
-        stateCapella.getNextWithdrawalValidatorIndex().plus(processedValidatorsSweepCount);
-    final UInt64 nextValidatorIndex = nextIndex.mod(state.getValidators().size());
-    stateCapella.setNextWithdrawalValidatorIndex(nextValidatorIndex);
+
+    if (withdrawals.size() == specConfig.getMaxWithdrawalsPerPayload()) {
+      // Next sweep starts after the latest withdrawal's validator index
+      final UInt64 nextValidatorIndex =
+          withdrawals.getLast().getValidatorIndex().plus(1).mod(state.getValidators().size());
+      stateCapella.setNextWithdrawalValidatorIndex(nextValidatorIndex);
+    } else {
+      // Advance sweep by the max length of the sweep if there was not a full set of withdrawals
+      final UInt64 nextIndex =
+          stateCapella
+              .getNextWithdrawalValidatorIndex()
+              .plus(specConfig.getMaxValidatorsPerWithdrawalSweep());
+      final UInt64 nextValidatorIndex = nextIndex.mod(state.getValidators().size());
+      stateCapella.setNextWithdrawalValidatorIndex(nextValidatorIndex);
+    }
   }
 }
