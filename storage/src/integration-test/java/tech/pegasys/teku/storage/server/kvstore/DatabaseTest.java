@@ -406,16 +406,16 @@ public class DatabaseTest {
 
     assertThat(database.getSidecarColumnCount()).isEqualTo(4L);
 
-    // Will not be overridden from Database interface, only initial set
-    assertThat(database.getEarliestDataColumnSidecarSlot()).contains(ZERO);
+    // This variable only gets set by pruner or backfiller
+    assertThat(database.getEarliestAvailableDataColumnSlot()).isEmpty();
 
-    // let's prune with limit to 1
+    // let's prune with limit to 1, will prune slot 0
     database.pruneAllSidecars(UInt64.MAX_VALUE, 1);
 
-    assertThat(database.getEarliestDataColumnSidecarSlot()).contains(ONE);
+    assertThat(database.getEarliestAvailableDataColumnSlot()).contains(ONE);
 
     database.pruneAllSidecars(UInt64.MAX_VALUE, 2);
-    assertThat(database.getEarliestDataColumnSidecarSlot()).contains(UInt64.valueOf(3));
+    assertThat(database.getEarliestAvailableDataColumnSlot()).contains(UInt64.valueOf(3));
   }
 
   private Path getSlotBlobsArchiveFile(final BlobSidecar blobSidecar) {
