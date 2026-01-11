@@ -1250,12 +1250,11 @@ public class KvStoreDatabase implements Database {
               updater.removeNonCanonicalSidecar(key);
             } else {
               updater.removeSidecar(key);
-
             }
           }
 
-          if(!nonCanonicalBlobSidecars){
-            earliestSidecarSlot =  Optional.of(slot.plus(1));
+          if (!nonCanonicalBlobSidecars) {
+            earliestSidecarSlot = Optional.of(slot.plus(1));
           }
 
           ++prunedSlots;

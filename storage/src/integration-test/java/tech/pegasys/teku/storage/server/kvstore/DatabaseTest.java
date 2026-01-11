@@ -83,7 +83,6 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
-import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -378,7 +377,8 @@ public class DatabaseTest {
   }
 
   @TestTemplate
-  public void verifyDataColumnSidecarsPruningSetsDbVariable(final DatabaseContext context) throws IOException {
+  public void verifyDataColumnSidecarsPruningSetsDbVariable(final DatabaseContext context)
+      throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalFulu());
     initialize(context);
 
@@ -386,14 +386,17 @@ public class DatabaseTest {
     assertThat(database.getEarliestDataColumnSidecarSlot()).isEmpty();
 
     final DataColumnSidecar dataColumnSidecarSlot0 =
-            dataStructureUtil.randomDataColumnSidecar(dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.valueOf(0)),UInt64.valueOf(0));
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.valueOf(0)), UInt64.valueOf(0));
     final DataColumnSidecar dataColumnSidecarSlot1 =
-            dataStructureUtil.randomDataColumnSidecar(dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.valueOf(1)),UInt64.valueOf(1));
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.valueOf(1)), UInt64.valueOf(1));
     final DataColumnSidecar dataColumnSidecarSlot2 =
-            dataStructureUtil.randomDataColumnSidecar(dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.valueOf(2)),UInt64.valueOf(2));
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.valueOf(2)), UInt64.valueOf(2));
     final DataColumnSidecar dataColumnSidecarSlot3 =
-            dataStructureUtil.randomDataColumnSidecar(dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.valueOf(3)),UInt64.valueOf(3));
-
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.valueOf(3)), UInt64.valueOf(3));
 
     // add blobs out of order
     database.addSidecar(dataColumnSidecarSlot1);
@@ -401,23 +404,19 @@ public class DatabaseTest {
     database.addSidecar(dataColumnSidecarSlot3);
     database.addSidecar(dataColumnSidecarSlot2);
 
-
     assertThat(database.getSidecarColumnCount()).isEqualTo(4L);
 
     // Will not be overridden from Database interface, only initial set
     assertThat(database.getEarliestDataColumnSidecarSlot()).contains(ZERO);
 
     // let's prune with limit to 1
-   database.pruneAllSidecars(UInt64.MAX_VALUE, 1);
+    database.pruneAllSidecars(UInt64.MAX_VALUE, 1);
 
     assertThat(database.getEarliestDataColumnSidecarSlot()).contains(ONE);
 
     database.pruneAllSidecars(UInt64.MAX_VALUE, 2);
     assertThat(database.getEarliestDataColumnSidecarSlot()).contains(UInt64.valueOf(3));
-
   }
-
-
 
   private Path getSlotBlobsArchiveFile(final BlobSidecar blobSidecar) {
     return blobSidecarsArchiver.resolveArchivePath(
