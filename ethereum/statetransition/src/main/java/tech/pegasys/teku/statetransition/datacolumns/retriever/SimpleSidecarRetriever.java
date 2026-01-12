@@ -64,6 +64,7 @@ public class SimpleSidecarRetriever
   private final AtomicBoolean started = new AtomicBoolean(false);
   private final AtomicLong retrieveCounter = new AtomicLong();
   private final AtomicLong errorCounter = new AtomicLong();
+  private final DataColumnPeerManager peerManager;
 
   public SimpleSidecarRetriever(
       final Spec spec,
@@ -79,7 +80,8 @@ public class SimpleSidecarRetriever
     this.asyncRunner = asyncRunner;
     this.roundPeriod = roundPeriod;
     this.reqResp = reqResp;
-    peerManager.addPeerListener(this);
+    this.peerManager = peerManager;
+    this.peerManager.addPeerListener(this);
     this.maxRequestCount =
         SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
             .getMaxRequestDataColumnSidecars();
@@ -187,6 +189,7 @@ public class SimpleSidecarRetriever
       final RetrieveRequest request, final RequestTracker ongoingRequestsTracker) {
     return connectedPeers.values().stream()
         .filter(peer -> peer.isCustodyFor(request.columnId))
+        .filter(peer -> peer.hasSlotAvailable(request.columnId.slot()))
         .filter(peer -> ongoingRequestsTracker.hasAvailableRequests(peer.nodeId));
   }
 
@@ -327,6 +330,13 @@ public class SimpleSidecarRetriever
 
     public boolean isCustodyFor(final DataColumnSlotAndIdentifier columnId) {
       return getNodeCustodyIndices(spec.atSlot(columnId.slot())).contains(columnId.columnIndex());
+    }
+
+    public boolean hasSlotAvailable(final UInt64 slot) {
+      return peerManager
+          .getEarliestAvailableSlot(nodeId)
+          .map(slot::isGreaterThanOrEqualTo)
+          .orElse(false);
     }
   }
 

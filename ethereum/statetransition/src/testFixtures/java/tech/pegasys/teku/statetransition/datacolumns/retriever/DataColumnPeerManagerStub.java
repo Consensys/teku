@@ -15,7 +15,9 @@ package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class DataColumnPeerManagerStub implements DataColumnPeerManager {
 
@@ -24,6 +26,11 @@ public class DataColumnPeerManagerStub implements DataColumnPeerManager {
   @Override
   public void addPeerListener(final PeerListener listener) {
     listeners.add(listener);
+  }
+
+  @Override
+  public Optional<UInt64> getEarliestAvailableSlot(final UInt256 nodeId) {
+    return Optional.empty();
   }
 
   public void addNode(final UInt256 nodeId) {

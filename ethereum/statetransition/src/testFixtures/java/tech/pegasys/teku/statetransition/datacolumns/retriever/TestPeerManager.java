@@ -15,8 +15,10 @@ package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
@@ -29,6 +31,15 @@ public class TestPeerManager implements DataColumnPeerManager, DataColumnReqResp
   public void connectPeer(final TestPeer peer) {
     dataColumnPeerManagerStub.addNode(peer.getNodeId());
     connectedPeers.put(peer.getNodeId(), peer);
+  }
+
+  @Override
+  public Optional<UInt64> getEarliestAvailableSlot(final UInt256 nodeId) {
+    final TestPeer peer = connectedPeers.get(nodeId);
+    if (peer == null) {
+      return Optional.empty();
+    }
+    return peer.getEarliestAvailableSlot();
   }
 
   @Override

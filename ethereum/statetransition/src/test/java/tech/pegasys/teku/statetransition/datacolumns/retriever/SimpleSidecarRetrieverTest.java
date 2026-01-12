@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Duration;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -123,11 +124,23 @@ public class SimpleSidecarRetrieverTest {
   @SuppressWarnings("deprecation")
   void sanityTest() {
     final TestPeer custodyPeerMissingData =
-        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100));
+        new TestPeer(
+            stubAsyncRunner,
+            custodyNodeIds.next(),
+            Duration.ofMillis(100),
+            Optional.of(UInt64.ZERO));
     final TestPeer custodyPeerHavingData =
-        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100));
+        new TestPeer(
+            stubAsyncRunner,
+            custodyNodeIds.next(),
+            Duration.ofMillis(100),
+            Optional.of(UInt64.ZERO));
     final TestPeer nonCustodyPeer =
-        new TestPeer(stubAsyncRunner, nonCustodyNodeIds.next(), Duration.ofMillis(100));
+        new TestPeer(
+            stubAsyncRunner,
+            nonCustodyNodeIds.next(),
+            Duration.ofMillis(100),
+            Optional.of(UInt64.ZERO));
 
     final List<Blob> blobs = Stream.generate(dataStructureUtil::randomValidBlob).limit(1).toList();
     final BeaconBlock block = blockResolver.addBlock(10, 1);
@@ -162,18 +175,34 @@ public class SimpleSidecarRetrieverTest {
   void selectingBestPeerShouldRespectPeerMetrics() {
 
     final TestPeer nonCustodyPeer =
-        new TestPeer(stubAsyncRunner, nonCustodyNodeIds.next(), Duration.ofMillis(100));
+        new TestPeer(
+            stubAsyncRunner,
+            nonCustodyNodeIds.next(),
+            Duration.ofMillis(100),
+            Optional.of(UInt64.ZERO));
 
     final TestPeer overloadedCustodyPeer =
-        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100))
+        new TestPeer(
+                stubAsyncRunner,
+                custodyNodeIds.next(),
+                Duration.ofMillis(100),
+                Optional.of(UInt64.ZERO))
             .currentRequestLimit(0);
 
     final TestPeer busyCustodyPeer =
-        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100))
+        new TestPeer(
+                stubAsyncRunner,
+                custodyNodeIds.next(),
+                Duration.ofMillis(100),
+                Optional.of(UInt64.ZERO))
             .currentRequestLimit(10);
 
     final TestPeer freeCustodyPeer =
-        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100))
+        new TestPeer(
+                stubAsyncRunner,
+                custodyNodeIds.next(),
+                Duration.ofMillis(100),
+                Optional.of(UInt64.ZERO))
             .currentRequestLimit(1000);
 
     final List<TestPeer> allPeers =
@@ -211,9 +240,97 @@ public class SimpleSidecarRetrieverTest {
   }
 
   @Test
+  void selectingBestPeerShouldRespectAdvertisedEarliestSlotAvailable() {
+
+    final TestPeer peerWithoutEarliestSlotAvailableSet =
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100))
+            .currentRequestLimit(1000);
+
+    final TestPeer peerWithEarliestSlotAvailableZero =
+        new TestPeer(
+                stubAsyncRunner,
+                custodyNodeIds.next(),
+                Duration.ofMillis(100),
+                Optional.of(UInt64.ZERO))
+            .currentRequestLimit(700);
+
+    final TestPeer peerWithEarliestSlotAvailableOne =
+        new TestPeer(
+                stubAsyncRunner,
+                custodyNodeIds.next(),
+                Duration.ofMillis(100),
+                Optional.of(UInt64.ONE))
+            .currentRequestLimit(800);
+
+    final TestPeer peerWithEarliestSlotAvailableTwo =
+        new TestPeer(
+                stubAsyncRunner,
+                custodyNodeIds.next(),
+                Duration.ofMillis(100),
+                Optional.of(UInt64.valueOf(2)))
+            .currentRequestLimit(900);
+
+    final List<TestPeer> allPeers =
+        List.of(
+            peerWithoutEarliestSlotAvailableSet, peerWithEarliestSlotAvailableZero,
+            peerWithEarliestSlotAvailableOne, peerWithEarliestSlotAvailableTwo);
+    Supplier<List<Integer>> allRequestCountsFunc =
+        () -> allPeers.stream().map(peer -> peer.getRequests().size()).toList();
+
+    allPeers.forEach(testPeerManager::connectPeer);
+
+    final List<Blob> blobso = Stream.generate(dataStructureUtil::randomValidBlob).limit(1).toList();
+    final BeaconBlock block0 = blockResolver.addBlock(0, 1);
+    final List<DataColumnSidecar> sidecars0 =
+        miscHelpers.constructDataColumnSidecarsOld(createSigned(block0), blobso);
+    final DataColumnSidecar sidecar0_0 = sidecars0.get(columnIndex.intValue());
+    peerWithEarliestSlotAvailableZero.addSidecar(sidecar0_0);
+
+    final List<Blob> blobs1 = Stream.generate(dataStructureUtil::randomValidBlob).limit(1).toList();
+    final BeaconBlock block1 = blockResolver.addBlock(1, 1);
+    final List<DataColumnSidecar> sidecars1 =
+        miscHelpers.constructDataColumnSidecarsOld(createSigned(block1), blobs1);
+    final DataColumnSidecar sidecar1_0 = sidecars1.get(columnIndex.intValue());
+    peerWithEarliestSlotAvailableZero.addSidecar(sidecar1_0);
+    peerWithEarliestSlotAvailableOne.addSidecar(sidecar1_0);
+
+    final List<Blob> blobs2 = Stream.generate(dataStructureUtil::randomValidBlob).limit(1).toList();
+    final BeaconBlock block2 = blockResolver.addBlock(2, 1);
+    final List<DataColumnSidecar> sidecars2 =
+        miscHelpers.constructDataColumnSidecarsOld(createSigned(block2), blobs2);
+    final DataColumnSidecar sidecar2_0 = sidecars2.get(columnIndex.intValue());
+    peerWithEarliestSlotAvailableZero.addSidecar(sidecar2_0);
+    peerWithEarliestSlotAvailableOne.addSidecar(sidecar2_0);
+    peerWithEarliestSlotAvailableTwo.addSidecar(sidecar2_0);
+
+    final DataColumnSlotAndIdentifier id0 =
+        new DataColumnSlotAndIdentifier(UInt64.ZERO, block0.getRoot(), columnIndex);
+    final DataColumnSlotAndIdentifier id1 =
+        new DataColumnSlotAndIdentifier(UInt64.ONE, block1.getRoot(), columnIndex);
+    final DataColumnSlotAndIdentifier id2 =
+        new DataColumnSlotAndIdentifier(UInt64.valueOf(2), block2.getRoot(), columnIndex);
+
+    simpleSidecarRetriever.retrieve(id0).finish(err -> LOG.error("Error retrieving sidecar", err));
+    advanceTimeGradually(retrieverRound);
+    assertThat(allRequestCountsFunc.get()).isEqualTo(List.of(0, 1, 0, 0));
+
+    simpleSidecarRetriever.retrieve(id1).finish(err -> LOG.error("Error retrieving sidecar", err));
+    advanceTimeGradually(retrieverRound);
+    assertThat(allRequestCountsFunc.get()).isEqualTo(List.of(0, 1, 1, 0));
+
+    simpleSidecarRetriever.retrieve(id2).finish(err -> LOG.error("Error retrieving sidecar", err));
+    advanceTimeGradually(retrieverRound);
+    assertThat(allRequestCountsFunc.get()).isEqualTo(List.of(0, 1, 1, 1));
+  }
+
+  @Test
   void cancellingRequestShouldRemoveItFromPending() {
     final TestPeer custodyPeer =
-        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100))
+        new TestPeer(
+                stubAsyncRunner,
+                custodyNodeIds.next(),
+                Duration.ofMillis(100),
+                Optional.of(UInt64.ZERO))
             .currentRequestLimit(1000);
 
     testPeerManager.connectPeer(custodyPeer);
@@ -271,7 +388,8 @@ public class SimpleSidecarRetrieverTest {
   void shouldTrackCustodyCountChangesForPeers() {
     final Duration responseLatency = Duration.ofDays(1); // complete responses manually
     final TestPeer peer =
-        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), responseLatency)
+        new TestPeer(
+                stubAsyncRunner, custodyNodeIds.next(), responseLatency, Optional.of(UInt64.ZERO))
             .currentRequestLimit(1000);
     testPeerManager.connectPeer(peer);
 
