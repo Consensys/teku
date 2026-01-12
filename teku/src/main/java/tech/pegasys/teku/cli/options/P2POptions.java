@@ -580,6 +580,20 @@ public class P2POptions {
   private boolean dasDisableElRecovery = P2PConfig.DEFAULT_DAS_DISABLE_EL_RECOVERY;
 
   @Option(
+      names = {"--Xcolumns-data-availability-half-check-enabled"},
+      hidden = true,
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Enables faster block import when 50% of all sidecar columns available without waiting "
+              + "to obtain the remaining columns, which continue to download in the background. "
+              + "Works only on nodes with 50%+ columns custody requirements.",
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean columnsDataAvailabilityHalfCheckEnabled =
+      P2PConfig.DEFAULT_COLUMNS_DATA_AVAILABILITY_HALF_CHECK_ENABLED;
+
+  @Option(
       names = {"--Xp2p-historical-data-max-concurrent-queries"},
       hidden = true,
       paramLabel = "<NUMBER>",
@@ -697,7 +711,8 @@ public class P2POptions {
                   .reworkedSidecarRecoveryEnabled(reworkedSidecarRecoveryEnabled)
                   .reworkedSidecarSyncPollPeriod(reworkedSidecarCustodySyncPollPeriodSeconds)
                   .reworkedSidecarSyncBatchSize(reworkedSidecarCustodySyncBatchSize)
-                  .reworkedSidecarSyncEnabled(reworkedSidecarCustodySyncEnabled);
+                  .reworkedSidecarSyncEnabled(reworkedSidecarCustodySyncEnabled)
+                  .columnsDataAvailabilityHalfCheckEnabled(columnsDataAvailabilityHalfCheckEnabled);
               batchVerifyQueueCapacity.ifPresent(b::batchVerifyQueueCapacity);
             })
         .discovery(

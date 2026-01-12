@@ -1,0 +1,22 @@
+{
+  "title" : "GetCustodyOverviewResponse",
+  "type" : "object",
+  "required" : [ "data" ],
+  "properties" : {
+    "data" : {
+      "type" : "object",
+      "required" : [ "custody_columns" ],
+      "properties" : {
+        "custody_columns" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string",
+            "description" : "unsigned 64 bit integer",
+            "example" : "1",
+            "format" : "uint64"
+          }
+        }
+      }
+    }
+  }
+}

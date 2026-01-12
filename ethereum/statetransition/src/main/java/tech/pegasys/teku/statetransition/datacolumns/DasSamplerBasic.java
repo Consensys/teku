@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
@@ -53,6 +55,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
   private final RPCFetchDelayProvider rpcFetchDelayProvider;
+  private final boolean halfColumnsSamplingCompletionEnabled;
 
   public DasSamplerBasic(
       final Spec spec,
@@ -62,7 +65,8 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
       final DataColumnSidecarCustody custody,
       final DataColumnSidecarRetriever retriever,
       final CustodyGroupCountManager custodyGroupCountManager,
-      final RecentChainData recentChainData) {
+      final RecentChainData recentChainData,
+      final boolean halfColumnsSamplingCompletionEnabled) {
     this.currentSlotProvider = currentSlotProvider;
     this.rpcFetchDelayProvider = rpcFetchDelayProvider;
     this.spec = spec;
@@ -71,6 +75,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
     this.retriever = retriever;
     this.custodyGroupCountManager = custodyGroupCountManager;
     this.recentChainData = recentChainData;
+    this.halfColumnsSamplingCompletionEnabled = halfColumnsSamplingCompletionEnabled;
   }
 
   @VisibleForTesting
@@ -100,7 +105,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
       return tracker.completionFuture();
     }
 
-    if (tracker.rpcFetchScheduled().compareAndSet(false, true)) {
+    if (tracker.rpcFetchInProgress().compareAndSet(false, true)) {
       fetchMissingColumnsViaRPC(slot, blockRoot, tracker);
     }
 
@@ -117,7 +122,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
       // wait eventual known columns to be added via onAlreadyKnownDataColumn before fetching.
       return;
     }
-    tracker.rpcFetchScheduled().set(true);
+    tracker.rpcFetchInProgress().set(true);
     asyncRunner
         .getDelayedFuture(delay)
         .always(() -> fetchMissingColumnsViaRPC(slot, blockRoot, tracker));
@@ -156,7 +161,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
             })
         // let's reset the fetched flag so that this tracker can reissue RPC requests on DA check
         // retry
-        .alwaysRun(() -> tracker.rpcFetchScheduled().set(false))
+        .alwaysRun(() -> tracker.rpcFetchInProgress().set(false))
         .finish(
             throwable -> {
               if (ExceptionUtil.hasCause(throwable, CancellationException.class)) {
@@ -176,7 +181,16 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
         blockRoot,
         k -> {
           final DataColumnSamplingTracker tracker =
-              DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager);
+              DataColumnSamplingTracker.create(
+                  slot,
+                  blockRoot,
+                  custodyGroupCountManager,
+                  halfColumnsSamplingCompletionEnabled
+                      ? Optional.of(
+                          SpecConfigFulu.required(spec.atSlot(slot).getConfig())
+                                  .getNumberOfColumns()
+                              / 2)
+                      : Optional.empty());
           onFirstSeen(slot, blockRoot, tracker);
           return tracker;
         });
@@ -236,16 +250,20 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
             tracker -> {
               if (tracker.slot().isLessThan(firstNonFinalizedSlot)
                   || recentChainData.containsBlock(tracker.blockRoot())) {
-
-                if (tracker.completionFuture().isDone()) {
+                // Outdated
+                if (!tracker.completionFuture().isDone()) {
+                  // make sure the future releases any pending waiters
+                  tracker
+                      .completionFuture()
+                      .completeExceptionally(
+                          new RuntimeException("DAS sampling expired while slot finalized"));
+                  // Slot less than finalized slot, but we didn't complete DA check, means it's
+                  // probably orphaned block with data never available - we must prune this
+                  // RecentChainData contains block, but we are here - shouldn't happen
                   return true;
                 }
-
-                // make sure the future releases any pending waiters
-                tracker
-                    .completionFuture()
-                    .completeExceptionally(new RuntimeException("DAS sampling expired"));
-                return true;
+                // cleanup only if fully sampled
+                return tracker.fullySampled().get();
               }
 
               return false;
