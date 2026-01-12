@@ -71,4 +71,8 @@ public final class RpcRequestDecoder<T extends RpcRequest & SszData> {
     }
     return maybeRequest;
   }
+
+  public void close() {
+    decoder.close();
+  }
 }
