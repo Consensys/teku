@@ -224,11 +224,11 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   }
 
   private void makeRoomForNewBlock(final Bytes32 blockRoot) {
-    if(!orderedRecentBlocksTracked.containsKey(blockRoot)) {
+    if (!orderedRecentBlocksTracked.containsKey(blockRoot)) {
       while (orderedRecentBlocksTracked.size() >= maxRecentlySampledBlocks) {
         LOG.debug(
-                "Making room for new block in DAS sampler, current size: {}",
-                orderedRecentBlocksTracked.size());
+            "Making room for new block in DAS sampler, current size: {}",
+            orderedRecentBlocksTracked.size());
 
         final Bytes32 toRemove = orderedRecentBlocksTracked.pollFirstEntry().getKey();
         LOG.debug("Removing block {}", toRemove);
