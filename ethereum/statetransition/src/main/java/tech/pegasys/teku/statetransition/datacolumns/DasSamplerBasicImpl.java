@@ -121,9 +121,10 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(beaconBlock.getSlot(), beaconBlock.getMessage().hashTreeRoot());
 
+    makeRoomForNewBlock(slotAndBlockRoot.getBlockRoot());
     final DataColumnSamplingTracker tracker =
         getOrCreateTracker(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
-    makeRoomForNewBlock();
+
     orderedRecentBlocksTracked.put(slotAndBlockRoot.getBlockRoot(), beaconBlock);
 
     if (tracker.completionFuture().isDone()) {
@@ -222,14 +223,16 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
         });
   }
 
-  private void makeRoomForNewBlock() {
-    while (orderedRecentBlocksTracked.size() >= maxRecentlySampledBlocks) {
-      LOG.debug(
-          "Making room for new block in DAS sampler, current size: {}",
-          orderedRecentBlocksTracked.size());
+  private void makeRoomForNewBlock(final Bytes32 blockRoot) {
+    if(!orderedRecentBlocksTracked.containsKey(blockRoot)) {
+      while (orderedRecentBlocksTracked.size() >= maxRecentlySampledBlocks) {
+        LOG.debug(
+                "Making room for new block in DAS sampler, current size: {}",
+                orderedRecentBlocksTracked.size());
 
-      final Bytes32 toRemove = orderedRecentBlocksTracked.pollFirstEntry().getKey();
-      LOG.debug("Removing block {}", toRemove);
+        final Bytes32 toRemove = orderedRecentBlocksTracked.pollFirstEntry().getKey();
+        LOG.debug("Removing block {}", toRemove);
+      }
     }
   }
 
@@ -302,8 +305,12 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
                   orderedRecentBlocksTracked.remove(slotAndBlockRoot.getBlockRoot());
                   return true;
                 }
+                final boolean fullySampled = tracker.fullySampled().get();
+                if (fullySampled) {
+                  orderedRecentBlocksTracked.remove(slotAndBlockRoot.getBlockRoot());
+                }
                 // cleanup only if fully sampled
-                return tracker.fullySampled().get();
+                return fullySampled;
               }
               return false;
             });
