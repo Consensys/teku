@@ -29,7 +29,7 @@ import tech.pegasys.teku.storage.server.Database;
 
 public class FinalizedStateCache {
 
-  private static final long MAX_REGENERATE_LOTS = 10_000L;
+  private static final long MAX_REGENERATE_SLOTS = 10_000L;
 
   /**
    * Note this is a best effort basis to track what states are cached. Slots are added here slightly
@@ -52,7 +52,7 @@ public class FinalizedStateCache {
         maximumCacheSize,
         useSoftReferences,
         stateRebuildTimeoutSeconds,
-        MAX_REGENERATE_LOTS);
+            MAX_REGENERATE_SLOTS);
   }
 
   FinalizedStateCache(
