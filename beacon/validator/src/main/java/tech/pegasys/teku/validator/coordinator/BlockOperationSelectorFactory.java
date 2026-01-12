@@ -273,7 +273,7 @@ public class BlockOperationSelectorFactory {
             beaconStateElectra ->
                 beaconStateElectra.getPendingPartialWithdrawals().stream()
                     .map(PendingPartialWithdrawal::getValidatorIndex)
-                    .noneMatch(index -> index == validatorIndex.intValue()))
+                    .noneMatch(index -> index.equals(validatorIndex)))
         .orElse(true);
   }
 

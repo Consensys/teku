@@ -26,7 +26,8 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 public interface RestClient {
   Map<String, String> NO_HEADERS = Collections.emptyMap();
 
-  SafeFuture<Response<Void>> getAsync(String apiPath, Duration timeout);
+  SafeFuture<Response<Void>> getAsync(
+      String apiPath, Map<String, String> headers, Duration timeout);
 
   <TResp extends SszData> SafeFuture<Response<BuilderApiResponse<TResp>>> getAsync(
       String apiPath,

@@ -51,8 +51,9 @@ public class OkHttpRestClient implements RestClient {
   }
 
   @Override
-  public SafeFuture<Response<Void>> getAsync(final String apiPath, final Duration timeout) {
-    final Request request = createGetRequest(apiPath, NO_HEADERS);
+  public SafeFuture<Response<Void>> getAsync(
+      final String apiPath, final Map<String, String> headers, final Duration timeout) {
+    final Request request = createGetRequest(apiPath, headers);
     return makeAsyncVoidRequest(request, timeout);
   }
 

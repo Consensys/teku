@@ -24,8 +24,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
@@ -38,6 +36,8 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.execution.AbstractExecutionPayloadProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
@@ -154,13 +154,13 @@ public class ExecutionPayloadProcessorGloas extends AbstractExecutionPayloadProc
       throw new ExecutionPayloadProcessingException(
           "Prev randao of the envelope is not consistent with the prev randao of the committed bid");
     }
-    // Verify the withdrawals root
+    // Verify consistency with expected withdrawals
     if (!ExecutionPayloadCapella.required(payload)
         .getWithdrawals()
         .hashTreeRoot()
-        .equals(stateGloas.getLatestWithdrawalsRoot())) {
+        .equals(stateGloas.getPayloadExpectedWithdrawals().hashTreeRoot())) {
       throw new ExecutionPayloadProcessingException(
-          "Withdrawals root of the envelope is not consistent with the latest withdrawals root in the state");
+          "Withdrawals of the envelope are not consistent with the expected withdrawals in the state");
     }
     // Verify the gas_limit
     if (!committedBid.getGasLimit().equals(payload.getGasLimit())) {
