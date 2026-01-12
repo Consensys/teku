@@ -534,26 +534,8 @@ licenseReport {
   renderers = [new GroupedLicenseHtmlRenderer(includeTimestamp: false)]
 }
 
-// Configure license report tasks for Gradle 9+ compatibility
-// IMPORTANT: The license report plugin resolves configurations at execution time, which in Gradle 9+
-// requires exclusive access. When running with parallel execution enabled, you must use the --no-parallel flag:
-//   ./gradlew generateLicenseReport --no-parallel
-//
-// This is a known limitation of the plugin with Gradle 9+.
-// See: https://github.com/jk1/Gradle-License-Report
-//      https://docs.gradle.org/current/userguide/upgrading_major_version_9.html
-tasks.withType(com.github.jk1.license.task.ReportTask).configureEach {
-  // Mark as not compatible with configuration cache
-  notCompatibleWithConfigurationCache("License report plugin resolves configurations at execution time")
-
-  doFirst {
-    if (gradle.startParameter.parallelProjectExecutionEnabled) {
-      logger.warn("WARNING: Running generateLicenseReport with parallel execution enabled may cause errors in Gradle 9+.")
-      logger.warn("If you encounter 'configuration resolution without exclusive lock' errors, run with --no-parallel flag:")
-      logger.warn("  ./gradlew generateLicenseReport --no-parallel")
-    }
-  }
-}
+// https://github.com/jk1/Gradle-License-Report/issues/337#issuecomment-3241442179
+generateLicenseReport.enabled = false
 
 task checkMavenCoordinateCollisions {
   doLast {
