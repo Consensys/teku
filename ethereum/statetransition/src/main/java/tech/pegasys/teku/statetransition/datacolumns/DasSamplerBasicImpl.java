@@ -283,13 +283,12 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   @Override
   public void onSlot(final UInt64 slot) {
     final UInt64 firstNonFinalizedSlot =
-        spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch()).increment();
+        spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch().increment());
     recentlySampledColumnsByRoot
         .values()
         .removeIf(
             tracker -> {
-              final SlotAndBlockRoot slotAndBlockRoot =
-                  new SlotAndBlockRoot(tracker.slot(), tracker.blockRoot());
+
               if (tracker.slot().isLessThan(firstNonFinalizedSlot)
                   || recentChainData.containsBlock(tracker.blockRoot())) {
                 // Outdated
@@ -302,12 +301,12 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
                   // Slot less than finalized slot, but we didn't complete DA check, means it's
                   // probably orphaned block with data never available - we must prune this
                   // RecentChainData contains block, but we are here - shouldn't happen
-                  orderedRecentBlocksTracked.remove(slotAndBlockRoot.getBlockRoot());
+                  orderedRecentBlocksTracked.remove(tracker.blockRoot());
                   return true;
                 }
                 final boolean fullySampled = tracker.fullySampled().get();
                 if (fullySampled) {
-                  orderedRecentBlocksTracked.remove(slotAndBlockRoot.getBlockRoot());
+                  orderedRecentBlocksTracked.remove(tracker.blockRoot());
                 }
                 // cleanup only if fully sampled
                 return fullySampled;
