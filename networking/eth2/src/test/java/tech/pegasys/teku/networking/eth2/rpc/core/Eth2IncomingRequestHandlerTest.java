@@ -144,7 +144,7 @@ public class Eth2IncomingRequestHandlerTest
   }
 
   @Test
-  public void shouldReleaseBuffersWhenStreamClosedWithoutAnyData() {
+  public void shouldReleaseBuffersWhenHandlerIsClosedWithNoProcessedData() {
     // Close without any data being processed - should not throw
     reqHandler.closed(nodeId, rpcStream);
 
