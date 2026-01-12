@@ -199,37 +199,36 @@ jobs:
             .openapidoc/spec/teku.json
           retention-days: 7
 
-  # # TODO - check the user vars work for publishing 
-  # publishAPISpec:
-  #   #if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
-  #   needs: extractAPISpec
-  #   runs-on: ubuntu-24.04
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v5
-  #       with:
-  #         submodules: 'recursive'
-  #     - name: Prepare
-  #       uses: ./.github/actions/prepare
-  #     - name: Download openapi spec
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: openapi-spec
-  #         path: ${{ github.workspace }}/.openapidoc/spec
-  #     - name: List openapidoc spec
-  #       run: |
-  #         tree .openapidoc/spec/          
-  #     - name: Use Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 22
-  #         cache-dependency-path: .openapidoc/package-lock.json 
-  #         cache: 'npm'  
-  #     - name: Install npm dependencies
-  #       working-directory: .openapidoc
-  #       run: |
-  #         npm ci
-  #         OA_GIT_USERNAME="${{ github.actor }}" OA_GIT_EMAIL="${{ github.actor }}@users.noreply.github.com" OA_GIT_URL="${{ github.server_url }}/${{ github.repository }}" OA_GH_PAGES_BRANCH="gh-pages" node publish.js
+  publishAPISpec:
+    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+    needs: extractAPISpec
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+      - name: Download openapi spec
+        uses: actions/download-artifact@v4
+        with:
+          name: openapi-spec
+          path: ${{ github.workspace }}/.openapidoc/spec
+      - name: List openapidoc spec
+        run: |
+          tree .openapidoc/spec/          
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache-dependency-path: .openapidoc/package-lock.json 
+          cache: 'npm'  
+      - name: Install npm dependencies
+        working-directory: .openapidoc
+        run: |
+          npm ci
+          OA_GIT_USERNAME="${{ github.actor }}" OA_GIT_EMAIL="${{ github.actor }}@users.noreply.github.com" OA_GIT_URL="${{ github.server_url }}/${{ github.repository }}" OA_GH_PAGES_BRANCH="gh-pages" node publish.js
 
   ## Tests 
   unitTests:
@@ -304,29 +303,28 @@ jobs:
         with:
           stage_key: property
 
-  # comment these out until we switch from circleci to gha to allow docker to run fine on circleci
-  # acceptanceTests:
-  #   needs: assemble
-  #   uses: ./.github/workflows/matrix-tests-template.yml
-  #   secrets: inherit
-  #   with:
-  #     assemble_output_run_id: ${{ github.run_id }}
-  #     stage_name: Acceptance Tests
-  #     stage_key: acceptance
-  #     gradle_task: acceptanceTest
-  #     src_pattern: "*/src/acceptance-test/java/*"
-  #     src_root: "src/acceptance-test/java"
-  #     runner: "ubuntu-latest-128"
+  acceptanceTests:
+    needs: assemble
+    uses: ./.github/workflows/matrix-tests-template.yml
+    secrets: inherit
+    with:
+      assemble_output_run_id: ${{ github.run_id }}
+      stage_name: Acceptance Tests
+      stage_key: acceptance
+      gradle_task: acceptanceTest
+      src_pattern: "*/src/acceptance-test/java/*"
+      src_root: "src/acceptance-test/java"
+      runner: "ubuntu-latest-128"
 
-  # acceptanceTestsReport:
-  #   runs-on: ubuntu-24.04
-  #   needs: acceptanceTests
-  #   steps:
-  #     - uses: actions/checkout@v5
-  #     - uses: ./.github/actions/collate-junit-reports
-  #       if: always()        
-  #       with:
-  #         stage_key: acceptance
+  acceptanceTestsReport:
+    runs-on: ubuntu-24.04
+    needs: acceptanceTests
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/collate-junit-reports
+        if: always()        
+        with:
+          stage_key: acceptance
 
   referenceTestsPrep:
     needs: assemble
@@ -474,35 +472,35 @@ jobs:
           stage_key: reference
 
   # DockerTags
-  # everything is a standard develop-jdk24/21; but you also add develop to develop-jdk21
+  # everything is a standard develop-jdk24/21; but we also add 'develop' to develop-jdk21
   # develop = develop-jdk21
   # develop-jdk24
-  # publishDockerJDK21:
-  #   #if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
-  #   needs: [assemble]
-  #   uses: ./.github/workflows/publish-docker.yml
-  #   with:
-  #     assemble_run_id: ${{ github.run_id }}
-  #     jdk_version: jdk21
-  #     include_hash_in_docker: ${{ github.event_name == 'workflow_dispatch' && inputs.include_hash_in_docker || 'false' }}
-  #   secrets: inherit
-  #
-  # publishDockerJDK24:
-  #   #if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
-  #   needs: [assemble]
-  #   uses: ./.github/workflows/publish-docker.yml
-  #   with:
-  #     assemble_run_id: ${{ github.run_id }}
-  #     jdk_version: jdk24
-  #   secrets: inherit
+  publishDockerJDK21:
+    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+    needs: [assemble, unitTests, integrationTests, propertyTests, acceptanceTests, referenceTests]
+    uses: ./.github/workflows/publish-docker.yml
+    with:
+      assemble_run_id: ${{ github.run_id }}
+      jdk_version: jdk21
+      include_hash_in_docker: ${{ github.event_name == 'workflow_dispatch' && inputs.include_hash_in_docker || 'false' }}
+    secrets: inherit
+
+  publishDockerJDK24:
+    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+    needs: [assemble, unitTests, integrationTests, propertyTests, acceptanceTests, referenceTests]
+    uses: ./.github/workflows/publish-docker.yml
+    with:
+      assemble_run_id: ${{ github.run_id }}
+      jdk_version: jdk24
+      include_hash_in_docker: ${{ github.event_name == 'workflow_dispatch' && inputs.include_hash_in_docker || 'false' }}
+    secrets: inherit
 
   # Release Distribution
-  # publishRelease:
-  #   if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
-  #   needs: [assemble]
-  #   uses: ./.github/workflows/publish-release.yml
-  #   with:
-  #     assemble_run_id: ${{ github.run_id }}
-  #     publish_version: ${{ needs.assemble.outputs.publish-version }}
-  #     include_hash_in_docker: ${{ github.event_name == 'workflow_dispatch' && inputs.include_hash_in_docker || 'false' }}
-  #   secrets: inherit
+  publishRelease:
+    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+    needs: [assemble, unitTests, integrationTests, propertyTests, acceptanceTests, referenceTests]
+    uses: ./.github/workflows/publish-release.yml
+    with:
+      assemble_run_id: ${{ github.run_id }}
+      publish_version: ${{ needs.assemble.outputs.publish-version }}
+    secrets: inherit
