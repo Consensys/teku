@@ -65,7 +65,7 @@ public class TransitionCachesBenchmark {
     @Param({"CAFFEINE", "LEGACY_LRU"})
     private CacheType cacheType;
 
-    @Param({"0", "50"})
+    @Param({"0", "5"})
     public long fallbackDelayMs;
 
     private static final int KEY_SPACE = 4096;

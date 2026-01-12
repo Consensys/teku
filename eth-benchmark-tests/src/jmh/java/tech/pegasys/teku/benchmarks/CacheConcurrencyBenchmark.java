@@ -44,6 +44,7 @@ import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
     value = 3,
     jvmArgs = {"-Xms2G", "-Xmx2G"})
 public class CacheConcurrencyBenchmark {
+
   @Param({"LEGACY_LRU", "CAFFEINE"})
   public String cacheType;
 
@@ -91,7 +92,7 @@ public class CacheConcurrencyBenchmark {
         cache.get(
             key,
             k -> {
-              throw new IllegalStateException("Should not be called - key should be cached");
+              throw new IllegalStateException("Should not be called - key must be cached");
             });
     bh.consume(value);
   }
@@ -173,5 +174,24 @@ public class CacheConcurrencyBenchmark {
               return "Value:" + k;
             });
     bh.consume(value);
+  }
+
+  /**
+   * Mixed Read and Write Workload. Simulates a workload with both reads and writes, testing
+   * contention
+   */
+  @Benchmark
+  @Group("mixedReadWriteScenario")
+  @GroupThreads(8)
+  public void mixedReadWriteOperations(final Blackhole bh) {
+    // 80% reads, 20% writes
+    if (ThreadLocalRandom.current().nextInt(100) < 80) {
+      final int key = ThreadLocalRandom.current().nextInt(keySpace);
+      final String value = cache.get(key, k -> "Value:" + k);
+      bh.consume(value);
+    } else {
+      final int key = ThreadLocalRandom.current().nextInt(keySpace);
+      cache.invalidateWithNewValue(key, "NewValue:" + key);
+    }
   }
 }
