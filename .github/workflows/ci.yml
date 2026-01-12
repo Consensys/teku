@@ -203,6 +203,10 @@ jobs:
     if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
     needs: extractAPISpec
     runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    permissions:
+      contents: write 
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -223,12 +227,21 @@ jobs:
         with:
           node-version: 22
           cache-dependency-path: .openapidoc/package-lock.json 
-          cache: 'npm'  
+          cache: 'npm'
+      - name: Setup Git identity
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
       - name: Install npm dependencies
         working-directory: .openapidoc
         run: |
           npm ci
-          OA_GIT_USERNAME="${{ github.actor }}" OA_GIT_EMAIL="${{ github.actor }}@users.noreply.github.com" OA_GIT_URL="${{ github.server_url }}/${{ github.repository }}" OA_GH_PAGES_BRANCH="gh-pages" node publish.js
+          OA_GIT_USERNAME="${{ github.actor }}" \
+          OA_GIT_EMAIL="${{ github.actor }}@users.noreply.github.com" \
+          OA_GIT_URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" \
+          OA_GH_PAGES_BRANCH="gh-pages" \
+          node publish.js
 
   ## Tests 
   unitTests:
@@ -472,9 +485,9 @@ jobs:
           stage_key: reference
 
   # DockerTags
-  # everything is a standard develop-jdk24/21; but we also add 'develop' to develop-jdk21
+  # everything is a standard develop-jdk25/21; but we also add 'develop' to develop-jdk21
   # develop = develop-jdk21
-  # develop-jdk24
+  # develop-jdk25
   publishDockerJDK21:
     if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
     needs: [assemble, unitTests, integrationTests, propertyTests, acceptanceTests, referenceTests]
@@ -485,13 +498,13 @@ jobs:
       include_hash_in_docker: ${{ github.event_name == 'workflow_dispatch' && inputs.include_hash_in_docker || 'false' }}
     secrets: inherit
 
-  publishDockerJDK24:
+  publishDockerJDK25:
     if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
     needs: [assemble, unitTests, integrationTests, propertyTests, acceptanceTests, referenceTests]
     uses: ./.github/workflows/publish-docker.yml
     with:
       assemble_run_id: ${{ github.run_id }}
-      jdk_version: jdk24
+      jdk_version: jdk25
       include_hash_in_docker: ${{ github.event_name == 'workflow_dispatch' && inputs.include_hash_in_docker || 'false' }}
     secrets: inherit
 
@@ -503,4 +516,3 @@ jobs:
     with:
       assemble_run_id: ${{ github.run_id }}
       publish_version: ${{ needs.assemble.outputs.publish-version }}
-    secrets: inherit
