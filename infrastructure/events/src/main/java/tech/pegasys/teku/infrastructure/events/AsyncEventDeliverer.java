@@ -16,14 +16,17 @@ package tech.pegasys.teku.infrastructure.events;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Collections.synchronizedMap;
 
+import com.google.common.base.Throwables;
 import java.lang.reflect.Method;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -98,7 +101,19 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
   public SafeFuture<Void> stop() {
     stopped.set(true);
     executor.shutdownNow();
-    return SafeFuture.allOf(queueReaders.stream().map(reader -> reader.readerStopped));
+    return SafeFuture.allOf(queueReaders.stream().map(reader -> reader.readerStopped))
+        .exceptionally(
+            err -> {
+              final Throwable rootCause = Throwables.getRootCause(err);
+              if (rootCause instanceof RejectedExecutionException
+                  || rootCause instanceof CancellationException
+                  || rootCause instanceof InterruptedException) {
+                LOG.debug("shutdown exception", err);
+              } else {
+                LOG.warn("Error while trying to stop event deliverer", err);
+              }
+              return null;
+            });
   }
 
   class QueueReader implements Runnable {

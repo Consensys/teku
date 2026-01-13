@@ -44,6 +44,11 @@ public class DelegatingSpecConfigGloas extends DelegatingSpecConfigFulu implemen
   }
 
   @Override
+  public int getMinBuilderWithdrawabilityDelay() {
+    return delegate.getMinBuilderWithdrawabilityDelay();
+  }
+
+  @Override
   public int getPayloadAttestationDueBps() {
     return delegate.getPayloadAttestationDueBps();
   }
@@ -59,8 +64,18 @@ public class DelegatingSpecConfigGloas extends DelegatingSpecConfigFulu implemen
   }
 
   @Override
+  public long getBuilderRegistryLimit() {
+    return delegate.getBuilderRegistryLimit();
+  }
+
+  @Override
   public long getBuilderPendingWithdrawalsLimit() {
     return delegate.getBuilderPendingWithdrawalsLimit();
+  }
+
+  @Override
+  public int getMaxBuildersPerWithdrawalsSweep() {
+    return delegate.getMaxBuildersPerWithdrawalsSweep();
   }
 
   @Override

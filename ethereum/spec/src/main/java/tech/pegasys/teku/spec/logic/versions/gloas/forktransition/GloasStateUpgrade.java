@@ -21,12 +21,13 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateSchemaGloas;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -103,6 +104,11 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
               state.setProposerLookahead(preStateFulu.getProposerLookahead());
 
               // New in Gloas
+              state.setBuilders(
+                  BeaconStateSchemaGloas.required(state.getBeaconStateSchema())
+                      .getBuildersSchema()
+                      .of());
+              state.setNextWithdrawalBuilderIndex(UInt64.ZERO);
               final SszBitvector executionPayloadAvailability =
                   schemaDefinitions
                       .getExecutionPayloadAvailabilitySchema()
@@ -119,7 +125,11 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
               state.setBuilderPendingWithdrawals(
                   schemaDefinitions.getBuilderPendingWithdrawalsSchema().getDefault());
               state.setLatestBlockHash(latestBlockHash);
-              state.setLatestWithdrawalsRoot(Bytes32.ZERO);
+              state.setPayloadExpectedWithdrawals(
+                  schemaDefinitions
+                      .getExecutionPayloadSchema()
+                      .getWithdrawalsSchemaRequired()
+                      .of());
             });
   }
 }

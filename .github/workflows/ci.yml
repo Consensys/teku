@@ -100,7 +100,7 @@ jobs:
           New-Item -ItemType Directory -Force build\test-results
           Get-ChildItem -Recurse | Where-Object {$_.FullName -match "test-results\\.*\\.*.xml"} | Copy-Item -Destination build\test-results\
       - name: Publish Windows Test Results and Reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           if-no-files-found: ignore
@@ -134,16 +134,22 @@ jobs:
         shell: bash      
         run: |
           ./gradlew clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compilePropertyTestJava assemble
-      - name: Upload distribution
-        uses: actions/upload-artifact@v4
+      - name: Upload distribution tar
+        uses: actions/upload-artifact@v6
         with:
-          name: distribution
+          name: distribution-tar
           path: |
             build/distributions/*.tar.gz
-            build/distributions/*.zip            
-          retention-days: 14
+          retention-days: 3
+      - name: Upload distribution zip
+        uses: actions/upload-artifact@v6
+        with:
+          name: distribution-zip
+          path: |
+            build/distributions/*.zip
+          retention-days: 3          
       - name: Upload workspace build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: assemble-output
           path: |
@@ -164,7 +170,7 @@ jobs:
       - name: Prepare
         uses: ./.github/actions/prepare
       - name: Download assemble-output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
@@ -192,44 +198,56 @@ jobs:
           kill $TEKU_PID
           exit $EXIT_CODE
       - name: Upload openapi spec
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: openapi-spec
           path: |
             .openapidoc/spec/teku.json
           retention-days: 7
 
-  # # TODO - check the user vars work for publishing 
-  # publishAPISpec:
-  #   #if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
-  #   needs: extractAPISpec
-  #   runs-on: ubuntu-24.04
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v5
-  #       with:
-  #         submodules: 'recursive'
-  #     - name: Prepare
-  #       uses: ./.github/actions/prepare
-  #     - name: Download openapi spec
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: openapi-spec
-  #         path: ${{ github.workspace }}/.openapidoc/spec
-  #     - name: List openapidoc spec
-  #       run: |
-  #         tree .openapidoc/spec/          
-  #     - name: Use Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 22
-  #         cache-dependency-path: .openapidoc/package-lock.json 
-  #         cache: 'npm'  
-  #     - name: Install npm dependencies
-  #       working-directory: .openapidoc
-  #       run: |
-  #         npm ci
-  #         OA_GIT_USERNAME="${{ github.actor }}" OA_GIT_EMAIL="${{ github.actor }}@users.noreply.github.com" OA_GIT_URL="${{ github.server_url }}/${{ github.repository }}" OA_GH_PAGES_BRANCH="gh-pages" node publish.js
+  publishAPISpec:
+    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+    needs: extractAPISpec
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    permissions:
+      contents: write 
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+      - name: Download openapi spec
+        uses: actions/download-artifact@v7
+        with:
+          name: openapi-spec
+          path: ${{ github.workspace }}/.openapidoc/spec
+      - name: List openapidoc spec
+        run: |
+          tree .openapidoc/spec/          
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache-dependency-path: .openapidoc/package-lock.json 
+          cache: 'npm'
+      - name: Setup Git identity
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+      - name: Install npm dependencies
+        working-directory: .openapidoc
+        run: |
+          npm ci
+          OA_GIT_USERNAME="${{ github.actor }}" \
+          OA_GIT_EMAIL="${{ github.actor }}@users.noreply.github.com" \
+          OA_GIT_URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" \
+          OA_GH_PAGES_BRANCH="gh-pages" \
+          node publish.js
 
   ## Tests 
   unitTests:
@@ -255,6 +273,11 @@ jobs:
         if: always()        
         with:
           stage_key: unit
+      - name: Check unitTests matrix status
+        if: needs.unitTests.result != 'success'
+        run: |
+          echo "One or more matrix jobs in 'unitTests' failed."
+          exit 1
 
   integrationTests:
     needs: assemble
@@ -267,7 +290,7 @@ jobs:
       - name: Prepare
         uses: ./.github/actions/prepare
       - name: Download assemble-output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: assemble-output
           path: ${{ github.workspace }}   
@@ -300,33 +323,43 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/collate-junit-reports
-        if: always()        
+        if: always()          
         with:
           stage_key: property
+      - name: Check propertyTests matrix status
+        if: needs.propertyTests.result != 'success'
+        run: |
+          echo "One or more matrix jobs in 'propertyTests' failed."
+          exit 1
 
-  # comment these out until we switch from circleci to gha to allow docker to run fine on circleci
-  # acceptanceTests:
-  #   needs: assemble
-  #   uses: ./.github/workflows/matrix-tests-template.yml
-  #   secrets: inherit
-  #   with:
-  #     assemble_output_run_id: ${{ github.run_id }}
-  #     stage_name: Acceptance Tests
-  #     stage_key: acceptance
-  #     gradle_task: acceptanceTest
-  #     src_pattern: "*/src/acceptance-test/java/*"
-  #     src_root: "src/acceptance-test/java"
-  #     runner: "ubuntu-latest-128"
+  acceptanceTests:
+    needs: assemble
+    uses: ./.github/workflows/matrix-tests-template.yml
+    secrets: inherit
+    with:
+      assemble_output_run_id: ${{ github.run_id }}
+      stage_name: Acceptance Tests
+      stage_key: acceptance
+      gradle_task: acceptanceTest
+      src_pattern: "*/src/acceptance-test/java/*"
+      src_root: "src/acceptance-test/java"
+      runner: "ubuntu-latest-128"
 
-  # acceptanceTestsReport:
-  #   runs-on: ubuntu-24.04
-  #   needs: acceptanceTests
-  #   steps:
-  #     - uses: actions/checkout@v5
-  #     - uses: ./.github/actions/collate-junit-reports
-  #       if: always()        
-  #       with:
-  #         stage_key: acceptance
+  acceptanceTestsReport:
+    runs-on: ubuntu-24.04
+    needs: acceptanceTests
+    if: always()
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/collate-junit-reports
+        if: always()           
+        with:
+          stage_key: acceptance
+      - name: Check acceptanceTests matrix status
+        if: needs.acceptanceTests.result != 'success'
+        run: |
+          echo "One or more matrix jobs in 'acceptanceTests' failed."
+          exit 1          
 
   referenceTestsPrep:
     needs: assemble
@@ -339,7 +372,7 @@ jobs:
       - name: Prepare
         uses: ./.github/actions/prepare
       - name: Download assemble-output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
@@ -371,7 +404,7 @@ jobs:
           path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
           key: reftests-${{ hashFiles('build.gradle') }}
       - name: Upload reftests
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: reftests
           path: |
@@ -395,7 +428,7 @@ jobs:
       - name: Prepare
         uses: ./.github/actions/prepare
       - name: Download assemble-output
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
@@ -408,7 +441,7 @@ jobs:
           path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
           key: reftests-${{ hashFiles('build.gradle') }}          
       - name: Download reftests
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
@@ -453,7 +486,7 @@ jobs:
             referenceTest ${{ inputs.gradle_args }} ${{ steps.shard.outputs.args }}
       - name: Upload JUnit XML + HTML for ReferenceTests
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: reference-reports-${{ matrix.shard }}
           path: |
@@ -469,40 +502,44 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/collate-junit-reports
-        if: always()
+        if: always()    
         with:
           stage_key: reference
+      - name: Check referenceTests matrix status
+        if: needs.referenceTests.result != 'success'
+        run: |
+          echo "One or more matrix jobs in 'referenceTests' failed."
+          exit 1
 
   # DockerTags
-  # everything is a standard develop-jdk24/21; but you also add develop to develop-jdk21
+  # everything is a standard develop-jdk25/21; but we also add 'develop' to develop-jdk21
   # develop = develop-jdk21
-  # develop-jdk24
-  # publishDockerJDK21:
-  #   #if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
-  #   needs: [assemble]
-  #   uses: ./.github/workflows/publish-docker.yml
-  #   with:
-  #     assemble_run_id: ${{ github.run_id }}
-  #     jdk_version: jdk21
-  #     include_hash_in_docker: ${{ github.event_name == 'workflow_dispatch' && inputs.include_hash_in_docker || 'false' }}
-  #   secrets: inherit
-  #
-  # publishDockerJDK24:
-  #   #if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
-  #   needs: [assemble]
-  #   uses: ./.github/workflows/publish-docker.yml
-  #   with:
-  #     assemble_run_id: ${{ github.run_id }}
-  #     jdk_version: jdk24
-  #   secrets: inherit
+  # develop-jdk25
+  publishDockerJDK21:
+    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+    needs: [assemble, unitTests, integrationTests, propertyTests, acceptanceTests, referenceTests]
+    uses: ./.github/workflows/publish-docker.yml
+    with:
+      assemble_run_id: ${{ github.run_id }}
+      jdk_version: jdk21
+      include_hash_in_docker: ${{ github.event_name == 'workflow_dispatch' && inputs.include_hash_in_docker || 'false' }}
+    secrets: inherit
+
+  publishDockerJDK25:
+    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+    needs: [assemble, unitTests, integrationTests, propertyTests, acceptanceTests, referenceTests]
+    uses: ./.github/workflows/publish-docker.yml
+    with:
+      assemble_run_id: ${{ github.run_id }}
+      jdk_version: jdk25
+      include_hash_in_docker: ${{ github.event_name == 'workflow_dispatch' && inputs.include_hash_in_docker || 'false' }}
+    secrets: inherit
 
   # Release Distribution
-  # publishRelease:
-  #   if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
-  #   needs: [assemble]
-  #   uses: ./.github/workflows/publish-release.yml
-  #   with:
-  #     assemble_run_id: ${{ github.run_id }}
-  #     publish_version: ${{ needs.assemble.outputs.publish-version }}
-  #     include_hash_in_docker: ${{ github.event_name == 'workflow_dispatch' && inputs.include_hash_in_docker || 'false' }}
-  #   secrets: inherit
+  publishRelease:
+    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+    needs: [assemble, unitTests, integrationTests, propertyTests, acceptanceTests, referenceTests]
+    uses: ./.github/workflows/publish-release.yml
+    with:
+      assemble_run_id: ${{ github.run_id }}
+      publish_version: ${{ needs.assemble.outputs.publish-version }}
