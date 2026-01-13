@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.peers;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
@@ -44,19 +43,11 @@ public class DataColumnPeerManagerImpl
     peerConnected(peer);
   }
 
-  @Override
-  public Optional<UInt64> getEarliestAvailableSlot(final UInt256 nodeId) {
-    final Eth2Peer eth2Peer = connectedPeers.get(nodeId);
-    if (eth2Peer != null) {
-      return eth2Peer.getStatus().getEarliestAvailableSlot();
-    }
-    return Optional.empty();
-  }
-
   private void peerConnected(final Eth2Peer peer) {
     final UInt256 nodeId = peer.getDiscoveryNodeId().orElseThrow();
     connectedPeers.put(nodeId, peer);
-    listeners.forEach(l -> l.peerConnected(nodeId));
+    listeners.forEach(
+        l -> l.peerConnected(nodeId, () -> peer.getStatus().getEarliestAvailableSlot()));
     peer.subscribeDisconnect((__, ___) -> peerDisconnected(peer));
   }
 

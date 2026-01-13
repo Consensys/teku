@@ -25,6 +25,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -271,10 +272,12 @@ public class SimpleSidecarRetriever
   }
 
   @Override
-  public void peerConnected(final UInt256 nodeId) {
+  public void peerConnected(
+      final UInt256 nodeId, final Supplier<Optional<UInt64>> maybeEarliestAvailableSlot) {
     LOG.trace(
         "SimpleSidecarRetriever.peerConnected: 0x...{}", () -> nodeId.toHexString().substring(58));
-    connectedPeers.computeIfAbsent(nodeId, __ -> new ConnectedPeer(nodeId));
+    connectedPeers.computeIfAbsent(
+        nodeId, __ -> new ConnectedPeer(nodeId, maybeEarliestAvailableSlot));
   }
 
   @Override
@@ -309,12 +312,15 @@ public class SimpleSidecarRetriever
 
   private class ConnectedPeer {
     final UInt256 nodeId;
+    final Supplier<Optional<UInt64>> maybeEarliestAvailableSlot;
     final Cache<CacheKey, Set<UInt64>> custodyIndicesCache = LRUCache.create(2);
 
     private record CacheKey(SpecVersion specVersion, int custodyCount) {}
 
-    public ConnectedPeer(final UInt256 nodeId) {
+    public ConnectedPeer(
+        final UInt256 nodeId, final Supplier<Optional<UInt64>> maybeEarliestAvailableSlot) {
       this.nodeId = nodeId;
+      this.maybeEarliestAvailableSlot = maybeEarliestAvailableSlot;
     }
 
     private Set<UInt64> calcNodeCustodyIndices(final CacheKey cacheKey) {
@@ -333,10 +339,8 @@ public class SimpleSidecarRetriever
     }
 
     public boolean hasSlotAvailable(final UInt64 slot) {
-      return peerManager
-          .getEarliestAvailableSlot(nodeId)
-          .map(slot::isGreaterThanOrEqualTo)
-          .orElse(false);
+      // if we don't have information, we consider it optimistically
+      return maybeEarliestAvailableSlot.get().map(slot::isGreaterThanOrEqualTo).orElse(true);
     }
   }
 
