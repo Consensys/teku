@@ -32,7 +32,7 @@ public class BuilderBuilder {
 
   public BuilderBuilder(final Spec spec, final DataStructureUtil dataStructureUtil) {
     this.publicKey = dataStructureUtil.randomPublicKey();
-    this.version = dataStructureUtil.randomPositiveInt(256);
+    this.version = dataStructureUtil.randomUInt8();
     this.executionAddress = dataStructureUtil.randomEth1Address();
     this.balance = spec.getGenesisSpec().getConfig().getMaxEffectiveBalance();
   }

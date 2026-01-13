@@ -306,6 +306,10 @@ public final class DataStructureUtil {
     return new Random(nextSeed()).nextBoolean();
   }
 
+  public int randomUInt8() {
+    return randomPositiveInt(256);
+  }
+
   public UInt64 randomUInt64() {
     return UInt64.fromLongBits(randomLong());
   }

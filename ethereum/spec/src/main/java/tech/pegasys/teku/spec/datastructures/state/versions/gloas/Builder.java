@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.state.versions.gloas;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
@@ -76,7 +74,6 @@ public class Builder
         SszUInt64.of(balance),
         SszUInt64.of(depositEpoch),
         SszUInt64.of(withdrawableEpoch));
-    checkArgument(version >= 0 && version <= 255, "version must be in uint8 range (0–255)");
   }
 
   public BLSPublicKey getPublicKey() {
