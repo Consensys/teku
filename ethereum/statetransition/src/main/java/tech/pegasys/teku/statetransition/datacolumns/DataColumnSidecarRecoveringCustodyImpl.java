@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -126,10 +127,10 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
 
   @Override
   public void onSlot(final UInt64 slot) {
+    pruneRecoveryTasks();
     if (shouldSkipProcessing(slot)) {
       return;
     }
-    pruneRecoveryTasks();
     asyncRunner
         .runAfterDelay(
             () -> {
@@ -138,6 +139,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
               recoveryTasks.keySet().stream()
                   .filter(key -> key.getSlot().isLessThanOrEqualTo(slot))
                   .map(recoveryTasks::get)
+                  .filter(Objects::nonNull)
                   .forEach(
                       recoveryTask -> {
                         if (recoveryTask.timedOut().compareAndSet(false, true)) {
