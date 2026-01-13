@@ -19,7 +19,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,7 +36,6 @@ import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
-import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
@@ -67,7 +66,9 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   private final AtomicBoolean isSuperNode = new AtomicBoolean();
 
   final Function<UInt64, Duration> slotToRecoveryDelay;
-  private final Map<SlotAndBlockRoot, RecoveryTask> recoveryTasks;
+  private final ConcurrentHashMap<SlotAndBlockRoot, RecoveryTask> recoveryTasks =
+      new ConcurrentHashMap<>();
+  private final int recoveryTasksSizeTarget;
 
   private final Counter totalDataAvailabilityReconstructedColumns;
   private final MetricsHistogram dataAvailabilityReconstructionTimeSeconds;
@@ -95,8 +96,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     this.spec = spec;
     this.dataColumnSidecarPublisher = dataColumnSidecarPublisher;
     this.custodyGroupCountManager = custodyGroupCountManager;
-    this.recoveryTasks =
-        LimitedMap.createSynchronizedNatural(spec.getGenesisSpec().getSlotsPerEpoch());
+    this.recoveryTasksSizeTarget = spec.getGenesisSpec().getSlotsPerEpoch();
     this.slotToRecoveryDelay = slotToRecoveryDelay;
     this.columnCount = columnCount;
     this.groupCount = groupCount;
@@ -129,18 +129,15 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     if (shouldSkipProcessing(slot)) {
       return;
     }
+    pruneRecoveryTasks();
     asyncRunner
         .runAfterDelay(
             () -> {
               LOG.debug("Check if recovery needed for slot: {}", slot);
-              final Set<SlotAndBlockRoot> recoveryTaskKeys;
-              synchronized (recoveryTasks) {
-                recoveryTaskKeys = new HashSet<>(recoveryTasks.keySet());
-              }
-              recoveryTaskKeys.stream()
+
+              recoveryTasks.keySet().stream()
                   .filter(key -> key.getSlot().isLessThanOrEqualTo(slot))
-                  .map(key -> Optional.ofNullable(recoveryTasks.get(key)))
-                  .flatMap(Optional::stream)
+                  .map(recoveryTasks::get)
                   .forEach(
                       recoveryTask -> {
                         if (recoveryTask.timedOut().compareAndSet(false, true)) {
@@ -150,6 +147,15 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
             },
             slotToRecoveryDelay.apply(slot))
         .finishWarn(LOG);
+  }
+
+  private void pruneRecoveryTasks() {
+    final Iterator<SlotAndBlockRoot> keysIterator =
+        recoveryTasks.keySet().stream().sorted().iterator();
+    while (recoveryTasks.size() >= recoveryTasksSizeTarget && keysIterator.hasNext()) {
+      final SlotAndBlockRoot key = keysIterator.next();
+      recoveryTasks.remove(key);
+    }
   }
 
   private boolean shouldSkipProcessing(final UInt64 slot) {
@@ -291,18 +297,15 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   }
 
   private void createOrUpdateRecoveryTaskForDataColumnSidecar(final DataColumnSidecar sidecar) {
-    final RecoveryTask task;
-    synchronized (recoveryTasks) {
-      task =
-          recoveryTasks.computeIfAbsent(
-              sidecar.getSlotAndBlockRoot(),
-              __ ->
-                  new RecoveryTask(
-                      sidecar.getSlotAndBlockRoot(),
-                      new ConcurrentHashMap<>(),
-                      new AtomicBoolean(false),
-                      new AtomicBoolean(false)));
-    }
+    final RecoveryTask task =
+        recoveryTasks.computeIfAbsent(
+            sidecar.getSlotAndBlockRoot(),
+            __ ->
+                new RecoveryTask(
+                    sidecar.getSlotAndBlockRoot(),
+                    new ConcurrentHashMap<>(),
+                    new AtomicBoolean(false),
+                    new AtomicBoolean(false)));
     task.existingSidecars().put(DataColumnSlotAndIdentifier.fromDataColumn(sidecar), sidecar);
     maybeStartRecovery(task);
   }
