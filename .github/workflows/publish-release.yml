@@ -47,12 +47,12 @@ jobs:
 
       - name: Download distribution
         if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ inputs.assemble_run_id }}
-          name: distribution
+          pattern: distribution-*
           merge-multiple: true
           path: build/distributions/
 
