@@ -243,7 +243,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   @Override
   public void onSlot(final UInt64 slot) {
     final UInt64 firstNonFinalizedSlot =
-        spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch().increment());
+        spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch()).increment();
     recentlySampledColumnsByRoot
         .values()
         .removeIf(

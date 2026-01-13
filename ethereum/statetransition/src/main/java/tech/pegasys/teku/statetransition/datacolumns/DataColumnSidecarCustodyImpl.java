@@ -208,7 +208,7 @@ public class DataColumnSidecarCustodyImpl
 
   @VisibleForTesting
   SafeFuture<Void> advanceFirstIncompleteSlot(final UInt64 finalizedEpoch) {
-    final UInt64 firstNonFinalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch.increment());
+    final UInt64 firstNonFinalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch).increment();
     return retrievePotentiallyIncompleteSlotCustodies(firstNonFinalizedSlot)
         .takeUntil(SlotCustody::isIncomplete, true)
         .findLast()
