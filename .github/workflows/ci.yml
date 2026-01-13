@@ -267,6 +267,11 @@ jobs:
         if: always()        
         with:
           stage_key: unit
+      - name: Check unitTests matrix status
+        if: needs.unitTests.result != 'success'
+        run: |
+          echo "One or more matrix jobs in 'unitTests' failed."
+          exit 1
 
   integrationTests:
     needs: assemble
@@ -312,9 +317,14 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/collate-junit-reports
-        if: always()        
+        if: always()          
         with:
           stage_key: property
+      - name: Check propertyTests matrix status
+        if: needs.propertyTests.result != 'success'
+        run: |
+          echo "One or more matrix jobs in 'propertyTests' failed."
+          exit 1
 
   acceptanceTests:
     needs: assemble
@@ -332,12 +342,18 @@ jobs:
   acceptanceTestsReport:
     runs-on: ubuntu-24.04
     needs: acceptanceTests
+    if: always()
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/collate-junit-reports
-        if: always()        
+        if: always()           
         with:
           stage_key: acceptance
+      - name: Check acceptanceTests matrix status
+        if: needs.acceptanceTests.result != 'success'
+        run: |
+          echo "One or more matrix jobs in 'acceptanceTests' failed."
+          exit 1          
 
   referenceTestsPrep:
     needs: assemble
@@ -480,9 +496,14 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/collate-junit-reports
-        if: always()
+        if: always()    
         with:
           stage_key: reference
+      - name: Check referenceTests matrix status
+        if: needs.referenceTests.result != 'success'
+        run: |
+          echo "One or more matrix jobs in 'referenceTests' failed."
+          exit 1
 
   # DockerTags
   # everything is a standard develop-jdk25/21; but we also add 'develop' to develop-jdk21
