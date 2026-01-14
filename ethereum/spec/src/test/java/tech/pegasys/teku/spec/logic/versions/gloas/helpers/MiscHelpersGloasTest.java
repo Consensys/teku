@@ -27,10 +27,14 @@ public class MiscHelpersGloasTest {
   private final MiscHelpersGloas miscHelpers =
       MiscHelpersGloas.required(spec.getGenesisSpec().miscHelpers());
 
+  private final PredicatesGloas predicates =
+      PredicatesGloas.required(spec.getGenesisSpec().predicates());
+
   @Test
-  public void roundTrip_convertBetweenBuilderIndexAndValidatorIndex() {
+  public void roundTrip_convertBuilderIndexToValidatorIndex() {
     final UInt64 builderIndex = UInt64.valueOf(42);
     final UInt64 validatorIndex = miscHelpers.convertBuilderIndexToValidatorIndex(builderIndex);
+    assertThat(predicates.isBuilderIndex(validatorIndex)).isTrue();
     assertThat(miscHelpers.convertValidatorIndexToBuilderIndex(validatorIndex))
         .isEqualTo(builderIndex);
   }
