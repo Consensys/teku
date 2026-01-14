@@ -543,3 +543,4 @@ jobs:
     with:
       assemble_run_id: ${{ github.run_id }}
       publish_version: ${{ needs.assemble.outputs.publish-version }}
+    secrets: inherit
