@@ -160,7 +160,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     } else {
       // Verify that the builder is active
       if (!predicatesGloas.isActiveBuilder(state, builderIndex)) {
-        throw new BlockProcessingException("Non-self builds require builder withdrawal credential");
+        throw new BlockProcessingException("Builder is not active");
       }
       // Verify that the builder has funds to cover the bid
       if (!beaconStateAccessorsGloas.canBuilderCoverBid(state, builderIndex, amount)) {
