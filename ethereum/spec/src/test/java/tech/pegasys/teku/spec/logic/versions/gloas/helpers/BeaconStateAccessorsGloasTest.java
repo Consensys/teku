@@ -17,9 +17,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -34,9 +38,10 @@ public class BeaconStateAccessorsGloasTest {
   @Test
   void getBuilderIndex_shouldReturnBuilderIndex() {
     final BeaconStateGloas state = BeaconStateGloas.required(dataStructureUtil.randomBeaconState());
-    assertThat(state.getBuilders()).hasSizeGreaterThan(5);
-    for (int i = 0; i < 5; i++) {
-      final Builder builder = state.getBuilders().get(i);
+    final SszList<Builder> builders = state.getBuilders();
+    assertThat(builders).isNotEmpty();
+    for (int i = 0; i < builders.size(); i++) {
+      final Builder builder = builders.get(i);
       assertThat(beaconStateAccessors.getBuilderIndex(state, builder.getPublicKey())).contains(i);
     }
   }
@@ -46,6 +51,33 @@ public class BeaconStateAccessorsGloasTest {
     final BeaconState state = dataStructureUtil.randomBeaconState();
     final Optional<Integer> index =
         beaconStateAccessors.getBuilderIndex(state, dataStructureUtil.randomPublicKey());
+    assertThat(index).isEmpty();
+  }
+
+  @Test
+  public void getBuilderPubKey_shouldReturnBuilderPubKey() {
+    final BeaconStateGloas state = BeaconStateGloas.required(dataStructureUtil.randomBeaconState());
+    final SszList<Builder> builders = state.getBuilders();
+    assertThat(builders).isNotEmpty();
+    for (int i = 0; i < builders.size(); i++) {
+      final Builder builder = builders.get(i);
+      final UInt64 builderIndex = UInt64.valueOf(i);
+      assertThat(beaconStateAccessors.getBuilderPubKey(state, builderIndex))
+          .contains(builder.getPublicKey());
+      // pubKey => builderIndex mapping is pre cached
+      assertThat(
+              BeaconStateCache.getTransitionCaches(state)
+                  .getBuildersPubKeys()
+                  .getCached(builderIndex))
+          .isPresent();
+    }
+  }
+
+  @Test
+  public void getBuilderPubKey_shouldReturnEmptyWhenBuilderNotExisting() {
+    final BeaconState state = dataStructureUtil.randomBeaconState();
+    final Optional<BLSPublicKey> index =
+        beaconStateAccessors.getBuilderPubKey(state, UInt64.valueOf(999));
     assertThat(index).isEmpty();
   }
 }
