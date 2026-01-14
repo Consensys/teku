@@ -37,7 +37,6 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -100,13 +99,9 @@ public class ExecutionPayloadProcessorGloas extends AbstractExecutionPayloadProc
     final BLSPublicKey pubkey;
     if (builderIndex.equals(BUILDER_INDEX_SELF_BUILD)) {
       final UInt64 validatorIndex = preState.getLatestBlockHeader().getProposerIndex();
-      pubkey = preState.getValidators().get(validatorIndex.intValue()).getPublicKey();
+      pubkey = beaconStateAccessors.getValidatorPubKey(preState, validatorIndex).orElseThrow();
     } else {
-      pubkey =
-          BeaconStateGloas.required(preState)
-              .getBuilders()
-              .get(builderIndex.intValue())
-              .getPublicKey();
+      pubkey = beaconStateAccessors.getBuilderPubKey(preState, builderIndex).orElseThrow();
     }
     final Bytes32 domain =
         beaconStateAccessors.getDomain(
