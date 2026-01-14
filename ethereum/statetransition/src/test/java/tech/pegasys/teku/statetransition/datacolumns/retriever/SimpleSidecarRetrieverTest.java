@@ -243,7 +243,11 @@ public class SimpleSidecarRetrieverTest {
   void selectingBestPeerShouldRespectAdvertisedEarliestSlotAvailable() {
 
     final TestPeer peerWithoutEarliestSlotAvailableSet =
-        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100))
+        new TestPeer(
+                stubAsyncRunner,
+                custodyNodeIds.next(),
+                Duration.ofMillis(100),
+                Optional.of(UInt64.MAX_VALUE))
             .currentRequestLimit(1000);
 
     final TestPeer peerWithEarliestSlotAvailableZero =
@@ -279,10 +283,10 @@ public class SimpleSidecarRetrieverTest {
 
     allPeers.forEach(testPeerManager::connectPeer);
 
-    final List<Blob> blobso = Stream.generate(dataStructureUtil::randomValidBlob).limit(1).toList();
+    final List<Blob> blobs0 = Stream.generate(dataStructureUtil::randomValidBlob).limit(1).toList();
     final BeaconBlock block0 = blockResolver.addBlock(0, 1);
     final List<DataColumnSidecar> sidecars0 =
-        miscHelpers.constructDataColumnSidecarsOld(createSigned(block0), blobso);
+        miscHelpers.constructDataColumnSidecarsOld(createSigned(block0), blobs0);
     final DataColumnSidecar sidecar0_0 = sidecars0.get(columnIndex.intValue());
     peerWithEarliestSlotAvailableZero.addSidecar(sidecar0_0);
 
