@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.unsigned.ByteUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
@@ -81,7 +82,7 @@ public class Builder
   }
 
   public int getVersion() {
-    return getField1().get();
+    return ByteUtil.toUnsignedInt(getField1().get());
   }
 
   public Eth1Address getExecutionAddress() {
