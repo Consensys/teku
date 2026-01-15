@@ -25,6 +25,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -64,6 +65,7 @@ public class SimpleSidecarRetriever
   private final AtomicBoolean started = new AtomicBoolean(false);
   private final AtomicLong retrieveCounter = new AtomicLong();
   private final AtomicLong errorCounter = new AtomicLong();
+  private final DataColumnPeerManager peerManager;
 
   public SimpleSidecarRetriever(
       final Spec spec,
@@ -79,7 +81,8 @@ public class SimpleSidecarRetriever
     this.asyncRunner = asyncRunner;
     this.roundPeriod = roundPeriod;
     this.reqResp = reqResp;
-    peerManager.addPeerListener(this);
+    this.peerManager = peerManager;
+    this.peerManager.addPeerListener(this);
     this.maxRequestCount =
         SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
             .getMaxRequestDataColumnSidecars();
@@ -187,6 +190,7 @@ public class SimpleSidecarRetriever
       final RetrieveRequest request, final RequestTracker ongoingRequestsTracker) {
     return connectedPeers.values().stream()
         .filter(peer -> peer.isCustodyFor(request.columnId))
+        .filter(peer -> peer.hasSlotAvailable(request.columnId.slot()))
         .filter(peer -> ongoingRequestsTracker.hasAvailableRequests(peer.nodeId));
   }
 
@@ -268,10 +272,12 @@ public class SimpleSidecarRetriever
   }
 
   @Override
-  public void peerConnected(final UInt256 nodeId) {
+  public void peerConnected(
+      final UInt256 nodeId, final Supplier<Optional<UInt64>> maybeEarliestAvailableSlot) {
     LOG.trace(
         "SimpleSidecarRetriever.peerConnected: 0x...{}", () -> nodeId.toHexString().substring(58));
-    connectedPeers.computeIfAbsent(nodeId, __ -> new ConnectedPeer(nodeId));
+    connectedPeers.computeIfAbsent(
+        nodeId, __ -> new ConnectedPeer(nodeId, maybeEarliestAvailableSlot));
   }
 
   @Override
@@ -306,12 +312,15 @@ public class SimpleSidecarRetriever
 
   private class ConnectedPeer {
     final UInt256 nodeId;
+    final Supplier<Optional<UInt64>> maybeEarliestAvailableSlot;
     final Cache<CacheKey, Set<UInt64>> custodyIndicesCache = LRUCache.create(2);
 
     private record CacheKey(SpecVersion specVersion, int custodyCount) {}
 
-    public ConnectedPeer(final UInt256 nodeId) {
+    public ConnectedPeer(
+        final UInt256 nodeId, final Supplier<Optional<UInt64>> maybeEarliestAvailableSlot) {
       this.nodeId = nodeId;
+      this.maybeEarliestAvailableSlot = maybeEarliestAvailableSlot;
     }
 
     private Set<UInt64> calcNodeCustodyIndices(final CacheKey cacheKey) {
@@ -327,6 +336,11 @@ public class SimpleSidecarRetriever
 
     public boolean isCustodyFor(final DataColumnSlotAndIdentifier columnId) {
       return getNodeCustodyIndices(spec.atSlot(columnId.slot())).contains(columnId.columnIndex());
+    }
+
+    public boolean hasSlotAvailable(final UInt64 slot) {
+      // if we don't have information, we consider it optimistically
+      return maybeEarliestAvailableSlot.get().map(slot::isGreaterThanOrEqualTo).orElse(true);
     }
   }
 

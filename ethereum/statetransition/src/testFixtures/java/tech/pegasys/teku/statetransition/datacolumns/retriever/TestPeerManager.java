@@ -27,7 +27,7 @@ public class TestPeerManager implements DataColumnPeerManager, DataColumnReqResp
   private final Map<UInt256, TestPeer> connectedPeers = new HashMap<>();
 
   public void connectPeer(final TestPeer peer) {
-    dataColumnPeerManagerStub.addNode(peer.getNodeId());
+    dataColumnPeerManagerStub.addPeer(peer);
     connectedPeers.put(peer.getNodeId(), peer);
   }
 
