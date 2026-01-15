@@ -21,6 +21,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.netty.buffer.ByteBuf;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
@@ -108,6 +109,46 @@ public class Eth2IncomingRequestHandlerTest
     asyncRunner.executeQueuedActions();
     asyncRunner.executeQueuedActions();
     verify(rpcStream, never()).closeAbruptly();
+  }
+
+  @Test
+  public void shouldReleaseBuffersWhenStreamClosedAfterPartialData() {
+    // Send partial data (incomplete request) - this will cause the decoder to retain the buffer
+    final ByteBuf partialData = Utils.toByteBuf(requestData.slice(0, requestData.size() / 2));
+    final int initialRefCnt = partialData.refCnt();
+
+    reqHandler.processData(nodeId, rpcStream, partialData);
+
+    // Buffer should have been retained by the decoder's CompositeByteBuf
+    assertThat(partialData.refCnt()).isGreaterThanOrEqualTo(initialRefCnt);
+
+    // Close the stream - this should release the retained buffers
+    reqHandler.closed(nodeId, rpcStream);
+
+    // After close, the buffer's reference count should be back to initial
+    // (the retained slice should have been released)
+    assertThat(partialData.refCnt()).isEqualTo(initialRefCnt);
+  }
+
+  @Test
+  public void shouldHandleClosedCalledMultipleTimes() {
+    // Send partial data
+    final ByteBuf partialData = Utils.toByteBuf(requestData.slice(0, requestData.size() / 2));
+    reqHandler.processData(nodeId, rpcStream, partialData);
+
+    // Close should be idempotent and not throw
+    reqHandler.closed(nodeId, rpcStream);
+    reqHandler.closed(nodeId, rpcStream);
+
+    // Should not throw any exceptions
+  }
+
+  @Test
+  public void shouldReleaseBuffersWhenHandlerIsClosedWithNoProcessedData() {
+    // Close without any data being processed - should not throw
+    reqHandler.closed(nodeId, rpcStream);
+
+    // Should complete without exceptions
   }
 
   @Override

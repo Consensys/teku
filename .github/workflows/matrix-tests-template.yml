@@ -50,7 +50,7 @@ jobs:
           fetch-tags: true
 
       - name: Download assemble-output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
@@ -110,7 +110,7 @@ jobs:
 
       - name: Upload JUnit XML + HTML for ${{ inputs.stage_name }}
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ inputs.stage_key }}-reports-${{ matrix.shard }}
           path: |
