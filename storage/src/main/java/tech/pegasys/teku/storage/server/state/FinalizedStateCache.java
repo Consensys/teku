@@ -52,7 +52,7 @@ public class FinalizedStateCache {
         maximumCacheSize,
         useSoftReferences,
         stateRebuildTimeoutSeconds,
-            MAX_REGENERATE_SLOTS);
+        MAX_REGENERATE_SLOTS);
   }
 
   FinalizedStateCache(
