@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
 import java.time.Duration;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -24,6 +23,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -144,14 +144,15 @@ public class SimpleSidecarRetriever
 
     final SafeFuture<DataColumnSidecar> reqRespPromise =
         reqResp.requestDataColumnSidecar(match.peer.nodeId, match.request.columnId);
-    match.request.onPeerRequest(match.peer().nodeId);
+    match.peer.sidecarsRequested.getAndIncrement();
 
     final SafeFuture<Void> activeRpcRequest =
         reqRespPromise.handle(
             (sidecar, err) -> {
               reqRespCompleted(match.request, sidecar);
-
-              if (err != null) {
+              if (err == null) {
+                match.peer.sidecarsReceived.incrementAndGet();
+              } else {
                 LOG.debug(
                     "SimpleSidecarRetriever.Request failed for {} due to: {}",
                     () -> match.request.columnId,
@@ -175,7 +176,9 @@ public class SimpleSidecarRetriever
 
     // taking first the peers which were not requested yet, then peers which are less busy
     final Comparator<ConnectedPeer> comparator =
-        Comparator.comparing((ConnectedPeer peer) -> request.getPeerRequestCount(peer.nodeId))
+        Comparator.comparing(
+                (ConnectedPeer peer) ->
+                    (float) peer.sidecarsReceived.get() / peer.sidecarsRequested.get())
             .reversed()
             .thenComparing(
                 (ConnectedPeer peer) ->
@@ -287,26 +290,20 @@ public class SimpleSidecarRetriever
   private static class RetrieveRequest {
     final DataColumnSlotAndIdentifier columnId;
     final SafeFuture<DataColumnSidecar> result = new SafeFuture<>();
-    final Map<UInt256, Integer> peerRequestCount = new HashMap<>();
     final AtomicBoolean activeRpcRequestSet = new AtomicBoolean(false);
     volatile ActiveRequest activeRpcRequest = null;
 
     private RetrieveRequest(final DataColumnSlotAndIdentifier columnId) {
       this.columnId = columnId;
     }
-
-    public void onPeerRequest(final UInt256 peerId) {
-      peerRequestCount.compute(peerId, (__, curCount) -> curCount == null ? 1 : curCount + 1);
-    }
-
-    public int getPeerRequestCount(final UInt256 peerId) {
-      return peerRequestCount.getOrDefault(peerId, 0);
-    }
   }
 
   private class ConnectedPeer {
     final UInt256 nodeId;
     final Cache<CacheKey, Set<UInt64>> custodyIndicesCache = LRUCache.create(2);
+    // just to avoid starting with non-divisible 0/0
+    final AtomicInteger sidecarsRequested = new AtomicInteger(1);
+    final AtomicInteger sidecarsReceived = new AtomicInteger(1);
 
     private record CacheKey(SpecVersion specVersion, int custodyCount) {}
 
