@@ -54,6 +54,26 @@ public final class CaffeineCache<K, V> implements Cache<K, V> {
     return new CaffeineCache<>(caffeineCache, builder);
   }
 
+  /**
+   * Factory method to create an unbounded CaffeineCache with no maximum size limit. This is
+   * suitable for caches that never evict entries and grow indefinitely. Memory overhead is
+   * significantly lower (32 bytes/entry vs 64 bytes/entry) since eviction policy structures
+   * (TinyLFU, CountMinSketch) are not allocated.
+   *
+   * @return A new unbounded instance of CaffeineCache.
+   */
+  public static <K, V> CaffeineCache<K, V> createUnbounded() {
+    final Caffeine<Object, Object> builder = Caffeine.newBuilder();
+    // No maximumSize() - cache grows indefinitely
+    final LoadingCache<K, V> caffeineCache =
+        builder.build(
+            key -> {
+              throw new UnsupportedOperationException(
+                  "Fallback function must be provided to get()");
+            });
+    return new CaffeineCache<>(caffeineCache, builder);
+  }
+
   @Override
   public V get(final K key, final Function<K, V> fallback) {
     return cache.get(key, fallback);
