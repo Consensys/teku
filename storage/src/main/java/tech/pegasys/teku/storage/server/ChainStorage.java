@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.api.ChainStorageFacade;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
+import tech.pegasys.teku.storage.api.SidecarQueryChannel;
 import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdate;
@@ -60,6 +61,7 @@ public class ChainStorage
         StorageQueryChannel,
         VoteUpdateChannel,
         SidecarUpdateChannel,
+        SidecarQueryChannel,
         ChainStorageFacade {
   private static final Logger LOG = LogManager.getLogger();
 
