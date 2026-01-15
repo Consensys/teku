@@ -38,6 +38,7 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.Spec;
@@ -50,13 +51,23 @@ class Eth2PeerSelectionStrategyTest {
   private static final Spec SPEC = TestSpecFactory.createMinimalAltair();
   private static final SchemaDefinitions SCHEMA_DEFINITIONS = SPEC.getGenesisSchemaDefinitions();
   private static final Optional<EnrForkId> ENR_FORK_ID = Optional.empty();
-  private static final PeerAddress PEER1 = new PeerAddress(new MockNodeId(1));
-  private static final PeerAddress PEER2 = new PeerAddress(new MockNodeId(2));
-  private static final PeerAddress PEER3 = new PeerAddress(new MockNodeId(3));
-  private static final PeerAddress PEER4 = new PeerAddress(new MockNodeId(4));
+  private static final NodeId PEER1_NODEID = new MockNodeId(1);
+  private static final NodeId PEER2_NODEID = new MockNodeId(2);
+  private static final NodeId PEER3_NODEID = new MockNodeId(3);
+  private static final NodeId PEER4_NODEID = new MockNodeId(4);
+  private static final PeerAddress PEER1 = new PeerAddress(PEER1_NODEID);
+  private static final PeerAddress PEER2 = new PeerAddress(PEER2_NODEID);
+  private static final PeerAddress PEER3 = new PeerAddress(PEER3_NODEID);
+  private static final PeerAddress PEER4 = new PeerAddress(PEER4_NODEID);
   private static final DiscoveryPeer DISCOVERY_PEER1 = createDiscoveryPeer(PEER1, 1);
   private static final DiscoveryPeer DISCOVERY_PEER2 = createDiscoveryPeer(PEER2, 2);
   private static final DiscoveryPeer DISCOVERY_PEER3 = createDiscoveryPeer(PEER3, 3);
+  private static final StubPeer STUB_PEER1 = new StubPeer(PEER1_NODEID);
+  private static final PeerId PEERID_PEER1 = PeerId.fromExistingId(PEER1_NODEID);
+  private static final StubPeer STUB_PEER2 = new StubPeer(PEER2_NODEID);
+  private static final PeerId PEERID_PEER2 = PeerId.fromExistingId(PEER2_NODEID);
+  private static final StubPeer STUB_PEER3 = new StubPeer(PEER3_NODEID);
+  private static final PeerId PEERID_PEER3 = PeerId.fromExistingId(PEER3_NODEID);
 
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Peer> network = mock(P2PNetwork.class);
@@ -219,96 +230,83 @@ class Eth2PeerSelectionStrategyTest {
   @Test
   void selectPeersToDisconnect_shouldDisconnectLowestScoringPeersWhenPeerCountExceedsUpperBound() {
     final Eth2PeerSelectionStrategy strategy = createStrategy(0, 1, 0);
-    final StubPeer peer1 = new StubPeer(new MockNodeId(1));
-    final StubPeer peer2 = new StubPeer(new MockNodeId(2));
-    final StubPeer peer3 = new StubPeer(new MockNodeId(3));
-    peerScorer.setScore(peer1.getId(), 100);
-    peerScorer.setScore(peer2.getId(), 200);
-    peerScorer.setScore(peer3.getId(), 150);
+    peerScorer.setScore(PEERID_PEER1, 100);
+    peerScorer.setScore(PEERID_PEER2, 200);
+    peerScorer.setScore(PEERID_PEER3, 150);
 
     when(network.getPeerCount()).thenReturn(3);
-    when(network.streamPeers()).thenReturn(Stream.of(peer1, peer2, peer3));
+    when(network.streamPeers()).thenReturn(Stream.of(STUB_PEER1, STUB_PEER2, STUB_PEER3));
 
     assertThat(strategy.selectPeersToDisconnect(network, peerPools))
-        .containsExactlyInAnyOrder(peer1, peer3);
+        .containsExactlyInAnyOrder(STUB_PEER1, STUB_PEER3);
   }
 
   @Test
   void selectPeersToDisconnect_shouldNotDisconnectFromStaticPeers() {
     final Eth2PeerSelectionStrategy strategy = createStrategy(0, 0, 0);
-    final StubPeer peer1 = new StubPeer(new MockNodeId(1));
-    final StubPeer peer2 = new StubPeer(new MockNodeId(2));
-    final StubPeer peer3 = new StubPeer(new MockNodeId(3));
     when(network.getPeerCount()).thenReturn(3);
-    when(network.streamPeers()).thenReturn(Stream.of(peer1, peer2, peer3));
+    when(network.streamPeers()).thenReturn(Stream.of(STUB_PEER1, STUB_PEER2, STUB_PEER3));
 
-    peerPools.addPeerToPool(peer2.getId(), PeerConnectionType.STATIC);
+    peerPools.addPeerToPool(PEER2_NODEID, PeerConnectionType.STATIC);
     assertThat(strategy.selectPeersToDisconnect(network, peerPools))
-        .containsExactlyInAnyOrder(peer1, peer3);
+        .containsExactlyInAnyOrder(STUB_PEER1, STUB_PEER3);
   }
 
   @Test
   void selectPeersToDisconnect_shouldNotDisconnectRandomlySelectedPeersBasedOnScore() {
     final Eth2PeerSelectionStrategy strategy = createStrategy(2, 2, 1);
-    final StubPeer peer1 = new StubPeer(new MockNodeId(1));
-    final StubPeer peer2 = new StubPeer(new MockNodeId(2));
-    final StubPeer peer3 = new StubPeer(new MockNodeId(3));
     when(network.getPeerCount()).thenReturn(3);
-    when(network.streamPeers()).thenReturn(Stream.of(peer1, peer2, peer3));
+    when(network.streamPeers()).thenReturn(Stream.of(STUB_PEER1, STUB_PEER2, STUB_PEER3));
 
-    peerPools.addPeerToPool(peer2.getId(), PeerConnectionType.RANDOMLY_SELECTED);
-    peerScorer.setScore(peer1.getId(), 100);
-    peerScorer.setScore(peer2.getId(), 0);
-    peerScorer.setScore(peer3.getId(), 50);
+    peerPools.addPeerToPool(PEER2_NODEID, PeerConnectionType.RANDOMLY_SELECTED);
+    peerScorer.setScore(PEERID_PEER1, 100);
+    peerScorer.setScore(PEERID_PEER2, 0);
+    peerScorer.setScore(PEERID_PEER3, 50);
     // peer2 has the lowest score but is safe because it's in the randomly selected pool
     assertThat(strategy.selectPeersToDisconnect(network, peerPools))
-        .containsExactlyInAnyOrder(peer3);
+        .containsExactlyInAnyOrder(STUB_PEER3);
   }
 
   @Test
   void selectPeersToDisconnect_shouldMoveExcessRandomlySelectedPeersBackToScoreBasedPool() {
     final Eth2PeerSelectionStrategy strategy = createStrategy(2, 2, 1);
-    final StubPeer peer1 = new StubPeer(new MockNodeId(1));
-    final StubPeer peer2 = new StubPeer(new MockNodeId(2));
-    final StubPeer peer3 = new StubPeer(new MockNodeId(3));
     when(network.getPeerCount()).thenReturn(3);
-    when(network.streamPeers()).thenReturn(Stream.of(peer1, peer2, peer3));
+    when(network.streamPeers()).thenReturn(Stream.of(STUB_PEER1, STUB_PEER2, STUB_PEER3));
 
-    peerPools.addPeerToPool(peer1.getId(), PeerConnectionType.RANDOMLY_SELECTED);
-    peerPools.addPeerToPool(peer2.getId(), PeerConnectionType.RANDOMLY_SELECTED);
+    peerPools.addPeerToPool(PEER1_NODEID, PeerConnectionType.RANDOMLY_SELECTED);
+    peerPools.addPeerToPool(PEER2_NODEID, PeerConnectionType.RANDOMLY_SELECTED);
 
-    peerScorer.setScore(peer1.getId(), 100);
-    peerScorer.setScore(peer2.getId(), 200);
-    peerScorer.setScore(peer3.getId(), 50);
-    withShuffleOrder(peer2, peer1, peer3);
+    peerScorer.setScore(PEERID_PEER1, 100);
+    peerScorer.setScore(PEERID_PEER2, 200);
+    peerScorer.setScore(PEERID_PEER3, 50);
+    withShuffleOrder(STUB_PEER2, STUB_PEER1, STUB_PEER3);
 
     // Peer2 was dropped from the random pool but had a better score than peer3 so was kept
     assertThat(strategy.selectPeersToDisconnect(network, peerPools))
-        .containsExactlyInAnyOrder(peer3);
-    assertThat(peerPools.getPeerConnectionType(peer2.getId()))
+        .containsExactlyInAnyOrder(STUB_PEER3);
+    assertThat(peerPools.getPeerConnectionType(PEER2_NODEID))
         .isEqualTo(PeerConnectionType.SCORE_BASED);
   }
 
   @Test
   void selectPeersToDisconnect_shouldDisconnectExcessRandomlySelectedPeersWhenOutscored() {
     final Eth2PeerSelectionStrategy strategy = createStrategy(2, 2, 1);
-    final StubPeer peer1 = new StubPeer(new MockNodeId(1));
-    final StubPeer peer2 = new StubPeer(new MockNodeId(2));
-    final StubPeer peer3 = new StubPeer(new MockNodeId(3));
     when(network.getPeerCount()).thenReturn(3);
-    when(network.streamPeers()).thenReturn(Stream.of(peer1, peer2, peer3));
+    when(network.streamPeers()).thenReturn(Stream.of(STUB_PEER1, STUB_PEER2, STUB_PEER3));
 
-    peerPools.addPeerToPool(peer1.getId(), PeerConnectionType.RANDOMLY_SELECTED);
-    peerPools.addPeerToPool(peer2.getId(), PeerConnectionType.RANDOMLY_SELECTED);
+    peerPools.addPeerToPool(PEER1_NODEID, PeerConnectionType.RANDOMLY_SELECTED);
+    peerPools.addPeerToPool(PEER2_NODEID, PeerConnectionType.RANDOMLY_SELECTED);
 
-    peerScorer.setScore(peer1.getId(), 100);
-    peerScorer.setScore(peer2.getId(), 50);
-    peerScorer.setScore(peer3.getId(), 250);
-    withShuffleOrder(peer2, peer1, peer3);
+    peerScorer.setScore(PEERID_PEER1, 100);
+    peerScorer.setScore(PEERID_PEER2, 50);
+    peerScorer.setScore(PEERID_PEER3, 250);
+    withShuffleOrder(STUB_PEER2, STUB_PEER1, STUB_PEER3);
+
+    withShuffleOrder(STUB_PEER2, STUB_PEER1, STUB_PEER3);
 
     // Peer2 was dropped from the random pool and had the worst score so got dropped
     assertThat(strategy.selectPeersToDisconnect(network, peerPools))
-        .containsExactlyInAnyOrder(peer2);
+        .containsExactlyInAnyOrder(STUB_PEER2);
   }
 
   private Eth2PeerSelectionStrategy createStrategy() {
