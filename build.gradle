@@ -23,7 +23,7 @@ buildscript {
 plugins {
   id 'com.diffplug.spotless' version '7.2.1'
   id 'com.github.ben-manes.versions' version '0.52.0'
-  id 'com.github.jk1.dependency-license-report' version '2.9'
+  id 'com.github.jk1.dependency-license-report' version '3.0.1'
   id 'io.spring.dependency-management' version '1.1.7'
   id 'net.ltgt.errorprone' version '4.3.0' apply false
   id 'de.undercouch.download' version '5.6.0'
@@ -534,6 +534,9 @@ licenseReport {
   renderers = [new GroupedLicenseHtmlRenderer(includeTimestamp: false)]
 }
 
+// https://github.com/jk1/Gradle-License-Report/issues/337#issuecomment-3241442179
+generateLicenseReport.enabled = false
+
 task checkMavenCoordinateCollisions {
   doLast {
     def coordinates = [:]
@@ -870,16 +873,16 @@ subprojects {
   apply plugin: 'idea'
   idea {
     module {
-      testSourceDirs += project.sourceSets.testFixtures.java.srcDirs
-      testSourceDirs += project.sourceSets.testFixtures.resources.srcDirs
-      testSourceDirs += project.sourceSets.integrationTest.java.srcDirs
-      testSourceDirs += project.sourceSets.integrationTest.resources.srcDirs
-      testSourceDirs += project.sourceSets.acceptanceTest.java.srcDirs
-      testSourceDirs += project.sourceSets.acceptanceTest.resources.srcDirs
-      testSourceDirs += project.sourceSets.propertyTest.java.srcDirs
-      testSourceDirs += project.sourceSets.propertyTest.resources.srcDirs
-      testSourceDirs += project.sourceSets.referenceTest.java.srcDirs
-      testSourceDirs += project.sourceSets.referenceTest.resources.srcDirs
+      testSources.from(project.sourceSets.testFixtures.java.srcDirs)
+      testResources.from(project.sourceSets.testFixtures.resources.srcDirs)
+      testSources.from(project.sourceSets.integrationTest.java.srcDirs)
+      testResources.from(project.sourceSets.integrationTest.resources.srcDirs)
+      testSources.from(project.sourceSets.acceptanceTest.java.srcDirs)
+      testResources.from(project.sourceSets.acceptanceTest.resources.srcDirs)
+      testSources.from(project.sourceSets.propertyTest.java.srcDirs)
+      testResources.from(project.sourceSets.propertyTest.resources.srcDirs)
+      testSources.from(project.sourceSets.referenceTest.java.srcDirs)
+      testResources.from(project.sourceSets.referenceTest.resources.srcDirs)
     }
   }
 
