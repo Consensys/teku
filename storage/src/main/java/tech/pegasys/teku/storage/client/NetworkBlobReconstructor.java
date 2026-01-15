@@ -14,7 +14,6 @@
 package tech.pegasys.teku.storage.client;
 
 import static com.google.common.base.Preconditions.checkState;
-import static java.util.Collections.emptyList;
 
 import com.google.common.collect.Streams;
 import java.util.Comparator;
@@ -83,16 +82,16 @@ public class NetworkBlobReconstructor implements BlobReconstructor {
             retrievedDataColumnSidecars -> {
               if (missingSidecars.size() != retrievedDataColumnSidecars.size()) {
                 // Not able to retrieve all requested columns
-                return Optional.of(emptyList());
+                return Optional.empty();
               }
-              var completeDataColumns =
+              final List<DataColumnSidecar> firstHalfColumns =
                   Streams.concat(retrievedDataColumnSidecars.stream(), existingSidecars.stream())
                       .sorted(Comparator.comparing(DataColumnSidecar::getIndex))
                       .toList();
-              checkState(completeDataColumns.size() == halfColumns, "Wrong number of columns");
+              checkState(firstHalfColumns.size() == halfColumns, "Wrong number of columns");
               return Optional.of(
                   reconstructBlobsFromFirstHalfDataColumns(
-                      completeDataColumns, blobIndices, blobSchemaSupplier.get()));
+                      firstHalfColumns, blobIndices, blobSchemaSupplier.get()));
             });
   }
 }
