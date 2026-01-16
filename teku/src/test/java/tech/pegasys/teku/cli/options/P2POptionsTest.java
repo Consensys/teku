@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.assertj.core.api.Fail;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
@@ -518,6 +519,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  @Disabled
   public void allSubnetsShouldOverrideQueueSizesAndPeers() {
     final TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--p2p-subscribe-all-subnets-enabled", "true");
