@@ -106,8 +106,7 @@ public class TransitionCaches {
     attestersTotalBalance = cacheFactory.create(MAX_BEACON_COMMITTEE_CACHE);
     totalActiveBalance = cacheFactory.create(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
     // Use unbounded cache for validators - they never evict and grow indefinitely
-    // This avoids allocating huge eviction policy structures (TinyLFU, CountMinSketch)
-    // Memory overhead: 32 bytes/entry vs 64 bytes/entry + multi-GB sketch allocation
+    // This avoids allocating huge eviction policy structures
     validatorsPubKeys = CaffeineCache.createUnbounded();
     validatorIndexCache = new ValidatorIndexCache();
     committeeShuffle = cacheFactory.create(MAX_COMMITTEE_SHUFFLE_CACHE);
