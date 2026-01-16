@@ -476,7 +476,12 @@ public class ChainStorage
 
   @Override
   public SafeFuture<Void> onNewSidecar(final DataColumnSidecar sidecar) {
-    return SafeFuture.fromRunnable(() -> database.addSidecar(sidecar));
+    return SafeFuture.fromRunnable(() -> database.addSidecars(List.of(sidecar)));
+  }
+
+  @Override
+  public SafeFuture<Void> onNewSidecars(final List<DataColumnSidecar> sidecars) {
+    return SafeFuture.fromRunnable(() -> database.addSidecars(sidecars));
   }
 
   @Override

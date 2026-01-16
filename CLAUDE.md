@@ -324,7 +324,8 @@ Each module has its own test suite under `src/test/java` and test fixtures under
 - **Async operations**: Use `SafeFuture` and `AsyncRunner` instead of raw CompletableFuture
 - **Immutability**: Prefer immutable data structures (record types, SszData implementations)
 - **Error handling**: Use checked exceptions for recoverable errors, unchecked for programming errors
-- **Testing**: All code must have automated test coverage (no manual tests)
+- **Testing**: All code must have automated test coverage (no manual tests). All code changes must include corresponding unit tests.
+- **Logging**: Add appropriate LOG lines for new code paths, following the Hyperledger Besu Coding Conventions.
 - **Commit messages**: Imperative mood, present tense ("Add feature" not "Added feature")
 
 See [Hyperledger Besu Coding Conventions](https://wiki.hyperledger.org/display/BESU/Coding+Conventions) for additional guidelines.

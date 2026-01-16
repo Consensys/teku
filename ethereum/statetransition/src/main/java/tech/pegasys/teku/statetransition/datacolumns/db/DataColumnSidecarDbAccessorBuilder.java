@@ -58,12 +58,12 @@ public class DataColumnSidecarDbAccessorBuilder {
   }
 
   public DataColumnSidecarDbAccessor build() {
-    final ColumnIdCachingDasDb columnIdCachingDasDb =
-        new ColumnIdCachingDasDb(
+    final CachingDataColumnSidecarDB cachingDataColumnSidecarDB =
+        new CachingDataColumnSidecarDB(
             db,
             this::getNumberOfColumnsForSlot,
             columnIdReadCacheSlotCount,
             columnIdWriteCacheCount);
-    return new DasDb(columnIdCachingDasDb);
+    return new DasDb(cachingDataColumnSidecarDB);
   }
 }

@@ -15,11 +15,15 @@ package tech.pegasys.teku.statetransition.datacolumns.db;
 
 import java.util.BitSet;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
@@ -28,7 +32,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
-class ColumnIdCachingDasDb implements DataColumnSidecarDB {
+class CachingDataColumnSidecarDB implements DataColumnSidecarDB {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final DataColumnSidecarDB delegateDb;
   private final Function<UInt64, Integer> slotToNumberOfColumns;
@@ -36,7 +41,10 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
   private final Map<UInt64, SlotCache> readSlotCaches;
   private final Set<DataColumnSlotAndIdentifier> latestAdded;
 
-  public ColumnIdCachingDasDb(
+  private final Map<DataColumnSlotAndIdentifier, InflightEntry> inflightColumns =
+      new ConcurrentHashMap<>();
+
+  public CachingDataColumnSidecarDB(
       final DataColumnSidecarDB delegateDb,
       final Function<UInt64, Integer> slotToNumberOfColumns,
       final int slotReadCacheSize,
@@ -61,16 +69,62 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
 
   @Override
   public SafeFuture<List<DataColumnSlotAndIdentifier>> getColumnIdentifiers(final UInt64 slot) {
-    return getOrCreateSlotCache(slot).generateColumnIdentifiers(slot);
+    return getOrCreateSlotCache(slot)
+        .generateColumnIdentifiers(slot)
+        .thenApply(
+            dbIdentifiers -> {
+              // Get inflight column identifiers at merge time to avoid race condition
+              final List<DataColumnSlotAndIdentifier> inflightIdentifiers =
+                  inflightColumns.keySet().stream().filter(id -> id.slot().equals(slot)).toList();
+
+              if (inflightIdentifiers.isEmpty()) {
+                return dbIdentifiers;
+              }
+              // Merge DB identifiers with inflight, avoiding duplicates
+              final Set<DataColumnSlotAndIdentifier> merged = new LinkedHashSet<>(dbIdentifiers);
+              merged.addAll(inflightIdentifiers);
+              LOG.debug(
+                  "Merged {} inflight columns with {} DB columns for slot {}",
+                  inflightIdentifiers.size(),
+                  dbIdentifiers.size(),
+                  slot);
+              return List.copyOf(merged);
+            });
   }
 
   @Override
   public SafeFuture<Void> addSidecar(final DataColumnSidecar sidecar) {
-    if (!latestAdded.add(DataColumnSlotAndIdentifier.fromDataColumn(sidecar))) {
+    final DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier =
+        DataColumnSlotAndIdentifier.fromDataColumn(sidecar);
+
+    if (!latestAdded.add(dataColumnSlotAndIdentifier)) {
+      LOG.debug("Skipping duplicate sidecar for {}", dataColumnSlotAndIdentifier);
       return SafeFuture.COMPLETE;
     }
     invalidateSlotCache(sidecar.getSlot());
-    return delegateDb.addSidecar(sidecar);
+
+    final InflightEntry entry =
+        inflightColumns.computeIfAbsent(
+            dataColumnSlotAndIdentifier,
+            key -> {
+              final SafeFuture<Void> writeFuture =
+                  delegateDb
+                      .addSidecar(sidecar)
+                      .alwaysRun(() -> inflightColumns.remove(dataColumnSlotAndIdentifier));
+              return new InflightEntry(sidecar, writeFuture);
+            });
+
+    return entry.future;
+  }
+
+  private static class InflightEntry {
+    final DataColumnSidecar sidecar;
+    final SafeFuture<Void> future;
+
+    InflightEntry(final DataColumnSidecar sidecar, final SafeFuture<Void> future) {
+      this.sidecar = sidecar;
+      this.future = future;
+    }
   }
 
   private static class SlotCache {
@@ -121,6 +175,14 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
   @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
       final DataColumnSlotAndIdentifier identifier) {
+    final Optional<DataColumnSidecar> maybeInflightSidecar =
+        Optional.ofNullable(inflightColumns.get(identifier)).map(entry -> entry.sidecar);
+
+    if (maybeInflightSidecar.isPresent()) {
+      LOG.debug("Returning inflight sidecar for {}", identifier);
+      return SafeFuture.completedFuture(maybeInflightSidecar);
+    }
+
     return delegateDb.getSidecar(identifier);
   }
 

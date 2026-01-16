@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.api;
 
+import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -25,6 +26,8 @@ public interface SidecarUpdateChannel extends ChannelInterface {
   SafeFuture<Void> onEarliestAvailableDataColumnSlot(UInt64 slot);
 
   SafeFuture<Void> onNewSidecar(DataColumnSidecar sidecar);
+
+  SafeFuture<Void> onNewSidecars(List<DataColumnSidecar> sidecars);
 
   SafeFuture<Void> onNewNonCanonicalSidecar(DataColumnSidecar sidecar);
 }

@@ -17,9 +17,11 @@ import static java.time.Duration.ofMillis;
 import static java.time.Duration.ofSeconds;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -35,7 +37,7 @@ import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarDBStub;
 import tech.pegasys.teku.statetransition.datacolumns.util.StubAsync;
 
 @SuppressWarnings("FutureReturnValueIgnored")
-public class ColumnIdCachingDasDbTest {
+public class CachingDataColumnSidecarDBTest {
   private final Spec spec = TestSpecFactory.createMinimalFulu();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
 
@@ -48,8 +50,8 @@ public class ColumnIdCachingDasDbTest {
 
   private final int slotReadCacheSize = 2;
   private final int sidecarsWriteCacheSize = 2;
-  private final ColumnIdCachingDasDb columnIdCachingDb =
-      new ColumnIdCachingDasDb(asyncDb, __ -> 128, slotReadCacheSize, sidecarsWriteCacheSize);
+  private final CachingDataColumnSidecarDB columnIdCachingDb =
+      new CachingDataColumnSidecarDB(asyncDb, __ -> 128, slotReadCacheSize, sidecarsWriteCacheSize);
 
   private DataColumnSidecar createSidecar(final int slot, final int index) {
     final UInt64 slotU = UInt64.valueOf(slot);
@@ -158,5 +160,147 @@ public class ColumnIdCachingDasDbTest {
     // the first cache entry (for slot 777) should be evicted and a query to underlying db should be
     // done
     assertThat(reads1).isGreaterThan(reads0);
+  }
+
+  @Test
+  void shouldCacheInflightSidecars() {
+    final DataColumnSidecar sidecar = createSidecar(777, 77);
+
+    final SafeFuture<Void> addCompleteFuture = columnIdCachingDb.addSidecar(sidecar);
+
+    final SafeFuture<Optional<DataColumnSidecar>> getCompleteFuture =
+        columnIdCachingDb.getSidecar(DataColumnSlotAndIdentifier.fromDataColumn(sidecar));
+
+    assertThatSafeFuture(getCompleteFuture).isCompletedWithValue(Optional.of(sidecar));
+    assertThat(addCompleteFuture).isNotCompleted();
+
+    assertThat(db.getDbReadCounter()).hasValue(0);
+
+    stubAsync.advanceTimeGraduallyUntilAllDone(ofSeconds(1));
+
+    assertThat(addCompleteFuture).isCompleted();
+
+    final SafeFuture<Optional<DataColumnSidecar>> getCompleteFuture2 =
+        columnIdCachingDb.getSidecar(DataColumnSlotAndIdentifier.fromDataColumn(sidecar));
+
+    stubAsync.advanceTimeGraduallyUntilAllDone(ofSeconds(1));
+
+    assertThatSafeFuture(getCompleteFuture2).isCompletedWithValue(Optional.of(sidecar));
+    assertThat(db.getDbReadCounter()).hasValue(1);
+  }
+
+  @Test
+  void shouldIncludeInflightSidecarsInGetColumnIdentifiers() {
+    final DataColumnSidecar sidecar1 = createSidecar(777, 10);
+    final DataColumnSidecar sidecar2 = createSidecar(777, 20);
+
+    // Start async writes but don't complete them
+    final SafeFuture<Void> addFuture1 = columnIdCachingDb.addSidecar(sidecar1);
+    final SafeFuture<Void> addFuture2 = columnIdCachingDb.addSidecar(sidecar2);
+
+    // Writes should still be in progress
+    assertThat(addFuture1).isNotCompleted();
+    assertThat(addFuture2).isNotCompleted();
+
+    // getColumnIdentifiers should include inflight sidecars
+    final SafeFuture<List<DataColumnSlotAndIdentifier>> identifiersFuture =
+        columnIdCachingDb.getColumnIdentifiers(UInt64.valueOf(777));
+
+    stubAsync.advanceTimeGradually(dbDelay);
+
+    assertThatSafeFuture(identifiersFuture)
+        .isCompletedWithValueMatching(
+            ids ->
+                ids.size() == 2
+                    && ids.contains(DataColumnSlotAndIdentifier.fromDataColumn(sidecar1))
+                    && ids.contains(DataColumnSlotAndIdentifier.fromDataColumn(sidecar2)));
+
+    // DB should not have been read for sidecars (only for column identifiers which returns empty)
+    assertThat(db.getDbReadCounter()).hasValue(1);
+
+    // Complete the writes
+    stubAsync.advanceTimeGraduallyUntilAllDone(ofSeconds(1));
+
+    assertThat(addFuture1).isCompleted();
+    assertThat(addFuture2).isCompleted();
+  }
+
+  @Test
+  void shouldMergeInflightWithPersistedInGetColumnIdentifiers() {
+    // First, persist a sidecar to DB
+    final DataColumnSidecar persistedSidecar = createSidecar(888, 5);
+    columnIdCachingDb.addSidecar(persistedSidecar);
+    stubAsync.advanceTimeGraduallyUntilAllDone(ofSeconds(1));
+
+    // Now start an inflight write
+    final DataColumnSidecar inflightSidecar = createSidecar(888, 15);
+    final SafeFuture<Void> inflightFuture = columnIdCachingDb.addSidecar(inflightSidecar);
+    assertThat(inflightFuture).isNotCompleted();
+
+    // getColumnIdentifiers should return both
+    final SafeFuture<List<DataColumnSlotAndIdentifier>> identifiersFuture =
+        columnIdCachingDb.getColumnIdentifiers(UInt64.valueOf(888));
+
+    stubAsync.advanceTimeGradually(dbDelay);
+
+    assertThatSafeFuture(identifiersFuture)
+        .isCompletedWithValueMatching(
+            ids ->
+                ids.size() == 2
+                    && ids.contains(DataColumnSlotAndIdentifier.fromDataColumn(persistedSidecar))
+                    && ids.contains(DataColumnSlotAndIdentifier.fromDataColumn(inflightSidecar)));
+
+    stubAsync.advanceTimeGraduallyUntilAllDone(ofSeconds(1));
+  }
+
+  @Test
+  void shouldShareFutureForConcurrentAddsOfSameSidecar() {
+    // sidecarsWriteCacheSize = 2, so adding 3 sidecars will evict the first from latestAdded
+    final DataColumnSidecar sidecar1 = createSidecar(999, 1);
+    final DataColumnSidecar sidecar2 = createSidecar(999, 2);
+    final DataColumnSidecar sidecar3 = createSidecar(999, 3);
+    final DataColumnSlotAndIdentifier id1 = DataColumnSlotAndIdentifier.fromDataColumn(sidecar1);
+
+    // Capture initial write count
+    final long initialWrites = db.getDbWriteCounter().get();
+
+    // Start first write - sidecar1 is now inflight
+    final SafeFuture<Void> addFuture1 = columnIdCachingDb.addSidecar(sidecar1);
+    assertThat(addFuture1).isNotCompleted();
+
+    // Add more sidecars to evict sidecar1 from latestAdded LRU cache
+    columnIdCachingDb.addSidecar(sidecar2);
+    columnIdCachingDb.addSidecar(sidecar3);
+
+    // sidecar1 should still be visible as inflight
+    assertThatSafeFuture(columnIdCachingDb.getSidecar(id1))
+        .isCompletedWithValue(Optional.of(sidecar1));
+
+    // Re-add sidecar1 (allowed because it was evicted from latestAdded)
+    // Should return the SAME future as the inflight write - no new DB write
+    final SafeFuture<Void> addFuture1Again = columnIdCachingDb.addSidecar(sidecar1);
+
+    // Both futures should be the same instance
+    assertThat(addFuture1Again).isSameAs(addFuture1);
+
+    // sidecar1 should still be visible as inflight
+    assertThatSafeFuture(columnIdCachingDb.getSidecar(id1))
+        .isCompletedWithValue(Optional.of(sidecar1));
+
+    // Complete all writes
+    stubAsync.advanceTimeGraduallyUntilAllDone(ofSeconds(1));
+
+    // Both futures complete together (they're the same future)
+    assertThat(addFuture1).isCompleted();
+    assertThat(addFuture1Again).isCompleted();
+
+    // Verify only 3 writes happened (sidecar1, sidecar2, sidecar3) - not 4
+    // sidecar1 was only written once despite being added twice
+    assertThat(db.getDbWriteCounter().get()).isEqualTo(initialWrites + 3);
+
+    // After completion, sidecar should be available from delegate DB
+    final SafeFuture<Optional<DataColumnSidecar>> getResult = columnIdCachingDb.getSidecar(id1);
+    stubAsync.advanceTimeGradually(dbDelay);
+    assertThatSafeFuture(getResult).isCompletedWithValue(Optional.of(sidecar1));
   }
 }
