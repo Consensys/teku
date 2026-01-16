@@ -40,6 +40,7 @@ import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
 import tech.pegasys.teku.storage.archive.filesystem.FileSystemBlobSidecarsArchiver;
+import tech.pegasys.teku.storage.server.BatchingSidecarUpdateChannel;
 import tech.pegasys.teku.storage.server.BatchingVoteUpdateChannel;
 import tech.pegasys.teku.storage.server.ChainStorage;
 import tech.pegasys.teku.storage.server.CombinedStorageChannelSplitter;
@@ -228,6 +229,11 @@ public class StorageService extends Service implements StorageServiceFacade {
                       new AsyncRunnerEventThread(
                           "batch-vote-updater", serviceConfig.getAsyncRunnerFactory()));
 
+              final AsyncRunner batchSidecarAsyncRunner =
+                  serviceConfig.createAsyncRunner("batch_sidecar_updater", 1);
+              final BatchingSidecarUpdateChannel batchingSidecarUpdateChannel =
+                  new BatchingSidecarUpdateChannel(chainStorage, batchSidecarAsyncRunner);
+
               eventChannels.subscribe(
                   CombinedStorageChannel.class,
                   new CombinedStorageChannelSplitter(
@@ -241,7 +247,7 @@ public class StorageService extends Service implements StorageServiceFacade {
                   .subscribe(Eth1DepositStorageChannel.class, depositStorage)
                   .subscribe(Eth1EventsChannel.class, depositStorage)
                   .subscribe(VoteUpdateChannel.class, batchingVoteUpdateChannel)
-                  .subscribe(SidecarUpdateChannel.class, chainStorage);
+                  .subscribe(SidecarUpdateChannel.class, batchingSidecarUpdateChannel);
             })
         .thenCompose(
             __ ->

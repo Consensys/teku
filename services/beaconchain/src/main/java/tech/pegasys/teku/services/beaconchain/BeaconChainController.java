@@ -1418,6 +1418,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new DataColumnSidecarNetworkRetrieverImpl(
               simpleSidecarRetriever.get()::retrieve,
               simpleSidecarRetriever.get()::flush,
+              // intentionally bypassing CachingDataColumnSidecarDB to avoid
+              // getGlobs API calls polluting caches
               sidecarDB.orElseThrow()::addSidecar,
               beaconConfig.beaconRestApiConfig().getGetBlobsSidecarsDownloadTimeoutSeconds());
     } else {

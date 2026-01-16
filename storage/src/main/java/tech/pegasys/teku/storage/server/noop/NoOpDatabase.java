@@ -418,7 +418,7 @@ public class NoOpDatabase implements Database {
   public void setFirstCustodyIncompleteSlot(final UInt64 slot) {}
 
   @Override
-  public void addSidecar(final DataColumnSidecar sidecar) {}
+  public void addSidecars(final List<DataColumnSidecar> sidecars) {}
 
   @Override
   public void addNonCanonicalSidecar(final DataColumnSidecar sidecar) {}

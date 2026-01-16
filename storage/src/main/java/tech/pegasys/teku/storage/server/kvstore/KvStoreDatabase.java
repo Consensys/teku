@@ -1190,9 +1190,12 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void addSidecar(final DataColumnSidecar sidecar) {
+  public void addSidecars(final List<DataColumnSidecar> sidecars) {
+    if (sidecars.isEmpty()) {
+      return;
+    }
     try (final FinalizedUpdater updater = finalizedUpdater()) {
-      updater.addSidecar(sidecar);
+      sidecars.forEach(updater::addSidecar);
       updater.commit();
     }
   }

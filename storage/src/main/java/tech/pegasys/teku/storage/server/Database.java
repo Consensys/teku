@@ -293,7 +293,7 @@ public interface Database extends AutoCloseable {
 
   void setFirstCustodyIncompleteSlot(UInt64 slot);
 
-  void addSidecar(DataColumnSidecar sidecar);
+  void addSidecars(List<DataColumnSidecar> sidecars);
 
   void addNonCanonicalSidecar(DataColumnSidecar sidecar);
 
