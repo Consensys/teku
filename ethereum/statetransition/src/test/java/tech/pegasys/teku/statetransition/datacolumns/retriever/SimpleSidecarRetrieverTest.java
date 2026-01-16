@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -139,6 +140,12 @@ public class SimpleSidecarRetrieverTest {
 
     testPeerManager.connectPeer(custodyPeerMissingData);
     testPeerManager.connectPeer(nonCustodyPeer);
+    assertThat(
+            simpleSidecarRetriever
+                .getConnectedPeers()
+                .get(custodyPeerMissingData.getNodeId())
+                .getResponseScore())
+        .isEqualTo(10);
 
     final SafeFuture<DataColumnSidecar> resp0 = simpleSidecarRetriever.retrieve(id0);
 
@@ -146,9 +153,21 @@ public class SimpleSidecarRetrieverTest {
 
     assertThat(resp0).isNotDone();
     assertThat(custodyPeerMissingData.getRequests()).hasSize(2);
+    assertThat(
+            simpleSidecarRetriever
+                .getConnectedPeers()
+                .get(custodyPeerMissingData.getNodeId())
+                .getResponseScore())
+        .isEqualTo(3);
 
     custodyPeerHavingData.addSidecar(sidecar0);
     testPeerManager.connectPeer(custodyPeerHavingData);
+    assertThat(
+            simpleSidecarRetriever
+                .getConnectedPeers()
+                .get(custodyPeerHavingData.getNodeId())
+                .getResponseScore())
+        .isEqualTo(10);
 
     advanceTimeGradually(retrieverRound.multipliedBy(2));
 
@@ -159,7 +178,7 @@ public class SimpleSidecarRetrieverTest {
   }
 
   @Test
-  void selectingBestPeerShouldRespectPeerMetrics() {
+  void selectingBestPeerShouldRespectRequestLimits() {
 
     final TestPeer nonCustodyPeer =
         new TestPeer(stubAsyncRunner, nonCustodyNodeIds.next(), Duration.ofMillis(100));
@@ -208,6 +227,95 @@ public class SimpleSidecarRetrieverTest {
     advanceTimeGradually(retrieverRound);
 
     assertThat(allRequestCountsFunc.get()).isEqualTo(List.of(0, 1, 2, 2));
+  }
+
+  @Test
+  void selectingBestPeerShouldRespectResponseScore() {
+
+    final TestPeer nonCustodyPeer =
+        new TestPeer(stubAsyncRunner, nonCustodyNodeIds.next(), Duration.ofMillis(100));
+
+    final TestPeer goodScoreCustodyPeer =
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100))
+            .currentRequestLimit(1000);
+
+    final TestPeer medianScoreCustodyPeer =
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100))
+            .currentRequestLimit(1000);
+
+    final TestPeer badScoreCustodyPeer =
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100))
+            .currentRequestLimit(1000);
+
+    final List<TestPeer> allPeers =
+        List.of(nonCustodyPeer, goodScoreCustodyPeer, medianScoreCustodyPeer, badScoreCustodyPeer);
+
+    allPeers.forEach(testPeerManager::connectPeer);
+    simpleSidecarRetriever
+        .getConnectedPeers()
+        .get(goodScoreCustodyPeer.getNodeId())
+        .getSidecarsRequested()
+        .addAndGet(1_000_000);
+    simpleSidecarRetriever
+        .getConnectedPeers()
+        .get(goodScoreCustodyPeer.getNodeId())
+        .getSidecarsReceived()
+        .addAndGet(1_000_000);
+    simpleSidecarRetriever
+        .getConnectedPeers()
+        .get(medianScoreCustodyPeer.getNodeId())
+        .getSidecarsRequested()
+        .addAndGet(1_000_000);
+    simpleSidecarRetriever
+        .getConnectedPeers()
+        .get(medianScoreCustodyPeer.getNodeId())
+        .getSidecarsReceived()
+        .addAndGet(500_000);
+    simpleSidecarRetriever
+        .getConnectedPeers()
+        .get(badScoreCustodyPeer.getNodeId())
+        .getSidecarsRequested()
+        .addAndGet(1_000_000);
+
+    // verifying all requests within request limit goes to goodScoreCustodyPeer,
+    assertThat(goodScoreCustodyPeer.getAvailableRequestCount()).isEqualTo(1000);
+    for (int i = 0; i < 1000; ++i) {
+      final SignedBeaconBlockHeader signedBeaconBlockHeader =
+          dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.valueOf(i));
+      final DataColumnSidecar dataColumnSidecar =
+          dataStructureUtil.randomDataColumnSidecar(signedBeaconBlockHeader, columnIndex);
+      goodScoreCustodyPeer.addSidecar(dataColumnSidecar);
+      medianScoreCustodyPeer.addSidecar(dataColumnSidecar);
+      badScoreCustodyPeer.addSidecar(dataColumnSidecar);
+      final DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier =
+          DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar);
+      simpleSidecarRetriever
+          .retrieve(dataColumnSlotAndIdentifier)
+          .finish(err -> LOG.error("Error retrieving sidecar", err));
+    }
+
+    advanceTimeGradually(retrieverRound.multipliedBy(2));
+    assertThat(goodScoreCustodyPeer.getAvailableRequestCount()).isEqualTo(0);
+
+    // verifying all requests within request limit goes to medianScoreCustodyPeer
+    // as goodScoreCustodyPeer is out of available requests in limit
+    for (int i = 1000; i < 1500; ++i) {
+      final SignedBeaconBlockHeader signedBeaconBlockHeader =
+          dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.valueOf(i));
+      final DataColumnSidecar dataColumnSidecar =
+          dataStructureUtil.randomDataColumnSidecar(signedBeaconBlockHeader, columnIndex);
+      goodScoreCustodyPeer.addSidecar(dataColumnSidecar);
+      medianScoreCustodyPeer.addSidecar(dataColumnSidecar);
+      badScoreCustodyPeer.addSidecar(dataColumnSidecar);
+      final DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier =
+          DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar);
+      simpleSidecarRetriever
+          .retrieve(dataColumnSlotAndIdentifier)
+          .finish(err -> LOG.error("Error retrieving sidecar", err));
+    }
+
+    advanceTimeGradually(retrieverRound.multipliedBy(2));
+    assertThat(medianScoreCustodyPeer.getAvailableRequestCount()).isEqualTo(500);
   }
 
   @Test
@@ -298,5 +406,30 @@ public class SimpleSidecarRetrieverTest {
 
     advanceTimeGradually(retrieverRound);
     assertThat(peer.getRequests()).hasSize(columnCount);
+  }
+
+  @Test
+  @SuppressWarnings("UnnecessaryAsync")
+  public void connectedPeerGetResponseScore() {
+    final SimpleSidecarRetriever.ConnectedPeer connectedPeer =
+        new SimpleSidecarRetriever.ConnectedPeer(
+            dataStructureUtil.randomUInt256(), miscHelpers, spec, () -> 4);
+
+    // Base score
+    assertThat(connectedPeer.getResponseScore()).isEqualTo(10);
+    connectedPeer.getSidecarsRequested().incrementAndGet();
+    assertThat(connectedPeer.getResponseScore()).isEqualTo(5);
+    connectedPeer.getSidecarsRequested().addAndGet(3);
+    assertThat(connectedPeer.getResponseScore()).isEqualTo(2);
+    connectedPeer.getSidecarsRequested().addAndGet(5);
+    assertThat(connectedPeer.getResponseScore()).isEqualTo(1);
+    connectedPeer.getSidecarsRequested().incrementAndGet();
+    assertThat(connectedPeer.getResponseScore()).isEqualTo(0);
+    connectedPeer.getSidecarsReceived().addAndGet(3);
+    assertThat(connectedPeer.getResponseScore()).isEqualTo(3);
+    connectedPeer.getSidecarsRequested().addAndGet(1_000_000);
+    assertThat(connectedPeer.getResponseScore()).isEqualTo(0);
+    connectedPeer.getSidecarsReceived().addAndGet(1_000_000);
+    assertThat(connectedPeer.getResponseScore()).isEqualTo(9);
   }
 }

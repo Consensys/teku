@@ -39,6 +39,7 @@ public class TestPeer {
   private final Map<DataColumnIdentifier, DataColumnSidecar> availableSidecars = new HashMap<>();
   private final List<Request> requests = new ArrayList<>();
   private int currentRequestLimit = 1000;
+  private int completedRequests = 0;
 
   public TestPeer(final AsyncRunner asyncRunner, final UInt256 nodeId, final Duration latency) {
     this.asyncRunner = asyncRunner;
@@ -72,6 +73,11 @@ public class TestPeer {
         .runAfterDelay(
             () -> {
               if (!promise.isDone()) {
+                if (getAvailableRequestCount() < 1) {
+                  promise.completeExceptionally(new DataColumnReqResp.DataColumnReqRespException());
+                  return;
+                }
+                completedRequests++;
                 DataColumnSidecar maybeSidecar = availableSidecars.get(dataColumnIdentifier);
                 if (maybeSidecar != null) {
                   promise.complete(maybeSidecar);
@@ -92,6 +98,14 @@ public class TestPeer {
 
   public int getCurrentRequestLimit() {
     return currentRequestLimit;
+  }
+
+  public int getAvailableRequestCount() {
+    return currentRequestLimit - completedRequests;
+  }
+
+  public void resetCompletedRequests() {
+    this.completedRequests = 0;
   }
 
   public TestPeer currentRequestLimit(final int currentRequestLimit) {
