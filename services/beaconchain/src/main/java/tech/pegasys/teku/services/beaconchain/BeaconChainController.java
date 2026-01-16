@@ -163,6 +163,7 @@ import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolver;
 import tech.pegasys.teku.statetransition.datacolumns.CurrentSlotProvider;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManagerImpl;
+import tech.pegasys.teku.statetransition.datacolumns.DasCustodyBackfiller;
 import tech.pegasys.teku.statetransition.datacolumns.DasCustodySync;
 import tech.pegasys.teku.statetransition.datacolumns.DasPreSampler;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
@@ -246,6 +247,7 @@ import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
+import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
@@ -260,6 +262,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
 import tech.pegasys.teku.storage.client.ValidatorIsConnectedProvider;
+import tech.pegasys.teku.storage.server.DataColumnSidecarNetworkRetrieverImpl;
 import tech.pegasys.teku.storage.store.FileKeyValueStore;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.storage.store.StoreConfig;
@@ -282,7 +285,6 @@ import tech.pegasys.teku.validator.coordinator.GraffitiBuilder;
 import tech.pegasys.teku.validator.coordinator.MilestoneBasedBlockFactory;
 import tech.pegasys.teku.validator.coordinator.StoredLatestCanonicalBlockUpdater;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
-import tech.pegasys.teku.validator.coordinator.ValidatorIndexCacheTracker;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.NoOpPerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
@@ -379,9 +381,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ExecutionPayloadBidManager executionPayloadBidManager;
   protected volatile ExecutionPayloadManager executionPayloadManager;
   protected volatile ExecutionProofManager executionProofManager;
+  protected volatile Optional<DataColumnSidecarDB> sidecarDB = Optional.empty();
+  protected volatile Optional<DasCustodyBackfiller> dasCustodyBackfiller = Optional.empty();
   protected volatile Optional<DasCustodySync> dasCustodySync = Optional.empty();
   protected volatile Optional<DataColumnSidecarRetriever> recoveringSidecarRetriever =
       Optional.empty();
+  protected volatile Optional<DataColumnSidecarRetriever> simpleSidecarRetriever = Optional.empty();
   protected volatile AvailabilityCheckerFactory<UInt64> dasSamplerManager;
   protected volatile DataAvailabilitySampler dataAvailabilitySampler;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
@@ -504,6 +509,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             p2pNetwork.start(),
             blockManager.start(),
             syncService.start(),
+            dasCustodyBackfiller.isPresent()
+                ? dasCustodyBackfiller.get().start()
+                : SafeFuture.COMPLETE,
             SafeFuture.fromRunnable(
                 () -> {
                   terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start);
@@ -541,6 +549,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             p2pNetwork.stop(),
             timerService.stop(),
             ephemerySlotValidationService.doStop(),
+            dasCustodyBackfiller.isPresent()
+                ? dasCustodyBackfiller.get().stop()
+                : SafeFuture.COMPLETE,
             SafeFuture.fromRunnable(
                 () -> {
                   terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop);
@@ -691,7 +702,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initValidatorApiHandler();
     initRestAPI();
     initOperationsReOrgManager();
-    initValidatorIndexCacheTracker();
     initStoredLatestCanonicalBlockUpdater();
   }
 
@@ -900,6 +910,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         DataColumnSidecarDB.create(
             combinedChainDataClient,
             eventChannels.getPublisher(SidecarUpdateChannel.class, beaconAsyncRunner));
+    this.sidecarDB = Optional.of(sidecarDB);
     final DataColumnSidecarDbAccessor dbAccessor =
         DataColumnSidecarDbAccessor.builder(sidecarDB).spec(spec).build();
     final CanonicalBlockResolver canonicalBlockResolver =
@@ -922,7 +933,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
             minCustodyPeriodSlotCalculator,
             custodyGroupCountManager);
     eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarCustodyImpl);
-    eventChannels.subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarCustodyImpl);
+
+    if (!beaconConfig.p2pConfig().isReworkedSidecarSyncEnabled()) {
+      // during finalization DataColumnSidecarCustody maintains FirstIncompleteSlot variable, which
+      // is not needed on reworked custody backfiller
+      eventChannels.subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarCustodyImpl);
+    }
 
     final DataColumnSidecarByRootCustody dataColumnSidecarByRootCustody =
         new DataColumnSidecarByRootCustodyImpl(
@@ -984,6 +1000,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dasAsyncRunner,
             Duration.ofSeconds(1));
 
+    simpleSidecarRetriever = Optional.of(sidecarRetriever);
+
     final DataColumnSidecarRetriever recoveringSidecarRetriever;
     if (beaconConfig.p2pConfig().isReworkedSidecarRecoveryEnabled()) {
       recoveringSidecarRetriever =
@@ -1012,13 +1030,32 @@ public class BeaconChainController extends Service implements BeaconChainControl
               timeProvider,
               specConfigFulu.getNumberOfColumns());
     }
-    final DasCustodySync svc =
-        new DasCustodySync(
-            dataColumnSidecarRecoveringCustody,
-            recoveringSidecarRetriever,
-            minCustodyPeriodSlotCalculator);
-    dasCustodySync = Optional.of(svc);
-    eventChannels.subscribe(SlotEventsChannel.class, svc);
+
+    if (beaconConfig.p2pConfig().isReworkedSidecarSyncEnabled()) {
+      final DasCustodyBackfiller custodyBackfiller =
+          new DasCustodyBackfiller(
+              combinedChainDataClient,
+              Duration.ofSeconds(beaconConfig.p2pConfig().getReworkedSidecarSyncPollPeriod()),
+              dataColumnSidecarRecoveringCustody,
+              custodyGroupCountManager,
+              recoveringSidecarRetriever,
+              minCustodyPeriodSlotCalculator,
+              dasAsyncRunner,
+              sidecarDB::getEarliestAvailableDataColumnSlot,
+              sidecarDB::setEarliestAvailableDataColumnSlot,
+              beaconConfig.p2pConfig().getReworkedSidecarSyncBatchSize());
+      eventChannels.subscribe(CustodyGroupCountChannel.class, custodyBackfiller);
+      eventChannels.subscribe(FinalizedCheckpointChannel.class, custodyBackfiller);
+      dasCustodyBackfiller = Optional.of(custodyBackfiller);
+    } else {
+      final DasCustodySync custodySync =
+          new DasCustodySync(
+              dataColumnSidecarRecoveringCustody,
+              recoveringSidecarRetriever,
+              minCustodyPeriodSlotCalculator);
+      dasCustodySync = Optional.of(custodySync);
+      eventChannels.subscribe(SlotEventsChannel.class, custodySync);
+    }
 
     final CurrentSlotProvider currentSlotProvider =
         CurrentSlotProvider.create(spec, recentChainData.getStore());
@@ -1041,7 +1078,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dataColumnSidecarRecoveringCustody,
             recoveringSidecarRetriever,
             custodyGroupCountManager,
-            recentChainData);
+            recentChainData,
+            beaconConfig.p2pConfig().isColumnsDataAvailabilityHalfCheckEnabled());
     LOG.info(
         "DAS Basic Sampler initialized with {} groups to sample",
         custodyGroupCountManager.getSamplingGroupCount());
@@ -1388,7 +1426,22 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initBlobReconstructionProvider() {
     LOG.debug("BeaconChainController.initBlobReconstructionProvider()");
-    this.blobReconstructionProvider = new BlobReconstructionProvider(combinedChainDataClient, spec);
+
+    final DataColumnSidecarNetworkRetriever networkRetriever;
+    if (simpleSidecarRetriever.isPresent()
+        && beaconConfig.beaconRestApiConfig().isGetBlobsSidecarsDownloadEnabled()) {
+      networkRetriever =
+          new DataColumnSidecarNetworkRetrieverImpl(
+              simpleSidecarRetriever.get()::retrieve,
+              simpleSidecarRetriever.get()::flush,
+              sidecarDB.orElseThrow()::addSidecar,
+              beaconConfig.beaconRestApiConfig().getGetBlobsSidecarsDownloadTimeoutSeconds());
+    } else {
+      networkRetriever = DataColumnSidecarNetworkRetriever.DISABLED;
+    }
+
+    this.blobReconstructionProvider =
+        new BlobReconstructionProvider(combinedChainDataClient, networkRetriever, spec);
   }
 
   protected void initDataProvider() {
@@ -1418,6 +1471,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .proposersDataManager(proposersDataManager)
             .forkChoiceNotifier(forkChoiceNotifier)
             .rejectedExecutionSupplier(rejectedExecutionCountSupplier)
+            .custodyGroupCountManager(custodyGroupCountManager)
             .dataColumnSidecarManager(dataColumnSidecarManager)
             .build();
   }
@@ -1436,7 +1490,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             (slot, blockRoot) ->
                 beaconAsyncRunner.runAsync(
-                    () -> operationsReOrgManager.onLateBlockReorgPreparation(slot, blockRoot)));
+                    () -> operationsReOrgManager.onLateBlockReorgPreparation(slot, blockRoot)),
+            beaconConfig.p2pConfig().isReworkedSidecarSyncEnabled());
   }
 
   protected SafeFuture<Void> initWeakSubjectivity(
@@ -1843,7 +1898,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   recentChainData,
                   throttlingStorageQueryChannel,
                   spec,
-                  LateBlockReorgPreparationHandler.NOOP));
+                  LateBlockReorgPreparationHandler.NOOP,
+                  beaconConfig.p2pConfig().isReworkedSidecarSyncEnabled()));
     }
 
     this.p2pNetwork =
@@ -2120,6 +2176,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     syncService.subscribeToSyncStateChangesAndUpdate(
         event -> dataColumnSidecarELManager.onSyncingStatusChanged(event.isInSync()));
+
+    dasCustodyBackfiller.ifPresent(
+        backfiller ->
+            syncService.subscribeToSyncStateChangesAndUpdate(
+                syncState -> backfiller.onNodeSyncStateChanged(syncState.isInSync())));
   }
 
   protected void initOperationsReOrgManager() {
@@ -2142,13 +2203,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new StoredLatestCanonicalBlockUpdater(recentChainData, spec);
 
     eventChannels.subscribe(SlotEventsChannel.class, storedLatestCanonicalBlockUpdater);
-  }
-
-  protected void initValidatorIndexCacheTracker() {
-    LOG.debug("BeaconChainController.initValidatorIndexCacheTracker()");
-    final ValidatorIndexCacheTracker validatorIndexCacheTracker =
-        new ValidatorIndexCacheTracker(recentChainData);
-    eventChannels.subscribe(FinalizedCheckpointChannel.class, validatorIndexCacheTracker);
   }
 
   protected void initForkChoiceStateProvider() {

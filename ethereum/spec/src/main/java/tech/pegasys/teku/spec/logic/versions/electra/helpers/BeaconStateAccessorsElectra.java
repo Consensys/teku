@@ -71,7 +71,7 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
   public UInt64 getPendingBalanceToWithdraw(
       final BeaconStateElectra state, final int validatorIndex) {
     return state.getPendingPartialWithdrawals().stream()
-        .filter(withdrawal -> withdrawal.getValidatorIndex() == validatorIndex)
+        .filter(withdrawal -> withdrawal.getValidatorIndex().intValue() == validatorIndex)
         .map(PendingPartialWithdrawal::getAmount)
         .reduce(UInt64.ZERO, UInt64::plus);
   }

@@ -27,14 +27,14 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -70,7 +70,8 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
    * <p>Return the indexed payload attestation corresponding to ``payload_attestation``.
    */
   public IndexedPayloadAttestation getIndexedPayloadAttestation(
-      final BeaconState state, final UInt64 slot, final PayloadAttestation payloadAttestation) {
+      final BeaconState state, final PayloadAttestation payloadAttestation) {
+    final UInt64 slot = payloadAttestation.getData().getSlot();
     final IntList ptc = getPtc(state, slot);
     final SszBitvector aggregationBits = payloadAttestation.getAggregationBits();
     final IntList attestingIndices = new IntArrayList();

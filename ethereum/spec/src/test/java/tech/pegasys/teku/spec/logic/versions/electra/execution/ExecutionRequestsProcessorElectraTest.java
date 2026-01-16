@@ -412,7 +412,8 @@ class ExecutionRequestsProcessorElectraTest extends ProcessorTestHelper {
             .getPendingPartialWithdrawals()
             .get(postState.getPendingPartialWithdrawals().size() - 1);
 
-    assertThat(mostRecentPendingPartialWithdrawal.getValidatorIndex()).isEqualTo(validatorIndex);
+    assertThat(mostRecentPendingPartialWithdrawal.getValidatorIndex().intValue())
+        .isEqualTo(validatorIndex);
     assertThat(mostRecentPendingPartialWithdrawal.getAmount())
         .isEqualTo(UInt64.valueOf(123_456_789));
     assertThat(mostRecentPendingPartialWithdrawal.getWithdrawableEpoch())

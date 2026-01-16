@@ -52,40 +52,32 @@ public class WithdrawalsHelpersElectra extends WithdrawalsHelpersCapella {
   }
 
   @Override
-  protected int sweepForPendingPartialWithdrawals(
-      final List<Withdrawal> withdrawals, final BeaconState state) {
-    final BeaconStateElectra stateElectra = BeaconStateElectra.required(state);
+  protected int processPendingPartialWithdrawals(
+      final BeaconState state, final List<Withdrawal> withdrawals) {
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(state.getSlot());
     UInt64 withdrawalIndex = getNextWithdrawalIndex(state, withdrawals);
     int processedPartialWithdrawalsCount = 0;
 
     final int bound = getBoundForPendingPartialWithdrawals(withdrawals);
 
-    for (PendingPartialWithdrawal withdrawal : stateElectra.getPendingPartialWithdrawals()) {
+    for (final PendingPartialWithdrawal withdrawal :
+        BeaconStateElectra.required(state).getPendingPartialWithdrawals()) {
       if (withdrawal.getWithdrawableEpoch().isGreaterThan(epoch) || withdrawals.size() == bound) {
         break;
       }
-      final int validatorIndex = withdrawal.getValidatorIndex();
-      final Validator validator = state.getValidators().get(validatorIndex);
-      final UInt64 partiallyWithdrawnBalance =
-          WithdrawalsHelpers.getPartiallyWithdrawnBalance(
-              withdrawals, UInt64.valueOf(validatorIndex));
-      final UInt64 remainingBalance =
-          state
-              .getBalances()
-              .get(withdrawal.getValidatorIndex())
-              .get()
-              .minusMinZero(partiallyWithdrawnBalance);
+      final UInt64 validatorIndex = withdrawal.getValidatorIndex();
+      final Validator validator = state.getValidators().get(validatorIndex.intValue());
+      final UInt64 balance = getBalanceAfterWithdrawals(state, validatorIndex, withdrawals);
       final boolean hasSufficientEffectiveBalance =
           validator
               .getEffectiveBalance()
               .isGreaterThanOrEqualTo(specConfigElectra.getMinActivationBalance());
       final boolean hasExcessBalance =
-          remainingBalance.isGreaterThan(specConfigElectra.getMinActivationBalance());
+          balance.isGreaterThan(specConfigElectra.getMinActivationBalance());
       LOG.trace(
           "pending withdrawal validator index {}, remaining balance {}, requested amount {}; exitEpoch {}, hasSufficientEffectiveBalance {}, hasExcessBalance {}",
           withdrawal.getValidatorIndex(),
-          remainingBalance,
+          balance,
           withdrawal.getAmount(),
           validator.getExitEpoch(),
           hasSufficientEffectiveBalance,
@@ -97,13 +89,13 @@ public class WithdrawalsHelpersElectra extends WithdrawalsHelpersCapella {
         final UInt64 withdrawableBalance =
             withdrawal
                 .getAmount()
-                .min(remainingBalance.minusMinZero(specConfigElectra.getMinActivationBalance()));
+                .min(balance.minusMinZero(specConfigElectra.getMinActivationBalance()));
         withdrawals.add(
             schemaDefinitions
                 .getWithdrawalSchema()
                 .create(
                     withdrawalIndex,
-                    UInt64.valueOf(withdrawal.getValidatorIndex()),
+                    withdrawal.getValidatorIndex(),
                     WithdrawalsHelpers.getEthAddressFromWithdrawalCredentials(validator),
                     withdrawableBalance));
         withdrawalIndex = withdrawalIndex.increment();
