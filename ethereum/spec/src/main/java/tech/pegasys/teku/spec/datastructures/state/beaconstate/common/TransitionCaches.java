@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 
+import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
@@ -22,7 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
-import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
+import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
 import tech.pegasys.teku.infrastructure.collections.cache.NoOpCache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
@@ -66,7 +67,7 @@ public class TransitionCaches {
 
   /** Creates new instance with clean caches */
   public static TransitionCaches createNewEmpty() {
-    return new TransitionCaches();
+    return new TransitionCaches(CaffeineCache::create);
   }
 
   /** Returns the instance which doesn't cache anything */
@@ -91,19 +92,27 @@ public class TransitionCaches {
   private volatile Optional<TotalBalances> latestTotalBalances = Optional.empty();
   private volatile ProgressiveTotalBalancesUpdates progressiveTotalBalances;
 
-  private TransitionCaches() {
-    activeValidators = LRUCache.create(MAX_ACTIVE_VALIDATORS_CACHE);
-    beaconProposerIndex = LRUCache.create(MAX_BEACON_PROPOSER_INDEX_CACHE);
-    beaconCommittee = LRUCache.create(MAX_BEACON_COMMITTEE_CACHE);
-    beaconCommitteesSize = LRUCache.create(MAX_BEACON_COMMITTEES_SIZE_CACHE);
-    attestersTotalBalance = LRUCache.create(MAX_BEACON_COMMITTEE_CACHE);
-    totalActiveBalance = LRUCache.create(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
-    validatorsPubKeys = LRUCache.create(Integer.MAX_VALUE - 1);
+  @FunctionalInterface
+  public interface CacheFactory {
+    <K, V> Cache<K, V> create(int capacity);
+  }
+
+  @VisibleForTesting
+  public TransitionCaches(final CacheFactory cacheFactory) {
+    activeValidators = cacheFactory.create(MAX_ACTIVE_VALIDATORS_CACHE);
+    beaconProposerIndex = cacheFactory.create(MAX_BEACON_PROPOSER_INDEX_CACHE);
+    beaconCommittee = cacheFactory.create(MAX_BEACON_COMMITTEE_CACHE);
+    beaconCommitteesSize = cacheFactory.create(MAX_BEACON_COMMITTEES_SIZE_CACHE);
+    attestersTotalBalance = cacheFactory.create(MAX_BEACON_COMMITTEE_CACHE);
+    totalActiveBalance = cacheFactory.create(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
+    // Use unbounded cache for validators - they never evict and grow indefinitely
+    // This avoids allocating huge eviction policy structures
+    validatorsPubKeys = CaffeineCache.createUnbounded();
     validatorIndexCache = new ValidatorIndexCache();
-    committeeShuffle = LRUCache.create(MAX_COMMITTEE_SHUFFLE_CACHE);
-    effectiveBalances = LRUCache.create(MAX_EFFECTIVE_BALANCE_CACHE);
-    syncCommitteeCache = LRUCache.create(MAX_SYNC_COMMITTEE_CACHE);
-    baseRewardPerIncrement = LRUCache.create(MAX_BASE_REWARD_PER_INCREMENT_CACHE);
+    committeeShuffle = cacheFactory.create(MAX_COMMITTEE_SHUFFLE_CACHE);
+    effectiveBalances = cacheFactory.create(MAX_EFFECTIVE_BALANCE_CACHE);
+    syncCommitteeCache = cacheFactory.create(MAX_SYNC_COMMITTEE_CACHE);
+    baseRewardPerIncrement = cacheFactory.create(MAX_BASE_REWARD_PER_INCREMENT_CACHE);
     progressiveTotalBalances = ProgressiveTotalBalancesUpdates.NOOP;
   }
 
@@ -225,7 +234,7 @@ public class TransitionCaches {
   }
 
   /**
-   * Makes an independent copy which contains all the data in this instance Modifications to
+   * Makes an independent copy which contains all the data in this instance. Modifications to the
    * returned caches shouldn't affect caches from this instance
    */
   public TransitionCaches copy() {
