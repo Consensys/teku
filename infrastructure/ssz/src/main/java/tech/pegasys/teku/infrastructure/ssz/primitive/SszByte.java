@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.infrastructure.ssz.primitive;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszPrimitiveSchema;
@@ -26,6 +28,7 @@ public class SszByte extends AbstractSszPrimitive<Byte> {
   }
 
   public static SszByte asUInt8(final int value) {
+    checkArgument(value >= 0 && value <= 255, "value must be in uint8 range (0–255)");
     return new SszByte((byte) value, SszPrimitiveSchemas.UINT8_SCHEMA);
   }
 
