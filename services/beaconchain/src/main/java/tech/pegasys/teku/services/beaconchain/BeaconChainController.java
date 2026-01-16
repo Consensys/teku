@@ -983,7 +983,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     final DataColumnReqResp dasRpc =
         new DataColumnReqRespBatchingImpl(
-            loggingByRootReqResp, schemaDefinitionsFulu.getDataColumnsByRootIdentifierSchema());
+            loggingByRootReqResp,
+            schemaDefinitionsFulu.getDataColumnsByRootIdentifierSchema(),
+            spec);
 
     final MetadataDasPeerCustodyTracker peerCustodyTracker = new MetadataDasPeerCustodyTracker();
     p2pNetwork.subscribeConnect(peerCustodyTracker);
