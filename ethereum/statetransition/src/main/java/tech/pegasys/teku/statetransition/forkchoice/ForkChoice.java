@@ -764,7 +764,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       return false;
     }
     // in the edge cases when the chain head is not present or the head state future is not
-    // immediately available, we will set the proposer boost root to maintain backwards
+    // immediately available, the proposer boost root will be set to maintain backwards
     // compatibility (see: https://github.com/ethereum/consensus-specs/pull/4807/)
     return recentChainData
         .getChainHead()
