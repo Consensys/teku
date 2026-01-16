@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -25,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -122,7 +124,8 @@ public class SimpleSidecarRetriever
   @Override
   public void stop() {}
 
-  private Stream<RequestMatch> matchRequestsAndPeers() {
+  @VisibleForTesting
+  Stream<RequestMatch> matchRequestsAndPeers() {
     final RequestTracker ongoingRequestsTracker = createFromCurrentPendingRequests();
     return pendingRequests.entrySet().stream()
         .filter(entry -> entry.getValue().activeRpcRequest == null)
@@ -144,14 +147,14 @@ public class SimpleSidecarRetriever
 
     final SafeFuture<DataColumnSidecar> reqRespPromise =
         reqResp.requestDataColumnSidecar(match.peer.nodeId, match.request.columnId);
-    match.peer.sidecarsRequested.getAndIncrement();
+    match.peer.countSidecarRequest();
 
     final SafeFuture<Void> activeRpcRequest =
         reqRespPromise.handle(
             (sidecar, err) -> {
               reqRespCompleted(match.request, sidecar);
               if (err == null) {
-                match.peer.sidecarsReceived.incrementAndGet();
+                match.peer.countSidecarReceived();
               } else {
                 LOG.debug(
                     "SimpleSidecarRetriever.Request failed for {} due to: {}",
@@ -176,10 +179,7 @@ public class SimpleSidecarRetriever
 
     // taking first the peers which were not requested yet, then peers which are less busy
     final Comparator<ConnectedPeer> comparator =
-        Comparator.comparing(
-                (ConnectedPeer peer) ->
-                    (float) peer.sidecarsReceived.get() / peer.sidecarsRequested.get())
-            .reversed()
+        Comparator.comparing(ConnectedPeer::getResponseScore)
             .thenComparing(
                 (ConnectedPeer peer) ->
                     ongoingRequestsTracker.getAvailableRequestCount(peer.nodeId));
@@ -274,7 +274,14 @@ public class SimpleSidecarRetriever
   public void peerConnected(final UInt256 nodeId) {
     LOG.trace(
         "SimpleSidecarRetriever.peerConnected: 0x...{}", () -> nodeId.toHexString().substring(58));
-    connectedPeers.computeIfAbsent(nodeId, __ -> new ConnectedPeer(nodeId));
+    connectedPeers.computeIfAbsent(
+        nodeId,
+        __ ->
+            new ConnectedPeer(
+                nodeId,
+                miscHelpersFulu,
+                spec,
+                () -> custodyCountSupplier.getCustodyGroupCountForPeer(nodeId)));
   }
 
   @Override
@@ -283,6 +290,11 @@ public class SimpleSidecarRetriever
         "SimpleSidecarRetriever.peerDisconnected: 0x...{}",
         () -> nodeId.toHexString().substring(58));
     connectedPeers.remove(nodeId);
+  }
+
+  @VisibleForTesting
+  Map<UInt256, ConnectedPeer> getConnectedPeers() {
+    return connectedPeers;
   }
 
   private record ActiveRequest(SafeFuture<Void> promise, ConnectedPeer peer) {}
@@ -298,16 +310,26 @@ public class SimpleSidecarRetriever
     }
   }
 
-  private class ConnectedPeer {
-    final UInt256 nodeId;
-    final Cache<CacheKey, Set<UInt64>> custodyIndicesCache = LRUCache.create(2);
+  static class ConnectedPeer {
+    private final UInt256 nodeId;
+    private final MiscHelpersFulu miscHelpersFulu;
+    private final Spec spec;
+    private final Supplier<Integer> custodyCountSupplier;
+    private final Cache<CacheKey, Set<UInt64>> custodyIndicesCache = LRUCache.create(2);
     // just to avoid starting with non-divisible 0/0
-    final AtomicInteger sidecarsRequested = new AtomicInteger(1);
-    final AtomicInteger sidecarsReceived = new AtomicInteger(1);
+    private final AtomicInteger sidecarsRequested = new AtomicInteger(1);
+    private final AtomicInteger sidecarsReceived = new AtomicInteger(1);
 
     private record CacheKey(SpecVersion specVersion, int custodyCount) {}
 
-    public ConnectedPeer(final UInt256 nodeId) {
+    public ConnectedPeer(
+        final UInt256 nodeId,
+        final MiscHelpersFulu miscHelpersFulu,
+        final Spec spec,
+        final Supplier<Integer> custodyCountSupplier) {
+      this.miscHelpersFulu = miscHelpersFulu;
+      this.spec = spec;
+      this.custodyCountSupplier = custodyCountSupplier;
       this.nodeId = nodeId;
     }
 
@@ -318,12 +340,46 @@ public class SimpleSidecarRetriever
 
     private Set<UInt64> getNodeCustodyIndices(final SpecVersion specVersion) {
       return custodyIndicesCache.get(
-          new CacheKey(specVersion, custodyCountSupplier.getCustodyGroupCountForPeer(nodeId)),
-          this::calcNodeCustodyIndices);
+          new CacheKey(specVersion, custodyCountSupplier.get()), this::calcNodeCustodyIndices);
     }
 
     public boolean isCustodyFor(final DataColumnSlotAndIdentifier columnId) {
       return getNodeCustodyIndices(spec.atSlot(columnId.slot())).contains(columnId.columnIndex());
+    }
+
+    /**
+     * Score is 0 to 10, where 10 is peer which always response well on all queries. Score is
+     * bucketed to 11 values, so another comparator could use different criteria to score several
+     * peers from one bucket.
+     */
+    public int getResponseScore() {
+      return (int) (sidecarsReceived.get() * 10.0F / sidecarsRequested.get());
+    }
+
+    public void countSidecarRequest() {
+      final int current = sidecarsRequested.incrementAndGet();
+      if (current == Integer.MAX_VALUE) {
+        sidecarsRequested.set(1);
+        sidecarsReceived.set(1);
+      }
+    }
+
+    public void countSidecarReceived() {
+      final int current = sidecarsReceived.incrementAndGet();
+      if (current == Integer.MAX_VALUE) {
+        sidecarsRequested.set(1);
+        sidecarsReceived.set(1);
+      }
+    }
+
+    @VisibleForTesting
+    AtomicInteger getSidecarsRequested() {
+      return sidecarsRequested;
+    }
+
+    @VisibleForTesting
+    AtomicInteger getSidecarsReceived() {
+      return sidecarsReceived;
     }
   }
 
