@@ -788,9 +788,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                 }
               }
               // Only update if the proposer is the same as on the canonical chain
-              System.out.println(
-                  block.getProposerIndex().intValue()
-                      == spec.getBeaconProposerIndex(headState, currentSlot));
               return block.getProposerIndex().intValue()
                   == spec.getBeaconProposerIndex(headState, currentSlot);
             })
