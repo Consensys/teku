@@ -27,6 +27,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
@@ -408,28 +411,37 @@ public class SimpleSidecarRetrieverTest {
     assertThat(peer.getRequests()).hasSize(columnCount);
   }
 
-  @Test
-  @SuppressWarnings("UnnecessaryAsync")
-  public void connectedPeerGetResponseScore() {
+  @ParameterizedTest
+  @MethodSource("sidecarsRequestedReceivedToScore")
+  public void connectedPeerGetResponseScore(
+      final int sidecarsRequestedIncrement,
+      final int sidecarsReceivedIncrement,
+      final int expectedScore) {
     final SimpleSidecarRetriever.ConnectedPeer connectedPeer =
         new SimpleSidecarRetriever.ConnectedPeer(
             dataStructureUtil.randomUInt256(), miscHelpers, spec, () -> 4);
 
     // Base score
     assertThat(connectedPeer.getResponseScore()).isEqualTo(10);
-    connectedPeer.getSidecarsRequested().incrementAndGet();
-    assertThat(connectedPeer.getResponseScore()).isEqualTo(5);
-    connectedPeer.getSidecarsRequested().addAndGet(3);
-    assertThat(connectedPeer.getResponseScore()).isEqualTo(2);
-    connectedPeer.getSidecarsRequested().addAndGet(5);
-    assertThat(connectedPeer.getResponseScore()).isEqualTo(1);
-    connectedPeer.getSidecarsRequested().incrementAndGet();
-    assertThat(connectedPeer.getResponseScore()).isEqualTo(0);
-    connectedPeer.getSidecarsReceived().addAndGet(3);
-    assertThat(connectedPeer.getResponseScore()).isEqualTo(3);
-    connectedPeer.getSidecarsRequested().addAndGet(1_000_000);
-    assertThat(connectedPeer.getResponseScore()).isEqualTo(0);
-    connectedPeer.getSidecarsReceived().addAndGet(1_000_000);
-    assertThat(connectedPeer.getResponseScore()).isEqualTo(9);
+
+    // Apply and verify input
+    connectedPeer.getSidecarsRequested().addAndGet(sidecarsRequestedIncrement);
+    connectedPeer.getSidecarsReceived().addAndGet(sidecarsReceivedIncrement);
+    assertThat(connectedPeer.getResponseScore()).isEqualTo(expectedScore);
+  }
+
+  private static Stream<Arguments> sidecarsRequestedReceivedToScore() {
+    return Stream.of(
+        Arguments.of(1, 0, 5),
+        Arguments.of(2, 0, 3),
+        Arguments.of(3, 0, 2),
+        Arguments.of(4, 0, 2),
+        Arguments.of(5, 0, 1),
+        Arguments.of(1_000_000, 0, 0),
+        Arguments.of(1, 1, 10),
+        Arguments.of(2, 1, 6),
+        Arguments.of(3, 2, 7),
+        Arguments.of(4, 1, 4),
+        Arguments.of(1_000_000, 1_000_000, 10));
   }
 }
