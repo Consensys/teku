@@ -685,12 +685,6 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
-  public TekuNodeConfigBuilder withReworkedRecovery() {
-    LOG.debug("Xp2p-reworked-sidecar-recovery-enabled: {}", true);
-    configMap.put("Xp2p-reworked-sidecar-recovery-enabled", true);
-    return this;
-  }
-
   public TekuNodeConfigBuilder withReworkedCustodySync() {
     LOG.debug("Xp2p-reworked-sidecar-custody-sync-enabled: {}", true);
     configMap.put("Xp2p-reworked-sidecar-custody-sync-enabled", true);

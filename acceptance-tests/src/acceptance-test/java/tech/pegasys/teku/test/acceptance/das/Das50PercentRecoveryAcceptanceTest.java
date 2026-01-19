@@ -20,7 +20,8 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
-import org.junit.jupiter.api.Disabled;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -31,8 +32,10 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 
 public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
-
   private final int subnetCount = 128;
+  private final int downloadTimeout = 12_000;
+  private final int recoveryTimeout = 45_000;
+  private static final Logger LOG = LogManager.getLogger();
 
   @Test
   public void shouldAbleToReconstructDataColumnSidecarsFrom50Percent_whenOnGossip()
@@ -62,11 +65,16 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
                 .withSubscribeAllCustodySubnetsEnabled()
                 .withInteropValidators(0, 0)
                 .withDasDisableElRecovery()
+                .withReworkedRecoveryTimeouts(recoveryTimeout, downloadTimeout)
                 .build());
 
     secondaryNode.start();
+    secondaryNode.waitForLogMessageContaining("Rest Api Configuration | Enabled: true");
+    secondaryNode.setLogLevel(
+        "tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecoveringCustodyImpl",
+        "DEBUG");
     // DataColumnSidecars are withheld on primaryNode
-    primaryNode.waitForLogMessageContaining("non-custodied sidecars at");
+    primaryNode.waitForLogMessageContaining("Withholding 64 non-custodied sidecars at");
     // DataColumnSidecars are reconstructed on secondaryNode
     secondaryNode.waitForLogMessageContaining("Data column sidecars recovery finished for block");
     final int firstFuluSlot =
@@ -101,11 +109,8 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
     assertThat(allFuluColumns).isGreaterThan(0);
   }
 
-  @Disabled
   @Test
-  public void
-      shouldAbleToReconstructDataColumnSidecarsFrom50Percent_whenSyncingWithReworkedRetriever()
-          throws Exception {
+  public void shouldAbleToReconstructDataColumnSidecarsFrom50Percent() throws Exception {
     final TekuBeaconNode primaryNode =
         createTekuBeaconNode(
             createFuluMinimalConfigBuilder()
@@ -122,6 +127,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
     primaryNode.start();
     final UInt64 genesisTime = primaryNode.getGenesisTime();
 
+    // this node syncs fast, need debug set on startup
     final TekuBeaconNode secondaryNode =
         createTekuBeaconNode(
             createFuluMinimalConfigBuilder()
@@ -133,8 +139,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
                 .withSubscribeAllCustodySubnetsEnabled()
                 .withInteropValidators(0, 0)
                 .withDasDisableElRecovery()
-                .withReworkedRecovery()
-                .withReworkedRecoveryTimeouts(100_000, 40_000)
+                .withReworkedRecoveryTimeouts(recoveryTimeout, downloadTimeout)
                 .build());
 
     // Wait for few epochs, so sync will kick-in when second node is started
@@ -142,8 +147,11 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
     primaryNode.waitForEpochAtOrAbove(3);
 
     secondaryNode.start();
+    secondaryNode.waitForLogMessageContaining("Rest Api Configuration | Enabled: true");
+    secondaryNode.setLogLevel(
+        "tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.RebuildColumnsTask",
+        "DEBUG");
     // DataColumnSidecars are reconstructed on secondaryNode
-    secondaryNode.waitForLogMessageContaining("Rebuilding columns for slot");
     secondaryNode.waitForLogMessageContaining("Rebuilding columns at");
     secondaryNode.waitForLogMessageContaining("Rebuilding columns DONE");
     // as first node custodies only 64 columns, it means we need to rebuild every single slot
@@ -202,6 +210,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
         } else {
           assertThat(columnCount).isZero();
         }
+        LOG.debug("At slot {}, found {} das columns", fuluSlot, columnCount);
         return columnCount;
       } else {
         return 0;
@@ -215,6 +224,6 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
     return TekuNodeConfigBuilder.createBeaconNode()
         .withNetwork(Resources.getResource("fulu-minimal.yaml"))
         .withStubExecutionEngine()
-        .withLogLevel("DEBUG");
+        .withLogLevel("INFO");
   }
 }
