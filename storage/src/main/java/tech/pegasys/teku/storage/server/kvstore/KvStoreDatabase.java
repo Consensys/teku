@@ -1227,7 +1227,7 @@ public class KvStoreDatabase implements Database {
       final boolean nonCanonicalBlobSidecars) {
 
     int prunedSlots = 0;
-
+    Optional<UInt64> earliestSidecarSlot = Optional.empty();
     final Map<UInt64, List<DataColumnSlotAndIdentifier>> prunableMap = new HashMap<>();
 
     dataColumnSlotAndIdentifierStream
@@ -1253,8 +1253,13 @@ public class KvStoreDatabase implements Database {
             }
           }
 
+          if (!nonCanonicalBlobSidecars) {
+            earliestSidecarSlot = Optional.of(slot.plus(1));
+          }
+
           ++prunedSlots;
         }
+        earliestSidecarSlot.ifPresent(updater::setEarliestAvailableDataColumnSlot);
         updater.commit();
       }
       LOG.debug("Pruned data column sidecars in {} slots", prunedSlots);
