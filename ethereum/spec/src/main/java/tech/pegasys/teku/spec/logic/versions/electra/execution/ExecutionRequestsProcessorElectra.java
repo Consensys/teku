@@ -86,20 +86,20 @@ public class ExecutionRequestsProcessorElectra implements ExecutionRequestsProce
   @Override
   public void processDepositRequests(
       final MutableBeaconState state, final List<DepositRequest> depositRequests) {
+    final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
     for (DepositRequest depositRequest : depositRequests) {
-      processDepositRequest(state, depositRequest);
+      processDepositRequest(stateElectra, depositRequest);
     }
   }
 
   // process_deposit_request
   protected void processDepositRequest(
-      final MutableBeaconState state, final DepositRequest depositRequest) {
-    final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
-    final SszMutableList<PendingDeposit> pendingDeposits = stateElectra.getPendingDeposits();
-    if (stateElectra
+      final MutableBeaconStateElectra state, final DepositRequest depositRequest) {
+    final SszMutableList<PendingDeposit> pendingDeposits = state.getPendingDeposits();
+    if (state
         .getDepositRequestsStartIndex()
         .equals(SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX)) {
-      stateElectra.setDepositRequestsStartIndex(depositRequest.getIndex());
+      state.setDepositRequestsStartIndex(depositRequest.getIndex());
     }
 
     final PendingDeposit deposit =

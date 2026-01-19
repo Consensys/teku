@@ -18,8 +18,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
@@ -60,7 +59,7 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorE
 
   @Override
   protected void processDepositRequest(
-      final MutableBeaconState state, final DepositRequest depositRequest) {
+      final MutableBeaconStateElectra state, final DepositRequest depositRequest) {
     // Regardless of the withdrawal credentials prefix, if a builder/validator already exists with
     // this pubkey, apply the deposit to their balance
     final boolean isBuilder =
@@ -80,8 +79,7 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorE
       return;
     }
     // Add validator deposits to the queue
-    final SszMutableList<PendingDeposit> pendingDeposits =
-        MutableBeaconStateGloas.required(state).getPendingDeposits();
+    final SszMutableList<PendingDeposit> pendingDeposits = state.getPendingDeposits();
     final PendingDeposit deposit =
         schemaDefinitions
             .getPendingDepositSchema()
