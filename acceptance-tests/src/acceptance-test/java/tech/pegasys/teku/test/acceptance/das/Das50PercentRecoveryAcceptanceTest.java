@@ -110,7 +110,7 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
   }
 
   @Test
-  public void shouldAbleToReconstructDataColumnSidecarsFrom50Percent() throws Exception {
+  public void shouldAbleToReconstructDataColumnSidecarsFrom50Percent_whenSyncing() throws Exception {
     final TekuBeaconNode primaryNode =
         createTekuBeaconNode(
             createFuluMinimalConfigBuilder()
