@@ -285,23 +285,36 @@ public class SimpleSidecarRetrieverTest {
 
     final List<Blob> blobs0 = Stream.generate(dataStructureUtil::randomValidBlob).limit(1).toList();
     final BeaconBlock block0 = blockResolver.addBlock(0, 1);
+    final SignedBeaconBlock signedBeaconBlock0 = createSigned(block0);
     final List<DataColumnSidecar> sidecars0 =
-        miscHelpers.constructDataColumnSidecarsOld(createSigned(block0), blobs0);
+        miscHelpers.constructDataColumnSidecars(
+            signedBeaconBlock0.getMessage(),
+            signedBeaconBlock0.asHeader(),
+            miscHelpers.computeExtendedMatrixAndProofs(blobs0));
+
     final DataColumnSidecar sidecar0_0 = sidecars0.get(columnIndex.intValue());
     peerWithEarliestSlotAvailableZero.addSidecar(sidecar0_0);
 
     final List<Blob> blobs1 = Stream.generate(dataStructureUtil::randomValidBlob).limit(1).toList();
     final BeaconBlock block1 = blockResolver.addBlock(1, 1);
+    final SignedBeaconBlock signedBeaconBlock1 = createSigned(block1);
     final List<DataColumnSidecar> sidecars1 =
-        miscHelpers.constructDataColumnSidecarsOld(createSigned(block1), blobs1);
+        miscHelpers.constructDataColumnSidecars(
+            signedBeaconBlock1.getMessage(),
+            signedBeaconBlock1.asHeader(),
+            miscHelpers.computeExtendedMatrixAndProofs(blobs1));
     final DataColumnSidecar sidecar1_0 = sidecars1.get(columnIndex.intValue());
     peerWithEarliestSlotAvailableZero.addSidecar(sidecar1_0);
     peerWithEarliestSlotAvailableOne.addSidecar(sidecar1_0);
 
     final List<Blob> blobs2 = Stream.generate(dataStructureUtil::randomValidBlob).limit(1).toList();
     final BeaconBlock block2 = blockResolver.addBlock(2, 1);
+    final SignedBeaconBlock signedBeaconBlock2 = createSigned(block2);
     final List<DataColumnSidecar> sidecars2 =
-        miscHelpers.constructDataColumnSidecarsOld(createSigned(block2), blobs2);
+        miscHelpers.constructDataColumnSidecars(
+            signedBeaconBlock2.getMessage(),
+            signedBeaconBlock2.asHeader(),
+            miscHelpers.computeExtendedMatrixAndProofs(blobs2));
     final DataColumnSidecar sidecar2_0 = sidecars2.get(columnIndex.intValue());
     peerWithEarliestSlotAvailableZero.addSidecar(sidecar2_0);
     peerWithEarliestSlotAvailableOne.addSidecar(sidecar2_0);
