@@ -19,8 +19,10 @@ import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,7 +37,6 @@ import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
-import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
@@ -66,7 +67,9 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   private final AtomicBoolean isSuperNode = new AtomicBoolean();
 
   final Function<UInt64, Duration> slotToRecoveryDelay;
-  private final Map<SlotAndBlockRoot, RecoveryTask> recoveryTasks;
+  private final ConcurrentHashMap<SlotAndBlockRoot, RecoveryTask> recoveryTasks =
+      new ConcurrentHashMap<>();
+  private final int recoveryTasksSizeTarget;
 
   private final Counter totalDataAvailabilityReconstructedColumns;
   private final MetricsHistogram dataAvailabilityReconstructionTimeSeconds;
@@ -94,8 +97,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     this.spec = spec;
     this.dataColumnSidecarPublisher = dataColumnSidecarPublisher;
     this.custodyGroupCountManager = custodyGroupCountManager;
-    this.recoveryTasks =
-        LimitedMap.createSynchronizedNatural(spec.getGenesisSpec().getSlotsPerEpoch());
+    this.recoveryTasksSizeTarget = spec.getGenesisSpec().getSlotsPerEpoch();
     this.slotToRecoveryDelay = slotToRecoveryDelay;
     this.columnCount = columnCount;
     this.groupCount = groupCount;
@@ -125,6 +127,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
 
   @Override
   public void onSlot(final UInt64 slot) {
+    pruneRecoveryTasks();
     if (shouldSkipProcessing(slot)) {
       return;
     }
@@ -136,6 +139,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
               recoveryTasks.keySet().stream()
                   .filter(key -> key.getSlot().isLessThanOrEqualTo(slot))
                   .map(recoveryTasks::get)
+                  .filter(Objects::nonNull)
                   .forEach(
                       recoveryTask -> {
                         if (recoveryTask.timedOut().compareAndSet(false, true)) {
@@ -145,6 +149,15 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
             },
             slotToRecoveryDelay.apply(slot))
         .finishWarn(LOG);
+  }
+
+  private void pruneRecoveryTasks() {
+    final Iterator<SlotAndBlockRoot> keysIterator =
+        recoveryTasks.keySet().stream().sorted().iterator();
+    while (recoveryTasks.size() >= recoveryTasksSizeTarget && keysIterator.hasNext()) {
+      final SlotAndBlockRoot key = keysIterator.next();
+      recoveryTasks.remove(key);
+    }
   }
 
   private boolean shouldSkipProcessing(final UInt64 slot) {

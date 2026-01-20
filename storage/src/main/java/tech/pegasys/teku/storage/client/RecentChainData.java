@@ -60,7 +60,6 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
@@ -289,11 +288,6 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
               this.bpoForkToForkDigest.put(blobParameters, forkDigest);
               this.forkDigestToBpoFork.put(forkDigest, blobParameters);
             });
-
-    // Update the ValidatorIndexCache latest finalized index to the anchor state
-    BeaconStateCache.getTransitionCaches(anchorState)
-        .getValidatorIndexCache()
-        .updateLatestFinalizedIndex(anchorState);
 
     storeInitializedFuture.complete(null);
     return true;
@@ -783,6 +777,10 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
 
   public void setBlockTimelinessIfEmpty(final SignedBeaconBlock block) {
     lateBlockReorgLogic.setBlockTimelinessFromArrivalTime(block, store.getTimeInMillis());
+  }
+
+  public boolean isBlockLate(final Bytes32 root) {
+    return lateBlockReorgLogic.isBlockLate(root);
   }
 
   public Optional<UInt64> getCustodyGroupCount() {

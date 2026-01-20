@@ -10,10 +10,10 @@
 
 ### Additions and Improvements
 
-- Added new metrics `beacon_earliest_available_slot` and
-  `data_column_sidecar_processing_validated_total`.
-- Block proposal duties can now be scheduled in advance for fulu.
+- New CLI flag `--rest-api-getblobs-sidecars-download-enabled` allows the beacon node to serve `getBlobs` REST API responses by attempting to fetch missing blob sidecars from the p2p network. The new flag `--rest-api-getblobs-sidecars-download-timeout` controls the network fetch timeout (default: 5 seconds). 
+
 
 ### Bug Fixes
-- Fixed a storage issue which sometimes caused Teku to crash during shut down.
-- Fixed `peer_count` metric when using `--metrics-publish-endpoint` feature. 
+
+- added `DOMAIN_BLS_TO_EXECUTION_CHANGE` to spec api output.
+

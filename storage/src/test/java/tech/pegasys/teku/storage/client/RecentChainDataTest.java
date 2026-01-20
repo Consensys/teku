@@ -50,7 +50,6 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrate
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.generator.ChainProperties;
@@ -154,13 +153,6 @@ class RecentChainDataTest {
         anchorPoint.getBlockSlot().times(genesisSpecConfig.getSecondsPerSlot()).plus(genesisTime);
     recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.valueOf(100));
     assertThat(recentChainData.getStore().getTimeSeconds()).isEqualTo(anchorBlockTime);
-    // make sure the ValidatorIndexCache latest finalized index is updated
-    assertThat(
-            BeaconStateCache.getTransitionCaches(anchor.getState())
-                .getValidatorIndexCache()
-                .getLatestFinalizedIndex())
-        .isNotEqualTo(-1)
-        .isEqualTo(anchor.getState().getValidators().size() - 1);
   }
 
   @Test

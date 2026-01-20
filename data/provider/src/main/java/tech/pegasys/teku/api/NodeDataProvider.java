@@ -48,6 +48,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool.NewBlobSidecarSubscriber;
+import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
 import tech.pegasys.teku.statetransition.datacolumns.ValidDataColumnSidecarsListener;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
@@ -77,6 +78,7 @@ public class NodeDataProvider {
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final RecentChainData recentChainData;
   private final DataColumnSidecarManager dataColumnSidecarManager;
+  private final CustodyGroupCountManager custodyGroupCountManager;
   private final Spec spec;
 
   public NodeDataProvider(
@@ -94,6 +96,7 @@ public class NodeDataProvider {
       final ForkChoiceNotifier forkChoiceNotifier,
       final RecentChainData recentChainData,
       final DataColumnSidecarManager dataColumnSidecarManager,
+      final CustodyGroupCountManager custodyGroupCountManager,
       final Spec spec) {
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingsPool;
@@ -109,6 +112,7 @@ public class NodeDataProvider {
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.recentChainData = recentChainData;
     this.dataColumnSidecarManager = dataColumnSidecarManager;
+    this.custodyGroupCountManager = custodyGroupCountManager;
     this.spec = spec;
   }
 
@@ -121,6 +125,10 @@ public class NodeDataProvider {
       final Optional<UInt64> maybeSlot, final Optional<UInt64> maybeCommitteeIndex) {
     return lookupMetaData(
         attestationPool.getAttestations(maybeSlot, maybeCommitteeIndex), maybeSlot);
+  }
+
+  public List<UInt64> getCustodyColumnIndices() {
+    return custodyGroupCountManager.getCustodyColumnIndices();
   }
 
   private ObjectAndMetaData<List<Attestation>> lookupMetaData(

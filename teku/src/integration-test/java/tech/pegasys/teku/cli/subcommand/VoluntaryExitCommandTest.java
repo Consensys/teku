@@ -635,7 +635,7 @@ public class VoluntaryExitCommandTest {
             request()
                 .withMethod("POST")
                 .withPath("/eth/v1/beacon/states/head/validators")
-                .withBody("{\"ids\":[" + String.join(",", "\"" + publicKey + "\"") + "]}"))
+                .withBody("{\"ids\":[" + "\"" + publicKey + "\"" + "]}"))
         .respond(response().withStatusCode(200).withBody(responseString));
   }
 

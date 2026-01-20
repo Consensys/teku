@@ -95,7 +95,9 @@ public class Eth2IncomingRequestHandler<
   }
 
   @Override
-  public void closed(final NodeId nodeId, final RpcStream rpcStream) {}
+  public void closed(final NodeId nodeId, final RpcStream rpcStream) {
+    requestDecoder.close();
+  }
 
   private void handleRequest(
       final Optional<Eth2Peer> peer,

@@ -16,13 +16,18 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -44,8 +49,8 @@ class StatusMessageFactoryTest {
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
-  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private StatusMessageFactory statusMessageFactory;
 
   @BeforeEach
@@ -92,8 +97,9 @@ class StatusMessageFactoryTest {
 
   @Test
   public void shouldOnlyUpdateEarliestSlotAvailableAtBeginningOfEpoch() {
-
     when(combinedChainDataClient.getEarliestAvailableBlockSlot())
+        .thenReturn(SafeFuture.completedFuture(Optional.of(UInt64.ZERO)));
+    when(combinedChainDataClient.getEarliestAvailableDataColumnSlotWithFallback())
         .thenReturn(SafeFuture.completedFuture(Optional.of(UInt64.ZERO)));
 
     final UInt64 currentEpoch = UInt64.ONE;
@@ -137,8 +143,66 @@ class StatusMessageFactoryTest {
     checkStatusMessagedHasExpectedEarliestAvailableSlot(rpcRequestBodySelector, UInt64.valueOf(10));
   }
 
+  @ParameterizedTest
+  @MethodSource("earliestAvailableSlotScenariosParams")
+  public void earliestAvailableSlotScenarios(
+      final Optional<UInt64> blockEarliestAvailableSlot,
+      final Optional<UInt64> dataColumnLatestAvailableSlot,
+      final Optional<UInt64> expectedEarliestAvailableSlot) {
+
+    final RpcRequestBodySelector<StatusMessage> rpcRequestBodySelector =
+        statusMessageFactory.createStatusMessage().orElseThrow();
+
+    when(combinedChainDataClient.getEarliestAvailableBlockSlot())
+        .thenReturn(SafeFuture.completedFuture(blockEarliestAvailableSlot));
+    when(combinedChainDataClient.getEarliestAvailableDataColumnSlotWithFallback())
+        .thenReturn(SafeFuture.completedFuture(dataColumnLatestAvailableSlot));
+    statusMessageFactory.onSlot(UInt64.ZERO);
+
+    if (expectedEarliestAvailableSlot.isPresent()) {
+      checkStatusMessagedHasExpectedEarliestAvailableSlot(
+          rpcRequestBodySelector, expectedEarliestAvailableSlot.get());
+    } else {
+      // When earliest_available_slot can't be determined, we use zero
+      checkStatusMessagedHasExpectedEarliestAvailableSlot(rpcRequestBodySelector, UInt64.ZERO);
+    }
+  }
+
+  private static Stream<Arguments> earliestAvailableSlotScenariosParams() {
+    return Stream.of(
+        Arguments.of(
+            Optional.of(UInt64.valueOf(1)),
+            Optional.of(UInt64.valueOf(1)),
+            Optional.of(UInt64.valueOf(1))),
+        Arguments.of(
+            Optional.of(UInt64.valueOf(1)),
+            Optional.of(UInt64.valueOf(2)),
+            Optional.of(UInt64.valueOf(2))),
+        Arguments.of(
+            Optional.of(UInt64.valueOf(2)),
+            Optional.of(UInt64.valueOf(1)),
+            Optional.of(UInt64.valueOf(2))),
+        Arguments.of(Optional.empty(), Optional.of(UInt64.valueOf(1)), Optional.empty()),
+        Arguments.of(Optional.of(UInt64.valueOf(1)), Optional.empty(), Optional.empty()),
+        Arguments.of(Optional.empty(), Optional.empty(), Optional.empty()));
+  }
+
+  @Test
+  public void onSlotShouldNotUpdateEarliestAvailableSlotIfFuluIsNotSupported() {
+    final Spec preFuluSpec = TestSpecFactory.createMinimalElectra();
+    statusMessageFactory =
+        new StatusMessageFactory(preFuluSpec, combinedChainDataClient, new StubMetricsSystem());
+
+    statusMessageFactory.onSlot(UInt64.ZERO);
+
+    verify(combinedChainDataClient, never()).getEarliestAvailableBlockSlot();
+    verify(combinedChainDataClient, never()).getEarliestAvailableDataColumnSlotWithFallback();
+  }
+
   private void tickOnSlotAndUpdatedEarliestSlotAvailable(final UInt64 earliestAvailableSlot) {
     when(combinedChainDataClient.getEarliestAvailableBlockSlot())
+        .thenReturn(SafeFuture.completedFuture(Optional.of(earliestAvailableSlot)));
+    when(combinedChainDataClient.getEarliestAvailableDataColumnSlotWithFallback())
         .thenReturn(SafeFuture.completedFuture(Optional.of(earliestAvailableSlot)));
     statusMessageFactory.onSlot(UInt64.ZERO);
   }
