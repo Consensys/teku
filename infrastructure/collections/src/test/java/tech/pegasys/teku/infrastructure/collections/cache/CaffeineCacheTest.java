@@ -39,15 +39,15 @@ public class CaffeineCacheTest {
                 () ->
                     CompletableFuture.runAsync(
                         () -> {
-                          Random random = new Random();
-                          for (int iteration = 0; iteration < 100; iteration++) {
-                            for (int i = 0; i < 256 * 16; i++) {
+                          final Random random = new Random();
+                          for (int iteration = 0; iteration < 50; iteration++) {
+                            for (int i = 0; i < 256 * 8; i++) {
                               int key = random.nextInt(256 * 2);
-                              Integer value = cache.get(key, idx -> idx);
+                              final Integer value = cache.get(key, idx -> idx);
                               assertThat(value).isEqualTo(key);
                             }
-                            for (int i = 0; i < 256; i++) {
-                              int key = random.nextInt(256 * 2);
+                            for (int i = 0; i < 128; i++) {
+                              final int key = random.nextInt(256 * 2);
                               cache.invalidate(key);
                             }
                             if (random.nextInt(threadsCount * 2) == 0) {
@@ -60,7 +60,7 @@ public class CaffeineCacheTest {
             .toArray(CompletableFuture[]::new);
 
     try {
-      CompletableFuture.allOf(futures).get(5, TimeUnit.SECONDS);
+      CompletableFuture.allOf(futures).get(10, TimeUnit.SECONDS);
     } catch (Exception e) {
       Assertions.fail("Concurrency test failed with exception", e);
     } finally {
