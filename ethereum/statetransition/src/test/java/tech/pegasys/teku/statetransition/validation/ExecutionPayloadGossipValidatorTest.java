@@ -15,10 +15,7 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
@@ -205,11 +202,10 @@ public class ExecutionPayloadGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldIgnoreIfStateIsUnavailable() {
+  void shouldSaveForFutureIfStateIsUnavailable() {
     when(gossipValidationHelper.getStateAtSlotAndBlockRoot(any(SlotAndBlockRoot.class)))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    assertThatSafeFuture(validator.validate(signedEnvelope))
-        .isCompletedWithValue(ignore("State for block root %s is unavailable", blockRoot));
+    assertThatSafeFuture(validator.validate(signedEnvelope)).isCompletedWithValue(SAVE_FOR_FUTURE);
   }
 
   @TestTemplate
@@ -225,19 +221,5 @@ public class ExecutionPayloadGossipValidatorTest {
         .thenReturn(true);
 
     assertThatSafeFuture(validator.validate(signedEnvelope)).isCompletedWithValue(ACCEPT);
-  }
-
-  @TestTemplate
-  void shouldSkipSeenPayload() {
-    assertThatSafeFuture(validator.validate(signedEnvelope)).isCompletedWithValue(ACCEPT);
-    verify(gossipValidationHelper).retrieveBlockByRoot(blockRoot);
-    clearInvocations(gossipValidationHelper);
-
-    assertThatSafeFuture(validator.validate(signedEnvelope))
-        .isCompletedWithValue(
-            ignore(
-                "Already received execution payload envelope with block root %s from builder with index %s",
-                blockRoot, envelope.getBuilderIndex()));
-    verify(gossipValidationHelper, never()).retrieveBlockByRoot(any());
   }
 }

@@ -92,6 +92,23 @@ public class GossipValidationHelperTest {
   }
 
   @TestTemplate
+  void isBeforeFinalizedSlot_shouldComputeCorrectly() {
+
+    final UInt64 finalizedEpoch = UInt64.valueOf(2);
+    final UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch);
+
+    assertThat(gossipValidationHelper.isBeforeFinalizedSlot(finalizedSlot)).isFalse();
+    assertThat(gossipValidationHelper.isBeforeFinalizedSlot(finalizedSlot.minus(1))).isFalse();
+
+    storageSystem.chainUpdater().advanceChain(finalizedSlot);
+    storageSystem.chainUpdater().finalizeEpoch(finalizedEpoch);
+
+    assertThat(gossipValidationHelper.isBeforeFinalizedSlot(finalizedSlot.minus(1))).isTrue();
+    assertThat(gossipValidationHelper.isBeforeFinalizedSlot(finalizedSlot)).isFalse();
+    assertThat(gossipValidationHelper.isBeforeFinalizedSlot(finalizedSlot.plus(1))).isFalse();
+  }
+
+  @TestTemplate
   void isSlotFromFuture_shouldComputeCorrectly() {
     final UInt64 slot2 = UInt64.valueOf(2);
 
