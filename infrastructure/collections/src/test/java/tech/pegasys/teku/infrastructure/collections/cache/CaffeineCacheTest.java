@@ -173,4 +173,50 @@ public class CaffeineCacheTest {
     assertThat(sourceCache.getCached(0)).isPresent();
     assertThat(sourceCache.getCached(newItemKey)).isEmpty();
   }
+
+  @Test
+  void unboundedCache_shouldGrowIndefinitelyWithoutEviction() {
+    final Cache<Integer, Integer> unboundedCache = CaffeineCache.createUnbounded();
+    final int largeSize = 10000;
+
+    // add many items
+    for (int i = 0; i < largeSize; i++) {
+      unboundedCache.get(i, key -> key);
+    }
+
+    // verify all items are still in the cache (no eviction)
+    assertThat(unboundedCache.size()).isEqualTo(largeSize);
+    for (int i = 0; i < largeSize; i++) {
+      assertThat(unboundedCache.getCached(i)).as("Item %d should still be in cache", i).contains(i);
+    }
+  }
+
+  @Test
+  void unboundedCache_copyAndTransferShouldPreserveUnboundedBehavior() {
+    final Cache<Integer, Integer> unboundedCache = CaffeineCache.createUnbounded();
+    final int itemCount = 1000;
+
+    // populate the cache
+    for (int i = 0; i < itemCount; i++) {
+      unboundedCache.get(i, key -> key);
+    }
+
+    // test copy preserves unbounded behavior
+    final Cache<Integer, Integer> copiedCache = unboundedCache.copy();
+    assertThat(copiedCache.size()).isEqualTo(itemCount);
+
+    // add more items to copied cache - should grow without eviction
+    for (int i = itemCount; i < itemCount * 2; i++) {
+      copiedCache.get(i, key -> key);
+    }
+    assertThat(copiedCache.size()).isEqualTo(itemCount * 2);
+
+    // verify all items are still present
+    for (int i = 0; i < itemCount * 2; i++) {
+      assertThat(copiedCache.getCached(i)).isPresent();
+    }
+
+    // original cache should be unaffected
+    assertThat(unboundedCache.size()).isEqualTo(itemCount);
+  }
 }
