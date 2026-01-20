@@ -95,6 +95,7 @@ public class TekuBeaconNode extends TekuNode {
   public static final String LOCAL_VALIDATOR_LIVENESS_URL = "/eth/v1/validator/liveness/{epoch}";
   public static final String POST_PROPOSER_SLASHING_URL = "/eth/v1/beacon/pool/proposer_slashings";
   public static final String POST_ATTESTER_SLASHING_URL = "/eth/v1/beacon/pool/attester_slashings";
+  public static final String PUT_LOG_LEVEL_URL = "/teku/v1/admin/log_level";
   private final TekuNodeConfig config;
   private final Spec spec;
 
@@ -229,6 +230,13 @@ public class TekuBeaconNode extends TekuNode {
       output.put(entry.index(), entry.isLive());
     }
     return output;
+  }
+
+  public void setLogLevel(final String queryString, final String level) throws IOException {
+    httpClient.put(
+        getRestApiUrl(),
+        PUT_LOG_LEVEL_URL,
+        String.format("{\"level\":\"%s\", \"log_filter\":[\"%s\"]}", level, queryString));
   }
 
   public void postProposerSlashing(

@@ -66,7 +66,7 @@ class RebuildColumnsTask {
       final DataColumnSidecar sidecar = sidecarMap.get(pendingRequest.getIndex().intValue());
       if (sidecar != null
           && sidecar.getSlotAndBlockRoot().equals(pendingRequest.getSlotAndBlockRoot())) {
-        LOG.debug(
+        LOG.trace(
             "Pending request (slotAndBlock: {}) for column {} matched completed rebuild",
             pendingRequest.getSlotAndBlockRoot(),
             pendingRequest.getIndex());
@@ -151,7 +151,9 @@ class RebuildColumnsTask {
               .collect(
                   Collectors.toUnmodifiableMap(DataColumnSidecar::getIndex, Function.identity()));
       LOG.debug(
-          "Rebuild KZG call completed, have {} sidecars as a result", reconstructedSidecars.size());
+          "Rebuild KZG call completed at {}, have {} sidecars as a result",
+          slotAndBlockRoot,
+          reconstructedSidecars.size());
       reconstructedSidecars
           .values()
           .forEach(
@@ -187,14 +189,14 @@ class RebuildColumnsTask {
         dataColumnSlotAndIdentifiers.size());
     for (DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier : dataColumnSlotAndIdentifiers) {
       if (!sidecarMap.containsKey(dataColumnSlotAndIdentifier.columnIndex().intValue())) {
-        LOG.debug("attempting to fetch column {}", dataColumnSlotAndIdentifier);
+        LOG.trace("attempting to fetch column {}", dataColumnSlotAndIdentifier);
         sidecarDB
             .getSidecar(dataColumnSlotAndIdentifier)
             .thenAccept(
                 maybeSidecar ->
                     maybeSidecar.ifPresentOrElse(
                         sidecar -> {
-                          LOG.debug(
+                          LOG.trace(
                               "root {} rebuild - found sidecar {}",
                               slotAndBlockRoot.getBlockRoot(),
                               dataColumnSlotAndIdentifier.columnIndex().intValue());
