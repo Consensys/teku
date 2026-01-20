@@ -55,6 +55,7 @@ public class AbstractFetchTaskTest {
     when(peer.getOutstandingRequests()).thenReturn(0);
     when(peer.getId()).thenReturn(new MockNodeId(id));
     when(peer.getStatus()).thenReturn(peerStatus);
+    when(peerStatus.getEarliestAvailableSlot()).thenReturn(Optional.empty());
 
     return peer;
   }
