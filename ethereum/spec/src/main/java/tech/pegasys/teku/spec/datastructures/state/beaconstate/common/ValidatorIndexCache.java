@@ -40,7 +40,7 @@ public class ValidatorIndexCache {
   }
 
   public ValidatorIndexCache() {
-    this.validatorIndices = CaffeineCache.create(Integer.MAX_VALUE - 1);
+    this.validatorIndices = CaffeineCache.createUnbounded();
     this.lastCachedIndex = new AtomicInteger(INDEX_NONE);
   }
 
