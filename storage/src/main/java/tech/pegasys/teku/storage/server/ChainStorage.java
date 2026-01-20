@@ -476,11 +476,11 @@ public class ChainStorage
 
   @Override
   public SafeFuture<Void> onNewSidecar(final DataColumnSidecar sidecar) {
-    return SafeFuture.fromRunnable(() -> database.addSidecar(sidecar));
+    return SafeFuture.fromRunnable(() -> database.addSidecarOnly(sidecar));
   }
 
   @Override
   public SafeFuture<Void> onNewNonCanonicalSidecar(final DataColumnSidecar sidecar) {
-    return SafeFuture.fromRunnable(() -> database.addNonCanonicalSidecar(sidecar));
+    return SafeFuture.fromRunnable(() -> database.addNonCanonicalSidecarOnly(sidecar));
   }
 }

@@ -349,6 +349,20 @@ public class V4FinalizedKvStoreDao {
         .map(ColumnEntry::getKey);
   }
 
+  public void addSidecarOnly(final DataColumnSidecar sidecar) {
+    db.putOnly(
+        schema.getColumnSidecarByColumnSlotAndIdentifier(),
+        DataColumnSlotAndIdentifier.fromDataColumn(sidecar),
+        sidecar.sszSerialize());
+  }
+
+  public void addNonCanonicalSidecarOnly(final DataColumnSidecar sidecar) {
+    db.putOnly(
+        schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(),
+        DataColumnSlotAndIdentifier.fromDataColumn(sidecar),
+        sidecar.sszSerialize());
+  }
+
   static class V4FinalizedUpdater implements FinalizedUpdater {
     private final KvStoreTransaction transaction;
     private final KvStoreAccessor db;

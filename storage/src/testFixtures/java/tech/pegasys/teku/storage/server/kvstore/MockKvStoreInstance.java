@@ -203,6 +203,14 @@ public class MockKvStoreInstance implements KvStoreAccessor {
   }
 
   @Override
+  public <K, V> void putOnly(final KvStoreColumn<K, V> column, final K key, final V value) {
+    assertOpen();
+    final Bytes keyBytes = keyToBytes(column, key);
+    final Bytes valueBytes = valueToBytes(column, value);
+    columnData.get(column).put(keyBytes, valueBytes);
+  }
+
+  @Override
   public KvStoreTransaction startTransaction() {
     assertOpen();
     return new MockKvStoreTransaction(this);

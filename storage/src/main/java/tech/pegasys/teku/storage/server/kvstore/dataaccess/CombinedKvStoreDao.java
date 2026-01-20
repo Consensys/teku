@@ -675,6 +675,22 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     return db.get(schema.getColumnDataColumnSidecarsProofsBySlot(), slot);
   }
 
+  @Override
+  public void addSidecarOnly(final DataColumnSidecar sidecar) {
+    db.putOnly(
+        schema.getColumnSidecarByColumnSlotAndIdentifier(),
+        DataColumnSlotAndIdentifier.fromDataColumn(sidecar),
+        sidecar.sszSerialize());
+  }
+
+  @Override
+  public void addNonCanonicalSidecarOnly(final DataColumnSidecar sidecar) {
+    db.putOnly(
+        schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(),
+        DataColumnSlotAndIdentifier.fromDataColumn(sidecar),
+        sidecar.sszSerialize());
+  }
+
   static class V4CombinedUpdater<S extends SchemaCombined> implements CombinedUpdater {
     private final KvStoreTransaction transaction;
 

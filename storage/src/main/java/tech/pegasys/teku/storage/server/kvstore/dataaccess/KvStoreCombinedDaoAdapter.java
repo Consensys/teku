@@ -387,6 +387,16 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public void addSidecarOnly(final DataColumnSidecar sidecar) {
+    finalizedDao.addSidecarOnly(sidecar);
+  }
+
+  @Override
+  public void addNonCanonicalSidecarOnly(final DataColumnSidecar sidecar) {
+    finalizedDao.addNonCanonicalSidecarOnly(sidecar);
+  }
+
+  @Override
   public void ingest(
       final KvStoreCombinedDao dao, final int batchSize, final Consumer<String> logger) {
     throw new UnsupportedOperationException("Cannot migrate to a split database format");

@@ -197,6 +197,10 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(UInt64 slot);
 
+  void addSidecarOnly(DataColumnSidecar sidecar);
+
+  void addNonCanonicalSidecarOnly(DataColumnSidecar sidecar);
+
   interface CombinedUpdater extends HotUpdater, FinalizedUpdater {}
 
   interface HotUpdater extends AutoCloseable {

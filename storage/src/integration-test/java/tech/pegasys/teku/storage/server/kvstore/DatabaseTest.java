@@ -2392,6 +2392,34 @@ public class DatabaseTest {
   }
 
   @TestTemplate
+  public void addSidecarOnly_isOperative(final DatabaseContext context) throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+    final DataColumnSidecar dataColumnSidecar = dataStructureUtil.randomDataColumnSidecar();
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar);
+    assertThat(database.getSidecar(columnSlotAndIdentifier).isEmpty()).isTrue();
+
+    database.addSidecarOnly(dataColumnSidecar);
+    assertThat(database.getSidecar(columnSlotAndIdentifier)).contains(dataColumnSidecar);
+  }
+
+  @TestTemplate
+  public void addNonCanonicalSidecarOnly_isOperative(final DatabaseContext context)
+      throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+    final DataColumnSidecar dataColumnSidecar = dataStructureUtil.randomDataColumnSidecar();
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar);
+    assertThat(database.getNonCanonicalSidecar(columnSlotAndIdentifier).isEmpty()).isTrue();
+
+    database.addNonCanonicalSidecarOnly(dataColumnSidecar);
+    assertThat(database.getNonCanonicalSidecar(columnSlotAndIdentifier))
+        .contains(dataColumnSidecar);
+  }
+
+  @TestTemplate
   public void setFirstCustodyIncompleteSlot_isOperative(final DatabaseContext context)
       throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalFulu());

@@ -198,6 +198,19 @@ public class RocksDbInstance implements KvStoreAccessor {
   }
 
   @Override
+  public <K, V> void putOnly(final KvStoreColumn<K, V> column, final K key, final V value) {
+    assertOpen();
+    final byte[] keyBytes = column.getKeySerializer().serialize(key);
+    final ColumnFamilyHandle columnHandle = columnHandles.get(column);
+    final byte[] valueBytes = column.getValueSerializer().serialize(value);
+    try {
+      db.put(columnHandle, keyBytes, valueBytes);
+    } catch (RocksDBException e) {
+      throw RocksDbExceptionUtil.wrapException("Failed to put value", e);
+    }
+  }
+
+  @Override
   @MustBeClosed
   public synchronized KvStoreTransaction startTransaction() {
     assertOpen();

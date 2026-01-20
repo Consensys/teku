@@ -274,6 +274,13 @@ public class LevelDbInstance implements KvStoreAccessor {
     return streamKeys(column, fromBytes, toBytes);
   }
 
+  @Override
+  public <K, V> void putOnly(final KvStoreColumn<K, V> column, final K key, final V value) {
+    final byte[] columnKey = getColumnKey(column, key);
+    final byte[] serializedValue = column.getValueSerializer().serialize(value);
+    db.put(columnKey, serializedValue);
+  }
+
   @MustBeClosed
   private <K, V> Stream<ColumnEntry<K, V>> stream(
       final KvStoreColumn<K, V> column, final byte[] fromBytes, final byte[] toBytes) {

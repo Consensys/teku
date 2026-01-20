@@ -108,6 +108,9 @@ public interface KvStoreAccessor extends AutoCloseable {
   @MustBeClosed
   <K extends Comparable<K>, V> Stream<K> streamKeys(KvStoreColumn<K, V> column, K from, K to);
 
+  /** Doesn't involve transaction, just atomic put */
+  <K, V> void putOnly(KvStoreColumn<K, V> column, K key, V value);
+
   KvStoreTransaction startTransaction();
 
   interface KvStoreTransaction extends AutoCloseable {

@@ -1206,6 +1206,16 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public void addSidecarOnly(final DataColumnSidecar sidecar) {
+    dao.addSidecarOnly(sidecar);
+  }
+
+  @Override
+  public void addNonCanonicalSidecarOnly(final DataColumnSidecar sidecar) {
+    dao.addNonCanonicalSidecarOnly(sidecar);
+  }
+
+  @Override
   public void pruneAllSidecars(final UInt64 tillSlotInclusive, final int pruneLimit) {
     try (final Stream<DataColumnSlotAndIdentifier> prunableIdentifiers =
             streamDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive);
