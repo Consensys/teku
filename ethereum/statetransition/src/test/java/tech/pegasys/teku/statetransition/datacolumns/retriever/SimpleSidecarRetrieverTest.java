@@ -121,7 +121,6 @@ public class SimpleSidecarRetrieverTest {
   }
 
   @Test
-  @SuppressWarnings("deprecation")
   void sanityTest() {
     final TestPeer custodyPeerMissingData =
         new TestPeer(
@@ -144,8 +143,12 @@ public class SimpleSidecarRetrieverTest {
 
     final List<Blob> blobs = Stream.generate(dataStructureUtil::randomValidBlob).limit(1).toList();
     final BeaconBlock block = blockResolver.addBlock(10, 1);
+    final SignedBeaconBlock signedBeaconBlock = createSigned(block);
     final List<DataColumnSidecar> sidecars =
-        miscHelpers.constructDataColumnSidecarsOld(createSigned(block), blobs);
+        miscHelpers.constructDataColumnSidecars(
+            signedBeaconBlock.getMessage(),
+            signedBeaconBlock.asHeader(),
+            miscHelpers.computeExtendedMatrixAndProofs(blobs));
     final DataColumnSidecar sidecar0 = sidecars.get(columnIndex.intValue());
 
     final DataColumnSlotAndIdentifier id0 = createId(block, columnIndex.intValue());
