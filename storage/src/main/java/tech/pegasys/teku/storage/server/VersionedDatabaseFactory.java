@@ -43,6 +43,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
   @VisibleForTesting static final String DB_PATH = "db";
   @VisibleForTesting static final String ARCHIVE_PATH = "archive";
+  @VisibleForTesting static final String COLUMNS_PATH = "columns";
   @VisibleForTesting static final String DB_VERSION_PATH = "db.version";
 
   @VisibleForTesting static final String STORAGE_MODE_PATH = "data-storage-mode.txt";
@@ -53,6 +54,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final int maxKnownNodeCacheSize;
   private final File dbDirectory;
   private final File v5ArchiveDirectory;
+  private final File columnsDirectory;
   private final File dbVersionFile;
   private final File dbStorageModeFile;
   private final StateStorageMode stateStorageMode;
@@ -83,6 +85,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
     this.v5ArchiveDirectory = this.dataDirectory.toPath().resolve(ARCHIVE_PATH).toFile();
+    this.columnsDirectory = this.dataDirectory.toPath().resolve(COLUMNS_PATH).toFile();
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();
     this.dbStorageModeFile = this.dataDirectory.toPath().resolve(STORAGE_MODE_PATH).toFile();
 
@@ -230,7 +233,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
-          spec);
+          spec,
+          columnsDirectory.toPath());
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
     }
@@ -274,7 +278,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
-          spec);
+          spec,
+          columnsDirectory.toPath());
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
     }
@@ -290,7 +295,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           storeNonCanonicalBlocks,
           maxKnownNodeCacheSize,
-          spec);
+          spec,
+          columnsDirectory.toPath());
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
     }
@@ -342,6 +348,14 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
               String.format(
                   "Unable to create the path to store archive files at %s",
                   v5ArchiveDirectory.getAbsolutePath()));
+        }
+      }
+      case V6, LEVELDB2, LEVELDB_TREE -> {
+        if (!columnsDirectory.mkdirs() && !columnsDirectory.isDirectory()) {
+          throw DatabaseStorageException.unrecoverable(
+              String.format(
+                  "Unable to create the path to store data column files at %s",
+                  columnsDirectory.getAbsolutePath()));
         }
       }
       default -> {

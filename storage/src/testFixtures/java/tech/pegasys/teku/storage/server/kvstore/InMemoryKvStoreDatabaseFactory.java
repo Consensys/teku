@@ -13,8 +13,13 @@
 
 package tech.pegasys.teku.storage.server.kvstore;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.storage.archive.DataColumnSidecarsArchiver;
+import tech.pegasys.teku.storage.archive.filesystem.FileSystemDataColumnSidecarsArchiver;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotStateAdapter;
@@ -51,9 +56,24 @@ public class InMemoryKvStoreDatabaseFactory {
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
+    final Path tmp;
+    try {
+      tmp = Files.createTempDirectory(null);
+      tmp.toFile().deleteOnExit();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    final DataColumnSidecarsArchiver dataColumnSidecarsArchiver =
+        new FileSystemDataColumnSidecarsArchiver(spec, tmp);
     final V6SchemaCombinedSnapshot combinedSchema = V6SchemaCombinedSnapshot.createV6(spec);
     return KvStoreDatabase.createWithStateSnapshots(
-        db, combinedSchema, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
+        db,
+        combinedSchema,
+        storageMode,
+        stateStorageFrequency,
+        storeNonCanonicalBlocks,
+        spec,
+        dataColumnSidecarsArchiver);
   }
 
   public static Database createTree(
@@ -61,8 +81,25 @@ public class InMemoryKvStoreDatabaseFactory {
       final StateStorageMode storageMode,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
+    final Path tmp;
+    try {
+      tmp = Files.createTempDirectory(null);
+      tmp.toFile().deleteOnExit();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    final DataColumnSidecarsArchiver dataColumnSidecarsArchiver =
+        new FileSystemDataColumnSidecarsArchiver(spec, tmp);
     final V6SchemaCombinedTreeState schema = new V6SchemaCombinedTreeState(spec);
     return KvStoreDatabase.createWithStateTree(
-        new StubMetricsSystem(), db, schema, storageMode, storeNonCanonicalBlocks, 1000, spec);
+        new StubMetricsSystem(),
+        db,
+        schema,
+        storageMode,
+        storeNonCanonicalBlocks,
+        1000,
+        spec,
+        dataColumnSidecarsArchiver);
   }
 }

@@ -158,7 +158,7 @@ public class FileBackedStorageSystemBuilder {
   }
 
   private Database createV6Database() {
-    KvStoreConfiguration configDefault = KvStoreConfiguration.v6SingleDefaults();
+    final KvStoreConfiguration configDefault = KvStoreConfiguration.v6SingleDefaults();
 
     final V6SchemaCombinedSnapshot schema = V6SchemaCombinedSnapshot.createV6(spec);
     return RocksDbDatabaseFactory.createV6(
@@ -168,7 +168,8 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        spec);
+        spec,
+        dataDir.resolve("columns"));
   }
 
   private Database createLevelDb2Database() {
@@ -179,7 +180,8 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        spec);
+        spec,
+        dataDir.resolve("columns"));
   }
 
   private Database createLevelDbTrieDatabase() {
@@ -190,7 +192,8 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         storeNonCanonicalBlocks,
         10_000,
-        spec);
+        spec,
+        dataDir.resolve("columns"));
   }
 
   private Database createV5Database() {

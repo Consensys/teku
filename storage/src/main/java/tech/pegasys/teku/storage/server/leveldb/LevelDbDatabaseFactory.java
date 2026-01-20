@@ -17,8 +17,11 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAG
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
 
+import java.nio.file.Path;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.storage.archive.DataColumnSidecarsArchiver;
+import tech.pegasys.teku.storage.archive.filesystem.FileSystemDataColumnSidecarsArchiver;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
@@ -77,7 +80,8 @@ public class LevelDbDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
-      final Spec spec) {
+      final Spec spec,
+      final Path columnsPath) {
     final V6SchemaCombinedSnapshot schema = V6SchemaCombinedSnapshot.createV6(spec);
     final KvStoreAccessor db =
         LevelDbInstanceFactory.create(
@@ -89,8 +93,17 @@ public class LevelDbDatabaseFactory {
             schema.getAllVariables(),
             schema.getDeletedVariableIds());
 
+    final DataColumnSidecarsArchiver dataColumnSidecarsArchiver =
+        new FileSystemDataColumnSidecarsArchiver(spec, columnsPath);
+
     return KvStoreDatabase.createWithStateSnapshots(
-        db, schema, stateStorageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
+        db,
+        schema,
+        stateStorageMode,
+        stateStorageFrequency,
+        storeNonCanonicalBlocks,
+        spec,
+        dataColumnSidecarsArchiver);
   }
 
   public static Database createLevelDbTree(
@@ -99,7 +112,8 @@ public class LevelDbDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final int maxKnownNodeCacheSize,
-      final Spec spec) {
+      final Spec spec,
+      final Path columnsPath) {
 
     final V6SchemaCombinedTreeState schema = new V6SchemaCombinedTreeState(spec);
     final KvStoreAccessor db =
@@ -111,6 +125,10 @@ public class LevelDbDatabaseFactory {
             schema.getDeletedColumnIds(),
             schema.getAllVariables(),
             schema.getDeletedVariableIds());
+
+    final DataColumnSidecarsArchiver dataColumnSidecarsArchiver =
+        new FileSystemDataColumnSidecarsArchiver(spec, columnsPath);
+
     return KvStoreDatabase.createWithStateTree(
         metricsSystem,
         db,
@@ -118,6 +136,7 @@ public class LevelDbDatabaseFactory {
         stateStorageMode,
         storeNonCanonicalBlocks,
         maxKnownNodeCacheSize,
-        spec);
+        spec,
+        dataColumnSidecarsArchiver);
   }
 }
