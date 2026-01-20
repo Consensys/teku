@@ -361,7 +361,7 @@ public class P2POptions {
       DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS;
 
   @Option(
-      names = {"--Xp2p-reworked-sidecar-cancel-timeout-ms"},
+      names = {"--Xp2p-sidecar-cancel-timeout-ms"},
       paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
       description = "",
@@ -370,7 +370,7 @@ public class P2POptions {
   private Integer sidecarCancelTimeoutMs = DEFAULT_RECOVERY_TIMEOUT_MS;
 
   @Option(
-      names = {"--Xp2p-reworked-sidecar-download-timeout-ms"},
+      names = {"--Xp2p-sidecar-download-timeout-ms"},
       paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
       description = "",

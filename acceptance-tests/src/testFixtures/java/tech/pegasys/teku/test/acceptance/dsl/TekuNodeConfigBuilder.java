@@ -693,10 +693,10 @@ public class TekuNodeConfigBuilder {
 
   public TekuNodeConfigBuilder withReworkedRecoveryTimeouts(
       final int recoveryTimeout, final int downloadTimeout) {
-    LOG.debug("Xp2p-reworked-sidecar-cancel-timeout-ms: {}", recoveryTimeout);
-    configMap.put("Xp2p-reworked-sidecar-cancel-timeout-ms", recoveryTimeout);
-    LOG.debug("Xp2p-reworked-sidecar-download-timeout-ms: {}", downloadTimeout);
-    configMap.put("Xp2p-reworked-sidecar-download-timeout-ms", downloadTimeout);
+    LOG.debug("Xp2p-sidecar-cancel-timeout-ms: {}", recoveryTimeout);
+    configMap.put("Xp2p-sidecar-cancel-timeout-ms", recoveryTimeout);
+    LOG.debug("Xp2p-sidecar-download-timeout-ms: {}", downloadTimeout);
+    configMap.put("Xp2p-sidecar-download-timeout-ms", downloadTimeout);
     return this;
   }
 
