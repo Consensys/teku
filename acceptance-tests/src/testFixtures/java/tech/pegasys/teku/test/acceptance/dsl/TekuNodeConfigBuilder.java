@@ -691,7 +691,7 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
-  public TekuNodeConfigBuilder withGetBlobsSidecarsDownloadApiEnabled(){
+  public TekuNodeConfigBuilder withGetBlobsSidecarsDownloadApiEnabled() {
     LOG.debug("--rest-api-getblobs-sidecars-download-enabled: {}", true);
     configMap.put("rest-api-getblobs-sidecars-download-enabled", true);
     return this;

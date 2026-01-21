@@ -750,9 +750,10 @@ public class TekuBeaconNode extends TekuNode {
 
   public Optional<List<Blob>> getBlobsAtSlot(final UInt64 slot) throws IOException {
     final Bytes result =
-            httpClient.getAsBytes(getRestApiUrl(),
-                            "/eth/v1/beacon/blobs/" + slot,
-                            Map.of("Accept", "application/octet-stream"));
+        httpClient.getAsBytes(
+            getRestApiUrl(),
+            "/eth/v1/beacon/blobs/" + slot,
+            Map.of("Accept", "application/octet-stream"));
     if (result.isEmpty()) {
       return Optional.empty();
     } else {
