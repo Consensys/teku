@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAG
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
 
+import java.nio.file.Path;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
@@ -38,7 +39,8 @@ public class LevelDbDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
-      final Spec spec) {
+      final Spec spec,
+      final Path beaconDataDirectory) {
     final V6SchemaCombinedSnapshot combinedSchema = V6SchemaCombinedSnapshot.createV4(spec);
     final SchemaHotAdapter schemaHot = combinedSchema.asSchemaHot();
     final SchemaFinalizedSnapshotStateAdapter schemaFinalized = combinedSchema.asSchemaFinalized();
@@ -68,7 +70,8 @@ public class LevelDbDatabaseFactory {
         stateStorageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        spec);
+        spec,
+        beaconDataDirectory);
   }
 
   public static Database createLevelDbV2(
@@ -77,7 +80,8 @@ public class LevelDbDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
-      final Spec spec) {
+      final Spec spec,
+      final Path beaconDataDirectory) {
     final V6SchemaCombinedSnapshot schema = V6SchemaCombinedSnapshot.createV6(spec);
     final KvStoreAccessor db =
         LevelDbInstanceFactory.create(
@@ -90,7 +94,13 @@ public class LevelDbDatabaseFactory {
             schema.getDeletedVariableIds());
 
     return KvStoreDatabase.createWithStateSnapshots(
-        db, schema, stateStorageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
+        db,
+        schema,
+        stateStorageMode,
+        stateStorageFrequency,
+        storeNonCanonicalBlocks,
+        spec,
+        beaconDataDirectory);
   }
 
   public static Database createLevelDbTree(
@@ -99,7 +109,8 @@ public class LevelDbDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final int maxKnownNodeCacheSize,
-      final Spec spec) {
+      final Spec spec,
+      final Path beaconDataDirectory) {
 
     final V6SchemaCombinedTreeState schema = new V6SchemaCombinedTreeState(spec);
     final KvStoreAccessor db =
@@ -118,6 +129,7 @@ public class LevelDbDatabaseFactory {
         stateStorageMode,
         storeNonCanonicalBlocks,
         maxKnownNodeCacheSize,
-        spec);
+        spec,
+        beaconDataDirectory);
   }
 }

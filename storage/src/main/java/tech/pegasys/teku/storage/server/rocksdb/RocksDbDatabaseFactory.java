@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAG
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
 
+import java.nio.file.Path;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
@@ -38,7 +39,8 @@ public class RocksDbDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
-      final Spec spec) {
+      final Spec spec,
+      final Path beaconDataDirectory) {
 
     final V6SchemaCombinedSnapshot combinedSchema = V6SchemaCombinedSnapshot.createV4(spec);
     final SchemaHotAdapter schemaHot = combinedSchema.asSchemaHot();
@@ -69,7 +71,8 @@ public class RocksDbDatabaseFactory {
         stateStorageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        spec);
+        spec,
+        beaconDataDirectory);
   }
 
   public static Database createV6(
@@ -79,7 +82,8 @@ public class RocksDbDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
-      final Spec spec) {
+      final Spec spec,
+      final Path beaconDataDirectory) {
 
     final KvStoreAccessor db =
         RocksDbInstanceFactory.create(
@@ -92,6 +96,12 @@ public class RocksDbDatabaseFactory {
             schema.getDeletedVariableIds());
 
     return KvStoreDatabase.createWithStateSnapshots(
-        db, schema, stateStorageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
+        db,
+        schema,
+        stateStorageMode,
+        stateStorageFrequency,
+        storeNonCanonicalBlocks,
+        spec,
+        beaconDataDirectory);
   }
 }

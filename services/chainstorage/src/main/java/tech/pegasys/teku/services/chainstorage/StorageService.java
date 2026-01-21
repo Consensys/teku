@@ -49,6 +49,7 @@ import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.RetryingStorageUpdateChannel;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
+import tech.pegasys.teku.storage.server.kvstore.KvStoreDatabase;
 import tech.pegasys.teku.storage.server.network.EphemeryException;
 import tech.pegasys.teku.storage.server.pruner.BlobSidecarPruner;
 import tech.pegasys.teku.storage.server.pruner.BlockPruner;
@@ -110,6 +111,11 @@ public class StorageService extends Service implements StorageServiceFacade {
                 LOG.warn(
                     "Ephemery network deposit contract id has updated, resetting the stored database and slashing protection data.");
                 database = ephemeryDatabaseReset.resetDatabaseAndCreate(serviceConfig, dbFactory);
+              }
+
+              // Migrate existing DataColumnSidecars from database to file storage (one-time)
+              if (database instanceof KvStoreDatabase) {
+                ((KvStoreDatabase) database).migrateDataColumnSidecarsToFileStorage();
               }
 
               final SettableLabelledGauge pruningTimingsLabelledGauge =

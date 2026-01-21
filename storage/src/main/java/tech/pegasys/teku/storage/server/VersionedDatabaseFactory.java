@@ -183,7 +183,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
-          spec);
+          spec,
+          dataDirectory.toPath());
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read configuration file", e);
     }
@@ -211,7 +212,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
-          spec);
+          spec,
+          dataDirectory.toPath());
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
     }
@@ -230,7 +232,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
-          spec);
+          spec,
+          dataDirectory.toPath());
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
     }
@@ -258,7 +261,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
-          spec);
+          spec,
+          dataDirectory.toPath());
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
     }
@@ -274,7 +278,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
-          spec);
+          spec,
+          dataDirectory.toPath());
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
     }
@@ -290,7 +295,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           storeNonCanonicalBlocks,
           maxKnownNodeCacheSize,
-          spec);
+          spec,
+          dataDirectory.toPath());
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
     }

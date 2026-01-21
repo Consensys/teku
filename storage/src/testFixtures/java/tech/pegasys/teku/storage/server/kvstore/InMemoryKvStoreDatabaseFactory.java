@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.storage.server.kvstore;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
@@ -42,7 +45,8 @@ public class InMemoryKvStoreDatabaseFactory {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        spec);
+        spec,
+        createTempDirectory());
   }
 
   public static Database createV6(
@@ -53,7 +57,13 @@ public class InMemoryKvStoreDatabaseFactory {
       final Spec spec) {
     final V6SchemaCombinedSnapshot combinedSchema = V6SchemaCombinedSnapshot.createV6(spec);
     return KvStoreDatabase.createWithStateSnapshots(
-        db, combinedSchema, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
+        db,
+        combinedSchema,
+        storageMode,
+        stateStorageFrequency,
+        storeNonCanonicalBlocks,
+        spec,
+        createTempDirectory());
   }
 
   public static Database createTree(
@@ -63,6 +73,21 @@ public class InMemoryKvStoreDatabaseFactory {
       final Spec spec) {
     final V6SchemaCombinedTreeState schema = new V6SchemaCombinedTreeState(spec);
     return KvStoreDatabase.createWithStateTree(
-        new StubMetricsSystem(), db, schema, storageMode, storeNonCanonicalBlocks, 1000, spec);
+        new StubMetricsSystem(),
+        db,
+        schema,
+        storageMode,
+        storeNonCanonicalBlocks,
+        1000,
+        spec,
+        createTempDirectory());
+  }
+
+  private static Path createTempDirectory() {
+    try {
+      return Files.createTempDirectory("teku-test-data-columns");
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to create temp directory for test", e);
+    }
   }
 }

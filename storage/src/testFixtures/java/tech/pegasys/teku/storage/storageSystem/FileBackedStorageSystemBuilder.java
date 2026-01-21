@@ -154,7 +154,8 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        spec);
+        spec,
+        dataDir);
   }
 
   private Database createV6Database() {
@@ -168,7 +169,8 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        spec);
+        spec,
+        dataDir);
   }
 
   private Database createLevelDb2Database() {
@@ -179,7 +181,8 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        spec);
+        spec,
+        dataDir);
   }
 
   private Database createLevelDbTrieDatabase() {
@@ -190,7 +193,8 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         storeNonCanonicalBlocks,
         10_000,
-        spec);
+        spec,
+        dataDir);
   }
 
   private Database createV5Database() {
@@ -201,7 +205,8 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        spec);
+        spec,
+        dataDir);
   }
 
   private Database createV4Database() {
@@ -212,6 +217,7 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        spec);
+        spec,
+        dataDir);
   }
 }
