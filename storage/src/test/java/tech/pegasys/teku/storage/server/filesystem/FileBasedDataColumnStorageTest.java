@@ -64,10 +64,15 @@ public class FileBasedDataColumnStorageTest {
     }
   }
 
+  private DataColumnSidecar createDataColumnSidecar(final UInt64 slot) {
+    return dataStructureUtil.randomDataColumnSidecar(
+        dataStructureUtil.randomSignedBeaconBlockHeader(slot), UInt64.ZERO);
+  }
+
   @Test
   void testAddAndRetrieveSidecar() {
     final UInt64 slot = UInt64.valueOf(100);
-    final DataColumnSidecar sidecar = dataStructureUtil.randomDataColumnSidecar(slot);
+    final DataColumnSidecar sidecar = createDataColumnSidecar(slot);
     final DataColumnSlotAndIdentifier identifier =
         DataColumnSlotAndIdentifier.fromDataColumn(sidecar);
 
@@ -83,7 +88,7 @@ public class FileBasedDataColumnStorageTest {
   @Test
   void testAddAndRetrieveNonCanonicalSidecar() {
     final UInt64 slot = UInt64.valueOf(200);
-    final DataColumnSidecar sidecar = dataStructureUtil.randomDataColumnSidecar(slot);
+    final DataColumnSidecar sidecar = createDataColumnSidecar(slot);
     final DataColumnSlotAndIdentifier identifier =
         DataColumnSlotAndIdentifier.fromDataColumn(sidecar);
 
@@ -108,8 +113,8 @@ public class FileBasedDataColumnStorageTest {
 
   @Test
   void testEpochDirectoryCreation() {
-    final UInt64 slot = UInt64.valueOf(32); // Epoch 1
-    final DataColumnSidecar sidecar = dataStructureUtil.randomDataColumnSidecar(slot);
+    final UInt64 slot = UInt64.valueOf(8); // Epoch 1 (8 slots per epoch)
+    final DataColumnSidecar sidecar = createDataColumnSidecar(slot);
 
     storage.addSidecar(sidecar);
 
@@ -158,8 +163,8 @@ public class FileBasedDataColumnStorageTest {
   @Test
   void testGetIdentifiersForSlot() {
     final UInt64 slot = UInt64.valueOf(64);
-    final DataColumnSidecar sidecar1 = dataStructureUtil.randomDataColumnSidecar(slot);
-    final DataColumnSidecar sidecar2 = dataStructureUtil.randomDataColumnSidecar(slot);
+    final DataColumnSidecar sidecar1 = createDataColumnSidecar(slot);
+    final DataColumnSidecar sidecar2 = createDataColumnSidecar(slot);
 
     storage.addSidecar(sidecar1);
     storage.addSidecar(sidecar2);
@@ -177,14 +182,38 @@ public class FileBasedDataColumnStorageTest {
   }
 
   @Test
-  void testStreamIdentifiersInRange() {
-    final UInt64 slot1 = UInt64.valueOf(32);
-    final UInt64 slot2 = UInt64.valueOf(64);
-    final UInt64 slot3 = UInt64.valueOf(96);
+  void testGetIdentifiersWithBlockRootFilter() {
+    final UInt64 slot = UInt64.valueOf(64);
+    final DataColumnSidecar sidecar1 = createDataColumnSidecar(slot);
+    final DataColumnSidecar sidecar2 = createDataColumnSidecar(slot);
 
-    storage.addSidecar(dataStructureUtil.randomDataColumnSidecar(slot1));
-    storage.addSidecar(dataStructureUtil.randomDataColumnSidecar(slot2));
-    storage.addSidecar(dataStructureUtil.randomDataColumnSidecar(slot3));
+    storage.addSidecar(sidecar1);
+    storage.addSidecar(sidecar2);
+
+    final DataColumnSlotAndIdentifier id1 = DataColumnSlotAndIdentifier.fromDataColumn(sidecar1);
+    final DataColumnSlotAndIdentifier id2 = DataColumnSlotAndIdentifier.fromDataColumn(sidecar2);
+
+    // Filter by specific blockRoot should only return matching sidecars
+    final List<DataColumnSlotAndIdentifier> identifiers1 =
+        storage.getIdentifiers(slot, id1.blockRoot());
+    assertThat(identifiers1).hasSize(1);
+    assertThat(identifiers1.get(0).blockRoot()).isEqualTo(id1.blockRoot());
+
+    final List<DataColumnSlotAndIdentifier> identifiers2 =
+        storage.getIdentifiers(slot, id2.blockRoot());
+    assertThat(identifiers2).hasSize(1);
+    assertThat(identifiers2.get(0).blockRoot()).isEqualTo(id2.blockRoot());
+  }
+
+  @Test
+  void testStreamIdentifiersInRange() {
+    final UInt64 slot1 = UInt64.valueOf(8); // Epoch 1
+    final UInt64 slot2 = UInt64.valueOf(16); // Epoch 2
+    final UInt64 slot3 = UInt64.valueOf(24); // Epoch 3
+
+    storage.addSidecar(createDataColumnSidecar(slot1));
+    storage.addSidecar(createDataColumnSidecar(slot2));
+    storage.addSidecar(createDataColumnSidecar(slot3));
 
     final List<DataColumnSlotAndIdentifier> identifiers =
         storage.streamIdentifiers(slot1, slot2).collect(Collectors.toList());
@@ -197,17 +226,17 @@ public class FileBasedDataColumnStorageTest {
 
   @Test
   void testPruneEpochs() {
-    // Slots in epoch 0, 1, 2
-    final UInt64 slot0 = UInt64.valueOf(10);
-    final UInt64 slot1 = UInt64.valueOf(40);
-    final UInt64 slot2 = UInt64.valueOf(70);
+    // Slots in epoch 0, 1, 2 (8 slots per epoch)
+    final UInt64 slot0 = UInt64.valueOf(5); // Epoch 0 (slots 0-7)
+    final UInt64 slot1 = UInt64.valueOf(10); // Epoch 1 (slots 8-15)
+    final UInt64 slot2 = UInt64.valueOf(18); // Epoch 2 (slots 16-23)
 
-    storage.addSidecar(dataStructureUtil.randomDataColumnSidecar(slot0));
-    storage.addSidecar(dataStructureUtil.randomDataColumnSidecar(slot1));
-    storage.addSidecar(dataStructureUtil.randomDataColumnSidecar(slot2));
+    storage.addSidecar(createDataColumnSidecar(slot0));
+    storage.addSidecar(createDataColumnSidecar(slot1));
+    storage.addSidecar(createDataColumnSidecar(slot2));
 
-    // Prune up to slot 65 (should delete epochs 0 and 1)
-    final UInt64 pruneUpToSlot = UInt64.valueOf(65);
+    // Prune up to slot 13 (in epoch 1, should delete epochs 0 and 1, keep epoch 2)
+    final UInt64 pruneUpToSlot = UInt64.valueOf(13);
     final Optional<UInt64> lastPrunedEpoch = storage.pruneEpochs(pruneUpToSlot, 10);
 
     assertThat(lastPrunedEpoch).isPresent();
@@ -224,14 +253,14 @@ public class FileBasedDataColumnStorageTest {
 
   @Test
   void testPruneEpochsWithLimit() {
-    // Slots in epochs 0, 1, 2, 3
-    storage.addSidecar(dataStructureUtil.randomDataColumnSidecar(UInt64.valueOf(5)));
-    storage.addSidecar(dataStructureUtil.randomDataColumnSidecar(UInt64.valueOf(35)));
-    storage.addSidecar(dataStructureUtil.randomDataColumnSidecar(UInt64.valueOf(65)));
-    storage.addSidecar(dataStructureUtil.randomDataColumnSidecar(UInt64.valueOf(95)));
+    // Slots in epochs 0, 1, 2, 3 (8 slots per epoch)
+    storage.addSidecar(createDataColumnSidecar(UInt64.valueOf(5))); // Epoch 0
+    storage.addSidecar(createDataColumnSidecar(UInt64.valueOf(12))); // Epoch 1
+    storage.addSidecar(createDataColumnSidecar(UInt64.valueOf(20))); // Epoch 2
+    storage.addSidecar(createDataColumnSidecar(UInt64.valueOf(28))); // Epoch 3
 
-    // Prune up to slot 95, but limit to 2 epochs
-    final Optional<UInt64> lastPrunedEpoch = storage.pruneEpochs(UInt64.valueOf(95), 2);
+    // Prune up to slot 28 (epoch 3), but limit to 2 epochs
+    final Optional<UInt64> lastPrunedEpoch = storage.pruneEpochs(UInt64.valueOf(28), 2);
 
     assertThat(lastPrunedEpoch).isPresent();
     assertThat(lastPrunedEpoch.get()).isEqualTo(UInt64.ONE);
@@ -268,9 +297,9 @@ public class FileBasedDataColumnStorageTest {
     assertThat(storage.getEarliestSlot()).isEmpty();
 
     // Add sidecars at different slots
-    storage.addSidecar(dataStructureUtil.randomDataColumnSidecar(UInt64.valueOf(100)));
-    storage.addSidecar(dataStructureUtil.randomDataColumnSidecar(UInt64.valueOf(50)));
-    storage.addSidecar(dataStructureUtil.randomDataColumnSidecar(UInt64.valueOf(75)));
+    storage.addSidecar(createDataColumnSidecar(UInt64.valueOf(100)));
+    storage.addSidecar(createDataColumnSidecar(UInt64.valueOf(50)));
+    storage.addSidecar(createDataColumnSidecar(UInt64.valueOf(75)));
 
     // Should return slot 50
     assertThat(storage.getEarliestSlot()).hasValue(UInt64.valueOf(50));
@@ -280,9 +309,9 @@ public class FileBasedDataColumnStorageTest {
   void testGetCount() {
     assertThat(storage.getCount()).isZero();
 
-    storage.addSidecar(dataStructureUtil.randomDataColumnSidecar(UInt64.valueOf(32)));
-    storage.addSidecar(dataStructureUtil.randomDataColumnSidecar(UInt64.valueOf(33)));
-    storage.addSidecar(dataStructureUtil.randomDataColumnSidecar(UInt64.valueOf(64)));
+    storage.addSidecar(createDataColumnSidecar(UInt64.valueOf(8))); // Epoch 1
+    storage.addSidecar(createDataColumnSidecar(UInt64.valueOf(9))); // Epoch 1
+    storage.addSidecar(createDataColumnSidecar(UInt64.valueOf(16))); // Epoch 2
 
     assertThat(storage.getCount()).isEqualTo(3);
   }
@@ -301,7 +330,7 @@ public class FileBasedDataColumnStorageTest {
 
   @Test
   void testSidecarPathResolution() {
-    final UInt64 slot = UInt64.valueOf(32); // Epoch 1
+    final UInt64 slot = UInt64.valueOf(8); // Epoch 1 (8 slots per epoch)
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final UInt64 columnIndex = UInt64.valueOf(5);
     final DataColumnSlotAndIdentifier identifier =
@@ -320,8 +349,8 @@ public class FileBasedDataColumnStorageTest {
   @Test
   void testBothCanonicalAndNonCanonicalInSameDirectory() {
     final UInt64 slot = UInt64.valueOf(64);
-    final DataColumnSidecar canonical = dataStructureUtil.randomDataColumnSidecar(slot);
-    final DataColumnSidecar nonCanonical = dataStructureUtil.randomDataColumnSidecar(slot);
+    final DataColumnSidecar canonical = createDataColumnSidecar(slot);
+    final DataColumnSidecar nonCanonical = createDataColumnSidecar(slot);
 
     storage.addSidecar(canonical);
     storage.addNonCanonicalSidecar(nonCanonical);

@@ -18,6 +18,7 @@ import static java.util.stream.Collectors.groupingBy;
 import static tech.pegasys.teku.infrastructure.logging.DbLogger.DB_LOGGER;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.errorprone.annotations.MustBeClosed;
@@ -989,7 +990,7 @@ public class KvStoreDatabase implements Database {
       return false;
     }
     try (final Stream<SlotAndBlockRootAndBlobIndex> prunableBlobKeys =
-        streamBlobSidecarKeys(earliestBlobSidecarSlot.orElse(UInt64.ZERO), lastSlotToPrune)) {
+        streamBlobSidecarKeys(earliestBlobSidecarSlot.orElse(ZERO), lastSlotToPrune)) {
       return pruneBlobSidecars(pruneLimit, prunableBlobKeys, blobSidecarsArchiver, false);
     }
   }
@@ -1005,8 +1006,7 @@ public class KvStoreDatabase implements Database {
       return false;
     }
     try (final Stream<SlotAndBlockRootAndBlobIndex> prunableNoncanonicalBlobKeys =
-        streamNonCanonicalBlobSidecarKeys(
-            earliestBlobSidecarSlot.orElse(UInt64.ZERO), lastSlotToPrune)) {
+        streamNonCanonicalBlobSidecarKeys(earliestBlobSidecarSlot.orElse(ZERO), lastSlotToPrune)) {
       return pruneBlobSidecars(
           pruneLimit, prunableNoncanonicalBlobKeys, blobSidecarsArchiver, true);
     }
@@ -1236,6 +1236,13 @@ public class KvStoreDatabase implements Database {
         });
   }
 
+  private Optional<UInt64> getLastDataColumnSidecarSlot() {
+    try (final Stream<DataColumnSlotAndIdentifier> indices =
+        dao.streamDataColumnIdentifiers(ZERO, UInt64.MAX_VALUE)) {
+      return indices.map(DataColumnSlotAndIdentifier::slot).max(UInt64::compareTo);
+    }
+  }
+
   /**
    * Migrate existing DataColumnSidecars from database to file storage.
    *
@@ -1253,7 +1260,8 @@ public class KvStoreDatabase implements Database {
 
     // Determine range to migrate
     final Optional<UInt64> earliestSlot = dao.getEarliestDataSidecarColumnSlot();
-    final Optional<UInt64> latestSlot = dao.getLastDataColumnSidecarsProofsSlot();
+
+    final Optional<UInt64> latestSlot = getLastDataColumnSidecarSlot();
 
     if (earliestSlot.isEmpty()) {
       LOG.info("No DataColumnSidecars in database, migration not needed");
@@ -1536,14 +1544,15 @@ public class KvStoreDatabase implements Database {
         final int start = index;
         try (final FinalizedUpdater updater = finalizedUpdater()) {
           while (nonCanonicalBlocksIterator.hasNext() && (index - start) < BLOBS_TX_BATCH_SIZE) {
-            dao.getDataColumnIdentifiers(nonCanonicalBlocksIterator.next())
+            final SlotAndBlockRoot slotAndBlockRoot = nonCanonicalBlocksIterator.next();
+            dataColumnStorage
+                .getIdentifiers(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot())
                 .forEach(
                     key -> {
-                      dao.getSidecar(key)
+                      dataColumnStorage
+                          .getSidecar(key)
                           .ifPresent(
-                              sidecarBytes -> {
-                                DataColumnSidecar sideCar =
-                                    spec.deserializeSidecar(sidecarBytes, key.slot());
+                              sideCar -> {
                                 updater.addNonCanonicalSidecar(sideCar);
                                 LOG.trace(
                                     "Moving non-canonical sidecar with identifier {} to non-canonical sidecars table",
@@ -1560,7 +1569,8 @@ public class KvStoreDatabase implements Database {
       LOG.trace("Removing sidecars for non-canonical blocks");
       try (final FinalizedUpdater updater = finalizedUpdater()) {
         for (final SlotAndBlockRoot slotAndBlockRoot : nonCanonicalBlocks) {
-          dao.getDataColumnIdentifiers(slotAndBlockRoot)
+          dataColumnStorage
+              .getIdentifiers(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot())
               .forEach(
                   key -> {
                     LOG.trace("Removing sidecar with identifier {} for non-canonical block", key);

@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -173,6 +174,14 @@ public class FileBasedDataColumnStorage {
     return getIdentifiersInEpoch(slot);
   }
 
+  /** Get all identifiers for a specific slot and blockRoot. */
+  public List<DataColumnSlotAndIdentifier> getIdentifiers(
+      final UInt64 slot, final Bytes32 blockRoot) {
+    return getIdentifiersInEpoch(slot).stream()
+        .filter(id -> id.blockRoot().equals(blockRoot))
+        .collect(Collectors.toList());
+  }
+
   private List<DataColumnSlotAndIdentifier> getIdentifiersInEpoch(final UInt64 slot) {
     final Path epochDir = resolveEpochDirectory(slot);
     final List<DataColumnSlotAndIdentifier> identifiers = new ArrayList<>();
@@ -240,7 +249,7 @@ public class FileBasedDataColumnStorage {
       }
     }
 
-    return identifiers.stream();
+    return identifiers.stream().sorted();
   }
 
   // ==================== Metadata Operations ====================
@@ -391,7 +400,7 @@ public class FileBasedDataColumnStorage {
           .map(Path::toString)
           .filter(this::isNumeric)
           .map(UInt64::valueOf)
-          .filter(epoch -> epoch.isLessThan(cutoffEpoch))
+          .filter(epoch -> epoch.isLessThanOrEqualTo(cutoffEpoch))
           .sorted()
           .limit(epochLimit)
           .forEach(epochsToPrune::add);
