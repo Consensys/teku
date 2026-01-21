@@ -115,7 +115,13 @@ public class StorageService extends Service implements StorageServiceFacade {
 
               // Migrate existing DataColumnSidecars from database to file storage (one-time)
               if (database instanceof KvStoreDatabase) {
-                ((KvStoreDatabase) database).migrateDataColumnSidecarsToFileStorage();
+                SafeFuture.runAsync(
+                        () -> ((KvStoreDatabase) database).migrateDataColumnSidecarsToFileStorage())
+                    .exceptionally(
+                        err -> {
+                          LOG.error("Failed to complete data-column migration.", err);
+                          return null;
+                        });
               }
 
               final SettableLabelledGauge pruningTimingsLabelledGauge =
