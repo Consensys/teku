@@ -92,7 +92,6 @@ public class ExecutionRequestsProcessorElectra implements ExecutionRequestsProce
     }
   }
 
-  // process_deposit_request
   protected void processDepositRequest(
       final MutableBeaconStateElectra state, final DepositRequest depositRequest) {
     final SszMutableList<PendingDeposit> pendingDeposits = state.getPendingDeposits();
