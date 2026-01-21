@@ -87,6 +87,9 @@ public final class CaffeineCache<K, V> implements Cache<K, V> {
 
   @Override
   public int size() {
+    // Force pending maintenance operations to complete before returning size to ensures the size is
+    // accurate
+    cache.cleanUp();
     return (int) cache.estimatedSize();
   }
 
