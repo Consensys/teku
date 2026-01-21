@@ -31,6 +31,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -44,6 +45,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetrieverStub;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DelayedDataColumnSidecarRetriever;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class DasCustodySyncTest {
 
@@ -80,11 +82,13 @@ public class DasCustodySyncTest {
           retrieverStub, custodyStand.stubAsync.getStubAsyncRunner(), ofMillis(0));
   final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator =
       mock(MinCustodyPeriodSlotCalculator.class);
+  final CombinedChainDataClient combinedChainDataClient = mock(CombinedChainDataClient.class);
   final DasCustodySync dasCustodySync =
       new DasCustodySync(
           custodyStand.custody,
           asyncRetriever,
           minCustodyPeriodSlotCalculator,
+          combinedChainDataClient,
           minSyncRequests,
           maxSyncRequests);
 
@@ -94,6 +98,8 @@ public class DasCustodySyncTest {
   public void setup() {
     when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any()))
         .thenReturn(Optional.of(UInt64.ZERO));
+    when(combinedChainDataClient.migrateDataColumnSidecarsToFilesystem())
+        .thenReturn(SafeFuture.completedFuture(null));
   }
 
   @Test
@@ -285,7 +291,12 @@ public class DasCustodySyncTest {
     when(custody.retrieveMissingColumns()).thenReturn(testData(columns));
     final DasCustodySync custodySync =
         new DasCustodySync(
-            custody, retriever, minCustodyPeriodSlotCalculator, minSyncRequests, maxSyncRequests);
+            custody,
+            retriever,
+            minCustodyPeriodSlotCalculator,
+            combinedChainDataClient,
+            minSyncRequests,
+            maxSyncRequests);
     custodySync.fillUp();
     verify(retriever).retrieve(columns.get(1));
     verifyNoMoreInteractions(retriever);

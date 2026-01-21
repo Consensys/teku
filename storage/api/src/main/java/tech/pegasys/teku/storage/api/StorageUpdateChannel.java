@@ -41,6 +41,8 @@ public interface StorageUpdateChannel extends ChannelInterface {
 
   SafeFuture<Void> onWeakSubjectivityUpdate(WeakSubjectivityUpdate weakSubjectivityUpdate);
 
+  SafeFuture<Void> migrateDataColumnSidecarsToFilesystem();
+
   SafeFuture<Void> onFinalizedDepositSnapshot(DepositTreeSnapshot depositTreeSnapshot);
 
   void onChainInitialized(AnchorPoint initialAnchor);

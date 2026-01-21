@@ -1052,7 +1052,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new DasCustodySync(
               dataColumnSidecarRecoveringCustody,
               recoveringSidecarRetriever,
-              minCustodyPeriodSlotCalculator);
+              minCustodyPeriodSlotCalculator,
+              combinedChainDataClient);
       dasCustodySync = Optional.of(custodySync);
       eventChannels.subscribe(SlotEventsChannel.class, custodySync);
     }

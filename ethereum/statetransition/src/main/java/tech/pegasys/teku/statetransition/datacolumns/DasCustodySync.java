@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class DasCustodySync implements SlotEventsChannel {
 
@@ -56,6 +57,8 @@ public class DasCustodySync implements SlotEventsChannel {
       new ConcurrentHashMap<>();
   private boolean started = false;
   private boolean coolDownTillNextSlot = false;
+  private volatile SafeFuture<Void> migrationFuture = null;
+  private final CombinedChainDataClient combinedChainDataClient;
   private volatile boolean fillingUp = false;
   private final AtomicLong syncedColumnCount = new AtomicLong();
   private final AtomicReference<UInt64> currentSlot = new AtomicReference<>(ZERO);
@@ -64,11 +67,13 @@ public class DasCustodySync implements SlotEventsChannel {
       final DataColumnSidecarCustody custody,
       final DataColumnSidecarRetriever retriever,
       final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator,
+      final CombinedChainDataClient combinedChainDataClient,
       final int minPendingColumnRequests,
       final int maxPendingColumnRequests) {
     this.custody = custody;
     this.retriever = retriever;
     this.minCustodyPeriodSlotCalculator = minCustodyPeriodSlotCalculator;
+    this.combinedChainDataClient = combinedChainDataClient;
     this.minPendingColumnRequests = minPendingColumnRequests;
     this.maxPendingColumnRequests = maxPendingColumnRequests;
   }
@@ -76,11 +81,13 @@ public class DasCustodySync implements SlotEventsChannel {
   public DasCustodySync(
       final DataColumnSidecarCustody custody,
       final DataColumnSidecarRetriever retriever,
-      final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator) {
+      final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator,
+      final CombinedChainDataClient combinedChainDataClient) {
     this(
         custody,
         retriever,
         minCustodyPeriodSlotCalculator,
+        combinedChainDataClient,
         MIN_PENDING_COLUMN_REQUESTS,
         MAX_PENDING_COLUMN_REQUESTS);
   }
@@ -115,8 +122,14 @@ public class DasCustodySync implements SlotEventsChannel {
   }
 
   private void fillUpIfNeeded() {
-    if (started
-        && pendingRequests.size() <= minPendingColumnRequests
+    if (!started) {
+      LOG.trace("Not started");
+    } else if (migrationFuture == null) {
+      LOG.debug("Migrating DataColumnSidecars to disk");
+      migrationFuture = combinedChainDataClient.migrateDataColumnSidecarsToFilesystem();
+    } else if (!migrationFuture.isDone()) {
+      LOG.debug("Waiting on migration of DataColumnSidecars");
+    } else if (pendingRequests.size() <= minPendingColumnRequests
         && !coolDownTillNextSlot
         && !fillingUp) {
       fillUp();

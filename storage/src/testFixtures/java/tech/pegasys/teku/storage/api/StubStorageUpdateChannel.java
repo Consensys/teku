@@ -55,6 +55,11 @@ public class StubStorageUpdateChannel implements StorageUpdateChannel {
   }
 
   @Override
+  public SafeFuture<Void> migrateDataColumnSidecarsToFilesystem() {
+    return SafeFuture.COMPLETE;
+  }
+
+  @Override
   public SafeFuture<Void> onFinalizedDepositSnapshot(
       final DepositTreeSnapshot depositTreeSnapshot) {
     return SafeFuture.COMPLETE;

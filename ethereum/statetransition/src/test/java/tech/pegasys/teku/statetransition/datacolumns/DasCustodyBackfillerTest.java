@@ -88,6 +88,8 @@ class DasCustodyBackfillerTest {
 
   @BeforeEach
   void setUp() {
+    when(combinedChainDataClient.migrateDataColumnSidecarsToFilesystem())
+        .thenReturn(SafeFuture.COMPLETE);
     when(combinedChainDataClient.getRecentChainData()).thenReturn(recentChainData);
     when(recentChainData.getSpec()).thenReturn(spec);
     when(custodyGroupCountManager.getCustodyGroupSyncedCount())
@@ -173,6 +175,14 @@ class DasCustodyBackfillerTest {
 
     // Should not trigger logic to reset cursor
     assertThat(earliestAvailableColumnSlotStore.get()).isPresent().hasValue(UInt64.valueOf(500));
+  }
+
+  @Test
+  void shouldOnlyRunMigrationAtFirstRound() {
+    backfiller.setFirstRoundAfterStartup(true);
+    safeJoin(backfiller.start());
+    asyncRunner.executeQueuedActions();
+    verify(combinedChainDataClient).migrateDataColumnSidecarsToFilesystem();
   }
 
   @Test

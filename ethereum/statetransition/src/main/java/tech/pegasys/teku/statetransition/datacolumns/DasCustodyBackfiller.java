@@ -79,6 +79,7 @@ public class DasCustodyBackfiller extends Service
   private volatile boolean isFirstRoundAfterStartup = true;
 
   private volatile boolean inSync = false;
+  private volatile SafeFuture<Void> migrationFuture = null;
 
   private final Map<DataColumnSlotAndIdentifier, SafeFuture<DataColumnSidecar>> pendingRequests =
       new ConcurrentHashMap<>();
@@ -208,6 +209,17 @@ public class DasCustodyBackfiller extends Service
       LOG.debug(
           "DasCustodyBackfiller: Backfilling is in progress. Pending requests: {}",
           pendingRequests.size());
+      return;
+    }
+
+    if (migrationFuture == null) {
+      LOG.debug("Migrating DataColumnSidecars to disk");
+      migrationFuture = combinedChainDataClient.migrateDataColumnSidecarsToFilesystem();
+    }
+
+    if (!migrationFuture.isDone()) {
+      LOG.debug("Waiting on migration of DataColumnSidecars");
+      backfilling.set(false);
       return;
     }
 

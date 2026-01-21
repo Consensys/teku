@@ -113,17 +113,6 @@ public class StorageService extends Service implements StorageServiceFacade {
                 database = ephemeryDatabaseReset.resetDatabaseAndCreate(serviceConfig, dbFactory);
               }
 
-              // Migrate existing DataColumnSidecars from database to file storage (one-time)
-              if (database instanceof KvStoreDatabase) {
-                SafeFuture.runAsync(
-                        () -> ((KvStoreDatabase) database).migrateDataColumnSidecarsToFileStorage())
-                    .exceptionally(
-                        err -> {
-                          LOG.error("Failed to complete data-column migration.", err);
-                          return null;
-                        });
-              }
-
               final SettableLabelledGauge pruningTimingsLabelledGauge =
                   SettableLabelledGauge.create(
                       serviceConfig.getMetricsSystem(),

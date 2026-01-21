@@ -61,6 +61,11 @@ public class StubStorageUpdateChannelWithDelays implements StorageUpdateChannel 
   }
 
   @Override
+  public SafeFuture<Void> migrateDataColumnSidecarsToFilesystem() {
+    return asyncRunner.runAsync(() -> SafeFuture.COMPLETE);
+  }
+
+  @Override
   public SafeFuture<Void> onFinalizedDepositSnapshot(
       final DepositTreeSnapshot depositTreeSnapshot) {
     return asyncRunner.runAsync(() -> SafeFuture.COMPLETE);

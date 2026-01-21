@@ -566,6 +566,18 @@ public class CombinedChainDataClient {
     return historicalChainData.getEarliestAvailableBlobSidecarSlot();
   }
 
+  public SafeFuture<Void> migrateDataColumnSidecarsToFilesystem() {
+    final SafeFuture<Void> migration =
+        recentChainData.storageUpdateChannel.migrateDataColumnSidecarsToFilesystem();
+
+    migration.finish(
+        err -> {
+          LOG.error("DataColumnSidecar migration to disk failed", err);
+        });
+
+    return migration;
+  }
+
   public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot() {
     return historicalChainData.getEarliestAvailableDataColumnSlot();
   }

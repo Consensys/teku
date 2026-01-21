@@ -53,6 +53,7 @@ import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
+import tech.pegasys.teku.storage.server.kvstore.KvStoreDatabase;
 import tech.pegasys.teku.storage.server.state.FinalizedStateCache;
 
 public class ChainStorage
@@ -161,6 +162,12 @@ public class ChainStorage
       final WeakSubjectivityUpdate weakSubjectivityUpdate) {
     return SafeFuture.fromRunnable(
         () -> database.updateWeakSubjectivityState(weakSubjectivityUpdate));
+  }
+
+  @Override
+  public SafeFuture<Void> migrateDataColumnSidecarsToFilesystem() {
+    return SafeFuture.fromRunnable(
+        () -> ((KvStoreDatabase) database).migrateDataColumnSidecarsToFileStorage());
   }
 
   @Override

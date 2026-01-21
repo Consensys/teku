@@ -93,6 +93,11 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
+  public SafeFuture<Void> migrateDataColumnSidecarsToFilesystem() {
+    return updateDelegate.migrateDataColumnSidecarsToFilesystem();
+  }
+
+  @Override
   public SafeFuture<Void> onFinalizedDepositSnapshot(
       final DepositTreeSnapshot depositTreeSnapshot) {
     return updateDelegate.onFinalizedDepositSnapshot(depositTreeSnapshot);

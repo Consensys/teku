@@ -110,6 +110,12 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
   }
 
   @Override
+  public SafeFuture<Void> migrateDataColumnSidecarsToFilesystem() {
+    // not a retrying interface, just call through
+    return delegate.migrateDataColumnSidecarsToFilesystem();
+  }
+
+  @Override
   public SafeFuture<Void> onFinalizedDepositSnapshot(
       final DepositTreeSnapshot depositTreeSnapshot) {
     return retry(() -> delegate.onFinalizedDepositSnapshot(depositTreeSnapshot));
