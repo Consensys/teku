@@ -3174,12 +3174,6 @@ public final class DataStructureUtil {
         randomBytes32(), slot, builderIndex, randomUInt64(), randomUInt64());
   }
 
-  private ExecutionPayloadBid randomExecutionPayloadBid(
-      final UInt64 value, final Bytes32 parentBlockHash) {
-    return randomExecutionPayloadBid(
-        parentBlockHash, randomSlot(), randomBuilderIndex(), value, randomUInt64());
-  }
-
   public ExecutionPayloadBid randomExecutionPayloadBid(
       final Bytes32 parentBlockHash,
       final UInt64 slot,
@@ -3210,13 +3204,6 @@ public final class DataStructureUtil {
     return getGloasSchemaDefinitions()
         .getSignedExecutionPayloadBidSchema()
         .create(randomExecutionPayloadBid(executionPayment), randomSignature());
-  }
-
-  public SignedExecutionPayloadBid randomSignedExecutionPayloadBid(
-      final UInt64 value, final Bytes32 parentBlockHash) {
-    return getGloasSchemaDefinitions()
-        .getSignedExecutionPayloadBidSchema()
-        .create(randomExecutionPayloadBid(value, parentBlockHash), randomSignature());
   }
 
   public SignedExecutionPayloadBid randomSignedExecutionPayloadBid(
