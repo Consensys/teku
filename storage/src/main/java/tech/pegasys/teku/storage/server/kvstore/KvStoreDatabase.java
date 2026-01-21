@@ -1256,7 +1256,8 @@ public class KvStoreDatabase implements Database {
       return;
     }
 
-    LOG.info("Starting migration of DataColumnSidecars from database to file storage");
+    LOG.info(
+        "Starting migration of DataColumnSidecars from database to file storage (latest to earliest)");
 
     // Determine range to migrate
     final Optional<UInt64> earliestSlot = dao.getEarliestDataSidecarColumnSlot();
@@ -1270,32 +1271,42 @@ public class KvStoreDatabase implements Database {
     }
 
     // Migrate in batches (32 slots = 1 epoch, aligns with filesystem structure)
+    // START FROM LATEST and work backward to EARLIEST
     final int batchSizeSlots = 32;
-    UInt64 currentSlot = earliestSlot.get();
-    final UInt64 endSlot = latestSlot.orElse(currentSlot);
+    UInt64 currentSlot = latestSlot.get();
+    final UInt64 endSlot = earliestSlot.get();
     int totalMigrated = 0;
 
-    while (currentSlot.isLessThanOrEqualTo(endSlot)) {
-      final UInt64 batchEndSlot = currentSlot.plus(batchSizeSlots).min(endSlot);
+    while (currentSlot.isGreaterThanOrEqualTo(endSlot)) {
+      final UInt64 batchStartSlot = currentSlot.minusMinZero(batchSizeSlots - 1).max(endSlot);
 
       try (final FinalizedUpdater updater = finalizedUpdater()) {
-        final int batchCount = migrateBatch(currentSlot, batchEndSlot, updater);
+        final int batchCount = migrateBatch(batchStartSlot, currentSlot, updater);
         updater.commit();
         totalMigrated += batchCount;
+
+        // Update earliestAvailableSlot after each successful batch
+        dataColumnStorage.setEarliestAvailableSlot(batchStartSlot);
+
         if (batchCount > 0) {
-          LOG.debug("Migrated {} sidecars (slots {}-{})", batchCount, currentSlot, batchEndSlot);
+          LOG.debug(
+              "Migrated {} sidecars (slots {}-{}), earliestAvailableSlot now: {}",
+              batchCount,
+              batchStartSlot,
+              currentSlot,
+              batchStartSlot);
         }
       } catch (Exception e) {
         LOG.error(
             "Failed to migrate data column batch (slots {}-{}), will retry on next startup",
+            batchStartSlot,
             currentSlot,
-            batchEndSlot,
             e);
         // Don't set migration complete, so it will retry on next startup
         return;
       }
 
-      currentSlot = batchEndSlot.plus(1);
+      currentSlot = batchStartSlot.minusMinZero(1);
     }
 
     dataColumnStorage.setMigrationComplete(true);
