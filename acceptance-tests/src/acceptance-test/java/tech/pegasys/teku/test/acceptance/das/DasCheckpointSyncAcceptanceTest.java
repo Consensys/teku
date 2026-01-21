@@ -58,7 +58,7 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
                 .isGreaterThan(specConfigFulu.getFuluForkEpoch()))
         .isTrue();
 
-    // late joining full node without validators with --rest-api-getblobs-sidecars-download-enabled
+    // late joining full node without validators
     final TekuBeaconNode secondaryNode =
         createTekuBeaconNode(
             createConfigBuilder()
@@ -119,7 +119,6 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
 
     primaryNode.start();
     final UInt64 genesisTime = primaryNode.getGenesisTime();
-
     primaryNode.waitForNewFinalization();
     final SignedBeaconBlock checkpointFinalizedBlock = primaryNode.getFinalizedBlock();
     // We expect at least 1 full epoch in Fulu before checkpoint, so it's greater without equal
