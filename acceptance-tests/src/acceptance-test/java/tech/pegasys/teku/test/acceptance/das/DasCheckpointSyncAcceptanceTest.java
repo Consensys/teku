@@ -145,7 +145,7 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
 
     secondaryNode.start();
 
-    // late joining full node without validators without
+    // late joining node without validators without
     // --rest-api-getblobs-sidecars-download-enabled
     // this mean that when we try to blob sidecars it will 404
 
@@ -178,7 +178,7 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
     final int columnsFromThirdNode = thirdNode.getDataColumnSidecarCount("head");
     assertThat(columnsFromThirdNode).isGreaterThan(0);
 
-    // 404 are casted into optional empty
+    // third node should not have blobs as get blobs download is not enabled
     assertThat(thirdNode.getBlobsAtSlot(headSlot)).isEmpty();
   }
 
