@@ -16,7 +16,7 @@ package tech.pegasys.teku.statetransition.validation;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.Constants.HIGHEST_BID_SET_SIZE;
-import static tech.pegasys.teku.spec.config.Constants.SEEN_EXECUTION_PAYLOAD_BID_SET_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.MAX_SLOTS_TO_TRACK_BUILDERS_BIDS;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
@@ -25,13 +25,13 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
-import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
@@ -42,11 +42,11 @@ import tech.pegasys.teku.spec.signatures.SigningRootUtil;
 public class ExecutionPayloadBidGossipValidator {
 
   private static final Logger LOG = LogManager.getLogger();
-  final GossipValidationHelper gossipValidationHelper;
-  final SigningRootUtil signingRootUtil;
 
-  private final Set<BuilderIndexAndSlot> seenExecutionPayloadBids =
-      LimitedSet.createSynchronized(SEEN_EXECUTION_PAYLOAD_BID_SET_SIZE);
+  private final GossipValidationHelper gossipValidationHelper;
+  private final SigningRootUtil signingRootUtil;
+  private final Map<UInt64, Set<UInt64>> seenExecutionPayloadBids =
+      LimitedMap.createSynchronizedLRU(MAX_SLOTS_TO_TRACK_BUILDERS_BIDS);
   private final Map<SlotAndBlockHash, UInt64> highestBids =
       LimitedMap.createSynchronizedLRU(HIGHEST_BID_SET_SIZE);
 
@@ -73,8 +73,10 @@ public class ExecutionPayloadBidGossipValidator {
     /*
      * [IGNORE] this is the first signed bid seen with a valid signature from the given builder for this slot.
      */
-    final BuilderIndexAndSlot key = new BuilderIndexAndSlot(bid.getBuilderIndex(), bid.getSlot());
-    if (seenExecutionPayloadBids.contains(key)) {
+    final Set<UInt64> buildersForSlot =
+        seenExecutionPayloadBids.computeIfAbsent(
+            bid.getSlot(), __ -> ConcurrentHashMap.newKeySet());
+    if (buildersForSlot.contains(bid.getBuilderIndex())) {
       return completedFuture(
           ignore(
               "Already received a bid from builder with index %s at slot %s",
@@ -128,7 +130,9 @@ public class ExecutionPayloadBidGossipValidator {
     final Optional<UInt64> maybeParentBlockSlot =
         gossipValidationHelper.getSlotForBlockRoot(bid.getParentBlockRoot());
     if (maybeParentBlockSlot.isEmpty()) {
-      LOG.trace("Bid's parent block does not exist. It will be saved for future processing");
+      LOG.trace(
+          "Bid's parent block with root {} does not exist. It will be saved for future processing",
+          bid.getParentBlockRoot());
       return completedFuture(SAVE_FOR_FUTURE);
     }
     final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
@@ -141,7 +145,7 @@ public class ExecutionPayloadBidGossipValidator {
                 LOG.trace(
                     "State for block root {} and slot {} is unavailable.",
                     bid.getParentBlockRoot(),
-                    bid.getSlot());
+                    parentBlockSlot);
                 return SAVE_FOR_FUTURE;
               }
               final BeaconState state = maybeState.get();
@@ -150,14 +154,14 @@ public class ExecutionPayloadBidGossipValidator {
                * [REJECT] bid.builder_index is a valid, active, and non-slashed builder index.
                */
 
-              final UInt64 buildrIndex = bid.getBuilderIndex();
-              if (!gossipValidationHelper.isValidBuilderIndex(buildrIndex, state, bid.getSlot())) {
+              final UInt64 builderIndex = bid.getBuilderIndex();
+              if (!gossipValidationHelper.isValidBuilderIndex(builderIndex, state, bid.getSlot())) {
                 LOG.trace(
                     "Invalid builder index {}. Builder should be valid, active and non-slashed.",
-                    buildrIndex);
+                    builderIndex);
                 return reject(
                     "Invalid builder index %s. Builder should be valid, active and non-slashed.",
-                    buildrIndex);
+                    builderIndex);
               }
 
               /*
@@ -197,8 +201,10 @@ public class ExecutionPayloadBidGossipValidator {
                 LOG.trace("Invalid payload execution bid signature");
                 return reject("Invalid payload execution bid signature");
               }
+              // handle race condition (new values might have come in while performing the checks)
+              // and update only if the new value is higher than the current value
               highestBids.merge(bidValueKey, bid.getValue(), UInt64::max);
-              seenExecutionPayloadBids.add(key);
+              buildersForSlot.add(bid.getBuilderIndex());
               return ACCEPT;
             });
   }
@@ -214,8 +220,6 @@ public class ExecutionPayloadBidGossipValidator {
         signedExecutionPayloadBid.getSignature(),
         state);
   }
-
-  record BuilderIndexAndSlot(UInt64 validatorIndex, UInt64 slot) {}
 
   record SlotAndBlockHash(UInt64 slot, Bytes32 blockHash) {}
 }

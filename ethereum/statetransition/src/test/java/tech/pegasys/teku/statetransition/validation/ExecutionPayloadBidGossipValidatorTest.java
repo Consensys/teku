@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.spec.config.Constants.MAX_SLOTS_TO_TRACK_BUILDERS_BIDS;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
@@ -27,6 +28,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
@@ -160,7 +162,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
     assertThatSafeFuture(bidValidator.validate(signedBid)).isCompletedWithValue(ACCEPT);
 
     // a same value bid from a different builder with the same parent block hash and slot
-    final SignedExecutionPayloadBid lowerValueBid =
+    final SignedExecutionPayloadBid sameValueBid =
         dataStructureUtil.randomSignedExecutionPayloadBid(
             dataStructureUtil.randomExecutionPayloadBid(
                 parentBlockHash,
@@ -169,7 +171,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
                 bid.getValue(),
                 bid.getExecutionPayment()));
 
-    assertThatSafeFuture(bidValidator.validate(lowerValueBid))
+    assertThatSafeFuture(bidValidator.validate(sameValueBid))
         .isCompletedWithValue(
             ignore(
                 "Already received a bid with equal or higher value %s for block with parent hash %s. Current bid's value is %s",
@@ -351,5 +353,84 @@ public class ExecutionPayloadBidGossipValidatorTest {
 
     // It should be accepted now, not ignored
     assertThatSafeFuture(bidValidator.validate(signedBid)).isCompletedWithValue(ACCEPT);
+  }
+
+  @TestTemplate
+  void shouldEvictOldestSlotAfterMaxSlotsTracked() {
+    final UInt64 startSlot = UInt64.valueOf(100);
+    final UInt64 sameBuilder = builderIndex;
+    final SpecVersion specVersion = mock(SpecVersion.class);
+    final MiscHelpers miscHelpers = mock(MiscHelpers.class);
+    when(miscHelpers.computeSigningRoot(any(Bytes.class), any(Bytes32.class)))
+        .thenReturn(Bytes32.random());
+    when(specVersion.miscHelpers()).thenReturn(miscHelpers);
+    when(spec.atSlot(any())).thenReturn(specVersion);
+
+    // Submit bids for MAX_SLOTS_TO_TRACK_BUILDERS_BIDS + 1 slots to fill the cache and evict oldest
+    // entries
+    for (int i = 0; i < MAX_SLOTS_TO_TRACK_BUILDERS_BIDS + 1; i++) {
+      final UInt64 bidValue = UInt64.valueOf(1000 + i);
+      final SignedExecutionPayloadBid bid =
+          dataStructureUtil.randomSignedExecutionPayloadBid(
+              dataStructureUtil.randomExecutionPayloadBid(
+                  dataStructureUtil.randomBytes32(),
+                  startSlot.plus(i),
+                  sameBuilder,
+                  bidValue,
+                  UInt64.ZERO));
+      mockBidValidation(bid, sameBuilder, bidValue);
+      assertThatSafeFuture(bidValidator.validate(bid)).isCompletedWithValue(ACCEPT);
+    }
+
+    // Submit another bid for slot 100 which has been evicted and should be accepted
+    final SignedExecutionPayloadBid bidForEvictedSlot =
+        dataStructureUtil.randomSignedExecutionPayloadBid(
+            dataStructureUtil.randomExecutionPayloadBid(
+                dataStructureUtil.randomBytes32(),
+                startSlot,
+                sameBuilder,
+                UInt64.valueOf(2000),
+                UInt64.ZERO));
+    mockBidValidation(bidForEvictedSlot, sameBuilder, UInt64.valueOf(2000));
+    assertThatSafeFuture(bidValidator.validate(bidForEvictedSlot)).isCompletedWithValue(ACCEPT);
+
+    // Submit another bid for most recent slot which is still in cache and should be ignored
+    final UInt64 cachedSlot = startSlot.plus(MAX_SLOTS_TO_TRACK_BUILDERS_BIDS);
+    final SignedExecutionPayloadBid bidForCachedSlot =
+        dataStructureUtil.randomSignedExecutionPayloadBid(
+            dataStructureUtil.randomExecutionPayloadBid(
+                dataStructureUtil.randomBytes32(),
+                cachedSlot,
+                sameBuilder,
+                UInt64.valueOf(3000),
+                UInt64.ZERO));
+    mockBidValidation(bidForCachedSlot, sameBuilder, UInt64.valueOf(3000));
+    assertThatSafeFuture(bidValidator.validate(bidForCachedSlot))
+        .isCompletedWithValue(
+            ignore(
+                "Already received a bid from builder with index %s at slot %s",
+                sameBuilder, cachedSlot));
+  }
+
+  private void mockBidValidation(
+      final SignedExecutionPayloadBid bid, final UInt64 builderIndex, final UInt64 bidValue) {
+    final ExecutionPayloadBid message = bid.getMessage();
+    final UInt64 slot = message.getSlot();
+    when(gossipValidationHelper.isSlotCurrentOrNext(slot)).thenReturn(true);
+    when(gossipValidationHelper.isBlockHashKnown(
+            message.getParentBlockHash(), message.getParentBlockRoot()))
+        .thenReturn(true);
+    when(gossipValidationHelper.getSlotForBlockRoot(message.getParentBlockRoot()))
+        .thenReturn(Optional.of(slot.decrement()));
+    when(gossipValidationHelper.getParentStateInBlockEpoch(
+            slot.decrement(), message.getParentBlockRoot(), slot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(postState)));
+    when(gossipValidationHelper.isValidBuilderIndex(builderIndex, postState, slot))
+        .thenReturn(true);
+    when(gossipValidationHelper.hasBuilderWithdrawalCredential(builderIndex, postState, slot))
+        .thenReturn(true);
+    when(gossipValidationHelper.builderHasEnoughBalanceForBid(
+            bidValue, builderIndex, postState, slot))
+        .thenReturn(true);
   }
 }

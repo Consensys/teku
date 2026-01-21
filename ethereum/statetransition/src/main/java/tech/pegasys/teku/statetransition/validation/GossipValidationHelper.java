@@ -161,13 +161,13 @@ public class GossipValidationHelper {
   public boolean isValidBuilderIndex(
       final UInt64 builderIndex, final BeaconState state, final UInt64 slot) {
     if (builderIndex.isGreaterThanOrEqualTo(state.getValidators().size())
-        || builderIndex.longValue() < 0) {
+        || builderIndex.intValue() < 0) {
       return false;
     }
     final int index = builderIndex.intValue();
     final Validator builder = state.getValidators().get(index);
     final boolean isActiveBuilder =
-        spec.getActiveValidatorIndices(state, spec.computeEpochAtSlot(slot)).contains(index);
+        spec.atSlot(slot).predicates().isActiveValidator(builder, spec.computeEpochAtSlot(slot));
     return !builder.isSlashed() && isActiveBuilder;
   }
 
@@ -203,7 +203,6 @@ public class GossipValidationHelper {
   }
 
   public boolean isBlockHashKnown(final Bytes32 blockHash, final Bytes32 blockRoot) {
-    // TODO-GLOAS check this logic. We might need to check the block hash existence in the store
     final Optional<Bytes32> maybeBlockHash =
         recentChainData.getExecutionBlockHashForBlockRoot(blockRoot);
     return maybeBlockHash.isPresent() && blockHash.equals(maybeBlockHash.get());

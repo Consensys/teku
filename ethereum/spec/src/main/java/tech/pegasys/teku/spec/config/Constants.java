@@ -26,9 +26,9 @@ public class Constants {
   public static final int VALID_PAYLOAD_ATTESTATION_SET_SIZE = 512 * 2;
   // Target holding two slots worth of aggregators (16 aggregators, 64 committees and 2 slots)
   public static final int VALID_AGGREGATE_SET_SIZE = 16 * 64 * 2;
-  // Target 2 different attestation data (aggregators normally agree) for two slots
-  public static final int SEEN_EXECUTION_PAYLOAD_BID_SET_SIZE = 10000;
+  public static final int MAX_SLOTS_TO_TRACK_BUILDERS_BIDS = 10;
   public static final int HIGHEST_BID_SET_SIZE = 10;
+  // Target 2 different attestation data (aggregators normally agree) for two slots
   public static final int VALID_ATTESTATION_DATA_SET_SIZE = 2 * 64 * 2;
   public static final int VALID_VALIDATOR_SET_SIZE = 10000;
   // Only need to maintain a cache for the current slot, so just needs to be as large as the
