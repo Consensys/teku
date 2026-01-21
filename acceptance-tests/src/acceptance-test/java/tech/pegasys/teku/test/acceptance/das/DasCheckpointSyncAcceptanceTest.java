@@ -103,7 +103,6 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
             .mapToInt(i -> i)
             .sum();
     assertThat(beforeCheckpointSidecars).isGreaterThan(0);
-
   }
 
   @Test
@@ -111,12 +110,12 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
 
     // supernode with validators
     final TekuBeaconNode primaryNode =
-            createTekuBeaconNode(
-                    createConfigBuilder()
-                            .withRealNetwork()
-                            .withSubscribeAllCustodySubnetsEnabled()
-                            .withInteropValidators(0, 64)
-                            .build());
+        createTekuBeaconNode(
+            createConfigBuilder()
+                .withRealNetwork()
+                .withSubscribeAllCustodySubnetsEnabled()
+                .withInteropValidators(0, 64)
+                .build());
 
     primaryNode.start();
     final UInt64 genesisTime = primaryNode.getGenesisTime();
@@ -125,25 +124,25 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
     final SignedBeaconBlock checkpointFinalizedBlock = primaryNode.getFinalizedBlock();
     // We expect at least 1 full epoch in Fulu before checkpoint, so it's greater without equal
     final SpecConfigFulu specConfigFulu =
-            SpecConfigFulu.required(primaryNode.getSpec().forMilestone(SpecMilestone.FULU).getConfig());
+        SpecConfigFulu.required(primaryNode.getSpec().forMilestone(SpecMilestone.FULU).getConfig());
     assertThat(
             primaryNode
-                    .getSpec()
-                    .computeEpochAtSlot(checkpointFinalizedBlock.getSlot())
-                    .isGreaterThan(specConfigFulu.getFuluForkEpoch()))
-            .isTrue();
+                .getSpec()
+                .computeEpochAtSlot(checkpointFinalizedBlock.getSlot())
+                .isGreaterThan(specConfigFulu.getFuluForkEpoch()))
+        .isTrue();
 
     // late joining full node without validators with --rest-api-getblobs-sidecars-download-enabled
     final TekuBeaconNode secondaryNode =
-            createTekuBeaconNode(
-                    createConfigBuilder()
-                            .withRealNetwork()
-                            .withCheckpointSyncUrl(primaryNode.getBeaconRestApiUrl())
-                            .withGenesisTime(genesisTime.intValue())
-                            .withGetBlobsSidecarsDownloadApiEnabled()
-                            .withPeers(primaryNode)
-                            .withInteropValidators(0, 0)
-                            .build());
+        createTekuBeaconNode(
+            createConfigBuilder()
+                .withRealNetwork()
+                .withCheckpointSyncUrl(primaryNode.getBeaconRestApiUrl())
+                .withGenesisTime(genesisTime.intValue())
+                .withGetBlobsSidecarsDownloadApiEnabled()
+                .withPeers(primaryNode)
+                .withInteropValidators(0, 0)
+                .build());
 
     secondaryNode.start();
 
@@ -152,14 +151,14 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
     // this mean that when we try to blob sidecars it will 404
 
     final TekuBeaconNode thirdNode =
-            createTekuBeaconNode(
-                    createConfigBuilder()
-                            .withRealNetwork()
-                            .withCheckpointSyncUrl(primaryNode.getBeaconRestApiUrl())
-                            .withGenesisTime(genesisTime.intValue())
-                            .withPeers(primaryNode)
-                            .withInteropValidators(0, 0)
-                            .build());
+        createTekuBeaconNode(
+            createConfigBuilder()
+                .withRealNetwork()
+                .withCheckpointSyncUrl(primaryNode.getBeaconRestApiUrl())
+                .withGenesisTime(genesisTime.intValue())
+                .withPeers(primaryNode)
+                .withInteropValidators(0, 0)
+                .build());
 
     thirdNode.start();
 
@@ -182,8 +181,8 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
 
     // 404 are casted into optional empty
     assertThat(thirdNode.getBlobsAtSlot(headSlot)).isEmpty();
-
   }
+
   private int getAndAssertDasCustody(
       final TekuBeaconNode node, final UInt64 fuluSlot, final int expectedCustodyCount) {
     try {
