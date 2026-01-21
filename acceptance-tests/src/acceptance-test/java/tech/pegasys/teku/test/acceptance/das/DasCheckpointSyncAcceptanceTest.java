@@ -65,31 +65,11 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
                 .withRealNetwork()
                 .withCheckpointSyncUrl(primaryNode.getBeaconRestApiUrl())
                 .withGenesisTime(genesisTime.intValue())
-                .withGetBlobsSidecarsDownloadApiEnabled()
                 .withPeers(primaryNode)
                 .withInteropValidators(0, 0)
                 .build());
 
     secondaryNode.start();
-
-    // late joining full node without validators without
-    // --rest-api-getblobs-sidecars-download-enabled
-    // this mean that when we try to blob sidecars it will 404
-
-    final TekuBeaconNode thirdNode =
-        createTekuBeaconNode(
-            createConfigBuilder()
-                .withRealNetwork()
-                .withCheckpointSyncUrl(primaryNode.getBeaconRestApiUrl())
-                .withGenesisTime(genesisTime.intValue())
-                .withPeers(primaryNode)
-                .withInteropValidators(0, 0)
-                .build());
-
-    thirdNode.start();
-
-    secondaryNode.waitUntilInSyncWith(primaryNode);
-    thirdNode.waitUntilInSyncWith(primaryNode);
 
     final UInt64 firstFuluSlot =
         primaryNode.getSpec().computeStartSlotAtEpoch(specConfigFulu.getFuluForkEpoch());
@@ -124,7 +104,68 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
             .sum();
     assertThat(beforeCheckpointSidecars).isGreaterThan(0);
 
-    // get a slot to get blobs from
+  }
+
+  @Test
+  public void shouldBeAbleToRetrieveBlobsWhenGetBlobsDownloadIsEnabled() throws Exception {
+
+    // supernode with validators
+    final TekuBeaconNode primaryNode =
+            createTekuBeaconNode(
+                    createConfigBuilder()
+                            .withRealNetwork()
+                            .withSubscribeAllCustodySubnetsEnabled()
+                            .withInteropValidators(0, 64)
+                            .build());
+
+    primaryNode.start();
+    final UInt64 genesisTime = primaryNode.getGenesisTime();
+
+    primaryNode.waitForNewFinalization();
+    final SignedBeaconBlock checkpointFinalizedBlock = primaryNode.getFinalizedBlock();
+    // We expect at least 1 full epoch in Fulu before checkpoint, so it's greater without equal
+    final SpecConfigFulu specConfigFulu =
+            SpecConfigFulu.required(primaryNode.getSpec().forMilestone(SpecMilestone.FULU).getConfig());
+    assertThat(
+            primaryNode
+                    .getSpec()
+                    .computeEpochAtSlot(checkpointFinalizedBlock.getSlot())
+                    .isGreaterThan(specConfigFulu.getFuluForkEpoch()))
+            .isTrue();
+
+    // late joining full node without validators with --rest-api-getblobs-sidecars-download-enabled
+    final TekuBeaconNode secondaryNode =
+            createTekuBeaconNode(
+                    createConfigBuilder()
+                            .withRealNetwork()
+                            .withCheckpointSyncUrl(primaryNode.getBeaconRestApiUrl())
+                            .withGenesisTime(genesisTime.intValue())
+                            .withGetBlobsSidecarsDownloadApiEnabled()
+                            .withPeers(primaryNode)
+                            .withInteropValidators(0, 0)
+                            .build());
+
+    secondaryNode.start();
+
+    // late joining full node without validators without
+    // --rest-api-getblobs-sidecars-download-enabled
+    // this mean that when we try to blob sidecars it will 404
+
+    final TekuBeaconNode thirdNode =
+            createTekuBeaconNode(
+                    createConfigBuilder()
+                            .withRealNetwork()
+                            .withCheckpointSyncUrl(primaryNode.getBeaconRestApiUrl())
+                            .withGenesisTime(genesisTime.intValue())
+                            .withPeers(primaryNode)
+                            .withInteropValidators(0, 0)
+                            .build());
+
+    thirdNode.start();
+
+    secondaryNode.waitUntilInSyncWith(primaryNode);
+    thirdNode.waitUntilInSyncWith(primaryNode);
+
     final UInt64 headSlot = secondaryNode.getHeadBlock().getSlot();
 
     final Optional<List<Blob>> blobsForBlockNode1 = primaryNode.getBlobsAtSlot(headSlot);
@@ -141,8 +182,8 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
 
     // 404 are casted into optional empty
     assertThat(thirdNode.getBlobsAtSlot(headSlot)).isEmpty();
-  }
 
+  }
   private int getAndAssertDasCustody(
       final TekuBeaconNode node, final UInt64 fuluSlot, final int expectedCustodyCount) {
     try {
