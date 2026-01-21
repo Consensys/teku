@@ -276,29 +276,32 @@ public class SimpleSidecarRetrieverTest {
 
     final List<TestPeer> allPeers =
         List.of(
-                peerWithoutEarliestSlotAvailableSetToLargeSlot, peerWithEarliestSlotAvailableZero,
-            peerWithEarliestSlotAvailableOne, peerWithEarliestSlotAvailableTwo);
+            peerWithoutEarliestSlotAvailableSetToLargeSlot,
+            peerWithEarliestSlotAvailableZero,
+            peerWithEarliestSlotAvailableOne,
+            peerWithEarliestSlotAvailableTwo);
     Supplier<List<Integer>> allRequestCountsFunc =
         () -> allPeers.stream().map(peer -> peer.getRequests().size()).toList();
 
     allPeers.forEach(testPeerManager::connectPeer);
 
     final BeaconBlock block0 = blockResolver.addBlock(0, 1);
-    final List<DataColumnSidecar> sidecars0 = dataStructureUtil.randomDataColumnSidecars(UInt64.ZERO,1);
+    final List<DataColumnSidecar> sidecars0 =
+        dataStructureUtil.randomDataColumnSidecars(UInt64.ZERO, 1);
 
     final DataColumnSidecar sidecar0_0 = sidecars0.get(columnIndex.intValue());
     peerWithEarliestSlotAvailableZero.addSidecar(sidecar0_0);
 
     final BeaconBlock block1 = blockResolver.addBlock(1, 1);
     final List<DataColumnSidecar> sidecars1 =
-            dataStructureUtil.randomDataColumnSidecars(UInt64.valueOf(1),1);
+        dataStructureUtil.randomDataColumnSidecars(UInt64.valueOf(1), 1);
     final DataColumnSidecar sidecar1_0 = sidecars1.get(columnIndex.intValue());
     peerWithEarliestSlotAvailableZero.addSidecar(sidecar1_0);
     peerWithEarliestSlotAvailableOne.addSidecar(sidecar1_0);
 
     final BeaconBlock block2 = blockResolver.addBlock(2, 1);
     final List<DataColumnSidecar> sidecars2 =
-            dataStructureUtil.randomDataColumnSidecars(UInt64.valueOf(2),1);
+        dataStructureUtil.randomDataColumnSidecars(UInt64.valueOf(2), 1);
     final DataColumnSidecar sidecar2_0 = sidecars2.get(columnIndex.intValue());
     peerWithEarliestSlotAvailableZero.addSidecar(sidecar2_0);
     peerWithEarliestSlotAvailableOne.addSidecar(sidecar2_0);

@@ -110,8 +110,8 @@ public class AbstractFetchTaskTest {
         .thenReturn(Optional.of(UInt64.valueOf(100))); // Later slot
 
     try {
-        mockResponse.accept(peer1);
-        mockResponse.accept(peer2);
+      mockResponse.accept(peer1);
+      mockResponse.accept(peer2);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
