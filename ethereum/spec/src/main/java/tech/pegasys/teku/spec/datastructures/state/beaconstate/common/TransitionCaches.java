@@ -23,7 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
-import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
+import tech.pegasys.teku.infrastructure.collections.cache.ConcurrentCache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.collections.cache.NoOpCache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -68,10 +68,11 @@ public class TransitionCaches {
 
   /**
    * Creates new instance with clean caches. Uses LRUCache for bounded caches (lightweight, copied
-   * frequently) and CaffeineCache for unbounded validator caches (hot path, high concurrency).
+   * frequently) and ConcurrentCache for unbounded validator caches (non-blocking, minimal
+   * overhead).
    */
   public static TransitionCaches createNewEmpty() {
-    return new TransitionCaches(LRUCache::create);
+    return new TransitionCaches(LRUCache::create, ConcurrentCache::create);
   }
 
   /** Returns the instance which doesn't cache anything */
@@ -134,7 +135,7 @@ public class TransitionCaches {
    */
   @VisibleForTesting
   public TransitionCaches(final CacheFactory cacheFactory) {
-    this(cacheFactory, CaffeineCache::createUnbounded);
+    this(cacheFactory, ConcurrentCache::create);
   }
 
   private TransitionCaches(

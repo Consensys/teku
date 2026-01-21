@@ -105,13 +105,6 @@ public final class CaffeineCache<K, V> implements Cache<K, V> {
     return new CaffeineCache<>(newCacheInstance, this.builder);
   }
 
-  @Override
-  public Cache<K, V> transfer() {
-    final Cache<K, V> copiedCache = this.copy();
-    this.clear();
-    return copiedCache;
-  }
-
   private static <K, V> CaffeineCache<K, V> buildCache(final Caffeine<Object, Object> builder) {
     final LoadingCache<K, V> caffeineCache =
         builder.build(

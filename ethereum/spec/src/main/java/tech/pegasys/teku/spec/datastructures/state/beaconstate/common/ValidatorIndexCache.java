@@ -18,7 +18,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
-import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
+import tech.pegasys.teku.infrastructure.collections.cache.ConcurrentCache;
 import tech.pegasys.teku.infrastructure.collections.cache.NoOpCache;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -46,7 +46,7 @@ public class ValidatorIndexCache {
   }
 
   public ValidatorIndexCache() {
-    this(CaffeineCache.createUnbounded());
+    this(ConcurrentCache.create());
   }
 
   public Optional<Integer> getValidatorIndex(

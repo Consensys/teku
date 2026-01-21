@@ -30,6 +30,7 @@ import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
+import tech.pegasys.teku.infrastructure.collections.cache.ConcurrentCache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
@@ -46,6 +47,13 @@ public class TransitionCachesBenchmark {
 
   public enum CacheType {
     CAFFEINE(CaffeineCache::create),
+    CONCURRENT(
+        new TransitionCaches.CacheFactory() {
+          @Override
+          public <K, V> Cache<K, V> create(final int capacity) {
+            return ConcurrentCache.create();
+          }
+        }),
     LRU(LRUCache::create);
 
     private final TransitionCaches.CacheFactory cacheFactory;
@@ -62,7 +70,7 @@ public class TransitionCachesBenchmark {
   @State(Scope.Benchmark)
   public static class BenchmarkState {
 
-    @Param({"CAFFEINE", "LRU"})
+    @Param({"CAFFEINE", "CONCURRENT", "LRU"})
     public CacheType cacheType;
 
     @Param({"0", "5"})

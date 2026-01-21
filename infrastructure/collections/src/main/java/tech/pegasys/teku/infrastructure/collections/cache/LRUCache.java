@@ -79,11 +79,4 @@ public class LRUCache<K, V> implements Cache<K, V> {
   public synchronized int size() {
     return cacheData.size();
   }
-
-  @Override
-  public Cache<K, V> transfer() {
-    final Cache<K, V> copiedCache = this.copy();
-    this.clear();
-    return copiedCache;
-  }
 }
