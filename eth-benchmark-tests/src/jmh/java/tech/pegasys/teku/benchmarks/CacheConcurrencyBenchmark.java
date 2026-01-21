@@ -30,9 +30,9 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import tech.pegasys.teku.benchmarks.gen.LegacyLRUCache;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
+import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 
 /** Benchmark comparing Caffeine Cache to a legacy LRU cache implementation */
 @State(Scope.Group)
@@ -45,7 +45,7 @@ import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
     jvmArgs = {"-Xms2G", "-Xmx2G"})
 public class CacheConcurrencyBenchmark {
 
-  @Param({"LEGACY_LRU", "CAFFEINE"})
+  @Param({"LRU", "CAFFEINE"})
   public String cacheType;
 
   @Param({"1024"})
@@ -62,8 +62,8 @@ public class CacheConcurrencyBenchmark {
   @Setup(Level.Trial)
   public void setup() {
     switch (cacheType) {
-      case "LEGACY_LRU":
-        cache = LegacyLRUCache.create(cacheSize);
+      case "LRU":
+        cache = LRUCache.create(cacheSize);
         break;
       case "CAFFEINE":
         cache = CaffeineCache.create(cacheSize);

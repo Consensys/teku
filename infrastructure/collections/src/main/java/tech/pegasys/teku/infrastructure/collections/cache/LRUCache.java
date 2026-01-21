@@ -11,27 +11,35 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.benchmarks.gen;
+package tech.pegasys.teku.infrastructure.collections.cache;
 
 import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
-import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 
-public class LegacyLRUCache<K, V> implements Cache<K, V> {
-  public static <K, V> LegacyLRUCache<K, V> create(final int capacity) {
-    return new LegacyLRUCache<>(LimitedMap.createNonSynchronized(capacity));
+/**
+ * Simple LRU cache implementation using synchronized access. This is lightweight and suitable for
+ * caches that are frequently copied (e.g., TransitionCaches). For high-contention scenarios or
+ * unbounded caches, use CaffeineCache instead.
+ *
+ * @param <K> Keys type
+ * @param <V> Values type
+ */
+public class LRUCache<K, V> implements Cache<K, V> {
+
+  public static <K, V> LRUCache<K, V> create(final int capacity) {
+    return new LRUCache<>(LimitedMap.createNonSynchronized(capacity));
   }
 
   private final LimitedMap<K, V> cacheData;
 
-  private LegacyLRUCache(final LimitedMap<K, V> cacheData) {
+  private LRUCache(final LimitedMap<K, V> cacheData) {
     this.cacheData = cacheData;
   }
 
   @Override
   public synchronized Cache<K, V> copy() {
-    return new LegacyLRUCache<>(cacheData.copy());
+    return new LRUCache<>(cacheData.copy());
   }
 
   @Override
@@ -70,5 +78,12 @@ public class LegacyLRUCache<K, V> implements Cache<K, V> {
   @Override
   public synchronized int size() {
     return cacheData.size();
+  }
+
+  @Override
+  public Cache<K, V> transfer() {
+    final Cache<K, V> copiedCache = this.copy();
+    this.clear();
+    return copiedCache;
   }
 }

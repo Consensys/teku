@@ -39,9 +39,14 @@ public class ValidatorIndexCache {
     this.lastCachedIndex = new AtomicInteger(lastCachedIndex);
   }
 
+  /** Constructor for benchmarking - allows testing different cache implementations. */
+  @VisibleForTesting
+  ValidatorIndexCache(final Cache<BLSPublicKey, Integer> validatorIndices) {
+    this(validatorIndices, INDEX_NONE);
+  }
+
   public ValidatorIndexCache() {
-    this.validatorIndices = CaffeineCache.createUnbounded();
-    this.lastCachedIndex = new AtomicInteger(INDEX_NONE);
+    this(CaffeineCache.createUnbounded());
   }
 
   public Optional<Integer> getValidatorIndex(

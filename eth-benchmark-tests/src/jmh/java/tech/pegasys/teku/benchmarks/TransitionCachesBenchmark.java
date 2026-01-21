@@ -27,10 +27,10 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import tech.pegasys.teku.benchmarks.gen.LegacyLRUCache;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
+import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 
@@ -46,7 +46,7 @@ public class TransitionCachesBenchmark {
 
   public enum CacheType {
     CAFFEINE(CaffeineCache::create),
-    LEGACY_LRU(LegacyLRUCache::create);
+    LRU(LRUCache::create);
 
     private final TransitionCaches.CacheFactory cacheFactory;
 
@@ -62,8 +62,8 @@ public class TransitionCachesBenchmark {
   @State(Scope.Benchmark)
   public static class BenchmarkState {
 
-    @Param({"CAFFEINE", "LEGACY_LRU"})
-    private CacheType cacheType;
+    @Param({"CAFFEINE", "LRU"})
+    public CacheType cacheType;
 
     @Param({"0", "5"})
     public long fallbackDelayMs;

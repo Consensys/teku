@@ -24,6 +24,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
+import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.collections.cache.NoOpCache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
@@ -65,9 +66,12 @@ public class TransitionCaches {
         }
       };
 
-  /** Creates new instance with clean caches */
+  /**
+   * Creates new instance with clean caches. Uses LRUCache for bounded caches (lightweight, copied
+   * frequently) and CaffeineCache for unbounded validator caches (hot path, high concurrency).
+   */
   public static TransitionCaches createNewEmpty() {
-    return new TransitionCaches(CaffeineCache::create);
+    return new TransitionCaches(LRUCache::create);
   }
 
   /** Returns the instance which doesn't cache anything */
@@ -97,23 +101,40 @@ public class TransitionCaches {
     <K, V> Cache<K, V> create(int capacity);
   }
 
+  @FunctionalInterface
+  public interface UnboundedCacheFactory {
+    <K, V> Cache<K, V> create();
+  }
+
+  /**
+   * Constructor for benchmarking - allows testing different cache implementations for both bounded
+   * and unbounded caches.
+   */
+  @VisibleForTesting
+  public TransitionCaches(
+      final CacheFactory boundedCacheFactory, final UnboundedCacheFactory unboundedCacheFactory) {
+    activeValidators = boundedCacheFactory.create(MAX_ACTIVE_VALIDATORS_CACHE);
+    beaconProposerIndex = boundedCacheFactory.create(MAX_BEACON_PROPOSER_INDEX_CACHE);
+    beaconCommittee = boundedCacheFactory.create(MAX_BEACON_COMMITTEE_CACHE);
+    beaconCommitteesSize = boundedCacheFactory.create(MAX_BEACON_COMMITTEES_SIZE_CACHE);
+    attestersTotalBalance = boundedCacheFactory.create(MAX_BEACON_COMMITTEE_CACHE);
+    totalActiveBalance = boundedCacheFactory.create(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
+    validatorsPubKeys = unboundedCacheFactory.create();
+    validatorIndexCache = new ValidatorIndexCache(unboundedCacheFactory.create());
+    committeeShuffle = boundedCacheFactory.create(MAX_COMMITTEE_SHUFFLE_CACHE);
+    effectiveBalances = boundedCacheFactory.create(MAX_EFFECTIVE_BALANCE_CACHE);
+    syncCommitteeCache = boundedCacheFactory.create(MAX_SYNC_COMMITTEE_CACHE);
+    baseRewardPerIncrement = boundedCacheFactory.create(MAX_BASE_REWARD_PER_INCREMENT_CACHE);
+    progressiveTotalBalances = ProgressiveTotalBalancesUpdates.NOOP;
+  }
+
+  /**
+   * Convenience constructor that uses the same factory for both bounded and unbounded caches.
+   * Useful for testing when you want to compare implementations across all cache types.
+   */
   @VisibleForTesting
   public TransitionCaches(final CacheFactory cacheFactory) {
-    activeValidators = cacheFactory.create(MAX_ACTIVE_VALIDATORS_CACHE);
-    beaconProposerIndex = cacheFactory.create(MAX_BEACON_PROPOSER_INDEX_CACHE);
-    beaconCommittee = cacheFactory.create(MAX_BEACON_COMMITTEE_CACHE);
-    beaconCommitteesSize = cacheFactory.create(MAX_BEACON_COMMITTEES_SIZE_CACHE);
-    attestersTotalBalance = cacheFactory.create(MAX_BEACON_COMMITTEE_CACHE);
-    totalActiveBalance = cacheFactory.create(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
-    // Use unbounded cache for validators - they never evict and grow indefinitely
-    // This avoids allocating huge eviction policy structures
-    validatorsPubKeys = CaffeineCache.createUnbounded();
-    validatorIndexCache = new ValidatorIndexCache();
-    committeeShuffle = cacheFactory.create(MAX_COMMITTEE_SHUFFLE_CACHE);
-    effectiveBalances = cacheFactory.create(MAX_EFFECTIVE_BALANCE_CACHE);
-    syncCommitteeCache = cacheFactory.create(MAX_SYNC_COMMITTEE_CACHE);
-    baseRewardPerIncrement = cacheFactory.create(MAX_BASE_REWARD_PER_INCREMENT_CACHE);
-    progressiveTotalBalances = ProgressiveTotalBalancesUpdates.NOOP;
+    this(cacheFactory, CaffeineCache::createUnbounded);
   }
 
   private TransitionCaches(
