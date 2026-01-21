@@ -14,21 +14,28 @@
 package tech.pegasys.teku.test.acceptance.das;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 
 public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
+
   @Test
   public void shouldBeAbleToCheckpointSyncAndBackfillCustody() throws Exception {
     // supernode with validators
@@ -42,6 +49,7 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
 
     primaryNode.start();
     final UInt64 genesisTime = primaryNode.getGenesisTime();
+
     primaryNode.waitForNewFinalization();
     final SignedBeaconBlock checkpointFinalizedBlock = primaryNode.getFinalizedBlock();
     // We expect at least 1 full epoch in Fulu before checkpoint, so it's greater without equal
@@ -54,19 +62,39 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
                 .isGreaterThan(specConfigFulu.getFuluForkEpoch()))
         .isTrue();
 
-    // late joining full node without validators
+
+    // late joining full node without validators with --rest-api-getblobs-sidecars-download-enabled
     final TekuBeaconNode secondaryNode =
-        createTekuBeaconNode(
-            createConfigBuilder()
-                .withRealNetwork()
-                .withCheckpointSyncUrl(primaryNode.getBeaconRestApiUrl())
-                .withGenesisTime(genesisTime.intValue())
-                .withPeers(primaryNode)
-                .withInteropValidators(0, 0)
-                .build());
+            createTekuBeaconNode(
+                    createConfigBuilder()
+                            .withRealNetwork()
+                            .withCheckpointSyncUrl(primaryNode.getBeaconRestApiUrl())
+                            .withGenesisTime(genesisTime.intValue())
+                            .withGetBlobsSidecarsDownloadApiEnabled()
+                            .withPeers(primaryNode)
+                            .withInteropValidators(0, 0)
+                            .build());
 
     secondaryNode.start();
+
+    // late joining full node without validators without --rest-api-getblobs-sidecars-download-enabled
+    //this mean that when we try to blob sidecars it will 404
+
+    final TekuBeaconNode thirdNode =
+            createTekuBeaconNode(
+                    createConfigBuilder()
+                            .withRealNetwork()
+                            .withCheckpointSyncUrl(primaryNode.getBeaconRestApiUrl())
+                            .withGenesisTime(genesisTime.intValue())
+                            .withPeers(primaryNode)
+                            .withInteropValidators(0, 0)
+                            .build());
+
+    thirdNode.start();
+
     secondaryNode.waitUntilInSyncWith(primaryNode);
+    thirdNode.waitUntilInSyncWith(primaryNode);
+
 
     final UInt64 firstFuluSlot =
         primaryNode.getSpec().computeStartSlotAtEpoch(specConfigFulu.getFuluForkEpoch());
@@ -100,6 +128,25 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
             .mapToInt(i -> i)
             .sum();
     assertThat(beforeCheckpointSidecars).isGreaterThan(0);
+
+    //get a slot to get blobs from
+    final UInt64 headSlot = secondaryNode.getHeadBlock().getSlot();
+
+    final Optional<List<Blob>> blobsForBlockNode1 = primaryNode.getBlobsAtSlot(headSlot);
+    final int columnsFromSecondNode = secondaryNode.getDataColumnSidecarCount("head");
+    assertThat(columnsFromSecondNode).isGreaterThan(0);
+    final Optional<List<Blob>> blobsForBlockNode2 = secondaryNode.getBlobsAtSlot(headSlot);
+
+    //assert that blobs obtained from node 1 and node 2 are the same
+    assertThat(blobsForBlockNode1).isPresent();
+    assertThat(blobsForBlockNode1).isEqualTo(blobsForBlockNode2);
+
+    final int columnsFromThirdNode = thirdNode.getDataColumnSidecarCount("head");
+    assertThat(columnsFromThirdNode).isGreaterThan(0);
+
+    //404 are casted into optional empty
+    assertThat(thirdNode.getBlobsAtSlot(headSlot)).isEmpty();
+
   }
 
   private int getAndAssertDasCustody(

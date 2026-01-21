@@ -65,6 +65,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -745,6 +746,18 @@ public class TekuBeaconNode extends TekuNode {
         httpClient.get(getRestApiUrl(), "/eth/v1/debug/beacon/data_column_sidecars/" + blockId);
     final JsonNode jsonNode = OBJECT_MAPPER.readTree(result);
     return jsonNode.get("data").size();
+  }
+
+  public Optional<List<Blob>> getBlobsAtSlot(final UInt64 slot) throws IOException {
+    final Bytes result =
+            httpClient.getAsBytes(getRestApiUrl(),
+                            "/eth/v1/beacon/blobs/" + slot,
+                            Map.of("Accept", "application/octet-stream"));
+    if (result.isEmpty()) {
+      return Optional.empty();
+    } else {
+      return Optional.of(spec.deserializeBlobsInBlock(result, slot).asList());
+    }
   }
 
   public void waitForCustodyBackfill(final UInt64 slot, final int expectedCustodyCount) {
