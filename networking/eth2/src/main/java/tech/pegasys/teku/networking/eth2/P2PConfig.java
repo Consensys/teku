@@ -58,8 +58,7 @@ public class P2PConfig {
   public static final int DEFAULT_DOWNLOAD_TIMEOUT_MS = 240_000;
 
   public static final int DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS = 30;
-  // Align with epoch size (32 slots) for efficient filesystem scanning
-  public static final int DEFAULT_COLUMN_CUSTODY_BACKFILLER_BATCH_SIZE = 32;
+  public static final int DEFAULT_COLUMN_CUSTODY_BACKFILLER_BATCH_SIZE = 10;
 
   // RocksDB is configured with 6 background jobs and threads (DEFAULT_MAX_BACKGROUND_JOBS and
   // DEFAULT_BACKGROUND_THREAD_COUNT)
