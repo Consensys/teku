@@ -123,7 +123,7 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                       .getBuilderPendingPaymentsSchema()
                       .createFromElements(builderPendingPayments));
               state.setBuilderPendingWithdrawals(
-                  schemaDefinitions.getBuilderPendingWithdrawalsSchema().getDefault());
+                  schemaDefinitions.getBuilderPendingWithdrawalsSchema().of());
               state.setLatestBlockHash(latestBlockHash);
               state.setPayloadExpectedWithdrawals(
                   schemaDefinitions

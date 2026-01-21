@@ -15,26 +15,24 @@ package tech.pegasys.teku.spec.datastructures.state.versions.gloas;
 
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container4;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BuilderPendingWithdrawal
-    extends Container4<BuilderPendingWithdrawal, SszByteVector, SszUInt64, SszUInt64, SszUInt64> {
+    extends Container3<BuilderPendingWithdrawal, SszByteVector, SszUInt64, SszUInt64> {
 
   protected BuilderPendingWithdrawal(
       final BuilderPendingWithdrawalSchema schema,
       final Eth1Address feeRecipient,
       final UInt64 amount,
-      final UInt64 builderIndex,
-      final UInt64 withdrawableEpoch) {
+      final UInt64 builderIndex) {
     super(
         schema,
         SszByteVector.fromBytes(feeRecipient.getWrappedBytes()),
         SszUInt64.of(amount),
-        SszUInt64.of(builderIndex),
-        SszUInt64.of(withdrawableEpoch));
+        SszUInt64.of(builderIndex));
   }
 
   protected BuilderPendingWithdrawal(
@@ -52,15 +50,6 @@ public class BuilderPendingWithdrawal
 
   public UInt64 getBuilderIndex() {
     return getField2().get();
-  }
-
-  public UInt64 getWithdrawableEpoch() {
-    return getField3().get();
-  }
-
-  public BuilderPendingWithdrawal copyWithNewWithdrawableEpoch(final UInt64 withdrawableEpoch) {
-    return new BuilderPendingWithdrawal(
-        getSchema(), getFeeRecipient(), getAmount(), getBuilderIndex(), withdrawableEpoch);
   }
 
   @Override
