@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
+import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.collections.cache.NoOpCache;
 import tech.pegasys.teku.infrastructure.collections.cache.StripedCache;
@@ -67,12 +68,25 @@ public class TransitionCaches {
       };
 
   /**
-   * Creates new instance with clean caches. Uses LRUCache for bounded caches (lightweight, copied
-   * frequently) and StripedCache for unbounded validator caches (16x less lock contention, same
-   * memory footprint as master).
+   * Creates new instance with clean caches. Uses: - CaffeineCache for beaconCommittee (high
+   * contention, hot path) - LRUCache for other bounded caches (lightweight, copied frequently) -
+   * StripedCache for unbounded validator caches (16x less lock contention)
    */
   public static TransitionCaches createNewEmpty() {
-    return new TransitionCaches(LRUCache::create, StripedCache::createUnbounded);
+    return new TransitionCaches(
+        LRUCache.create(MAX_ACTIVE_VALIDATORS_CACHE),
+        LRUCache.create(MAX_BEACON_PROPOSER_INDEX_CACHE),
+        CaffeineCache.create(MAX_BEACON_COMMITTEE_CACHE),
+        LRUCache.create(MAX_BEACON_COMMITTEES_SIZE_CACHE),
+        LRUCache.create(MAX_BEACON_COMMITTEE_CACHE),
+        LRUCache.create(MAX_TOTAL_ACTIVE_BALANCE_CACHE),
+        StripedCache.createUnbounded(),
+        new ValidatorIndexCache(StripedCache.createUnbounded()),
+        LRUCache.create(MAX_COMMITTEE_SHUFFLE_CACHE),
+        LRUCache.create(MAX_EFFECTIVE_BALANCE_CACHE),
+        LRUCache.create(MAX_SYNC_COMMITTEE_CACHE),
+        LRUCache.create(MAX_BASE_REWARD_PER_INCREMENT_CACHE),
+        ProgressiveTotalBalancesUpdates.NOOP);
   }
 
   /** Returns the instance which doesn't cache anything */
@@ -127,15 +141,6 @@ public class TransitionCaches {
     syncCommitteeCache = boundedCacheFactory.create(MAX_SYNC_COMMITTEE_CACHE);
     baseRewardPerIncrement = boundedCacheFactory.create(MAX_BASE_REWARD_PER_INCREMENT_CACHE);
     progressiveTotalBalances = ProgressiveTotalBalancesUpdates.NOOP;
-  }
-
-  /**
-   * Convenience constructor that uses the same factory for both bounded and unbounded caches.
-   * Useful for testing when you want to compare implementations across all cache types.
-   */
-  @VisibleForTesting
-  public TransitionCaches(final CacheFactory cacheFactory) {
-    this(cacheFactory, StripedCache::createUnbounded);
   }
 
   private TransitionCaches(

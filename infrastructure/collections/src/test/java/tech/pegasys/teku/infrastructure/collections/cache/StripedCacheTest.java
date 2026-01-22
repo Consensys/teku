@@ -15,164 +15,34 @@ package tech.pegasys.teku.infrastructure.collections.cache;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Random;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class StripedCacheTest {
+/** Concrete test class for StripedCache that inherits all contract tests. */
+public class StripedCacheTest extends CacheContractTest {
 
-  @Test
-  void concurrencyTest() {
-    final Cache<Integer, Integer> cache = StripedCache.createUnbounded();
-    final int threadsCount = 16;
-    final ExecutorService executor = Executors.newFixedThreadPool(threadsCount);
-
-    final CompletableFuture<?>[] futures =
-        Stream.generate(
-                () ->
-                    CompletableFuture.runAsync(
-                        () -> {
-                          final Random random = new Random();
-                          for (int iteration = 0; iteration < 50; iteration++) {
-                            for (int i = 0; i < 256 * 8; i++) {
-                              int key = random.nextInt(256 * 2);
-                              final Integer value = cache.get(key, idx -> idx);
-                              assertThat(value).isEqualTo(key);
-                            }
-                            for (int i = 0; i < 128; i++) {
-                              final int key = random.nextInt(256 * 2);
-                              cache.invalidate(key);
-                            }
-                            if (random.nextInt(threadsCount * 2) == 0) {
-                              cache.clear();
-                            }
-                          }
-                        },
-                        executor))
-            .limit(threadsCount)
-            .toArray(CompletableFuture[]::new);
-
-    try {
-      CompletableFuture.allOf(futures).get(10, TimeUnit.SECONDS);
-    } catch (Exception e) {
-      Assertions.fail("Concurrency test failed with exception", e);
-    } finally {
-      executor.shutdownNow();
-    }
+  @Override
+  protected <K, V> Cache<K, V> createCache(final int capacity) {
+    // StripedCache is unbounded, so we ignore the capacity parameter
+    return StripedCache.createUnbounded();
   }
 
-  @Test
-  void get_shouldCreateAnEntryWhenMiss() {
-    final Cache<Integer, Integer> cache = StripedCache.createUnbounded();
-    Integer i = cache.get(1, __ -> 777);
-    assertThat(i).isEqualTo(777);
-    assertThat(cache.size()).isEqualTo(1);
+  @Override
+  protected <K, V> Cache<K, V> createUnboundedCache() {
+    return StripedCache.createUnbounded();
   }
 
+  @Override
   @Test
-  void get_shouldReturnExistingEntryWhenHit() {
-    final Cache<Integer, Integer> cache = StripedCache.createUnbounded();
-    cache.get(1, __ -> 777);
-    Integer i = cache.get(1, __ -> 888);
-    assertThat(i).isEqualTo(777);
-    assertThat(cache.size()).isEqualTo(1);
+  void get_shouldEvictAnItemWhenCapacityIsReached() {
+    // StripedCache is unbounded, so eviction tests don't apply
+    // Skip this test
   }
 
+  @Override
   @Test
-  void invalidate_shouldRemoveEntry() {
-    final Cache<Integer, Integer> cache = StripedCache.createUnbounded();
-    cache.get(0, __ -> 100);
-    cache.get(1, __ -> 101);
-    cache.invalidate(0);
-    assertThat(cache.size()).isEqualTo(1);
-    assertThat(cache.getCached(0)).isEmpty();
-    assertThat(cache.getCached(1)).contains(101);
-  }
-
-  @Test
-  void invalidate_shouldNotModifyWithNonExistingKey() {
-    final Cache<Integer, Integer> cache = StripedCache.createUnbounded();
-    cache.get(0, __ -> 100);
-    cache.get(1, __ -> 101);
-    cache.invalidate(2);
-
-    assertThat(cache.size()).isEqualTo(2);
-    assertThat(cache.getCached(0)).contains(100);
-    assertThat(cache.getCached(1)).contains(101);
-  }
-
-  @Test
-  void unboundedCache_shouldGrowIndefinitelyWithoutEviction() {
-    final Cache<Integer, Integer> unboundedCache = StripedCache.createUnbounded();
-    final int largeSize = 10000;
-
-    // add many items
-    for (int i = 0; i < largeSize; i++) {
-      unboundedCache.get(i, key -> key);
-    }
-
-    // verify all items are still in the cache (no eviction)
-    assertThat(unboundedCache.size()).isEqualTo(largeSize);
-    for (int i = 0; i < largeSize; i++) {
-      assertThat(unboundedCache.getCached(i)).as("Item %d should still be in cache", i).contains(i);
-    }
-  }
-
-  @Test
-  void unboundedCache_copyShouldPreserveUnboundedBehavior() {
-    final Cache<Integer, Integer> unboundedCache = StripedCache.createUnbounded();
-    final int itemCount = 1000;
-
-    // populate the cache
-    for (int i = 0; i < itemCount; i++) {
-      unboundedCache.get(i, key -> key);
-    }
-
-    // test copy preserves unbounded behavior
-    final Cache<Integer, Integer> copiedCache = unboundedCache.copy();
-    assertThat(copiedCache.size()).isEqualTo(itemCount);
-
-    // add more items to copied cache - should grow without eviction
-    for (int i = itemCount; i < itemCount * 2; i++) {
-      copiedCache.get(i, key -> key);
-    }
-    assertThat(copiedCache.size()).isEqualTo(itemCount * 2);
-
-    // verify all items are still present
-    for (int i = 0; i < itemCount * 2; i++) {
-      assertThat(copiedCache.getCached(i)).isPresent();
-    }
-
-    // original cache should be unaffected
-    assertThat(unboundedCache.size()).isEqualTo(itemCount);
-  }
-
-  @Test
-  void clear_shouldRemoveAllEntries() {
-    final Cache<Integer, Integer> cache = StripedCache.createUnbounded();
-    for (int i = 0; i < 100; i++) {
-      cache.get(i, key -> key);
-    }
-    assertThat(cache.size()).isEqualTo(100);
-
-    cache.clear();
-    assertThat(cache.size()).isEqualTo(0);
-    assertThat(cache.getCached(50)).isEmpty();
-  }
-
-  @Test
-  void invalidateWithNewValue_shouldReplaceValue() {
-    final Cache<Integer, Integer> cache = StripedCache.createUnbounded();
-    cache.get(1, __ -> 100);
-    assertThat(cache.getCached(1)).contains(100);
-
-    cache.invalidateWithNewValue(1, 200);
-    assertThat(cache.getCached(1)).contains(200);
+  void copy_shouldPreserveCapacityLimit() {
+    // StripedCache is unbounded, so capacity limit tests don't apply
+    // Skip this test
   }
 
   @Test
