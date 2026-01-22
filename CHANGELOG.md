@@ -7,6 +7,7 @@
 ## Unreleased Changes
 
 ### Breaking Changes
+ - Removed development cli arg `--Xp2p-reworked-sidecar-recovery-enabled`.
 
 ### Additions and Improvements
 

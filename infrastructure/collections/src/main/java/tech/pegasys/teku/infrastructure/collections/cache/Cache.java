@@ -41,11 +41,6 @@ public interface Cache<K, V> {
   /** Creates independent copy of this Cache instance */
   Cache<K, V> copy();
 
-  /** Creates independent copy of this Cache instance while possibly clearing this cache content */
-  default Cache<K, V> transfer() {
-    return copy();
-  }
-
   /** Removes cache entry */
   void invalidate(K key);
 

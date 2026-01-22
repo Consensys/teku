@@ -87,7 +87,8 @@ public abstract class BeaconStateAccessors {
             .get(
                 validatorIndex,
                 i -> {
-                  BLSPublicKey pubKey = state.getValidators().get(i.intValue()).getPublicKey();
+                  final BLSPublicKey pubKey =
+                      state.getValidators().get(i.intValue()).getPublicKey();
 
                   // eagerly pre-cache pubKey => validatorIndex mapping
                   BeaconStateCache.getTransitionCaches(state)
@@ -361,5 +362,16 @@ public abstract class BeaconStateAccessors {
   public Bytes32 getVoluntaryExitDomain(
       final UInt64 epoch, final Fork fork, final Bytes32 genesisValidatorsRoot) {
     return getDomain(Domain.VOLUNTARY_EXIT, epoch, fork, genesisValidatorsRoot);
+  }
+
+  public Optional<BLSPublicKey> getBuilderPubKey(
+      final BeaconState state, final UInt64 builderIndex) {
+    // NO-OP
+    return Optional.empty();
+  }
+
+  public Optional<Integer> getBuilderIndex(final BeaconState state, final BLSPublicKey publicKey) {
+    // NO-OP
+    return Optional.empty();
   }
 }
