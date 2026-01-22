@@ -19,8 +19,8 @@ import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 
 /**
  * Simple LRU cache implementation using synchronized access. This is lightweight and suitable for
- * caches that are frequently copied (e.g., TransitionCaches). For high-contention scenarios or
- * unbounded caches, use CaffeineCache instead.
+ * caches that are frequently copied (e.g., TransitionCaches). For unbounded caches with high
+ * concurrency, use StripedCache instead.
  *
  * @param <K> Keys type
  * @param <V> Values type

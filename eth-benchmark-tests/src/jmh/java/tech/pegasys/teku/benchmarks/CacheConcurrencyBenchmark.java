@@ -31,11 +31,10 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
-import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
-import tech.pegasys.teku.infrastructure.collections.cache.ConcurrentCache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
+import tech.pegasys.teku.infrastructure.collections.cache.StripedCache;
 
-/** Benchmark comparing Caffeine Cache to a legacy LRU cache implementation */
+/** Benchmark comparing Striped LRU Cache to a single synchronized LRU cache implementation */
 @State(Scope.Group)
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -46,7 +45,7 @@ import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
     jvmArgs = {"-Xms2G", "-Xmx2G"})
 public class CacheConcurrencyBenchmark {
 
-  @Param({"LRU", "CONCURRENT", "CAFFEINE"})
+  @Param({"LRU", "STRIPED"})
   public String cacheType;
 
   @Param({"1024"})
@@ -66,11 +65,8 @@ public class CacheConcurrencyBenchmark {
       case "LRU":
         cache = LRUCache.create(cacheSize);
         break;
-      case "CONCURRENT":
-        cache = ConcurrentCache.create();
-        break;
-      case "CAFFEINE":
-        cache = CaffeineCache.create(cacheSize);
+      case "STRIPED":
+        cache = StripedCache.createUnbounded();
         break;
       default:
         throw new IllegalStateException("Unknown cache type: " + cacheType);

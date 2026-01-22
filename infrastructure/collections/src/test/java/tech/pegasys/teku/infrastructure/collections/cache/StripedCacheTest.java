@@ -24,13 +24,11 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class CaffeineCacheTest {
-  private final int maxCacheSize = 16;
-  private final Cache<Integer, Integer> cache = CacheTestUtil.createSynchronous(maxCacheSize);
+public class StripedCacheTest {
 
   @Test
   void concurrencyTest() {
-    final Cache<Integer, Integer> cache = CaffeineCache.create(256);
+    final Cache<Integer, Integer> cache = StripedCache.createUnbounded();
     final int threadsCount = 16;
     final ExecutorService executor = Executors.newFixedThreadPool(threadsCount);
 
@@ -70,6 +68,7 @@ public class CaffeineCacheTest {
 
   @Test
   void get_shouldCreateAnEntryWhenMiss() {
+    final Cache<Integer, Integer> cache = StripedCache.createUnbounded();
     Integer i = cache.get(1, __ -> 777);
     assertThat(i).isEqualTo(777);
     assertThat(cache.size()).isEqualTo(1);
@@ -77,6 +76,7 @@ public class CaffeineCacheTest {
 
   @Test
   void get_shouldReturnExistingEntryWhenHit() {
+    final Cache<Integer, Integer> cache = StripedCache.createUnbounded();
     cache.get(1, __ -> 777);
     Integer i = cache.get(1, __ -> 888);
     assertThat(i).isEqualTo(777);
@@ -85,6 +85,7 @@ public class CaffeineCacheTest {
 
   @Test
   void invalidate_shouldRemoveEntry() {
+    final Cache<Integer, Integer> cache = StripedCache.createUnbounded();
     cache.get(0, __ -> 100);
     cache.get(1, __ -> 101);
     cache.invalidate(0);
@@ -95,6 +96,7 @@ public class CaffeineCacheTest {
 
   @Test
   void invalidate_shouldNotModifyWithNonExistingKey() {
+    final Cache<Integer, Integer> cache = StripedCache.createUnbounded();
     cache.get(0, __ -> 100);
     cache.get(1, __ -> 101);
     cache.invalidate(2);
@@ -105,78 +107,8 @@ public class CaffeineCacheTest {
   }
 
   @Test
-  void get_shouldHonorMaxCapacityAfterEviction() {
-    final Cache<Integer, Integer> smallCache = CacheTestUtil.createSynchronous(maxCacheSize);
-    for (int i = 0; i < maxCacheSize; i++) {
-      smallCache.get(i, key -> key);
-    }
-    assertThat(smallCache.size()).isEqualTo(maxCacheSize);
-    smallCache.get(maxCacheSize, key -> key);
-    assertThat(smallCache.size()).isEqualTo(maxCacheSize);
-    assertThat(smallCache.getCached(maxCacheSize)).isPresent();
-  }
-
-  @Test
-  void get_shouldEvictAnItemWhenCapacityIsReached() {
-    // fill the cache to its maximum capacity
-    for (int i = 0; i < maxCacheSize; i++) {
-      cache.get(i, key -> key);
-    }
-    assertThat(cache.size()).isEqualTo(maxCacheSize);
-
-    // add a new item, which should trigger an eviction
-    int newItemKey = maxCacheSize;
-    cache.get(newItemKey, key -> key);
-
-    // verify the cache's contract
-    assertThat(cache.size())
-        .as("Cache should not grow beyond its max size")
-        .isEqualTo(maxCacheSize);
-    assertThat(cache.getCached(newItemKey))
-        .as("The newly added item should be present")
-        .isPresent();
-
-    long originalItemsStillInCache = 0;
-    for (int i = 0; i < maxCacheSize; i++) {
-      if (cache.getCached(i).isPresent()) {
-        originalItemsStillInCache++;
-      }
-    }
-    assertThat(originalItemsStillInCache)
-        .as("Exactly one of the original items should have been evicted")
-        .isEqualTo(maxCacheSize - 1);
-  }
-
-  @Test
-  void copy_shouldPreserveCapacityLimit() {
-    final Cache<Integer, Integer> sourceCache = CacheTestUtil.createSynchronous(maxCacheSize);
-    for (int i = 0; i < maxCacheSize; i++) {
-      sourceCache.get(i, key -> key);
-    }
-    assertThat(sourceCache.size()).isEqualTo(maxCacheSize);
-
-    // create a copy
-    final Cache<Integer, Integer> copiedCache = sourceCache.copy();
-    assertThat(copiedCache.size()).isEqualTo(maxCacheSize);
-
-    int newItemKey = maxCacheSize;
-    copiedCache.get(newItemKey, key -> key);
-
-    // the copied cache respected the size limit and did not grow
-    assertThat(copiedCache.size())
-        .as("Copied cache should evict old entries and not exceed its capacity")
-        .isEqualTo(maxCacheSize);
-    assertThat(copiedCache.getCached(newItemKey)).isPresent();
-
-    // verify the original cache was not affected
-    assertThat(sourceCache.size()).isEqualTo(maxCacheSize);
-    assertThat(sourceCache.getCached(0)).isPresent();
-    assertThat(sourceCache.getCached(newItemKey)).isEmpty();
-  }
-
-  @Test
   void unboundedCache_shouldGrowIndefinitelyWithoutEviction() {
-    final Cache<Integer, Integer> unboundedCache = CaffeineCache.createUnbounded();
+    final Cache<Integer, Integer> unboundedCache = StripedCache.createUnbounded();
     final int largeSize = 10000;
 
     // add many items
@@ -192,8 +124,8 @@ public class CaffeineCacheTest {
   }
 
   @Test
-  void unboundedCache_copyAndTransferShouldPreserveUnboundedBehavior() {
-    final Cache<Integer, Integer> unboundedCache = CaffeineCache.createUnbounded();
+  void unboundedCache_copyShouldPreserveUnboundedBehavior() {
+    final Cache<Integer, Integer> unboundedCache = StripedCache.createUnbounded();
     final int itemCount = 1000;
 
     // populate the cache
@@ -218,5 +150,45 @@ public class CaffeineCacheTest {
 
     // original cache should be unaffected
     assertThat(unboundedCache.size()).isEqualTo(itemCount);
+  }
+
+  @Test
+  void clear_shouldRemoveAllEntries() {
+    final Cache<Integer, Integer> cache = StripedCache.createUnbounded();
+    for (int i = 0; i < 100; i++) {
+      cache.get(i, key -> key);
+    }
+    assertThat(cache.size()).isEqualTo(100);
+
+    cache.clear();
+    assertThat(cache.size()).isEqualTo(0);
+    assertThat(cache.getCached(50)).isEmpty();
+  }
+
+  @Test
+  void invalidateWithNewValue_shouldReplaceValue() {
+    final Cache<Integer, Integer> cache = StripedCache.createUnbounded();
+    cache.get(1, __ -> 100);
+    assertThat(cache.getCached(1)).contains(100);
+
+    cache.invalidateWithNewValue(1, 200);
+    assertThat(cache.getCached(1)).contains(200);
+  }
+
+  @Test
+  void stripingDistributesKeysAcrossMultipleStripes() {
+    final Cache<Integer, Integer> cache = StripedCache.createUnbounded();
+
+    // Add many keys to ensure they distribute across stripes
+    for (int i = 0; i < 1000; i++) {
+      cache.get(i, key -> key);
+    }
+
+    assertThat(cache.size()).isEqualTo(1000);
+
+    // Verify all keys are retrievable (proves correct stripe distribution)
+    for (int i = 0; i < 1000; i++) {
+      assertThat(cache.getCached(i)).as("Key %d should be in cache", i).contains(i);
+    }
   }
 }

@@ -18,7 +18,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
-import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
+import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
@@ -41,7 +41,7 @@ public class DataColumnSidecarSignatureValidator {
 
     // let's cache enough headers so that we can be effective even during syncing,
     // when we try to download columns for multiple blocks in parallel
-    this.cachedSignatureValidationResultsBySignedHeaderRoot = CaffeineCache.create(100);
+    this.cachedSignatureValidationResultsBySignedHeaderRoot = LRUCache.create(100);
   }
 
   public SafeFuture<Boolean> validateSignature(final DataColumnSidecar sidecar) {
