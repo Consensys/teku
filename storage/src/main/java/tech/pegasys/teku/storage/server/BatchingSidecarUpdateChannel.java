@@ -70,14 +70,18 @@ public class BatchingSidecarUpdateChannel implements SidecarUpdateChannel {
   @Override
   public SafeFuture<Void> onNewSidecar(final DataColumnSidecar sidecar) {
     final SafeFuture<Void> result = new SafeFuture<>();
+    boolean shouldFlush = false;
     synchronized (lock) {
       pendingItems.add(new PendingItem(sidecar, result));
       if (pendingItems.size() >= maxBatchSize) {
-        flushBatch();
+        shouldFlush = true;
       } else if (!flushScheduled) {
         flushScheduled = true;
         asyncRunner.runAfterDelay(this::flushBatch, maxDelay).finishStackTrace();
       }
+    }
+    if (shouldFlush) {
+      flushBatch();
     }
     return result;
   }
@@ -115,7 +119,7 @@ public class BatchingSidecarUpdateChannel implements SidecarUpdateChannel {
       flushScheduled = false;
     }
 
-    LOG.info("Executing a batch of size {}", batch.size());
+    LOG.debug("Executing a batch of size {}", batch.size());
 
     delegate
         .onNewSidecars(batch)
