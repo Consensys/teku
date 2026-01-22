@@ -324,7 +324,7 @@ Each module has its own test suite under `src/test/java` and test fixtures under
 - **Async operations**: Use `SafeFuture` and `AsyncRunner` instead of raw CompletableFuture
 - **Immutability**: Prefer immutable data structures (record types, SszData implementations)
 - **Error handling**: Use checked exceptions for recoverable errors, unchecked for programming errors
-- **Testing**: All code must have automated test coverage (no manual tests). All code changes must include corresponding unit tests.
+- **Testing**: All code must have automated test coverage (no manual tests).
 - **Logging**: Add appropriate LOG lines for new code paths, following the Hyperledger Besu Coding Conventions.
 - **Commit messages**: Imperative mood, present tense ("Add feature" not "Added feature")
 
@@ -353,10 +353,12 @@ Circular dependencies are prevented by build-time dependency checks (DepCheckPlu
 ## Development Workflow
 
 1. Make changes to relevant module(s)
-2. Run `./gradlew spotlessApply` to format code
-3. Run `./gradlew test` to run unit tests
-4. Run module-specific tests: `./gradlew :<module>:test`
-5. Run `./gradlew build` for full verification before committing
+2. Write unit tests for all code changes
+3. Run `./gradlew spotlessApply` to format code
+4. Verify compilation: `./gradlew compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compilePropertyTestJava`
+5. Run unit tests: `./gradlew test`
+6. Run module-specific tests: `./gradlew :<module>:test`
+7. Run full build before committing: `./gradlew build`
 
 ## Running Teku Locally
 

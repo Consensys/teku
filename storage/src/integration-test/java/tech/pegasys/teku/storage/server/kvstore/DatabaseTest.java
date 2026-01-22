@@ -399,10 +399,9 @@ public class DatabaseTest {
             dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.valueOf(3)), UInt64.valueOf(3));
 
     // add blobs out of order
-    database.addSidecar(dataColumnSidecarSlot1);
-    database.addSidecar(dataColumnSidecarSlot0);
-    database.addSidecar(dataColumnSidecarSlot3);
-    database.addSidecar(dataColumnSidecarSlot2);
+    database.addSidecars(List.of(dataColumnSidecarSlot1));
+    database.addSidecars(List.of(dataColumnSidecarSlot0));
+    database.addSidecars(List.of(dataColumnSidecarSlot3, dataColumnSidecarSlot2));
 
     assertThat(database.getSidecarColumnCount()).isEqualTo(4L);
 
@@ -2387,7 +2386,7 @@ public class DatabaseTest {
         DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar);
     assertThat(database.getSidecar(columnSlotAndIdentifier).isEmpty()).isTrue();
 
-    database.addSidecar(dataColumnSidecar);
+    database.addSidecars(List.of(dataColumnSidecar));
     assertThat(database.getSidecar(columnSlotAndIdentifier)).contains(dataColumnSidecar);
   }
 
@@ -2439,9 +2438,7 @@ public class DatabaseTest {
     final DataColumnSlotAndIdentifier block2Column0 =
         DataColumnSlotAndIdentifier.fromDataColumn(block2Sidecar0);
 
-    database.addSidecar(block1Sidecar0);
-    database.addSidecar(block1Sidecar1);
-    database.addSidecar(block2Sidecar0);
+    database.addSidecars(List.of(block1Sidecar0, block1Sidecar1, block2Sidecar0));
 
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(block1Sidecar0.getSlot().plus(1))) {
@@ -2485,9 +2482,7 @@ public class DatabaseTest {
     final DataColumnSlotAndIdentifier block2Column0 =
         DataColumnSlotAndIdentifier.fromDataColumn(block2Sidecar0);
 
-    database.addSidecar(block1Sidecar0);
-    database.addSidecar(block1Sidecar1);
-    database.addSidecar(block2Sidecar0);
+    database.addSidecars(List.of(block1Sidecar0, block1Sidecar1, block2Sidecar0));
 
     database.pruneAllSidecars(ZERO, 10);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
@@ -2544,11 +2539,8 @@ public class DatabaseTest {
     final DataColumnSlotAndIdentifier block3Column0 =
         DataColumnSlotAndIdentifier.fromDataColumn(block3Sidecar0);
 
-    database.addSidecar(block1Sidecar0);
-    database.addSidecar(block1Sidecar1);
-    database.addSidecar(block1Sidecar2);
-    database.addSidecar(block2Sidecar0);
-    database.addSidecar(block3Sidecar0);
+    database.addSidecars(
+        List.of(block1Sidecar0, block1Sidecar1, block1Sidecar2, block2Sidecar0, block3Sidecar0));
 
     // not pruned yet should contain all sidecars
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
@@ -2612,9 +2604,7 @@ public class DatabaseTest {
     final DataColumnSlotAndIdentifier block3Column0 =
         DataColumnSlotAndIdentifier.fromDataColumn(block3Sidecar0);
 
-    database.addSidecar(block1Sidecar0);
-    database.addSidecar(block1Sidecar1);
-    database.addSidecar(block1Sidecar2);
+    database.addSidecars(List.of(block1Sidecar0, block1Sidecar1, block1Sidecar2));
     database.addNonCanonicalSidecar(block2Sidecar0);
     database.addNonCanonicalSidecar(block3Sidecar0);
 
