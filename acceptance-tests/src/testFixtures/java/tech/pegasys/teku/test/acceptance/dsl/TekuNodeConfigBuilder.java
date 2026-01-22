@@ -691,6 +691,12 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withGetBlobsSidecarsDownloadApiEnabled() {
+    LOG.debug("--rest-api-getblobs-sidecars-download-enabled: {}", true);
+    configMap.put("rest-api-getblobs-sidecars-download-enabled", true);
+    return this;
+  }
+
   public TekuNodeConfigBuilder withReworkedRecoveryTimeouts(
       final int recoveryTimeout, final int downloadTimeout) {
     LOG.debug("Xp2p-sidecar-cancel-timeout-ms: {}", recoveryTimeout);
