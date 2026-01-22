@@ -1,7 +1,7 @@
 {
   "title" : "BuilderPendingWithdrawal",
   "type" : "object",
-  "required" : [ "fee_recipient", "amount", "builder_index", "withdrawable_epoch" ],
+  "required" : [ "fee_recipient", "amount", "builder_index" ],
   "properties" : {
     "fee_recipient" : {
       "type" : "string",
@@ -16,12 +16,6 @@
       "format" : "uint64"
     },
     "builder_index" : {
-      "type" : "string",
-      "description" : "unsigned 64 bit integer",
-      "example" : "1",
-      "format" : "uint64"
-    },
-    "withdrawable_epoch" : {
       "type" : "string",
       "description" : "unsigned 64 bit integer",
       "example" : "1",
