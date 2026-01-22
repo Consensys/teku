@@ -60,7 +60,6 @@ public class StripedCache<K, V> implements Cache<K, V> {
     return (key.hashCode() & 0x7FFFFFFF) & STRIPE_MASK;
   }
 
-  /** Gets the stripe (LRUCache instance) for a given key. */
   private LRUCache<K, V> getStripe(final K key) {
     return stripes[getStripeIndex(key)];
   }
