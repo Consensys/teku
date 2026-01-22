@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
 import static tech.pegasys.teku.spec.constants.EthConstants.GWEI_TO_WEI;
 
 import java.util.Collections;
@@ -602,7 +603,7 @@ public abstract class AbstractBlockFactoryTest {
                           executionPayload.getFeeRecipient(),
                           executionPayload.getGasLimit(),
                           // self-built for simplification
-                          UInt64.valueOf(spec.getBeaconProposerIndex(state, slot)),
+                          BUILDER_INDEX_SELF_BUILD,
                           slot,
                           ZERO,
                           ZERO,

@@ -1130,6 +1130,16 @@ public class Spec {
         .getPtc(state, slot);
   }
 
+  // Builder Utils
+  public Optional<BLSPublicKey> getBuilderPubKey(
+      final BeaconState state, final UInt64 builderIndex) {
+    return atState(state).beaconStateAccessors().getBuilderPubKey(state, builderIndex);
+  }
+
+  public Optional<Integer> getBuilderIndex(final BeaconState state, final BLSPublicKey publicKey) {
+    return atState(state).beaconStateAccessors().getBuilderIndex(state, publicKey);
+  }
+
   // Attestation helpers
   public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
     return atSlot(attestation.getData().getSlot())

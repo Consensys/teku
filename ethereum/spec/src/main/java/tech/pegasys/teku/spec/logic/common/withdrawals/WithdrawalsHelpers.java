@@ -39,6 +39,7 @@ public interface WithdrawalsHelpers {
       List<Withdrawal> withdrawals,
       int processedBuilderWithdrawalsCount,
       int processedPartialWithdrawalsCount,
+      int processedBuildersSweepCount,
       int processedValidatorsSweepCount) {}
 
   static UInt64 getTotalWithdrawn(final List<Withdrawal> withdrawals, final UInt64 validatorIndex) {
