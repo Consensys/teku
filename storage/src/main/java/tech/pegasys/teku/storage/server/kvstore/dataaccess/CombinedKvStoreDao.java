@@ -480,7 +480,10 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
         .put(
             "OPTIMISTIC_TRANSITION_BLOCK_SLOT",
             getOptimisticTransitionBlockSlot().map(Objects::toString))
-        .put("CUSTODY_GROUP_COUNT", getCustodyGroupCount().map(Objects::toString));
+        .put("CUSTODY_GROUP_COUNT", getCustodyGroupCount().map(Objects::toString))
+        .put(
+            "EARLIEST_AVAILABLE_DATA_COLUMN_SLOT",
+            getEarliestAvailableDataColumnSlot().map(Objects::toString));
 
     // get a list of the known keys, so that we can add missing variables
     final Map<String, Optional<String>> knownVariables = knownVariablesBuilder.build();
@@ -820,7 +823,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
     @Override
     public void setEarliestAvailableDataColumnSlot(final UInt64 slot) {
-      transaction.put(schema.getVariableEarliestAvailableDataColumnSlot(), slot);
+      if (slot == null) {
+        transaction.delete(schema.getVariableEarliestAvailableDataColumnSlot());
+      } else {
+        transaction.put(schema.getVariableEarliestAvailableDataColumnSlot(), slot);
+      }
     }
 
     @Override
@@ -973,7 +980,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
     @Override
     public void setFirstCustodyIncompleteSlot(final UInt64 slot) {
-      transaction.put(schema.getVariableFirstCustodyIncompleteSlot(), slot);
+      if (slot == null) {
+        transaction.delete(schema.getVariableFirstCustodyIncompleteSlot());
+      } else {
+        transaction.put(schema.getVariableFirstCustodyIncompleteSlot(), slot);
+      }
     }
 
     @Override

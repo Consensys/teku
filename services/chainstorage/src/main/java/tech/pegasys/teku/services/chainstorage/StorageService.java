@@ -49,7 +49,6 @@ import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.RetryingStorageUpdateChannel;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
-import tech.pegasys.teku.storage.server.kvstore.KvStoreDatabase;
 import tech.pegasys.teku.storage.server.network.EphemeryException;
 import tech.pegasys.teku.storage.server.pruner.BlobSidecarPruner;
 import tech.pegasys.teku.storage.server.pruner.BlockPruner;

@@ -1309,6 +1309,12 @@ public class KvStoreDatabase implements Database {
       currentSlot = batchStartSlot.minusMinZero(1);
     }
 
+    // clear the data-storage in database
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.setEarliestAvailableDataColumnSlot(null);
+      updater.setFirstCustodyIncompleteSlot(null);
+      updater.commit();
+    }
     dataColumnStorage.setMigrationComplete(true);
     LOG.info("Migration completed: {} DataColumnSidecars moved to file storage", totalMigrated);
   }
