@@ -91,11 +91,6 @@ public class BatchingSidecarUpdateChannel implements SidecarUpdateChannel {
     return delegate.onNewSidecars(sidecars);
   }
 
-  @Override
-  public SafeFuture<Void> onNewNonCanonicalSidecar(final DataColumnSidecar sidecar) {
-    return delegate.onNewNonCanonicalSidecar(sidecar);
-  }
-
   private void flushBatch() {
     final List<DataColumnSidecar> batch;
     final List<SafeFuture<Void>> futures;

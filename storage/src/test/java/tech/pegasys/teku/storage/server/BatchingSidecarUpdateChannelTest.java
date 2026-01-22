@@ -180,17 +180,6 @@ class BatchingSidecarUpdateChannelTest {
 
   @Test
   @SuppressWarnings("FutureReturnValueIgnored")
-  void shouldDelegateOnNewNonCanonicalSidecarDirectly() {
-    final DataColumnSidecar sidecar = mock(DataColumnSidecar.class);
-    when(delegate.onNewNonCanonicalSidecar(sidecar)).thenReturn(SafeFuture.COMPLETE);
-
-    channel.onNewNonCanonicalSidecar(sidecar);
-
-    verify(delegate).onNewNonCanonicalSidecar(sidecar);
-  }
-
-  @Test
-  @SuppressWarnings("FutureReturnValueIgnored")
   void shouldDelegateOnNewSidecarsListDirectly() {
     final DataColumnSidecar sidecar1 = mock(DataColumnSidecar.class);
     final DataColumnSidecar sidecar2 = mock(DataColumnSidecar.class);
