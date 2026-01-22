@@ -242,7 +242,7 @@ public class SimpleSidecarRetrieverTest {
   @Test
   void selectingBestPeerShouldRespectAdvertisedEarliestSlotAvailable() {
 
-    final TestPeer peerWithoutEarliestSlotAvailableSetToLargeSlot =
+    final TestPeer peerWithEarliestSlotAvailableSetToLargeSlot =
         new TestPeer(
                 stubAsyncRunner,
                 custodyNodeIds.next(),
@@ -276,7 +276,7 @@ public class SimpleSidecarRetrieverTest {
 
     final List<TestPeer> allPeers =
         List.of(
-            peerWithoutEarliestSlotAvailableSetToLargeSlot,
+            peerWithEarliestSlotAvailableSetToLargeSlot,
             peerWithEarliestSlotAvailableZero,
             peerWithEarliestSlotAvailableOne,
             peerWithEarliestSlotAvailableTwo);
