@@ -1554,47 +1554,10 @@ public class KvStoreDatabase implements Database {
             .map(entry -> new SlotAndBlockRoot(entry.getValue(), entry.getKey()))
             .collect(Collectors.toSet());
 
-    if (storeNonCanonicalBlocks) {
-      final Iterator<SlotAndBlockRoot> nonCanonicalBlocksIterator = nonCanonicalBlocks.iterator();
-      int index = 0;
-      while (nonCanonicalBlocksIterator.hasNext()) {
-        final int start = index;
-        try (final FinalizedUpdater updater = finalizedUpdater()) {
-          while (nonCanonicalBlocksIterator.hasNext() && (index - start) < BLOBS_TX_BATCH_SIZE) {
-            final SlotAndBlockRoot slotAndBlockRoot = nonCanonicalBlocksIterator.next();
-            dataColumnStorage
-                .getIdentifiers(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot())
-                .forEach(
-                    key -> {
-                      dataColumnStorage
-                          .getSidecar(key)
-                          .ifPresent(
-                              sideCar -> {
-                                updater.addNonCanonicalSidecar(sideCar);
-                                LOG.trace(
-                                    "Moving non-canonical sidecar with identifier {} to non-canonical sidecars table",
-                                    key);
-                                updater.removeSidecar(key);
-                              });
-                    });
-            index++;
-          }
-          updater.commit();
-        }
-      }
-    } else {
+    if (!storeNonCanonicalBlocks) {
       LOG.trace("Removing sidecars for non-canonical blocks");
-      try (final FinalizedUpdater updater = finalizedUpdater()) {
-        for (final SlotAndBlockRoot slotAndBlockRoot : nonCanonicalBlocks) {
-          dataColumnStorage
-              .getIdentifiers(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot())
-              .forEach(
-                  key -> {
-                    LOG.trace("Removing sidecar with identifier {} for non-canonical block", key);
-                    updater.removeSidecar(key);
-                  });
-        }
-        updater.commit();
+      for (final SlotAndBlockRoot slotAndBlockRoot : nonCanonicalBlocks) {
+        dataColumnStorage.delete(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
       }
     }
   }

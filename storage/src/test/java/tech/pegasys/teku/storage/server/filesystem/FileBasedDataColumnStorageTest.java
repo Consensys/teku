@@ -26,10 +26,12 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -141,16 +143,13 @@ public class FileBasedDataColumnStorageTest {
   void testParseFilename() {
     final UInt64 slot = UInt64.valueOf(456);
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
-    final UInt64 columnIndex = UInt64.valueOf(3);
 
-    final String filename =
-        String.format("%s_%s_%s.ssz", slot, blockRoot.toUnprefixedHexString(), columnIndex);
+    final String filename = String.format("%s_%s.ssz", slot, blockRoot.toUnprefixedHexString());
 
-    final Optional<DataColumnSlotAndIdentifier> parsed = storage.parseFilename(filename);
+    final Optional<SlotAndBlockRoot> parsed = storage.parseFilename(filename);
     assertThat(parsed).isPresent();
-    assertThat(parsed.get().slot()).isEqualTo(slot);
-    assertThat(parsed.get().blockRoot()).isEqualTo(blockRoot);
-    assertThat(parsed.get().columnIndex()).isEqualTo(columnIndex);
+    assertThat(parsed.get().getSlot()).isEqualTo(slot);
+    assertThat(parsed.get().getBlockRoot()).isEqualTo(blockRoot);
   }
 
   @Test
@@ -158,27 +157,6 @@ public class FileBasedDataColumnStorageTest {
     assertThat(storage.parseFilename("invalid")).isEmpty();
     assertThat(storage.parseFilename("123_abc.ssz")).isEmpty();
     assertThat(storage.parseFilename("123_abc_def_ghi.ssz")).isEmpty();
-  }
-
-  @Test
-  void testGetIdentifiersForSlot() {
-    final UInt64 slot = UInt64.valueOf(64);
-    final DataColumnSidecar sidecar1 = createDataColumnSidecar(slot);
-    final DataColumnSidecar sidecar2 = createDataColumnSidecar(slot);
-
-    storage.addSidecar(sidecar1);
-    storage.addSidecar(sidecar2);
-
-    final List<DataColumnSlotAndIdentifier> identifiers = storage.getIdentifiers(slot);
-    assertThat(identifiers).hasSize(2);
-    assertThat(identifiers).extracting(DataColumnSlotAndIdentifier::slot).containsOnly(slot);
-  }
-
-  @Test
-  void testGetIdentifiersForEmptySlot() {
-    final UInt64 slot = UInt64.valueOf(999);
-    final List<DataColumnSlotAndIdentifier> identifiers = storage.getIdentifiers(slot);
-    assertThat(identifiers).isEmpty();
   }
 
   @Test
@@ -193,16 +171,17 @@ public class FileBasedDataColumnStorageTest {
     final DataColumnSlotAndIdentifier id1 = DataColumnSlotAndIdentifier.fromDataColumn(sidecar1);
     final DataColumnSlotAndIdentifier id2 = DataColumnSlotAndIdentifier.fromDataColumn(sidecar2);
 
+    storage.readSidecars(slot, id1.blockRoot());
     // Filter by specific blockRoot should only return matching sidecars
-    final List<DataColumnSlotAndIdentifier> identifiers1 =
-        storage.getIdentifiers(slot, id1.blockRoot());
-    assertThat(identifiers1).hasSize(1);
-    assertThat(identifiers1.get(0).blockRoot()).isEqualTo(id1.blockRoot());
+    final Optional<SszList<DataColumnSidecar>> sidecars =
+        storage.readSidecars(slot, id1.blockRoot());
+    assertThat(sidecars.orElseThrow()).hasSize(1);
+    assertThat(sidecars.orElseThrow().get(0).getBeaconBlockRoot()).isEqualTo(id1.blockRoot());
 
-    final List<DataColumnSlotAndIdentifier> identifiers2 =
-        storage.getIdentifiers(slot, id2.blockRoot());
-    assertThat(identifiers2).hasSize(1);
-    assertThat(identifiers2.get(0).blockRoot()).isEqualTo(id2.blockRoot());
+    final Optional<SszList<DataColumnSidecar>> sidecars2 =
+        storage.readSidecars(slot, id2.blockRoot());
+    assertThat(sidecars2.orElseThrow()).hasSize(1);
+    assertThat(sidecars2.orElseThrow().get(0).getBeaconBlockRoot()).isEqualTo(id2.blockRoot());
   }
 
   @Test

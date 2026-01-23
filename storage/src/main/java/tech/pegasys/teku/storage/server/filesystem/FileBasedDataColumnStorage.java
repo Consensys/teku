@@ -30,21 +30,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 /**
  * File-based storage for DataColumnSidecars.
  *
- * <p>Storage structure: {@code <baseDirectory>/<epoch>/<slot>_<blockRoot>_<columnIndex>.ssz}
+ * <p>Storage structure: {@code <baseDirectory>/<epoch>/<slot>_<blockRoot>.ssz}
  *
  * <p>Both canonical and non-canonical sidecars are stored in the same directory structure and
  * distinguished by their blockRoot. The Database layer maintains knowledge of which blockRoots are
@@ -54,19 +58,34 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
  * and other tracking information.
  */
 public class FileBasedDataColumnStorage {
-
   private static final Logger LOG = LogManager.getLogger();
   private static final String METADATA_FILE_NAME = "metadata.properties";
   private static final String SSZ_FILE_EXTENSION = ".ssz";
+  public static final String EARLIEST_AVAILABLE_SLOT = "earliestAvailableSlot";
+  public static final String FIRST_CUSTODY_INCOMPLETE_SLOT = "firstCustodyIncompleteSlot";
+  public static final String DATA_MIGRATION_COMPLETE = "dataMigrationComplete";
 
   private final Spec spec;
   private final Path baseDirectory;
   private final Path metadataFile;
+  private final SszListSchema<DataColumnSidecar, ?> sidecarsSchema;
 
   public FileBasedDataColumnStorage(final Spec spec, final Path baseDirectory) {
     this.spec = spec;
     this.baseDirectory = baseDirectory;
     this.metadataFile = baseDirectory.resolve(METADATA_FILE_NAME);
+    if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
+      sidecarsSchema = null;
+      return;
+    }
+    sidecarsSchema =
+        SszListSchema.create(
+            spec.forMilestone(SpecMilestone.FULU)
+                .getSchemaDefinitions()
+                .toVersionFulu()
+                .orElseThrow()
+                .getDataColumnSidecarSchema(),
+            128);
     initializeStorage();
   }
 
@@ -83,29 +102,49 @@ public class FileBasedDataColumnStorage {
 
   // ==================== Write Operations ====================
 
+  public SszListSchema<DataColumnSidecar, ?> getDataColumnSidecarsSchema() {
+    return sidecarsSchema;
+  }
+
   /** Add a canonical sidecar to storage. */
   public void addSidecar(final DataColumnSidecar sidecar) {
-    writeSidecar(sidecar);
+    //    writeSidecar(sidecar);
+    writeToSidecars(sidecar);
   }
 
   /** Add a non-canonical sidecar to storage. */
   public void addNonCanonicalSidecar(final DataColumnSidecar sidecar) {
     // Both canonical and non-canonical use same storage structure
-    writeSidecar(sidecar);
+    //    writeSidecar(sidecar);
+    writeToSidecars(sidecar);
   }
 
-  private void writeSidecar(final DataColumnSidecar sidecar) {
-    final DataColumnSlotAndIdentifier identifier =
-        DataColumnSlotAndIdentifier.fromDataColumn(sidecar);
-    final Path sidecarPath = resolveSidecarPath(identifier);
+  @VisibleForTesting
+  synchronized void writeToSidecars(final DataColumnSidecar sidecar) {
+    final Optional<SszList<DataColumnSidecar>> maybeExisting =
+        readSidecars(sidecar.getSlot(), sidecar.getBeaconBlockRoot());
+    final SszList<DataColumnSidecar> sidecars;
+    if (maybeExisting.isPresent()) {
+      final SszMutableList<DataColumnSidecar> list = maybeExisting.get().createWritableCopy();
+      list.append(sidecar);
+      sidecars = list.commitChanges();
+    } else {
+      sidecars = sidecarsSchema.createFromElements(List.of(sidecar));
+    }
 
-    LOG.trace("Writing data column sidecar to file: {}", identifier);
+    writeToSidecars(sidecars, sidecar.getSlot(), sidecar.getBeaconBlockRoot());
+  }
 
+  @VisibleForTesting
+  void writeToSidecars(
+      final SszList<DataColumnSidecar> sidecars, final UInt64 slot, final Bytes32 blockRoot) {
+    final Path sidecarPath = resolveSidecarsPath(slot, blockRoot);
+    LOG.trace("Writing data column sidecars to file: {}", sidecarPath);
     // Create epoch directory if it doesn't exist
     try {
       Files.createDirectories(sidecarPath.getParent());
     } catch (IOException e) {
-      LOG.error("Failed to create directory for sidecar: {}", identifier, e);
+      LOG.error("Failed to create directory for sidecars: {}", sidecarPath, e);
       throw new RuntimeException("Failed to create directory for data column sidecar", e);
     }
 
@@ -113,19 +152,39 @@ public class FileBasedDataColumnStorage {
     try (final OutputStream output =
         Files.newOutputStream(
             sidecarPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-      final Bytes sszBytes = sidecar.sszSerialize();
-      output.write(sszBytes.toArrayUnsafe());
-      LOG.trace(
-          "Successfully wrote data column sidecar ({} bytes) to file: {}",
-          sszBytes.size(),
-          sidecarPath);
+      sidecars.sszSerialize(output);
     } catch (IOException e) {
-      LOG.error("Failed to write sidecar to file: {}", identifier, e);
+      LOG.error("Failed to write sidecar to file: {}", sidecarPath, e);
       throw new RuntimeException("Failed to write data column sidecar to file", e);
     }
   }
 
   // ==================== Read Operations ====================
+  public synchronized Optional<SszList<DataColumnSidecar>> readSidecars(
+      final UInt64 slot, final Bytes32 blockRoot) {
+    final Path sidecarsPath = resolveSidecarsPath(slot, blockRoot);
+    if (Files.notExists(sidecarsPath)) {
+      LOG.trace("Data column sidecars file does not exist: {}", blockRoot.toUnprefixedHexString());
+      return Optional.empty();
+    }
+
+    try (final InputStream input = Files.newInputStream(sidecarsPath)) {
+      final Bytes sszBytes = Bytes.wrap(input.readAllBytes());
+      final SszList<DataColumnSidecar> sidecars = sidecarsSchema.sszDeserialize(sszBytes);
+      LOG.trace(
+          "Successfully read data column {} sidecars ({} bytes): {}",
+          sidecars.size(),
+          sszBytes.size(),
+          sidecarsPath);
+      return Optional.of(sidecars);
+    } catch (IOException e) {
+      LOG.warn("Failed to read sidecars from file: {}", sidecarsPath, e);
+      return Optional.empty();
+    } catch (Exception e) {
+      LOG.error("Failed to deserialize sidecars from file: {}", sidecarsPath, e);
+      return Optional.empty();
+    }
+  }
 
   /** Get a canonical sidecar by identifier. */
   public Optional<DataColumnSidecar> getSidecar(final DataColumnSlotAndIdentifier identifier) {
@@ -139,69 +198,17 @@ public class FileBasedDataColumnStorage {
   }
 
   private Optional<DataColumnSidecar> readSidecar(final DataColumnSlotAndIdentifier identifier) {
-    final Path sidecarPath = resolveSidecarPath(identifier);
+    final Optional<SszList<DataColumnSidecar>> maybeSidecars =
+        readSidecars(identifier.slot(), identifier.blockRoot());
 
-    LOG.trace("Reading data column sidecar from file: {}", identifier);
-
-    if (!Files.exists(sidecarPath)) {
-      LOG.trace("Data column sidecar file does not exist: {}", sidecarPath);
-      return Optional.empty();
+    if (maybeSidecars.isPresent()) {
+      return maybeSidecars.flatMap(
+          sidecars ->
+              sidecars.stream()
+                  .filter(p -> p.getIndex().equals(identifier.columnIndex()))
+                  .findFirst());
     }
-
-    try (final InputStream input = Files.newInputStream(sidecarPath)) {
-      final Bytes sszBytes = Bytes.wrap(input.readAllBytes());
-      final DataColumnSidecar sidecar = spec.deserializeSidecar(sszBytes, identifier.slot());
-      LOG.trace(
-          "Successfully read data column sidecar ({} bytes): {}", sszBytes.size(), identifier);
-      return Optional.of(sidecar);
-    } catch (IOException e) {
-      LOG.warn("Failed to read sidecar from file: {}", identifier, e);
-      return Optional.empty();
-    } catch (Exception e) {
-      LOG.error("Failed to deserialize sidecar from file: {}", identifier, e);
-      return Optional.empty();
-    }
-  }
-
-  /** Get all identifiers for a specific slot. */
-  public List<DataColumnSlotAndIdentifier> getIdentifiers(final UInt64 slot) {
-    return getIdentifiersInEpoch(slot);
-  }
-
-  /** Get all non-canonical identifiers for a specific slot. */
-  public List<DataColumnSlotAndIdentifier> getNonCanonicalIdentifiers(final UInt64 slot) {
-    // Both stored together, need Database layer to distinguish
-    return getIdentifiersInEpoch(slot);
-  }
-
-  /** Get all identifiers for a specific slot and blockRoot. */
-  public List<DataColumnSlotAndIdentifier> getIdentifiers(
-      final UInt64 slot, final Bytes32 blockRoot) {
-    return getIdentifiersInEpoch(slot).stream()
-        .filter(id -> id.blockRoot().equals(blockRoot))
-        .collect(Collectors.toList());
-  }
-
-  private List<DataColumnSlotAndIdentifier> getIdentifiersInEpoch(final UInt64 slot) {
-    final Path epochDir = resolveEpochDirectory(slot);
-    final List<DataColumnSlotAndIdentifier> identifiers = new ArrayList<>();
-
-    if (!Files.exists(epochDir)) {
-      return identifiers;
-    }
-
-    try (DirectoryStream<Path> stream =
-        Files.newDirectoryStream(epochDir, "*" + SSZ_FILE_EXTENSION)) {
-      for (Path path : stream) {
-        parseFilename(path.getFileName().toString())
-            .filter(id -> id.slot().equals(slot))
-            .ifPresent(identifiers::add);
-      }
-    } catch (IOException e) {
-      LOG.warn("Failed to list identifiers for slot: {}", slot, e);
-    }
-
-    return identifiers;
+    return Optional.empty();
   }
 
   // ==================== Stream Operations ====================
@@ -237,12 +244,28 @@ public class FileBasedDataColumnStorage {
       try (DirectoryStream<Path> stream =
           Files.newDirectoryStream(epochDir, "*" + SSZ_FILE_EXTENSION)) {
         for (Path path : stream) {
-          parseFilename(path.getFileName().toString())
-              .filter(
-                  id ->
-                      id.slot().isGreaterThanOrEqualTo(startSlot)
-                          && id.slot().isLessThanOrEqualTo(endSlot))
-              .ifPresent(identifiers::add);
+          final Optional<SlotAndBlockRoot> maybeSlotAndBlockRoot =
+              parseFilename(path.getFileName().toString());
+          if (maybeSlotAndBlockRoot.isEmpty()) {
+            LOG.debug("File went missing  {}", path);
+          } else {
+            final Optional<SszList<DataColumnSidecar>> maybeSidecars =
+                readSidecars(
+                    maybeSlotAndBlockRoot.get().getSlot(),
+                    maybeSlotAndBlockRoot.get().getBlockRoot());
+            if (maybeSidecars.isEmpty()) {
+              continue;
+            }
+            identifiers.addAll(
+                maybeSidecars.orElseThrow().stream()
+                    .map(
+                        sidecar ->
+                            new DataColumnSlotAndIdentifier(
+                                sidecar.getSlot(),
+                                sidecar.getBeaconBlockRoot(),
+                                sidecar.getIndex()))
+                    .toList());
+          }
         }
       } catch (IOException e) {
         LOG.warn("Failed to stream identifiers from epoch directory: {}", epoch, e);
@@ -257,7 +280,7 @@ public class FileBasedDataColumnStorage {
   /** Get the earliest available slot (after pruning). */
   public Optional<UInt64> getEarliestAvailableSlot() {
     final Map<String, Object> metadata = loadMetadata();
-    final Object value = metadata.get("earliestAvailableSlot");
+    final Object value = metadata.get(EARLIEST_AVAILABLE_SLOT);
     if (value != null) {
       return Optional.of(UInt64.valueOf(value.toString()));
     }
@@ -268,7 +291,7 @@ public class FileBasedDataColumnStorage {
   public void setEarliestAvailableSlot(final UInt64 slot) {
     LOG.trace("Setting earliest available data column slot to: {}", slot);
     final Map<String, Object> metadata = loadMetadata();
-    metadata.put("earliestAvailableSlot", slot.toString());
+    metadata.put(EARLIEST_AVAILABLE_SLOT, slot.toString());
     saveMetadata(metadata);
   }
 
@@ -293,7 +316,7 @@ public class FileBasedDataColumnStorage {
                       .map(this::parseFilename)
                       .filter(Optional::isPresent)
                       .map(Optional::get)
-                      .map(DataColumnSlotAndIdentifier::slot)
+                      .map(SlotAndBlockRoot::getSlot)
                       .min(UInt64::compareTo);
                 } catch (IOException e) {
                   LOG.warn("Failed to scan epoch directory: {}", earliestEpoch, e);
@@ -309,7 +332,7 @@ public class FileBasedDataColumnStorage {
   /** Get first custody incomplete slot from metadata. */
   public Optional<UInt64> getFirstCustodyIncompleteSlot() {
     final Map<String, Object> metadata = loadMetadata();
-    final Object value = metadata.get("firstCustodyIncompleteSlot");
+    final Object value = metadata.get(FIRST_CUSTODY_INCOMPLETE_SLOT);
     if (value != null) {
       return Optional.of(UInt64.valueOf(value.toString()));
     }
@@ -320,14 +343,14 @@ public class FileBasedDataColumnStorage {
   public void setFirstCustodyIncompleteSlot(final UInt64 slot) {
     LOG.trace("Setting first custody incomplete slot to: {}", slot);
     final Map<String, Object> metadata = loadMetadata();
-    metadata.put("firstCustodyIncompleteSlot", slot.toString());
+    metadata.put(FIRST_CUSTODY_INCOMPLETE_SLOT, slot.toString());
     saveMetadata(metadata);
   }
 
   /** Check if data migration from database to file storage is complete. */
   public boolean isMigrationComplete() {
     final Map<String, Object> metadata = loadMetadata();
-    final Object value = metadata.get("dataMigrationComplete");
+    final Object value = metadata.get(DATA_MIGRATION_COMPLETE);
     return value != null && Boolean.parseBoolean(value.toString());
   }
 
@@ -335,7 +358,7 @@ public class FileBasedDataColumnStorage {
   public void setMigrationComplete(final boolean complete) {
     LOG.info("Setting data migration complete flag to: {}", complete);
     final Map<String, Object> metadata = loadMetadata();
-    metadata.put("dataMigrationComplete", String.valueOf(complete));
+    metadata.put(DATA_MIGRATION_COMPLETE, String.valueOf(complete));
     saveMetadata(metadata);
   }
 
@@ -497,6 +520,13 @@ public class FileBasedDataColumnStorage {
     return epochDir.resolve(filename);
   }
 
+  @VisibleForTesting
+  Path resolveSidecarsPath(final UInt64 slot, final Bytes32 blockRoot) {
+    final Path epochDir = resolveEpochDirectory(slot);
+    return epochDir.resolve(
+        String.format("%s_%s%s", slot, blockRoot.toUnprefixedHexString(), SSZ_FILE_EXTENSION));
+  }
+
   /**
    * Resolve the epoch directory for a slot.
    *
@@ -524,12 +554,12 @@ public class FileBasedDataColumnStorage {
   }
 
   /**
-   * Parse a filename into a DataColumnSlotAndIdentifier.
+   * Parse a filename into a SlotAndBlockRoot.
    *
-   * <p>Format: {@code <slot>_<blockRoot>_<columnIndex>.ssz}
+   * <p>Format: {@code <slot>_<blockRoot>.ssz}
    */
   @VisibleForTesting
-  Optional<DataColumnSlotAndIdentifier> parseFilename(final String filename) {
+  Optional<SlotAndBlockRoot> parseFilename(final String filename) {
     if (!filename.endsWith(SSZ_FILE_EXTENSION)) {
       return Optional.empty();
     }
@@ -539,15 +569,14 @@ public class FileBasedDataColumnStorage {
           filename.substring(0, filename.length() - SSZ_FILE_EXTENSION.length());
       final List<String> parts = Splitter.on('_').splitToList(withoutExtension);
 
-      if (parts.size() != 3) {
+      if (parts.size() != 2) {
         return Optional.empty();
       }
 
       final UInt64 slot = UInt64.valueOf(parts.get(0));
       final Bytes32 blockRoot = Bytes32.fromHexString("0x" + parts.get(1));
-      final UInt64 columnIndex = UInt64.valueOf(parts.get(2));
 
-      return Optional.of(new DataColumnSlotAndIdentifier(slot, blockRoot, columnIndex));
+      return Optional.of(new SlotAndBlockRoot(slot, blockRoot));
     } catch (Exception e) {
       LOG.debug("Failed to parse filename: {}", filename, e);
       return Optional.empty();
@@ -560,6 +589,15 @@ public class FileBasedDataColumnStorage {
       return true;
     } catch (NumberFormatException e) {
       return false;
+    }
+  }
+
+  public void delete(final UInt64 slot, final Bytes32 blockRoot) {
+    final Path sidecarsPath = resolveSidecarsPath(slot, blockRoot);
+    try {
+      Files.deleteIfExists(sidecarsPath);
+    } catch (IOException e) {
+      LOG.warn("Failed to delete file: {}", sidecarsPath, e);
     }
   }
 }
