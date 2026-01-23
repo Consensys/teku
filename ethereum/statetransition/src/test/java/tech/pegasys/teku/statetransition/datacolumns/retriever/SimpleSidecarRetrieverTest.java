@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -286,26 +287,31 @@ public class SimpleSidecarRetrieverTest {
     allPeers.forEach(testPeerManager::connectPeer);
 
     final BeaconBlock block0 = blockResolver.addBlock(0, 1);
-    final List<DataColumnSidecar> sidecars0 =
-        dataStructureUtil.randomDataColumnSidecars(UInt64.ZERO, 1);
+    final SignedBeaconBlockHeader header0 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.ZERO);
+    final DataColumnSidecar sidecar0 =
+        dataStructureUtil.randomDataColumnSidecar(header0, columnIndex);
 
-    final DataColumnSidecar sidecar0_0 = sidecars0.get(columnIndex.intValue());
-    peerWithEarliestSlotAvailableZero.addSidecar(sidecar0_0);
+    peerWithEarliestSlotAvailableZero.addSidecar(sidecar0);
 
     final BeaconBlock block1 = blockResolver.addBlock(1, 1);
-    final List<DataColumnSidecar> sidecars1 =
-        dataStructureUtil.randomDataColumnSidecars(UInt64.valueOf(1), 1);
-    final DataColumnSidecar sidecar1_0 = sidecars1.get(columnIndex.intValue());
-    peerWithEarliestSlotAvailableZero.addSidecar(sidecar1_0);
-    peerWithEarliestSlotAvailableOne.addSidecar(sidecar1_0);
+    final SignedBeaconBlockHeader header1 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.ONE);
+    final DataColumnSidecar sidecar1 =
+        dataStructureUtil.randomDataColumnSidecar(header1, columnIndex);
+
+    peerWithEarliestSlotAvailableZero.addSidecar(sidecar1);
+    peerWithEarliestSlotAvailableOne.addSidecar(sidecar1);
 
     final BeaconBlock block2 = blockResolver.addBlock(2, 1);
-    final List<DataColumnSidecar> sidecars2 =
-        dataStructureUtil.randomDataColumnSidecars(UInt64.valueOf(2), 1);
-    final DataColumnSidecar sidecar2_0 = sidecars2.get(columnIndex.intValue());
-    peerWithEarliestSlotAvailableZero.addSidecar(sidecar2_0);
-    peerWithEarliestSlotAvailableOne.addSidecar(sidecar2_0);
-    peerWithEarliestSlotAvailableTwo.addSidecar(sidecar2_0);
+    final SignedBeaconBlockHeader header2 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.valueOf(2));
+    final DataColumnSidecar sidecar2 =
+        dataStructureUtil.randomDataColumnSidecar(header2, columnIndex);
+
+    peerWithEarliestSlotAvailableZero.addSidecar(sidecar2);
+    peerWithEarliestSlotAvailableOne.addSidecar(sidecar2);
+    peerWithEarliestSlotAvailableTwo.addSidecar(sidecar2);
 
     final DataColumnSlotAndIdentifier id0 =
         new DataColumnSlotAndIdentifier(UInt64.ZERO, block0.getRoot(), columnIndex);
@@ -314,17 +320,20 @@ public class SimpleSidecarRetrieverTest {
     final DataColumnSlotAndIdentifier id2 =
         new DataColumnSlotAndIdentifier(UInt64.valueOf(2), block2.getRoot(), columnIndex);
 
-    simpleSidecarRetriever.retrieve(id0).finish(err -> LOG.error("Error retrieving sidecar", err));
+    final SafeFuture<DataColumnSidecar> resp0 = simpleSidecarRetriever.retrieve(id0);
     advanceTimeGradually(retrieverRound);
     assertThat(allRequestCountsFunc.get()).isEqualTo(List.of(0, 1, 0, 0));
+    resp0.cancel(true);
 
-    simpleSidecarRetriever.retrieve(id1).finish(err -> LOG.error("Error retrieving sidecar", err));
+    final SafeFuture<DataColumnSidecar> resp1 = simpleSidecarRetriever.retrieve(id1);
     advanceTimeGradually(retrieverRound);
     assertThat(allRequestCountsFunc.get()).isEqualTo(List.of(0, 1, 1, 0));
+    resp1.cancel(true);
 
-    simpleSidecarRetriever.retrieve(id2).finish(err -> LOG.error("Error retrieving sidecar", err));
+    final SafeFuture<DataColumnSidecar> resp2 = simpleSidecarRetriever.retrieve(id2);
     advanceTimeGradually(retrieverRound);
     assertThat(allRequestCountsFunc.get()).isEqualTo(List.of(0, 1, 1, 1));
+    resp2.cancel(true);
   }
 
   @Test
