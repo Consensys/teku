@@ -219,30 +219,4 @@ public class FetchBlockTaskTest extends AbstractFetchTaskTest {
     assertThat(fetchResult.isSuccessful()).isFalse();
     assertThat(fetchResult.getStatus()).isEqualTo(Status.CANCELLED);
   }
-
-  @Test
-  void run_prioritizesEarliestAvailableSlotAfterOutstandingRequests() {
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
-    final FetchBlockTask task = new FetchBlockTask(eth2P2PNetwork, block.getRoot());
-
-    assertPeerPrioritizesEarliestAvailableSlotAfterOutstandingRequests(
-        task,
-        block,
-        peer ->
-            when(peer.requestBlockByRoot(block.getRoot()))
-                .thenReturn(SafeFuture.completedFuture(Optional.of(block))));
-  }
-
-  @Test
-  void run_prioritizesOutstandingRequestsOverEarliestAvailableSlot() {
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
-    final FetchBlockTask task = new FetchBlockTask(eth2P2PNetwork, block.getRoot());
-
-    assertPeerPrioritizesOutstandingRequestsOverEarliestAvailableSlot(
-        task,
-        block,
-        peer ->
-            when(peer.requestBlockByRoot(block.getRoot()))
-                .thenReturn(SafeFuture.completedFuture(Optional.of(block))));
-  }
 }

@@ -227,34 +227,4 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
     assertThat(fetchResult.isSuccessful()).isFalse();
     assertThat(fetchResult.getStatus()).isEqualTo(Status.CANCELLED);
   }
-
-  @Test
-  void run_prioritizesEarliestAvailableSlotAfterOutstandingRequests() {
-    final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
-    final BlobIdentifier blobIdentifier =
-        new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
-    final FetchBlobSidecarTask task = new FetchBlobSidecarTask(eth2P2PNetwork, blobIdentifier);
-
-    assertPeerPrioritizesEarliestAvailableSlotAfterOutstandingRequests(
-        task,
-        blobSidecar,
-        peer ->
-            when(peer.requestBlobSidecarByRoot(blobIdentifier))
-                .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar))));
-  }
-
-  @Test
-  void run_prioritizesOutstandingRequestsOverEarliestAvailableSlot() {
-    final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
-    final BlobIdentifier blobIdentifier =
-        new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
-    final FetchBlobSidecarTask task = new FetchBlobSidecarTask(eth2P2PNetwork, blobIdentifier);
-
-    assertPeerPrioritizesOutstandingRequestsOverEarliestAvailableSlot(
-        task,
-        blobSidecar,
-        peer ->
-            when(peer.requestBlobSidecarByRoot(blobIdentifier))
-                .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar))));
-  }
 }

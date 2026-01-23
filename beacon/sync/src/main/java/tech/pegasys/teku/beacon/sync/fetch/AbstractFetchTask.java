@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import tech.pegasys.teku.beacon.sync.fetch.FetchResult.Status;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -102,7 +101,6 @@ public abstract class AbstractFetchTask<K, T> {
         .filter(this::peerIsNotQueried)
         .min(
             Comparator.comparing(Eth2Peer::getOutstandingRequests)
-                .thenComparing(p -> p.getStatus().getEarliestAvailableSlot().orElse(UInt64.ZERO))
                 .thenComparing(SHUFFLING_COMPARATOR));
   }
 
