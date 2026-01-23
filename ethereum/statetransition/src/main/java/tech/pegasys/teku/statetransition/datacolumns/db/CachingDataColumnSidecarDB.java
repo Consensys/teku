@@ -106,26 +106,19 @@ class CachingDataColumnSidecarDB implements DataColumnSidecarDB {
     final InflightEntry entry =
         inflightColumns.computeIfAbsent(
             dataColumnSlotAndIdentifier,
-            key -> {
-              final SafeFuture<Void> writeFuture =
-                  delegateDb
-                      .addSidecar(sidecar)
-                      .alwaysRun(() -> inflightColumns.remove(dataColumnSlotAndIdentifier));
-              return new InflightEntry(sidecar, writeFuture);
-            });
+            key -> new InflightEntry(sidecar, delegateDb.addSidecar(sidecar)));
+
+    // do the cleanup outside computeIfAbsent to avoid concurrent update exception if the future is
+    // already completed
+    entry
+        .future
+        .alwaysRun(() -> inflightColumns.remove(dataColumnSlotAndIdentifier))
+        .finishError(LOG);
 
     return entry.future;
   }
 
-  private static class InflightEntry {
-    final DataColumnSidecar sidecar;
-    final SafeFuture<Void> future;
-
-    InflightEntry(final DataColumnSidecar sidecar, final SafeFuture<Void> future) {
-      this.sidecar = sidecar;
-      this.future = future;
-    }
-  }
+  private record InflightEntry(DataColumnSidecar sidecar, SafeFuture<Void> future) {}
 
   private static class SlotCache {
     private final SafeFuture<Map<Bytes32, BitSet>> compactCacheFuture;
