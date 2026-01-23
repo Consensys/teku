@@ -240,7 +240,9 @@ public class Eth2OutgoingRequestHandler<
     // releasing any resources
     try {
       responseDecoder.close();
-      rpcStream.closeAbruptly().finishStackTrace();
+      rpcStream.closeAbruptly().finishDebug(LOG);
+    } catch (Exception ex) {
+      LOG.debug("Encountered error while aborting outgoing request", ex);
     } finally {
       getResponseProcessor(rpcStream)
           .finishProcessing()
