@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
@@ -288,7 +289,10 @@ public class SimpleSidecarRetrieverTest {
 
     final BeaconBlock block0 = blockResolver.addBlock(0, 1);
     final SignedBeaconBlockHeader header0 =
-        dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.ZERO);
+        new SignedBeaconBlockHeader(
+            BeaconBlockHeader.fromBlock(block0.getBeaconBlock().orElseThrow()),
+            dataStructureUtil.randomSignature());
+
     final DataColumnSidecar sidecar0 =
         dataStructureUtil.randomDataColumnSidecar(header0, columnIndex);
 
@@ -296,7 +300,9 @@ public class SimpleSidecarRetrieverTest {
 
     final BeaconBlock block1 = blockResolver.addBlock(1, 1);
     final SignedBeaconBlockHeader header1 =
-        dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.ONE);
+        new SignedBeaconBlockHeader(
+            BeaconBlockHeader.fromBlock(block1.getBeaconBlock().orElseThrow()),
+            dataStructureUtil.randomSignature());
     final DataColumnSidecar sidecar1 =
         dataStructureUtil.randomDataColumnSidecar(header1, columnIndex);
 
@@ -305,7 +311,9 @@ public class SimpleSidecarRetrieverTest {
 
     final BeaconBlock block2 = blockResolver.addBlock(2, 1);
     final SignedBeaconBlockHeader header2 =
-        dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.valueOf(2));
+        new SignedBeaconBlockHeader(
+            BeaconBlockHeader.fromBlock(block2.getBeaconBlock().orElseThrow()),
+            dataStructureUtil.randomSignature());
     final DataColumnSidecar sidecar2 =
         dataStructureUtil.randomDataColumnSidecar(header2, columnIndex);
 
@@ -320,20 +328,16 @@ public class SimpleSidecarRetrieverTest {
     final DataColumnSlotAndIdentifier id2 =
         new DataColumnSlotAndIdentifier(UInt64.valueOf(2), block2.getRoot(), columnIndex);
 
-    final SafeFuture<DataColumnSidecar> resp0 = simpleSidecarRetriever.retrieve(id0);
+    simpleSidecarRetriever.retrieve(id0).finish(err -> LOG.error("Error retrieving sidecar", err));
     advanceTimeGradually(retrieverRound);
     assertThat(allRequestCountsFunc.get()).isEqualTo(List.of(0, 1, 0, 0));
-    resp0.cancel(true);
 
-    final SafeFuture<DataColumnSidecar> resp1 = simpleSidecarRetriever.retrieve(id1);
+    simpleSidecarRetriever.retrieve(id1).finish(err -> LOG.error("Error retrieving sidecar", err));
     advanceTimeGradually(retrieverRound);
     assertThat(allRequestCountsFunc.get()).isEqualTo(List.of(0, 1, 1, 0));
-    resp1.cancel(true);
-
-    final SafeFuture<DataColumnSidecar> resp2 = simpleSidecarRetriever.retrieve(id2);
+    simpleSidecarRetriever.retrieve(id2).finish(err -> LOG.error("Error retrieving sidecar", err));
     advanceTimeGradually(retrieverRound);
     assertThat(allRequestCountsFunc.get()).isEqualTo(List.of(0, 1, 1, 1));
-    resp2.cancel(true);
   }
 
   @Test
