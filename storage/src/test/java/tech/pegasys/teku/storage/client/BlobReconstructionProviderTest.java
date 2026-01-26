@@ -124,6 +124,33 @@ public class BlobReconstructionProviderTest extends BlobReconstructionAbstractTe
     verify(networkBlobReconstructor).reconstructBlobs(any(), any(), any());
   }
 
+  @Test
+  public void shouldReturnEmptyListWhenAllReconstructorsFail() {
+    final int numberOfColumns = spec.getNumberOfDataColumns().orElseThrow();
+
+    final BlobsAndMatrix blobsAndMatrix = loadBlobsAndMatrixFixture();
+    initializedClientMock(blobsAndMatrix);
+
+    when(extensionBlobReconstructor.reconstructBlobs(any(), any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(cryptoBlobReconstructor.reconstructBlobs(any(), any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(networkBlobReconstructor.reconstructBlobs(any(), any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    final SafeFuture<List<Blob>> result =
+        blobReconstructionProvider.reconstructBlobs(
+            slotAndBlockRoot, Collections.emptyList(), true);
+
+    assertThat(result).isCompletedWithValueMatching(List::isEmpty);
+
+    // Verify all three were tried in order
+    verify(client, times(numberOfColumns)).getSidecar(any(DataColumnSlotAndIdentifier.class));
+    verify(extensionBlobReconstructor).reconstructBlobs(any(), any(), any());
+    verify(cryptoBlobReconstructor).reconstructBlobs(any(), any(), any());
+    verify(networkBlobReconstructor).reconstructBlobs(any(), any(), any());
+  }
+
   private void initializedClientMock(final BlobsAndMatrix blobsAndMatrix) {
     final BeaconBlockBody beaconBlockBody =
         dataStructureUtil.randomBeaconBlockBodyWithCommitments(2);
