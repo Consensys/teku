@@ -23,6 +23,8 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -34,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
 
 public class NetworkBlobReconstructor extends BlobReconstructor {
+  private static final Logger LOG = LogManager.getLogger();
   private final DataColumnSidecarNetworkRetriever networkRetriever;
 
   public NetworkBlobReconstructor(
@@ -49,6 +52,8 @@ public class NetworkBlobReconstructor extends BlobReconstructor {
       final SlotAndBlockRoot slotAndBlockRoot,
       final List<DataColumnSidecar> existingSidecars,
       final List<UInt64> blobIndices) {
+    LOG.trace(
+        "Reconstructing blobs from {} sidecars for {}", existingSidecars.size(), slotAndBlockRoot);
     if (!networkRetriever.isEnabled()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
@@ -72,6 +77,8 @@ public class NetworkBlobReconstructor extends BlobReconstructor {
                         slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), index))
             .filter(idx -> !existingSidecarIdentifiers.contains(idx))
             .toList();
+    LOG.trace(
+        "Trying to fetch {} missing sidecars for {}", missingSidecars.size(), slotAndBlockRoot);
 
     return networkRetriever
         .retrieveDataColumnSidecars(missingSidecars)

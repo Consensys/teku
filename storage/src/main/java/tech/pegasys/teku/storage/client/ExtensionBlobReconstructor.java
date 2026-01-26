@@ -16,6 +16,8 @@ package tech.pegasys.teku.storage.client;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -25,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
 public class ExtensionBlobReconstructor extends BlobReconstructor {
+  private static final Logger LOG = LogManager.getLogger();
 
   public ExtensionBlobReconstructor(
       final Spec spec, final Supplier<BlobSchema> blobSchemaSupplier) {
@@ -36,6 +39,8 @@ public class ExtensionBlobReconstructor extends BlobReconstructor {
       final SlotAndBlockRoot slotAndBlockRoot,
       final List<DataColumnSidecar> existingSidecars,
       final List<UInt64> blobIndices) {
+    LOG.trace(
+        "Reconstructing blobs from {} sidecars for {}", existingSidecars.size(), slotAndBlockRoot);
     final int halfColumns = spec.getNumberOfDataColumns().orElseThrow() / 2;
     if (existingSidecars.size() < halfColumns) {
       return SafeFuture.completedFuture(Optional.empty());

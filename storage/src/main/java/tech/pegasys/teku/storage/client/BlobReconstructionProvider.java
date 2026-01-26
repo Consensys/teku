@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -33,6 +35,8 @@ import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
 
 /** Blob provider for post-FULU, reconstructs Blobs from DataColumnSidecars */
 public class BlobReconstructionProvider {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final CombinedChainDataClient combinedChainDataClient;
   private final Spec spec;
   private final ExtensionBlobReconstructor extensionBlobReconstructor;
@@ -116,6 +120,8 @@ public class BlobReconstructionProvider {
       final List<UInt64> blobIndices,
       final boolean isCanonical) {
 
+    LOG.trace("Trying to reconstruct blobs with extension reconstructor for {}", slotAndBlockRoot);
+
     // We need the first 50% for reconstruction
     final List<DataColumnSlotAndIdentifier> firstHalfIdentifiers =
         createIdentifiers(
@@ -140,6 +146,10 @@ public class BlobReconstructionProvider {
                       return reconstructBlobSidecarsStartingWithCryptoReconstructor(
                           firstHalfOfSidecars, slotAndBlockRoot, blobIndices, isCanonical);
                     } else {
+                      LOG.trace(
+                          "Blobs {} reconstructed for {} with extension reconstruction",
+                          blobIndices,
+                          slotAndBlockRoot);
                       return SafeFuture.completedFuture(maybeBlobs.get());
                     }
                   });
@@ -151,6 +161,7 @@ public class BlobReconstructionProvider {
       final SlotAndBlockRoot slotAndBlockRoot,
       final List<UInt64> blobIndices,
       final boolean isCanonical) {
+    LOG.trace("Trying to reconstruct blobs with crypto reconstructor for {}", slotAndBlockRoot);
     final List<DataColumnSlotAndIdentifier> secondHalfIdentifiers =
         createIdentifiers(
             slotAndBlockRoot,
@@ -176,6 +187,10 @@ public class BlobReconstructionProvider {
                   return reconstructBlobSidecarsUsingNetworkReconstructor(
                       firstHalfOfSidecarsWithGaps, slotAndBlockRoot, blobIndices);
                 } else {
+                  LOG.trace(
+                      "Blobs {} reconstructed for {} with crypto reconstruction",
+                      blobIndices,
+                      slotAndBlockRoot);
                   return SafeFuture.completedFuture(maybeBlobs.get());
                 }
               });
@@ -186,6 +201,7 @@ public class BlobReconstructionProvider {
       final List<DataColumnSidecar> firstHalfOfSidecarsWithGaps,
       final SlotAndBlockRoot slotAndBlockRoot,
       final List<UInt64> blobIndices) {
+    LOG.trace("Trying to reconstruct blobs with network reconstructor for {}", slotAndBlockRoot);
     final SafeFuture<Optional<List<Blob>>> maybeNetworkReconstructedBlobs =
         networkBlobReconstructor.reconstructBlobs(
             slotAndBlockRoot, firstHalfOfSidecarsWithGaps, blobIndices);
@@ -193,8 +209,16 @@ public class BlobReconstructionProvider {
     return maybeNetworkReconstructedBlobs.thenCompose(
         maybeBlobs -> {
           if (maybeBlobs.isEmpty()) {
+            LOG.debug(
+                "Blobs {} were not reconstructed for {} with network reconstruction",
+                blobIndices,
+                slotAndBlockRoot);
             return SafeFuture.completedFuture(Collections.emptyList());
           } else {
+            LOG.debug(
+                "Blobs {} reconstructed for {} with network reconstruction",
+                blobIndices,
+                slotAndBlockRoot);
             return SafeFuture.completedFuture(maybeBlobs.get());
           }
         });
