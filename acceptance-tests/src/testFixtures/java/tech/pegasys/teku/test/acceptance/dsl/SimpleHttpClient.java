@@ -97,9 +97,36 @@ public class SimpleHttpClient {
     }
   }
 
+  public String put(final URI baseUrl, final String path, final String jsonBody)
+      throws IOException {
+    return this.put(baseUrl, path, jsonBody, Collections.emptyMap());
+  }
+
   public String post(final URI baseUrl, final String path, final String jsonBody)
       throws IOException {
     return this.post(baseUrl, path, jsonBody, Collections.emptyMap());
+  }
+
+  public String put(
+      final URI baseUrl,
+      final String path,
+      final String jsonBody,
+      final Map<String, String> headers)
+      throws IOException {
+    final RequestBody requestBody = RequestBody.create(jsonBody, JSON);
+    final Request.Builder builder =
+        new Request.Builder().url(baseUrl.resolve(path).toURL()).put(requestBody);
+    headers.forEach(builder::header);
+    LOG.debug("PUT {}{}, body {}, headers: {}", baseUrl, path, jsonBody, headers.toString());
+
+    final Response response = httpClient.newCall(builder.build()).execute();
+    final ResponseBody responseBody = response.body();
+    if (!response.isSuccessful()) {
+      LOG.debug("PUT RESPONSE CODE: {}, BODY: {}", response.code(), responseBody.string());
+    }
+    assertThat(response.isSuccessful()).describedAs("Response is successful").isTrue();
+    assertThat(responseBody).isNotNull();
+    return responseBody.string();
   }
 
   public String post(

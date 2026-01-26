@@ -13,19 +13,20 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.execution;
 
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
+
 import java.util.BitSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
@@ -34,10 +35,10 @@ import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.execution.AbstractExecutionPayloadProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
@@ -94,16 +95,21 @@ public class ExecutionPayloadProcessorGloas extends AbstractExecutionPayloadProc
       final BeaconState preState,
       final SignedExecutionPayloadEnvelope signedEnvelope,
       final BLSSignatureVerifier signatureVerifier) {
-    final Validator builder =
-        preState.getValidators().get(signedEnvelope.getMessage().getBuilderIndex().intValue());
+    final UInt64 builderIndex = signedEnvelope.getMessage().getBuilderIndex();
+    final BLSPublicKey pubkey;
+    if (builderIndex.equals(BUILDER_INDEX_SELF_BUILD)) {
+      final UInt64 validatorIndex = preState.getLatestBlockHeader().getProposerIndex();
+      pubkey = beaconStateAccessors.getValidatorPubKey(preState, validatorIndex).orElseThrow();
+    } else {
+      pubkey = beaconStateAccessors.getBuilderPubKey(preState, builderIndex).orElseThrow();
+    }
     final Bytes32 domain =
         beaconStateAccessors.getDomain(
             preState.getForkInfo(),
             Domain.BEACON_BUILDER,
             miscHelpers.computeEpochAtSlot(preState.getSlot()));
     final Bytes signingRoot = miscHelpers.computeSigningRoot(signedEnvelope.getMessage(), domain);
-    return signatureVerifier.verify(
-        builder.getPublicKey(), signingRoot, signedEnvelope.getSignature());
+    return signatureVerifier.verify(pubkey, signingRoot, signedEnvelope.getSignature());
   }
 
   @Override
@@ -154,13 +160,13 @@ public class ExecutionPayloadProcessorGloas extends AbstractExecutionPayloadProc
       throw new ExecutionPayloadProcessingException(
           "Prev randao of the envelope is not consistent with the prev randao of the committed bid");
     }
-    // Verify the withdrawals root
+    // Verify consistency with expected withdrawals
     if (!ExecutionPayloadCapella.required(payload)
         .getWithdrawals()
         .hashTreeRoot()
-        .equals(stateGloas.getLatestWithdrawalsRoot())) {
+        .equals(stateGloas.getPayloadExpectedWithdrawals().hashTreeRoot())) {
       throw new ExecutionPayloadProcessingException(
-          "Withdrawals root of the envelope is not consistent with the latest withdrawals root in the state");
+          "Withdrawals of the envelope are not consistent with the expected withdrawals in the state");
     }
     // Verify the gas_limit
     if (!committedBid.getGasLimit().equals(payload.getGasLimit())) {
@@ -212,14 +218,7 @@ public class ExecutionPayloadProcessorGloas extends AbstractExecutionPayloadProc
     final BuilderPendingPayment payment = stateGloas.getBuilderPendingPayments().get(paymentIndex);
     final UInt64 amount = payment.getWithdrawal().getAmount();
     if (amount.isGreaterThan(0)) {
-      final UInt64 exitQueueEpoch =
-          beaconStateMutators.computeExitEpochAndUpdateChurn(stateGloas, amount);
-      final BuilderPendingWithdrawal withdrawalToQueue =
-          payment
-              .getWithdrawal()
-              .copyWithNewWithdrawableEpoch(
-                  exitQueueEpoch.plus(specConfig.getMinValidatorWithdrawabilityDelay()));
-      stateGloas.getBuilderPendingWithdrawals().append(withdrawalToQueue);
+      stateGloas.getBuilderPendingWithdrawals().append(payment.getWithdrawal());
     }
     stateGloas
         .getBuilderPendingPayments()

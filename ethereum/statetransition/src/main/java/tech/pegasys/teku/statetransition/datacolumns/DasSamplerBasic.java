@@ -29,6 +29,7 @@ import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DasSamplerBasic implements DataAvailabilitySampler {
   private static final Logger LOG = LogManager.getLogger();
@@ -52,7 +54,10 @@ public class DasSamplerBasic implements DataAvailabilitySampler {
       new ConcurrentHashMap<>();
 
   private final AsyncRunner asyncRunner;
+  @SuppressWarnings("UnusedVariable")
+  private final RecentChainData recentChainData;
   private final RPCFetchDelayProvider rpcFetchDelayProvider;
+  private final boolean halfColumnsSamplingCompletionEnabled;
 
   public DasSamplerBasic(
       final Spec spec,
@@ -61,7 +66,9 @@ public class DasSamplerBasic implements DataAvailabilitySampler {
       final RPCFetchDelayProvider rpcFetchDelayProvider,
       final DataColumnSidecarCustody custody,
       final DataColumnSidecarRetriever retriever,
-      final CustodyGroupCountManager custodyGroupCountManager) {
+      final CustodyGroupCountManager custodyGroupCountManager,
+      final RecentChainData recentChainData,
+      final boolean halfColumnsSamplingCompletionEnabled) {
     this.currentSlotProvider = currentSlotProvider;
     this.rpcFetchDelayProvider = rpcFetchDelayProvider;
     this.spec = spec;
@@ -69,6 +76,8 @@ public class DasSamplerBasic implements DataAvailabilitySampler {
     this.custody = custody;
     this.retriever = retriever;
     this.custodyGroupCountManager = custodyGroupCountManager;
+    this.recentChainData = recentChainData;
+    this.halfColumnsSamplingCompletionEnabled = halfColumnsSamplingCompletionEnabled;
   }
 
   @VisibleForTesting
@@ -98,7 +107,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler {
       return tracker.completionFuture();
     }
 
-    if (tracker.rpcFetchScheduled().compareAndSet(false, true)) {
+    if (tracker.rpcFetchInProgress().compareAndSet(false, true)) {
       fetchMissingColumnsViaRPC(slot, blockRoot, tracker);
     }
 
@@ -115,7 +124,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler {
       // wait eventual known columns to be added via onAlreadyKnownDataColumn before fetching.
       return;
     }
-    tracker.rpcFetchScheduled().set(true);
+    tracker.rpcFetchInProgress().set(true);
     asyncRunner
         .getDelayedFuture(delay)
         .always(() -> fetchMissingColumnsViaRPC(slot, blockRoot, tracker));
@@ -154,7 +163,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler {
             })
         // let's reset the fetched flag so that this tracker can reissue RPC requests on DA check
         // retry
-        .alwaysRun(() -> tracker.rpcFetchScheduled().set(false))
+        .alwaysRun(() -> tracker.rpcFetchInProgress().set(false))
         .finish(
             throwable -> {
               if (ExceptionUtil.hasCause(throwable, CancellationException.class)) {
@@ -174,7 +183,16 @@ public class DasSamplerBasic implements DataAvailabilitySampler {
         blockRoot,
         k -> {
           final DataColumnSamplingTracker tracker =
-              DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager);
+              DataColumnSamplingTracker.create(
+                  slot,
+                  blockRoot,
+                  custodyGroupCountManager,
+                  halfColumnsSamplingCompletionEnabled
+                      ? Optional.of(
+                          SpecConfigFulu.required(spec.atSlot(slot).getConfig())
+                                  .getNumberOfColumns()
+                              / 2)
+                      : Optional.empty());
           onFirstSeen(slot, blockRoot, tracker);
           return tracker;
         });
@@ -224,6 +242,41 @@ public class DasSamplerBasic implements DataAvailabilitySampler {
     }
   }
 
+  // FIXME: there was correct pruning here, we need to get it back somehow
+  //    @Override
+  //    public void onSlot(final UInt64 slot) {
+  //        final UInt64 firstNonFinalizedSlot =
+  //                spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch()).increment();
+  //        recentlySampledColumnsByRoot
+  //                .values()
+  //                .removeIf(
+  //                        tracker -> {
+  //                            if (tracker.slot().isLessThan(firstNonFinalizedSlot)
+  //                                    || recentChainData.containsBlock(tracker.blockRoot())) {
+  //                                // Outdated
+  //                                if (!tracker.completionFuture().isDone()) {
+  //                                    // make sure the future releases any pending waiters
+  //                                    tracker
+  //                                            .completionFuture()
+  //                                            .completeExceptionally(
+  //                                                    new RuntimeException("DAS sampling expired
+  // while slot finalized"));
+  //                                    // Slot less than finalized slot, but we didn't complete DA
+  // check, means it's
+  //                                    // probably orphaned block with data never available - we
+  // must prune this
+  //                                    // RecentChainData contains block, but we are here -
+  // shouldn't happen
+  //                                    return true;
+  //                                }
+  //                                // cleanup only if fully sampled
+  //                                return tracker.fullySampled().get();
+  //                            }
+  //
+  //                            return false;
+  //                        });
+  //    }
+
   @Override
   public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
     final DataColumnSamplingTracker tracker = getOrCreateTracker(block.getSlot(), block.getRoot());
@@ -232,7 +285,8 @@ public class DasSamplerBasic implements DataAvailabilitySampler {
       return;
     }
 
-    if (tracker.rpcFetchScheduled().compareAndSet(false, true)) {
+    // FIXME: it was rpcFetchScheduled here, check the correctness of change
+    if (tracker.rpcFetchInProgress().compareAndSet(false, true)) {
       fetchMissingColumnsViaRPC(block.getSlot(), block.getRoot(), tracker);
     }
   }

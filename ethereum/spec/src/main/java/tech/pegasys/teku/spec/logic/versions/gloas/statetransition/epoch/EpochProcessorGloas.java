@@ -22,9 +22,9 @@ import tech.pegasys.teku.infrastructure.ssz.SszMutableVector;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
@@ -76,17 +76,8 @@ public class EpochProcessorGloas extends EpochProcessorFulu {
         .forEach(
             i -> {
               final BuilderPendingPayment payment = builderPendingPayments.get(i);
-              if (payment.getWeight().isGreaterThan(quorum)) {
-                final UInt64 amount = payment.getWithdrawal().getAmount();
-                final UInt64 exitQueueEpoch =
-                    BeaconStateMutatorsElectra.required(beaconStateMutators)
-                        .computeExitEpochAndUpdateChurn(stateGloas, amount);
-                final UInt64 withdrawableEpoch =
-                    exitQueueEpoch.plus(specConfig.getMinValidatorWithdrawabilityDelay());
-                stateGloas
-                    .getBuilderPendingWithdrawals()
-                    .append(
-                        payment.getWithdrawal().copyWithNewWithdrawableEpoch(withdrawableEpoch));
+              if (payment.getWeight().isGreaterThanOrEqualTo(quorum)) {
+                stateGloas.getBuilderPendingWithdrawals().append(payment.getWithdrawal());
               }
             });
     final List<BuilderPendingPayment> oldPayments =

@@ -440,7 +440,10 @@ public class ChainStorage
     return SafeFuture.of(
         () -> {
           try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
-              database.streamDataColumnIdentifiers(startSlot, endSlot).limit(limit.longValue())) {
+              database
+                  .streamDataColumnIdentifiers(startSlot, endSlot)
+                  .limit(
+                      limit.isGreaterThan(Long.MAX_VALUE) ? Long.MAX_VALUE : limit.longValue())) {
             return dataColumnIdentifiersStream.toList();
           }
         });
@@ -474,10 +477,5 @@ public class ChainStorage
   @Override
   public SafeFuture<Void> onNewSidecar(final DataColumnSidecar sidecar) {
     return SafeFuture.fromRunnable(() -> database.addSidecar(sidecar));
-  }
-
-  @Override
-  public SafeFuture<Void> onNewNonCanonicalSidecar(final DataColumnSidecar sidecar) {
-    return SafeFuture.fromRunnable(() -> database.addNonCanonicalSidecar(sidecar));
   }
 }

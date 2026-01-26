@@ -38,10 +38,11 @@ public interface WithdrawalsHelpers {
   record ExpectedWithdrawals(
       List<Withdrawal> withdrawals,
       int processedBuilderWithdrawalsCount,
-      int processedPartialWithdrawalsCount) {}
+      int processedPartialWithdrawalsCount,
+      int processedBuildersSweepCount,
+      int processedValidatorsSweepCount) {}
 
-  static UInt64 getPartiallyWithdrawnBalance(
-      final List<Withdrawal> withdrawals, final UInt64 validatorIndex) {
+  static UInt64 getTotalWithdrawn(final List<Withdrawal> withdrawals, final UInt64 validatorIndex) {
     return withdrawals.stream()
         .filter(withdrawal -> withdrawal.getValidatorIndex().equals(validatorIndex))
         .map(Withdrawal::getAmount)

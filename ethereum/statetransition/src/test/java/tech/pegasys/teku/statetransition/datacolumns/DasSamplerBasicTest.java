@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import static java.util.Map.entry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.when;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -49,6 +51,7 @@ import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler.SamplingEligibilityStatus;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DasSamplerBasicTest {
   private static final Spec SPEC = TestSpecFactory.createMinimalFulu();
@@ -59,6 +62,7 @@ public class DasSamplerBasicTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(stubTimeProvider);
   private final RPCFetchDelayProvider rpcFetchDelayProvider = mock(RPCFetchDelayProvider.class);
 
+  private RecentChainData recentChainData;
   private DataColumnSidecarCustody custody;
   private DataColumnSidecarRetriever retriever;
   private CurrentSlotProvider currentSlotProvider;
@@ -70,6 +74,7 @@ public class DasSamplerBasicTest {
   public void setUp() {
     final CustodyGroupCountManager custodyGroupCountManager = mock(CustodyGroupCountManager.class);
     when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(SAMPLING_INDICES);
+    recentChainData = mock(RecentChainData.class);
     custody = mock(DataColumnSidecarCustody.class);
     retriever = mock(DataColumnSidecarRetriever.class);
     currentSlotProvider = mock(CurrentSlotProvider.class);
@@ -88,7 +93,9 @@ public class DasSamplerBasicTest {
             rpcFetchDelayProvider,
             custody,
             retriever,
-            custodyGroupCountManager);
+            custodyGroupCountManager,
+            recentChainData,
+            true);
   }
 
   @Test
@@ -174,7 +181,7 @@ public class DasSamplerBasicTest {
     final Map<UInt64, SafeFuture<DataColumnSidecar>> futureSidecarsByIndex =
         missingColumnSidecars.values().stream()
             .map(DataColumnSidecar::getIndex)
-            .map(index -> Map.entry(index, new SafeFuture<DataColumnSidecar>()))
+            .map(index -> entry(index, new SafeFuture<DataColumnSidecar>()))
             .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
 
     final DataColumnSidecar lateArrivedSidecar =
@@ -385,6 +392,101 @@ public class DasSamplerBasicTest {
     sampler.removeAllForBlock(slotAndBlockRoot);
   }
 
+  @Test
+  void onSlot_shouldPruneTrackers() {
+    final UInt64 finalizedEpoch = UInt64.valueOf(1);
+    final Bytes32 importedBlockRoot = dataStructureUtil.randomBytes32();
+    final UInt64 lastFinalizedSlot = UInt64.valueOf(8);
+    final UInt64 firstNonFinalizedSlot = UInt64.valueOf(9);
+
+    when(recentChainData.getFinalizedEpoch()).thenReturn(finalizedEpoch);
+    when(recentChainData.containsBlock(any())).thenReturn(false);
+    when(recentChainData.containsBlock(importedBlockRoot)).thenReturn(true);
+
+    final DataColumnSamplingTracker partiallyCompletedTrackerBeforeFinalized =
+        mock(DataColumnSamplingTracker.class);
+    when(partiallyCompletedTrackerBeforeFinalized.completionFuture())
+        .thenReturn(SafeFuture.completedFuture(null));
+    when(partiallyCompletedTrackerBeforeFinalized.fullySampled())
+        .thenReturn(new AtomicBoolean(false));
+    when(partiallyCompletedTrackerBeforeFinalized.blockRoot())
+        .thenReturn(dataStructureUtil.randomBytes32());
+    when(partiallyCompletedTrackerBeforeFinalized.slot()).thenReturn(lastFinalizedSlot.decrement());
+
+    final DataColumnSamplingTracker fullyCompletedTrackerBeforeFinalized =
+        mock(DataColumnSamplingTracker.class);
+    when(fullyCompletedTrackerBeforeFinalized.completionFuture())
+        .thenReturn(SafeFuture.completedFuture(null));
+    when(fullyCompletedTrackerBeforeFinalized.fullySampled()).thenReturn(new AtomicBoolean(true));
+    when(fullyCompletedTrackerBeforeFinalized.blockRoot())
+        .thenReturn(dataStructureUtil.randomBytes32());
+    when(fullyCompletedTrackerBeforeFinalized.slot()).thenReturn(lastFinalizedSlot.decrement());
+
+    // But not imported yet!
+    final DataColumnSamplingTracker fullyCompletedTrackerAfterFinalized =
+        mock(DataColumnSamplingTracker.class);
+    when(fullyCompletedTrackerAfterFinalized.completionFuture())
+        .thenReturn(SafeFuture.completedFuture(null));
+    when(fullyCompletedTrackerAfterFinalized.fullySampled()).thenReturn(new AtomicBoolean(true));
+    when(fullyCompletedTrackerAfterFinalized.blockRoot())
+        .thenReturn(dataStructureUtil.randomBytes32());
+    when(fullyCompletedTrackerAfterFinalized.slot()).thenReturn(lastFinalizedSlot.increment());
+
+    final DataColumnSamplingTracker incompleteTrackerBeforeFinalized =
+        mock(DataColumnSamplingTracker.class);
+    final SafeFuture<List<UInt64>> incompleteTrackerFuture = new SafeFuture<>();
+    when(incompleteTrackerBeforeFinalized.completionFuture()).thenReturn(incompleteTrackerFuture);
+    when(incompleteTrackerBeforeFinalized.fullySampled()).thenReturn(new AtomicBoolean(false));
+    when(incompleteTrackerBeforeFinalized.blockRoot())
+        .thenReturn(dataStructureUtil.randomBytes32());
+    when(incompleteTrackerBeforeFinalized.slot()).thenReturn(lastFinalizedSlot);
+
+    final SafeFuture<List<UInt64>> incompleteTrackerForImportedBlockFuture = new SafeFuture<>();
+    final DataColumnSamplingTracker incompleteTrackerForImportedBlock =
+        mock(DataColumnSamplingTracker.class);
+    when(incompleteTrackerForImportedBlock.completionFuture())
+        .thenReturn(incompleteTrackerForImportedBlockFuture);
+    when(incompleteTrackerForImportedBlock.fullySampled()).thenReturn(new AtomicBoolean(false));
+    when(incompleteTrackerForImportedBlock.slot()).thenReturn(firstNonFinalizedSlot);
+    when(incompleteTrackerForImportedBlock.blockRoot()).thenReturn(importedBlockRoot);
+
+    sampler
+        .getRecentlySampledColumnsByRoot()
+        .put(
+            partiallyCompletedTrackerBeforeFinalized.blockRoot(),
+            partiallyCompletedTrackerBeforeFinalized);
+    sampler
+        .getRecentlySampledColumnsByRoot()
+        .put(
+            fullyCompletedTrackerBeforeFinalized.blockRoot(), fullyCompletedTrackerBeforeFinalized);
+    sampler
+        .getRecentlySampledColumnsByRoot()
+        .put(fullyCompletedTrackerAfterFinalized.blockRoot(), fullyCompletedTrackerAfterFinalized);
+    sampler
+        .getRecentlySampledColumnsByRoot()
+        .put(incompleteTrackerBeforeFinalized.blockRoot(), incompleteTrackerBeforeFinalized);
+    sampler
+        .getRecentlySampledColumnsByRoot()
+        .put(incompleteTrackerForImportedBlock.blockRoot(), incompleteTrackerForImportedBlock);
+
+    // FIXME: we don't have onSlot anymore, should we restore it?
+//    sampler.onSlot(UInt64.valueOf(20));
+
+    // DA check is completed but fetch is not yet completed for this one
+    assertThat(sampler.getRecentlySampledColumnsByRoot())
+        .containsExactly(
+            entry(
+                partiallyCompletedTrackerBeforeFinalized.blockRoot(),
+                partiallyCompletedTrackerBeforeFinalized),
+            entry(
+                fullyCompletedTrackerAfterFinalized.blockRoot(),
+                fullyCompletedTrackerAfterFinalized));
+    assertThat(incompleteTrackerBeforeFinalized.completionFuture()).isCompletedExceptionally();
+    assertThat(incompleteTrackerForImportedBlock.completionFuture()).isCompletedExceptionally();
+    assertThat(partiallyCompletedTrackerBeforeFinalized.completionFuture()).isCompleted();
+    assertThat(fullyCompletedTrackerBeforeFinalized.completionFuture()).isCompleted();
+  }
+
   private void assertSamplerTracker(
       final Bytes32 blockRoot, final UInt64 slot, final List<UInt64> missingColumns) {
     assertThat(sampler.getRecentlySampledColumnsByRoot())
@@ -409,7 +511,7 @@ public class DasSamplerBasicTest {
     assertThat(sampler.getRecentlySampledColumnsByRoot())
         .hasEntrySatisfying(
             blockRoot,
-            tracker -> assertThat(tracker.rpcFetchScheduled().get()).isEqualTo(expected));
+            tracker -> assertThat(tracker.rpcFetchInProgress().get()).isEqualTo(expected));
   }
 
   private void assertRPCFetchInMillis(

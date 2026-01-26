@@ -126,7 +126,7 @@ public class DataColumnSidecarsByRangeIntegrationTest extends AbstractRpcMethodI
           nonCanonicalDataColumnSidecars.addAll(dataColumnSidecars);
           peerStorage.chainUpdater().saveBlock(signedBlockAndState);
           dataColumnSidecars.forEach(
-              sidecar -> safeJoin(peerStorage.chainStorage().onNewNonCanonicalSidecar(sidecar)));
+              sidecar -> peerStorage.database().addNonCanonicalSidecar(sidecar));
         });
 
     // make sure canonical head is the canonical head

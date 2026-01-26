@@ -307,10 +307,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         beaconStateAccessors.getBeaconCommittee(state, data.getSlot(), data.getIndex());
     checkArgument(
         attestation.getAggregationBits().size() == committee.size(),
-        "process_attestations: Attestation aggregation bits and committee don't have the same length - committee "
-            + committee.size()
-            + ", aggregation bits "
-            + attestation.getAggregationBits().size());
+        "process_attestations: Attestation aggregation bits and committee don't have the same length - committee %s, aggregation bits %s",
+        committee.size(),
+        attestation.getAggregationBits().size());
   }
 
   @Override
@@ -820,14 +819,20 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
                 "process_voluntary_exits: %s",
                 invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
-            // - Run initiate_validator_exit(state, exit.validator_index)
-
-            beaconStateMutators.initiateValidatorExit(
-                state,
-                signedExit.getMessage().getValidatorIndex().intValue(),
-                validatorExitContextSupplier);
+            initiateExit(state, signedExit, validatorExitContextSupplier);
           }
         });
+  }
+
+  protected void initiateExit(
+      final MutableBeaconState state,
+      final SignedVoluntaryExit signedExit,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
+    // - Run initiate_validator_exit(state, exit.validator_index)
+    beaconStateMutators.initiateValidatorExit(
+        state,
+        signedExit.getMessage().getValidatorIndex().intValue(),
+        validatorExitContextSupplier);
   }
 
   protected BlockValidationResult verifyVoluntaryExits(

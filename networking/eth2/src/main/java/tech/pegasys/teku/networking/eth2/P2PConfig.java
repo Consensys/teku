@@ -45,6 +45,7 @@ public class P2PConfig {
   public static final boolean DEFAULT_GOSSIP_SCORING_ENABLED = true;
   public static final boolean DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED = true;
   public static final boolean DEFAULT_DAS_DISABLE_EL_RECOVERY = false;
+  public static final boolean DEFAULT_COLUMNS_DATA_AVAILABILITY_HALF_CHECK_ENABLED = false;
   public static final int DEFAULT_BATCH_VERIFY_MAX_THREADS =
       Math.max(4, Runtime.getRuntime().availableProcessors() / 2);
   public static final int DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY = 30_000;
@@ -93,10 +94,10 @@ public class P2PConfig {
   private final boolean allTopicsFilterEnabled;
   private final int reworkedSidecarRecoveryTimeout;
   private final int reworkedSidecarDownloadTimeout;
-  private final boolean reworkedSidecarRecoveryEnabled;
   private final int reworkedSidecarSyncBatchSize;
   private final int reworkedSidecarSyncPollPeriod;
   private final boolean reworkedSidecarSyncEnabled;
+  private final boolean columnsDataAvailabilityHalfCheckEnabled;
   private final boolean executionProofTopicEnabled;
 
   private P2PConfig(
@@ -121,12 +122,12 @@ public class P2PConfig {
       final boolean batchVerifyStrictThreadLimitEnabled,
       final boolean allTopicsFilterEnabled,
       final boolean isGossipBlobsAfterBlockEnabled,
-      final boolean reworkedSidecarRecoveryEnabled,
       final int reworkedSidecarRecoveryTimeout,
       final int reworkedSidecarDownloadTimeout,
       final boolean reworkedSidecarSyncEnabled,
       final Integer reworkedSidecarSyncBatchSize,
       final Integer reworkedSidecarSyncPollPeriod,
+      final boolean columnsDataAvailabilityHalfCheckEnabled,
       final boolean executionProofTopicEnabled) {
     this.spec = spec;
     this.networkConfig = networkConfig;
@@ -150,12 +151,12 @@ public class P2PConfig {
     this.networkingSpecConfig = spec.getNetworkingConfig();
     this.allTopicsFilterEnabled = allTopicsFilterEnabled;
     this.isGossipBlobsAfterBlockEnabled = isGossipBlobsAfterBlockEnabled;
-    this.reworkedSidecarRecoveryEnabled = reworkedSidecarRecoveryEnabled;
     this.reworkedSidecarDownloadTimeout = reworkedSidecarDownloadTimeout;
     this.reworkedSidecarRecoveryTimeout = reworkedSidecarRecoveryTimeout;
     this.reworkedSidecarSyncEnabled = reworkedSidecarSyncEnabled;
     this.reworkedSidecarSyncBatchSize = reworkedSidecarSyncBatchSize;
     this.reworkedSidecarSyncPollPeriod = reworkedSidecarSyncPollPeriod;
+    this.columnsDataAvailabilityHalfCheckEnabled = columnsDataAvailabilityHalfCheckEnabled;
     this.executionProofTopicEnabled = executionProofTopicEnabled;
   }
 
@@ -259,10 +260,6 @@ public class P2PConfig {
     return isGossipBlobsAfterBlockEnabled;
   }
 
-  public boolean isReworkedSidecarRecoveryEnabled() {
-    return reworkedSidecarRecoveryEnabled;
-  }
-
   public int getReworkedSidecarRecoveryTimeout() {
     return reworkedSidecarRecoveryTimeout;
   }
@@ -281,6 +278,10 @@ public class P2PConfig {
 
   public int getReworkedSidecarSyncPollPeriod() {
     return reworkedSidecarSyncPollPeriod;
+  }
+
+  public boolean isColumnsDataAvailabilityHalfCheckEnabled() {
+    return columnsDataAvailabilityHalfCheckEnabled;
   }
 
   public static class Builder {
@@ -312,11 +313,11 @@ public class P2PConfig {
         DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
     private boolean gossipBlobsAfterBlockEnabled = DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED;
     private boolean executionProofTopicEnabled = DEFAULT_EXECUTION_PROOF_GOSSIP_ENABLED;
-    private boolean reworkedSidecarRecoveryEnabled = true;
     private Integer reworkedSidecarRecoveryTimeout = DEFAULT_RECOVERY_TIMEOUT_MS;
     private Integer reworkedSidecarDownloadTimeout = DEFAULT_DOWNLOAD_TIMEOUT_MS;
 
     private boolean reworkedSidecarSyncEnabled = false;
+    private boolean columnsDataAvailabilityHalfCheckEnabled = false;
     private Integer reworkedSidecarSyncBatchSize = DEFAULT_COLUMN_CUSTODY_BACKFILLER_BATCH_SIZE;
     private Integer reworkedSidecarSyncPollPeriod =
         DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS;
@@ -385,12 +386,12 @@ public class P2PConfig {
           batchVerifyStrictThreadLimitEnabled,
           allTopicsFilterEnabled,
           gossipBlobsAfterBlockEnabled,
-          reworkedSidecarRecoveryEnabled,
           reworkedSidecarRecoveryTimeout,
           reworkedSidecarDownloadTimeout,
           reworkedSidecarSyncEnabled,
           reworkedSidecarSyncBatchSize,
           reworkedSidecarSyncPollPeriod,
+          columnsDataAvailabilityHalfCheckEnabled,
           executionProofTopicEnabled);
     }
 
@@ -571,11 +572,6 @@ public class P2PConfig {
       return this;
     }
 
-    public Builder reworkedSidecarRecoveryEnabled(final boolean reworkedSidecarRecoveryEnabled) {
-      this.reworkedSidecarRecoveryEnabled = reworkedSidecarRecoveryEnabled;
-      return this;
-    }
-
     public Builder reworkedSidecarSyncBatchSize(final Integer reworkedSidecarSyncBatchSize) {
       this.reworkedSidecarSyncBatchSize = reworkedSidecarSyncBatchSize;
       return this;
@@ -588,6 +584,12 @@ public class P2PConfig {
 
     public Builder reworkedSidecarSyncEnabled(final boolean reworkedSidecarSyncEnabled) {
       this.reworkedSidecarSyncEnabled = reworkedSidecarSyncEnabled;
+      return this;
+    }
+
+    public Builder columnsDataAvailabilityHalfCheckEnabled(
+        final boolean columnsDataAvailabilityHalfCheckEnabled) {
+      this.columnsDataAvailabilityHalfCheckEnabled = columnsDataAvailabilityHalfCheckEnabled;
       return this;
     }
   }

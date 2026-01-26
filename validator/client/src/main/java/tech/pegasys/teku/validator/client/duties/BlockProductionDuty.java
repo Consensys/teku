@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.duties;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.logging.Converter.weiToEth;
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
@@ -224,8 +225,8 @@ public class BlockProductionDuty implements Duty {
 
   private void notifyExecutionPayloadBidEventsSubscribers(
       final SignedExecutionPayloadBid signedBid, final ForkInfo forkInfo) {
-    // G2_POINT_AT_INFINITY signature indicates a self-built bid
-    if (signedBid.getSignature().isInfinity()) {
+    // BUILDER_INDEX_SELF_BUILD indicates a self-built bid
+    if (signedBid.getMessage().getBuilderIndex().equals(BUILDER_INDEX_SELF_BUILD)) {
       executionPayloadBidEventsChannelPublisher.onSelfBuiltBidIncludedInBlock(
           validator, forkInfo, signedBid.getMessage());
     }
