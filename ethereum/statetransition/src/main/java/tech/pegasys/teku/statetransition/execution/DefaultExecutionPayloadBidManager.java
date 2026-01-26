@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.execution;
 
 import static tech.pegasys.teku.infrastructure.logging.Converter.weiToEth;
 import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatAbbreviatedHashRoot;
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
 
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -87,13 +88,12 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
             .getBlobKzgCommitmentsSchema()
             .createFromBlobsBundle(getPayloadResponse.getBlobsBundle().orElseThrow())
             .hashTreeRoot();
-    // proposer is the builder
-    final UInt64 builderIndex = UInt64.valueOf(spec.getBeaconProposerIndex(state, slot));
+    // For self-builds, use `BUILDER_INDEX_SELF_BUILD`
     final ExecutionPayloadBid bid =
         schemaDefinitions
             .getExecutionPayloadBidSchema()
             .createLocalSelfBuiltBid(
-                builderIndex, slot, state, executionPayload, blobKzgCommitmentsRoot);
+                BUILDER_INDEX_SELF_BUILD, slot, state, executionPayload, blobKzgCommitmentsRoot);
     // Using G2_POINT_AT_INFINITY as signature for self-builds
     return schemaDefinitions
         .getSignedExecutionPayloadBidSchema()

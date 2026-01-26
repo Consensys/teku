@@ -77,16 +77,7 @@ public class EpochProcessorGloas extends EpochProcessorFulu {
             i -> {
               final BuilderPendingPayment payment = builderPendingPayments.get(i);
               if (payment.getWeight().isGreaterThanOrEqualTo(quorum)) {
-                final UInt64 amount = payment.getWithdrawal().getAmount();
-                final UInt64 exitQueueEpoch =
-                    BeaconStateMutatorsElectra.required(beaconStateMutators)
-                        .computeExitEpochAndUpdateChurn(stateGloas, amount);
-                final UInt64 withdrawableEpoch =
-                    exitQueueEpoch.plus(specConfig.getMinValidatorWithdrawabilityDelay());
-                stateGloas
-                    .getBuilderPendingWithdrawals()
-                    .append(
-                        payment.getWithdrawal().copyWithNewWithdrawableEpoch(withdrawableEpoch));
+                stateGloas.getBuilderPendingWithdrawals().append(payment.getWithdrawal());
               }
             });
     final List<BuilderPendingPayment> oldPayments =

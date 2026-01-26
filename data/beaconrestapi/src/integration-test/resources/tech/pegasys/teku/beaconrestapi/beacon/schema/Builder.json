@@ -11,7 +11,9 @@
     },
     "version" : {
       "type" : "string",
-      "format" : "byte"
+      "example" : "1",
+      "description" : "unsigned 8 bit integer, max value 255",
+      "format" : "uint8"
     },
     "execution_address" : {
       "type" : "string",
