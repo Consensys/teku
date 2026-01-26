@@ -685,24 +685,24 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
-  public TekuNodeConfigBuilder withReworkedRecovery() {
-    LOG.debug("Xp2p-reworked-sidecar-recovery-enabled: {}", true);
-    configMap.put("Xp2p-reworked-sidecar-recovery-enabled", true);
-    return this;
-  }
-
   public TekuNodeConfigBuilder withReworkedCustodySync() {
     LOG.debug("Xp2p-reworked-sidecar-custody-sync-enabled: {}", true);
     configMap.put("Xp2p-reworked-sidecar-custody-sync-enabled", true);
     return this;
   }
 
+  public TekuNodeConfigBuilder withGetBlobsSidecarsDownloadApiEnabled() {
+    LOG.debug("--rest-api-getblobs-sidecars-download-enabled: {}", true);
+    configMap.put("rest-api-getblobs-sidecars-download-enabled", true);
+    return this;
+  }
+
   public TekuNodeConfigBuilder withReworkedRecoveryTimeouts(
       final int recoveryTimeout, final int downloadTimeout) {
-    LOG.debug("Xp2p-reworked-sidecar-cancel-timeout-ms: {}", recoveryTimeout);
-    configMap.put("Xp2p-reworked-sidecar-cancel-timeout-ms", recoveryTimeout);
-    LOG.debug("Xp2p-reworked-sidecar-download-timeout-ms: {}", downloadTimeout);
-    configMap.put("Xp2p-reworked-sidecar-download-timeout-ms", downloadTimeout);
+    LOG.debug("Xp2p-sidecar-cancel-timeout-ms: {}", recoveryTimeout);
+    configMap.put("Xp2p-sidecar-cancel-timeout-ms", recoveryTimeout);
+    LOG.debug("Xp2p-sidecar-download-timeout-ms: {}", downloadTimeout);
+    configMap.put("Xp2p-sidecar-download-timeout-ms", downloadTimeout);
     return this;
   }
 

@@ -263,6 +263,19 @@ jobs:
       src_root: "src/test/java"
       runner: "gha-runner-scale-set-ubuntu-22.04-amd64-large"
 
+  unitTestsResult:
+    runs-on: ubuntu-24.04
+    needs: unitTests
+    if: always()
+    steps:
+      - run: |
+          echo "unitTests result: ${{ needs.prunitTestspertyTests.result }}"
+          if [ "${{ needs.unitTests.result }}" != "success" ]; then
+            echo "❌ One or more unitTests matrix jobs failed."
+            exit 1
+          fi
+          echo "✅ All unitTests matrix jobs passed."   
+
   unitTestsReport:
     runs-on: ubuntu-24.04
     needs: unitTests
@@ -270,14 +283,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/collate-junit-reports
-        if: always()        
+        continue-on-error: true
+        if: always()
         with:
           stage_key: unit
-      - name: Check unitTests matrix status
-        if: needs.unitTests.result != 'success'
-        run: |
-          echo "One or more matrix jobs in 'unitTests' failed."
-          exit 1
 
   integrationTests:
     needs: assemble
@@ -316,6 +325,19 @@ jobs:
       src_root: "src/property-test/java"
       runner: "gha-runner-scale-set-ubuntu-22.04-amd64-xl"
 
+  propertyTestsResult:
+    runs-on: ubuntu-24.04
+    needs: propertyTests
+    if: always()
+    steps:
+      - run: |
+          echo "propertyTests result: ${{ needs.propertyTests.result }}"
+          if [ "${{ needs.propertyTests.result }}" != "success" ]; then
+            echo "❌ One or more propertyTests matrix jobs failed."
+            exit 1
+          fi
+          echo "✅ All propertyTests matrix jobs passed."    
+
   propertyTestsReport:
     runs-on: ubuntu-24.04
     needs: propertyTests
@@ -323,14 +345,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/collate-junit-reports
-        if: always()          
+        continue-on-error: true
+        if: always()       
         with:
           stage_key: property
-      - name: Check propertyTests matrix status
-        if: needs.propertyTests.result != 'success'
-        run: |
-          echo "One or more matrix jobs in 'propertyTests' failed."
-          exit 1
 
   acceptanceTests:
     needs: assemble
@@ -345,6 +363,19 @@ jobs:
       src_root: "src/acceptance-test/java"
       runner: "ubuntu-latest-128"
 
+  acceptanceTestsResult:
+    runs-on: ubuntu-24.04
+    needs: acceptanceTests
+    if: always()
+    steps:
+      - run: |
+          echo "acceptanceTests result: ${{ needs.acceptanceTests.result }}"
+          if [ "${{ needs.acceptanceTests.result }}" != "success" ]; then
+            echo "❌ One or more acceptanceTests matrix jobs failed."
+            exit 1
+          fi
+          echo "✅ All acceptanceTests matrix jobs passed."    
+
   acceptanceTestsReport:
     runs-on: ubuntu-24.04
     needs: acceptanceTests
@@ -352,14 +383,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/collate-junit-reports
-        if: always()           
+        continue-on-error: true
+        if: always()          
         with:
           stage_key: acceptance
-      - name: Check acceptanceTests matrix status
-        if: needs.acceptanceTests.result != 'success'
-        run: |
-          echo "One or more matrix jobs in 'acceptanceTests' failed."
-          exit 1          
 
   referenceTestsPrep:
     needs: assemble
@@ -495,6 +522,19 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
 
+  referenceTestsResult:
+    runs-on: ubuntu-24.04
+    needs: referenceTests
+    if: always()
+    steps:
+      - run: |
+          echo "referenceTests result: ${{ needs.referenceTests.result }}"
+          if [ "${{ needs.referenceTests.result }}" != "success" ]; then
+            echo "❌ One or more referenceTests matrix jobs failed."
+            exit 1
+          fi
+          echo "✅ All referenceTests matrix jobs passed."    
+
   referenceTestsReport:
     runs-on: ubuntu-24.04
     needs: referenceTests
@@ -502,14 +542,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/collate-junit-reports
+        continue-on-error: true
         if: always()    
         with:
           stage_key: reference
-      - name: Check referenceTests matrix status
-        if: needs.referenceTests.result != 'success'
-        run: |
-          echo "One or more matrix jobs in 'referenceTests' failed."
-          exit 1
 
   # DockerTags
   # everything is a standard develop-jdk25/21; but we also add 'develop' to develop-jdk21

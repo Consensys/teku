@@ -384,8 +384,12 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
    *
    * <p>This helper demonstrates the relationship between blobs and ``ExtendedMatrix``.
    *
-   * <p>>The data structure for storing cells is implementation-dependent.
+   * <p>The data structure for storing cells is implementation-dependent.
+   *
+   * <p>This method uses heavy calculation, use it only when needed
    */
+  @VisibleForTesting
+  @Deprecated
   public List<List<MatrixEntry>> computeExtendedMatrixAndProofs(final List<Blob> blobs) {
     return IntStream.range(0, blobs.size())
         .parallel()

@@ -32,8 +32,9 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
@@ -43,7 +44,7 @@ public class OperationSignatureVerifier {
   private static final Logger LOG = LogManager.getLogger();
 
   private final MiscHelpers miscHelpers;
-  private final BeaconStateAccessors beaconStateAccessors;
+  protected final BeaconStateAccessors beaconStateAccessors;
 
   public OperationSignatureVerifier(
       final MiscHelpers miscHelpers, final BeaconStateAccessors beaconStateAccessors) {
@@ -152,8 +153,10 @@ public class OperationSignatureVerifier {
       final BeaconState state,
       final SignedExecutionPayloadBid signedBid,
       final BLSSignatureVerifier signatureVerifier) {
-    final Validator builder =
-        state.getValidators().get(signedBid.getMessage().getBuilderIndex().intValue());
+    final Builder builder =
+        BeaconStateGloas.required(state)
+            .getBuilders()
+            .get(signedBid.getMessage().getBuilderIndex().intValue());
     final Bytes signingRoot =
         calculateExecutionPayloadBidSigningRoot(state, signedBid.getMessage());
     return signatureVerifier.verify(builder.getPublicKey(), signingRoot, signedBid.getSignature());

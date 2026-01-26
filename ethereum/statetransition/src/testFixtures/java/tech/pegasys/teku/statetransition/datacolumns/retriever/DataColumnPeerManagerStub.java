@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.tuweni.units.bigints.UInt256;
 
 public class DataColumnPeerManagerStub implements DataColumnPeerManager {
 
@@ -26,11 +25,11 @@ public class DataColumnPeerManagerStub implements DataColumnPeerManager {
     listeners.add(listener);
   }
 
-  public void addNode(final UInt256 nodeId) {
-    listeners.forEach(l -> l.peerConnected(nodeId));
+  public void addPeer(final TestPeer peer) {
+    listeners.forEach(l -> l.peerConnected(peer.getNodeId(), peer::getEarliestAvailableSlot));
   }
 
-  public void removeNode(final UInt256 nodeId) {
-    listeners.forEach(l -> l.peerDisconnected(nodeId));
+  public void removePeer(final TestPeer peer) {
+    listeners.forEach(l -> l.peerDisconnected(peer.getNodeId()));
   }
 }
