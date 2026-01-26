@@ -469,8 +469,7 @@ public class DasSamplerBasicTest {
         .getRecentlySampledColumnsByRoot()
         .put(incompleteTrackerForImportedBlock.blockRoot(), incompleteTrackerForImportedBlock);
 
-    // FIXME: we don't have onSlot anymore, should we restore it?
-//    sampler.onSlot(UInt64.valueOf(20));
+    sampler.onSlot(UInt64.valueOf(20));
 
     // DA check is completed but fetch is not yet completed for this one
     assertThat(sampler.getRecentlySampledColumnsByRoot())

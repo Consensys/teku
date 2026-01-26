@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
@@ -41,7 +42,7 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecar
 import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class DasSamplerBasic implements DataAvailabilitySampler {
+public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final DataColumnSidecarCustody custody;
@@ -54,7 +55,6 @@ public class DasSamplerBasic implements DataAvailabilitySampler {
       new ConcurrentHashMap<>();
 
   private final AsyncRunner asyncRunner;
-  @SuppressWarnings("UnusedVariable")
   private final RecentChainData recentChainData;
   private final RPCFetchDelayProvider rpcFetchDelayProvider;
   private final boolean halfColumnsSamplingCompletionEnabled;
@@ -242,40 +242,35 @@ public class DasSamplerBasic implements DataAvailabilitySampler {
     }
   }
 
-  // FIXME: there was correct pruning here, we need to get it back somehow
-  //    @Override
-  //    public void onSlot(final UInt64 slot) {
-  //        final UInt64 firstNonFinalizedSlot =
-  //                spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch()).increment();
-  //        recentlySampledColumnsByRoot
-  //                .values()
-  //                .removeIf(
-  //                        tracker -> {
-  //                            if (tracker.slot().isLessThan(firstNonFinalizedSlot)
-  //                                    || recentChainData.containsBlock(tracker.blockRoot())) {
-  //                                // Outdated
-  //                                if (!tracker.completionFuture().isDone()) {
-  //                                    // make sure the future releases any pending waiters
-  //                                    tracker
-  //                                            .completionFuture()
-  //                                            .completeExceptionally(
-  //                                                    new RuntimeException("DAS sampling expired
-  // while slot finalized"));
-  //                                    // Slot less than finalized slot, but we didn't complete DA
-  // check, means it's
-  //                                    // probably orphaned block with data never available - we
-  // must prune this
-  //                                    // RecentChainData contains block, but we are here -
-  // shouldn't happen
-  //                                    return true;
-  //                                }
-  //                                // cleanup only if fully sampled
-  //                                return tracker.fullySampled().get();
-  //                            }
-  //
-  //                            return false;
-  //                        });
-  //    }
+  @Override
+  public void onSlot(final UInt64 slot) {
+    final UInt64 firstNonFinalizedSlot =
+        spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch()).increment();
+    recentlySampledColumnsByRoot
+        .values()
+        .removeIf(
+            tracker -> {
+              if (tracker.slot().isLessThan(firstNonFinalizedSlot)
+                  || recentChainData.containsBlock(tracker.blockRoot())) {
+                // Outdated
+                if (!tracker.completionFuture().isDone()) {
+                  // make sure the future releases any pending waiters
+                  tracker
+                      .completionFuture()
+                      .completeExceptionally(
+                          new RuntimeException("DAS sampling expired while slot finalized"));
+                  // Slot less than finalized slot, but we didn't complete DA check, means it's
+                  // probably orphaned block with data never available - we must prune this
+                  // RecentChainData contains block, but we are here - shouldn't happen
+                  return true;
+                }
+                // cleanup only if fully sampled
+                return tracker.fullySampled().get();
+              }
+
+              return false;
+            });
+  }
 
   @Override
   public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
