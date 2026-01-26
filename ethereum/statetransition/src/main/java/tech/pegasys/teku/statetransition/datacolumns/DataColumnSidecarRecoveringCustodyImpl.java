@@ -170,8 +170,11 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   }
 
   private void pruneCompletedSlots() {
-    while (completedSlots.size() >= completedSlotsSizeTarget) {
-      completedSlots.removeFirst();
+    final int slotsToPrune = completedSlots.size() - completedSlotsSizeTarget;
+    if (slotsToPrune >= 0) {
+      for (int i = 0; i <= slotsToPrune; i++) {
+        completedSlots.removeFirst();
+      }
     }
   }
 
