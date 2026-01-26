@@ -90,4 +90,36 @@ public class BlobTrackerPoolTest {
     verifyNoInteractions(blockBlobSidecarsTrackersPool);
     verify(prunedDataAvailabilitySampler).onNewBlock(block, Optional.of(RemoteOrigin.GOSSIP));
   }
+
+  @Test
+  public void removeAllForBlock_shouldHandleDenebBlocks() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(denebSlot);
+    blobTrackerPool.removeAllForBlock(block.getSlotAndBlockRoot());
+    verify(blockBlobSidecarsTrackersPool).removeAllForBlock(block.getSlotAndBlockRoot());
+    verifyNoInteractions(recentChainData, prunedDataAvailabilitySampler);
+  }
+
+  @Test
+  public void removeAllForBlock_shouldHandleFuluBlocks() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(fuluSlot);
+    blobTrackerPool.removeAllForBlock(block.getSlotAndBlockRoot());
+    verify(prunedDataAvailabilitySampler).removeAllForBlock(block.getSlotAndBlockRoot());
+    verifyNoInteractions(recentChainData, blockBlobSidecarsTrackersPool);
+  }
+
+  @Test
+  public void enableBlockImportOnCompletion_shouldHandleDenebBlocks() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(denebSlot);
+    blobTrackerPool.enableBlockImportOnCompletion(block);
+    verify(blockBlobSidecarsTrackersPool).enableBlockImportOnCompletion(block);
+    verifyNoInteractions(recentChainData, prunedDataAvailabilitySampler);
+  }
+
+  @Test
+  public void enableBlockImportOnCompletion_shouldHandleFuluBlocks() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(fuluSlot);
+    blobTrackerPool.enableBlockImportOnCompletion(block);
+    verify(prunedDataAvailabilitySampler).enableBlockImportOnCompletion(block);
+    verifyNoInteractions(recentChainData, blockBlobSidecarsTrackersPool);
+  }
 }
