@@ -321,6 +321,9 @@ Each module has its own test suite under `src/test/java` and test fixtures under
 ## Code Conventions
 
 - **Coding style**: Google Java conventions (enforced by Spotless)
+- **Imports**: Always use proper import statements instead of fully qualified class names in code
+  - Good: `import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationHelper; ... DataColumnSidecarValidationHelper helper = ...`
+  - Bad: `tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationHelper helper = ...`
 - **Async operations**: Use `SafeFuture` and `AsyncRunner` instead of raw CompletableFuture
 - **Immutability**: Prefer immutable data structures (record types, SszData implementations)
 - **Error handling**: Use checked exceptions for recoverable errors, unchecked for programming errors
@@ -328,6 +331,29 @@ Each module has its own test suite under `src/test/java` and test fixtures under
 - **Commit messages**: Imperative mood, present tense ("Add feature" not "Added feature")
 
 See [Hyperledger Besu Coding Conventions](https://wiki.hyperledger.org/display/BESU/Coding+Conventions) for additional guidelines.
+
+## Fork-Aware Development Patterns
+
+When implementing features that vary across Ethereum consensus forks:
+
+1. **Add convenience methods to `Spec.java`** for fork-specific helpers to avoid repetitive `Optional.orElseThrow()` boilerplate. See: `getExecutionRequestsProcessor()`, `getDataColumnSidecarUtil()`
+
+2. **Use abstract test base classes** for components with significantly different behavior across forks, instead of `@TestSpecContext`. Each fork gets its own test class that extends the abstract base and implements `createSpec()`. See: `AbstractDataColumnSidecarGossipValidatorTest`, `AbstractAttestationValidatorTest`
+
+3. **Pass `SpecLogic` to validation helpers** instead of fork-specific implementations. Let each helper extract what it needs internally (e.g., casting to `MiscHelpersFulu`). This keeps generic validators fork-agnostic. See: `DataColumnSidecarUtil` hierarchy
+
+4. **Create validation utility hierarchies** for fork-specific validation logic:
+   - Abstract base class: `ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/`
+   - Fork implementations: `ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/{fork}/util/`
+   - Integrate via SpecLogic: Add getter method to SpecLogic interface and implement in fork-specific SpecLogic classes
+   - Add convenience method to Spec.java that handles the Optional unwrapping
+   - Abstract test base: `ethereum/statetransition/src/test/.../Abstract{Feature}Test.java`
+
+   Example pattern (DataColumnSidecarUtil):
+   - Base: `DataColumnSidecarUtil` (abstract class with common methods)
+   - Fulu: `DataColumnSidecarUtilFulu` (includes header validation, inclusion proofs)
+   - Gloas: `DataColumnSidecarUtilGloas` (simplified, no headers, validates execution payload bids)
+   - Integration: `SpecLogic.getDataColumnSidecarUtil()` → `Spec.getDataColumnSidecarUtil(slot)`
 
 ## Important Files
 

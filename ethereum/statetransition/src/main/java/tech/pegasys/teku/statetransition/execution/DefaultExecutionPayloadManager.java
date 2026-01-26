@@ -13,14 +13,14 @@
 
 package tech.pegasys.teku.statetransition.execution;
 
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -33,12 +33,10 @@ public class DefaultExecutionPayloadManager implements ExecutionPayloadManager {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  // The cache is currently only used for the `payload_present` voting, so no need for a long term
-  // caching
   private static final int RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE = 32;
 
-  private final Set<Bytes32> recentSeenExecutionPayloads =
-      LimitedSet.createSynchronized(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
+  private final Map<Bytes32, SignedExecutionPayloadEnvelope> recentSeenExecutionPayloads =
+      LimitedMap.createSynchronizedLRU(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
 
   private final AsyncRunner asyncRunner;
   private final ExecutionPayloadGossipValidator executionPayloadGossipValidator;
@@ -58,7 +56,7 @@ public class DefaultExecutionPayloadManager implements ExecutionPayloadManager {
 
   @Override
   public boolean isExecutionPayloadRecentlySeen(final Bytes32 beaconBlockRoot) {
-    return recentSeenExecutionPayloads.contains(beaconBlockRoot);
+    return recentSeenExecutionPayloads.containsKey(beaconBlockRoot);
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
@@ -84,8 +82,8 @@ public class DefaultExecutionPayloadManager implements ExecutionPayloadManager {
 
   private SafeFuture<ExecutionPayloadImportResult> doImportExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
-    // cache the seen `beacon_block_root`
-    recentSeenExecutionPayloads.add(signedExecutionPayload.getBeaconBlockRoot());
+    recentSeenExecutionPayloads.put(
+        signedExecutionPayload.getBeaconBlockRoot(), signedExecutionPayload);
     return asyncRunner
         .runAsync(() -> forkChoice.onExecutionPayload(signedExecutionPayload, executionLayer))
         .thenPeek(

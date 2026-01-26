@@ -657,6 +657,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initBlockBlobSidecarsTrackersPool();
     initBlobSidecarManager();
     initDasSamplerManager();
+    initExecutionPayloadBidManager();
+    initExecutionPayloadManager();
     initDataColumnSidecarManager();
     initZkChain();
     initForkChoiceStateProvider();
@@ -677,8 +679,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initGenesisHandler();
     initAttestationManager();
     initBlockManager();
-    initExecutionPayloadBidManager();
-    initExecutionPayloadManager();
     initSyncCommitteePools();
     initP2PNetwork();
     initCustodyGroupCountManager();
@@ -863,7 +863,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               spec,
               invalidBlockRoots,
               gossipValidationHelper,
-              MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers()),
+              executionPayloadBidManager,
               metricsSystem,
               timeProvider);
       dataColumnSidecarManager =
