@@ -23,10 +23,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
-import tech.pegasys.teku.statetransition.blobs.DataSidecarBlockNotification;
+import tech.pegasys.teku.statetransition.blobs.BlockEvents;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
-public interface DataAvailabilitySampler extends DataSidecarBlockNotification {
+public interface DataAvailabilitySampler extends BlockEvents {
 
   enum SamplingEligibilityStatus {
     NOT_REQUIRED_OLD_EPOCH,

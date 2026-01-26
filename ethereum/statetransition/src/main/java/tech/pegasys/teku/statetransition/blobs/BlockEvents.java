@@ -17,9 +17,9 @@ import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
-public interface DataSidecarBlockNotification {
-  DataSidecarBlockNotification NOOP =
-      new DataSidecarBlockNotification() {
+public interface BlockEvents {
+  BlockEvents NOOP =
+      new BlockEvents() {
         @Override
         public void onNewBlock(
             final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {}

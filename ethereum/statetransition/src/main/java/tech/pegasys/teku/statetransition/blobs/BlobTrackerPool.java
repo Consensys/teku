@@ -40,7 +40,7 @@ public class BlobTrackerPool {
     this.spec = spec;
   }
 
-  private DataSidecarBlockNotification getBlockPrunedTrackerFactory(final UInt64 slot) {
+  private BlockEvents getBlockPrunedTrackerFactory(final UInt64 slot) {
     final SpecMilestone blockMilestone = spec.atSlot(slot).getMilestone();
     if (blockMilestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
       return dasSamplerSupplier.get();
@@ -48,7 +48,7 @@ public class BlobTrackerPool {
       return blockBlobSidecarsTrackersPool;
     }
 
-    return DataSidecarBlockNotification.NOOP;
+    return BlockEvents.NOOP;
   }
 
   public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
