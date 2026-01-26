@@ -22,6 +22,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand.createCustodyGroupCountManager;
 
@@ -412,6 +413,7 @@ public class DataColumnSidecarRecoveringCustodyTest {
     sidecars
         .values()
         .forEach(sidecar -> custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC));
+    verify(delegate, times(sidecars.size())).onNewValidatedDataColumnSidecar(any(), any());
 
     assertThat(custody.getCompletedSlots()).isEmpty();
 
@@ -422,6 +424,11 @@ public class DataColumnSidecarRecoveringCustodyTest {
     stubAsyncRunner.executeDueActionsRepeatedly();
 
     assertThat(custody.getCompletedSlots()).contains(signedBeaconBlock.getSlotAndBlockRoot());
+
+    // doesn't pass sidecars further when it's proved as completed
+    custody.onNewValidatedDataColumnSidecar(
+        sidecars.values().stream().findFirst().get(), RemoteOrigin.RPC);
+    verifyNoMoreInteractions(delegate);
   }
 
   @Test
