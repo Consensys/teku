@@ -24,14 +24,11 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
-public class ExtensionBlobReconstructor implements BlobReconstructor {
-  private final Spec spec;
-  private final Supplier<BlobSchema> blobSchemaSupplier;
+public class ExtensionBlobReconstructor extends BlobReconstructor {
 
   public ExtensionBlobReconstructor(
       final Spec spec, final Supplier<BlobSchema> blobSchemaSupplier) {
-    this.spec = spec;
-    this.blobSchemaSupplier = blobSchemaSupplier;
+    super(spec, blobSchemaSupplier);
   }
 
   @Override

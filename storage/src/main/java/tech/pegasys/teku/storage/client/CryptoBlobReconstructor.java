@@ -26,14 +26,11 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 
-public class CryptoBlobReconstructor implements BlobReconstructor {
-  private final Spec spec;
-  private final Supplier<BlobSchema> blobSchemaSupplier;
+public class CryptoBlobReconstructor extends BlobReconstructor {
   private final Supplier<MiscHelpersFulu> miscHelpersFuluSupplier;
 
   public CryptoBlobReconstructor(final Spec spec, final Supplier<BlobSchema> blobSchemaSupplier) {
-    this.spec = spec;
-    this.blobSchemaSupplier = blobSchemaSupplier;
+    super(spec, blobSchemaSupplier);
     this.miscHelpersFuluSupplier =
         () -> MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
   }

@@ -15,22 +15,32 @@ package tech.pegasys.teku.storage.client;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
-public interface BlobReconstructor {
-  SafeFuture<Optional<List<Blob>>> reconstructBlobs(
+public abstract class BlobReconstructor {
+  final Spec spec;
+  final Supplier<BlobSchema> blobSchemaSupplier;
+
+  public BlobReconstructor(final Spec spec, final Supplier<BlobSchema> blobSchemaSupplier) {
+    this.spec = spec;
+    this.blobSchemaSupplier = blobSchemaSupplier;
+  }
+
+  abstract SafeFuture<Optional<List<Blob>>> reconstructBlobs(
       final SlotAndBlockRoot slotAndBlockRoot,
       final List<DataColumnSidecar> existingSidecars,
       final List<UInt64> blobIndices);
 
-  default List<Blob> reconstructBlobsFromFirstHalfDataColumns(
+  List<Blob> reconstructBlobsFromFirstHalfDataColumns(
       final List<DataColumnSidecar> dataColumnSidecars,
       final List<UInt64> blobIndices,
       final BlobSchema blobSchema) {
@@ -41,7 +51,7 @@ public interface BlobReconstructor {
         .toList();
   }
 
-  default Blob constructBlob(
+  Blob constructBlob(
       final List<DataColumnSidecar> dataColumnSidecars,
       final int blobIndex,
       final BlobSchema blobSchema) {

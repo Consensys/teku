@@ -23,8 +23,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
@@ -37,8 +39,15 @@ public class BlobReconstructorTest extends BlobReconstructionAbstractTest {
   final BlobSchema blobSchema = schemaDefinitionsElectra.getBlobSchema();
 
   private final BlobReconstructor blobReconstructor =
-      (slotAndBlockRoot, existingSidecars, blobIndices) ->
-          SafeFuture.completedFuture(Optional.empty());
+      new BlobReconstructor(spec, () -> blobSchema) {
+        @Override
+        SafeFuture<Optional<List<Blob>>> reconstructBlobs(
+            final SlotAndBlockRoot slotAndBlockRoot,
+            final List<DataColumnSidecar> existingSidecars,
+            final List<UInt64> blobIndices) {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+      };
 
   @Test
   public void shouldBuildBlobFromSidecars() {

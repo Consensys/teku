@@ -92,10 +92,7 @@ public class BlobReconstructionProvider {
       final UInt64 fromIndexInclusive,
       final UInt64 toIndexExclusive) {
     return Stream.iterate(
-            fromIndexInclusive,
-            // We need the first 50% for reconstruction
-            index -> index.isLessThan(toIndexExclusive),
-            UInt64::increment)
+            fromIndexInclusive, index -> index.isLessThan(toIndexExclusive), UInt64::increment)
         .map(
             index ->
                 new DataColumnSlotAndIdentifier(

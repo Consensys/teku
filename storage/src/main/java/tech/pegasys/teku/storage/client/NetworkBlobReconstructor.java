@@ -33,17 +33,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
 
-public class NetworkBlobReconstructor implements BlobReconstructor {
-  private final Spec spec;
-  private final Supplier<BlobSchema> blobSchemaSupplier;
+public class NetworkBlobReconstructor extends BlobReconstructor {
   private final DataColumnSidecarNetworkRetriever networkRetriever;
 
   public NetworkBlobReconstructor(
       final Spec spec,
       final Supplier<BlobSchema> blobSchemaSupplier,
       final DataColumnSidecarNetworkRetriever networkRetriever) {
-    this.spec = spec;
-    this.blobSchemaSupplier = blobSchemaSupplier;
+    super(spec, blobSchemaSupplier);
     this.networkRetriever = networkRetriever;
   }
 
