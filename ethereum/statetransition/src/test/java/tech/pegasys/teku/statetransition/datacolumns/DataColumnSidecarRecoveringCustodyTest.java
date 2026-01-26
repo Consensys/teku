@@ -36,7 +36,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -89,24 +88,24 @@ public class DataColumnSidecarRecoveringCustodyTest {
       dataStructureUtil.randomBeaconBlockBodyWithCommitments(1);
   private final BeaconBlock block = dataStructureUtil.randomBeaconBlock(slot, beaconBlockBody);
   private final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.signedBlock(block);
-
-  private final DataColumnSidecarRecoveringCustodyImpl custody =
-      new DataColumnSidecarRecoveringCustodyImpl(
-          delegate,
-          stubAsyncRunner,
-          spec,
-          miscHelpersFulu,
-          dataColumnSidecarPublisher,
-          createCustodyGroupCountManager(
-              config.getNumberOfCustodyGroups(), config.getSamplesPerSlot()),
-          config.getNumberOfColumns(),
-          config.getNumberOfCustodyGroups(),
-          __ -> Duration.ofSeconds(2),
-          stubMetricsSystem,
-          stubTimeProvider);
+  private DataColumnSidecarRecoveringCustodyImpl custody;
 
   @BeforeEach
   public void setup() {
+    this.custody =
+        new DataColumnSidecarRecoveringCustodyImpl(
+            delegate,
+            stubAsyncRunner,
+            spec,
+            miscHelpersFulu,
+            dataColumnSidecarPublisher,
+            createCustodyGroupCountManager(
+                config.getNumberOfCustodyGroups(), config.getSamplesPerSlot()),
+            config.getNumberOfColumns(),
+            config.getNumberOfCustodyGroups(),
+            __ -> Duration.ofSeconds(2),
+            stubMetricsSystem,
+            stubTimeProvider);
     when(delegate.onNewValidatedDataColumnSidecar(any(), any())).thenReturn(SafeFuture.COMPLETE);
     custody.onSyncingStatusChanged(true); // default in sync
   }
@@ -470,11 +469,27 @@ public class DataColumnSidecarRecoveringCustodyTest {
   }
 
   @Test
-  @Disabled("This test is slow for CI, run it locally")
   public void shouldPruneCompletedSlots() {
+    this.custody =
+        new DataColumnSidecarRecoveringCustodyImpl(
+            delegate,
+            stubAsyncRunner,
+            spec,
+            miscHelpersFulu,
+            dataColumnSidecarPublisher,
+            createCustodyGroupCountManager(
+                config.getNumberOfCustodyGroups(), config.getSamplesPerSlot()),
+            config.getNumberOfColumns(),
+            config.getNumberOfCustodyGroups(),
+            __ -> Duration.ofSeconds(2),
+            stubMetricsSystem,
+            stubTimeProvider,
+            8,
+            16);
+
     final int slotsPerEpoch = spec.getGenesisSpec().getSlotsPerEpoch();
-    // completed slots size target is slots per epoch * 64, we have minimal spec with 8 slots
-    for (long j = 0; j <= 64; ++j) {
+    // completed slots size target is 16, let's run 3 * 8
+    for (long j = 0; j < 3; ++j) {
       for (UInt64 slot = UInt64.ONE.plus(slotsPerEpoch * j);
           slot.isLessThanOrEqualTo(UInt64.valueOf(8).plus(slotsPerEpoch * j));
           slot = slot.increment()) {
@@ -500,10 +515,10 @@ public class DataColumnSidecarRecoveringCustodyTest {
       stubAsyncRunner.executeDueActionsRepeatedly();
     }
     // we didn't have onSlot (which fires prune) after last 8 recovery tasks execution
-    custody.onSlot(UInt64.valueOf(65 * 8 + 1));
+    custody.onSlot(UInt64.valueOf(3 * 8 + 1));
 
-    assertThat(custody.getCompletedSlots().size()).isEqualTo(8 * 64 - 1);
+    assertThat(custody.getCompletedSlots().size()).isEqualTo(8 * 2 - 1);
     assertThat(custody.getCompletedSlots().getFirst().getSlot()).isEqualTo(UInt64.valueOf(10));
-    assertThat(custody.getCompletedSlots().getLast().getSlot()).isEqualTo(UInt64.valueOf(8 * 65));
+    assertThat(custody.getCompletedSlots().getLast().getSlot()).isEqualTo(UInt64.valueOf(8 * 3));
   }
 }

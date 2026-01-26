@@ -83,7 +83,8 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
 
   private volatile boolean inSync;
 
-  public DataColumnSidecarRecoveringCustodyImpl(
+  @VisibleForTesting
+  protected DataColumnSidecarRecoveringCustodyImpl(
       final DataColumnSidecarByRootCustody delegate,
       final AsyncRunner asyncRunner,
       final Spec spec,
@@ -94,18 +95,17 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       final int groupCount,
       final Function<UInt64, Duration> slotToRecoveryDelay,
       final MetricsSystem metricsSystem,
-      final TimeProvider timeProvider) {
+      final TimeProvider timeProvider,
+      final int recoveryTasksSizeTarget,
+      final int completedSlotsSizeTarget) {
     this.delegate = delegate;
     this.asyncRunner = asyncRunner;
     this.miscHelpers = miscHelpers;
     this.spec = spec;
     this.dataColumnSidecarPublisher = dataColumnSidecarPublisher;
     this.custodyGroupCountManager = custodyGroupCountManager;
-    // 1 epoch, having sidecars in memory, it will occupy several Mb for each slot
-    this.recoveryTasksSizeTarget = spec.getGenesisSpec().getSlotsPerEpoch();
-    // 64 epochs, 2048 slots, pretty big number when you have healthy network
-    // and it's just 64 byte (SlotAndBlockRoot) * 2048 = 128kb of cache
-    this.completedSlotsSizeTarget = spec.getGenesisSpec().getSlotsPerEpoch() * 64;
+    this.recoveryTasksSizeTarget = recoveryTasksSizeTarget;
+    this.completedSlotsSizeTarget = completedSlotsSizeTarget;
     this.slotToRecoveryDelay = slotToRecoveryDelay;
     this.columnCount = columnCount;
     this.groupCount = groupCount;
@@ -126,6 +126,37 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
               0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 5.0,
               7.5, 10.0
             });
+  }
+
+  public DataColumnSidecarRecoveringCustodyImpl(
+      final DataColumnSidecarByRootCustody delegate,
+      final AsyncRunner asyncRunner,
+      final Spec spec,
+      final MiscHelpersFulu miscHelpers,
+      final BiConsumer<DataColumnSidecar, RemoteOrigin> dataColumnSidecarPublisher,
+      final CustodyGroupCountManager custodyGroupCountManager,
+      final int columnCount,
+      final int groupCount,
+      final Function<UInt64, Duration> slotToRecoveryDelay,
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider) {
+    this(
+        delegate,
+        asyncRunner,
+        spec,
+        miscHelpers,
+        dataColumnSidecarPublisher,
+        custodyGroupCountManager,
+        columnCount,
+        groupCount,
+        slotToRecoveryDelay,
+        metricsSystem,
+        timeProvider,
+        // 1 epoch, having sidecars in memory, it will occupy several Mb for each slot
+        spec.getGenesisSpec().getSlotsPerEpoch(),
+        // 64 epochs, 2048 slots, pretty big number when you have healthy network
+        // and it's just 64 byte (SlotAndBlockRoot) * 2048 = 128kb of cache
+        spec.getGenesisSpec().getSlotsPerEpoch() * 64);
   }
 
   @Override
