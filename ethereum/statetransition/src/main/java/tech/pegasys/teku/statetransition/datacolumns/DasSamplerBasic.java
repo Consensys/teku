@@ -280,7 +280,6 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
       return;
     }
 
-    // FIXME: it was rpcFetchScheduled here, check the correctness of change
     if (tracker.rpcFetchInProgress().compareAndSet(false, true)) {
       fetchMissingColumnsViaRPC(block.getSlot(), block.getRoot(), tracker);
     }
