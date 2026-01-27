@@ -146,7 +146,7 @@ public class BlobReconstructionProvider {
                       return reconstructBlobSidecarsStartingWithCryptoReconstructor(
                           firstHalfOfSidecars, slotAndBlockRoot, blobIndices, isCanonical);
                     } else {
-                      LOG.trace(
+                      LOG.debug(
                           "Blobs {} reconstructed for {} with extension reconstruction",
                           blobIndices,
                           slotAndBlockRoot);
@@ -187,7 +187,7 @@ public class BlobReconstructionProvider {
                   return reconstructBlobSidecarsUsingNetworkReconstructor(
                       firstHalfOfSidecarsWithGaps, slotAndBlockRoot, blobIndices);
                 } else {
-                  LOG.trace(
+                  LOG.debug(
                       "Blobs {} reconstructed for {} with crypto reconstruction",
                       blobIndices,
                       slotAndBlockRoot);
