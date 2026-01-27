@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -22,6 +22,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand.createCustodyGroupCountManager;
 
@@ -50,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
@@ -86,24 +88,24 @@ public class DataColumnSidecarRecoveringCustodyTest {
       dataStructureUtil.randomBeaconBlockBodyWithCommitments(1);
   private final BeaconBlock block = dataStructureUtil.randomBeaconBlock(slot, beaconBlockBody);
   private final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.signedBlock(block);
-
-  private final DataColumnSidecarRecoveringCustodyImpl custody =
-      new DataColumnSidecarRecoveringCustodyImpl(
-          delegate,
-          stubAsyncRunner,
-          spec,
-          miscHelpersFulu,
-          dataColumnSidecarPublisher,
-          createCustodyGroupCountManager(
-              config.getNumberOfCustodyGroups(), config.getSamplesPerSlot()),
-          config.getNumberOfColumns(),
-          config.getNumberOfCustodyGroups(),
-          __ -> Duration.ofSeconds(2),
-          stubMetricsSystem,
-          stubTimeProvider);
+  private DataColumnSidecarRecoveringCustodyImpl custody;
 
   @BeforeEach
   public void setup() {
+    this.custody =
+        new DataColumnSidecarRecoveringCustodyImpl(
+            delegate,
+            stubAsyncRunner,
+            spec,
+            miscHelpersFulu,
+            dataColumnSidecarPublisher,
+            createCustodyGroupCountManager(
+                config.getNumberOfCustodyGroups(), config.getSamplesPerSlot()),
+            config.getNumberOfColumns(),
+            config.getNumberOfCustodyGroups(),
+            __ -> Duration.ofSeconds(2),
+            stubMetricsSystem,
+            stubTimeProvider);
     when(delegate.onNewValidatedDataColumnSidecar(any(), any())).thenReturn(SafeFuture.COMPLETE);
     custody.onSyncingStatusChanged(true); // default in sync
   }
@@ -330,10 +332,18 @@ public class DataColumnSidecarRecoveringCustodyTest {
 
   @Test
   public void shouldPreserveTaskIsStartedWhenSuccess() {
+    final Map<DataColumnSlotAndIdentifier, DataColumnSidecar> sidecars =
+        columnIndices
+            .get()
+            .limit(64)
+            .map(i -> dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock.asHeader(), i))
+            .collect(
+                Collectors.toMap(DataColumnSlotAndIdentifier::fromDataColumn, sidecar -> sidecar));
+
     final DataColumnSidecarRecoveringCustodyImpl.RecoveryTask task =
         new DataColumnSidecarRecoveringCustodyImpl.RecoveryTask(
             new SlotAndBlockRoot(UInt64.ZERO, Bytes32.ZERO),
-            Collections.emptyMap(),
+            sidecars,
             new AtomicBoolean(true),
             new AtomicBoolean(true));
 
@@ -387,5 +397,128 @@ public class DataColumnSidecarRecoveringCustodyTest {
 
     verifyNoInteractions(miscHelpersFulu);
     verify(dataColumnSidecarPublisher, never()).accept(any(), eq(RemoteOrigin.RECOVERED));
+  }
+
+  @Test
+  public void shouldAddToCompletedSlotsWhenCompleted() {
+    custody.onSlot(slot);
+    assertThat(stubAsyncRunner.hasDelayedActions()).isTrue();
+
+    final Map<UInt64, DataColumnSidecar> sidecars =
+        columnIndices
+            .get()
+            .map(i -> dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock.asHeader(), i))
+            .collect(Collectors.toMap(DataColumnSidecar::getIndex, sidecar -> sidecar));
+    sidecars
+        .values()
+        .forEach(sidecar -> custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC));
+    verify(delegate, times(sidecars.size())).onNewValidatedDataColumnSidecar(any(), any());
+
+    assertThat(custody.getCompletedSlots()).isEmpty();
+
+    stubAsyncRunner.executeDueActionsRepeatedly();
+    stubTimeProvider.advanceTimeBySeconds(1);
+    stubAsyncRunner.executeDueActionsRepeatedly();
+    stubTimeProvider.advanceTimeBySeconds(1);
+    stubAsyncRunner.executeDueActionsRepeatedly();
+
+    assertThat(custody.getCompletedSlots()).contains(signedBeaconBlock.getSlotAndBlockRoot());
+
+    // doesn't pass sidecars further when it's proved as completed
+    custody.onNewValidatedDataColumnSidecar(
+        sidecars.values().stream().findFirst().get(), RemoteOrigin.RPC);
+    verifyNoMoreInteractions(delegate);
+  }
+
+  @Test
+  public void shouldPruneRecoveryTasks() {
+    // recovery tasks size target is slots per epoch, minimal is 8, so adding 9, 1st should gone
+    for (UInt64 slot = UInt64.ONE;
+        slot.isLessThanOrEqualTo(UInt64.valueOf(9));
+        slot = slot.increment()) {
+      custody.onSlot(slot);
+      assertThat(stubAsyncRunner.hasDelayedActions()).isTrue();
+
+      final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlock(slot);
+      final Map<UInt64, DataColumnSidecar> sidecars =
+          columnIndices
+              .get()
+              .map(i -> dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock.asHeader(), i))
+              .collect(Collectors.toMap(DataColumnSidecar::getIndex, sidecar -> sidecar));
+      sidecars
+          .values()
+          .forEach(sidecar -> custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC));
+    }
+
+    assertThat(custody.getCompletedSlots()).isEmpty();
+    assertThat(custody.getRecoveryTasks().size()).isEqualTo(8);
+    // replaced with 2nd because prune target is 8
+    assertThat(
+            custody.getRecoveryTasks().keySet().stream()
+                .map(SlotAndBlockRoot::getSlot)
+                .collect(Collectors.toSet()))
+        .doesNotContain(UInt64.ONE);
+
+    stubAsyncRunner.executeDueActionsRepeatedly();
+    stubTimeProvider.advanceTimeBySeconds(1);
+    stubAsyncRunner.executeDueActionsRepeatedly();
+    stubTimeProvider.advanceTimeBySeconds(1);
+    stubAsyncRunner.executeDueActionsRepeatedly();
+
+    assertThat(custody.getCompletedSlots().size()).isEqualTo(8);
+  }
+
+  @Test
+  public void shouldPruneCompletedSlots() {
+    this.custody =
+        new DataColumnSidecarRecoveringCustodyImpl(
+            delegate,
+            stubAsyncRunner,
+            spec,
+            miscHelpersFulu,
+            dataColumnSidecarPublisher,
+            createCustodyGroupCountManager(
+                config.getNumberOfCustodyGroups(), config.getSamplesPerSlot()),
+            config.getNumberOfColumns(),
+            config.getNumberOfCustodyGroups(),
+            __ -> Duration.ofSeconds(2),
+            stubMetricsSystem,
+            stubTimeProvider,
+            8,
+            16);
+
+    final int slotsPerEpoch = spec.getGenesisSpec().getSlotsPerEpoch();
+    // completed slots size target is 16, let's run 3 * 8
+    for (long j = 0; j < 3; ++j) {
+      for (UInt64 slot = UInt64.ONE.plus(slotsPerEpoch * j);
+          slot.isLessThanOrEqualTo(UInt64.valueOf(8).plus(slotsPerEpoch * j));
+          slot = slot.increment()) {
+        custody.onSlot(slot);
+        assertThat(stubAsyncRunner.hasDelayedActions()).isTrue();
+
+        final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlock(slot);
+        final Map<UInt64, DataColumnSidecar> sidecars =
+            columnIndices
+                .get()
+                .map(
+                    i -> dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock.asHeader(), i))
+                .collect(Collectors.toMap(DataColumnSidecar::getIndex, sidecar -> sidecar));
+        sidecars
+            .values()
+            .forEach(sidecar -> custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC));
+      }
+
+      stubAsyncRunner.executeDueActionsRepeatedly();
+      stubTimeProvider.advanceTimeBySeconds(1);
+      stubAsyncRunner.executeDueActionsRepeatedly();
+      stubTimeProvider.advanceTimeBySeconds(1);
+      stubAsyncRunner.executeDueActionsRepeatedly();
+    }
+    // we didn't have onSlot (which fires prune) after last 8 recovery tasks execution
+    custody.onSlot(UInt64.valueOf(3 * 8 + 1));
+
+    assertThat(custody.getCompletedSlots().size()).isEqualTo(8 * 2 - 1);
+    assertThat(custody.getCompletedSlots().getFirst().getSlot()).isEqualTo(UInt64.valueOf(10));
+    assertThat(custody.getCompletedSlots().getLast().getSlot()).isEqualTo(UInt64.valueOf(8 * 3));
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -26,6 +26,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
 
 import java.util.List;
 import java.util.Optional;
@@ -626,16 +627,15 @@ class BlockProductionDutyTest {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
 
-    final ExecutionPayloadBid bid = dataStructureUtil.randomExecutionPayloadBid();
+    final ExecutionPayloadBid bid =
+        dataStructureUtil.randomExecutionPayloadBid(slot, BUILDER_INDEX_SELF_BUILD);
     final BeaconBlockBody blockBody =
         dataStructureUtil.randomBeaconBlockBody(
             builder ->
                 builder.signedExecutionPayloadBid(
                     SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions())
                         .getSignedExecutionPayloadBidSchema()
-                        .create(
-                            // mimicking self-built bid
-                            bid, BLSSignature.infinity())));
+                        .create(bid, dataStructureUtil.randomSignature())));
 
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(

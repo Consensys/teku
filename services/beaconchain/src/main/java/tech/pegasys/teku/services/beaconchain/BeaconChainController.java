@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -189,7 +189,6 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DasPeerCustodyCou
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqResp;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqRespBatchingImpl;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
-import tech.pegasys.teku.statetransition.datacolumns.retriever.RecoveringSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.SimpleSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever;
 import tech.pegasys.teku.statetransition.execution.DefaultExecutionPayloadBidManager;
@@ -1002,34 +1001,19 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     simpleSidecarRetriever = Optional.of(sidecarRetriever);
 
-    final DataColumnSidecarRetriever recoveringSidecarRetriever;
-    if (beaconConfig.p2pConfig().isReworkedSidecarRecoveryEnabled()) {
-      recoveringSidecarRetriever =
-          new SidecarRetriever(
-              sidecarRetriever,
-              miscHelpersFulu,
-              dbAccessor,
-              dasAsyncRunner,
-              Duration.ofMillis(beaconConfig.p2pConfig().getReworkedSidecarRecoveryTimeout()),
-              Duration.ofMillis(beaconConfig.p2pConfig().getReworkedSidecarDownloadTimeout()),
-              Duration.ofSeconds(15),
-              timeProvider,
-              specConfigFulu.getNumberOfColumns(),
-              custodyGroupCountManager,
-              metricsSystem);
-    } else {
-      recoveringSidecarRetriever =
-          new RecoveringSidecarRetriever(
-              sidecarRetriever,
-              miscHelpersFulu,
-              canonicalBlockResolver,
-              dbAccessor,
-              dasAsyncRunner,
-              Duration.ofMinutes(5),
-              Duration.ofSeconds(30),
-              timeProvider,
-              specConfigFulu.getNumberOfColumns());
-    }
+    final DataColumnSidecarRetriever recoveringSidecarRetriever =
+        new SidecarRetriever(
+            sidecarRetriever,
+            miscHelpersFulu,
+            dbAccessor,
+            dasAsyncRunner,
+            Duration.ofMillis(beaconConfig.p2pConfig().getReworkedSidecarRecoveryTimeout()),
+            Duration.ofMillis(beaconConfig.p2pConfig().getReworkedSidecarDownloadTimeout()),
+            Duration.ofSeconds(15),
+            timeProvider,
+            specConfigFulu.getNumberOfColumns(),
+            custodyGroupCountManager,
+            metricsSystem);
 
     if (beaconConfig.p2pConfig().isReworkedSidecarSyncEnabled()) {
       final DasCustodyBackfiller custodyBackfiller =

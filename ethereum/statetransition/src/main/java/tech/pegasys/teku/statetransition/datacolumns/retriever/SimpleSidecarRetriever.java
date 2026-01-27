@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -66,6 +66,7 @@ public class SimpleSidecarRetriever
   private final AtomicBoolean started = new AtomicBoolean(false);
   private final AtomicLong retrieveCounter = new AtomicLong();
   private final AtomicLong errorCounter = new AtomicLong();
+  private final DataColumnPeerManager peerManager;
 
   public SimpleSidecarRetriever(
       final Spec spec,
@@ -81,7 +82,8 @@ public class SimpleSidecarRetriever
     this.asyncRunner = asyncRunner;
     this.roundPeriod = roundPeriod;
     this.reqResp = reqResp;
-    peerManager.addPeerListener(this);
+    this.peerManager = peerManager;
+    this.peerManager.addPeerListener(this);
     this.maxRequestCount =
         SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
             .getMaxRequestDataColumnSidecars();
@@ -190,6 +192,7 @@ public class SimpleSidecarRetriever
       final RetrieveRequest request, final RequestTracker ongoingRequestsTracker) {
     return connectedPeers.values().stream()
         .filter(peer -> peer.isCustodyFor(request.columnId))
+        .filter(peer -> peer.hasSlotAvailable(request.columnId.slot()))
         .filter(peer -> ongoingRequestsTracker.hasAvailableRequests(peer.nodeId));
   }
 
@@ -271,17 +274,16 @@ public class SimpleSidecarRetriever
   }
 
   @Override
-  public void peerConnected(final UInt256 nodeId) {
+  public void peerConnected(
+      final UInt256 nodeId, final Supplier<Optional<UInt64>> maybeEarliestAvailableSlot) {
     LOG.trace(
         "SimpleSidecarRetriever.peerConnected: 0x...{}", () -> nodeId.toHexString().substring(58));
     connectedPeers.computeIfAbsent(
         nodeId,
-        __ ->
-            new ConnectedPeer(
-                nodeId,
-                miscHelpersFulu,
-                spec,
-                () -> custodyCountSupplier.getCustodyGroupCountForPeer(nodeId)));
+        __ -> new ConnectedPeer(nodeId, maybeEarliestAvailableSlot),
+        miscHelpersFulu,
+        spec,
+        () -> custodyCountSupplier.getCustodyGroupCountForPeer(nodeId));
   }
 
   @Override
@@ -312,10 +314,11 @@ public class SimpleSidecarRetriever
 
   static class ConnectedPeer {
     private final UInt256 nodeId;
+    private final Supplier<Optional<UInt64>> maybeEarliestAvailableSlot;
+    private final Cache<CacheKey, Set<UInt64>> custodyIndicesCache = LRUCache.create(2);
     private final MiscHelpersFulu miscHelpersFulu;
     private final Spec spec;
     private final Supplier<Integer> custodyCountSupplier;
-    private final Cache<CacheKey, Set<UInt64>> custodyIndicesCache = LRUCache.create(2);
     // just to avoid starting with non-divisible 0/0
     private final AtomicInteger sidecarsRequested = new AtomicInteger(1);
     private final AtomicInteger sidecarsReceived = new AtomicInteger(1);
@@ -324,13 +327,15 @@ public class SimpleSidecarRetriever
 
     public ConnectedPeer(
         final UInt256 nodeId,
+        final Supplier<Optional<UInt64>> maybeEarliestAvailableSlot,
         final MiscHelpersFulu miscHelpersFulu,
         final Spec spec,
         final Supplier<Integer> custodyCountSupplier) {
+      this.nodeId = nodeId;
+      this.maybeEarliestAvailableSlot = maybeEarliestAvailableSlot;
       this.miscHelpersFulu = miscHelpersFulu;
       this.spec = spec;
       this.custodyCountSupplier = custodyCountSupplier;
-      this.nodeId = nodeId;
     }
 
     private Set<UInt64> calcNodeCustodyIndices(final CacheKey cacheKey) {
@@ -340,11 +345,17 @@ public class SimpleSidecarRetriever
 
     private Set<UInt64> getNodeCustodyIndices(final SpecVersion specVersion) {
       return custodyIndicesCache.get(
-          new CacheKey(specVersion, custodyCountSupplier.get()), this::calcNodeCustodyIndices);
+          new CacheKey(specVersion, custodyCountSupplier.getCustodyGroupCountForPeer(nodeId)),
+          this::calcNodeCustodyIndices);
     }
 
     public boolean isCustodyFor(final DataColumnSlotAndIdentifier columnId) {
       return getNodeCustodyIndices(spec.atSlot(columnId.slot())).contains(columnId.columnIndex());
+    }
+
+    public boolean hasSlotAvailable(final UInt64 slot) {
+      // if we don't have information, we consider it optimistically
+      return maybeEarliestAvailableSlot.get().map(slot::isGreaterThanOrEqualTo).orElse(true);
     }
 
     /**

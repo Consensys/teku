@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -819,14 +819,20 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
                 "process_voluntary_exits: %s",
                 invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
-            // - Run initiate_validator_exit(state, exit.validator_index)
-
-            beaconStateMutators.initiateValidatorExit(
-                state,
-                signedExit.getMessage().getValidatorIndex().intValue(),
-                validatorExitContextSupplier);
+            initiateExit(state, signedExit, validatorExitContextSupplier);
           }
         });
+  }
+
+  protected void initiateExit(
+      final MutableBeaconState state,
+      final SignedVoluntaryExit signedExit,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
+    // - Run initiate_validator_exit(state, exit.validator_index)
+    beaconStateMutators.initiateValidatorExit(
+        state,
+        signedExit.getMessage().getValidatorIndex().intValue(),
+        validatorExitContextSupplier);
   }
 
   protected BlockValidationResult verifyVoluntaryExits(
