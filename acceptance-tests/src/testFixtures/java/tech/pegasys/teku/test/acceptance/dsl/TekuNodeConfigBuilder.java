@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -688,6 +688,12 @@ public class TekuNodeConfigBuilder {
   public TekuNodeConfigBuilder withReworkedCustodySync() {
     LOG.debug("Xp2p-reworked-sidecar-custody-sync-enabled: {}", true);
     configMap.put("Xp2p-reworked-sidecar-custody-sync-enabled", true);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withGetBlobsSidecarsDownloadApiEnabled() {
+    LOG.debug("--rest-api-getblobs-sidecars-download-enabled: {}", true);
+    configMap.put("rest-api-getblobs-sidecars-download-enabled", true);
     return this;
   }
 
