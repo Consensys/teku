@@ -22,6 +22,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -111,6 +112,11 @@ public class GossipValidationHelper {
 
   public Optional<UInt64> getSlotForBlockRoot(final Bytes32 blockRoot) {
     return recentChainData.getSlotForBlockRoot(blockRoot);
+  }
+
+  public Optional<SignedBeaconBlock> getRecentlyValidatedSignedBlockByRoot(
+      final Bytes32 blockRoot) {
+    return recentChainData.getRecentlyValidatedSignedBlockByRoot(blockRoot);
   }
 
   public boolean isBlockAvailable(final Bytes32 blockRoot) {

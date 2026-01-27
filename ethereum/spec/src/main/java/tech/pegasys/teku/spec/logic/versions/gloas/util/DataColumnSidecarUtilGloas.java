@@ -24,7 +24,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -67,7 +66,7 @@ public class DataColumnSidecarUtilGloas extends DataColumnSidecarUtil {
       final Spec spec,
       final DataColumnSidecar dataColumnSidecar,
       final Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot,
-      final Function<Bytes32, Optional<SignedExecutionPayloadBid>> getExecutionPayloadBid) {
+      final Function<Bytes32, Optional<Bytes32>> getBlockKzgCommitmentsRoot) {
 
     final Bytes32 beaconBlockRoot = dataColumnSidecar.getBeaconBlockRoot();
 
@@ -91,22 +90,22 @@ public class DataColumnSidecarUtilGloas extends DataColumnSidecarUtil {
      * [REJECT] The hash of the sidecar's kzg_commitments matches the blob_kzg_commitments_root
      * in the corresponding builder's bid for sidecar.beacon_block_root
      */
-    final Optional<SignedExecutionPayloadBid> maybeExecutionPayloadBid =
-        getExecutionPayloadBid.apply(beaconBlockRoot);
-    if (maybeExecutionPayloadBid.isEmpty()) {
+    final Optional<Bytes32> maybeBlockKzgCommitmentsRoot =
+        getBlockKzgCommitmentsRoot.apply(beaconBlockRoot);
+    if (maybeBlockKzgCommitmentsRoot.isEmpty()) {
       return DataColumnSidecarValidationResult.invalid(
           "DataColumnSidecar's beacon_block_root does not correspond to a known execution payload bid");
     }
 
-    final Bytes32 commitmentsRoot =
-        maybeExecutionPayloadBid.get().getMessage().getBlobKzgCommitmentsRoot();
-    final Bytes32 sidecarCommitmentsRoot = dataColumnSidecar.getKzgCommitments().hashTreeRoot();
-    if (!commitmentsRoot.equals(sidecarCommitmentsRoot)) {
+    final Bytes32 commitmentsRoot = maybeBlockKzgCommitmentsRoot.get();
+    final Bytes32 dataColumnSidecarCommitmentsRoot =
+        dataColumnSidecar.getKzgCommitments().hashTreeRoot();
+    if (!commitmentsRoot.equals(dataColumnSidecarCommitmentsRoot)) {
       return DataColumnSidecarValidationResult.invalid(
           () ->
               String.format(
                   "DataColumnSidecar's kzg_commitments root %s does not match the bid's blob_kzg_commitments_root %s",
-                  sidecarCommitmentsRoot, commitmentsRoot));
+                  dataColumnSidecarCommitmentsRoot, commitmentsRoot));
     }
 
     return DataColumnSidecarValidationResult.valid();

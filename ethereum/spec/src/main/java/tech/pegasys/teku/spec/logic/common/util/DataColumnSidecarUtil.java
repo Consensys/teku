@@ -26,7 +26,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -66,14 +65,14 @@ public abstract class DataColumnSidecarUtil {
    * @param spec the spec
    * @param dataColumnSidecar the data column sidecar to validate
    * @param getSlotForBlockRoot function to get slot for a block root
-   * @param getExecutionPayloadBid function to get execution payload bid
+   * @param getBlockKzgCommitmentsRoot function to corresponding block's kzg commitments root
    * @return validation result
    */
   public abstract DataColumnSidecarValidationResult validateExecutionPayloadReference(
       Spec spec,
       DataColumnSidecar dataColumnSidecar,
       Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot,
-      Function<Bytes32, Optional<SignedExecutionPayloadBid>> getExecutionPayloadBid);
+      Function<Bytes32, Optional<Bytes32>> getBlockKzgCommitmentsRoot);
 
   /**
    * Validate parent block for the data column sidecar.

@@ -49,7 +49,6 @@ import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationResul
 import tech.pegasys.teku.spec.logic.common.util.FuluTrackingKey;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 
 public class DataColumnSidecarGossipValidatorFuluTest
     extends AbstractDataColumnSidecarGossipValidatorTest {
@@ -75,12 +74,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
 
     this.validator =
         DataColumnSidecarGossipValidator.create(
-            spec,
-            invalidBlocks,
-            gossipValidationHelper,
-            ExecutionPayloadBidManager.NOOP,
-            metricsSystemStub,
-            stubTimeProvider);
+            spec, invalidBlocks, gossipValidationHelper, metricsSystemStub, stubTimeProvider);
 
     parentSlot = UInt64.valueOf(1);
     slot = UInt64.valueOf(2);
@@ -165,12 +159,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
     // Create a validator with the mocked spec
     final DataColumnSidecarGossipValidator validatorWithMockedSpec =
         DataColumnSidecarGossipValidator.create(
-            mockSpec,
-            invalidBlocks,
-            gossipValidationHelper,
-            ExecutionPayloadBidManager.NOOP,
-            metricsSystemStub,
-            stubTimeProvider);
+            mockSpec, invalidBlocks, gossipValidationHelper, metricsSystemStub, stubTimeProvider);
 
     SafeFutureAssert.assertThatSafeFuture(validatorWithMockedSpec.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
@@ -457,12 +446,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
     when(specVersion.getSlotsPerEpoch()).thenReturn(1);
     this.validator =
         DataColumnSidecarGossipValidator.create(
-            specMock,
-            invalidBlocks,
-            gossipValidationHelper,
-            ExecutionPayloadBidManager.NOOP,
-            metricsSystemStub,
-            stubTimeProvider);
+            specMock, invalidBlocks, gossipValidationHelper, metricsSystemStub, stubTimeProvider);
     // Accept everything
     when(gossipValidationHelper.isSlotFinalized(any())).thenReturn(false);
     when(gossipValidationHelper.isSlotFromFuture(any())).thenReturn(false);

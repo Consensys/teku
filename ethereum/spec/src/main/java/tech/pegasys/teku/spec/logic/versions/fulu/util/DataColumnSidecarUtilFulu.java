@@ -28,7 +28,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -91,7 +90,7 @@ public class DataColumnSidecarUtilFulu extends DataColumnSidecarUtil {
       final Spec spec,
       final DataColumnSidecar dataColumnSidecar,
       final Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot,
-      final Function<Bytes32, Optional<SignedExecutionPayloadBid>> getExecutionPayloadBid) {
+      final Function<Bytes32, Optional<Bytes32>> getBlockKzgCommitmentsRoot) {
     // Fulu does not validate execution payload reference (this is Gloas-specific)
     return DataColumnSidecarValidationResult.valid();
   }

@@ -657,8 +657,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initBlockBlobSidecarsTrackersPool();
     initBlobSidecarManager();
     initDasSamplerManager();
-    initExecutionPayloadBidManager();
-    initExecutionPayloadManager();
     initDataColumnSidecarManager();
     initZkChain();
     initForkChoiceStateProvider();
@@ -679,6 +677,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initGenesisHandler();
     initAttestationManager();
     initBlockManager();
+    initExecutionPayloadBidManager();
+    initExecutionPayloadManager();
     initSyncCommitteePools();
     initP2PNetwork();
     initCustodyGroupCountManager();
@@ -860,12 +860,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
       dataColumnSidecarGossipValidator =
           DataColumnSidecarGossipValidator.create(
-              spec,
-              invalidBlockRoots,
-              gossipValidationHelper,
-              executionPayloadBidManager,
-              metricsSystem,
-              timeProvider);
+              spec, invalidBlockRoots, gossipValidationHelper, metricsSystem, timeProvider);
       dataColumnSidecarManager =
           new DataColumnSidecarManagerImpl(
               dataColumnSidecarGossipValidator, dasGossipLogger, metricsSystem, timeProvider);

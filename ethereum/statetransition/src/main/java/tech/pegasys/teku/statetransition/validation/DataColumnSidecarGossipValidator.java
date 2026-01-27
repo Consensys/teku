@@ -48,7 +48,6 @@ import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarTrackingKey;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil.InclusionProofInfo;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationResult;
-import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 
 /**
  * This class supposed to implement gossip validation rules as per <a
@@ -106,7 +105,6 @@ public class DataColumnSidecarGossipValidator {
                   2.0);
 
   private final Spec spec;
-  private final ExecutionPayloadBidManager executionPayloadBidManager;
   private final Set<DataColumnSidecarTrackingKey> receivedValidDataColumnSidecarInfoSet;
   private final Set<InclusionProofInfo> validInclusionProofInfoSet;
   private final Set<Bytes32> validSignedBlockHeaders;
@@ -122,7 +120,6 @@ public class DataColumnSidecarGossipValidator {
       final Spec spec,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final GossipValidationHelper gossipValidationHelper,
-      final ExecutionPayloadBidManager executionPayloadBidManager,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider) {
 
@@ -137,7 +134,6 @@ public class DataColumnSidecarGossipValidator {
         spec,
         invalidBlockRoots,
         gossipValidationHelper,
-        executionPayloadBidManager,
         metricsSystem,
         timeProvider,
         LimitedSet.createSynchronized(validInfoSize),
@@ -154,7 +150,6 @@ public class DataColumnSidecarGossipValidator {
       final Spec spec,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final GossipValidationHelper gossipValidationHelper,
-      final ExecutionPayloadBidManager executionPayloadBidManager,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider,
       final Set<DataColumnSidecarTrackingKey> receivedValidDataColumnSidecarInfoSet,
@@ -163,7 +158,6 @@ public class DataColumnSidecarGossipValidator {
     this.spec = spec;
     this.invalidBlockRoots = invalidBlockRoots;
     this.gossipValidationHelper = gossipValidationHelper;
-    this.executionPayloadBidManager = executionPayloadBidManager;
     this.receivedValidDataColumnSidecarInfoSet = receivedValidDataColumnSidecarInfoSet;
     this.totalDataColumnSidecarsProcessingRequestsCounter =
         metricsSystem.createCounter(
@@ -268,7 +262,20 @@ public class DataColumnSidecarGossipValidator {
             spec,
             dataColumnSidecar,
             gossipValidationHelper::getSlotForBlockRoot,
-            executionPayloadBidManager::getExecutionPayloadBid);
+            beaconBlockRoot ->
+                gossipValidationHelper
+                    .getRecentlyValidatedSignedBlockByRoot(beaconBlockRoot)
+                    .flatMap(
+                        signedBeaconBlock ->
+                            signedBeaconBlock
+                                .getMessage()
+                                .getBody()
+                                .getOptionalSignedExecutionPayloadBid()
+                                .map(
+                                    signedExecutionPayloadBid ->
+                                        signedExecutionPayloadBid
+                                            .getMessage()
+                                            .getBlobKzgCommitmentsRoot())));
     if (!payloadRefResult.isValid()) {
       return completedFuture(
           reject(payloadRefResult.getReason().orElse("Execution payload validation failed")));
@@ -472,6 +479,7 @@ public class DataColumnSidecarGossipValidator {
 
     /*
      * [REJECT] The sidecar's kzg_commitments field inclusion proof is valid
+     * as verified by verify_data_column_sidecar_inclusion_proof(sidecar).
      */
     try (MetricsHistogram.Timer ignored =
         dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer()) {
