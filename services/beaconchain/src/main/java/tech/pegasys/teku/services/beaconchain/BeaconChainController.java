@@ -1425,7 +1425,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
 
     this.blobReconstructionProvider =
-        new BlobReconstructionProvider(combinedChainDataClient, networkRetriever, spec);
+        BlobReconstructionProvider.create(combinedChainDataClient, networkRetriever, spec);
   }
 
   protected void initDataProvider() {
