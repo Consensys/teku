@@ -163,7 +163,7 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
   }
 
   public boolean hasBuilderWithdrawalCredential(final Validator validator) {
-    return predicates.hasBuilderWithdrawalCredential(validator);
+    return predicates.isBuilderWithdrawalCredential(validator.getWithdrawalCredentials());
   }
 
   @Override
