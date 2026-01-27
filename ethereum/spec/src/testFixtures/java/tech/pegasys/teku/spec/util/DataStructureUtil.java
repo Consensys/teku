@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -304,6 +304,10 @@ public final class DataStructureUtil {
 
   private boolean randomBoolean() {
     return new Random(nextSeed()).nextBoolean();
+  }
+
+  public int randomUInt8() {
+    return randomPositiveInt(256);
   }
 
   public UInt64 randomUInt64() {
@@ -2089,6 +2093,18 @@ public final class DataStructureUtil {
           ? extends AbstractBeaconStateBuilder<?, ?, ?>>
       stateBuilder(
           final SpecMilestone milestone, final int validatorCount, final int numItemsInSszLists) {
+    return stateBuilder(milestone, validatorCount, 10, numItemsInSszLists);
+  }
+
+  public AbstractBeaconStateBuilder<
+          ? extends BeaconState,
+          ? extends MutableBeaconState,
+          ? extends AbstractBeaconStateBuilder<?, ?, ?>>
+      stateBuilder(
+          final SpecMilestone milestone,
+          final int validatorCount,
+          final int builderCount,
+          final int numItemsInSszLists) {
     return switch (milestone) {
       case PHASE0 -> stateBuilderPhase0(validatorCount, numItemsInSszLists);
       case ALTAIR -> stateBuilderAltair(validatorCount, numItemsInSszLists);
@@ -2097,7 +2113,7 @@ public final class DataStructureUtil {
       case DENEB -> stateBuilderDeneb(validatorCount, numItemsInSszLists);
       case ELECTRA -> stateBuilderElectra(validatorCount, numItemsInSszLists);
       case FULU -> stateBuilderFulu(validatorCount, numItemsInSszLists);
-      case GLOAS -> stateBuilderGloas(validatorCount, numItemsInSszLists);
+      case GLOAS -> stateBuilderGloas(validatorCount, builderCount, numItemsInSszLists);
     };
   }
 
@@ -2154,9 +2170,11 @@ public final class DataStructureUtil {
   }
 
   public BeaconStateBuilderGloas stateBuilderGloas(
-      final int defaultValidatorCount, final int defaultItemsInSSZLists) {
+      final int defaultValidatorCount,
+      final int defaultBuilderCount,
+      final int defaultItemsInSSZLists) {
     return BeaconStateBuilderGloas.create(
-        this, spec, defaultValidatorCount, defaultItemsInSSZLists);
+        this, spec, defaultValidatorCount, defaultBuilderCount, defaultItemsInSSZLists);
   }
 
   public BeaconState randomBeaconState(final UInt64 slot) {
@@ -3135,7 +3153,7 @@ public final class DataStructureUtil {
   public BuilderPendingWithdrawal randomBuilderPendingWithdrawal() {
     return getGloasSchemaDefinitions()
         .getBuilderPendingWithdrawalSchema()
-        .create(randomEth1Address(), randomUInt64(), randomUInt64(), randomEpoch());
+        .create(randomEth1Address(), randomUInt64(), randomUInt64());
   }
 
   public BuilderPendingPayment randomBuilderPendingPayment() {

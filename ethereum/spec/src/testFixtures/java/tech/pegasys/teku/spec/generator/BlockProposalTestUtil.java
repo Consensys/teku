@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -12,6 +12,8 @@
  */
 
 package tech.pegasys.teku.spec.generator;
+
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -309,7 +311,7 @@ public class BlockProposalTestUtil {
                 executionPayloadProposalDataCache.put(newSlot, executionPayloadProposalData);
                 builder.signedExecutionPayloadBid(
                     createSignedExecutionPayloadBid(
-                        newSlot, blockSlotState, proposerIndex, executionPayloadProposalData));
+                        newSlot, blockSlotState, executionPayloadProposalData));
               }
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(
@@ -407,7 +409,7 @@ public class BlockProposalTestUtil {
                 executionPayloadProposalDataCache.put(newSlot, executionPayloadProposalData);
                 builder.signedExecutionPayloadBid(
                     createSignedExecutionPayloadBid(
-                        newSlot, blockSlotState, proposerIndex, executionPayloadProposalData));
+                        newSlot, blockSlotState, executionPayloadProposalData));
               }
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(
@@ -491,7 +493,6 @@ public class BlockProposalTestUtil {
   private SignedExecutionPayloadBid createSignedExecutionPayloadBid(
       final UInt64 newSlot,
       final BeaconState state,
-      final int proposerIndex,
       final ExecutionPayloadProposalData executionPayloadProposalData) {
     final SpecVersion specVersion = spec.atSlot(newSlot);
     final SchemaDefinitionsGloas schemaDefinitions =
@@ -508,7 +509,7 @@ public class BlockProposalTestUtil {
                 executionPayload.getPrevRandao(),
                 executionPayload.getFeeRecipient(),
                 executionPayload.getGasLimit(),
-                UInt64.valueOf(proposerIndex),
+                BUILDER_INDEX_SELF_BUILD,
                 newSlot,
                 UInt64.ZERO,
                 UInt64.ZERO,

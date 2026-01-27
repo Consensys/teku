@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -777,6 +777,10 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
 
   public void setBlockTimelinessIfEmpty(final SignedBeaconBlock block) {
     lateBlockReorgLogic.setBlockTimelinessFromArrivalTime(block, store.getTimeInMillis());
+  }
+
+  public boolean isBlockLate(final Bytes32 root) {
+    return lateBlockReorgLogic.isBlockLate(root);
   }
 
   public Optional<UInt64> getCustodyGroupCount() {

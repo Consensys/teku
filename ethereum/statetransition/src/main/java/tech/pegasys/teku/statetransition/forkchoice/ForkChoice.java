@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -67,6 +66,8 @@ import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
@@ -663,8 +664,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         blobSidecars,
         earliestBlobSidecarsSlot);
 
-    final boolean shouldApplyProposerBoost = shouldApplyProposerBoost(block, transaction);
-    if (shouldApplyProposerBoost) {
+    final boolean shouldUpdateProposerBoostRoot = shouldUpdateProposerBoostRoot(block, transaction);
+
+    if (shouldUpdateProposerBoostRoot) {
       transaction.setProposerBoostRoot(block.getRoot());
     }
 
@@ -694,7 +696,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     } else {
       result = BlockImportResult.optimisticallySuccessful(block);
     }
-    updateForkChoiceForImportedBlock(block, shouldApplyProposerBoost, result, forkChoiceStrategy);
+    updateForkChoiceForImportedBlock(
+        block, shouldUpdateProposerBoostRoot, result, forkChoiceStrategy);
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
     return result;
   }
@@ -747,20 +750,48 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   // from consensus-specs/fork-choice:
-  private boolean shouldApplyProposerBoost(
+  //
+  // Add proposer score boost if the block is timely, not conflicting with an existing block, with
+  // the same the proposer as the canonical chain.
+  private boolean shouldUpdateProposerBoostRoot(
       final SignedBeaconBlock block, final StoreTransaction transaction) {
-    // get_current_slot(store) == block.slot
-    if (!spec.getCurrentSlot(transaction).equals(block.getSlot())) {
-      return false;
-    }
-    // is_before_attesting_interval
-    final UInt64 timeIntoSlotMillis =
-        getMillisIntoSlot(transaction, spec.getSlotDurationMillis(block.getSlot()));
-    if (!timeIntoSlotMillis.isLessThan(spec.getAttestationDueMillis(block.getSlot()))) {
-      return false;
-    }
     // is_first_block
-    return transaction.getProposerBoostRoot().isEmpty();
+    if (transaction.getProposerBoostRoot().isPresent()) {
+      return false;
+    }
+    // is_timely
+    if (recentChainData.isBlockLate(block.getRoot())) {
+      return false;
+    }
+    // in the edge cases when the chain head is not present or the head state future is not
+    // immediately available, the proposer boost root will be set to maintain backwards
+    // compatibility (see: https://github.com/ethereum/consensus-specs/pull/4807/)
+    return recentChainData
+        .getChainHead()
+        .map(
+            chainHead -> {
+              final SafeFuture<BeaconState> headStateFuture = chainHead.getState();
+              if (!headStateFuture.isCompletedNormally()) {
+                return true;
+              }
+              BeaconState headState = headStateFuture.join();
+              final UInt64 currentSlot = spec.getCurrentSlot(transaction);
+              if (headState.getSlot().isLessThan(currentSlot)) {
+                try {
+                  headState = spec.processSlots(headState, currentSlot);
+                } catch (final SlotProcessingException | EpochProcessingException ex) {
+                  throw new RuntimeException(
+                      String.format(
+                          "Can't progress head state from slot %s to slot %s",
+                          headState.getSlot(), currentSlot),
+                      ex);
+                }
+              }
+              // Only update if the proposer is the same as on the canonical chain
+              return block.getProposerIndex().intValue()
+                  == spec.getBeaconProposerIndex(headState, currentSlot);
+            })
+        .orElse(true);
   }
 
   private Optional<List<BlobSidecar>> extractBlobSidecarsFromValidationResults(
@@ -812,13 +843,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             earliestAvailabilityWindowSlotBeforeBlock.max(earliestAffectedSlot));
   }
 
-  private UInt64 getMillisIntoSlot(final StoreTransaction transaction, final int millisPerSlot) {
-    return transaction
-        .getTimeInMillis()
-        .minus(secondsToMillis(transaction.getGenesisTime()))
-        .mod(millisPerSlot);
-  }
-
   private void onExecutionPayloadResult(
       final Bytes32 blockRoot, final PayloadStatus payloadResult) {
     final SafeFuture<PayloadValidationResult> transitionValidatedStatus;
@@ -859,7 +883,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   private void updateForkChoiceForImportedBlock(
       final SignedBeaconBlock block,
-      final boolean shouldApplyProposerBoost,
+      final boolean shouldUpdateProposerBoostRoot,
       final BlockImportResult result,
       final ForkChoiceStrategy forkChoiceStrategy) {
 
@@ -873,7 +897,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       }
     }
 
-    if (!result.isBlockOnCanonicalChain() && shouldApplyProposerBoost) {
+    if (!result.isBlockOnCanonicalChain() && shouldUpdateProposerBoostRoot) {
       // This is likely a reorging block that requires a full processHead to update the head.
       // Running processHead here will ensure:
       //
