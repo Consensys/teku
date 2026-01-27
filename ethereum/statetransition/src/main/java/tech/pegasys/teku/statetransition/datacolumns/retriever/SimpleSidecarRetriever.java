@@ -280,10 +280,13 @@ public class SimpleSidecarRetriever
         "SimpleSidecarRetriever.peerConnected: 0x...{}", () -> nodeId.toHexString().substring(58));
     connectedPeers.computeIfAbsent(
         nodeId,
-        __ -> new ConnectedPeer(nodeId, maybeEarliestAvailableSlot),
-        miscHelpersFulu,
-        spec,
-        () -> custodyCountSupplier.getCustodyGroupCountForPeer(nodeId));
+        __ ->
+            new ConnectedPeer(
+                nodeId,
+                maybeEarliestAvailableSlot,
+                miscHelpersFulu,
+                spec,
+                () -> custodyCountSupplier.getCustodyGroupCountForPeer(nodeId)));
   }
 
   @Override
@@ -345,8 +348,7 @@ public class SimpleSidecarRetriever
 
     private Set<UInt64> getNodeCustodyIndices(final SpecVersion specVersion) {
       return custodyIndicesCache.get(
-          new CacheKey(specVersion, custodyCountSupplier.getCustodyGroupCountForPeer(nodeId)),
-          this::calcNodeCustodyIndices);
+          new CacheKey(specVersion, custodyCountSupplier.get()), this::calcNodeCustodyIndices);
     }
 
     public boolean isCustodyFor(final DataColumnSlotAndIdentifier columnId) {
