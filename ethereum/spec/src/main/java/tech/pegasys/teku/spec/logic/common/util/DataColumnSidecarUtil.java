@@ -31,14 +31,13 @@ import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 
 /**
- * Fork-aware utility for Data Column Sidecar gossip validation. This class provides abstract
- * methods for fork-specific validation logic.
+ * Fork-aware utility for Data Column Sidecar gossip validation. This interface defines the contract
+ * for fork-specific validation logic.
  *
- * <p>Different fork implementations (Fulu, Gloas) override these methods to provide fork-specific
- * behavior. Methods that don't apply to a particular fork return {@link
- * DataColumnSidecarValidationResult#VALID}.
+ * <p>Different fork implementations (Fulu, Gloas) provide fork-specific behavior. Methods that
+ * don't apply to a particular fork return {@link DataColumnSidecarValidationResult#VALID}.
  */
-public abstract class DataColumnSidecarUtil {
+public interface DataColumnSidecarUtil {
 
   /**
    * Perform slot timing gossip validation checks
@@ -49,8 +48,8 @@ public abstract class DataColumnSidecarUtil {
    * @param isSlotFromFuture function to check if a slot is from the future
    * @return validation result if the sidecar should be ignored or saved, empty if it passes
    */
-  public abstract Optional<SlotInclusionGossipValidationResult> performSlotTimingValidation(
-      final DataColumnSidecar dataColumnSidecar, final Predicate<UInt64> isSlotFromFuture);
+  Optional<SlotInclusionGossipValidationResult> performSlotTimingValidation(
+      DataColumnSidecar dataColumnSidecar, Predicate<UInt64> isSlotFromFuture);
 
   /**
    * Perform slot finalization gossip validation checks
@@ -62,8 +61,8 @@ public abstract class DataColumnSidecarUtil {
    * @param isSlotFinalized function to check if a slot is finalized
    * @return validation result if the sidecar should be ignored or saved, empty if it passes
    */
-  public abstract Optional<SlotInclusionGossipValidationResult> performSlotFinalizationValidation(
-      final DataColumnSidecar dataColumnSidecar, final Predicate<UInt64> isSlotFinalized);
+  Optional<SlotInclusionGossipValidationResult> performSlotFinalizationValidation(
+      DataColumnSidecar dataColumnSidecar, Predicate<UInt64> isSlotFinalized);
 
   /**
    * Validate execution payload reference for the data column sidecar.
@@ -77,7 +76,7 @@ public abstract class DataColumnSidecarUtil {
    * @param getBlockKzgCommitmentsRoot function to corresponding block's kzg commitments root
    * @return validation result
    */
-  public abstract DataColumnSidecarValidationResult validateExecutionPayloadReference(
+  DataColumnSidecarValidationResult validateExecutionPayloadReference(
       Spec spec,
       DataColumnSidecar dataColumnSidecar,
       Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot,
@@ -96,7 +95,7 @@ public abstract class DataColumnSidecarUtil {
    *     ancestry
    * @return validation result
    */
-  public abstract DataColumnSidecarValidationResult validateParentBlock(
+  DataColumnSidecarValidationResult validateParentBlock(
       BeaconBlockHeader blockHeader,
       Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot,
       Map<Bytes32, BlockImportResult> invalidBlockRoots,
@@ -115,8 +114,7 @@ public abstract class DataColumnSidecarUtil {
    * @param dataColumnSidecar the data column dataColumnSidecar
    * @return the fork-appropriate tracking key
    */
-  public abstract DataColumnSidecarTrackingKey extractTrackingKey(
-      DataColumnSidecar dataColumnSidecar);
+  DataColumnSidecarTrackingKey extractTrackingKey(DataColumnSidecar dataColumnSidecar);
 
   /**
    * Extract tracking key from block header and dataColumnSidecar for late validation check.
@@ -128,7 +126,7 @@ public abstract class DataColumnSidecarUtil {
    * @param dataColumnSidecar the data column dataColumnSidecar
    * @return the fork-appropriate tracking key
    */
-  public abstract DataColumnSidecarTrackingKey extractTrackingKeyFromHeader(
+  DataColumnSidecarTrackingKey extractTrackingKeyFromHeader(
       BeaconBlockHeader header, DataColumnSidecar dataColumnSidecar);
 
   /**
@@ -143,7 +141,7 @@ public abstract class DataColumnSidecarUtil {
    * @param dataColumnSidecar the data column dataColumnSidecar
    * @return true if structure is valid
    */
-  public abstract boolean verifyDataColumnSidecarStructure(
+  boolean verifyDataColumnSidecarStructure(
       SpecLogic specLogic, DataColumnSidecar dataColumnSidecar);
 
   /**
@@ -160,7 +158,7 @@ public abstract class DataColumnSidecarUtil {
    *     optimization
    * @return true if inclusion proof is valid or not applicable
    */
-  public abstract boolean verifyInclusionProof(
+  boolean verifyInclusionProof(
       SpecLogic specLogic,
       DataColumnSidecar dataColumnSidecar,
       Set<InclusionProofInfo> validInclusionProofInfoSet);
@@ -175,7 +173,7 @@ public abstract class DataColumnSidecarUtil {
    * @param dataColumnSidecar the data column sidecar
    * @return true if KZG proofs are valid
    */
-  public abstract boolean verifyDataColumnSidecarKzgProofs(
+  boolean verifyDataColumnSidecarKzgProofs(
       SpecLogic specLogic, DataColumnSidecar dataColumnSidecar);
 
   /**
@@ -191,7 +189,7 @@ public abstract class DataColumnSidecarUtil {
    * @param dataColumnSidecar the data column dataColumnSidecar
    * @return Optional containing signature verification data if applicable
    */
-  public abstract Optional<SignatureVerificationData> getSignatureVerificationData(
+  Optional<SignatureVerificationData> getSignatureVerificationData(
       Spec spec, BeaconState state, DataColumnSidecar dataColumnSidecar);
 
   /**
@@ -205,7 +203,7 @@ public abstract class DataColumnSidecarUtil {
    * @param dataColumnSidecar the data column dataColumnSidecar
    * @return Optional containing the header if applicable
    */
-  public abstract Optional<BeaconBlockHeader> getBlockHeader(DataColumnSidecar dataColumnSidecar);
+  Optional<BeaconBlockHeader> getBlockHeader(DataColumnSidecar dataColumnSidecar);
 
   /**
    * Cache validated header/proof info for optimization if applicable.
@@ -219,7 +217,7 @@ public abstract class DataColumnSidecarUtil {
    * @param validSignedBlockHeaders cache of validated signed block header hashes
    * @param validInclusionProofInfoSet cache of validated inclusion proof info
    */
-  public abstract void cacheValidatedInfo(
+  void cacheValidatedInfo(
       DataColumnSidecar dataColumnSidecar,
       Set<Bytes32> validSignedBlockHeaders,
       Set<InclusionProofInfo> validInclusionProofInfoSet);

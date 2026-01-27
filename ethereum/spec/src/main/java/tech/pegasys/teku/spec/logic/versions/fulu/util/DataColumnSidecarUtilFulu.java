@@ -47,7 +47,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
  * block availability and validation - Inclusion proof verification - Proposer verification -
  * Signature verification
  */
-public class DataColumnSidecarUtilFulu extends DataColumnSidecarUtil {
+public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
 
   @Override
   public Optional<SlotInclusionGossipValidationResult> performSlotTimingValidation(

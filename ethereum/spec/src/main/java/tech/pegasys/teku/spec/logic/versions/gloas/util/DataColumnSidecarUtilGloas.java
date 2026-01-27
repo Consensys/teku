@@ -45,7 +45,7 @@ import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
  * Fulu) - No signature verification (removed from Fulu) - ADDED: Execution payload reference
  * validation (beacon_block_root matching)
  */
-public class DataColumnSidecarUtilGloas extends DataColumnSidecarUtil {
+public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
 
   @Override
   public Optional<SlotInclusionGossipValidationResult> performSlotTimingValidation(
