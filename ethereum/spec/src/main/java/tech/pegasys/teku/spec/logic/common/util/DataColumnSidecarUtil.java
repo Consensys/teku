@@ -65,6 +65,22 @@ public interface DataColumnSidecarUtil {
       DataColumnSidecar dataColumnSidecar, Predicate<UInt64> isSlotFinalized);
 
   /**
+   * Check if the referenced block has been seen.
+   *
+   * <p>Fulu: Checks if the sidecar's block's parent (defined by block_header.parent_root) has been
+   * seen (via gossip or non-gossip sources).
+   *
+   * <p>Gloas: Checks if the sidecar's beacon_block_root has been seen via a valid signed execution
+   * payload bid.
+   *
+   * @param dataColumnSidecar the data column sidecar to validate
+   * @param isBlockRootSeen function to check if a block root has been seen
+   * @return true if the referenced block has been seen
+   */
+  boolean isBlockSeen(
+      DataColumnSidecar dataColumnSidecar, Function<Bytes32, Boolean> isBlockRootSeen);
+
+  /**
    * Validate execution payload reference for the data column sidecar.
    *
    * <p>Gloas: Validates that the execution payload envelope is known and KZG commitments match.

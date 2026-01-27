@@ -98,6 +98,25 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     return Optional.empty();
   }
 
+  /*
+   * [IGNORE] The sidecar's block's parent (defined by block_header.parent_root) has been seen
+   * (via gossip or non-gossip sources)
+   * (a client MAY queue sidecars for processing once the parent block is retrieved).
+   */
+  @Override
+  public boolean isBlockSeen(
+      final DataColumnSidecar dataColumnSidecar, final Function<Bytes32, Boolean> isBlockRootSeen) {
+    final Optional<SignedBeaconBlockHeader> maybeSignedBlockHeader =
+        dataColumnSidecar.getMaybeSignedBlockHeader();
+
+    if (maybeSignedBlockHeader.isEmpty()) {
+      return false;
+    }
+
+    final BeaconBlockHeader header = maybeSignedBlockHeader.get().getMessage();
+    return isBlockRootSeen.apply(header.getParentRoot());
+  }
+
   @Override
   public DataColumnSidecarValidationResult validateExecutionPayloadReference(
       final Spec spec,

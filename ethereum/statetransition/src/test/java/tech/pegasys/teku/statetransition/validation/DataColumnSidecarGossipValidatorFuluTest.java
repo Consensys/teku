@@ -401,6 +401,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
         .thenReturn(DataColumnSidecarValidationResult.valid());
     when(validationHelper.validateParentBlock(any(), any(), any(), any()))
         .thenReturn(DataColumnSidecarValidationResult.valid());
+    when(validationHelper.isBlockSeen(any(), any())).thenReturn(true);
     when(validationHelper.extractTrackingKey(any()))
         .thenAnswer(
             invocation -> {

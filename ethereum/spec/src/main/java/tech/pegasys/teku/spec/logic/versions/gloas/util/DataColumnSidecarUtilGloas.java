@@ -60,6 +60,16 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
   }
 
   /*
+   * [IGNORE] The sidecar's beacon_block_root has been seen via a valid signed execution payload bid.
+   * A client MAY queue the sidecar for processing once the block is retrieved.
+   */
+  @Override
+  public boolean isBlockSeen(
+      final DataColumnSidecar dataColumnSidecar, final Function<Bytes32, Boolean> isBlockRootSeen) {
+    return isBlockRootSeen.apply(dataColumnSidecar.getBeaconBlockRoot());
+  }
+
+  /*
    * [REJECT] The sidecar's slot matches the slot of the block with root beacon_block_root
    *
    * [REJECT] The hash of the sidecar's kzg_commitments matches the blob_kzg_commitments_root

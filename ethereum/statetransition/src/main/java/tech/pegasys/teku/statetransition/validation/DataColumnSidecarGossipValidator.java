@@ -310,10 +310,10 @@ public class DataColumnSidecarGossipValidator {
      * A client MAY queue the sidecar for processing once the block is retrieved.
      */
 
-    if (!gossipValidationHelper.isBlockAvailable(dataColumnSidecar.getBeaconBlockRoot())) {
+    if (!dataColumnSidecarUtil.isBlockSeen(
+        dataColumnSidecar, gossipValidationHelper::isBlockAvailable)) {
       LOG.trace(
-          "Data column sidecar's block with root {} is not available. Saving for future processing",
-          dataColumnSidecar.getBeaconBlockRoot());
+          "Data column sidecar's referenced block has not been seen. Saving for future processing");
       return completedFuture(SAVE_FOR_FUTURE);
     }
 
