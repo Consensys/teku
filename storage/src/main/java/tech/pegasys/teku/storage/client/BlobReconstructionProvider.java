@@ -13,17 +13,14 @@
 
 package tech.pegasys.teku.storage.client;
 
-import static com.google.common.base.Preconditions.checkState;
-import static java.util.Collections.emptyList;
-
 import com.google.common.collect.Streams;
-import java.util.Comparator;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.apache.tuweni.bytes.Bytes;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -38,23 +35,51 @@ import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
 
 /** Blob provider for post-FULU, reconstructs Blobs from DataColumnSidecars */
 public class BlobReconstructionProvider {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final CombinedChainDataClient combinedChainDataClient;
   private final Spec spec;
-  private final Supplier<BlobSchema> blobSchemaSupplier;
-  private final DataColumnSidecarNetworkRetriever networkRetriever;
+  private final ExtensionBlobReconstructor extensionBlobReconstructor;
+  private final CryptoBlobReconstructor cryptoBlobReconstructor;
+  private final NetworkBlobReconstructor networkBlobReconstructor;
 
-  public BlobReconstructionProvider(
+  protected BlobReconstructionProvider(
+      final CombinedChainDataClient combinedChainDataClient,
+      final Spec spec,
+      final ExtensionBlobReconstructor extensionBlobReconstructor,
+      final CryptoBlobReconstructor cryptoBlobReconstructor,
+      final NetworkBlobReconstructor networkBlobReconstructor) {
+    this.combinedChainDataClient = combinedChainDataClient;
+    this.spec = spec;
+    this.extensionBlobReconstructor = extensionBlobReconstructor;
+    this.cryptoBlobReconstructor = cryptoBlobReconstructor;
+    this.networkBlobReconstructor = networkBlobReconstructor;
+  }
+
+  public static BlobReconstructionProvider create(
       final CombinedChainDataClient combinedChainDataClient,
       final DataColumnSidecarNetworkRetriever networkRetriever,
       final Spec spec) {
-    this.combinedChainDataClient = combinedChainDataClient;
-    this.spec = spec;
-    this.networkRetriever = networkRetriever;
-    this.blobSchemaSupplier =
+
+    final Supplier<BlobSchema> blobSchemaSupplier =
         () ->
             SchemaDefinitionsDeneb.required(
                     spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
                 .getBlobSchema();
+
+    final ExtensionBlobReconstructor extensionBlobReconstructor =
+        new ExtensionBlobReconstructor(spec, blobSchemaSupplier);
+    final CryptoBlobReconstructor cryptoBlobReconstructor =
+        new CryptoBlobReconstructor(spec, blobSchemaSupplier);
+    final NetworkBlobReconstructor networkBlobReconstructor =
+        new NetworkBlobReconstructor(spec, blobSchemaSupplier, networkRetriever);
+
+    return new BlobReconstructionProvider(
+        combinedChainDataClient,
+        spec,
+        extensionBlobReconstructor,
+        cryptoBlobReconstructor,
+        networkBlobReconstructor);
   }
 
   public SafeFuture<List<Blob>> reconstructBlobs(
@@ -62,98 +87,140 @@ public class BlobReconstructionProvider {
       final List<UInt64> blobIndices,
       final boolean isCanonical) {
 
-    final List<DataColumnSlotAndIdentifier> requiredIdentifiers =
-        Stream.iterate(
-                UInt64.ZERO,
-                // We need the first 50% for reconstruction
-                index -> index.isLessThan(spec.getNumberOfDataColumns().orElseThrow() / 2),
-                UInt64::increment)
-            .map(
-                index ->
-                    new DataColumnSlotAndIdentifier(
-                        slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), index))
-            .toList();
-
-    return reconstructBlobSidecarsForIdentifiers(requiredIdentifiers, blobIndices, isCanonical);
+    return reconstructBlobSidecarsStartingWithExtensionReconstructor(
+        slotAndBlockRoot, blobIndices, isCanonical);
   }
 
-  private SafeFuture<List<Blob>> reconstructBlobSidecarsForIdentifiers(
-      final List<DataColumnSlotAndIdentifier> slotAndIdentifiers,
-      final List<UInt64> blobIndices,
-      final boolean isCanonical) {
-
-    return SafeFuture.collectAll(
-            slotAndIdentifiers.stream()
-                .map(
-                    identifier ->
-                        isCanonical
-                            ? combinedChainDataClient.getSidecar(identifier)
-                            : combinedChainDataClient.getNonCanonicalSidecar(identifier)))
-        .thenCompose(
-            sidecarOptionals -> {
-              final List<DataColumnSidecar> locallyFoundSidecars =
-                  sidecarOptionals.stream().filter(Optional::isPresent).map(Optional::get).toList();
-
-              if (locallyFoundSidecars.size() == slotAndIdentifiers.size()) {
-                // we have all we need from local DB
-                return SafeFuture.completedFuture(
-                    reconstructBlobsFromDataColumns(
-                        sidecarOptionals.stream().map(Optional::orElseThrow).toList(),
-                        blobIndices));
-              }
-
-              if (!networkRetriever.isEnabled()) {
-                // We can't attempt to get missing sidecars from network
-                return SafeFuture.completedFuture(emptyList());
-              }
-
-              final List<DataColumnSlotAndIdentifier> missingSidecars =
-                  IntStream.range(0, slotAndIdentifiers.size())
-                      .filter(idx -> sidecarOptionals.get(idx).isEmpty())
-                      .mapToObj(slotAndIdentifiers::get)
-                      .toList();
-
-              return networkRetriever
-                  .retrieveDataColumnSidecars(missingSidecars)
-                  .thenApply(
-                      retrievedDataColumnSidecars -> {
-                        if (missingSidecars.size() != retrievedDataColumnSidecars.size()) {
-                          // Not able to retrieve all requested columns
-                          return emptyList();
-                        }
-                        var completeDataColumns =
-                            Streams.concat(
-                                    retrievedDataColumnSidecars.stream(),
-                                    locallyFoundSidecars.stream())
-                                .sorted(Comparator.comparing(DataColumnSidecar::getIndex))
-                                .toList();
-                        checkState(
-                            completeDataColumns.size() == slotAndIdentifiers.size(),
-                            "Wrong number of columns");
-                        return reconstructBlobsFromDataColumns(completeDataColumns, blobIndices);
-                      });
-            });
-  }
-
-  private List<Blob> reconstructBlobsFromDataColumns(
-      final List<DataColumnSidecar> dataColumnSidecars, final List<UInt64> blobIndices) {
-    if (dataColumnSidecars.isEmpty()) {
-      return emptyList();
-    }
-
-    return IntStream.range(0, dataColumnSidecars.getFirst().getKzgCommitments().size())
-        .filter(index -> blobIndices.isEmpty() || blobIndices.contains(UInt64.valueOf(index)))
-        .mapToObj(blobIndex -> constructBlob(dataColumnSidecars, blobIndex))
+  private List<DataColumnSlotAndIdentifier> createIdentifiers(
+      final SlotAndBlockRoot slotAndBlockRoot,
+      final UInt64 fromIndexInclusive,
+      final UInt64 toIndexExclusive) {
+    return Stream.iterate(
+            fromIndexInclusive, index -> index.isLessThan(toIndexExclusive), UInt64::increment)
+        .map(
+            index ->
+                new DataColumnSlotAndIdentifier(
+                    slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), index))
         .toList();
   }
 
-  private Blob constructBlob(
-      final List<DataColumnSidecar> dataColumnSidecars, final int blobIndex) {
-    final Bytes blobBytes =
-        dataColumnSidecars.stream()
-            .map(dataColumnSidecar -> dataColumnSidecar.getColumn().get(blobIndex).getBytes())
-            .reduce(Bytes::concatenate)
-            .orElseThrow();
-    return blobSchemaSupplier.get().create(blobBytes);
+  private SafeFuture<List<Optional<DataColumnSidecar>>> fetchDataColumnSidecars(
+      final List<DataColumnSlotAndIdentifier> slotAndIdentifiers, final boolean isCanonical) {
+    return SafeFuture.collectAll(
+        slotAndIdentifiers.stream()
+            .map(
+                identifier ->
+                    isCanonical
+                        ? combinedChainDataClient.getSidecar(identifier)
+                        : combinedChainDataClient.getNonCanonicalSidecar(identifier)));
+  }
+
+  private SafeFuture<List<Blob>> reconstructBlobSidecarsStartingWithExtensionReconstructor(
+      final SlotAndBlockRoot slotAndBlockRoot,
+      final List<UInt64> blobIndices,
+      final boolean isCanonical) {
+
+    LOG.trace("Trying to reconstruct blobs with extension reconstructor for {}", slotAndBlockRoot);
+
+    // We need the first 50% for reconstruction
+    final List<DataColumnSlotAndIdentifier> firstHalfIdentifiers =
+        createIdentifiers(
+            slotAndBlockRoot,
+            UInt64.ZERO,
+            UInt64.valueOf(spec.getNumberOfDataColumns().orElseThrow() / 2));
+
+    return fetchDataColumnSidecars(firstHalfIdentifiers, isCanonical)
+        .thenCompose(
+            sidecarOptionals -> {
+              final List<DataColumnSidecar> firstHalfOfSidecars =
+                  sidecarOptionals.stream().filter(Optional::isPresent).map(Optional::get).toList();
+
+              // we try extension reconstruction first, which is the fastest one
+              final SafeFuture<Optional<List<Blob>>> maybeReconstructedBlobs =
+                  extensionBlobReconstructor.reconstructBlobs(
+                      slotAndBlockRoot, firstHalfOfSidecars, blobIndices);
+
+              return maybeReconstructedBlobs.thenCompose(
+                  maybeBlobs -> {
+                    if (maybeBlobs.isEmpty()) {
+                      return reconstructBlobSidecarsStartingWithCryptoReconstructor(
+                          firstHalfOfSidecars, slotAndBlockRoot, blobIndices, isCanonical);
+                    } else {
+                      LOG.debug(
+                          "Blobs {} reconstructed for {} with extension reconstruction",
+                          blobIndices,
+                          slotAndBlockRoot);
+                      return SafeFuture.completedFuture(maybeBlobs.get());
+                    }
+                  });
+            });
+  }
+
+  private SafeFuture<List<Blob>> reconstructBlobSidecarsStartingWithCryptoReconstructor(
+      final List<DataColumnSidecar> firstHalfOfSidecarsWithGaps,
+      final SlotAndBlockRoot slotAndBlockRoot,
+      final List<UInt64> blobIndices,
+      final boolean isCanonical) {
+    LOG.trace("Trying to reconstruct blobs with crypto reconstructor for {}", slotAndBlockRoot);
+    final List<DataColumnSlotAndIdentifier> secondHalfIdentifiers =
+        createIdentifiers(
+            slotAndBlockRoot,
+            UInt64.valueOf(spec.getNumberOfDataColumns().orElseThrow() / 2),
+            UInt64.valueOf(spec.getNumberOfDataColumns().orElseThrow()));
+    final SafeFuture<List<Optional<DataColumnSidecar>>> secondHalfSidecarFutures =
+        fetchDataColumnSidecars(secondHalfIdentifiers, isCanonical);
+
+    return secondHalfSidecarFutures.thenCompose(
+        secondHalfSidecars -> {
+          final List<DataColumnSidecar> existingSidecars =
+              Streams.concat(
+                      firstHalfOfSidecarsWithGaps.stream(),
+                      secondHalfSidecars.stream().filter(Optional::isPresent).map(Optional::get))
+                  .toList();
+          final SafeFuture<Optional<List<Blob>>> maybeCryptoReconstructedBlobs =
+              cryptoBlobReconstructor.reconstructBlobs(
+                  slotAndBlockRoot, existingSidecars, blobIndices);
+
+          return maybeCryptoReconstructedBlobs.thenCompose(
+              maybeBlobs -> {
+                if (maybeBlobs.isEmpty()) {
+                  return reconstructBlobSidecarsUsingNetworkReconstructor(
+                      firstHalfOfSidecarsWithGaps, slotAndBlockRoot, blobIndices);
+                } else {
+                  LOG.debug(
+                      "Blobs {} reconstructed for {} with crypto reconstruction",
+                      blobIndices,
+                      slotAndBlockRoot);
+                  return SafeFuture.completedFuture(maybeBlobs.get());
+                }
+              });
+        });
+  }
+
+  private SafeFuture<List<Blob>> reconstructBlobSidecarsUsingNetworkReconstructor(
+      final List<DataColumnSidecar> firstHalfOfSidecarsWithGaps,
+      final SlotAndBlockRoot slotAndBlockRoot,
+      final List<UInt64> blobIndices) {
+    LOG.trace("Trying to reconstruct blobs with network reconstructor for {}", slotAndBlockRoot);
+    final SafeFuture<Optional<List<Blob>>> maybeNetworkReconstructedBlobs =
+        networkBlobReconstructor.reconstructBlobs(
+            slotAndBlockRoot, firstHalfOfSidecarsWithGaps, blobIndices);
+
+    return maybeNetworkReconstructedBlobs.thenCompose(
+        maybeBlobs -> {
+          if (maybeBlobs.isEmpty()) {
+            LOG.debug(
+                "Blobs {} were not reconstructed for {} with network reconstruction",
+                blobIndices,
+                slotAndBlockRoot);
+            return SafeFuture.completedFuture(Collections.emptyList());
+          } else {
+            LOG.debug(
+                "Blobs {} reconstructed for {} with network reconstruction",
+                blobIndices,
+                slotAndBlockRoot);
+            return SafeFuture.completedFuture(maybeBlobs.get());
+          }
+        });
   }
 }
