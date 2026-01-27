@@ -41,20 +41,29 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 public abstract class DataColumnSidecarUtil {
 
   /**
-   * Perform slot inclusion gossip validation checks (timing, finalization, etc.).
+   * Perform slot timing gossip validation checks
    *
    * <p>This method checks if the sidecar should be IGNOREd or SAVE_FOR_FUTUREd based on slot timing
-   * and finalization status.
    *
    * @param dataColumnSidecar the data column sidecar to validate
    * @param isSlotFromFuture function to check if a slot is from the future
-   * @param isSlotFinalized function to check if a slot is finalized
    * @return validation result if the sidecar should be ignored or saved, empty if it passes
    */
   public abstract Optional<SlotInclusionGossipValidationResult> performSlotTimingValidation(
-      DataColumnSidecar dataColumnSidecar,
-      Predicate<UInt64> isSlotFromFuture,
-      Predicate<UInt64> isSlotFinalized);
+      final DataColumnSidecar dataColumnSidecar, final Predicate<UInt64> isSlotFromFuture);
+
+  /**
+   * Perform slot finalization gossip validation checks
+   *
+   * <p>This method checks if the sidecar should be IGNOREd or SAVE_FOR_FUTUREd based on slot
+   * finalization status.
+   *
+   * @param dataColumnSidecar the data column sidecar to validate
+   * @param isSlotFinalized function to check if a slot is finalized
+   * @return validation result if the sidecar should be ignored or saved, empty if it passes
+   */
+  public abstract Optional<SlotInclusionGossipValidationResult> performSlotFinalizationValidation(
+      final DataColumnSidecar dataColumnSidecar, final Predicate<UInt64> isSlotFinalized);
 
   /**
    * Validate execution payload reference for the data column sidecar.

@@ -72,7 +72,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
         createSpec(builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
     this.dataStructureUtil = new DataStructureUtil(spec);
 
-    this.validator =
+    this.dataColumnSidecarGossipValidator =
         DataColumnSidecarGossipValidator.create(
             spec, invalidBlocks, gossipValidationHelper, metricsSystemStub, stubTimeProvider);
 
@@ -109,13 +109,12 @@ public class DataColumnSidecarGossipValidatorFuluTest
     when(gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
             any(), eq(proposerIndex), any(), eq(postState)))
         .thenReturn(true);
-    // Note: Real MiscHelpersFulu from Spec will be used for validation
-    // DataStructureUtil generates valid test data that should pass real validation
   }
 
   @Test
   void shouldAccept() {
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     assertValidationMetrics(Map.of(ValidationResultCode.ACCEPT, 1));
@@ -125,7 +124,8 @@ public class DataColumnSidecarGossipValidatorFuluTest
   void shouldSaveForFutureWhenSlotIsFromFuture() {
     when(gossipValidationHelper.isSlotFromFuture(slot)).thenReturn(true);
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
   }
 
@@ -133,7 +133,8 @@ public class DataColumnSidecarGossipValidatorFuluTest
   void shouldIgnoreWhenSlotAlreadyFinalized() {
     when(gossipValidationHelper.isSlotFinalized(slot)).thenReturn(true);
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
   }
 
@@ -171,7 +172,8 @@ public class DataColumnSidecarGossipValidatorFuluTest
             any(), eq(proposerIndex), any(), eq(postState)))
         .thenReturn(false);
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
 
     assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
@@ -181,7 +183,8 @@ public class DataColumnSidecarGossipValidatorFuluTest
   void shouldIgnoreWhenParentIsNotAvailableSlot() {
     when(gossipValidationHelper.getSlotForBlockRoot(blockParentRoot)).thenReturn(Optional.empty());
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
 
     assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
@@ -191,7 +194,8 @@ public class DataColumnSidecarGossipValidatorFuluTest
   void shouldRejectWhenParentBlockInvalid() {
     invalidBlocks.put(blockParentRoot, BlockImportResult.FAILED_INVALID_ANCESTRY);
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
 
     assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
@@ -202,7 +206,8 @@ public class DataColumnSidecarGossipValidatorFuluTest
     when(gossipValidationHelper.getSlotForBlockRoot(blockParentRoot))
         .thenReturn(Optional.of(parentSlot.plus(1)));
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
 
     assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
@@ -218,7 +223,8 @@ public class DataColumnSidecarGossipValidatorFuluTest
                 .getParentRoot()))
         .thenReturn(false);
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
 
     assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
@@ -229,11 +235,12 @@ public class DataColumnSidecarGossipValidatorFuluTest
 
   @Test
   void shouldIgnoreWhenIsNotFirstValidSignature() {
-    validator
+    dataColumnSidecarGossipValidator
         .getReceivedValidDataColumnSidecarInfoSet()
         .add(new FuluTrackingKey(slot, proposerIndex, index));
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
 
     assertValidationMetrics(Map.of(ValidationResultCode.IGNORE, 1));
@@ -244,7 +251,8 @@ public class DataColumnSidecarGossipValidatorFuluTest
     when(gossipValidationHelper.getParentStateInBlockEpoch(parentSlot, blockParentRoot, slot))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
 
     assertValidationMetrics(Map.of(ValidationResultCode.IGNORE, 1));
@@ -255,7 +263,8 @@ public class DataColumnSidecarGossipValidatorFuluTest
     when(gossipValidationHelper.isProposerTheExpectedProposer(proposerIndex, slot, postState))
         .thenReturn(false);
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
 
     assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
@@ -263,10 +272,12 @@ public class DataColumnSidecarGossipValidatorFuluTest
 
   @Test
   void shouldTrackValidInfoSet() {
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
 
     assertValidationMetrics(Map.of(ValidationResultCode.ACCEPT, 1, ValidationResultCode.IGNORE, 1));
@@ -274,7 +285,8 @@ public class DataColumnSidecarGossipValidatorFuluTest
 
   @Test
   void shouldIgnoreImmediatelyWhenDataColumnFromValidInfoSet() {
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     // Verify state-related validations were called
@@ -284,7 +296,8 @@ public class DataColumnSidecarGossipValidatorFuluTest
         .isSignatureValidWithRespectToProposerIndex(any(), any(), any(), any());
     clearInvocations(gossipValidationHelper);
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
 
     // Second attempt should be ignored without state validations
@@ -298,7 +311,8 @@ public class DataColumnSidecarGossipValidatorFuluTest
 
   @Test
   void shouldNotVerifyKnownValidSignedHeader() {
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     // Verify full validation was performed
@@ -312,7 +326,8 @@ public class DataColumnSidecarGossipValidatorFuluTest
     final DataColumnSidecar dataColumnSidecar0 =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(signedBeaconBlock, UInt64.ZERO);
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar0))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar0))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     // Second sidecar from same block should skip state validations (cached header)
@@ -346,7 +361,8 @@ public class DataColumnSidecarGossipValidatorFuluTest
             dataColumnSidecarNew.getSlot(), parentRoot))
         .thenReturn(true);
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecarNew))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecarNew))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
 
     // Verify state validation was attempted
@@ -444,7 +460,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
 
     // This will make cache of size 3
     when(specVersion.getSlotsPerEpoch()).thenReturn(1);
-    this.validator =
+    this.dataColumnSidecarGossipValidator =
         DataColumnSidecarGossipValidator.create(
             specMock, invalidBlocks, gossipValidationHelper, metricsSystemStub, stubTimeProvider);
     // Accept everything
@@ -463,7 +479,8 @@ public class DataColumnSidecarGossipValidatorFuluTest
         .thenReturn(true);
 
     // First DataColumnSidecar
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
     clearInvocations(gossipValidationHelper);
 
@@ -473,7 +490,8 @@ public class DataColumnSidecarGossipValidatorFuluTest
         dataStructureUtil.randomDataColumnSidecar(
             DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader(), UInt64.ZERO);
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar0))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar0))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     verify(gossipValidationHelper, never())
@@ -485,7 +503,8 @@ public class DataColumnSidecarGossipValidatorFuluTest
     when(gossipValidationHelper.getSlotForBlockRoot(any()))
         .thenReturn(Optional.of(dataColumnSidecar2.getSlot().decrement()));
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar2))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar2))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     verify(gossipValidationHelper)
@@ -497,7 +516,8 @@ public class DataColumnSidecarGossipValidatorFuluTest
     when(gossipValidationHelper.getSlotForBlockRoot(any()))
         .thenReturn(Optional.of(dataColumnSidecar3.getSlot().decrement()));
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar3))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar3))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     verify(gossipValidationHelper)
@@ -509,7 +529,8 @@ public class DataColumnSidecarGossipValidatorFuluTest
     when(gossipValidationHelper.getSlotForBlockRoot(any()))
         .thenReturn(Optional.of(dataColumnSidecar4.getSlot().decrement()));
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar4))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar4))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     verify(gossipValidationHelper)
@@ -524,7 +545,8 @@ public class DataColumnSidecarGossipValidatorFuluTest
     when(gossipValidationHelper.getSlotForBlockRoot(any()))
         .thenReturn(Optional.of(dataColumnSidecar5.getSlot().decrement()));
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar5))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar5))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     // Signature is validating again though header was known valid until dropped from cache

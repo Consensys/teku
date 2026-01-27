@@ -49,9 +49,13 @@ public class DataColumnSidecarUtilGloas extends DataColumnSidecarUtil {
 
   @Override
   public Optional<SlotInclusionGossipValidationResult> performSlotTimingValidation(
-      final DataColumnSidecar dataColumnSidecar,
-      final Predicate<UInt64> isSlotFromFuture,
-      final Predicate<UInt64> isSlotFinalized) {
+      final DataColumnSidecar dataColumnSidecar, final Predicate<UInt64> isSlotFromFuture) {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<SlotInclusionGossipValidationResult> performSlotFinalizationValidation(
+      final DataColumnSidecar dataColumnSidecar, final Predicate<UInt64> isSlotFinalized) {
     return Optional.empty();
   }
 

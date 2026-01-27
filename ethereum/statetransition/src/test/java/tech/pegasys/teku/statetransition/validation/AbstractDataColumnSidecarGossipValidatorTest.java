@@ -39,7 +39,7 @@ abstract class AbstractDataColumnSidecarGossipValidatorTest {
   protected final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(0);
 
   protected DataStructureUtil dataStructureUtil;
-  protected DataColumnSidecarGossipValidator validator;
+  protected DataColumnSidecarGossipValidator dataColumnSidecarGossipValidator;
   protected UInt64 slot;
   protected UInt64 index;
   protected DataColumnSidecar dataColumnSidecar;

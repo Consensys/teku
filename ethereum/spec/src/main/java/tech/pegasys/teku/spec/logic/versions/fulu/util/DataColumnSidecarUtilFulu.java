@@ -51,9 +51,7 @@ public class DataColumnSidecarUtilFulu extends DataColumnSidecarUtil {
 
   @Override
   public Optional<SlotInclusionGossipValidationResult> performSlotTimingValidation(
-      final DataColumnSidecar dataColumnSidecar,
-      final Predicate<UInt64> isSlotFromFuture,
-      final Predicate<UInt64> isSlotFinalized) {
+      final DataColumnSidecar dataColumnSidecar, final Predicate<UInt64> isSlotFromFuture) {
     final Optional<SignedBeaconBlockHeader> maybeSignedBlockHeader =
         dataColumnSidecar.getMaybeSignedBlockHeader();
 
@@ -72,6 +70,21 @@ public class DataColumnSidecarUtilFulu extends DataColumnSidecarUtil {
     if (isSlotFromFuture.test(header.getSlot())) {
       return Optional.of(SlotInclusionGossipValidationResult.SAVE_FOR_FUTURE);
     }
+
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<SlotInclusionGossipValidationResult> performSlotFinalizationValidation(
+      final DataColumnSidecar dataColumnSidecar, final Predicate<UInt64> isSlotFinalized) {
+    final Optional<SignedBeaconBlockHeader> maybeSignedBlockHeader =
+        dataColumnSidecar.getMaybeSignedBlockHeader();
+
+    if (maybeSignedBlockHeader.isEmpty()) {
+      return Optional.of(SlotInclusionGossipValidationResult.IGNORE);
+    }
+
+    final BeaconBlockHeader header = maybeSignedBlockHeader.get().getMessage();
 
     /*
      * [IGNORE] The sidecar is from a slot greater than the latest finalized slot
@@ -200,8 +213,7 @@ public class DataColumnSidecarUtilFulu extends DataColumnSidecarUtil {
   }
 
   /*
-   * [REJECT] The sidecar's column data is valid as verified by
-   *   verify_data_column_sidecar_kzg_proofs(sidecar)
+   * [REJECT] The sidecar's column data is valid as verified by verify_data_column_sidecar_kzg_proofs(sidecar)
    */
   @Override
   public boolean verifyDataColumnSidecarKzgProofs(

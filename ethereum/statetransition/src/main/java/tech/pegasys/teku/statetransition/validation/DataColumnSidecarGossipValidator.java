@@ -238,14 +238,33 @@ public class DataColumnSidecarGossipValidator {
     final Optional<DataColumnSidecarUtil.SlotInclusionGossipValidationResult>
         maybeSlotTimingValidationResult =
             dataColumnSidecarUtil.performSlotTimingValidation(
-                dataColumnSidecar,
-                gossipValidationHelper::isSlotFromFuture,
-                gossipValidationHelper::isSlotFinalized);
+                dataColumnSidecar, gossipValidationHelper::isSlotFromFuture);
 
     if (maybeSlotTimingValidationResult.isPresent()) {
       return switch (maybeSlotTimingValidationResult.get()) {
-        case IGNORE -> completedFuture(IGNORE);
-        case SAVE_FOR_FUTURE -> completedFuture(SAVE_FOR_FUTURE);
+        case IGNORE ->
+            completedFuture(
+                ignore("Unable to check DataColumnSidecar block header slot. Ignoring"));
+        case SAVE_FOR_FUTURE ->
+            completedFuture(
+                saveForFuture(
+                    "DataColumnSidecar block header slot is from the future. It will be saved for future processing"));
+      };
+    }
+
+    final Optional<DataColumnSidecarUtil.SlotInclusionGossipValidationResult>
+        maybeSlotFinalizationValidationResult =
+            dataColumnSidecarUtil.performSlotFinalizationValidation(
+                dataColumnSidecar, gossipValidationHelper::isSlotFinalized);
+
+    if (maybeSlotFinalizationValidationResult.isPresent()) {
+      return switch (maybeSlotFinalizationValidationResult.get()) {
+        case IGNORE ->
+            completedFuture(
+                ignore(
+                    "DataColumnSidecar is from a slot greater than the latest finalized slot. Ignoring"));
+        case SAVE_FOR_FUTURE ->
+            completedFuture(saveForFuture("DataColumnSidecar will be saved for future processing"));
       };
     }
 

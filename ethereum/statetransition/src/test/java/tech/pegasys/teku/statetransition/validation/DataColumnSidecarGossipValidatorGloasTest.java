@@ -61,11 +61,9 @@ public class DataColumnSidecarGossipValidatorGloasTest
         createSpec(builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
     this.dataStructureUtil = new DataStructureUtil(spec);
 
-    this.validator =
+    this.dataColumnSidecarGossipValidator =
         DataColumnSidecarGossipValidator.create(
             spec, invalidBlocks, gossipValidationHelper, metricsSystemStub, stubTimeProvider);
-
-    // Use fixed values like Fulu tests for predictable mocking
     slot = UInt64.valueOf(2);
     index = UInt64.valueOf(1);
     beaconBlockRoot = dataStructureUtil.randomBytes32();
@@ -119,7 +117,8 @@ public class DataColumnSidecarGossipValidatorGloasTest
 
   @Test
   void shouldAcceptValidGloasDataColumnSidecar() {
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
   }
 
@@ -154,27 +153,21 @@ public class DataColumnSidecarGossipValidatorGloasTest
   @Test
   void shouldIgnoreWhenIsNotFirstValidForGloasTrackingKey() {
     // Add tracking key to the set (beaconBlockRoot + columnIndex)
-    validator
+    dataColumnSidecarGossipValidator
         .getReceivedValidDataColumnSidecarInfoSet()
         .add(new GloasTrackingKey(beaconBlockRoot, index));
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
   }
-
-  // Note: Gloas does NOT check for future slots or finalized slots
-  // These checks were removed in the Gloas spec
-
-  // TODO: Test for KZG validation failure requires either:
-  // 1. Creating data with invalid KZG proofs, or
-  // 2. Mocking at Spec/SpecLogic level to return mock MiscHelpers
-  // Skipping for now as other tests cover the main validation flow
 
   @Test
   void shouldNotValidateHeaderSignatureForGloas() {
     // In Gloas, there's no header signature validation
     // This test verifies that signature validation is never called
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     // Verify that signature validation was never invoked
@@ -186,7 +179,8 @@ public class DataColumnSidecarGossipValidatorGloasTest
   void shouldNotValidateInclusionProofForGloas() {
     // In Gloas, there's no inclusion proof validation (always passes)
     // The inclusion proof methods should never be called
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     // Gloas helper's verifyInclusionProof always returns true, so no actual verification happens
@@ -196,27 +190,30 @@ public class DataColumnSidecarGossipValidatorGloasTest
   @Test
   void shouldTrackByBeaconBlockRootAndColumnIndex() {
     // First sidecar - should accept
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     // Verify the tracking key was added (beaconBlockRoot + columnIndex)
-    assertThat(validator.getReceivedValidDataColumnSidecarInfoSet())
+    assertThat(dataColumnSidecarGossipValidator.getReceivedValidDataColumnSidecarInfoSet())
         .contains(new GloasTrackingKey(beaconBlockRoot, index));
 
     // Manually add a duplicate to the tracking set (same beaconBlockRoot and columnIndex)
-    validator
+    dataColumnSidecarGossipValidator
         .getReceivedValidDataColumnSidecarInfoSet()
         .add(new GloasTrackingKey(beaconBlockRoot, index));
 
     // Same beaconBlockRoot and columnIndex - should ignore
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
   }
 
   @Test
   void shouldAcceptDifferentColumnIndexForSameBlock() {
     // First sidecar
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     // Create another sidecar with different column index but same slot and block root
@@ -245,11 +242,12 @@ public class DataColumnSidecarGossipValidatorGloasTest
         .thenReturn(Optional.of(mockBlock2));
 
     // Different column index, should accept
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(sidecarDifferentIndex))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(sidecarDifferentIndex))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     // Verify both tracking keys are present
-    assertThat(validator.getReceivedValidDataColumnSidecarInfoSet())
+    assertThat(dataColumnSidecarGossipValidator.getReceivedValidDataColumnSidecarInfoSet())
         .contains(new GloasTrackingKey(beaconBlockRoot, index))
         .contains(new GloasTrackingKey(beaconBlockRoot, differentIndex));
   }
@@ -257,7 +255,8 @@ public class DataColumnSidecarGossipValidatorGloasTest
   @Test
   void shouldAcceptDifferentBlockForSameColumnIndex() {
     // First sidecar
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     // Different block (different beacon block root) but same slot and column index
@@ -286,11 +285,12 @@ public class DataColumnSidecarGossipValidatorGloasTest
         .thenReturn(Optional.of(mockBlock3));
 
     // Should accept - different block root means different tracking key
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(sidecarDifferentBlock))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(sidecarDifferentBlock))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     // Verify both tracking keys are present
-    assertThat(validator.getReceivedValidDataColumnSidecarInfoSet())
+    assertThat(dataColumnSidecarGossipValidator.getReceivedValidDataColumnSidecarInfoSet())
         .contains(new GloasTrackingKey(beaconBlockRoot, index))
         .contains(new GloasTrackingKey(differentBlockRoot, index));
   }
@@ -300,7 +300,8 @@ public class DataColumnSidecarGossipValidatorGloasTest
     // Mock getSlotForBlockRoot to return empty (block not known)
     when(gossipValidationHelper.getSlotForBlockRoot(beaconBlockRoot)).thenReturn(Optional.empty());
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
@@ -311,7 +312,8 @@ public class DataColumnSidecarGossipValidatorGloasTest
     when(gossipValidationHelper.getSlotForBlockRoot(beaconBlockRoot))
         .thenReturn(Optional.of(differentSlot));
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
@@ -320,7 +322,8 @@ public class DataColumnSidecarGossipValidatorGloasTest
     // Mock getSlotForBlockRoot to return the same slot as the sidecar
     when(gossipValidationHelper.getSlotForBlockRoot(beaconBlockRoot)).thenReturn(Optional.of(slot));
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
   }
 
@@ -332,7 +335,8 @@ public class DataColumnSidecarGossipValidatorGloasTest
     when(gossipValidationHelper.getRecentlyValidatedSignedBlockByRoot(beaconBlockRoot))
         .thenReturn(Optional.empty());
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
@@ -356,7 +360,8 @@ public class DataColumnSidecarGossipValidatorGloasTest
     when(gossipValidationHelper.getRecentlyValidatedSignedBlockByRoot(beaconBlockRoot))
         .thenReturn(Optional.of(mockBlock));
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
@@ -382,7 +387,8 @@ public class DataColumnSidecarGossipValidatorGloasTest
     when(gossipValidationHelper.getRecentlyValidatedSignedBlockByRoot(beaconBlockRoot))
         .thenReturn(Optional.of(mockBlock));
 
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
   }
 }
