@@ -664,7 +664,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
     return store.retrieveBlockState(blockRoot);
   }
 
-  public SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(
+  public SafeFuture<Optional<BeaconState>> retrieveBlockState(
       final SlotAndBlockRoot slotAndBlockRoot) {
     if (store == null) {
       return EmptyStoreResults.EMPTY_STATE_FUTURE;

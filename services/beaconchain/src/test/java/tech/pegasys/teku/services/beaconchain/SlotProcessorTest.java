@@ -407,7 +407,7 @@ public class SlotProcessorTest {
     final Optional<MinimalBeaconBlockSummary> headBlock =
         storageSystem.recentChainData().getHeadBlock();
     when(recentChainData.getHeadBlock()).thenReturn(headBlock);
-    when(recentChainData.retrieveStateAtSlot(any())).thenReturn(new SafeFuture<>());
+    when(recentChainData.retrieveBlockState(any())).thenReturn(new SafeFuture<>());
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
     final Spec spec = TestSpecFactory.create(SpecMilestone.PHASE0, eth2Network);
@@ -446,7 +446,7 @@ public class SlotProcessorTest {
         nextEpochSlotMinusOne.plus(oneThirdMillis(millisPerSlot)), Optional.empty());
 
     // Shouldn't have precomputed epoch transition yet.
-    verify(recentChainData, never()).retrieveStateAtSlot(any());
+    verify(recentChainData, never()).retrieveBlockState(any());
 
     // But just before the last slot of the epoch ends, we should precompute the next epoch
     slotProcessor.onTick(
@@ -458,7 +458,7 @@ public class SlotProcessorTest {
         nextEpochSlotMinusOne.plus(oneThirdMillis(millisPerSlot) * 2 + 1000), Optional.empty());
     slotProcessor.onTick(
         nextEpochSlotMinusOne.plus(oneThirdMillis(millisPerSlot) * 2 + 2000), Optional.empty());
-    verify(recentChainData, atMostOnce()).retrieveStateAtSlot(any());
+    verify(recentChainData, atMostOnce()).retrieveBlockState(any());
   }
 
   @ParameterizedTest
