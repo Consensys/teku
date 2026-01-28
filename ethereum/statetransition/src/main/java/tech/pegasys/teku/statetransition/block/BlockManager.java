@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
-import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.blobs.BlockEventsListener;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -48,7 +48,7 @@ public class BlockManager extends Service
 
   private final RecentChainData recentChainData;
   private final BlockImporter blockImporter;
-  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
+  private final BlockEventsListener blockEventsListener;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final BlockValidator blockValidator;
   private final TimeProvider timeProvider;
@@ -69,7 +69,7 @@ public class BlockManager extends Service
   public BlockManager(
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
-      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final BlockEventsListener blockEventsListener,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final FutureItems<SignedBeaconBlock> futureBlocks,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
@@ -79,7 +79,7 @@ public class BlockManager extends Service
       final Optional<BlockImportMetrics> blockImportMetrics) {
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
-    this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
+    this.blockEventsListener = blockEventsListener;
     this.pendingBlocks = pendingBlocks;
     this.futureBlocks = futureBlocks;
     this.invalidBlockRoots = invalidBlockRoots;
@@ -164,7 +164,7 @@ public class BlockManager extends Service
             // block failed gossip validation, let's drop it from the pool, so it won't be served
             // via RPC anymore. This should not be done on ignore result (i.e. duplicate blocks
             // could cause an unwanted drop)
-            case REJECT -> blockBlobSidecarsTrackersPool.removeAllForBlock(block.getRoot());
+            case REJECT -> blockEventsListener.removeAllForBlock(block.getSlotAndBlockRoot());
             case IGNORE -> {}
           }
         });
@@ -193,11 +193,11 @@ public class BlockManager extends Service
 
   @Override
   public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
-    final Bytes32 blockRoot = block.getRoot();
-    blockBlobSidecarsTrackersPool.removeAllForBlock(blockRoot);
+    blockEventsListener.removeAllForBlock(block.getSlotAndBlockRoot());
     pendingBlocks.remove(block);
     // Check if any pending blocks can now be imported
-    final List<SignedBeaconBlock> children = pendingBlocks.getItemsDependingOn(blockRoot, false);
+    final List<SignedBeaconBlock> children =
+        pendingBlocks.getItemsDependingOn(block.getRoot(), false);
     children.forEach(pendingBlocks::remove);
     children.forEach(this::importBlockIgnoringResult);
   }
@@ -260,7 +260,7 @@ public class BlockManager extends Service
       final Optional<BlockImportPerformance> blockImportPerformance,
       final BlockBroadcastValidator blockBroadcastValidator,
       final Optional<RemoteOrigin> origin) {
-    blockBlobSidecarsTrackersPool.onNewBlock(block, origin);
+    blockEventsListener.onNewBlock(block, origin);
     preImportBlockSubscribers.deliver(l -> l.onNewBlock(block, origin));
 
     return blockImporter
@@ -302,7 +302,7 @@ public class BlockManager extends Service
                   }
                   case FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE -> {
                     logFailedBlockImport(block, result.getFailureReason());
-                    blockBlobSidecarsTrackersPool.enableBlockImportOnCompletion(block);
+                    blockEventsListener.enableBlockImportOnCompletion(block);
                   }
                   case FAILED_DATA_AVAILABILITY_CHECK_INVALID -> {
                     // Block's commitments and known blobSidecars are not matching.
@@ -311,7 +311,7 @@ public class BlockManager extends Service
                     // If next block builds on top of this one, we will re-download all blobSidecars
                     // and block again via RPC by root.
                     logFailedBlockImport(block, result.getFailureReason());
-                    blockBlobSidecarsTrackersPool.removeAllForBlock(block.getRoot());
+                    blockEventsListener.removeAllForBlock(block.getSlotAndBlockRoot());
                   }
                   case FAILED_BROADCAST_VALIDATION ->
                       LOG.warn(
@@ -367,21 +367,19 @@ public class BlockManager extends Service
 
   private void dropInvalidBlock(
       final SignedBeaconBlock block, final BlockImportResult blockImportResult) {
-    final Bytes32 blockRoot = block.getRoot();
-
     invalidBlockRoots.put(block.getMessage().hashTreeRoot(), blockImportResult);
     pendingBlocks.remove(block);
-    blockBlobSidecarsTrackersPool.removeAllForBlock(blockRoot);
+    blockEventsListener.removeAllForBlock(block.getSlotAndBlockRoot());
 
     pendingBlocks
-        .getItemsDependingOn(blockRoot, true)
+        .getItemsDependingOn(block.getRoot(), true)
         .forEach(
             blockToDrop -> {
               invalidBlockRoots.put(
                   blockToDrop.getMessage().hashTreeRoot(),
                   BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
               pendingBlocks.remove(blockToDrop);
-              blockBlobSidecarsTrackersPool.removeAllForBlock(blockToDrop.getRoot());
+              blockEventsListener.removeAllForBlock(blockToDrop.getSlotAndBlockRoot());
             });
   }
 
