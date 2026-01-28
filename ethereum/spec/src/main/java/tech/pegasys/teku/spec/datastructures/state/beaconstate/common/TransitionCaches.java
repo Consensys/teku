@@ -289,13 +289,18 @@ public class TransitionCaches {
 
   /**
    * Makes an independent copy which contains all the data in this instance. Modifications to the
-   * returned caches shouldn't affect caches from this instance
+   * returned caches shouldn't affect caches from this instance.
+   *
+   * <p>Note: beaconCommittee cache is shared (not copied) because CaffeineCache is thread-safe and
+   * designed for concurrent access. Committee lookups are deterministic and read-only during state
+   * transitions, so cache isolation is unnecessary. This avoids the expensive deep copy operation
+   * that was causing fork choice timeouts.
    */
   public TransitionCaches copy() {
     return new TransitionCaches(
         activeValidators.copy(),
         beaconProposerIndex.copy(),
-        beaconCommittee.copy(),
+        beaconCommittee, // Shared - CaffeineCache is thread-safe, avoids copy cost
         beaconCommitteesSize.copy(),
         attestersTotalBalance.copy(),
         totalActiveBalance.copy(),
