@@ -373,33 +373,18 @@ public class DataColumnSidecarGossipValidator {
     }
     final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
 
-    /*
-     * [REJECT] The sidecar's kzg_commitments field inclusion proof is valid
-     * as verified by verify_data_column_sidecar_inclusion_proof(sidecar).
-     */
-    try (MetricsHistogram.Timer ignored =
-        dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer()) {
-      if (!dataColumnSidecarUtil.verifyInclusionProof(
-          specLogic, dataColumnSidecar, validInclusionProofInfoSet)) {
-        return SafeFuture.completedFuture(
-            reject("DataColumnSidecar inclusion proof validation failed"));
-      }
-    } catch (final Throwable t) {
-      return SafeFuture.completedFuture(
-          reject("DataColumnSidecar inclusion proof validation failed"));
+    // Verify inclusion proof
+    final Optional<InternalValidationResult> inclusionProofResult =
+        verifyInclusionProofWithMetrics(dataColumnSidecarUtil, specLogic, dataColumnSidecar);
+    if (inclusionProofResult.isPresent()) {
+      return SafeFuture.completedFuture(inclusionProofResult.get());
     }
 
-    /*
-     * [REJECT] The sidecar's column data is valid
-     *          as verified by verify_data_column_sidecar_kzg_proofs(sidecar).
-     */
-    try (MetricsHistogram.Timer ignored =
-        dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-      if (!dataColumnSidecarUtil.verifyDataColumnSidecarKzgProofs(specLogic, dataColumnSidecar)) {
-        return SafeFuture.completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
-      }
-    } catch (final Throwable t) {
-      return SafeFuture.completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
+    // Verify KZG proofs
+    final Optional<InternalValidationResult> kzgProofResult =
+        verifyKzgProofsWithMetrics(dataColumnSidecarUtil, specLogic, dataColumnSidecar);
+    if (kzgProofResult.isPresent()) {
+      return SafeFuture.completedFuture(kzgProofResult.get());
     }
 
     return gossipValidationHelper
@@ -508,33 +493,18 @@ public class DataColumnSidecarGossipValidator {
           reject("DataColumnSidecar block header does not descend from finalized checkpoint"));
     }
 
-    /*
-     * [REJECT] The sidecar's kzg_commitments field inclusion proof is valid
-     * as verified by verify_data_column_sidecar_inclusion_proof(sidecar).
-     */
-    try (MetricsHistogram.Timer ignored =
-        dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer()) {
-      if (!validationHelper.verifyInclusionProof(
-          specLogic, dataColumnSidecar, validInclusionProofInfoSet)) {
-        return SafeFuture.completedFuture(
-            reject("DataColumnSidecar inclusion proof validation failed"));
-      }
-    } catch (final Throwable t) {
-      return SafeFuture.completedFuture(
-          reject("DataColumnSidecar inclusion proof validation failed"));
+    // Verify inclusion proof
+    final Optional<InternalValidationResult> inclusionProofResult =
+        verifyInclusionProofWithMetrics(validationHelper, specLogic, dataColumnSidecar);
+    if (inclusionProofResult.isPresent()) {
+      return SafeFuture.completedFuture(inclusionProofResult.get());
     }
 
-    /*
-     * [REJECT] The current finalized_checkpoint is an ancestor of the sidecar's block
-     * -- i.e. get_checkpoint_block(store, block_header.parent_root, store.finalized_checkpoint.epoch) == store.finalized_checkpoint.root.
-     */
-    try (MetricsHistogram.Timer ignored =
-        dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-      if (!validationHelper.verifyDataColumnSidecarKzgProofs(specLogic, dataColumnSidecar)) {
-        return SafeFuture.completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
-      }
-    } catch (final Throwable t) {
-      return SafeFuture.completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
+    // Verify KZG proofs
+    final Optional<InternalValidationResult> kzgProofResult =
+        verifyKzgProofsWithMetrics(validationHelper, specLogic, dataColumnSidecar);
+    if (kzgProofResult.isPresent()) {
+      return SafeFuture.completedFuture(kzgProofResult.get());
     }
 
     // Final equivocation check
@@ -545,6 +515,57 @@ public class DataColumnSidecarGossipValidator {
     }
 
     return SafeFuture.completedFuture(accept());
+  }
+
+  private Optional<InternalValidationResult> verifyInclusionProofWithMetrics(
+      final DataColumnSidecarUtil validationHelper,
+      final SpecLogic specLogic,
+      final DataColumnSidecar dataColumnSidecar) {
+
+    /*
+     * [REJECT] The sidecar's kzg_commitments field inclusion proof is valid
+     * as verified by verify_data_column_sidecar_inclusion_proof(sidecar).
+     */
+    try (MetricsHistogram.Timer ignored =
+        dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer()) {
+      if (!validationHelper.verifyInclusionProof(
+          specLogic, dataColumnSidecar, validInclusionProofInfoSet)) {
+        return Optional.of(reject("DataColumnSidecar inclusion proof validation failed"));
+      }
+    } catch (final Throwable t) {
+      return Optional.of(reject("DataColumnSidecar inclusion proof validation failed"));
+    }
+
+    return Optional.empty();
+  }
+
+  /**
+   * Verifies the KZG proofs for a data column sidecar with metrics timing.
+   *
+   * @param validationHelper fork-specific validation helper
+   * @param specLogic spec logic for the sidecar's slot
+   * @param dataColumnSidecar the sidecar to validate
+   * @return Optional containing rejection result if validation fails, empty if validation passes
+   */
+  private Optional<InternalValidationResult> verifyKzgProofsWithMetrics(
+      final DataColumnSidecarUtil validationHelper,
+      final SpecLogic specLogic,
+      final DataColumnSidecar dataColumnSidecar) {
+
+    /*
+     * [REJECT] The sidecar's column data is valid
+     *          as verified by verify_data_column_sidecar_kzg_proofs(sidecar).
+     */
+    try (MetricsHistogram.Timer ignored =
+        dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
+      if (!validationHelper.verifyDataColumnSidecarKzgProofs(specLogic, dataColumnSidecar)) {
+        return Optional.of(reject("DataColumnSidecar does not pass kzg validation"));
+      }
+    } catch (final Throwable t) {
+      return Optional.of(reject("DataColumnSidecar does not pass kzg validation"));
+    }
+
+    return Optional.empty();
   }
 
   public void markForEquivocation(
