@@ -81,7 +81,6 @@ public class GossipValidationHelper {
       final UInt64 proposerIndex,
       final BLSSignature signature,
       final BeaconState postState) {
-
     return spec.getValidatorPubKey(postState, proposerIndex)
         .map(publicKey -> BLS.verify(publicKey, signingRoot, signature))
         .orElse(false);
@@ -92,8 +91,9 @@ public class GossipValidationHelper {
       final UInt64 builderIndex,
       final BLSSignature signature,
       final BeaconState postState) {
-    return isSignatureValidWithRespectToProposerIndex(
-        signingRoot, builderIndex, signature, postState);
+    return spec.getBuilderPubKey(postState, builderIndex)
+        .map(publicKey -> BLS.verify(publicKey, signingRoot, signature))
+        .orElse(false);
   }
 
   /**
