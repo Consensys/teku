@@ -274,15 +274,8 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
 
   @Override
   public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
-    final DataColumnSamplingTracker tracker = getOrCreateTracker(block.getSlot(), block.getRoot());
-
-    if (tracker.completionFuture().isDone()) {
-      return;
-    }
-
-    if (tracker.rpcFetchInProgress().compareAndSet(false, true)) {
-      fetchMissingColumnsViaRPC(block.getSlot(), block.getRoot(), tracker);
-    }
+    LOG.debug("Sampler received block {} - origin: {}", block.getSlotAndBlockRoot(), remoteOrigin);
+    getOrCreateTracker(block.getSlot(), block.getRoot());
   }
 
   @Override

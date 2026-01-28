@@ -40,7 +40,7 @@ public class BlockEventsListenerRouter implements BlockEventsListener {
     this.spec = spec;
   }
 
-  private BlockEventsListener getBlockPrunedTrackerFactory(final UInt64 slot) {
+  private BlockEventsListener lookupBlockEventsListener(final UInt64 slot) {
     final SpecMilestone blockMilestone = spec.atSlot(slot).getMilestone();
     if (blockMilestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
       return dasSamplerSupplier.get();
@@ -56,16 +56,16 @@ public class BlockEventsListenerRouter implements BlockEventsListener {
     if (recentChainData.containsBlock(block.getRoot())) {
       return;
     }
-    getBlockPrunedTrackerFactory(block.getSlot()).onNewBlock(block, remoteOrigin);
+    lookupBlockEventsListener(block.getSlot()).onNewBlock(block, remoteOrigin);
   }
 
   @Override
   public void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {
-    getBlockPrunedTrackerFactory(slotAndBlockRoot.getSlot()).removeAllForBlock(slotAndBlockRoot);
+    lookupBlockEventsListener(slotAndBlockRoot.getSlot()).removeAllForBlock(slotAndBlockRoot);
   }
 
   @Override
   public void enableBlockImportOnCompletion(final SignedBeaconBlock block) {
-    getBlockPrunedTrackerFactory(block.getSlot()).enableBlockImportOnCompletion(block);
+    lookupBlockEventsListener(block.getSlot()).enableBlockImportOnCompletion(block);
   }
 }
