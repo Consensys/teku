@@ -147,7 +147,7 @@ class SyncCommitteeStateUtilsTest {
     when(recentChainData.getSlotForBlockRoot(blockRoot)).thenReturn(Optional.of(blockSlot));
 
     assertThatSafeFuture(stateUtils.getStateForSyncCommittee(slot)).isCompletedWithEmptyOptional();
-    verify(recentChainData, never()).retrieveBlockState(any());
+    verify(recentChainData, never()).retrieveBlockState(any(SlotAndBlockRoot.class));
   }
 
   private void assertRetrievedStateIsSuitable(final UInt64 slot, final BeaconState state) {
