@@ -79,7 +79,9 @@ public class GossipValidationHelper {
       final UInt64 builderIndex,
       final BLSSignature signature,
       final BeaconState state) {
-    return isSignatureValidForIndex(signingRoot, builderIndex, signature, state);
+    return spec.getBuilderPubKey(state, builderIndex)
+        .map(publicKey -> BLS.verify(publicKey, signingRoot, signature))
+        .orElse(false);
   }
 
   public boolean isSignatureValidWithRespectToProposerIndex(
@@ -87,15 +89,7 @@ public class GossipValidationHelper {
       final UInt64 proposerIndex,
       final BLSSignature signature,
       final BeaconState state) {
-    return isSignatureValidForIndex(signingRoot, proposerIndex, signature, state);
-  }
-
-  private boolean isSignatureValidForIndex(
-      final Bytes signingRoot,
-      final UInt64 validatorIndex,
-      final BLSSignature signature,
-      final BeaconState state) {
-    return spec.getValidatorPubKey(state, validatorIndex)
+    return spec.getValidatorPubKey(state, proposerIndex)
         .map(publicKey -> BLS.verify(publicKey, signingRoot, signature))
         .orElse(false);
   }
@@ -195,11 +189,18 @@ public class GossipValidationHelper {
   }
 
   public boolean builderHasEnoughBalanceForBid(
-      final UInt64 value, final UInt64 builderIndex, final BeaconState state, final UInt64 slot) {
+      final UInt64 bidValue,
+      final UInt64 builderIndex,
+      final BeaconState state,
+      final UInt64 slot) {
     final UInt64 builderBalance = state.getBalances().get(builderIndex.intValue()).get();
     final UInt64 minActivationBalance =
         SpecConfigGloas.required(spec.atSlot(slot).getConfig()).getMinActivationBalance();
-    return minActivationBalance.plus(value).isLessThanOrEqualTo(builderBalance);
+    try {
+      return minActivationBalance.plus(bidValue).isLessThanOrEqualTo(builderBalance);
+    } catch (final ArithmeticException e) {
+      return false;
+    }
   }
 
   public boolean isBlockHashKnown(final Bytes32 blockHash, final Bytes32 blockRoot) {

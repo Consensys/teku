@@ -30,8 +30,10 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
+import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
@@ -48,6 +50,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -148,6 +152,53 @@ public class GossipValidationHelperTest {
                 signedBlock.getProposerIndex().increment(),
                 signedBlock.getSignature(),
                 headState))
+        .isFalse();
+  }
+
+  @TestTemplate
+  void isSignatureValidWithRespectToBuilderIndex_shouldComputeCorrectly(
+      final SpecContext specContext) {
+    specContext.assumeGloasActive();
+
+    final BeaconState state = recentChainData.getBestState().orElseThrow().getImmediately();
+    final UInt64 builderIndex = UInt64.ZERO;
+
+    // Get the builder's public key to ensure builder exists
+    if (spec.getBuilderPubKey(state, builderIndex).isEmpty()) {
+      // Skip test if no builders in state
+      return;
+    }
+
+    // Create a builder with a known keypair
+    final BLSKeyPair builderKeyPair = BLSKeyGenerator.generateKeyPairs(1).get(0);
+    final Builder builder =
+        dataStructureUtil.builderBuilder().publicKey(builderKeyPair.getPublicKey()).build();
+
+    // Create a modified state with our builder at index 0
+    final BeaconState modifiedState =
+        state.updated(
+            mutableState -> {
+              MutableBeaconStateGloas gloasState = MutableBeaconStateGloas.required(mutableState);
+              final SszMutableList<Builder> builders = gloasState.getBuilders();
+              if (builders.size() > builderIndex.intValue()) {
+                builders.set(builderIndex.intValue(), builder);
+              }
+            });
+
+    // Create a message and sign it with the builder's keypair
+    final Bytes message = dataStructureUtil.randomBytes32();
+    final BLSSignature signature = BLS.sign(builderKeyPair.getSecretKey(), message);
+
+    // Verify signature is valid with correct builder index
+    assertThat(
+            gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
+                message, builderIndex, signature, modifiedState))
+        .isTrue();
+
+    // Verify signature is invalid with wrong builder index
+    assertThat(
+            gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
+                message, builderIndex.increment(), signature, modifiedState))
         .isFalse();
   }
 
@@ -426,6 +477,75 @@ public class GossipValidationHelperTest {
 
   private UInt64 getSlotStartTimeMillis(final UInt64 slot) {
     return spec.computeTimeAtSlot(slot, recentChainData.getGenesisTime()).times(1000);
+  }
+
+  @TestTemplate
+  void builderHasEnoughBalanceForBid_shouldHandleOverflow(final SpecContext specContext) {
+    specContext.assumeGloasActive();
+    final BeaconState state = recentChainData.getBestState().orElseThrow().getImmediately();
+    final UInt64 slot = state.getSlot();
+    final UInt64 builderIndex = UInt64.ZERO;
+
+    // Set a very large bidValue that will cause overflow when added to minActivationBalance
+    final UInt64 largeBidValue = UInt64.MAX_VALUE.minus(1);
+
+    // This should return false because minActivationBalance + largeBidValue will overflow
+    assertThat(
+            gossipValidationHelper.builderHasEnoughBalanceForBid(
+                largeBidValue, builderIndex, state, slot))
+        .isFalse();
+  }
+
+  @TestTemplate
+  void builderHasEnoughBalanceForBid_shouldReturnFalseWhenBidExceedsExcessBalance(
+      final SpecContext specContext) {
+    specContext.assumeGloasActive();
+    final BeaconState originalState = recentChainData.getBestState().orElseThrow().getImmediately();
+    final UInt64 slot = originalState.getSlot();
+    final UInt64 builderIndex = UInt64.ZERO;
+
+    // Set builder balance to a known value
+    final UInt64 builderBalance = UInt64.valueOf(50_000_000_000L); // 50 ETH in Gwei
+    final BeaconState modifiedState =
+        originalState.updated(
+            mutableState ->
+                mutableState
+                    .getBalances()
+                    .set(builderIndex.intValue(), SszUInt64.of(builderBalance)));
+
+    // Bid value that exceeds excess balance (minActivationBalance + bidValue > builderBalance)
+    final UInt64 excessiveBidValue = builderBalance.plus(1);
+
+    assertThat(
+            gossipValidationHelper.builderHasEnoughBalanceForBid(
+                excessiveBidValue, builderIndex, modifiedState, slot))
+        .isFalse();
+  }
+
+  @TestTemplate
+  void builderHasEnoughBalanceForBid_shouldReturnTrueWhenBuilderHasSufficientBalance(
+      final SpecContext specContext) {
+    specContext.assumeGloasActive();
+    final BeaconState originalState = recentChainData.getBestState().orElseThrow().getImmediately();
+    final UInt64 slot = originalState.getSlot();
+    final UInt64 builderIndex = UInt64.ZERO;
+
+    // Set builder balance to a large value
+    final UInt64 builderBalance = UInt64.valueOf(100_000_000_000L); // 100 ETH in Gwei
+    final BeaconState modifiedState =
+        originalState.updated(
+            mutableState ->
+                mutableState
+                    .getBalances()
+                    .set(builderIndex.intValue(), SszUInt64.of(builderBalance)));
+
+    // Reasonable bid value
+    final UInt64 bidValue = UInt64.valueOf(1_000_000_000L); // 1 ETH in Gwei
+
+    assertThat(
+            gossipValidationHelper.builderHasEnoughBalanceForBid(
+                bidValue, builderIndex, modifiedState, slot))
+        .isTrue();
   }
 
   private void assertIsSlotCurrent(
