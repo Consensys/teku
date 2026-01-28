@@ -290,7 +290,7 @@ public class DataColumnSidecarGossipValidator {
      * [REJECT] The sidecar's slot matches the slot of the block with root beacon_block_root
      */
     final DataColumnSidecarValidationResult blockSlotMatchResult =
-        dataColumnSidecarUtil.validateBlockSlotMatch(
+        dataColumnSidecarUtil.validateBlockSlot(
             dataColumnSidecar, gossipValidationHelper::getSlotForBlockRoot);
     if (!blockSlotMatchResult.isValid()) {
       return completedFuture(

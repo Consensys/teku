@@ -126,7 +126,7 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   }
 
   @Override
-  public DataColumnSidecarValidationResult validateBlockSlotMatch(
+  public DataColumnSidecarValidationResult validateBlockSlot(
       final DataColumnSidecar dataColumnSidecar,
       final Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot) {
     // Fulu does not validate block slot match (this is Gloas-specific)

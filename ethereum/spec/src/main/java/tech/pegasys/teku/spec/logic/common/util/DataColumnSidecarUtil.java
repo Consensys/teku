@@ -99,14 +99,11 @@ public interface DataColumnSidecarUtil {
    * @param getSlotForBlockRoot function to get the slot for a block root
    * @return validation result
    */
-  DataColumnSidecarValidationResult validateBlockSlotMatch(
+  DataColumnSidecarValidationResult validateBlockSlot(
       DataColumnSidecar dataColumnSidecar, Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot);
 
   /**
    * Validate parent block for the data column sidecar.
-   *
-   * <p>Fulu: Validates that parent block exists, is valid, and has correct slot relationship.
-   * Gloas: Returns VALID (not applicable).
    *
    * @param blockHeader the block header from the sidecar
    * @param getSlotForBlockRoot function to get slot for a block root
@@ -124,13 +121,6 @@ public interface DataColumnSidecarUtil {
   /**
    * Extract the tracking key from a data column dataColumnSidecar.
    *
-   * <p>Different forks use different tracking keys:
-   *
-   * <ul>
-   *   <li>Fulu: (slot, proposerIndex, columnIndex) extracted from signed block header
-   *   <li>Gloas: (beaconBlockRoot, columnIndex) extracted directly from dataColumnSidecar
-   * </ul>
-   *
    * @param dataColumnSidecar the data column dataColumnSidecar
    * @return the fork-appropriate tracking key
    */
@@ -138,9 +128,6 @@ public interface DataColumnSidecarUtil {
 
   /**
    * Extract tracking key from block header and dataColumnSidecar for late validation check.
-   *
-   * <p>Used in the second equivocation check after all validations pass. For Gloas, this may still
-   * use the dataColumnSidecar's beacon block root rather than computing from the header.
    *
    * @param header the beacon block header (may be null for Gloas)
    * @param dataColumnSidecar the data column dataColumnSidecar
@@ -152,11 +139,6 @@ public interface DataColumnSidecarUtil {
   /**
    * Verify structural validity of the data column dataColumnSidecar.
    *
-   * <ul>
-   *   <li>Fulu: checks signed block header, inclusion proof structure, KZG commitments
-   *   <li>Gloas: simpler checks without header signature validation
-   * </ul>
-   *
    * @param specLogic the fork-specific SpecLogic containing MiscHelpers
    * @param dataColumnSidecar the data column dataColumnSidecar
    * @return true if structure is valid
@@ -166,11 +148,6 @@ public interface DataColumnSidecarUtil {
 
   /**
    * Verify inclusion proof if applicable.
-   *
-   * <ul>
-   *   <li>Fulu: verifies KZG commitments inclusion proof using Merkle proof
-   *   <li>Gloas: returns true (no inclusion proof in Gloas)
-   * </ul>
    *
    * @param specLogic the fork-specific SpecLogic containing MiscHelpers
    * @param dataColumnSidecar the data column sidecar
@@ -186,9 +163,6 @@ public interface DataColumnSidecarUtil {
   /**
    * Verify KZG proofs for the data column sidecar.
    *
-   * <p>Both Fulu and Gloas validate KZG proofs, but they may use different MiscHelpers
-   * implementations.
-   *
    * @param specLogic the fork-specific SpecLogic containing MiscHelpers
    * @param dataColumnSidecar the data column sidecar
    * @return true if KZG proofs are valid
@@ -198,11 +172,6 @@ public interface DataColumnSidecarUtil {
 
   /**
    * Get signature verification data if applicable.
-   *
-   * <ul>
-   *   <li>Fulu: returns signature verification data (signing root, proposer index, signature)
-   *   <li>Gloas: returns empty (no header signature in Gloas)
-   * </ul>
    *
    * @param spec the Spec instance for domain and signing root computation
    * @param state the beacon state for proposer lookup
@@ -215,11 +184,6 @@ public interface DataColumnSidecarUtil {
   /**
    * Get beacon block header if applicable.
    *
-   * <ul>
-   *   <li>Fulu: extracts BeaconBlockHeader from signed block header in dataColumnSidecar
-   *   <li>Gloas: returns empty (no header in Gloas sidecars)
-   * </ul>
-   *
    * @param dataColumnSidecar the data column dataColumnSidecar
    * @return Optional containing the header if applicable
    */
@@ -227,11 +191,6 @@ public interface DataColumnSidecarUtil {
 
   /**
    * Cache validated header/proof info for optimization if applicable.
-   *
-   * <ul>
-   *   <li>Fulu: caches signed block header hash and inclusion proof info for future validations
-   *   <li>Gloas: no-op (nothing to cache)
-   * </ul>
    *
    * @param dataColumnSidecar the validated data column dataColumnSidecar
    * @param validSignedBlockHeaders cache of validated signed block header hashes

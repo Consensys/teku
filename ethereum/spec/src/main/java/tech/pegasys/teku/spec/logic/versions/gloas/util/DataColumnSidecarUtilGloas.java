@@ -104,7 +104,7 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
    * [REJECT] The sidecar's slot matches the slot of the block with root beacon_block_root
    */
   @Override
-  public DataColumnSidecarValidationResult validateBlockSlotMatch(
+  public DataColumnSidecarValidationResult validateBlockSlot(
       final DataColumnSidecar dataColumnSidecar,
       final Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot) {
     final Bytes32 beaconBlockRoot = dataColumnSidecar.getBeaconBlockRoot();
