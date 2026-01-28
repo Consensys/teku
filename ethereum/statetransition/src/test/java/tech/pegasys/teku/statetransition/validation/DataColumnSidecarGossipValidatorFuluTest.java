@@ -235,15 +235,17 @@ public class DataColumnSidecarGossipValidatorFuluTest
 
   @Test
   void shouldIgnoreWhenIsNotFirstValidSignature() {
-    dataColumnSidecarGossipValidator
-        .getReceivedValidDataColumnSidecarInfoSet()
-        .add(new FuluTrackingKey(slot, proposerIndex, index));
+    // First validation - should accept and add tracking key to the set
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
+    // Second validation with same sidecar - should ignore (duplicate tracking key)
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
 
-    assertValidationMetrics(Map.of(ValidationResultCode.IGNORE, 1));
+    assertValidationMetrics(Map.of(ValidationResultCode.ACCEPT, 1, ValidationResultCode.IGNORE, 1));
   }
 
   @Test
@@ -397,7 +399,9 @@ public class DataColumnSidecarGossipValidatorFuluTest
             });
     when(validationHelper.verifyDataColumnSidecarStructure(any(), any())).thenReturn(true);
     when(validationHelper.verifyDataColumnSidecarKzgProofs(any(), any())).thenReturn(true);
-    when(validationHelper.validateExecutionPayloadReference(any(), any(), any(), any()))
+    when(validationHelper.validateKzgCommitmentsRoot(any(), any()))
+        .thenReturn(DataColumnSidecarValidationResult.valid());
+    when(validationHelper.validateBlockSlotMatch(any(), any()))
         .thenReturn(DataColumnSidecarValidationResult.valid());
     when(validationHelper.validateParentBlock(any(), any(), any(), any()))
         .thenReturn(DataColumnSidecarValidationResult.valid());

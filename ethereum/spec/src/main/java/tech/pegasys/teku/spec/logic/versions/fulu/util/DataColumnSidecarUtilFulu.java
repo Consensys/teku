@@ -118,12 +118,18 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   }
 
   @Override
-  public DataColumnSidecarValidationResult validateExecutionPayloadReference(
-      final Spec spec,
+  public DataColumnSidecarValidationResult validateKzgCommitmentsRoot(
       final DataColumnSidecar dataColumnSidecar,
-      final Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot,
       final Function<Bytes32, Optional<Bytes32>> getBlockKzgCommitmentsRoot) {
-    // Fulu does not validate execution payload reference (this is Gloas-specific)
+    // Fulu does not validate the kzg commitments root (this is Gloas-specific)
+    return DataColumnSidecarValidationResult.valid();
+  }
+
+  @Override
+  public DataColumnSidecarValidationResult validateBlockSlotMatch(
+      final DataColumnSidecar dataColumnSidecar,
+      final Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot) {
+    // Fulu does not validate block slot match (this is Gloas-specific)
     return DataColumnSidecarValidationResult.valid();
   }
 

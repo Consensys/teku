@@ -16,10 +16,10 @@ package tech.pegasys.teku.statetransition.validation;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.spec.config.Constants.BEST_CASE_NON_FINALIZED_EPOCHS;
 import static tech.pegasys.teku.spec.config.Constants.VALID_BLOCK_SET_SIZE;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -143,7 +143,7 @@ public class DataColumnSidecarGossipValidator {
 
   @VisibleForTesting
   public Set<DataColumnSidecarTrackingKey> getReceivedValidDataColumnSidecarInfoSet() {
-    return receivedValidDataColumnSidecarInfoSet;
+    return Collections.unmodifiableSet(receivedValidDataColumnSidecarInfoSet);
   }
 
   private DataColumnSidecarGossipValidator(
@@ -269,18 +269,47 @@ public class DataColumnSidecarGossipValidator {
     }
 
     /*
+     * FULU
+     * [IGNORE] The sidecar's block's parent (defined by block_header.parent_root) has been seen (via gossip or non-gossip sources)
+     * (a client MAY queue sidecars for processing once the parent block is retrieved).
+     *
+     * GLOAS
+     * [IGNORE] The sidecar's beacon_block_root has been seen via a valid signed execution payload bid.
+     * A client MAY queue the sidecar for processing once the block is retrieved.
+     */
+
+    if (!dataColumnSidecarUtil.isBlockSeen(
+        dataColumnSidecar, gossipValidationHelper::isBlockAvailable)) {
+      LOG.trace(
+          "Data column sidecar's referenced block has not been seen. Saving for future processing");
+      return completedFuture(SAVE_FOR_FUTURE);
+    }
+
+    /*
      * Gloas-specific validations
      * [REJECT] The sidecar's slot matches the slot of the block with root beacon_block_root
+     */
+    final DataColumnSidecarValidationResult blockSlotMatchResult =
+        dataColumnSidecarUtil.validateBlockSlotMatch(
+            dataColumnSidecar, gossipValidationHelper::getSlotForBlockRoot);
+    if (!blockSlotMatchResult.isValid()) {
+      return completedFuture(
+          reject(
+              blockSlotMatchResult
+                  .getReason()
+                  .orElse("DataColumnSidecar slot doesn't match the corresponding block slot")));
+    }
+
+    /*
+     * Gloas-specific validations
      *
      * [REJECT] The hash of the sidecar's kzg_commitments matches the blob_kzg_commitments_root
      * in the corresponding builder's bid for sidecar.beacon_block_root.
      */
 
     final DataColumnSidecarValidationResult payloadRefResult =
-        dataColumnSidecarUtil.validateExecutionPayloadReference(
-            spec,
+        dataColumnSidecarUtil.validateKzgCommitmentsRoot(
             dataColumnSidecar,
-            gossipValidationHelper::getSlotForBlockRoot,
             beaconBlockRoot ->
                 gossipValidationHelper
                     .getRecentlyValidatedSignedBlockByRoot(beaconBlockRoot)
@@ -298,23 +327,6 @@ public class DataColumnSidecarGossipValidator {
     if (!payloadRefResult.isValid()) {
       return completedFuture(
           reject(payloadRefResult.getReason().orElse("Execution payload validation failed")));
-    }
-
-    /*
-     * FULU
-     * [IGNORE] The sidecar's block's parent (defined by block_header.parent_root) has been seen (via gossip or non-gossip sources)
-     * (a client MAY queue sidecars for processing once the parent block is retrieved).
-     *
-     * GLOAS
-     * [IGNORE] The sidecar's beacon_block_root has been seen via a valid signed execution payload bid.
-     * A client MAY queue the sidecar for processing once the block is retrieved.
-     */
-
-    if (!dataColumnSidecarUtil.isBlockSeen(
-        dataColumnSidecar, gossipValidationHelper::isBlockAvailable)) {
-      LOG.trace(
-          "Data column sidecar's referenced block has not been seen. Saving for future processing");
-      return completedFuture(SAVE_FOR_FUTURE);
     }
 
     // For sidecars with headers (Fulu), perform additional validations

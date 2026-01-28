@@ -152,11 +152,12 @@ public class DataColumnSidecarGossipValidatorGloasTest
 
   @Test
   void shouldIgnoreWhenIsNotFirstValidForGloasTrackingKey() {
-    // Add tracking key to the set (beaconBlockRoot + columnIndex)
-    dataColumnSidecarGossipValidator
-        .getReceivedValidDataColumnSidecarInfoSet()
-        .add(new GloasTrackingKey(beaconBlockRoot, index));
+    // First validation - should accept and add tracking key to the set
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
+    // Second validation with same sidecar - should ignore (duplicate tracking key)
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
@@ -198,12 +199,7 @@ public class DataColumnSidecarGossipValidatorGloasTest
     assertThat(dataColumnSidecarGossipValidator.getReceivedValidDataColumnSidecarInfoSet())
         .contains(new GloasTrackingKey(beaconBlockRoot, index));
 
-    // Manually add a duplicate to the tracking set (same beaconBlockRoot and columnIndex)
-    dataColumnSidecarGossipValidator
-        .getReceivedValidDataColumnSidecarInfoSet()
-        .add(new GloasTrackingKey(beaconBlockRoot, index));
-
-    // Same beaconBlockRoot and columnIndex - should ignore
+    // Same beaconBlockRoot and columnIndex - should ignore (already in set from first validation)
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);

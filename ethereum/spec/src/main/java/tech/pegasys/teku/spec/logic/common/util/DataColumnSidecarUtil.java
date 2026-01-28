@@ -81,22 +81,26 @@ public interface DataColumnSidecarUtil {
       DataColumnSidecar dataColumnSidecar, Function<Bytes32, Boolean> isBlockRootSeen);
 
   /**
-   * Validate execution payload reference for the data column sidecar.
+   * Validate that the sidecar's KZG commitments root matches the block's KZG commitments root.
    *
-   * <p>Gloas: Validates that the execution payload envelope is known and KZG commitments match.
-   * Fulu: Returns VALID (not applicable).
-   *
-   * @param spec the spec
    * @param dataColumnSidecar the data column sidecar to validate
-   * @param getSlotForBlockRoot function to get slot for a block root
-   * @param getBlockKzgCommitmentsRoot function to corresponding block's kzg commitments root
+   * @param getBlockKzgCommitmentsRoot function to get the block's kzg commitments root by block
+   *     root
    * @return validation result
    */
-  DataColumnSidecarValidationResult validateExecutionPayloadReference(
-      Spec spec,
+  DataColumnSidecarValidationResult validateKzgCommitmentsRoot(
       DataColumnSidecar dataColumnSidecar,
-      Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot,
       Function<Bytes32, Optional<Bytes32>> getBlockKzgCommitmentsRoot);
+
+  /**
+   * Validate that the sidecar's slot matches the referenced block's slot.
+   *
+   * @param dataColumnSidecar the data column sidecar to validate
+   * @param getSlotForBlockRoot function to get the slot for a block root
+   * @return validation result
+   */
+  DataColumnSidecarValidationResult validateBlockSlotMatch(
+      DataColumnSidecar dataColumnSidecar, Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot);
 
   /**
    * Validate parent block for the data column sidecar.
@@ -245,7 +249,7 @@ public interface DataColumnSidecarUtil {
    * @param inclusionProofRoot hash tree root of inclusion proof
    * @param bodyRoot the beacon block body root
    */
-  public record InclusionProofInfo(
+  record InclusionProofInfo(
       Bytes32 commitmentsRoot, Bytes32 inclusionProofRoot, Bytes32 bodyRoot) {}
 
   /**
@@ -255,11 +259,11 @@ public interface DataColumnSidecarUtil {
    * @param proposerIndex the proposer index
    * @param signature the BLS signature to verify
    */
-  public record SignatureVerificationData(
+  record SignatureVerificationData(
       Bytes signingRoot, UInt64 proposerIndex, BLSSignature signature) {}
 
   /** Result of slot inclusion gossip validation. */
-  public enum SlotInclusionGossipValidationResult {
+  enum SlotInclusionGossipValidationResult {
     IGNORE,
     SAVE_FOR_FUTURE
   }

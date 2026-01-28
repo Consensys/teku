@@ -70,40 +70,15 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
   }
 
   /*
-   * [REJECT] The sidecar's slot matches the slot of the block with root beacon_block_root
-   *
    * [REJECT] The hash of the sidecar's kzg_commitments matches the blob_kzg_commitments_root
    * in the corresponding builder's bid for sidecar.beacon_block_root
    */
   @Override
-  public DataColumnSidecarValidationResult validateExecutionPayloadReference(
-      final Spec spec,
+  public DataColumnSidecarValidationResult validateKzgCommitmentsRoot(
       final DataColumnSidecar dataColumnSidecar,
-      final Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot,
       final Function<Bytes32, Optional<Bytes32>> getBlockKzgCommitmentsRoot) {
 
     final Bytes32 beaconBlockRoot = dataColumnSidecar.getBeaconBlockRoot();
-
-    /*
-     * [REJECT] The sidecar's slot matches the slot of the block with root beacon_block_root
-     */
-    final Optional<UInt64> blockSlot = getSlotForBlockRoot.apply(beaconBlockRoot);
-    if (blockSlot.isEmpty()) {
-      return DataColumnSidecarValidationResult.invalid(
-          "DataColumnSidecar's beacon_block_root does not correspond to a known block");
-    }
-    if (!blockSlot.get().equals(dataColumnSidecar.getSlot())) {
-      return DataColumnSidecarValidationResult.invalid(
-          () ->
-              String.format(
-                  "DataColumnSidecar's slot %s does not match the block slot %s for beacon_block_root %s",
-                  dataColumnSidecar.getSlot(), blockSlot.get(), beaconBlockRoot));
-    }
-
-    /*
-     * [REJECT] The hash of the sidecar's kzg_commitments matches the blob_kzg_commitments_root
-     * in the corresponding builder's bid for sidecar.beacon_block_root
-     */
     final Optional<Bytes32> maybeBlockKzgCommitmentsRoot =
         getBlockKzgCommitmentsRoot.apply(beaconBlockRoot);
     if (maybeBlockKzgCommitmentsRoot.isEmpty()) {
@@ -122,6 +97,29 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
                   dataColumnSidecarCommitmentsRoot, commitmentsRoot));
     }
 
+    return DataColumnSidecarValidationResult.valid();
+  }
+
+  /*
+   * [REJECT] The sidecar's slot matches the slot of the block with root beacon_block_root
+   */
+  @Override
+  public DataColumnSidecarValidationResult validateBlockSlotMatch(
+      final DataColumnSidecar dataColumnSidecar,
+      final Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot) {
+    final Bytes32 beaconBlockRoot = dataColumnSidecar.getBeaconBlockRoot();
+    final Optional<UInt64> blockSlot = getSlotForBlockRoot.apply(beaconBlockRoot);
+    if (blockSlot.isEmpty()) {
+      return DataColumnSidecarValidationResult.invalid(
+          "DataColumnSidecar's beacon_block_root does not correspond to a known block");
+    }
+    if (!blockSlot.get().equals(dataColumnSidecar.getSlot())) {
+      return DataColumnSidecarValidationResult.invalid(
+          () ->
+              String.format(
+                  "DataColumnSidecar's slot %s does not match the block slot %s for beacon_block_root %s",
+                  dataColumnSidecar.getSlot(), blockSlot.get(), beaconBlockRoot));
+    }
     return DataColumnSidecarValidationResult.valid();
   }
 
