@@ -126,8 +126,7 @@ public class SimpleSidecarRetriever
   @Override
   public void stop() {}
 
-  @VisibleForTesting
-  Stream<RequestMatch> matchRequestsAndPeers() {
+  private Stream<RequestMatch> matchRequestsAndPeers() {
     final RequestTracker ongoingRequestsTracker = createFromCurrentPendingRequests();
     return pendingRequests.entrySet().stream()
         .filter(entry -> entry.getValue().activeRpcRequest == null)
