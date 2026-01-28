@@ -39,11 +39,7 @@ import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
  * <p>Implements Gloas gossip validation rules as per
  * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/p2p-interface.md#data_column_sidecar_subnet_id
  *
- * <p>Gloas sidecars do NOT include signed block headers, resulting in simplified validation: - No
- * slot/finalization checks (removed from Fulu) - No parent block validation (removed from Fulu) -
- * No inclusion proof verification (removed from Fulu) - No proposer verification (removed from
- * Fulu) - No signature verification (removed from Fulu) - ADDED: Execution payload reference
- * validation (beacon_block_root matching)
+ * <p>Gloas sidecars do NOT include signed block headers, resulting in simplified validation
  */
 public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
 

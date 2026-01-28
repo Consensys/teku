@@ -42,8 +42,6 @@ public interface DataColumnSidecarUtil {
   /**
    * Perform slot timing gossip validation checks
    *
-   * <p>This method checks if the sidecar should be IGNOREd or SAVE_FOR_FUTUREd based on slot timing
-   *
    * @param dataColumnSidecar the data column sidecar to validate
    * @param isSlotFromFuture function to check if a slot is from the future
    * @return validation result if the sidecar should be ignored or saved, empty if it passes
@@ -54,9 +52,6 @@ public interface DataColumnSidecarUtil {
   /**
    * Perform slot finalization gossip validation checks
    *
-   * <p>This method checks if the sidecar should be IGNOREd or SAVE_FOR_FUTUREd based on slot
-   * finalization status.
-   *
    * @param dataColumnSidecar the data column sidecar to validate
    * @param isSlotFinalized function to check if a slot is finalized
    * @return validation result if the sidecar should be ignored or saved, empty if it passes
@@ -66,12 +61,6 @@ public interface DataColumnSidecarUtil {
 
   /**
    * Check if the referenced block has been seen.
-   *
-   * <p>Fulu: Checks if the sidecar's block's parent (defined by block_header.parent_root) has been
-   * seen (via gossip or non-gossip sources).
-   *
-   * <p>Gloas: Checks if the sidecar's beacon_block_root has been seen via a valid signed execution
-   * payload bid.
    *
    * @param dataColumnSidecar the data column sidecar to validate
    * @param isBlockRootSeen function to check if a block root has been seen

@@ -43,9 +43,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
  * <p>Implements Fulu gossip validation rules as per
  * https://github.com/ethereum/consensus-specs/blob/master/specs/fulu/p2p-interface.md#data_column_sidecar_subnet_id
  *
- * <p>Fulu sidecars include signed block headers, which require: - Slot/finalization checks - Parent
- * block availability and validation - Inclusion proof verification - Proposer verification -
- * Signature verification
+ * <p>Fulu sidecars include signed block headers
  */
 public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
 
