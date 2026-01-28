@@ -24,10 +24,10 @@ import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockEventsListenerRouter implements BlockEventsListener {
-  final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
-  final Supplier<DataAvailabilitySampler> dasSamplerSupplier;
-  final RecentChainData recentChainData;
-  final Spec spec;
+  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
+  private final Supplier<DataAvailabilitySampler> dasSamplerSupplier;
+  private final RecentChainData recentChainData;
+  private final Spec spec;
 
   public BlockEventsListenerRouter(
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
