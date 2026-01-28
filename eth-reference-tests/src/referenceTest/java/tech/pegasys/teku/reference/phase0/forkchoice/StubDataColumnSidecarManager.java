@@ -34,7 +34,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.availability.Availabi
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
-import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -95,7 +94,6 @@ public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<
                     spec,
                     new ConcurrentHashMap<>(),
                     new GossipValidationHelper(spec, recentChainData, metricsSystem),
-                    ExecutionPayloadBidManager.NOOP,
                     metricsSystem,
                     recentChainData.getStore());
             validationResult.complete(validateDataColumnSidecar());
