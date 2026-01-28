@@ -230,9 +230,6 @@ public class DataColumnSidecarGossipValidatorFuluTest
     assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
   }
 
-  // TODO: Tests for inclusion proof and KZG validation failures require mocking at Spec level
-  // Temporarily commented out during MiscHelpers refactoring
-
   @Test
   void shouldIgnoreWhenIsNotFirstValidSignature() {
     // First validation - should accept and add tracking key to the set
