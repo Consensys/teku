@@ -19,8 +19,8 @@
       ],
       "signed_block_header": {
         "message": {
-          "slot": "4666673844721362956",
-          "proposer_index": "4665021361504678828",
+          "slot": "26360681478",
+          "proposer_index": "79963",
           "parent_root": "0xfd18cf40cc907a739be483f1ca0ee23ad65cdd3df23205eabc6d660a75d1f54e",
           "state_root": "0x103ac9406cdc59b89027eb1c9e97f607dd5fdccfa8fb2da4eaeea9d25032add9",
           "body_root": "0x6fdfab408c56b6105a76eff5c0435d09fc6ed7a938e7f946cf74fbbb9416428f"
@@ -59,8 +59,8 @@
       ],
       "signed_block_header": {
         "message": {
-          "slot": "4590659586689121994",
-          "proposer_index": "4589007099177470570",
+          "slot": "1344560997",
+          "proposer_index": "230738",
           "parent_root": "0x0413923f8a8494fa55044c196eeb367d2800a80969899f2e64ada348863fa491",
           "state_root": "0x17348c3f2ad0733f4b47b34442744b4a2e03a79b1f52c8e8922ee71060a05b1c",
           "body_root": "0xded09d3f4aedd5706b7e7dc2c7d90de31bfaa9e5fcf74dba08ab1cb8d17d357c"
@@ -111,8 +111,8 @@
       ],
       "signed_block_header": {
         "message": {
-          "slot": "4539432581202110249",
-          "proposer_index": "4544390030852162633",
+          "slot": "2601055124",
+          "proposer_index": "1036628",
           "parent_root": "0xbb0b0b3fe94fa42a5e0893ff71360feab7459127ca9149e88148b44625f31d08",
           "state_root": "0x1bb1ed3e09ca0083285797d894e275ebd7548c015a7d158b66ce053068d7b2bd",
           "body_root": "0x2ed2e73ea915e0c71d9afe03676b8ab8dd578b9311463e45934f49f843386a48"

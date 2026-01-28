@@ -122,7 +122,7 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
   @Override
   public DataColumnSidecarValidationResult validateParentBlock(
       final BeaconBlockHeader dataColumnSidecar,
-      final Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot,
+      final UInt64 parentBlockSlot,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final BiPredicate<UInt64, Bytes32> currentFinalizedCheckpointIsAncestorOfBlock) {
     // Gloas does not validate parent block (no header in Gloas sidecars)

@@ -345,18 +345,6 @@ public class DataColumnSidecarGossipValidator {
       final DataColumnSidecarUtil dataColumnSidecarUtil,
       final BeaconBlockHeader blockHeader) {
 
-    final DataColumnSidecarValidationResult parentBlockValidation =
-        dataColumnSidecarUtil.validateParentBlock(
-            blockHeader,
-            gossipValidationHelper::getSlotForBlockRoot,
-            invalidBlockRoots,
-            gossipValidationHelper::currentFinalizedCheckpointIsAncestorOfBlock);
-
-    if (!parentBlockValidation.isValid()) {
-      return SafeFuture.completedFuture(
-          reject(parentBlockValidation.getReason().orElse("Parent block validation failed")));
-    }
-
     // Optimization: If we have already completely verified a sidecar with the same header
     final Bytes32 headerHash =
         DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader().hashTreeRoot();
@@ -364,6 +352,12 @@ public class DataColumnSidecarGossipValidator {
       return validateWithKnownValidHeader(
           specLogic, dataColumnSidecarUtil, dataColumnSidecar, blockHeader);
     }
+
+    /*
+     * [IGNORE] The sidecar's block's parent (defined by block_header.parent_root) has been seen
+     * (via gossip or non-gossip sources)
+     * (a client MAY queue sidecars for processing once the parent block is retrieved).
+     */
     final Optional<UInt64> maybeParentBlockSlot =
         gossipValidationHelper.getSlotForBlockRoot(blockHeader.getParentRoot());
     if (maybeParentBlockSlot.isEmpty()) {
@@ -372,6 +366,18 @@ public class DataColumnSidecarGossipValidator {
               "DataColumnSidecar block header parent block does not exist. It will be saved for future processing"));
     }
     final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
+
+    final DataColumnSidecarValidationResult parentBlockValidation =
+        dataColumnSidecarUtil.validateParentBlock(
+            blockHeader,
+            parentBlockSlot,
+            invalidBlockRoots,
+            gossipValidationHelper::currentFinalizedCheckpointIsAncestorOfBlock);
+
+    if (!parentBlockValidation.isValid()) {
+      return SafeFuture.completedFuture(
+          reject(parentBlockValidation.getReason().orElse("Parent block validation failed")));
+    }
 
     // Verify inclusion proof
     final Optional<InternalValidationResult> inclusionProofResult =

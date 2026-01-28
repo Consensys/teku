@@ -95,7 +95,7 @@ public interface DataColumnSidecarUtil {
    * Validate parent block for the data column sidecar.
    *
    * @param blockHeader the block header from the sidecar
-   * @param getSlotForBlockRoot function to get slot for a block root
+   * @param parentBlockSlot the slot of the parent block
    * @param invalidBlockRoots map of invalid block roots
    * @param currentFinalizedCheckpointIsAncestorOfBlock function to check finalized checkpoint
    *     ancestry
@@ -103,7 +103,7 @@ public interface DataColumnSidecarUtil {
    */
   DataColumnSidecarValidationResult validateParentBlock(
       BeaconBlockHeader blockHeader,
-      Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot,
+      UInt64 parentBlockSlot,
       Map<Bytes32, BlockImportResult> invalidBlockRoots,
       BiPredicate<UInt64, Bytes32> currentFinalizedCheckpointIsAncestorOfBlock);
 

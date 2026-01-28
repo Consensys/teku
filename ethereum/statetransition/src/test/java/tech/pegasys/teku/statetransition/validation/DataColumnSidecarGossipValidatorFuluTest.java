@@ -185,9 +185,9 @@ public class DataColumnSidecarGossipValidatorFuluTest
 
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
+        .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
 
-    assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
+    assertValidationMetrics(Map.of(ValidationResultCode.SAVE_FOR_FUTURE, 1));
   }
 
   @Test

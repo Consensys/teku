@@ -140,17 +140,9 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   @Override
   public DataColumnSidecarValidationResult validateParentBlock(
       final BeaconBlockHeader blockHeader,
-      final Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot,
+      final UInt64 parentBlockSlot,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final BiPredicate<UInt64, Bytes32> currentFinalizedCheckpointIsAncestorOfBlock) {
-
-    final Optional<UInt64> maybeParentBlockSlot =
-        getSlotForBlockRoot.apply(blockHeader.getParentRoot());
-    if (maybeParentBlockSlot.isEmpty()) {
-      return DataColumnSidecarValidationResult.invalid(
-          "DataColumnSidecar block header parent block does not exist");
-    }
-    final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
 
     /*
      * [REJECT] The sidecar's block's parent (defined by block_header.parent_root) passes validation.
