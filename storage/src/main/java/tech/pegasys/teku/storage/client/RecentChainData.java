@@ -669,7 +669,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
     if (store == null) {
       return EmptyStoreResults.EMPTY_STATE_FUTURE;
     }
-    return store.retrieveStateAtSlot(slotAndBlockRoot);
+    return store.retrieveBlockState(slotAndBlockRoot);
   }
 
   public SafeFuture<Optional<BeaconState>> retrieveStateInEffectAtSlot(final UInt64 slot) {
