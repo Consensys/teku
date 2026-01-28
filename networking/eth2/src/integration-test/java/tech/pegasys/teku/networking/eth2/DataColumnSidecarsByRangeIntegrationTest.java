@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -126,7 +126,7 @@ public class DataColumnSidecarsByRangeIntegrationTest extends AbstractRpcMethodI
           nonCanonicalDataColumnSidecars.addAll(dataColumnSidecars);
           peerStorage.chainUpdater().saveBlock(signedBlockAndState);
           dataColumnSidecars.forEach(
-              sidecar -> safeJoin(peerStorage.chainStorage().onNewNonCanonicalSidecar(sidecar)));
+              sidecar -> peerStorage.database().addNonCanonicalSidecar(sidecar));
         });
 
     // make sure canonical head is the canonical head
