@@ -150,8 +150,8 @@ import tech.pegasys.teku.statetransition.attestation.utils.AggregatingAttestatio
 import tech.pegasys.teku.statetransition.attestation.utils.AggregatingAttestationPoolProfilerCSV;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl;
-import tech.pegasys.teku.statetransition.blobs.BlobTrackerPool;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.blobs.BlockEventsListenerRouter;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
@@ -2079,15 +2079,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
             ? Optional.of(BlockImportMetrics.create(metricsSystem))
             : Optional.empty();
 
-    final BlobTrackerPool blobTrackerPool =
-        new BlobTrackerPool(
+    final BlockEventsListenerRouter blockEventsListenerRouter =
+        new BlockEventsListenerRouter(
             blockBlobSidecarsTrackersPool, () -> dataAvailabilitySampler, recentChainData, spec);
 
     blockManager =
         new BlockManager(
             recentChainData,
             blockImporter,
-            blobTrackerPool,
+            blockEventsListenerRouter,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,

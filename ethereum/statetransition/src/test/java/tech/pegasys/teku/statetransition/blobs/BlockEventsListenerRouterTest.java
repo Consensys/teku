@@ -31,7 +31,7 @@ import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class BlobTrackerPoolTest {
+public class BlockEventsListenerRouterTest {
   final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool =
       mock(BlockBlobSidecarsTrackersPoolImpl.class);
   final DataAvailabilitySampler prunedDataAvailabilitySampler = mock(DataAvailabilitySampler.class);
@@ -39,8 +39,8 @@ public class BlobTrackerPoolTest {
   final Spec spec =
       TestSpecFactory.createMinimalWithCapellaDenebElectraAndFuluForkEpoch(
           UInt64.ZERO, UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3));
-  final BlobTrackerPool blobTrackerPool =
-      new BlobTrackerPool(
+  final BlockEventsListenerRouter blockEventsListenerRouter =
+      new BlockEventsListenerRouter(
           blockBlobSidecarsTrackersPool,
           () -> prunedDataAvailabilitySampler,
           recentChainData,
@@ -57,7 +57,7 @@ public class BlobTrackerPoolTest {
   @Test
   public void onNewBlock_shouldIgnorePreDenebBlocks() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
-    blobTrackerPool.onNewBlock(block, Optional.empty());
+    blockEventsListenerRouter.onNewBlock(block, Optional.empty());
     verify(recentChainData).containsBlock(block.getRoot());
     verifyNoInteractions(blockBlobSidecarsTrackersPool);
     verifyNoInteractions(prunedDataAvailabilitySampler);
@@ -67,7 +67,7 @@ public class BlobTrackerPoolTest {
   public void onNewBlock_shouldIgnoreImportedBlocks() {
     when(recentChainData.containsBlock(any())).thenReturn(true);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
-    blobTrackerPool.onNewBlock(block, Optional.empty());
+    blockEventsListenerRouter.onNewBlock(block, Optional.empty());
     verify(recentChainData).containsBlock(block.getRoot());
     verifyNoInteractions(blockBlobSidecarsTrackersPool);
     verifyNoInteractions(prunedDataAvailabilitySampler);
@@ -76,7 +76,7 @@ public class BlobTrackerPoolTest {
   @Test
   public void onNewBlock_shouldHandleDenebBlocks() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(denebSlot);
-    blobTrackerPool.onNewBlock(block, Optional.of(RemoteOrigin.GOSSIP));
+    blockEventsListenerRouter.onNewBlock(block, Optional.of(RemoteOrigin.GOSSIP));
     verify(recentChainData).containsBlock(block.getRoot());
     verify(blockBlobSidecarsTrackersPool).onNewBlock(block, Optional.of(RemoteOrigin.GOSSIP));
     verifyNoInteractions(prunedDataAvailabilitySampler);
@@ -85,7 +85,7 @@ public class BlobTrackerPoolTest {
   @Test
   public void onNewBlock_shouldHandleFuluBlocks() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(fuluSlot);
-    blobTrackerPool.onNewBlock(block, Optional.of(RemoteOrigin.GOSSIP));
+    blockEventsListenerRouter.onNewBlock(block, Optional.of(RemoteOrigin.GOSSIP));
     verify(recentChainData).containsBlock(block.getRoot());
     verifyNoInteractions(blockBlobSidecarsTrackersPool);
     verify(prunedDataAvailabilitySampler).onNewBlock(block, Optional.of(RemoteOrigin.GOSSIP));
@@ -94,7 +94,7 @@ public class BlobTrackerPoolTest {
   @Test
   public void removeAllForBlock_shouldHandleDenebBlocks() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(denebSlot);
-    blobTrackerPool.removeAllForBlock(block.getSlotAndBlockRoot());
+    blockEventsListenerRouter.removeAllForBlock(block.getSlotAndBlockRoot());
     verify(blockBlobSidecarsTrackersPool).removeAllForBlock(block.getSlotAndBlockRoot());
     verifyNoInteractions(recentChainData, prunedDataAvailabilitySampler);
   }
@@ -102,7 +102,7 @@ public class BlobTrackerPoolTest {
   @Test
   public void removeAllForBlock_shouldHandleFuluBlocks() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(fuluSlot);
-    blobTrackerPool.removeAllForBlock(block.getSlotAndBlockRoot());
+    blockEventsListenerRouter.removeAllForBlock(block.getSlotAndBlockRoot());
     verify(prunedDataAvailabilitySampler).removeAllForBlock(block.getSlotAndBlockRoot());
     verifyNoInteractions(recentChainData, blockBlobSidecarsTrackersPool);
   }
@@ -110,7 +110,7 @@ public class BlobTrackerPoolTest {
   @Test
   public void enableBlockImportOnCompletion_shouldHandleDenebBlocks() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(denebSlot);
-    blobTrackerPool.enableBlockImportOnCompletion(block);
+    blockEventsListenerRouter.enableBlockImportOnCompletion(block);
     verify(blockBlobSidecarsTrackersPool).enableBlockImportOnCompletion(block);
     verifyNoInteractions(recentChainData, prunedDataAvailabilitySampler);
   }
@@ -118,7 +118,7 @@ public class BlobTrackerPoolTest {
   @Test
   public void enableBlockImportOnCompletion_shouldHandleFuluBlocks() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(fuluSlot);
-    blobTrackerPool.enableBlockImportOnCompletion(block);
+    blockEventsListenerRouter.enableBlockImportOnCompletion(block);
     verify(prunedDataAvailabilitySampler).enableBlockImportOnCompletion(block);
     verifyNoInteractions(recentChainData, blockBlobSidecarsTrackersPool);
   }

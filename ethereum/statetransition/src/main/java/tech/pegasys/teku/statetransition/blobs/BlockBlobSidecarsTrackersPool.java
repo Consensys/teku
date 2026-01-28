@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
-public interface BlockBlobSidecarsTrackersPool extends BlockEvents, SlotEventsChannel {
+public interface BlockBlobSidecarsTrackersPool extends BlockEventsListener, SlotEventsChannel {
 
   BlockBlobSidecarsTrackersPool NOOP =
       new BlockBlobSidecarsTrackersPool() {

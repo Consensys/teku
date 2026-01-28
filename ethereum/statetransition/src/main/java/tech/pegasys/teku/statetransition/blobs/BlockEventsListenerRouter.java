@@ -23,13 +23,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class BlobTrackerPool {
+public class BlockEventsListenerRouter implements BlockEventsListener {
   final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   final Supplier<DataAvailabilitySampler> dasSamplerSupplier;
   final RecentChainData recentChainData;
   final Spec spec;
 
-  public BlobTrackerPool(
+  public BlockEventsListenerRouter(
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final Supplier<DataAvailabilitySampler> dasSamplerSupplier,
       final RecentChainData recentChainData,
@@ -40,7 +40,7 @@ public class BlobTrackerPool {
     this.spec = spec;
   }
 
-  private BlockEvents getBlockPrunedTrackerFactory(final UInt64 slot) {
+  private BlockEventsListener getBlockPrunedTrackerFactory(final UInt64 slot) {
     final SpecMilestone blockMilestone = spec.atSlot(slot).getMilestone();
     if (blockMilestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
       return dasSamplerSupplier.get();
@@ -48,9 +48,10 @@ public class BlobTrackerPool {
       return blockBlobSidecarsTrackersPool;
     }
 
-    return BlockEvents.NOOP;
+    return BlockEventsListener.NOOP;
   }
 
+  @Override
   public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
     if (recentChainData.containsBlock(block.getRoot())) {
       return;
@@ -58,10 +59,12 @@ public class BlobTrackerPool {
     getBlockPrunedTrackerFactory(block.getSlot()).onNewBlock(block, remoteOrigin);
   }
 
+  @Override
   public void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {
     getBlockPrunedTrackerFactory(slotAndBlockRoot.getSlot()).removeAllForBlock(slotAndBlockRoot);
   }
 
+  @Override
   public void enableBlockImportOnCompletion(final SignedBeaconBlock block) {
     getBlockPrunedTrackerFactory(block.getSlot()).enableBlockImportOnCompletion(block);
   }

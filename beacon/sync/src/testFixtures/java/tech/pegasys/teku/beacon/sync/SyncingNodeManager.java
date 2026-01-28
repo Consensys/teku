@@ -58,8 +58,8 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
-import tech.pegasys.teku.statetransition.blobs.BlobTrackerPool;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.blobs.BlockEventsListenerRouter;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
@@ -160,8 +160,8 @@ public class SyncingNodeManager {
             forkChoice,
             WeakSubjectivityFactory.lenientValidator(),
             new ExecutionLayerChannelStub(spec, false));
-    final BlobTrackerPool blobTrackerPool =
-        new BlobTrackerPool(
+    final BlockEventsListenerRouter blockEventsListenerRouter =
+        new BlockEventsListenerRouter(
             BlockBlobSidecarsTrackersPool.NOOP,
             () -> DataAvailabilitySampler.NOOP,
             recentChainData,
@@ -171,7 +171,7 @@ public class SyncingNodeManager {
         new BlockManager(
             recentChainData,
             blockImporter,
-            blobTrackerPool,
+            blockEventsListenerRouter,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,
