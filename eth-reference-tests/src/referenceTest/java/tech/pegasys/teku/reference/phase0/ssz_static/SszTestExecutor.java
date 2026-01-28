@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -246,6 +247,7 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                   schemas -> SchemaDefinitionsFulu.required(schemas).getMatrixEntrySchema()))
 
           // Gloas types
+          .put("ssz_static/Builder", new SszTestExecutor<>(__ -> Builder.SSZ_SCHEMA))
           .put(
               "ssz_static/BuilderPendingPayment",
               new SszTestExecutor<>(
@@ -300,6 +302,9 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                   schemas ->
                       SchemaDefinitionsGloas.required(schemas)
                           .getSignedExecutionPayloadEnvelopeSchema()))
+          // TODO-GLOAS: https://github.com/Consensys/teku/issues/10259
+          .put("ssz_static/ProposerPreferences", IGNORE_TESTS)
+          .put("ssz_static/SignedProposerPreferences", IGNORE_TESTS)
           .put("ssz_static/ForkChoiceNode", IGNORE_TESTS)
 
           // Legacy Schemas (Not yet migrated to SchemaDefinitions)

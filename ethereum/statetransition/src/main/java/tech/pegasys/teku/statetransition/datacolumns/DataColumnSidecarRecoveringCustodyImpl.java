@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -22,10 +22,12 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -69,7 +71,9 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   final Function<UInt64, Duration> slotToRecoveryDelay;
   private final ConcurrentHashMap<SlotAndBlockRoot, RecoveryTask> recoveryTasks =
       new ConcurrentHashMap<>();
+  private final NavigableSet<SlotAndBlockRoot> completedSlots = new ConcurrentSkipListSet<>();
   private final int recoveryTasksSizeTarget;
+  private final int completedSlotsSizeTarget;
 
   private final Counter totalDataAvailabilityReconstructedColumns;
   private final MetricsHistogram dataAvailabilityReconstructionTimeSeconds;
@@ -79,7 +83,8 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
 
   private volatile boolean inSync;
 
-  public DataColumnSidecarRecoveringCustodyImpl(
+  @VisibleForTesting
+  protected DataColumnSidecarRecoveringCustodyImpl(
       final DataColumnSidecarByRootCustody delegate,
       final AsyncRunner asyncRunner,
       final Spec spec,
@@ -90,14 +95,17 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       final int groupCount,
       final Function<UInt64, Duration> slotToRecoveryDelay,
       final MetricsSystem metricsSystem,
-      final TimeProvider timeProvider) {
+      final TimeProvider timeProvider,
+      final int recoveryTasksSizeTarget,
+      final int completedSlotsSizeTarget) {
     this.delegate = delegate;
     this.asyncRunner = asyncRunner;
     this.miscHelpers = miscHelpers;
     this.spec = spec;
     this.dataColumnSidecarPublisher = dataColumnSidecarPublisher;
     this.custodyGroupCountManager = custodyGroupCountManager;
-    this.recoveryTasksSizeTarget = spec.getGenesisSpec().getSlotsPerEpoch();
+    this.recoveryTasksSizeTarget = recoveryTasksSizeTarget;
+    this.completedSlotsSizeTarget = completedSlotsSizeTarget;
     this.slotToRecoveryDelay = slotToRecoveryDelay;
     this.columnCount = columnCount;
     this.groupCount = groupCount;
@@ -120,6 +128,37 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
             });
   }
 
+  public DataColumnSidecarRecoveringCustodyImpl(
+      final DataColumnSidecarByRootCustody delegate,
+      final AsyncRunner asyncRunner,
+      final Spec spec,
+      final MiscHelpersFulu miscHelpers,
+      final BiConsumer<DataColumnSidecar, RemoteOrigin> dataColumnSidecarPublisher,
+      final CustodyGroupCountManager custodyGroupCountManager,
+      final int columnCount,
+      final int groupCount,
+      final Function<UInt64, Duration> slotToRecoveryDelay,
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider) {
+    this(
+        delegate,
+        asyncRunner,
+        spec,
+        miscHelpers,
+        dataColumnSidecarPublisher,
+        custodyGroupCountManager,
+        columnCount,
+        groupCount,
+        slotToRecoveryDelay,
+        metricsSystem,
+        timeProvider,
+        // 1 epoch, having sidecars in memory, it will occupy several Mb for each slot
+        spec.getGenesisSpec().getSlotsPerEpoch(),
+        // 64 epochs, 2048 slots, pretty big number when you have healthy network
+        // and it's just 64 byte (SlotAndBlockRoot) * 2048 = 128kb of cache
+        spec.getGenesisSpec().getSlotsPerEpoch() * 64);
+  }
+
   @Override
   public void onSyncingStatusChanged(final boolean inSync) {
     this.inSync = inSync;
@@ -128,6 +167,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   @Override
   public void onSlot(final UInt64 slot) {
     pruneRecoveryTasks();
+    pruneCompletedSlots();
     if (shouldSkipProcessing(slot)) {
       return;
     }
@@ -160,6 +200,15 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     }
   }
 
+  private void pruneCompletedSlots() {
+    final int slotsToPrune = completedSlots.size() - completedSlotsSizeTarget;
+    if (slotsToPrune >= 0) {
+      for (int i = 0; i <= slotsToPrune; i++) {
+        completedSlots.removeFirst();
+      }
+    }
+  }
+
   private boolean shouldSkipProcessing(final UInt64 slot) {
     if (isActiveSuperNode(slot)) {
       return false;
@@ -179,6 +228,11 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     if (readyToBeRecovered(task)) {
       if (task.recoveryStarted.compareAndSet(false, true)) {
         if (task.existingSidecars.size() == columnCount) {
+          completedSlots.add(
+              task.existingSidecars.values().stream()
+                  .findFirst()
+                  .orElseThrow()
+                  .getSlotAndBlockRoot());
           task.existingSidecars.clear();
           return;
         }
@@ -271,6 +325,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
               recoveredColumnSidecarSubscribers.forEach(
                   subscriber -> subscriber.onNewValidSidecar(dataColumnSidecar, RECOVERED));
             });
+    completedSlots.add(sidecars.stream().findFirst().orElseThrow().getSlotAndBlockRoot());
     recoveryTask.existingSidecars.clear();
     LOG.debug(
         "Data column sidecars recovery finished for block: {}", recoveryTask.slotAndBlockRoot);
@@ -285,6 +340,9 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   @Override
   public SafeFuture<Void> onNewValidatedDataColumnSidecar(
       final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {
+    if (completedSlots.contains(dataColumnSidecar.getSlotAndBlockRoot())) {
+      return SafeFuture.COMPLETE;
+    }
     // Recovery is not needed for locally produced or recovered data,
     // we will get everything for it in custody w/o reconstruction
     if (remoteOrigin.equals(RemoteOrigin.RPC) || remoteOrigin.equals(RemoteOrigin.GOSSIP)) {
@@ -333,5 +391,15 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   public void subscribeToRecoveredColumnSidecar(
       final ValidDataColumnSidecarsListener sidecarListener) {
     recoveredColumnSidecarSubscribers.subscribe(sidecarListener);
+  }
+
+  @VisibleForTesting
+  protected NavigableSet<SlotAndBlockRoot> getCompletedSlots() {
+    return completedSlots;
+  }
+
+  @VisibleForTesting
+  protected ConcurrentHashMap<SlotAndBlockRoot, RecoveryTask> getRecoveryTasks() {
+    return recoveryTasks;
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.gloas.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_FLAG;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 
@@ -56,6 +57,14 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
       final PredicatesGloas predicates,
       final SchemaDefinitionsGloas schemaDefinitions) {
     super(specConfig, predicates, schemaDefinitions);
+  }
+
+  public UInt64 convertBuilderIndexToValidatorIndex(final UInt64 builderIndex) {
+    return UInt64.valueOf(builderIndex.longValue() | BUILDER_INDEX_FLAG.longValue());
+  }
+
+  public UInt64 convertValidatorIndexToBuilderIndex(final UInt64 validatorIndex) {
+    return UInt64.valueOf(validatorIndex.longValue() & ~BUILDER_INDEX_FLAG.longValue());
   }
 
   /**

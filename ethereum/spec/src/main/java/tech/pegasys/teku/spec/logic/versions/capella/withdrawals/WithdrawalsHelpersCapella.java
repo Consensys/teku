@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -65,12 +65,15 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
     final int processedPartialWithdrawalsCount =
         processPendingPartialWithdrawals(state, withdrawals);
 
+    final int processedBuildersSweepCount = processBuildersSweepWithdrawals(state, withdrawals);
+
     final int processedValidatorsSweepCount = processValidatorsSweepWithdrawals(state, withdrawals);
 
     return new ExpectedWithdrawals(
         withdrawals,
         processedBuilderWithdrawalsCount,
         processedPartialWithdrawalsCount,
+        processedBuildersSweepCount,
         processedValidatorsSweepCount);
   }
 
@@ -82,6 +85,12 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
 
   // NO-OP
   protected int processPendingPartialWithdrawals(
+      final BeaconState state, final List<Withdrawal> withdrawals) {
+    return 0;
+  }
+
+  // NO-OP
+  protected int processBuildersSweepWithdrawals(
       final BeaconState state, final List<Withdrawal> withdrawals) {
     return 0;
   }
@@ -161,7 +170,8 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
         state,
         expectedWithdrawals.withdrawals(),
         expectedWithdrawals.processedBuilderWithdrawalsCount(),
-        expectedWithdrawals.processedPartialWithdrawalsCount());
+        expectedWithdrawals.processedPartialWithdrawalsCount(),
+        expectedWithdrawals.processedBuildersSweepCount());
   }
 
   private void assertWithdrawalsInExecutionPayloadMatchExpected(
@@ -196,14 +206,16 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
         state,
         expectedWithdrawals.withdrawals(),
         expectedWithdrawals.processedBuilderWithdrawalsCount(),
-        expectedWithdrawals.processedPartialWithdrawalsCount());
+        expectedWithdrawals.processedPartialWithdrawalsCount(),
+        expectedWithdrawals.processedBuildersSweepCount());
   }
 
   private void processWithdrawalsUnchecked(
       final MutableBeaconState state,
       final List<Withdrawal> withdrawals,
       final int processedBuilderWithdrawalsCount,
-      final int processedPartialWithdrawalsCount) {
+      final int processedPartialWithdrawalsCount,
+      final int processedBuildersSweepCount) {
 
     applyWithdrawals(state, withdrawals);
 
@@ -218,6 +230,8 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
     if (processedPartialWithdrawalsCount > 0) {
       updatePendingPartialWithdrawals(state, processedPartialWithdrawalsCount);
     }
+
+    updateNextWithdrawalBuilderIndex(state, processedBuildersSweepCount);
 
     updateNextWithdrawalValidatorIndex(state, withdrawals);
   }
@@ -252,23 +266,27 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
   protected void updatePendingPartialWithdrawals(
       final MutableBeaconState state, final int processedPartialWithdrawalsCount) {}
 
+  // NO-OP
+  protected void updateNextWithdrawalBuilderIndex(
+      final MutableBeaconState state, final int processedBuildersSweepCount) {}
+
   protected void updateNextWithdrawalValidatorIndex(
       final MutableBeaconState state, final List<Withdrawal> withdrawals) {
     final MutableBeaconStateCapella stateCapella = MutableBeaconStateCapella.required(state);
 
     if (withdrawals.size() == specConfig.getMaxWithdrawalsPerPayload()) {
-      // Update the next validator index to start the next withdrawal sweep
-      final Withdrawal latestWithdrawal = withdrawals.getLast();
-      final int nextWithdrawalValidatorIndex = latestWithdrawal.getValidatorIndex().intValue() + 1;
-      stateCapella.setNextWithdrawalValidatorIndex(
-          UInt64.valueOf(nextWithdrawalValidatorIndex % state.getValidators().size()));
+      // Next sweep starts after the latest withdrawal's validator index
+      final UInt64 nextValidatorIndex =
+          withdrawals.getLast().getValidatorIndex().plus(1).mod(state.getValidators().size());
+      stateCapella.setNextWithdrawalValidatorIndex(nextValidatorIndex);
     } else {
       // Advance sweep by the max length of the sweep if there was not a full set of withdrawals
-      final int nextWithdrawalValidatorIndex =
-          stateCapella.getNextWithdrawalValidatorIndex().intValue()
-              + specConfig.getMaxValidatorsPerWithdrawalSweep();
-      stateCapella.setNextWithdrawalValidatorIndex(
-          UInt64.valueOf(nextWithdrawalValidatorIndex % state.getValidators().size()));
+      final UInt64 nextIndex =
+          stateCapella
+              .getNextWithdrawalValidatorIndex()
+              .plus(specConfig.getMaxValidatorsPerWithdrawalSweep());
+      final UInt64 nextValidatorIndex = nextIndex.mod(state.getValidators().size());
+      stateCapella.setNextWithdrawalValidatorIndex(nextValidatorIndex);
     }
   }
 }

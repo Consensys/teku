@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -65,6 +65,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -95,6 +96,7 @@ public class TekuBeaconNode extends TekuNode {
   public static final String LOCAL_VALIDATOR_LIVENESS_URL = "/eth/v1/validator/liveness/{epoch}";
   public static final String POST_PROPOSER_SLASHING_URL = "/eth/v1/beacon/pool/proposer_slashings";
   public static final String POST_ATTESTER_SLASHING_URL = "/eth/v1/beacon/pool/attester_slashings";
+  public static final String PUT_LOG_LEVEL_URL = "/teku/v1/admin/log_level";
   private final TekuNodeConfig config;
   private final Spec spec;
 
@@ -229,6 +231,13 @@ public class TekuBeaconNode extends TekuNode {
       output.put(entry.index(), entry.isLive());
     }
     return output;
+  }
+
+  public void setLogLevel(final String queryString, final String level) throws IOException {
+    httpClient.put(
+        getRestApiUrl(),
+        PUT_LOG_LEVEL_URL,
+        String.format("{\"level\":\"%s\", \"log_filter\":[\"%s\"]}", level, queryString));
   }
 
   public void postProposerSlashing(
@@ -737,6 +746,19 @@ public class TekuBeaconNode extends TekuNode {
         httpClient.get(getRestApiUrl(), "/eth/v1/debug/beacon/data_column_sidecars/" + blockId);
     final JsonNode jsonNode = OBJECT_MAPPER.readTree(result);
     return jsonNode.get("data").size();
+  }
+
+  public Optional<List<Blob>> getBlobsAtSlot(final UInt64 slot) throws IOException {
+    final Bytes result =
+        httpClient.getAsBytes(
+            getRestApiUrl(),
+            "/eth/v1/beacon/blobs/" + slot,
+            Map.of("Accept", "application/octet-stream"));
+    if (result.isEmpty()) {
+      return Optional.empty();
+    } else {
+      return Optional.of(spec.deserializeBlobsInBlock(result, slot).asList());
+    }
   }
 
   public void waitForCustodyBackfill(final UInt64 slot, final int expectedCustodyCount) {

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -62,16 +62,16 @@ record DataColumnSamplingTracker(
       return false;
     }
 
-    LOG.debug("Adding column {} to sampling tracker", columnIdentifier);
+    LOG.trace("Adding column {} to sampling tracker", columnIdentifier);
     final boolean removed =
         missingColumns.removeIf(idx -> idx.equals(columnIdentifier.columnIndex()));
     if (!removed) {
-      LOG.debug("Column {} was already marked as received, origin: {}", columnIdentifier, origin);
+      LOG.trace("Column {} was already marked as received, origin: {}", columnIdentifier, origin);
       return false;
     }
 
     if (missingColumns.isEmpty()) {
-      LOG.debug(
+      LOG.trace(
           "Sampling complete for slot {} root {} via column {} received via {}",
           slot,
           blockRoot,
@@ -85,7 +85,7 @@ record DataColumnSamplingTracker(
     if (isCompletedEarly()) {
       completionFuture.complete(
           samplingRequirement.stream().filter(idx -> !missingColumns.contains(idx)).toList());
-      LOG.debug(
+      LOG.trace(
           "Partial sampling complete for slot {} root {} via column {} received via {}",
           slot,
           blockRoot,
@@ -94,7 +94,7 @@ record DataColumnSamplingTracker(
       return true;
     }
 
-    LOG.debug(
+    LOG.trace(
         "Sampling still pending for slot {} root {}, remaining columns: {}",
         slot,
         blockRoot,
