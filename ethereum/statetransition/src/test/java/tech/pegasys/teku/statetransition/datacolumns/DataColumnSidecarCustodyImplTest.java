@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -163,9 +163,9 @@ public class DataColumnSidecarCustodyImplTest {
     custody.onSlot(UInt64.valueOf(FULU_ACTIVATION_SLOT));
     final SafeFuture<Void> future = custody.advanceFirstIncompleteSlot(UInt64.valueOf(2));
     assertThat(future).isCompleted();
-    // if epoch 2 is final, then slots 0-23 are 'final' and slot 24 is the first non final
+    // if epoch 2 is final, then slots 0-16 are 'final' and slot 17 is the first non final
     assertThat(dbAccessor.getFirstCustodyIncompleteSlot())
-        .isCompletedWithValue(Optional.of(UInt64.valueOf(24)));
+        .isCompletedWithValue(Optional.of(UInt64.valueOf(17)));
   }
 
   @Test

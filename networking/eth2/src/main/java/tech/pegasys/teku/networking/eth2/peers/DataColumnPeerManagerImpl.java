@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -46,7 +46,8 @@ public class DataColumnPeerManagerImpl
   private void peerConnected(final Eth2Peer peer) {
     final UInt256 nodeId = peer.getDiscoveryNodeId().orElseThrow();
     connectedPeers.put(nodeId, peer);
-    listeners.forEach(l -> l.peerConnected(nodeId));
+    listeners.forEach(
+        l -> l.peerConnected(nodeId, () -> peer.getStatus().getEarliestAvailableSlot()));
     peer.subscribeDisconnect((__, ___) -> peerDisconnected(peer));
   }
 
