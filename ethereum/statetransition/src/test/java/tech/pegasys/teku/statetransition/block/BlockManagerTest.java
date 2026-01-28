@@ -469,7 +469,7 @@ public class BlockManagerTest {
 
     // blob pool should be notified about new block only
     verify(blobTrackerPool).onNewBlock(nextBlock, Optional.empty());
-    verifyNoMoreInteractions(blobSidecarManager);
+    verifyNoInteractions(blobSidecarManager);
   }
 
   @Test
