@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -3182,6 +3182,24 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayloadBid randomExecutionPayloadBid(
+      final UInt64 slot, final UInt64 builderIndex, final Bytes32 blockHash) {
+    return getGloasSchemaDefinitions()
+        .getExecutionPayloadBidSchema()
+        .create(
+            randomBytes32(),
+            randomBytes32(),
+            blockHash,
+            randomBytes32(),
+            randomEth1Address(),
+            randomUInt64(),
+            builderIndex,
+            slot,
+            randomUInt64(),
+            randomUInt64(),
+            randomBytes32());
+  }
+
+  public ExecutionPayloadBid randomExecutionPayloadBid(
       final UInt64 slot, final UInt64 builderIndex) {
     return getGloasSchemaDefinitions()
         .getExecutionPayloadBidSchema()
@@ -3200,9 +3218,14 @@ public final class DataStructureUtil {
   }
 
   public SignedExecutionPayloadBid randomSignedExecutionPayloadBid() {
+    return randomSignedExecutionPayloadBid(randomExecutionPayloadBid());
+  }
+
+  public SignedExecutionPayloadBid randomSignedExecutionPayloadBid(
+      final ExecutionPayloadBid executionPayloadBid) {
     return getGloasSchemaDefinitions()
         .getSignedExecutionPayloadBidSchema()
-        .create(randomExecutionPayloadBid(), randomSignature());
+        .create(executionPayloadBid, randomSignature());
   }
 
   public SignedExecutionPayloadBid randomSignedExecutionPayloadBidWithCommitments(
