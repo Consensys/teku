@@ -114,7 +114,7 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
    * @return true if the referenced block has been seen
    */
   @Override
-  public boolean isBlockSeen(
+  public boolean isBlockParentSeen(
       final DataColumnSidecar dataColumnSidecar, final Function<Bytes32, Boolean> isBlockRootSeen) {
     final Optional<SignedBeaconBlockHeader> maybeSignedBlockHeader =
         dataColumnSidecar.getMaybeSignedBlockHeader();
@@ -125,6 +125,22 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
 
     final BeaconBlockHeader header = maybeSignedBlockHeader.get().getMessage();
     return isBlockRootSeen.apply(header.getParentRoot());
+  }
+
+  /**
+   * Check if the referenced block with bid has been seen. Gossip rule: Not applicable to Fulu as
+   * this check is Gloas-specific. Gloas requires validating that the sidecar's beacon_block_root
+   * has been seen via a valid signed execution payload bid.
+   *
+   * @param dataColumnSidecar the data column sidecar to validate
+   * @param isBlockRootSeen function to check if a block root has been seen
+   * @return true (always valid for Fulu, as this is a Gloas-specific validation)
+   */
+  @Override
+  public boolean isBlockWithBidSeen(
+      final DataColumnSidecar dataColumnSidecar, final Function<Bytes32, Boolean> isBlockRootSeen) {
+    // Fulu doesn't require block with bid check (Gloas-specific validation)
+    return true;
   }
 
   /**

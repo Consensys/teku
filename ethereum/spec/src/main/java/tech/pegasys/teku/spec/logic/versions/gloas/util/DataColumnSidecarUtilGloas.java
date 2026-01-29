@@ -70,6 +70,20 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
   }
 
   /**
+   * Check if the sidecar's block parent has been seen. Gossip rule: Not applicable to Gloas as
+   * Gloas sidecars don't contain block headers with parent references.
+   *
+   * @param dataColumnSidecar the data column sidecar to validate
+   * @param isBlockRootSeen function to check if a block root has been seen
+   * @return true (always valid for Gloas)
+   */
+  @Override
+  public boolean isBlockParentSeen(
+      final DataColumnSidecar dataColumnSidecar, final Function<Bytes32, Boolean> isBlockRootSeen) {
+    return true;
+  }
+
+  /**
    * Check if the referenced block has been seen. Gossip rule: [IGNORE] The sidecar's
    * beacon_block_root has been seen via a valid signed execution payload bid. A client MAY queue
    * the sidecar for processing once the block is retrieved.
@@ -79,7 +93,7 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
    * @return true if the referenced block has been seen
    */
   @Override
-  public boolean isBlockSeen(
+  public boolean isBlockWithBidSeen(
       final DataColumnSidecar dataColumnSidecar, final Function<Bytes32, Boolean> isBlockRootSeen) {
     return isBlockRootSeen.apply(dataColumnSidecar.getBeaconBlockRoot());
   }

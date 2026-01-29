@@ -272,16 +272,23 @@ public class DataColumnSidecarGossipValidator {
      * FULU
      * [IGNORE] The sidecar's block's parent (defined by block_header.parent_root) has been seen (via gossip or non-gossip sources)
      * (a client MAY queue sidecars for processing once the parent block is retrieved).
-     *
+     */
+    if (!dataColumnSidecarUtil.isBlockParentSeen(
+        dataColumnSidecar, gossipValidationHelper::isBlockAvailable)) {
+      LOG.trace(
+          "Data column sidecar's referenced parent block block has not been seen. Saving for future processing");
+      return completedFuture(SAVE_FOR_FUTURE);
+    }
+
+    /*
      * GLOAS
      * [IGNORE] The sidecar's beacon_block_root has been seen via a valid signed execution payload bid.
      * A client MAY queue the sidecar for processing once the block is retrieved.
      */
-
-    if (!dataColumnSidecarUtil.isBlockSeen(
+    if (!dataColumnSidecarUtil.isBlockWithBidSeen(
         dataColumnSidecar, gossipValidationHelper::isBlockAvailable)) {
       LOG.trace(
-          "Data column sidecar's referenced block has not been seen. Saving for future processing");
+          "Data column sidecar's referenced block has not been seen via a valid signed execution payload bid. Saving for future processing");
       return completedFuture(SAVE_FOR_FUTURE);
     }
 

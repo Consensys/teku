@@ -45,7 +45,10 @@ public interface DataColumnSidecarUtil {
   Optional<SlotInclusionGossipValidationResult> performSlotFinalizationValidation(
       DataColumnSidecar dataColumnSidecar, Predicate<UInt64> isSlotFinalized);
 
-  boolean isBlockSeen(
+  boolean isBlockParentSeen(
+      DataColumnSidecar dataColumnSidecar, Function<Bytes32, Boolean> isBlockRootSeen);
+
+  boolean isBlockWithBidSeen(
       DataColumnSidecar dataColumnSidecar, Function<Bytes32, Boolean> isBlockRootSeen);
 
   DataColumnSidecarValidationResult validateKzgCommitmentsRoot(
