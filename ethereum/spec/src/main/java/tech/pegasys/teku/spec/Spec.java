@@ -79,6 +79,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.epbs.ExecutionPayloadAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -588,6 +589,13 @@ public class Spec {
     return atSlot(proof.getAggregate().getData().getSlot())
         .miscHelpers()
         .computeSigningRoot(proof, domain);
+  }
+
+  public Bytes computeSigningRoot(
+      final ExecutionPayloadEnvelope executionPayloadEnvelope, final Bytes32 domain) {
+    return atSlot(executionPayloadEnvelope.getSlot())
+        .miscHelpers()
+        .computeSigningRoot(executionPayloadEnvelope, domain);
   }
 
   public Bytes computeSigningRoot(final UInt64 slot, final Bytes32 domain) {

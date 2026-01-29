@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -147,14 +148,13 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
    * Validate that the sidecar's KZG commitments root matches the block's KZG commitments root.
    *
    * @param dataColumnSidecar the data column sidecar to validate
-   * @param getBlockKzgCommitmentsRoot function to get the block's kzg commitments root by block
-   *     root
+   * @param getBeaconBlockByRoot function to get the beacon block by root
    * @return validation result
    */
   @Override
   public DataColumnSidecarValidationResult validateKzgCommitmentsRoot(
       final DataColumnSidecar dataColumnSidecar,
-      final Function<Bytes32, Optional<Bytes32>> getBlockKzgCommitmentsRoot) {
+      final Function<Bytes32, Optional<BeaconBlock>> getBeaconBlockByRoot) {
     // Fulu does not validate the kzg commitments root (this is Gloas-specific)
     return DataColumnSidecarValidationResult.valid();
   }

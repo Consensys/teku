@@ -357,6 +357,42 @@ public class DasSamplerBasicTest {
   }
 
   @Test
+  void onRemoveAllForBlock_shouldPruneTrackers() {
+    final SlotAndBlockRoot slotAndBlockRoot = dataStructureUtil.randomSlotAndBlockRoot();
+    final SlotAndBlockRoot slotAndBlockRootAdded = dataStructureUtil.randomSlotAndBlockRoot();
+    final SlotAndBlockRoot slotAndBlockRootRemaining = dataStructureUtil.randomSlotAndBlockRoot();
+
+    final DataColumnSamplingTracker completedTracker = mock(DataColumnSamplingTracker.class);
+    when(completedTracker.completionFuture()).thenReturn(SafeFuture.completedFuture(null));
+    when(completedTracker.blockRoot()).thenReturn(slotAndBlockRootRemaining.getBlockRoot());
+    when(completedTracker.slot()).thenReturn(slotAndBlockRootRemaining.getSlot());
+
+    final SafeFuture<List<UInt64>> completionFuture = new SafeFuture<>();
+    final DataColumnSamplingTracker nonCompletedTracker = mock(DataColumnSamplingTracker.class);
+    when(nonCompletedTracker.completionFuture()).thenReturn(completionFuture);
+    when(nonCompletedTracker.blockRoot()).thenReturn(slotAndBlockRootAdded.getBlockRoot());
+    when(nonCompletedTracker.slot()).thenReturn(slotAndBlockRootAdded.getSlot());
+
+    sampler
+        .getRecentlySampledColumnsByRoot()
+        .put(slotAndBlockRootRemaining.getBlockRoot(), completedTracker);
+    sampler
+        .getRecentlySampledColumnsByRoot()
+        .put(slotAndBlockRootAdded.getBlockRoot(), nonCompletedTracker);
+
+    assertThat(sampler.getRecentlySampledColumnsByRoot())
+        .containsValues(completedTracker, nonCompletedTracker);
+
+    sampler.removeAllForBlock(slotAndBlockRootAdded);
+
+    assertThat(sampler.getRecentlySampledColumnsByRoot()).containsValues(completedTracker);
+    assertThat(nonCompletedTracker.completionFuture()).isCancelled();
+
+    // Non-existing - doesn't throw
+    sampler.removeAllForBlock(slotAndBlockRoot);
+  }
+
+  @Test
   void onSlot_shouldPruneTrackers() {
     final UInt64 finalizedEpoch = UInt64.valueOf(1);
     final Bytes32 importedBlockRoot = dataStructureUtil.randomBytes32();

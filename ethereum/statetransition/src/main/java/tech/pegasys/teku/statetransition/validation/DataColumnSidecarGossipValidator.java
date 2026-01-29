@@ -329,20 +329,7 @@ public class DataColumnSidecarGossipValidator {
     final DataColumnSidecarValidationResult payloadRefResult =
         dataColumnSidecarUtil.validateKzgCommitmentsRoot(
             dataColumnSidecar,
-            beaconBlockRoot ->
-                gossipValidationHelper
-                    .getRecentlyValidatedSignedBlockByRoot(beaconBlockRoot)
-                    .flatMap(
-                        signedBeaconBlock ->
-                            signedBeaconBlock
-                                .getMessage()
-                                .getBody()
-                                .getOptionalSignedExecutionPayloadBid()
-                                .map(
-                                    signedExecutionPayloadBid ->
-                                        signedExecutionPayloadBid
-                                            .getMessage()
-                                            .getBlobKzgCommitmentsRoot())));
+            beaconBlockRoot -> gossipValidationHelper.retrieveBlockByRoot(beaconBlockRoot));
     if (!payloadRefResult.isValid()) {
       return completedFuture(
           reject(payloadRefResult.getReason().orElse("Execution payload validation failed")));

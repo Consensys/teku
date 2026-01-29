@@ -25,6 +25,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.SpecLogic;
@@ -53,7 +54,7 @@ public interface DataColumnSidecarUtil {
 
   DataColumnSidecarValidationResult validateKzgCommitmentsRoot(
       DataColumnSidecar dataColumnSidecar,
-      Function<Bytes32, Optional<Bytes32>> getBlockKzgCommitmentsRoot);
+      Function<Bytes32, Optional<BeaconBlock>> getBeaconBlockByRoot);
 
   DataColumnSidecarValidationResult validateBlockSlot(
       DataColumnSidecar dataColumnSidecar, Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot);
