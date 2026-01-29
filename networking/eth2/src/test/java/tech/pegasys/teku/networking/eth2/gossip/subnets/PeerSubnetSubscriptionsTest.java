@@ -153,7 +153,7 @@ class PeerSubnetSubscriptionsTest {
   }
 
   @Test
-  public void getSubscribersRequiredWithTargetSubnetSubscriptions() {
+  public void getSubscribersRequiredWithTargetPerSubnetSubscribers() {
     // Set up some sync committee subnets we should be participating in
     syncnetSubscriptions.setSubscriptions(IntList.of(0, 1));
     dataColumnSubscriptions.setSubscriptions(IntList.of(0, 1));
@@ -306,7 +306,7 @@ class PeerSubnetSubscriptionsTest {
   }
 
   private PeerSubnetSubscriptions createPeerSubnetSubscriptions(
-      final int targetSubscriptionsPerSubnet) {
+      final int targetPerSubnetSubscribers) {
     return PeerSubnetSubscriptions.create(
         currentSpecVersionSupplier.get(),
         NodeIdToDataColumnSidecarSubnetsCalculator.NOOP,
@@ -317,7 +317,7 @@ class PeerSubnetSubscriptionsTest {
         dataColumnSidecarSubnetTopicProvider,
         dataColumnSubscriptions,
         TARGET_SUBSCRIBER_COUNT,
-        OptionalInt.of(targetSubscriptionsPerSubnet),
+        OptionalInt.of(targetPerSubnetSubscribers),
         subnetPeerCountGauge);
   }
 

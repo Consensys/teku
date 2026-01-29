@@ -251,14 +251,14 @@ public class PeerSubnetSubscriptions {
   public int getSubscribersRequired() {
     final OptionalInt minSubscribersCount = getMinSubscriberCount();
     final OptionalInt targetSubscribersShortage = getTargetSubscribersShortage();
-    final int attestationSubscribersShortage =
+    final int allSubnetSubscribersShortage =
         minSubscribersCount.isPresent()
             ? Math.max(targetSubnetSubscriberCount - minSubscribersCount.getAsInt(), 0)
             : 0;
     if (targetSubscribersShortage.isPresent()) {
-      return Math.max(targetSubscribersShortage.getAsInt(), attestationSubscribersShortage);
+      return Math.max(targetSubscribersShortage.getAsInt(), allSubnetSubscribersShortage);
     } else {
-      return attestationSubscribersShortage;
+      return allSubnetSubscribersShortage;
     }
   }
 
@@ -427,23 +427,21 @@ public class PeerSubnetSubscriptions {
           syncCommitteeSubnetSubscriptions.build(),
           dataColumnSidecarSubnetSubscriptions.build(),
           nodeIdToDataColumnSidecarSubnetsCalculator,
-              targetSubnetSubscriberCount,
-              targetPerSubnetSubscriberCount);
+          targetSubnetSubscriberCount,
+          targetPerSubnetSubscriberCount);
     }
 
-    public Builder targetSubnetSubscriberCount(
-        final int targetSubnetSubscriberCount) {
+    public Builder targetSubnetSubscriberCount(final int targetSubnetSubscriberCount) {
       if (targetSubnetSubscriberCount < 0) {
         throw new InvalidConfigurationException(
-            String.format(
-                "Invalid targetSubnetSubscriberCount: %d",
-                targetSubnetSubscriberCount));
+            String.format("Invalid targetSubnetSubscriberCount: %d", targetSubnetSubscriberCount));
       }
       this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
       return this;
     }
 
-    public Builder targetPerSubnetSubscriberCount(final OptionalInt targetPerSubnetSubscriberCount) {
+    public Builder targetPerSubnetSubscriberCount(
+        final OptionalInt targetPerSubnetSubscriberCount) {
       this.targetPerSubnetSubscriberCount = targetPerSubnetSubscriberCount;
       return this;
     }

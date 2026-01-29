@@ -299,8 +299,7 @@ public class P2PConfig {
     private Spec spec;
     private Boolean isGossipScoringEnabled = DEFAULT_GOSSIP_SCORING_ENABLED;
     private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
-    private Integer targetSubnetSubscriberCount =
-            DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
+    private Integer targetSubnetSubscriberCount = DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
     private Integer targetPerSubnetSubscriberCount = DEFAULT_P2P_TARGET_PER_SUBNET_SUBSCRIBER_COUNT;
     private Boolean subscribeAllSubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
     private Boolean subscribeAllCustodySubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
@@ -384,7 +383,7 @@ public class P2PConfig {
           discoveryConfig.build(),
           gossipConfigurator,
           gossipEncoding,
-              targetSubnetSubscriberCount,
+          targetSubnetSubscriberCount,
           targetPerSubnetSubscriberCountOptional,
           subscribeAllSubnetsEnabled,
           custodyGroupCountOverride,
@@ -436,14 +435,11 @@ public class P2PConfig {
       return this;
     }
 
-    public Builder targetSubnetSubscriberCount(
-        final Integer targetSubnetSubscriberCount) {
+    public Builder targetSubnetSubscriberCount(final Integer targetSubnetSubscriberCount) {
       checkNotNull(targetSubnetSubscriberCount);
       if (targetSubnetSubscriberCount < 0) {
         throw new InvalidConfigurationException(
-            String.format(
-                "Invalid targetSubnetSubscriberCount: %d",
-                targetSubnetSubscriberCount));
+            String.format("Invalid targetSubnetSubscriberCount: %d", targetSubnetSubscriberCount));
       }
       this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
       return this;
