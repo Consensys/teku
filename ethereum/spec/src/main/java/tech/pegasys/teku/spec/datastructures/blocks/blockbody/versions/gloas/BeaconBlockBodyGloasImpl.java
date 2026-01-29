@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -47,7 +47,7 @@ public class BeaconBlockBodyGloasImpl
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
         SszList<SignedBlsToExecutionChange>,
-        SignedExecutionPayloadHeader,
+        SignedExecutionPayloadBid,
         SszList<PayloadAttestation>>
     implements BeaconBlockBodyGloas {
 
@@ -63,7 +63,7 @@ public class BeaconBlockBodyGloasImpl
       final SszList<SignedVoluntaryExit> voluntaryExits,
       final SyncAggregate syncAggregate,
       final SszList<SignedBlsToExecutionChange> blsToExecutionChanges,
-      final SignedExecutionPayloadHeader signedExecutionPayloadHeader,
+      final SignedExecutionPayloadBid signedExecutionPayloadBid,
       final SszList<PayloadAttestation> payloadAttestations) {
     super(
         type,
@@ -77,7 +77,7 @@ public class BeaconBlockBodyGloasImpl
         voluntaryExits,
         syncAggregate,
         blsToExecutionChanges,
-        signedExecutionPayloadHeader,
+        signedExecutionPayloadBid,
         payloadAttestations);
   }
 
@@ -158,7 +158,7 @@ public class BeaconBlockBodyGloasImpl
   }
 
   @Override
-  public SignedExecutionPayloadHeader getSignedExecutionPayloadHeader() {
+  public SignedExecutionPayloadBid getSignedExecutionPayloadBid() {
     return getField10();
   }
 

@@ -8,6 +8,8 @@ dependencies {
   implementation "io.github.crate-crypto:java-eth-kzg"
   implementation 'commons-io:commons-io'
 
+  testImplementation project(':infrastructure:json')
+
   testFixturesImplementation 'com.google.guava:guava'
   testFixturesImplementation 'io.consensys.tuweni:tuweni-bytes'
 }

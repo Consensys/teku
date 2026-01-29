@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,12 +14,15 @@
 package tech.pegasys.teku.ethtests.finder;
 
 import java.nio.file.Path;
+import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethtests.TestFork;
 import tech.pegasys.teku.ethtests.TestSpecConfig;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifierImpl;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class TestDefinition {
@@ -84,9 +87,18 @@ public class TestDefinition {
         };
     final BLSSignatureVerifier blsSignatureVerifier =
         blsSignatureVerificationEnabled ? BLSSignatureVerifier.SIMPLE : BLSSignatureVerifier.NO_OP;
+    final Supplier<BatchSignatureVerifier> batchSignatureVerifierSupplier =
+        blsSignatureVerificationEnabled
+            ? BatchSignatureVerifierImpl::new
+            : () -> BatchSignatureVerifier.NO_OP;
     spec =
         TestSpecFactory.create(
-            milestone, network, builder -> builder.blsSignatureVerifier(blsSignatureVerifier));
+            milestone,
+            network,
+            builder ->
+                builder
+                    .blsSignatureVerifier(blsSignatureVerifier)
+                    .batchSignatureVerifierSupplier(batchSignatureVerifierSupplier));
   }
 
   public String getTestType() {

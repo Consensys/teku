@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -283,9 +283,8 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
     // Requesting 5 blocks
     verify(peer, times(1)).approveBlocksRequest(any(), eq(Long.valueOf(count)));
-    // Sending 0 blocks (First block is missing, return error)
-    verify(peer, times(1))
-        .adjustBlocksRequest(eq(maybeRequestKey.orElseThrow()), eq(Long.valueOf(0)));
+    // Be protective: do not adjust due to error
+    verify(peer, never()).adjustBlocksRequest(any(), anyLong());
 
     final RpcException expectedError =
         new RpcException.ResourceUnavailableException(
@@ -309,9 +308,8 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
     // Requesting 5 blocks
     verify(peer, times(1)).approveBlocksRequest(any(), eq(Long.valueOf(count)));
-    // Sending 0 blocks (First block is missing, return error)
-    verify(peer, times(1))
-        .adjustBlocksRequest(eq(maybeRequestKey.orElseThrow()), eq(Long.valueOf(0)));
+    // Be protective: do not adjust due to error
+    verify(peer, never()).adjustBlocksRequest(any(), anyLong());
 
     final RpcException expectedError =
         new RpcException.ResourceUnavailableException(

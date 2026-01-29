@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -31,7 +31,8 @@ import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
-import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
+import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.execution.versions.fulu.BlobsBundleFulu;
 
 public class BlobsBundleV2 {
   @JsonSerialize(contentUsing = BytesSerializer.class)
@@ -58,15 +59,15 @@ public class BlobsBundleV2 {
     this.blobs = blobs;
   }
 
-  public static BlobsBundleV2 fromInternalBlobsBundle(final BlobsCellBundle blobsBundle) {
+  public static BlobsBundleV2 fromInternalBlobsBundle(final BlobsBundle blobsBundle) {
     return new BlobsBundleV2(
         blobsBundle.getCommitments().stream().map(KZGCommitment::getBytesCompressed).toList(),
         blobsBundle.getProofs().stream().map(KZGProof::getBytesCompressed).toList(),
         blobsBundle.getBlobs().stream().map(SszByteVectorImpl::getBytes).toList());
   }
 
-  public BlobsCellBundle asInternalBlobsCellBundle(final BlobSchema blobSchema) {
-    return new BlobsCellBundle(
+  public BlobsBundle asInternalBlobsBundle(final BlobSchema blobSchema) {
+    return new BlobsBundleFulu(
         commitments.stream().map(KZGCommitment::new).toList(),
         proofs.stream().map(KZGProof::new).toList(),
         blobs.stream().map(blobBytes -> new Blob(blobSchema, blobBytes)).toList());

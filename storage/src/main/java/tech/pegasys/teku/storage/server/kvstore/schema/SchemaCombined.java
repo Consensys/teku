@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server.kvstore.schema;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes;
@@ -22,6 +23,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -68,6 +70,8 @@ public interface SchemaCombined extends Schema {
   KvStoreColumn<DataColumnSlotAndIdentifier, Bytes>
       getColumnNonCanonicalSidecarByColumnSlotAndIdentifier();
 
+  KvStoreColumn<UInt64, List<List<KZGProof>>> getColumnDataColumnSidecarsProofsBySlot();
+
   // Variables
   KvStoreVariable<UInt64> getVariableGenesisTime();
 
@@ -89,6 +93,8 @@ public interface SchemaCombined extends Schema {
 
   KvStoreVariable<UInt64> getVariableEarliestBlobSidecarSlot();
 
+  KvStoreVariable<UInt64> getVariableEarliestAvailableDataColumnSlot();
+
   KvStoreVariable<Bytes32> getVariableLatestCanonicalBlockRoot();
 
   KvStoreVariable<UInt64> getVariableCustodyGroupCount();
@@ -98,8 +104,6 @@ public interface SchemaCombined extends Schema {
   KvStoreVariable<DepositTreeSnapshot> getVariableFinalizedDepositSnapshot();
 
   KvStoreVariable<UInt64> getVariableFirstCustodyIncompleteSlot();
-
-  KvStoreVariable<UInt64> getVariableFirstSamplerIncompleteSlot();
 
   Map<String, KvStoreColumn<?, ?>> getColumnMap();
 

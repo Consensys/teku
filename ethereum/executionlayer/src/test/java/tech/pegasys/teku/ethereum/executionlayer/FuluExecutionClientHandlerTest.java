@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -43,7 +43,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
-import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
+import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
@@ -74,7 +74,7 @@ public class FuluExecutionClientHandlerTest extends ExecutionHandlerClientTest {
             ExecutionPayloadV3.fromInternalExecutionPayload(
                 dataStructureUtil.randomExecutionPayload()),
             UInt256.MAX_VALUE,
-            BlobsBundleV2.fromInternalBlobsBundle(dataStructureUtil.randomBlobsCellBundle()),
+            BlobsBundleV2.fromInternalBlobsBundle(dataStructureUtil.randomBlobsBundle()),
             true,
             dataStructureUtil.randomEncodedExecutionRequests());
     final SafeFuture<Response<GetPayloadV5Response>> dummyResponse =
@@ -168,16 +168,15 @@ public class FuluExecutionClientHandlerTest extends ExecutionHandlerClientTest {
         SpecConfigDeneb.required(spec.getGenesisSpecConfig()).getMaxBlobsPerBlock();
     final List<VersionedHash> versionedHashes =
         dataStructureUtil.randomVersionedHashes(maxBlobsPerBlock);
-    final BlobsCellBundle blobsCellBundle =
-        dataStructureUtil.randomBlobsCellBundle(maxBlobsPerBlock);
+    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle(maxBlobsPerBlock);
     final UInt64 slot = dataStructureUtil.randomUInt64(1_000_000);
     final List<BlobAndProofV2> responseData =
-        IntStream.range(0, blobsCellBundle.getBlobs().size())
+        IntStream.range(0, blobsBundle.getBlobs().size())
             .mapToObj(
                 i ->
                     new BlobAndProofV2(
-                        blobsCellBundle.getBlobs().get(i).getBytes(),
-                        blobsCellBundle
+                        blobsBundle.getBlobs().get(i).getBytes(),
+                        blobsBundle
                             .getProofs()
                             .subList(i * CELLS_PER_EXT_BLOB, (i + 1) * CELLS_PER_EXT_BLOB)
                             .stream()

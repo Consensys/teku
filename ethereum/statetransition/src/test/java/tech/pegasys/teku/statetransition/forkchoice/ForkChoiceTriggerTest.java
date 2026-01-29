@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,6 +23,7 @@ import static tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger.DEB
 import static tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger.WARNING_TIME_MILLIS;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.infrastructure.logging.LogCaptor;
@@ -64,8 +65,8 @@ class ForkChoiceTriggerTest {
     timeProvider.advanceTimeByMillis(2000);
     try (final LogCaptor logCaptor = LogCaptor.forClass(ForkChoiceTrigger.class)) {
       trigger.onAttestationsDueForSlot(UInt64.ONE);
-      assertThat(logCaptor.getErrorLogs())
-          .contains("Failed to wait for fork choice to complete for slot 1");
+      assertThat(logCaptor.getWarnLogs())
+          .anyMatch(log -> log.contains("Timeout waiting for fork choice to complete for slot 1"));
     }
   }
 
@@ -115,15 +116,10 @@ class ForkChoiceTriggerTest {
     final CompletableFuture<Void> attestationsDueFuture =
         SafeFuture.runAsync(() -> localTrigger.onAttestationsDueForSlot(UInt64.ONE));
     processHeadFuture.complete(true);
-    int i = 0;
-    // shouldn't take 30 x 100ms to complete, but allowing in case
-    while (i++ < 30) {
-      Thread.sleep(100);
-      if (processHeadFuture.isCompletedNormally()) {
-        break;
-      }
-    }
-    attestationsDueFuture.cancel(true);
+
+    // Wait for the async operation to complete using proper synchronization
+    // instead of polling with Thread.sleep which is flaky on Windows
+    attestationsDueFuture.get(5, TimeUnit.SECONDS);
   }
 
   @Test

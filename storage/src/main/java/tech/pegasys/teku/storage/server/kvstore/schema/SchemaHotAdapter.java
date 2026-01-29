@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -159,6 +159,12 @@ public class SchemaHotAdapter implements Schema {
   @Override
   public Collection<Bytes> getDeletedColumnIds() {
     // No hot db columns have been removed currently
+    return Collections.emptyList();
+  }
+
+  @Override
+  public Collection<Bytes> getDeletedVariableIds() {
+    // No hot db variables have been removed currently
     return Collections.emptyList();
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -20,18 +20,20 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.builder.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
 public class BlobsBundleFulu
     extends Container3<
-        BlobsBundleFulu, SszList<SszKZGCommitment>, SszList<SszKZGProof>, SszList<Blob>> {
+        BlobsBundleFulu, SszList<SszKZGCommitment>, SszList<SszKZGProof>, SszList<Blob>>
+    implements BlobsBundle {
 
   BlobsBundleFulu(final BlobsBundleSchemaFulu type, final TreeNode backingTreeNode) {
     super(type, backingTreeNode);
   }
 
-  public BlobsBundleFulu(
+  BlobsBundleFulu(
       final BlobsBundleSchemaFulu schema,
       final SszList<SszKZGCommitment> commitments,
       final SszList<SszKZGProof> proofs,
@@ -49,19 +51,18 @@ public class BlobsBundleFulu
         proofs.size());
   }
 
+  @Override
   public SszList<SszKZGCommitment> getCommitments() {
     return getField0();
   }
 
+  @Override
   public SszList<SszKZGProof> getProofs() {
     return getField1();
   }
 
+  @Override
   public SszList<Blob> getBlobs() {
     return getField2();
-  }
-
-  public int getNumberOfBlobs() {
-    return getBlobs().size();
   }
 }

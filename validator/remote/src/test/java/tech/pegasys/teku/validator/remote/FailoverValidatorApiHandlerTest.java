@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -63,6 +63,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -619,6 +621,46 @@ class FailoverValidatorApiHandlerTest {
         .sendSignedBlock(blindedSignedBlock, BroadcastValidationLevel.NOT_REQUIRED);
   }
 
+  @Test
+  public void executionPayloadIsCreatedByTheBeaconNodeWhichCreatedTheBid() {
+    final Spec spec = TestSpecFactory.createMinimalGloas();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
+    final UInt64 slot = UInt64.ONE;
+    final UInt64 builderIndex = dataStructureUtil.randomBuilderIndex();
+
+    final ExecutionPayloadBid bid = dataStructureUtil.randomExecutionPayloadBid(slot, builderIndex);
+
+    final ValidatorApiChannelRequest<Optional<ExecutionPayloadBid>> bidCreationRequest =
+        apiChannel -> apiChannel.createUnsignedExecutionPayloadBid(slot, builderIndex);
+
+    setupFailures(bidCreationRequest, primaryApiChannel);
+    setupSuccesses(bidCreationRequest, Optional.of(bid), failoverApiChannel1);
+
+    SafeFutureAssert.assertThatSafeFuture(bidCreationRequest.run(failoverApiHandler)).isCompleted();
+    final ExecutionPayloadEnvelope executionPayloadEnvelope =
+        dataStructureUtil.randomExecutionPayloadEnvelope(slot);
+
+    final ValidatorApiChannelRequest<Optional<ExecutionPayloadEnvelope>>
+        executionPayloadCreationRequest =
+            apiChannel -> apiChannel.createUnsignedExecutionPayload(slot, builderIndex);
+
+    setupSuccesses(
+        executionPayloadCreationRequest,
+        Optional.of(executionPayloadEnvelope),
+        primaryApiChannel,
+        failoverApiChannel1,
+        failoverApiChannel2);
+
+    SafeFutureAssert.assertThatSafeFuture(executionPayloadCreationRequest.run(failoverApiHandler))
+        .isCompleted();
+
+    verify(failoverApiChannel1).createUnsignedExecutionPayload(slot, builderIndex);
+
+    verify(primaryApiChannel, never()).createUnsignedExecutionPayload(slot, builderIndex);
+    verify(failoverApiChannel2, never()).createUnsignedExecutionPayload(slot, builderIndex);
+  }
+
   private <T> void setupSuccesses(
       final ValidatorApiChannelRequest<T> request,
       final T response,
@@ -892,7 +934,7 @@ class FailoverValidatorApiHandlerTest {
       final RemoteValidatorApiChannel apiChannel,
       final String methodLabel,
       final RequestOutcome outcome) {
-    return stubMetricsSystem.getCounterValue(
+    return stubMetricsSystem.getLabelledCounterValue(
         TekuMetricCategory.VALIDATOR,
         FailoverValidatorApiHandler.REMOTE_BEACON_NODES_REQUESTS_COUNTER_NAME,
         apiChannel.getEndpoint().toString(),

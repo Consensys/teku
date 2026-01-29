@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -33,6 +33,13 @@ class BitvectorImpl {
         bytes.size(),
         size);
     BitSet bitset = new BitSet(size);
+
+    final int bitsInLastByte = size % 8;
+    if (bitsInLastByte != 0) {
+      if ((bytes.get((size - 1) / 8) >>> bitsInLastByte) != 0) {
+        throw new IllegalArgumentException("Invalid padding bits for Bitvector");
+      }
+    }
 
     for (int i = size - 1; i >= 0; i--) {
       if (((bytes.get(i / 8) >>> (i % 8)) & 0x01) == 1) {

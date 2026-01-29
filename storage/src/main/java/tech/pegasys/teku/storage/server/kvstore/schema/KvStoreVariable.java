@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -29,8 +29,11 @@ public class KvStoreVariable<TValue> {
   }
 
   public static <T> KvStoreVariable<T> create(final int id, final KvStoreSerializer<T> serializer) {
-    final byte byteId = toByteExact(id);
-    return new KvStoreVariable<T>(new byte[] {byteId}, serializer);
+    return new KvStoreVariable<T>(asVariableId(id).toArray(), serializer);
+  }
+
+  public static Bytes asVariableId(final int id) {
+    return Bytes.of(toByteExact(id));
   }
 
   public Bytes getId() {

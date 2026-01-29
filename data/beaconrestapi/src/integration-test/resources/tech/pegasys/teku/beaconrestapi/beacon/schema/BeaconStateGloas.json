@@ -1,7 +1,7 @@
 {
   "title" : "BeaconStateGloas",
   "type" : "object",
-  "required" : [ "genesis_time", "genesis_validators_root", "slot", "fork", "latest_block_header", "block_roots", "state_roots", "historical_roots", "eth1_data", "eth1_data_votes", "eth1_deposit_index", "validators", "balances", "randao_mixes", "slashings", "previous_epoch_participation", "current_epoch_participation", "justification_bits", "previous_justified_checkpoint", "current_justified_checkpoint", "finalized_checkpoint", "inactivity_scores", "current_sync_committee", "next_sync_committee", "latest_execution_payload_header", "next_withdrawal_index", "next_withdrawal_validator_index", "historical_summaries", "deposit_requests_start_index", "deposit_balance_to_consume", "exit_balance_to_consume", "earliest_exit_epoch", "consolidation_balance_to_consume", "earliest_consolidation_epoch", "pending_deposits", "pending_partial_withdrawals", "pending_consolidations", "proposer_lookahead", "execution_payload_availability", "builder_pending_payments", "builder_pending_withdrawals", "latest_block_hash", "latest_withdrawals_root" ],
+  "required" : [ "genesis_time", "genesis_validators_root", "slot", "fork", "latest_block_header", "block_roots", "state_roots", "historical_roots", "eth1_data", "eth1_data_votes", "eth1_deposit_index", "validators", "balances", "randao_mixes", "slashings", "previous_epoch_participation", "current_epoch_participation", "justification_bits", "previous_justified_checkpoint", "current_justified_checkpoint", "finalized_checkpoint", "inactivity_scores", "current_sync_committee", "next_sync_committee", "latest_execution_payload_bid", "next_withdrawal_index", "next_withdrawal_validator_index", "historical_summaries", "deposit_requests_start_index", "deposit_balance_to_consume", "exit_balance_to_consume", "earliest_exit_epoch", "consolidation_balance_to_consume", "earliest_consolidation_epoch", "pending_deposits", "pending_partial_withdrawals", "pending_consolidations", "proposer_lookahead", "builders", "next_withdrawal_builder_index", "execution_payload_availability", "builder_pending_payments", "builder_pending_withdrawals", "latest_block_hash", "payload_expected_withdrawals" ],
   "properties" : {
     "genesis_time" : {
       "type" : "string",
@@ -150,8 +150,8 @@
     "next_sync_committee" : {
       "$ref" : "#/components/schemas/SyncCommittee"
     },
-    "latest_execution_payload_header" : {
-      "$ref" : "#/components/schemas/ExecutionPayloadHeaderGloas"
+    "latest_execution_payload_bid" : {
+      "$ref" : "#/components/schemas/ExecutionPayloadBid"
     },
     "next_withdrawal_index" : {
       "type" : "string",
@@ -234,6 +234,18 @@
         "format" : "uint64"
       }
     },
+    "builders" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/Builder"
+      }
+    },
+    "next_withdrawal_builder_index" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
     "execution_payload_availability" : {
       "type" : "string",
       "pattern" : "^0x[a-fA-F0-9]{2,}$",
@@ -258,11 +270,11 @@
       "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
       "format" : "byte"
     },
-    "latest_withdrawals_root" : {
-      "type" : "string",
-      "description" : "Bytes32 hexadecimal",
-      "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
-      "format" : "byte"
+    "payload_expected_withdrawals" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/Withdrawal"
+      }
     }
   }
 }

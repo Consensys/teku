@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -46,7 +46,10 @@ public class MilestoneBasedBlockContainerSigner implements BlockContainerSigner 
         .forEach(
             forkAndSpecMilestone -> {
               final SpecMilestone milestone = forkAndSpecMilestone.getSpecMilestone();
-              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+                // in Gloas, phase0 can be reused
+                registeredSigners.put(milestone, blockContainerSignerPhase0);
+              } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
                 registeredSigners.put(milestone, blockContainerSignerDeneb.get());
               } else {
                 registeredSigners.put(milestone, blockContainerSignerPhase0);

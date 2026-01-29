@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -49,14 +49,18 @@ public class RocksDbDatabaseFactory {
             STORAGE_HOT_DB,
             hotConfiguration,
             schemaHot.getAllColumns(),
-            schemaHot.getDeletedColumnIds());
+            schemaHot.getDeletedColumnIds(),
+            schemaHot.getAllVariables(),
+            schemaHot.getDeletedVariableIds());
     final KvStoreAccessor finalizedDb =
         RocksDbInstanceFactory.create(
             metricsSystem,
             STORAGE_FINALIZED_DB,
             finalizedConfiguration,
             schemaFinalized.getAllColumns(),
-            schemaFinalized.getDeletedColumnIds());
+            schemaFinalized.getDeletedColumnIds(),
+            schemaFinalized.getAllVariables(),
+            schemaFinalized.getDeletedVariableIds());
     return KvStoreDatabase.createV4(
         hotDb,
         finalizedDb,
@@ -83,7 +87,9 @@ public class RocksDbDatabaseFactory {
             STORAGE,
             hotConfiguration,
             schema.getAllColumns(),
-            schema.getDeletedColumnIds());
+            schema.getDeletedColumnIds(),
+            schema.getAllVariables(),
+            schema.getDeletedVariableIds());
 
     return KvStoreDatabase.createWithStateSnapshots(
         db, schema, stateStorageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);

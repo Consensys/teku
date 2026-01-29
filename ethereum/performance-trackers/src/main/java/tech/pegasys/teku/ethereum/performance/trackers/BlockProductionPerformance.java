@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -31,7 +31,8 @@ package tech.pegasys.teku.ethereum.performance.trackers;
  *       retrieve_state
  *    (which set slotTime too)
  *         |
- *         v
+ *         |        <-     validatorBlockRequested (VC triggers block production continuation,
+ *         |                           after prepareBlockProductionInternal has been processed)
  *         |
  *         v
  *    beaconBlockPrepared (attestations_for_block is part of the process of beaconBlockPrepared)
@@ -78,7 +79,13 @@ public interface BlockProductionPerformance {
         public void beaconBlockBodyPrepared() {}
 
         @Override
-        public void getStateAtSlot() {}
+        public void lateBlockReorgPreparationCompleted() {}
+
+        @Override
+        public void validatorBlockRequested() {}
+
+        @Override
+        public void getState() {}
 
         @Override
         public void engineGetPayload() {}
@@ -115,7 +122,11 @@ public interface BlockProductionPerformance {
 
   void beaconBlockBodyPrepared();
 
-  void getStateAtSlot();
+  void lateBlockReorgPreparationCompleted();
+
+  void validatorBlockRequested();
+
+  void getState();
 
   void engineGetPayload();
 

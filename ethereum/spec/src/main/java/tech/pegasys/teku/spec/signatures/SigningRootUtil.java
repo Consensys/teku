@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -22,6 +22,9 @@ import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -111,5 +114,39 @@ public class SigningRootUtil {
     final MiscHelpers miscHelpers = spec.getGenesisSpec().miscHelpers();
     final Bytes32 domain = miscHelpers.computeDomain(Domain.APPLICATION_BUILDER);
     return miscHelpers.computeSigningRoot(validatorRegistration, domain);
+  }
+
+  public Bytes signingRootForSignExecutionPayloadBid(
+      final ExecutionPayloadBid bid, final ForkInfo forkInfo) {
+    final UInt64 slot = bid.getSlot();
+    final Bytes32 domain = getDomainForSignExecutionPayload(slot, forkInfo);
+    return spec.atSlot(slot).miscHelpers().computeSigningRoot(bid, domain);
+  }
+
+  public Bytes signingRootForSignExecutionPayloadEnvelope(
+      final ExecutionPayloadEnvelope envelope, final ForkInfo forkInfo) {
+    final UInt64 slot = envelope.getSlot();
+    final Bytes32 domain = getDomainForSignExecutionPayload(slot, forkInfo);
+    return spec.atSlot(slot).miscHelpers().computeSigningRoot(envelope, domain);
+  }
+
+  private Bytes32 getDomainForSignExecutionPayload(final UInt64 slot, final ForkInfo forkInfo) {
+    return spec.getDomain(
+        Domain.BEACON_BUILDER,
+        spec.computeEpochAtSlot(slot),
+        forkInfo.getFork(),
+        forkInfo.getGenesisValidatorsRoot());
+  }
+
+  public Bytes signingRootForSignPayloadAttestationData(
+      final PayloadAttestationData payloadAttestationData, final ForkInfo forkInfo) {
+    final UInt64 slot = payloadAttestationData.getSlot();
+    final Bytes32 domain =
+        spec.getDomain(
+            Domain.PTC_ATTESTER,
+            spec.computeEpochAtSlot(slot),
+            forkInfo.getFork(),
+            forkInfo.getGenesisValidatorsRoot());
+    return spec.atSlot(slot).miscHelpers().computeSigningRoot(payloadAttestationData, domain);
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -87,8 +87,7 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void dataStorageCreateDbVersion_shouldDefault() {
     final StorageConfiguration config = getTekuConfigurationFromArguments().storageConfiguration();
-    final DatabaseVersion expectedDefault =
-        DatabaseVersion.isLevelDbSupported() ? DatabaseVersion.LEVELDB2 : DatabaseVersion.V5;
+    final DatabaseVersion expectedDefault = DatabaseVersion.V6;
     assertThat(config.getDataStorageCreateDbVersion()).isEqualTo(expectedDefault);
   }
 
@@ -96,7 +95,7 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
   public void dataStorageCreateDbVersion_shouldOverrideIfFrequencyIsLowAndSupported() {
     final Supplier<TekuConfiguration> tekuConfigurationSupplier =
         () -> getTekuConfigurationFromArguments("--data-storage-archive-frequency", "1");
-    if (DatabaseVersion.isLevelDbSupported()) {
+    if (DatabaseVersion.tryLoadLeveldbNativeLibrary()) {
       final StorageConfiguration config = tekuConfigurationSupplier.get().storageConfiguration();
       assertThat(config.getDataStorageCreateDbVersion()).isEqualTo(DatabaseVersion.LEVELDB_TREE);
     } else {

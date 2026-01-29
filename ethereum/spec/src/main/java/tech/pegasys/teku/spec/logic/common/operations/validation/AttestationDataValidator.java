@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -21,6 +21,8 @@ public interface AttestationDataValidator
   enum AttestationInvalidReason implements OperationInvalidReason {
     COMMITTEE_INDEX_TOO_HIGH("CommitteeIndex too high"),
     COMMITTEE_INDEX_MUST_BE_ZERO("CommitteeIndex must be set to zero"),
+    COMMITTEE_INDEX_MUST_BE_LESS_THAN_TWO(
+        "CommitteeIndex (used for payload availability) must be less than two"),
     PARTICIPANTS_COUNT_MISMATCH("Attesting participants count do not match aggregation bits"),
     NOT_FROM_CURRENT_OR_PREVIOUS_EPOCH("Attestation not from current or previous epoch"),
     SLOT_NOT_IN_EPOCH("Attestation slot not in specified epoch"),

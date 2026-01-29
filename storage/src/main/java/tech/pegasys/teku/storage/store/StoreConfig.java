@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -30,15 +30,12 @@ public class StoreConfig {
   public static final int DEFAULT_CHECKPOINT_STATE_CACHE_SIZE = 20;
   public static final int DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS = 2;
 
-  public static final int DEFAULT_EARLIEST_AVAILABLE_BLOCK_SLOT_QUERY_FREQUENCY = 0;
-
   private final int stateCacheSize;
 
   private final int epochStateCacheSize;
   private final int blockCacheSize;
   private final int checkpointStateCacheSize;
   private final int hotStatePersistenceFrequencyInEpochs;
-  private final int earliestAvailableBlockSlotFrequency;
   private final Optional<Bytes32> initialCanonicalBlockRoot;
 
   private StoreConfig(
@@ -46,14 +43,12 @@ public class StoreConfig {
       final int blockCacheSize,
       final int checkpointStateCacheSize,
       final int hotStatePersistenceFrequencyInEpochs,
-      final int earliestAvailableBlockSlotFrequency,
       final int epochStateCacheSize,
       final Optional<Bytes32> initialCanonicalBlockRoot) {
     this.stateCacheSize = stateCacheSize;
     this.blockCacheSize = blockCacheSize;
     this.checkpointStateCacheSize = checkpointStateCacheSize;
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
-    this.earliestAvailableBlockSlotFrequency = earliestAvailableBlockSlotFrequency;
     this.epochStateCacheSize = epochStateCacheSize;
     this.initialCanonicalBlockRoot = initialCanonicalBlockRoot;
   }
@@ -80,10 +75,6 @@ public class StoreConfig {
 
   public int getCheckpointStateCacheSize() {
     return checkpointStateCacheSize;
-  }
-
-  public int getEarliestAvailableBlockSlotFrequency() {
-    return earliestAvailableBlockSlotFrequency;
   }
 
   public int getHotStatePersistenceFrequencyInEpochs() {
@@ -130,7 +121,6 @@ public class StoreConfig {
     private int checkpointStateCacheSize = DEFAULT_CHECKPOINT_STATE_CACHE_SIZE;
     private int hotStatePersistenceFrequencyInEpochs =
         DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS;
-    private int earliestAvailableBlockSlotFrequency = 0;
     private Optional<Bytes32> initialCanonicalBlockRoot = Optional.empty();
 
     private Builder() {}
@@ -141,7 +131,6 @@ public class StoreConfig {
           blockCacheSize,
           checkpointStateCacheSize,
           hotStatePersistenceFrequencyInEpochs,
-          earliestAvailableBlockSlotFrequency,
           epochStateCacheSize,
           initialCanonicalBlockRoot);
     }
@@ -175,12 +164,6 @@ public class StoreConfig {
         this.initialCanonicalBlockRoot =
             Optional.of(Bytes32.fromHexString(initialCanonicalBlockRoot));
       }
-      return this;
-    }
-
-    public Builder earliestAvailableBlockSlotFrequency(
-        final int earliestAvailableBlockSlotQueryFrequency) {
-      this.earliestAvailableBlockSlotFrequency = earliestAvailableBlockSlotQueryFrequency;
       return this;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -48,6 +48,7 @@ public class EpochProcessingExecutor {
       case PENDING_DEPOSITS -> processPendingDeposits(state);
       case PENDING_CONSOLIDATIONS -> processPendingConsolidations(state);
       case PROPOSER_LOOKAHEAD -> epochProcessor.processProposerLookahead(state);
+      case BUILDER_PENDING_PAYMENTS -> epochProcessor.processBuilderPendingPayments(state);
       default ->
           throw new UnsupportedOperationException(
               "Attempted to execute unknown operation type: " + operation);

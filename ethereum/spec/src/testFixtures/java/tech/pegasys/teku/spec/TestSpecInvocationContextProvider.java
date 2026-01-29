@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.extension.Extension;
@@ -27,6 +28,8 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifierImpl;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -98,6 +101,7 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
   }
 
   public static class SpecContext {
+
     private final String displayName;
     private final Spec spec;
     private final DataStructureUtil dataStructureUtil;
@@ -118,11 +122,18 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
       } else {
         final BLSSignatureVerifier blsSignatureVerifier =
             signatureVerifierNoop ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE;
+        final Supplier<BatchSignatureVerifier> batchSignatureVerifierSupplier =
+            signatureVerifierNoop
+                ? () -> BatchSignatureVerifier.NO_OP
+                : BatchSignatureVerifierImpl::new;
         this.spec =
             TestSpecFactory.create(
                 specMilestone,
                 network,
-                builder -> builder.blsSignatureVerifier(blsSignatureVerifier));
+                builder ->
+                    builder
+                        .blsSignatureVerifier(blsSignatureVerifier)
+                        .batchSignatureVerifierSupplier(batchSignatureVerifierSupplier));
         this.dataStructureUtil = new DataStructureUtil(spec);
         this.schemaDefinitions = spec.forMilestone(specMilestone).getSchemaDefinitions();
       }
@@ -175,6 +186,14 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
       Assumptions.assumeTrue(specMilestone.isGreaterThanOrEqualTo(milestone), "Milestone skipped");
     }
 
+    public void assumeMilestonesActive(final SpecMilestone from, final SpecMilestone to) {
+      Assumptions.assumeTrue(specMilestone.isBetween(from, to), "Milestone skipped");
+    }
+
+    public void assumeGloasActive() {
+      assumeMilestoneActive(SpecMilestone.GLOAS);
+    }
+
     public void assumeFuluActive() {
       assumeMilestoneActive(SpecMilestone.FULU);
     }
@@ -201,6 +220,7 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
   }
 
   public static class SpecContextParameterResolver<T> implements ParameterResolver {
+
     T data;
 
     public SpecContextParameterResolver(final T data) {

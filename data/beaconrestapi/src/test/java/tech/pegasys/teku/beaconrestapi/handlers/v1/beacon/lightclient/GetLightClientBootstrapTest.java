@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -40,7 +40,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetLightClientBootstrapTest extends AbstractMigratedBeaconHandlerTest {
 
@@ -49,8 +48,9 @@ public class GetLightClientBootstrapTest extends AbstractMigratedBeaconHandlerTe
 
   @BeforeEach
   void setup() {
+    // we need altair minimum, so update spec
+    setSpec(TestSpecFactory.createMinimalAltair());
     setHandler(new GetLightClientBootstrap(chainDataProvider, schemaDefinitionCache));
-    dataStructureUtil = new DataStructureUtil(TestSpecFactory.createMinimalAltair());
     request.setPathParameter("block_root", blockRoot.toHexString());
   }
 
@@ -72,9 +72,9 @@ public class GetLightClientBootstrapTest extends AbstractMigratedBeaconHandlerTe
 
   @Test
   void metadata_shouldHandle200() throws IOException {
-    LightClientBootstrap lightClientBootstrap =
+    final LightClientBootstrap lightClientBootstrap =
         dataStructureUtil.randomLightClientBoostrap(UInt64.ONE);
-    ObjectAndMetaData<LightClientBootstrap> responseData =
+    final ObjectAndMetaData<LightClientBootstrap> responseData =
         new ObjectAndMetaData<>(lightClientBootstrap, SpecMilestone.ALTAIR, false, true, false);
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);

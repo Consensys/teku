@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -31,7 +31,6 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer.PeerStatusSubscriber;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
@@ -65,13 +64,15 @@ class Eth2PeerTest {
   private final MetadataMessagesFactory metadataMessagesFactory =
       mock(MetadataMessagesFactory.class);
   private final PeerChainValidator peerChainValidator = mock(PeerChainValidator.class);
-  private final RateTracker blockRateTracker = mock(RateTracker.class);
+  private final RateTracker blocksRateTracker = mock(RateTracker.class);
   private final RateTracker blobSidecarsRateTracker = mock(RateTracker.class);
   private final RateTracker dataColumnSidecarsRateTracker = mock(RateTracker.class);
+  private final RateTracker executionPayloadEnvelopesRateTracker = mock(RateTracker.class);
   private final RateTracker rateTracker = mock(RateTracker.class);
-  private final KZG kzg = mock(KZG.class);
   private final MetricsSystem metricsSystem = mock(MetricsSystem.class);
   private final TimeProvider timeProvider = mock(TimeProvider.class);
+  private final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator =
+      mock(DataColumnSidecarSignatureValidator.class);
 
   private final PeerStatus randomPeerStatus = randomPeerStatus();
 
@@ -84,11 +85,12 @@ class Eth2PeerTest {
           statusMessageFactory,
           metadataMessagesFactory,
           peerChainValidator,
-          blockRateTracker,
+          dataColumnSidecarSignatureValidator,
+          blocksRateTracker,
           blobSidecarsRateTracker,
           dataColumnSidecarsRateTracker,
+          executionPayloadEnvelopesRateTracker,
           rateTracker,
-          kzg,
           metricsSystem,
           timeProvider);
 

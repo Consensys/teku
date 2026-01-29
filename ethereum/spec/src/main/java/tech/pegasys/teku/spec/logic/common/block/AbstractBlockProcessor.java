@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -46,9 +46,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -137,7 +134,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final IndexedAttestationCache indexedAttestationCache,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws StateTransitionException {
-    final BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
+    final BatchSignatureVerifier signatureVerifier = specConfig.createBatchSignatureVerifier();
     final BeaconState result =
         processAndValidateBlock(
             signedBlock,
@@ -310,10 +307,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         beaconStateAccessors.getBeaconCommittee(state, data.getSlot(), data.getIndex());
     checkArgument(
         attestation.getAggregationBits().size() == committee.size(),
-        "process_attestations: Attestation aggregation bits and committee don't have the same length - committee "
-            + committee.size()
-            + ", aggregation bits "
-            + attestation.getAggregationBits().size());
+        "process_attestations: Attestation aggregation bits and committee don't have the same length - committee %s, aggregation bits %s",
+        committee.size(),
+        attestation.getAggregationBits().size());
   }
 
   @Override
@@ -501,12 +497,19 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
                 "process_proposer_slashings: %s",
                 invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
+            removeBuilderPendingPayment(proposerSlashing, state);
+
             beaconStateMutators.slashValidator(
                 state,
                 proposerSlashing.getHeader1().getMessage().getProposerIndex().intValue(),
                 validatorExitContextSupplier);
           }
         });
+  }
+
+  protected void removeBuilderPendingPayment(
+      final ProposerSlashing proposerSlashing, final MutableBeaconState state) {
+    // NO-OP until Gloas
   }
 
   protected BlockValidationResult verifyProposerSlashings(
@@ -792,7 +795,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     final Supplier<ValidatorExitContext> validatorExitContextSupplier =
         getValidatorExitContextSupplier(state);
     processVoluntaryExitsNoValidation(state, exits, validatorExitContextSupplier);
-    BlockValidationResult signaturesValid = verifyVoluntaryExits(state, exits, signatureVerifier);
+    final BlockValidationResult signaturesValid =
+        verifyVoluntaryExits(state, exits, signatureVerifier);
     if (!signaturesValid.isValid()) {
       throw new BlockProcessingException(signaturesValid.getFailureReason());
     }
@@ -815,14 +819,20 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
                 "process_voluntary_exits: %s",
                 invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
-            // - Run initiate_validator_exit(state, exit.validator_index)
-
-            beaconStateMutators.initiateValidatorExit(
-                state,
-                signedExit.getMessage().getValidatorIndex().intValue(),
-                validatorExitContextSupplier);
+            initiateExit(state, signedExit, validatorExitContextSupplier);
           }
         });
+  }
+
+  protected void initiateExit(
+      final MutableBeaconState state,
+      final SignedVoluntaryExit signedExit,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
+    // - Run initiate_validator_exit(state, exit.validator_index)
+    beaconStateMutators.initiateValidatorExit(
+        state,
+        signedExit.getMessage().getValidatorIndex().intValue(),
+        validatorExitContextSupplier);
   }
 
   protected BlockValidationResult verifyVoluntaryExits(
@@ -838,36 +848,6 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       }
     }
     return BlockValidationResult.SUCCESSFUL;
-  }
-
-  @Override
-  public void processDepositRequests(
-      final MutableBeaconState state, final List<DepositRequest> depositRequests) {
-    // No DepositRequests until Electra
-  }
-
-  @Override
-  public void processWithdrawalRequests(
-      final MutableBeaconState state,
-      final List<WithdrawalRequest> withdrawalRequests,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
-      throws BlockProcessingException {
-    // No WithdrawalRequests until Electra
-  }
-
-  @Override
-  public void processConsolidationRequests(
-      final MutableBeaconState state, final List<ConsolidationRequest> consolidationRequests)
-      throws BlockProcessingException {
-    // No Consolidations until Electra
-  }
-
-  @Override
-  public boolean isValidSwitchToCompoundingRequest(
-      final BeaconState beaconState, final ConsolidationRequest consolidationRequest)
-      throws BlockProcessingException {
-    // No Consolidations until Electra
-    return false;
   }
 
   // Catch generic errors and wrap them in a BlockProcessingException

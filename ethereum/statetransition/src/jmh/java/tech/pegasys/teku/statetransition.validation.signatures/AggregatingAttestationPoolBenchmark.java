@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -59,7 +59,6 @@ import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
-import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPoolV1;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPoolV2;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
 import tech.pegasys.teku.statetransition.attestation.PooledAttestation;
@@ -244,12 +243,14 @@ public class AggregatingAttestationPoolBenchmark {
   @BenchmarkMode(Mode.AverageTime)
   public void add(final Blackhole bh) {
     var emptyPool =
-        new AggregatingAttestationPoolV1(
+        new AggregatingAttestationPoolV2(
             SPEC,
             recentChainData,
             new NoOpMetricsSystem(),
+            DEFAULT_MAXIMUM_ATTESTATION_COUNT,
             AggregatingAttestationPoolProfiler.NOOP,
-            DEFAULT_MAXIMUM_ATTESTATION_COUNT);
+            10_000,
+            10_000);
     attestations.forEach(emptyPool::add);
   }
 

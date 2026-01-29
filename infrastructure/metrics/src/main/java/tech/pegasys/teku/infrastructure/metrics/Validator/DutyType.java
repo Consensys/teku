@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,7 +16,8 @@ package tech.pegasys.teku.infrastructure.metrics.Validator;
 public enum DutyType {
   ATTESTATION_AGGREGATION("attestation_aggregation"),
   ATTESTATION_PRODUCTION("attestation_production"),
-  BLOCK_PRODUCTION("block_production");
+  BLOCK_PRODUCTION("block_production"),
+  PAYLOAD_ATTESTATION_PRODUCTION("payload_attestation_production");
 
   private final String name;
 

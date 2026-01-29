@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -24,7 +24,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -97,7 +96,7 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
 
     processBlockHeader(state, block);
     if (miscHelpersBellatrix.isExecutionEnabled(genericState, block)) {
-      executionProcessing(genericState, block.getBody(), payloadExecutor);
+      executionProcessing(genericState, block, payloadExecutor);
     }
     processRandaoNoValidation(state, block.getBody());
     processEth1Data(state, block.getBody());
@@ -109,10 +108,10 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
 
   public void executionProcessing(
       final MutableBeaconState genericState,
-      final BeaconBlockBody beaconBlockBody,
+      final BeaconBlock beaconBlock,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
-    processExecutionPayload(genericState, beaconBlockBody, payloadExecutor);
+    processExecutionPayload(genericState, beaconBlock.getBody(), payloadExecutor);
   }
 
   @Override
@@ -181,7 +180,7 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
     if (miscHelpersBellatrix.isMergeTransitionComplete(state)) {
       if (!executionPayloadHeader
           .getParentHash()
-          .equals(state.getLatestExecutionPayloadHeader().getBlockHash())) {
+          .equals(state.getLatestExecutionPayloadHeaderRequired().getBlockHash())) {
         throw new BlockProcessingException(
             "Execution payload parent hash does not match previous execution payload header");
       }
@@ -220,12 +219,5 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
       final SszList<SignedBlsToExecutionChange> blsToExecutionChanges)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No BlsToExecutionChanges in Bellatrix.");
-  }
-
-  @Override
-  public void processWithdrawals(
-      final MutableBeaconState state, final ExecutionPayloadSummary payloadSummary)
-      throws BlockProcessingException {
-    throw new UnsupportedOperationException("No withdrawals in Bellatrix");
   }
 }

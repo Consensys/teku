@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -31,6 +31,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Readiness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetColumnCustodyAtSlot;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDeposits;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1Data;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1DataCache;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1VotingSumma
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetFinalizedStateSlotBefore;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetProposersData;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetStateByBlockRoot;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.node.GetCustodyOverview;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.node.GetPeersScore;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.validatorInclusion.GetGlobalValidatorInclusion;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.validatorInclusion.GetValidatorInclusion;
@@ -59,6 +61,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStatePendingConsolidations;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStatePendingDeposits;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStatePendingPartialWithdrawals;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateProposerLookahead;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateRandao;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateRoot;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateSyncCommittees;
@@ -261,6 +264,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetStatePendingConsolidations(dataProvider, schemaCache))
             .endpoint(new GetStatePendingDeposits(dataProvider, schemaCache))
             .endpoint(new GetStatePendingPartialWithdrawals(dataProvider, schemaCache))
+            .endpoint(new GetStateProposerLookahead(dataProvider, schemaCache))
             .endpoint(new GetDepositSnapshot(eth1DataProvider))
             // Event Handler
             .endpoint(
@@ -319,6 +323,8 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new Readiness(dataProvider))
             .endpoint(new GetAllBlocksAtSlot(dataProvider, schemaCache))
             .endpoint(new GetPeersScore(dataProvider))
+            .endpoint(new GetCustodyOverview(dataProvider))
+            .endpoint(new GetColumnCustodyAtSlot(dataProvider))
             .endpoint(new GetProposersData(dataProvider))
             .endpoint(new GetDeposits(eth1DataProvider))
             .endpoint(new GetEth1Data(dataProvider, eth1DataProvider))

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
@@ -82,16 +82,12 @@ public interface BeaconBlockBodyBuilder {
 
   BeaconBlockBodyBuilder executionRequests(ExecutionRequests executionRequests);
 
-  default Boolean supportsCellProofs() {
+  default Boolean supportsSignedExecutionPayloadBid() {
     return false;
   }
 
-  default Boolean supportsSignedExecutionPayloadHeader() {
-    return false;
-  }
-
-  BeaconBlockBodyBuilder signedExecutionPayloadHeader(
-      SignedExecutionPayloadHeader signedExecutionPayloadHeader);
+  BeaconBlockBodyBuilder signedExecutionPayloadBid(
+      SignedExecutionPayloadBid signedExecutionPayloadBid);
 
   default Boolean supportsPayloadAttestations() {
     return false;

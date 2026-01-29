@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -21,12 +21,14 @@ import java.io.IOException;
 import okhttp3.Response;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.lightclient.GetLightClientBootstrap;
 import tech.pegasys.teku.ethereum.json.types.SharedApiTypes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
@@ -36,27 +38,28 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
+@TestSpecContext(milestone = {SpecMilestone.ALTAIR, SpecMilestone.ELECTRA})
 public class GetLightClientBootstrapIntegrationTest
     extends AbstractDataBackedRestAPIIntegrationTest {
 
   final Bytes32 blockRoot = Bytes32.random();
 
   @BeforeEach
-  void setup() {
-    startRestAPIAtGenesis(SpecMilestone.ALTAIR);
+  void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
+    startRestAPIAtGenesis(specContext.getSpecMilestone());
   }
 
-  @Test
+  @TestTemplate
   void shouldReturnResultIfCreatedSuccessfully() throws IOException {
-    BeaconState state =
+    final BeaconState state =
         safeJoin(dataProvider.getChainDataProvider().getBeaconStateAtHead())
             .orElseThrow()
             .getData();
-    LightClientHeader expectedHeader =
+    final LightClientHeader expectedHeader =
         SchemaDefinitionsAltair.required(spec.getGenesisSchemaDefinitions())
             .getLightClientHeaderSchema()
             .create(BeaconBlockHeader.fromState(state));
-    SyncCommittee expectedSyncCommittee =
+    final SyncCommittee expectedSyncCommittee =
         BeaconStateAltair.required(state).getCurrentSyncCommittee();
 
     final Response response = get(expectedHeader.getBeacon().getRoot());
@@ -73,14 +76,14 @@ public class GetLightClientBootstrapIntegrationTest
     assertThat(parsedBootstrapResponse.getCurrentSyncCommittee()).isEqualTo(expectedSyncCommittee);
   }
 
-  @Test
+  @TestTemplate
   void shouldReturnBadRequestIfInvalidPath() throws IOException {
     final Response response =
         getResponse(GetLightClientBootstrap.ROUTE.replace("{block_root}", "foo"));
     assertBadRequest(response);
   }
 
-  @Test
+  @TestTemplate
   void shouldReturnNotFoundIfNoBlock() throws IOException {
     final Response response = get(blockRoot);
     assertNotFound(response);

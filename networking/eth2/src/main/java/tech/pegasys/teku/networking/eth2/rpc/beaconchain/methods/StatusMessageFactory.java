@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,12 +15,16 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.spec.Spec;
@@ -42,10 +46,22 @@ public class StatusMessageFactory implements SlotEventsChannel {
   private final CombinedChainDataClient combinedChainDataClient;
   private final AtomicReference<Optional<UInt64>> maybeEarliestAvailableSlot =
       new AtomicReference<>(Optional.empty());
+  private final boolean supportsEarliestAvailableSlot;
 
-  public StatusMessageFactory(final Spec spec, final CombinedChainDataClient recentChainData) {
+  public StatusMessageFactory(
+      final Spec spec,
+      final CombinedChainDataClient recentChainData,
+      final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.combinedChainDataClient = recentChainData;
+
+    supportsEarliestAvailableSlot = spec.isMilestoneSupported(SpecMilestone.FULU);
+
+    metricsSystem.createGauge(
+        TekuMetricCategory.BEACON,
+        "earliest_available_slot",
+        "Value representing the earliest slot where the node has data available to serve peers.",
+        () -> maybeEarliestAvailableSlot.get().map(UInt64::doubleValue).orElse(0.0));
   }
 
   public Optional<RpcRequestBodySelector<StatusMessage>> createStatusMessage() {
@@ -100,14 +116,33 @@ public class StatusMessageFactory implements SlotEventsChannel {
 
   @Override
   public void onSlot(final UInt64 slot) {
-    if (spec.computeStartSlotAtEpoch(combinedChainDataClient.getCurrentEpoch()).equals(slot)) {
+    final boolean isStartOfEpoch =
+        spec.computeStartSlotAtEpoch(combinedChainDataClient.getCurrentEpoch()).equals(slot);
+    if (isStartOfEpoch && supportsEarliestAvailableSlot) {
       updateEarliestAvailableSlot();
     }
   }
 
   private void updateEarliestAvailableSlot() {
-    combinedChainDataClient
-        .getEarliestAvailableBlockSlot()
+    final SafeFuture<Optional<UInt64>> earliestAvailableBlockSlotFuture =
+        combinedChainDataClient.getEarliestAvailableBlockSlot();
+    final SafeFuture<Optional<UInt64>> earliestDataColumnSidecarSlotFuture =
+        combinedChainDataClient.getEarliestAvailableDataColumnSlotWithFallback();
+
+    final BiFunction<Optional<UInt64>, Optional<UInt64>, Optional<UInt64>>
+        combineEarliestSlotFunction =
+            (blockEarliestAvailableSlot, dataColumnEarliestAvailableSlot) -> {
+              if (blockEarliestAvailableSlot.isPresent()
+                  && dataColumnEarliestAvailableSlot.isPresent()) {
+                return Optional.ofNullable(
+                    blockEarliestAvailableSlot.get().max(dataColumnEarliestAvailableSlot.get()));
+              } else {
+                return Optional.empty();
+              }
+            };
+
+    earliestAvailableBlockSlotFuture
+        .thenCombine(earliestDataColumnSidecarSlotFuture, combineEarliestSlotFunction)
         .thenAccept(
             maybeSlot -> {
               maybeSlot.ifPresent(

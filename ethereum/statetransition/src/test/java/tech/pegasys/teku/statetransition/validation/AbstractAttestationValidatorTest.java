@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -89,9 +89,10 @@ abstract class AbstractAttestationValidatorTest {
       new AttestationGenerator(spec, chainBuilder.getValidatorKeys());
   protected final AsyncBLSSignatureVerifier signatureVerifier =
       AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE);
-
+  protected final GossipValidationHelper gossipValidationHelper =
+      new GossipValidationHelper(spec, recentChainData, new StubMetricsSystem());
   protected final AttestationValidator validator =
-      new AttestationValidator(spec, recentChainData, signatureVerifier, new StubMetricsSystem());
+      new AttestationValidator(spec, signatureVerifier, gossipValidationHelper);
 
   @BeforeEach
   public void setUp() {

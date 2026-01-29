@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,7 +23,6 @@ import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -32,7 +31,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -45,7 +44,6 @@ import tech.pegasys.teku.statetransition.datacolumns.db.DelayedDasDb;
 import tech.pegasys.teku.statetransition.datacolumns.util.StubAsync;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 
-@SuppressWarnings("unused")
 public class DasCustodyStand {
 
   public static Builder builder(final Spec spec) {
@@ -107,8 +105,7 @@ public class DasCustodyStand {
             asyncBlockResolver,
             dbAccessor,
             minCustodyPeriodSlotCalculator,
-            () -> custodyGroupCountManager,
-            totalCustodyGroupCount);
+            custodyGroupCountManager);
     subscribeToSlotEvents(this.custody);
     subscribeToFinalizedEvents(this.custody);
 
@@ -159,7 +156,7 @@ public class DasCustodyStand {
     return custodyGroupCountManager.getCustodyColumnIndices();
   }
 
-  public UInt64 getMinCustodySlot() {
+  public Optional<UInt64> getMinCustodySlot() {
     return minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot);
   }
 
@@ -205,7 +202,6 @@ public class DasCustodyStand {
 
   public static class Builder {
     private Spec spec;
-    private UInt256 myNodeId = UInt256.ONE;
     private Integer totalCustodyGroupCount;
     private Integer samplingGroupCount;
     private Optional<Duration> asyncDbDelay = Optional.empty();
@@ -213,11 +209,6 @@ public class DasCustodyStand {
 
     public Builder withSpec(final Spec spec) {
       this.spec = spec;
-      return this;
-    }
-
-    public Builder withMyNodeId(final UInt256 myNodeId) {
-      this.myNodeId = myNodeId;
       return this;
     }
 

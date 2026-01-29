@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -207,5 +207,23 @@ class DefaultReputationManagerTest {
     peerPools.addPeerToPool(peerAddress.getId(), type);
     assertThat(reputationManager.adjustReputation(peerAddress, LARGE_PENALTY))
         .isEqualTo(!type.equals(PeerConnectionType.STATIC));
+  }
+
+  @Test
+  void shouldSwitchReputationWhenTypeChanges() {
+    // starting as score based should activate reputation tracking
+    peerPools.addPeerToPool(peerAddress.getId(), PeerConnectionType.SCORE_BASED);
+    assertThat(reputationManager.adjustReputation(peerAddress, LARGE_PENALTY)).isTrue();
+    assertThat(reputationManager.isConnectionInitiationAllowed(peerAddress)).isFalse();
+
+    // switching to static should switch to a static reputation (which ignores penalties)
+    peerPools.addPeerToPool(peerAddress.getId(), PeerConnectionType.STATIC);
+    assertThat(reputationManager.adjustReputation(peerAddress, LARGE_PENALTY)).isFalse();
+    assertThat(reputationManager.isConnectionInitiationAllowed(peerAddress)).isTrue();
+
+    // switching back to score based should switch back to a new score based reputation
+    peerPools.addPeerToPool(peerAddress.getId(), PeerConnectionType.RANDOMLY_SELECTED);
+    assertThat(reputationManager.adjustReputation(peerAddress, LARGE_PENALTY)).isTrue();
+    assertThat(reputationManager.isConnectionInitiationAllowed(peerAddress)).isFalse();
   }
 }

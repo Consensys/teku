@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -35,7 +35,7 @@ public class CompressedBranchInfoSerializerPropertyTest {
     final byte[] serialized = COMPRESSED_BRANCH_INFO_KV_STORE_SERIALIZER.serialize(value);
     final TreeNodeSource.CompressedBranchInfo deserialized =
         COMPRESSED_BRANCH_INFO_KV_STORE_SERIALIZER.deserialize(serialized);
-    assertThat(deserialized).isEqualToComparingFieldByField(value);
+    assertThat(deserialized).usingDefaultComparator().isEqualTo(value);
   }
 
   @Provide

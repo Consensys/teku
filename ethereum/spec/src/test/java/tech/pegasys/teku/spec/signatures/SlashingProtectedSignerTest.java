@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -27,6 +27,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -35,7 +38,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class SlashingProtectedSignerTest {
   private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createMinimalAltair());
+      new DataStructureUtil(TestSpecFactory.createMinimalGloas());
 
   private final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
   private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
@@ -140,6 +143,35 @@ class SlashingProtectedSignerTest {
     when(delegate.signValidatorRegistration(validatorRegistration)).thenReturn(signatureFuture);
 
     assertThatSafeFuture(signer.signValidatorRegistration(validatorRegistration))
+        .isCompletedWithValue(signature);
+  }
+
+  @Test
+  void signExecutionPayloadBid_shouldAlwaysSign() {
+    final ExecutionPayloadBid bid = dataStructureUtil.randomExecutionPayloadBid();
+    when(delegate.signExecutionPayloadBid(bid, forkInfo)).thenReturn(signatureFuture);
+
+    assertThatSafeFuture(signer.signExecutionPayloadBid(bid, forkInfo))
+        .isCompletedWithValue(signature);
+  }
+
+  @Test
+  void signExecutionPayloadEnvelope_shouldAlwaysSign() {
+    final ExecutionPayloadEnvelope envelope = dataStructureUtil.randomExecutionPayloadEnvelope();
+    when(delegate.signExecutionPayloadEnvelope(envelope, forkInfo)).thenReturn(signatureFuture);
+
+    assertThatSafeFuture(signer.signExecutionPayloadEnvelope(envelope, forkInfo))
+        .isCompletedWithValue(signature);
+  }
+
+  @Test
+  void signPayloadAttestationData_shouldAlwaysSign() {
+    final PayloadAttestationData payloadAttestationData =
+        dataStructureUtil.randomPayloadAttestationData();
+    when(delegate.signPayloadAttestationData(payloadAttestationData, forkInfo))
+        .thenReturn(signatureFuture);
+
+    assertThatSafeFuture(signer.signPayloadAttestationData(payloadAttestationData, forkInfo))
         .isCompletedWithValue(signature);
   }
 

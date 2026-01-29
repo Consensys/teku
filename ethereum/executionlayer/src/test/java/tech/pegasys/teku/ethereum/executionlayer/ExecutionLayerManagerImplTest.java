@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -1133,7 +1133,7 @@ class ExecutionLayerManagerImplTest {
 
   private void verifySourceCounter(final Source source, final FallbackReason reason) {
     final long actualCount =
-        stubMetricsSystem.getCounterValue(
+        stubMetricsSystem.getLabelledCounterValue(
             TekuMetricCategory.BEACON,
             "execution_payload_source_total",
             source.toString(),
@@ -1143,7 +1143,7 @@ class ExecutionLayerManagerImplTest {
 
   private void verifySourceCounterIsZero(final Source source, final FallbackReason reason) {
     final long actualCount =
-        stubMetricsSystem.getCounterValue(
+        stubMetricsSystem.getLabelledCounterValue(
             TekuMetricCategory.BEACON,
             "execution_payload_source_total",
             source.toString(),

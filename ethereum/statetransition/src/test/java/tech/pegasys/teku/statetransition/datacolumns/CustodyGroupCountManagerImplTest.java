@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -168,7 +168,7 @@ public class CustodyGroupCountManagerImplTest {
     custodyGroupCountManager.onSlot(UInt64.ZERO);
 
     assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(4);
-    assertThat(custodyGroupCountManager.getCustodyGroupSyncedCount()).isZero();
+    assertThat(custodyGroupCountManager.getCustodyGroupSyncedCount()).isEqualTo(4);
 
     // prepare a validator
     when(proposersDataManager.getPreparedProposerInfo())

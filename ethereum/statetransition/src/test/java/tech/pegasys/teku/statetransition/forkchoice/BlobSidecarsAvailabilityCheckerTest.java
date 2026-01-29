@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -56,7 +55,6 @@ public class BlobSidecarsAvailabilityCheckerTest {
   private final Spec spec = mock(Spec.class);
   private final SpecVersion specVersion = mock(SpecVersion.class);
   private final MiscHelpers miscHelpers = mock(MiscHelpers.class);
-  private final KZG kzg = mock(KZG.class);
   private final UpdatableStore store = mock(UpdatableStore.class);
   private final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
       mock(BlockBlobSidecarsTracker.class);
@@ -81,7 +79,7 @@ public class BlobSidecarsAvailabilityCheckerTest {
   void shouldVerifyValidAvailableBlobs() throws Exception {
     prepareInitialAvailability();
 
-    when(miscHelpers.verifyBlobKzgProofBatch(any(), any())).thenReturn(true);
+    when(miscHelpers.verifyBlobKzgProofBatch(any())).thenReturn(true);
     when(miscHelpers.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(anyList(), any()))
         .thenReturn(true);
 
@@ -95,7 +93,7 @@ public class BlobSidecarsAvailabilityCheckerTest {
   void shouldVerifyInvalidBlobsDueToWrongBlockHeader() throws Exception {
     prepareInitialAvailability();
 
-    when(miscHelpers.verifyBlobKzgProofBatch(any(), any())).thenReturn(true);
+    when(miscHelpers.verifyBlobKzgProofBatch(any())).thenReturn(true);
     when(miscHelpers.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(anyList(), any()))
         .thenReturn(false);
 
@@ -113,7 +111,7 @@ public class BlobSidecarsAvailabilityCheckerTest {
   void shouldVerifyInvalidBlobsDueToWrongKzg() throws Exception {
     prepareInitialAvailability();
 
-    when(miscHelpers.verifyBlobKzgProofBatch(any(), any())).thenReturn(false);
+    when(miscHelpers.verifyBlobKzgProofBatch(any())).thenReturn(false);
     when(miscHelpers.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(anyList(), any()))
         .thenReturn(true);
 
@@ -129,7 +127,7 @@ public class BlobSidecarsAvailabilityCheckerTest {
 
     final RuntimeException error = new RuntimeException("oops");
 
-    when(miscHelpers.verifyBlobKzgProofBatch(any(), any())).thenThrow(error);
+    when(miscHelpers.verifyBlobKzgProofBatch(any())).thenThrow(error);
 
     final SafeFuture<DataAndValidationResult<BlobSidecar>> availabilityCheckResult =
         runAvailabilityCheck();
@@ -143,7 +141,7 @@ public class BlobSidecarsAvailabilityCheckerTest {
 
     final RuntimeException error = new RuntimeException("oops");
 
-    when(miscHelpers.verifyBlobKzgProofBatch(any(), any())).thenReturn(true);
+    when(miscHelpers.verifyBlobKzgProofBatch(any())).thenReturn(true);
     when(miscHelpers.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(anyList(), any()))
         .thenReturn(true);
     doThrow(error).when(miscHelpers).verifyBlobSidecarCompleteness(anyList(), any());
@@ -345,7 +343,7 @@ public class BlobSidecarsAvailabilityCheckerTest {
 
     blobSidecarsAvailabilityChecker =
         new BlobSidecarsAvailabilityChecker(
-            spec, recentChainData, blockBlobSidecarsTracker, kzg, timeout);
+            spec, recentChainData, blockBlobSidecarsTracker, timeout);
   }
 
   private void completeTrackerWith(final List<BlobSidecar> blobSidecars) {
@@ -373,6 +371,6 @@ public class BlobSidecarsAvailabilityCheckerTest {
 
     blobSidecarsAvailabilityChecker =
         new BlobSidecarsAvailabilityChecker(
-            spec, recentChainData, blockBlobSidecarsTracker, kzg, Duration.ZERO);
+            spec, recentChainData, blockBlobSidecarsTracker, Duration.ZERO);
   }
 }

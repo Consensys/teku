@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -65,11 +65,11 @@ class DataColumnSidecarsByRootRequestMessageTest {
           final Spec spec = TestSpecFactory.createMainnet(milestone);
           final SpecConfig config = spec.forMilestone(milestone).getConfig();
           final SpecConfigFulu specConfigFulu = SpecConfigFulu.required(config);
-          final int maxRequestDataColumnSidecars = specConfigFulu.getMaxRequestDataColumnSidecars();
+          final int maxRequestBlocksDeneb = specConfigFulu.getMaxRequestBlocksDeneb();
           final DataColumnSidecarsByRootRequestMessageSchema schema =
               SchemaDefinitionsFulu.required(spec.forMilestone(milestone).getSchemaDefinitions())
                   .getDataColumnSidecarsByRootRequestMessageSchema();
-          assertThat(schema.getMaxLength()).isGreaterThanOrEqualTo(maxRequestDataColumnSidecars);
+          assertThat(schema.getMaxLength()).isEqualTo(maxRequestBlocksDeneb);
         });
   }
 

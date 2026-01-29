@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -24,4 +24,7 @@ public class WithdrawalPrefixes {
 
   public static final byte COMPOUNDING_WITHDRAWAL_BYTE = 0x02;
   public static final Bytes COMPOUNDING_WITHDRAWAL_PREFIX = Bytes.of(COMPOUNDING_WITHDRAWAL_BYTE);
+
+  public static final byte BUILDER_WITHDRAWAL_BYTE = 0x03;
+  public static final Bytes BUILDER_WITHDRAWAL_PREFIX = Bytes.of(BUILDER_WITHDRAWAL_BYTE);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -35,7 +35,7 @@ import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
@@ -92,7 +92,8 @@ public class DasCustodySyncTest {
 
   @BeforeEach
   public void setup() {
-    when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any())).thenReturn(UInt64.ZERO);
+    when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any()))
+        .thenReturn(Optional.of(UInt64.ZERO));
   }
 
   @Test
@@ -280,7 +281,7 @@ public class DasCustodySyncTest {
     final DataColumnSidecarRetriever retriever = mock(DataColumnSidecarRetriever.class);
     final DataColumnSidecarCustody custody = mock(DataColumnSidecarCustody.class);
     when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any()))
-        .thenReturn(UInt64.valueOf(1024));
+        .thenReturn(Optional.of(UInt64.valueOf(1024)));
     when(custody.retrieveMissingColumns()).thenReturn(testData(columns));
     final DasCustodySync custodySync =
         new DasCustodySync(
@@ -292,9 +293,7 @@ public class DasCustodySyncTest {
 
   @Test
   void nonFinalizationShouldNotPreventSyncingAndOverloadDB() {
-    // TODO-fulu this is too high and needs to be fixed
-    // (https://github.com/Consensys/teku/issues/9470)
-    final int maxAverageColumnDbReadsPerSlot = 400;
+    // all the block data will be coming from the proto array, so it's not a problem
     final int maxAverageBlockDbReadsPerSlot = 400;
 
     custodyStand.setCurrentSlot(0);
@@ -311,7 +310,7 @@ public class DasCustodySyncTest {
     }
 
     assertThat(custodyStand.db.getDbReadCounter().get() / 1000)
-        .isLessThan(maxAverageColumnDbReadsPerSlot);
+        .isLessThan(MAX_AVERAGE_COLUMN_DB_READS_PER_SLOT);
     assertThat(custodyStand.blockResolver.getBlockAccessCounter().get() / 1000)
         .isLessThan(maxAverageBlockDbReadsPerSlot);
 
@@ -322,7 +321,7 @@ public class DasCustodySyncTest {
     advanceTimeGraduallyUntilAllDone();
     printAndResetStats();
 
-    List<DataColumnSlotAndIdentifier> missingColumns =
+    final List<DataColumnSlotAndIdentifier> missingColumns =
         await(custodyStand.custody.retrieveMissingColumns().toList());
     assertThat(missingColumns).isEmpty();
     assertAllCustodyColumnsPresent();
@@ -359,7 +358,7 @@ public class DasCustodySyncTest {
     assertThat(retrieveRequests)
         .allSatisfy(
             request2 -> {
-              assertThat(request2.promise()).isCancelled();
+              assertThat(request2.future()).isCancelled();
             });
     assertThat(retrieverStub.requests).hasSize(retrieveRequests.size() * 2);
   }
@@ -373,7 +372,8 @@ public class DasCustodySyncTest {
 
   private void assertAllCustodyColumnsPresent() {
     assertCustodyColumnsPresent(
-        custodyStand.getMinCustodySlot().intValue(), custodyStand.getCurrentSlot().intValue());
+        custodyStand.getMinCustodySlot().orElseThrow().intValue(),
+        custodyStand.getCurrentSlot().intValue());
   }
 
   private void assertCustodyColumnsPresent(final int fromSlot, final int tillSlot) {
@@ -398,7 +398,7 @@ public class DasCustodySyncTest {
                           assertThat(sidecar.getSlot()).isEqualTo(uSlot);
                           assertThat(sidecar.getIndex()).isEqualTo(colIndex);
 
-                          assertThat(sidecar.getBlockRoot()).isEqualTo(block.getRoot());
+                          assertThat(sidecar.getBeaconBlockRoot()).isEqualTo(block.getRoot());
                         });
               }
             }

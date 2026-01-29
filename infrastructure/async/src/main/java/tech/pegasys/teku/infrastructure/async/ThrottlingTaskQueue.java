@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -25,6 +25,21 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
+/**
+ * *** WARNING *** Make sure about the following before using this class:
+ *
+ * <p>DO NOT nest calls to queueTask() - it may lead to stalled task processing. If the nested
+ * task(s) are queued, there might not be any inflight tasks to complete and trigger processing of
+ * the queued tasks.
+ *
+ * <p>Task suppliers should not be CPU intensive or blocking - they will occupy a thread from the
+ * executor's thread pool preventing other tasks from running. If you need to run blocking or CPU
+ * intensive tasks consider using a dedicated executor and queue for those tasks.
+ *
+ * <p>Submitted task should eventually complete (exceptionally or successfully). If tasks remains
+ * pending forever, inflight will reach the maximum and no further tasks will be started, causing
+ * the queue fill up and reject new tasks.
+ */
 public class ThrottlingTaskQueue implements TaskQueue {
   public static final int DEFAULT_MAXIMUM_QUEUE_SIZE = 500_000;
 

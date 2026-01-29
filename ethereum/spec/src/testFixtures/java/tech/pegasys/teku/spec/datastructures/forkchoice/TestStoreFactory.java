@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -77,7 +78,9 @@ public class TestStoreFactory {
         new HashMap<>(),
         Optional.empty(),
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        new HashMap<>(),
+        new HashMap<>());
   }
 
   private AnchorPoint createAnchorForGenesis() {
@@ -99,6 +102,8 @@ public class TestStoreFactory {
     Map<Checkpoint, BeaconState> checkpointStates = new HashMap<>();
     Map<UInt64, VoteTracker> votes = new HashMap<>();
     Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new HashMap<>();
+    Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads = new HashMap<>();
+    Map<Bytes32, BeaconState> executionPayloadStates = new HashMap<>();
 
     blocks.put(anchorRoot, anchor.getSignedBeaconBlock().orElseThrow());
     blockStates.put(anchorRoot, anchorState);
@@ -124,7 +129,9 @@ public class TestStoreFactory {
         blobSidecars,
         Optional.empty(),
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        executionPayloads,
+        executionPayloadStates);
   }
 
   private BeaconState createRandomGenesisState() {

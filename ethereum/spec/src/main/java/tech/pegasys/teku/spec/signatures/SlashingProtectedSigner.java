@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -24,6 +24,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -146,6 +149,24 @@ public class SlashingProtectedSigner implements Signer {
   public SafeFuture<BLSSignature> signValidatorRegistration(
       final ValidatorRegistration validatorRegistration) {
     return delegate.signValidatorRegistration(validatorRegistration);
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signExecutionPayloadBid(
+      final ExecutionPayloadBid bid, final ForkInfo forkInfo) {
+    return delegate.signExecutionPayloadBid(bid, forkInfo);
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signExecutionPayloadEnvelope(
+      final ExecutionPayloadEnvelope envelope, final ForkInfo forkInfo) {
+    return delegate.signExecutionPayloadEnvelope(envelope, forkInfo);
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signPayloadAttestationData(
+      final PayloadAttestationData payloadAttestationData, final ForkInfo forkInfo) {
+    return delegate.signPayloadAttestationData(payloadAttestationData, forkInfo);
   }
 
   @Override

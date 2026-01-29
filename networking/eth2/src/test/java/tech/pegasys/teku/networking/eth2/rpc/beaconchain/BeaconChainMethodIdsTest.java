@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -84,6 +84,8 @@ public class BeaconChainMethodIdsTest {
         Arguments.of(BeaconChainMethodIds.BLOB_SIDECARS_BY_RANGE),
         Arguments.of(BeaconChainMethodIds.DATA_COLUMN_SIDECARS_BY_ROOT),
         Arguments.of(BeaconChainMethodIds.DATA_COLUMN_SIDECARS_BY_RANGE),
+        Arguments.of(BeaconChainMethodIds.EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT),
+        Arguments.of(BeaconChainMethodIds.EXECUTION_PAYLOAD_ENVELOPES_BY_RANGE),
         Arguments.of(BeaconChainMethodIds.GET_METADATA),
         Arguments.of(BeaconChainMethodIds.PING));
   }

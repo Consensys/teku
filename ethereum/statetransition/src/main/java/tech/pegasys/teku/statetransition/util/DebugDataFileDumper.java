@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -30,11 +30,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public class DebugDataFileDumper implements DebugDataDumper {
 
@@ -46,6 +50,7 @@ public class DebugDataFileDumper implements DebugDataDumper {
   private static final String INVALID_BLOCK_DIR = "invalid_blocks";
   private static final String INVALID_BLOB_SIDECARS_DIR = "invalid_blob_sidecars";
   private static final String INVALID_DATA_COLUMN_SIDECARS_DIR = "invalid_data_column_sidecars";
+  private static final String INVALID_EXECUTION_PAYLOAD_DIR = "invalid_execution_payloads";
 
   private boolean enabled;
   private final Path directory;
@@ -71,6 +76,10 @@ public class DebugDataFileDumper implements DebugDataDumper {
         directory.resolve(INVALID_DATA_COLUMN_SIDECARS_DIR),
         INVALID_DATA_COLUMN_SIDECARS_DIR,
         "invalid data column sidecars");
+    createDirectory(
+        directory.resolve(INVALID_EXECUTION_PAYLOAD_DIR),
+        INVALID_EXECUTION_PAYLOAD_DIR,
+        "invalid execution payloads");
   }
 
   @Override
@@ -152,18 +161,49 @@ public class DebugDataFileDumper implements DebugDataDumper {
     if (!enabled || sidecars.isEmpty()) {
       return;
     }
-
     if (sidecars.getFirst() instanceof BlobSidecar) {
       saveInvalidBlobSidecars((List<BlobSidecar>) sidecars, block);
     } else if (sidecars.getFirst() instanceof DataColumnSidecar) {
-      saveInvalidDataColumnSidecars((List<DataColumnSidecar>) sidecars, block);
+      saveInvalidDataColumnSidecars(
+          (List<DataColumnSidecar>) sidecars,
+          block.getSlotAndBlockRoot(),
+          block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow());
     } else {
       throw new RuntimeException("Unknown sidecar type: " + sidecars.getFirst());
     }
   }
 
+  @Override
+  public void saveInvalidExecutionPayload(
+      final SignedExecutionPayloadEnvelope signedEnvelope,
+      final String failureReason,
+      final Optional<Throwable> failureCause) {
+    if (!enabled) {
+      return;
+    }
+    final UInt64 slot = signedEnvelope.getSlot();
+    final Bytes32 blockRoot = signedEnvelope.getBeaconBlockRoot();
+    final UInt64 builderIndex = signedEnvelope.getMessage().getBuilderIndex();
+    final String fileName =
+        String.format("%s_%s_%s.ssz", slot, blockRoot.toUnprefixedHexString(), builderIndex);
+    final boolean success =
+        saveBytesToFile(
+            "invalid execution payload",
+            Path.of(INVALID_EXECUTION_PAYLOAD_DIR).resolve(fileName),
+            signedEnvelope.sszSerialize());
+    if (success) {
+      LOG.warn(
+          "Rejecting invalid execution payload at slot {} with block root {} and builder index {}, reason: {}, cause: {}",
+          slot,
+          blockRoot,
+          builderIndex,
+          failureReason,
+          failureCause.orElse(null));
+    }
+  }
+
   private void saveInvalidBlobSidecars(
-      final List<BlobSidecar> sidecars, final SignedBeaconBlock block) {
+      final List<BlobSidecar> blobSidecars, final SignedBeaconBlock block) {
     final String kzgCommitmentsFileName =
         String.format(
             "%s_%s_kzg_commitments.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());
@@ -172,41 +212,44 @@ public class DebugDataFileDumper implements DebugDataDumper {
         Path.of(INVALID_BLOB_SIDECARS_DIR).resolve(kzgCommitmentsFileName),
         block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow().sszSerialize());
 
-    sidecars.forEach(
-        sidecar -> {
-          final UInt64 slot = sidecar.getSlot();
-          final Bytes32 blockRoot = sidecar.getBlockRoot();
-          final UInt64 index = sidecar.getIndex();
+    blobSidecars.forEach(
+        blobSidecar -> {
+          final UInt64 slot = blobSidecar.getSlot();
+          final Bytes32 blockRoot = blobSidecar.getBlockRoot();
+          final UInt64 index = blobSidecar.getIndex();
           final String fileName =
               String.format("%s_%s_%s.ssz", slot, blockRoot.toUnprefixedHexString(), index);
           saveBytesToFile(
               "blob sidecar",
               Path.of(INVALID_BLOB_SIDECARS_DIR).resolve(fileName),
-              sidecar.sszSerialize());
+              blobSidecar.sszSerialize());
         });
   }
 
   private void saveInvalidDataColumnSidecars(
-      final List<DataColumnSidecar> sidecars, final SignedBeaconBlock block) {
+      final List<DataColumnSidecar> dataColumnSidecars,
+      final SlotAndBlockRoot slotAndBlockRoot,
+      final SszList<SszKZGCommitment> blobKzgCommitments) {
     final String kzgCommitmentsFileName =
         String.format(
-            "%s_%s_kzg_commitments.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());
+            "%s_%s_kzg_commitments.ssz",
+            slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot().toUnprefixedHexString());
     saveBytesToFile(
         "kzg commitments",
         Path.of(INVALID_DATA_COLUMN_SIDECARS_DIR).resolve(kzgCommitmentsFileName),
-        block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow().sszSerialize());
+        blobKzgCommitments.sszSerialize());
 
-    sidecars.forEach(
-        sidecar -> {
-          final UInt64 slot = sidecar.getSlot();
-          final Bytes32 blockRoot = sidecar.getBlockRoot();
-          final UInt64 index = sidecar.getIndex();
+    dataColumnSidecars.forEach(
+        dataColumnSidecar -> {
+          final UInt64 slot = dataColumnSidecar.getSlot();
+          final Bytes32 blockRoot = dataColumnSidecar.getBeaconBlockRoot();
+          final UInt64 index = dataColumnSidecar.getIndex();
           final String fileName =
               String.format("%s_%s_%s.ssz", slot, blockRoot.toUnprefixedHexString(), index);
           saveBytesToFile(
               "data column sidecar",
               Path.of(INVALID_DATA_COLUMN_SIDECARS_DIR).resolve(fileName),
-              sidecar.sszSerialize());
+              dataColumnSidecar.sszSerialize());
         });
   }
 

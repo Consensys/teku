@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
-import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
+import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
@@ -85,14 +85,13 @@ public class EngineGetPayloadV5 extends AbstractEngineJsonRpcMethod<GetPayloadRe
                       .getExecutionPayloadSchema();
               final ExecutionPayload executionPayload =
                   response.executionPayload.asInternalExecutionPayload(payloadSchema);
-              final BlobsCellBundle blobsCellBundle =
-                  getBlobsCellBundle(response, schemaDefinitions);
+              final BlobsBundle blobsBundle = getBlobsBundle(response, schemaDefinitions);
               final ExecutionRequests executionRequests =
                   executionRequestsDataDecoder.decode(response.executionRequests);
               return new GetPayloadResponse(
                   executionPayload,
                   response.blockValue,
-                  blobsCellBundle,
+                  blobsBundle,
                   response.shouldOverrideBuilder,
                   executionRequests);
             })
@@ -106,10 +105,10 @@ public class EngineGetPayloadV5 extends AbstractEngineJsonRpcMethod<GetPayloadRe
                     getPayloadResponse));
   }
 
-  private BlobsCellBundle getBlobsCellBundle(
+  private BlobsBundle getBlobsBundle(
       final GetPayloadV5Response response, final SchemaDefinitions schemaDefinitions) {
     final BlobSchema blobSchema =
         SchemaDefinitionsDeneb.required(schemaDefinitions).getBlobSchema();
-    return response.blobsBundle.asInternalBlobsCellBundle(blobSchema);
+    return response.blobsBundle.asInternalBlobsBundle(blobSchema);
   }
 }

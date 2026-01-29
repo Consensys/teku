@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -145,7 +145,8 @@ public abstract class AttestationUtil {
 
   public AttestationProcessingResult isValidIndexedAttestation(
       final Fork fork, final BeaconState state, final ValidatableAttestation attestation) {
-    return isValidIndexedAttestation(fork, state, attestation, BLSSignatureVerifier.SIMPLE);
+    return isValidIndexedAttestation(
+        fork, state, attestation, specConfig.getBLSSignatureVerifier());
   }
 
   public AttestationProcessingResult isValidIndexedAttestation(
@@ -215,7 +216,8 @@ public abstract class AttestationUtil {
    */
   public AttestationProcessingResult isValidIndexedAttestation(
       final Fork fork, final BeaconState state, final IndexedAttestation indexedAttestation) {
-    return isValidIndexedAttestation(fork, state, indexedAttestation, BLSSignatureVerifier.SIMPLE);
+    return isValidIndexedAttestation(
+        fork, state, indexedAttestation, specConfig.getBLSSignatureVerifier());
   }
 
   public AttestationProcessingResult isValidIndexedAttestation(
@@ -326,6 +328,11 @@ public abstract class AttestationUtil {
 
   public abstract Attestation convertSingleAttestationToAggregated(
       final BeaconState state, final SingleAttestation singleAttestation);
+
+  public abstract AttestationValidationResult validateIndexValue(final UInt64 index);
+
+  public abstract AttestationValidationResult validatePayloadStatus(
+      final AttestationData attestationData, final Optional<UInt64> maybeBlockSlot);
 
   public enum SlotInclusionGossipValidationResult {
     IGNORE,

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -29,6 +29,7 @@ import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.NoOpKZG;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 
 @TestSpecContext(milestone = {CAPELLA, DENEB, ELECTRA})
 public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegrationTest {
@@ -47,6 +49,12 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
 
   @BeforeEach
   public void setUp(final TestSpecInvocationContextProvider.SpecContext specContext) {
+    specContext
+        .getSpec()
+        .reinitializeForTesting(
+            AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
+            AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
+            NoOpKZG.INSTANCE);
     peer = createPeer(specContext.getSpec());
     specMilestone = specContext.getSpecMilestone();
   }

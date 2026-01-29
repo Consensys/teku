@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -109,6 +109,16 @@ public class OperationsReOrgManagerTest {
     when(attestationManager.onAttestation(any()))
         .thenReturn(SafeFuture.completedFuture(AttestationProcessingResult.SUCCESSFUL));
 
+    final List<ValidatableAttestation> fork1Block2AttestationList =
+        fork1Block2.getBody().getAttestations().stream()
+            .map(attestation -> ValidatableAttestation.from(spec, attestation))
+            .toList();
+
+    final SafeFuture<AttestationProcessingResult> firstFork1Block2OnAttestationFuture =
+        new SafeFuture<>();
+    when(attestationManager.onAttestation(fork1Block2AttestationList.getFirst()))
+        .thenReturn(firstFork1Block2OnAttestationFuture);
+
     operationsReOrgManager.chainHeadUpdated(
         UInt64.valueOf(13),
         fork2Block2.getStateRoot(),
@@ -148,13 +158,23 @@ public class OperationsReOrgManagerTest {
         fork1Block1.getBody().getAttestations().stream()
             .map(attestation -> ValidatableAttestation.from(spec, attestation))
             .toList());
-    attestationList.addAll(
-        fork1Block2.getBody().getAttestations().stream()
-            .map(attestation -> ValidatableAttestation.from(spec, attestation))
-            .toList());
+    attestationList.addAll(fork1Block2AttestationList);
     assertThat(argument.getAllValues())
         .containsExactlyInAnyOrderElementsOf(attestationList)
         .allMatch(ValidatableAttestation::isValidIndexedAttestation);
+
+    // no new-canonical operations (removal) before non-canonical operations (re-adding) is
+    // completed
+    verify(proposerSlashingOperationPool, never()).removeAll(any());
+    verify(attesterSlashingOperationPool, never()).removeAll(any());
+    verify(exitOperationPool, never()).removeAll(any());
+    verify(attestationPool, never()).onAttestationsIncludedInBlock(any(), any());
+    verify(blsToExecutionOperationPool, never()).removeAll(any());
+
+    // complete non-canonical
+    firstFork1Block2OnAttestationFuture.complete(AttestationProcessingResult.SUCCESSFUL);
+
+    // verify new-canonical operations (removal) are done
 
     verify(proposerSlashingOperationPool).removeAll(fork2Block1.getBody().getProposerSlashings());
     verify(attesterSlashingOperationPool).removeAll(fork2Block1.getBody().getAttesterSlashings());
@@ -234,5 +254,60 @@ public class OperationsReOrgManagerTest {
         .onAttestationsIncludedInBlock(block1.getSlot(), block1.getBody().getAttestations());
     verify(blsToExecutionOperationPool)
         .removeAll(block1.getBody().getOptionalBlsToExecutionChanges().orElseThrow());
+  }
+
+  @Test
+  public void onLateBlockReorgPreparation_shouldRequeueOperations() {
+    final UInt64 lateBlockParentSlot = UInt64.valueOf(10);
+    final BeaconBlock lateBlock = dataStructureUtil.randomBeaconBlock(11);
+
+    final NavigableMap<UInt64, Bytes32> nowNotCanonicalBlockRoots = new TreeMap<>();
+    nowNotCanonicalBlockRoots.put(UInt64.valueOf(11), lateBlock.hashTreeRoot());
+    when(recentChainData.getAncestorsOnFork(lateBlockParentSlot, lateBlock.hashTreeRoot()))
+        .thenReturn(nowNotCanonicalBlockRoots);
+
+    when(recentChainData.retrieveBlockByRoot(lateBlock.hashTreeRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(lateBlock)));
+
+    final List<ValidatableAttestation> attestationList =
+        lateBlock.getBody().getAttestations().stream()
+            .map(attestation -> ValidatableAttestation.from(spec, attestation))
+            .toList();
+
+    when(attestationManager.onAttestation(any()))
+        .thenReturn(SafeFuture.completedFuture(AttestationProcessingResult.SUCCESSFUL));
+
+    final SafeFuture<AttestationProcessingResult> firstOnAttestationFuture = new SafeFuture<>();
+    when(attestationManager.onAttestation(attestationList.getFirst()))
+        .thenReturn(firstOnAttestationFuture);
+
+    final SafeFuture<Void> result =
+        operationsReOrgManager.onLateBlockReorgPreparation(
+            lateBlockParentSlot, lateBlock.hashTreeRoot());
+
+    // must wait for all attestations to be processed
+    assertThat(result).isNotDone();
+
+    // complete the first attestation processing, the rest are already completed
+    firstOnAttestationFuture.complete(AttestationProcessingResult.SUCCESSFUL);
+
+    assertThat(result).isCompleted();
+
+    verify(recentChainData).getAncestorsOnFork(lateBlockParentSlot, lateBlock.hashTreeRoot());
+
+    verify(attestationPool).onReorg(lateBlockParentSlot);
+    verify(proposerSlashingOperationPool).addAll(lateBlock.getBody().getProposerSlashings());
+    verify(attesterSlashingOperationPool).addAll(lateBlock.getBody().getAttesterSlashings());
+    verify(exitOperationPool).addAll(lateBlock.getBody().getVoluntaryExits());
+    verify(blsToExecutionOperationPool)
+        .addAll(lateBlock.getBody().getOptionalBlsToExecutionChanges().orElseThrow());
+
+    final ArgumentCaptor<ValidatableAttestation> argument =
+        ArgumentCaptor.forClass(ValidatableAttestation.class);
+    verify(attestationManager, atLeastOnce()).onAttestation(argument.capture());
+
+    assertThat(argument.getAllValues())
+        .containsExactlyInAnyOrderElementsOf(attestationList)
+        .allMatch(ValidatableAttestation::isValidIndexedAttestation);
   }
 }

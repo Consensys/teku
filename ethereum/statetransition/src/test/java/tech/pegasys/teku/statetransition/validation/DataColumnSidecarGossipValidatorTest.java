@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
@@ -25,21 +26,21 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -51,8 +52,7 @@ public class DataColumnSidecarGossipValidatorTest {
   private final Map<Bytes32, BlockImportResult> invalidBlocks = new HashMap<>();
   private final GossipValidationHelper gossipValidationHelper = mock(GossipValidationHelper.class);
   private final MiscHelpersFulu miscHelpersFulu = mock(MiscHelpersFulu.class);
-  private final KZG kzg = mock(KZG.class);
-  private final MetricsSystem metricsSystemStub = new StubMetricsSystem();
+  private final StubMetricsSystem metricsSystemStub = new StubMetricsSystem();
   private final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(0);
   private DataStructureUtil dataStructureUtil;
   private DataColumnSidecarGossipValidator validator;
@@ -77,7 +77,6 @@ public class DataColumnSidecarGossipValidatorTest {
             invalidBlocks,
             gossipValidationHelper,
             miscHelpersFulu,
-            kzg,
             metricsSystemStub,
             stubTimeProvider);
 
@@ -111,7 +110,7 @@ public class DataColumnSidecarGossipValidatorTest {
     when(gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
             any(), eq(proposerIndex), any(), eq(postState)))
         .thenReturn(true);
-    when(miscHelpersFulu.verifyDataColumnSidecarKzgProofs(any(), any(DataColumnSidecar.class)))
+    when(miscHelpersFulu.verifyDataColumnSidecarKzgProofs(any(DataColumnSidecar.class)))
         .thenReturn(true);
     when(miscHelpersFulu.verifyDataColumnSidecarInclusionProof(any())).thenReturn(true);
     when(miscHelpersFulu.verifyDataColumnSidecar(any())).thenReturn(true);
@@ -121,14 +120,21 @@ public class DataColumnSidecarGossipValidatorTest {
   void shouldAccept() {
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.ACCEPT, 1));
   }
 
+  /*
+   Spec says client should ignore or save it for future. Teku saves it for future processing.
+  */
   @TestTemplate
-  void shouldIgnoreWhenSlotIsFromFuture() {
+  void shouldSaveForFutureWhenSlotIsFromFuture() {
     when(gossipValidationHelper.isSlotFromFuture(slot)).thenReturn(true);
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.SAVE_FOR_FUTURE, 1));
   }
 
   @TestTemplate
@@ -137,6 +143,8 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.IGNORE, 1));
   }
 
   @TestTemplate
@@ -147,6 +155,8 @@ public class DataColumnSidecarGossipValidatorTest {
             result ->
                 result.equals(
                     InternalValidationResult.reject("DataColumnSidecar has invalid structure")));
+
+    assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
   }
 
   @TestTemplate
@@ -155,6 +165,8 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.SAVE_FOR_FUTURE, 1));
   }
 
   @TestTemplate
@@ -165,6 +177,8 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
   }
 
   @TestTemplate
@@ -173,6 +187,8 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.SAVE_FOR_FUTURE, 1));
   }
 
   @TestTemplate
@@ -181,6 +197,8 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
   }
 
   @TestTemplate
@@ -190,17 +208,24 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
   }
 
   @TestTemplate
   void shouldRejectIfFinalizedCheckpointIsNotAnAncestorOfDataColumnSidecarsBlock() {
     when(gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
             dataColumnSidecar.getSlot(),
-            dataColumnSidecar.getSignedBeaconBlockHeader().getMessage().getParentRoot()))
+            DataColumnSidecarFulu.required(dataColumnSidecar)
+                .getSignedBlockHeader()
+                .getMessage()
+                .getParentRoot()))
         .thenReturn(false);
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
   }
 
   @TestTemplate
@@ -209,15 +234,19 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
   }
 
   @TestTemplate
   void shouldRejectIfKzgVerificationFailed() {
-    when(miscHelpersFulu.verifyDataColumnSidecarKzgProofs(any(), any(DataColumnSidecar.class)))
+    when(miscHelpersFulu.verifyDataColumnSidecarKzgProofs(any(DataColumnSidecar.class)))
         .thenReturn(false);
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
   }
 
   @TestTemplate
@@ -230,6 +259,8 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.IGNORE, 1));
   }
 
   @TestTemplate
@@ -239,6 +270,8 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.IGNORE, 1));
   }
 
   @TestTemplate
@@ -248,6 +281,8 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
   }
 
   @TestTemplate
@@ -257,6 +292,8 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+
+    assertValidationMetrics(Map.of(ValidationResultCode.ACCEPT, 1, ValidationResultCode.IGNORE, 1));
   }
 
   @TestTemplate
@@ -265,7 +302,7 @@ public class DataColumnSidecarGossipValidatorTest {
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     verify(miscHelpersFulu).verifyDataColumnSidecarInclusionProof(dataColumnSidecar);
-    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar);
+    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProofs(dataColumnSidecar);
     verify(gossipValidationHelper).getParentStateInBlockEpoch(any(), any(), any());
     verify(gossipValidationHelper).isProposerTheExpectedProposer(any(), any(), any());
     verify(gossipValidationHelper)
@@ -277,11 +314,13 @@ public class DataColumnSidecarGossipValidatorTest {
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
 
     verify(miscHelpersFulu, never()).verifyDataColumnSidecarInclusionProof(dataColumnSidecar);
-    verify(miscHelpersFulu, never()).verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar);
+    verify(miscHelpersFulu, never()).verifyDataColumnSidecarKzgProofs(dataColumnSidecar);
     verify(gossipValidationHelper, never()).getParentStateInBlockEpoch(any(), any(), any());
     verify(gossipValidationHelper, never()).isProposerTheExpectedProposer(any(), any(), any());
     verify(gossipValidationHelper, never())
         .isSignatureValidWithRespectToProposerIndex(any(), any(), any(), any());
+
+    assertValidationMetrics(Map.of(ValidationResultCode.ACCEPT, 1, ValidationResultCode.IGNORE, 1));
   }
 
   @TestTemplate
@@ -290,7 +329,7 @@ public class DataColumnSidecarGossipValidatorTest {
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     verify(miscHelpersFulu).verifyDataColumnSidecarInclusionProof(dataColumnSidecar);
-    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar);
+    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProofs(dataColumnSidecar);
     verify(gossipValidationHelper).getParentStateInBlockEpoch(any(), any(), any());
     verify(gossipValidationHelper).isProposerTheExpectedProposer(any(), any(), any());
     verify(gossipValidationHelper)
@@ -300,13 +339,13 @@ public class DataColumnSidecarGossipValidatorTest {
     // Other DataColumnSidecar from the same block
     final DataColumnSidecar dataColumnSidecar0 =
         dataStructureUtil.randomDataColumnSidecar(
-            dataColumnSidecar.getSignedBeaconBlockHeader(), UInt64.ZERO);
+            DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader(), UInt64.ZERO);
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar0))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     verify(miscHelpersFulu).verifyDataColumnSidecarInclusionProof(dataColumnSidecar0);
-    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar0);
+    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProofs(dataColumnSidecar0);
     verify(gossipValidationHelper, never()).getParentStateInBlockEpoch(any(), any(), any());
     verify(gossipValidationHelper, never()).isProposerTheExpectedProposer(any(), any(), any());
     verify(gossipValidationHelper, never())
@@ -318,7 +357,10 @@ public class DataColumnSidecarGossipValidatorTest {
         dataStructureUtil.randomDataColumnSidecar(
             dataStructureUtil.randomSignedBeaconBlockHeader(), UInt64.ZERO);
     final Bytes32 parentRoot =
-        dataColumnSidecarNew.getSignedBeaconBlockHeader().getMessage().getParentRoot();
+        DataColumnSidecarFulu.required(dataColumnSidecarNew)
+            .getSignedBlockHeader()
+            .getMessage()
+            .getParentRoot();
 
     when(gossipValidationHelper.isSlotFinalized(dataColumnSidecarNew.getSlot())).thenReturn(false);
     when(gossipValidationHelper.isSlotFromFuture(dataColumnSidecarNew.getSlot())).thenReturn(false);
@@ -336,8 +378,10 @@ public class DataColumnSidecarGossipValidatorTest {
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
 
     verify(miscHelpersFulu).verifyDataColumnSidecarInclusionProof(dataColumnSidecarNew);
-    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecarNew);
+    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProofs(dataColumnSidecarNew);
     verify(gossipValidationHelper).getParentStateInBlockEpoch(any(), any(), any());
+
+    assertValidationMetrics(Map.of(ValidationResultCode.ACCEPT, 2, ValidationResultCode.IGNORE, 1));
   }
 
   @TestTemplate
@@ -354,7 +398,6 @@ public class DataColumnSidecarGossipValidatorTest {
             invalidBlocks,
             gossipValidationHelper,
             miscHelpersFulu,
-            kzg,
             metricsSystemStub,
             stubTimeProvider);
     // Accept everything
@@ -380,7 +423,7 @@ public class DataColumnSidecarGossipValidatorTest {
     // validation is used
     final DataColumnSidecar dataColumnSidecar0 =
         dataStructureUtil.randomDataColumnSidecar(
-            dataColumnSidecar.getSignedBeaconBlockHeader(), UInt64.ZERO);
+            DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader(), UInt64.ZERO);
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar0))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
@@ -428,7 +471,8 @@ public class DataColumnSidecarGossipValidatorTest {
     // DataColumnSidecar from the same block as DataColumnSidecar0 and DataColumnSidecar
     final DataColumnSidecar dataColumnSidecar5 =
         dataStructureUtil.randomDataColumnSidecar(
-            dataColumnSidecar.getSignedBeaconBlockHeader(), UInt64.valueOf(2));
+            DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader(),
+            UInt64.valueOf(2));
     when(gossipValidationHelper.getSlotForBlockRoot(any()))
         .thenReturn(Optional.of(dataColumnSidecar5.getSlot().decrement()));
 
@@ -438,5 +482,32 @@ public class DataColumnSidecarGossipValidatorTest {
     // Signature is validating again though header was known valid until dropped from cache
     verify(gossipValidationHelper)
         .isSignatureValidWithRespectToProposerIndex(any(), any(), any(), any());
+
+    assertValidationMetrics(Map.of(ValidationResultCode.ACCEPT, 6));
+  }
+
+  private void assertValidationMetrics(final Map<ValidationResultCode, Integer> values) {
+    assertThat(
+            metricsSystemStub.getCounterValue(
+                TekuMetricCategory.BEACON, "data_column_sidecar_processing_requests_total"))
+        .isEqualTo(values.values().stream().map(Integer::longValue).reduce(0L, Long::sum));
+
+    values.forEach(
+        (validationResultCode, count) -> {
+          assertThat(
+                  metricsSystemStub.getLabelledCounterValue(
+                      TekuMetricCategory.BEACON,
+                      "data_column_sidecar_processing_validated_total",
+                      validationResultCode.name()))
+              .isEqualTo(count.longValue());
+
+          if (validationResultCode == ValidationResultCode.ACCEPT) {
+            assertThat(
+                    metricsSystemStub.getCounterValue(
+                        TekuMetricCategory.BEACON,
+                        "data_column_sidecar_processing_successes_total"))
+                .isEqualTo(count.longValue());
+          }
+        });
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -20,9 +20,9 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntry;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -54,14 +54,15 @@ public class SidecarBenchmarkConfig {
       SchemaDefinitionsDeneb.required(spec.atSlot(UInt64.ONE).getSchemaDefinitions())
           .getBlobKzgCommitmentsSchema();
 
-  SidecarBenchmarkConfig(final boolean precompute) {
+  SidecarBenchmarkConfig(final boolean precompute, final boolean useRustLibrary) {
     kzgBenchmark = new KzgInstances(precompute ? 9 : 0);
     kzgCommitments =
         blobs.stream()
             .map(blob -> getKzg(false).blobToKzgCommitment(blob.getBytes()))
             .map(SszKZGCommitment::new)
             .toList();
-    extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, getKzg(false));
+    miscHelpersFulu.setKzg(getKzg(useRustLibrary));
+    extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs);
     signedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(
             blobKzgCommitmentsSchema.createFromElements(kzgCommitments));

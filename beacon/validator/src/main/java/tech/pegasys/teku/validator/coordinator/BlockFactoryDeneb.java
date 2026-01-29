@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,9 +23,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsDeneb;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -58,11 +57,7 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
               if (block.isBlinded()) {
                 return SafeFuture.completedFuture(blockContainerAndMetaData);
               }
-              // The execution BlobsBundle has been cached as part of the block creation
-              return operationSelector
-                  .createBlobsBundleSelector()
-                  .apply(block)
-                  .thenApply(blobsBundle -> createBlockContents(block, blobsBundle))
+              return createBlockContents(block)
                   .thenApply(blockContainerAndMetaData::withBlockContents);
             });
   }
@@ -72,15 +67,18 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
     return operationSelector.createBlobSidecarsSelector().apply(blockContainer);
   }
 
-  private BlockContentsDeneb createBlockContents(
-      final BeaconBlock block, final BlobsBundle blobsBundle) {
-    return getBlockContentsSchema(block.getSlot())
-        .create(block, blobsBundle.getProofs(), blobsBundle.getBlobs());
+  private SafeFuture<BlockContainer> createBlockContents(final BeaconBlock block) {
+    // The execution BlobsBundle has been cached as part of the block creation
+    return operationSelector
+        .createBlobsBundleSelector()
+        .apply(block)
+        .thenApply(blobsBundle -> createBlockContents(block, blobsBundle));
   }
 
-  private BlockContentsSchemaDeneb getBlockContentsSchema(final UInt64 slot) {
-    return (BlockContentsSchemaDeneb)
-        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-            .getBlockContentsSchema();
+  private BlockContainer createBlockContents(
+      final BeaconBlock block, final BlobsBundle blobsBundle) {
+    return SchemaDefinitionsDeneb.required(spec.atSlot(block.getSlot()).getSchemaDefinitions())
+        .getBlockContentsSchema()
+        .create(block, blobsBundle.getProofs(), blobsBundle.getBlobs());
   }
 }

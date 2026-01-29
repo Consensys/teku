@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -40,7 +40,6 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 @TestSpecContext(milestone = {PHASE0, ELECTRA})
@@ -50,8 +49,7 @@ class PostAttesterSlashingV2Test extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
-    spec = specContext.getSpec();
-    dataStructureUtil = new DataStructureUtil(spec);
+    setSpec(specContext.getSpec());
     specMilestone = specContext.getSpecMilestone();
     setHandler(new PostAttesterSlashingV2(nodeDataProvider, new SchemaDefinitionCache(spec)));
   }

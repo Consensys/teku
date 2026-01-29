@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,6 +15,8 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
+import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
+import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,8 +29,7 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-// TODO-GLOAS Fix test https://github.com/Consensys/teku/issues/9833
-@TestSpecContext(allMilestones = true, ignoredMilestones = SpecMilestone.GLOAS)
+@TestSpecContext(allMilestones = true)
 class SignedBeaconBlockTest {
 
   private Spec spec;
@@ -58,10 +59,11 @@ class SignedBeaconBlockTest {
     assertThat(blinded.hashTreeRoot()).isEqualTo(original.hashTreeRoot());
 
     if (!blinded.getMessage().getBody().isBlinded()) {
-      // Didn't blind the block so we must have a spec prior to bellatrix that doesn't have payloads
-      assertThat(
-              spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX))
-          .isFalse();
+      // Didn't blind the block so we must have a spec prior to bellatrix or post-gloas that
+      // doesn't have payloads
+      final SpecMilestone milestone = spec.getGenesisSpec().getMilestone();
+      assertThat(milestone.isLessThan(BELLATRIX) || milestone.isGreaterThanOrEqualTo(GLOAS))
+          .isTrue();
     } else {
       // Check the blinded block actually matches the schema by serializing it
       assertThatNoException().isThrownBy(blinded::sszSerialize);

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA;
 
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.function.Function;
@@ -26,7 +26,6 @@ import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema12;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -36,8 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFi
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -65,7 +63,7 @@ public class BeaconBlockBodySchemaGloasImpl
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
         SszList<SignedBlsToExecutionChange>,
-        SignedExecutionPayloadHeader,
+        SignedExecutionPayloadBid,
         SszList<PayloadAttestation>>
     implements BeaconBlockBodySchemaGloas<BeaconBlockBodyGloasImpl> {
 
@@ -81,7 +79,7 @@ public class BeaconBlockBodySchemaGloasImpl
       final NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema,
       final NamedSchema<SyncAggregate> syncAggregateSchema,
       final NamedSchema<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
-      final NamedSchema<SignedExecutionPayloadHeader> signedExecutionPayloadHeader,
+      final NamedSchema<SignedExecutionPayloadBid> signedExecutionPayloadBid,
       final NamedSchema<SszList<PayloadAttestation>> payloadAttestations) {
     super(
         containerName,
@@ -95,7 +93,7 @@ public class BeaconBlockBodySchemaGloasImpl
         voluntaryExitsSchema,
         syncAggregateSchema,
         blsToExecutionChange,
-        signedExecutionPayloadHeader,
+        signedExecutionPayloadBid,
         payloadAttestations);
   }
 
@@ -137,8 +135,8 @@ public class BeaconBlockBodySchemaGloasImpl
                 schemaRegistry.get(SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA),
                 specConfig.getMaxBlsToExecutionChanges())),
         namedSchema(
-            BlockBodyFields.SIGNED_EXECUTION_PAYLOAD_HEADER,
-            schemaRegistry.get(SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA)),
+            BlockBodyFields.SIGNED_EXECUTION_PAYLOAD_BID,
+            schemaRegistry.get(SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA)),
         namedSchema(
             BlockBodyFields.PAYLOAD_ATTESTATIONS,
             SszListSchema.create(
@@ -149,13 +147,23 @@ public class BeaconBlockBodySchemaGloasImpl
   @Override
   public SafeFuture<? extends BeaconBlockBody> createBlockBody(
       final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder) {
-    final BeaconBlockBodyBuilderGloas builder = new BeaconBlockBodyBuilderGloas(this, null);
+    final BeaconBlockBodyBuilderGloas builder = new BeaconBlockBodyBuilderGloas(this);
     return bodyBuilder.apply(builder).thenApply(__ -> builder.build());
   }
 
   @Override
   public BeaconBlockBody createEmpty() {
     return new BeaconBlockBodyGloasImpl(this);
+  }
+
+  @Override
+  public BeaconBlockBodyGloasImpl createFromBackingNode(final TreeNode node) {
+    return new BeaconBlockBodyGloasImpl(this, node);
+  }
+
+  @Override
+  public LongList getBlindedNodeGeneralizedIndices() {
+    return LongList.of();
   }
 
   @SuppressWarnings("unchecked")
@@ -198,11 +206,6 @@ public class BeaconBlockBodySchemaGloasImpl
   }
 
   @Override
-  public BeaconBlockBodyGloasImpl createFromBackingNode(final TreeNode node) {
-    return new BeaconBlockBodyGloasImpl(this, node);
-  }
-
-  @Override
   public ExecutionPayloadSchema<?> getExecutionPayloadSchema() {
     throw new UnsupportedOperationException("ExecutionPayload was removed in Gloas");
   }
@@ -225,21 +228,8 @@ public class BeaconBlockBodySchemaGloasImpl
   }
 
   @Override
-  public LongList getBlindedNodeGeneralizedIndices() {
-    return LongList.of();
-  }
-
-  @Override
-  public long getBlobKzgCommitmentsRootGeneralizedIndex() {
-    return GIndexUtil.gIdxCompose(
-        getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.SIGNED_EXECUTION_PAYLOAD_HEADER)),
-        getSignedExecutionPayloadHeaderSchema().getBlobKzgCommitmentsRootGeneralizedIndex());
-  }
-
-  @Override
-  public SignedExecutionPayloadHeaderSchema getSignedExecutionPayloadHeaderSchema() {
-    return (SignedExecutionPayloadHeaderSchema)
-        getChildSchema(getFieldIndex(BlockBodyFields.SIGNED_EXECUTION_PAYLOAD_HEADER));
+  public ExecutionRequestsSchema getExecutionRequestsSchema() {
+    throw new UnsupportedOperationException("ExecutionRequests were removed in Gloas");
   }
 
   @SuppressWarnings("unchecked")
@@ -247,10 +237,5 @@ public class BeaconBlockBodySchemaGloasImpl
   public SszListSchema<PayloadAttestation, ?> getPayloadAttestationsSchema() {
     return (SszListSchema<PayloadAttestation, ?>)
         getChildSchema(getFieldIndex(BlockBodyFields.PAYLOAD_ATTESTATIONS));
-  }
-
-  @Override
-  public ExecutionRequestsSchema getExecutionRequestsSchema() {
-    throw new UnsupportedOperationException("ExecutionRequests were removed in Gloas");
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,13 +13,10 @@
 
 package tech.pegasys.teku.storage.api;
 
-import static tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue.isQueueIsFullException;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
@@ -28,8 +25,9 @@ import tech.pegasys.teku.infrastructure.async.TaskQueue;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -58,16 +56,6 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
             TekuMetricCategory.STORAGE,
             "throttling_storage_query_queue_size",
             "throttling_storage_query_rejected");
-  }
-
-  public static <T> Optional<T> ignoreQueueIsFullException(final Throwable error) {
-    if (isQueueIsFullException(error)) {
-      return Optional.empty();
-    }
-    if (error instanceof RuntimeException exception) {
-      throw exception;
-    }
-    throw new CompletionException(error);
   }
 
   @Override
@@ -240,8 +228,8 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot() {
-    return taskQueue.queueTask(delegate::getFirstSamplerIncompleteSlot);
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot() {
+    return taskQueue.queueTask(delegate::getEarliestAvailableDataColumnSlot);
   }
 
   @Override
@@ -262,6 +250,12 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalDataColumnIdentifiers(
+      final UInt64 slot) {
+    return taskQueue.queueTask(() -> delegate.getNonCanonicalDataColumnIdentifiers(slot));
+  }
+
+  @Override
   public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(
       final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
     return taskQueue.queueTask(() -> delegate.getDataColumnIdentifiers(startSlot, endSlot, limit));
@@ -270,5 +264,10 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
   @Override
   public SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot() {
     return taskQueue.queueTask(delegate::getEarliestDataColumnSidecarSlot);
+  }
+
+  @Override
+  public SafeFuture<Optional<List<List<KZGProof>>>> getDataColumnSidecarsProofs(final UInt64 slot) {
+    return taskQueue.queueTask(() -> delegate.getDataColumnSidecarsProofs(slot));
   }
 }

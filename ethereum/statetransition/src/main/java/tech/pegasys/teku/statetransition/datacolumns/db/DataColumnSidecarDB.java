@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -34,7 +34,7 @@ public interface DataColumnSidecarDB extends DataColumnSidecarCoreDB {
 
   SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot();
 
-  SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot();
+  SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot();
 
   @Override
   SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnSlotAndIdentifier identifier);
@@ -46,7 +46,7 @@ public interface DataColumnSidecarDB extends DataColumnSidecarCoreDB {
 
   SafeFuture<Void> setFirstCustodyIncompleteSlot(UInt64 slot);
 
-  SafeFuture<Void> setFirstSamplerIncompleteSlot(UInt64 slot);
+  SafeFuture<Void> setEarliestAvailableDataColumnSlot(UInt64 slot);
 
   @Override
   SafeFuture<Void> addSidecar(DataColumnSidecar sidecar);

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -62,12 +62,21 @@ public class GetAttestationData extends RestApiEndpoint {
         EndpointMetadata.get(ROUTE)
             .operationId("produceAttestationData")
             .summary("Produce an AttestationData")
-            .description("Requests that the beacon node produce an AttestationData.")
+            .description(
+                """
+                  Requests that the beacon node produce an AttestationData. For `slot`s in \
+                  Electra and later, this AttestationData must have a `committee_index` of 0.
+
+                  A 503 error must be returned if the block identified by the response \
+                  `beacon_block_root` is optimistic (i.e. the attestation attests to a block \
+                  that has not been fully verified by an execution engine).
+                  """)
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .queryParam(SLOT_PARAM)
             .queryParam(
                 COMMITTEE_INDEX_PARAMETER.withDescription(
-                    "`UInt64` The committee index for which an attestation data should be created."))
+                    "`UInt64` The committee index for which an attestation data should be created. For `slot`s in "
+                        + "Electra and later, this parameter MAY always be set to 0."))
             .response(
                 SC_OK,
                 "Request successful",

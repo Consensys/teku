@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,7 +16,6 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsResponseInvalidResponseException.InvalidResponseType;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
@@ -28,11 +27,8 @@ public class BlobSidecarsByRootValidator extends AbstractBlobSidecarsValidator {
   private final Set<BlobIdentifier> expectedBlobIdentifiers;
 
   public BlobSidecarsByRootValidator(
-      final Peer peer,
-      final Spec spec,
-      final KZG kzg,
-      final List<BlobIdentifier> expectedBlobIdentifiers) {
-    super(peer, spec, kzg);
+      final Peer peer, final Spec spec, final List<BlobIdentifier> expectedBlobIdentifiers) {
+    super(peer, spec);
     this.expectedBlobIdentifiers = ConcurrentHashMap.newKeySet();
     this.expectedBlobIdentifiers.addAll(expectedBlobIdentifiers);
   }

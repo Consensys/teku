@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -149,39 +149,6 @@ public class ExecutionPayloadHeaderBuilderBellatrix implements ExecutionPayloadH
 
   @Override
   public ExecutionPayloadHeaderBuilder excessBlobGas(final Supplier<UInt64> excessBlobGasSupplier) {
-    return this;
-  }
-
-  @Override
-  public ExecutionPayloadHeaderBuilder parentBlockHash(
-      final Supplier<Bytes32> parentBlockHashSupplier) {
-    return this;
-  }
-
-  @Override
-  public ExecutionPayloadHeaderBuilder parentBlockRoot(
-      final Supplier<Bytes32> parentBlockRootSupplier) {
-    return this;
-  }
-
-  @Override
-  public ExecutionPayloadHeaderBuilder builderIndex(final Supplier<UInt64> builderIndexSupplier) {
-    return this;
-  }
-
-  @Override
-  public ExecutionPayloadHeaderBuilder slot(final Supplier<UInt64> slotSupplier) {
-    return this;
-  }
-
-  @Override
-  public ExecutionPayloadHeaderBuilder value(final Supplier<UInt64> valueSupplier) {
-    return this;
-  }
-
-  @Override
-  public ExecutionPayloadHeaderBuilder blobKzgCommitmentsRoot(
-      final Supplier<Bytes32> blobKzgCommitmentsRootSupplier) {
     return this;
   }
 

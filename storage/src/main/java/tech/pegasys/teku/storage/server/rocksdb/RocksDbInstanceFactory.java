@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -49,6 +49,7 @@ import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.Schema;
 
 public class RocksDbInstanceFactory {
@@ -61,7 +62,9 @@ public class RocksDbInstanceFactory {
       final MetricCategory metricCategory,
       final KvStoreConfiguration configuration,
       final Collection<KvStoreColumn<?, ?>> columns,
-      final Collection<Bytes> deletedColumns)
+      final Collection<Bytes> deletedColumns,
+      final Collection<KvStoreVariable<?>> variables,
+      final Collection<Bytes> deletedVariables)
       throws DatabaseStorageException {
     // Track resources that need to be closed
     checkArgument(
@@ -70,6 +73,13 @@ public class RocksDbInstanceFactory {
                 .count()
             == columns.size() + deletedColumns.size(),
         "Column IDs are not distinct");
+
+    checkArgument(
+        Stream.concat(variables.stream().map(KvStoreVariable::getId), deletedVariables.stream())
+                .distinct()
+                .count()
+            == variables.size() + deletedVariables.size(),
+        "Variable IDs are not distinct");
 
     // Create options
     final TransactionDBOptions txOptions = new TransactionDBOptions();

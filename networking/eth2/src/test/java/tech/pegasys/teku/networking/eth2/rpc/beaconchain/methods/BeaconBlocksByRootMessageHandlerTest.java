@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -53,7 +53,6 @@ import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class BeaconBlocksByRootMessageHandlerTest {
   private static final RpcEncoding RPC_ENCODING =
@@ -68,7 +67,6 @@ public class BeaconBlocksByRootMessageHandlerTest {
   private final UInt64 altairForkSlot = spec.computeStartSlotAtEpoch(altairForkEpoch);
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
   private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
-  final UpdatableStore store = mock(UpdatableStore.class);
   final RecentChainData recentChainData = mock(RecentChainData.class);
   final BeaconBlocksByRootMessageHandler handler =
       new BeaconBlocksByRootMessageHandler(spec, storageSystem.getMetricsSystem(), recentChainData);
@@ -156,9 +154,8 @@ public class BeaconBlocksByRootMessageHandlerTest {
 
     // Requesting 5 blocks
     verify(peer, times(1)).approveBlocksRequest(any(), eq(Long.valueOf(blocks.size())));
-    // Request cancelled
-    verify(peer, times(1))
-        .adjustBlocksRequest(eq(maybeRequestKey.orElseThrow()), eq(Long.valueOf(0)));
+    // Be protective: do not adjust due to error
+    verify(peer, never()).adjustBlocksRequest(any(), anyLong());
 
     // Check that we only asked for the first block
     verify(recentChainData, times(1)).retrieveSignedBlockByRoot(any());

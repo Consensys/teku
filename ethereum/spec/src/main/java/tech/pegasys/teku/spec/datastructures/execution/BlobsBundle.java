@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
@@ -22,7 +20,7 @@ import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 
-public class BlobsBundle {
+public abstract class BlobsBundle {
 
   private final List<KZGCommitment> commitments;
   private final List<KZGProof> proofs;
@@ -30,16 +28,6 @@ public class BlobsBundle {
 
   public BlobsBundle(
       final List<KZGCommitment> commitments, final List<KZGProof> proofs, final List<Blob> blobs) {
-    checkArgument(
-        commitments.size() == blobs.size(),
-        "Expected %s commitments but got %s",
-        blobs.size(),
-        commitments.size());
-    checkArgument(
-        proofs.size() == blobs.size(),
-        "Expected %s proofs but got %s",
-        blobs.size(),
-        proofs.size());
     this.commitments = commitments;
     this.proofs = proofs;
     this.blobs = blobs;

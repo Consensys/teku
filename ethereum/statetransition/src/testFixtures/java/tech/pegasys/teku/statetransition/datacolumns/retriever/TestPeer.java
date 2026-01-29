@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,12 +18,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 
 public class TestPeer {
@@ -35,15 +37,25 @@ public class TestPeer {
   private final AsyncRunner asyncRunner;
   private final UInt256 nodeId;
   private final Duration latency;
+  private Optional<UInt64> maybeEarliestAvailableSlot;
 
   private final Map<DataColumnIdentifier, DataColumnSidecar> availableSidecars = new HashMap<>();
   private final List<Request> requests = new ArrayList<>();
   private int currentRequestLimit = 1000;
 
-  public TestPeer(final AsyncRunner asyncRunner, final UInt256 nodeId, final Duration latency) {
+  public TestPeer(
+      final AsyncRunner asyncRunner,
+      final UInt256 nodeId,
+      final Duration latency,
+      final Optional<UInt64> maybeEarliestAvailableSlot) {
     this.asyncRunner = asyncRunner;
     this.nodeId = nodeId;
     this.latency = latency;
+    this.maybeEarliestAvailableSlot = maybeEarliestAvailableSlot;
+  }
+
+  public TestPeer(final AsyncRunner asyncRunner, final UInt256 nodeId, final Duration latency) {
+    this(asyncRunner, nodeId, latency, Optional.empty());
   }
 
   public void addSidecar(final DataColumnSidecar sidecar) {
@@ -52,6 +64,14 @@ public class TestPeer {
 
   public UInt256 getNodeId() {
     return nodeId;
+  }
+
+  public Optional<UInt64> getEarliestAvailableSlot() {
+    return maybeEarliestAvailableSlot;
+  }
+
+  public void setEarliestAvailableSlot(final Optional<UInt64> maybeEarliestAvailableSlot) {
+    this.maybeEarliestAvailableSlot = maybeEarliestAvailableSlot;
   }
 
   public void onDisconnect() {

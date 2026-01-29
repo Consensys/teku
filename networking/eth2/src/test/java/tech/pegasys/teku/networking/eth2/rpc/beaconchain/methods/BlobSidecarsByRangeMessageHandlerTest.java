@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -166,7 +166,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
                     maxRequestBlobSidecars)));
 
     final long countTooBigCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK,
             "rpc_blob_sidecars_by_range_requests_total",
             "count_too_big");
@@ -196,7 +196,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
                     maxRequestBlobSidecars)));
 
     final long countTooBigCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK,
             "rpc_blob_sidecars_by_range_requests_total",
             "count_too_big");
@@ -227,7 +227,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
                     maxRequestBlobSidecars)));
 
     final long countTooBigCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK,
             "rpc_blob_sidecars_by_range_requests_total",
             "count_too_big");
@@ -252,7 +252,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
     final long rateLimitedCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK,
             "rpc_blob_sidecars_by_range_requests_total",
             "rate_limited");
@@ -283,9 +283,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
     // Requesting 5 * maxBlobsPerBlock blob sidecars
     verify(peer).approveBlobSidecarsRequest(any(), eq(count.times(maxBlobsPerBlock).longValue()));
-    // Request cancelled
-    verify(peer)
-        .adjustBlobSidecarsRequest(eq(allowedObjectsRequest.orElseThrow()), eq(Long.valueOf(0)));
+    // Be protective: do not adjust due to error
+    verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
     // blob sidecars should be available from epoch 5000, but they are
     // available from epoch 5010

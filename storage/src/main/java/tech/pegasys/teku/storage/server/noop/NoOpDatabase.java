@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -29,8 +29,9 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -367,11 +368,6 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public Optional<UInt64> getFirstSamplerIncompleteSlot() {
-    return Optional.empty();
-  }
-
-  @Override
   public Optional<DataColumnSidecar> getSidecar(final DataColumnSlotAndIdentifier identifier) {
     return Optional.empty();
   }
@@ -401,10 +397,25 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public void setFirstCustodyIncompleteSlot(final UInt64 slot) {}
+  public Optional<UInt64> getEarliestAvailableDataColumnSlot() {
+    return Optional.empty();
+  }
 
   @Override
-  public void setFirstSamplerIncompleteSlot(final UInt64 slot) {}
+  public void setEarliestAvailableDataColumnSlot(final UInt64 slot) {}
+
+  @Override
+  public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(final UInt64 slot) {
+    return Optional.empty();
+  }
+
+  @Override
+  public void setFirstCustodyIncompleteSlot(final UInt64 slot) {}
 
   @Override
   public void addSidecar(final DataColumnSidecar sidecar) {}

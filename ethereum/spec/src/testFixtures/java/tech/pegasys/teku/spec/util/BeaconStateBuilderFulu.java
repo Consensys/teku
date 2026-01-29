@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -218,6 +218,10 @@ public class BeaconStateBuilderFulu
     this.proposerLookahead =
         dataStructureUtil.randomSszUInt64Vector(
             schema.getProposerLookaheadSchema(),
-            schema.getProposerLookaheadSchema().getMaxLength());
+            schema.getProposerLookaheadSchema().getMaxLength(),
+            () ->
+                defaultValidatorCount > 0
+                    ? dataStructureUtil.randomUInt64(defaultValidatorCount)
+                    : UInt64.ZERO);
   }
 }

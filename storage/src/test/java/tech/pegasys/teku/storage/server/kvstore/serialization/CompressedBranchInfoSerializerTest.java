@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -55,6 +55,6 @@ class CompressedBranchInfoSerializerTest {
     final CompressedBranchInfo input = new CompressedBranchInfo(depth, children);
     final byte[] serialized = serializer.serialize(input);
     final CompressedBranchInfo output = serializer.deserialize(serialized);
-    assertThat(output).isEqualToComparingFieldByField(input);
+    assertThat(output).usingDefaultComparator().isEqualTo(input);
   }
 }

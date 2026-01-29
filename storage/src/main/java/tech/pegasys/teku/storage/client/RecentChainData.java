@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -59,7 +60,6 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
@@ -289,11 +289,6 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
               this.forkDigestToBpoFork.put(forkDigest, blobParameters);
             });
 
-    // Update the ValidatorIndexCache latest finalized index to the anchor state
-    BeaconStateCache.getTransitionCaches(anchorState)
-        .getValidatorIndexCache()
-        .updateLatestFinalizedIndex(anchorState);
-
     storeInitializedFuture.complete(null);
     return true;
   }
@@ -393,6 +388,11 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
           optionalReorgContext);
     }
     bestBlockInitialized.complete(null);
+  }
+
+  public Optional<SlotAndBlockRoot> findCommonAncestor(
+      final Bytes32 blockRoot1, final Bytes32 blockRoot2) {
+    return store.getForkChoiceStrategy().findCommonAncestor(blockRoot1, blockRoot2);
   }
 
   private Optional<ReorgContext> computeReorgContext(
@@ -648,6 +648,15 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
     return validatedBlockProvider.getBlock(root);
   }
 
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>>
+      retrieveSignedExecutionPayloadEnvelopeByBlockRoot(final Bytes32 beaconBlockRoot) {
+    if (store == null) {
+      return EmptyStoreResults.EMPTY_SIGNED_EXECUTION_PAYLOAD_ENVELOPE_FUTURE;
+    }
+    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+  }
+
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(final Bytes32 blockRoot) {
     if (store == null) {
       return EmptyStoreResults.EMPTY_STATE_FUTURE;
@@ -768,6 +777,10 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
 
   public void setBlockTimelinessIfEmpty(final SignedBeaconBlock block) {
     lateBlockReorgLogic.setBlockTimelinessFromArrivalTime(block, store.getTimeInMillis());
+  }
+
+  public boolean isBlockLate(final Bytes32 root) {
+    return lateBlockReorgLogic.isBlockLate(root);
   }
 
   public Optional<UInt64> getCustodyGroupCount() {

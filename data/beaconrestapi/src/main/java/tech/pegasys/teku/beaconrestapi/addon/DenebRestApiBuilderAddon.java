@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -17,6 +17,7 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.RestApiBuilderAddon;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlobSidecarsAtSlot;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlobSidecars;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlobs;
 import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -44,6 +45,7 @@ public class DenebRestApiBuilderAddon implements RestApiBuilderAddon {
   public RestApiBuilder apply(final RestApiBuilder builder) {
     return builder
         .endpoint(new GetBlobSidecars(dataProvider, schemaCache))
+        .endpoint(new GetBlobs(dataProvider, schemaCache))
         .endpoint(new GetAllBlobSidecarsAtSlot(dataProvider, schemaCache));
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -85,7 +85,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     final List<ProtoNodeData> chainHeads = provider.getChainHeads();
     assertThat(chainHeads)
         .containsExactly(
@@ -109,7 +110,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             null,
             mockCombinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(false);
     assertThatThrownBy(provider::getGenesisTime).isInstanceOf(ChainDataUnavailableException.class);
   }
@@ -123,7 +125,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
 
     final UInt64 result = provider.getGenesisTime();
     assertEquals(genesis, result);
@@ -137,7 +140,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             null,
             mockCombinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(false);
     assertThatThrownBy(provider::getGenesisData).isInstanceOf(ChainDataUnavailableException.class);
   }
@@ -154,7 +158,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
 
     final GenesisData result = provider.getGenesisData();
     assertThat(result)
@@ -170,7 +175,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     final SignedBeaconBlock block =
         storageSystem.getChainHead().getSignedBeaconBlock().orElseThrow();
     BlockAndMetaData result = provider.getBlockAndMetaData("head").get().orElseThrow();
@@ -187,7 +193,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     final SignedBeaconBlock block =
         storageSystem.getChainHead().getSignedBeaconBlock().orElseThrow();
     BlockHeadersResponse results =
@@ -203,7 +210,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     final UInt64 slot = combinedChainDataClient.getCurrentSlot();
     BlockHeadersResponse results =
         safeJoin(provider.getBlockHeaders(Optional.empty(), Optional.of(slot)));
@@ -218,7 +226,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
 
     final UInt64 headSlot = recentChainData.getHeadSlot();
     storageSystem.chainUpdater().advanceChain(headSlot.plus(1));
@@ -239,7 +248,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     List<Integer> indices =
         provider.getFilteredValidatorList(internalState, List.of("1", "33"), emptySet()).stream()
             .map(v -> v.getIndex().intValue())
@@ -256,7 +266,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     final Bytes48 key = internalState.getValidators().get(12).getPubkeyBytes();
     final String missingKey = data.randomPublicKey().toString();
     List<Bytes48> pubkeys =
@@ -278,7 +289,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
 
     assertThat(
             provider.getFilteredValidatorList(
@@ -299,7 +311,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     assertThat(
             provider
                 .getStateCommittees(
@@ -320,7 +333,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
 
     assertThat(
             provider
@@ -339,7 +353,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
 
     assertThat(
             provider
@@ -360,7 +375,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     final BeaconState internalState = data.randomBeaconState();
     when(mockCombinedChainDataClient.getBestState())
         .thenReturn(Optional.of(completedFuture(internalState)));
@@ -380,7 +396,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             new RewardCalculator(spec, new BlockRewardCalculatorUtil(spec)),
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     final SafeFuture<Optional<SyncCommitteeRewardData>> future =
         provider.getSyncCommitteeRewardsFromBlockId("head", Set.of());
     assertThat(future).isCompletedExceptionally();
@@ -399,7 +416,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     final BeaconState internalState = data.randomBeaconState();
 
     BeaconBlockHeader expectedBlockHeader = BeaconBlockHeader.fromState(internalState);
@@ -420,7 +438,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     final BeaconState internalState = data.randomBeaconState(1024);
     assertThat(provider.getValidatorBalancesFromState(internalState, emptyList())).hasSize(1024);
 
@@ -438,7 +457,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     final Optional<ObjectAndMetaData<Bytes32>> response = provider.getBlockRoot("head").get();
     assertThat(response).isPresent();
     assertThat(response.get().getData()).isEqualTo(bestBlock.getRoot());
@@ -452,7 +472,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     ChainBuilder chainBuilder = storageSystem.chainBuilder();
 
     ChainBuilder.BlockOptions blockOptions = ChainBuilder.BlockOptions.create();
@@ -486,7 +507,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     assertThat(provider.stateParameterMaySupportAltair("genesis")).isFalse();
   }
 
@@ -499,7 +521,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData1,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     when(recentChainData1.getCurrentEpoch()).thenReturn(Optional.empty());
     assertThatThrownBy(() -> provider.getValidatorInclusionAtEpoch(data.randomEpoch()))
         .isInstanceOf(ServiceUnavailableException.class);
@@ -513,7 +536,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     assertThatThrownBy(() -> provider.getValidatorInclusionAtEpoch(UInt64.valueOf(3)))
         .isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> provider.getValidatorInclusionAtEpoch(UInt64.valueOf(4)))
@@ -531,7 +555,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             mockCombinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     // expect to see the last slot of epoch requested, so 3 * 8 - 1 (23)
     when(mockCombinedChainDataClient.getChainHead())
         .thenReturn(combinedChainDataClient.getChainHead());
@@ -550,7 +575,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     Optional<Bytes32> finalizedBlockRoot = provider.getFinalizedBlockRoot(UInt64.valueOf(24)).get();
     assertThat(finalizedBlockRoot).isPresent();
   }
@@ -564,7 +590,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     Optional<Bytes32> finalizedBlockRoot = provider.getFinalizedBlockRoot(UInt64.valueOf(1)).get();
     assertThat(finalizedBlockRoot).isEmpty();
   }
@@ -577,7 +604,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     assertThatThrownBy(
             () ->
                 chainDataProvider.getExpectedWithdrawalsFromState(
@@ -598,7 +626,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
             recentChainData,
             combinedChainDataClient,
             rewardCalculatorMock,
-            mockBlobSidecarReconstructionProvider);
+            mockBlobSidecarReconstructionProvider,
+            mockBlobReconstructionProvider);
     assertThat(provider.getRandaoAtEpochFromState(state, Optional.of(epoch)))
         .isEqualTo(maybeRandao);
   }

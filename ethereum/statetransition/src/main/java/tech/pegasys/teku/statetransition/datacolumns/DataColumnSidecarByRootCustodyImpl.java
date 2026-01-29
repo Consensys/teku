@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -24,7 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
@@ -127,7 +127,7 @@ public class DataColumnSidecarByRootCustodyImpl
     }
 
     public void addColumnSlotIdFromSidecar(final DataColumnSidecar sidecar) {
-      addBlockRootToSlot(sidecar.getBlockRoot(), sidecar.getSlot());
+      addBlockRootToSlot(sidecar.getBeaconBlockRoot(), sidecar.getSlot());
     }
 
     public synchronized void addBlockRootToSlot(final Bytes32 blockRoot, final UInt64 slot) {

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -22,7 +22,6 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -55,7 +54,6 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
       final RecentChainData recentChainData,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final BlobSidecarGossipValidator validator,
-      final KZG kzg,
       final FutureItems<BlobSidecar> futureBlobSidecars,
       final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots) {
     this(
@@ -65,7 +63,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
         validator,
         futureBlobSidecars,
         invalidBlobSidecarRoots,
-        (tracker) -> new BlobSidecarsAvailabilityChecker(spec, recentChainData, tracker, kzg),
+        (tracker) -> new BlobSidecarsAvailabilityChecker(spec, recentChainData, tracker),
         (block) -> new BlockBlobSidecarsTracker(block.getSlotAndBlockRoot()));
   }
 
@@ -138,15 +136,6 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
 
   @Override
   public AvailabilityChecker<BlobSidecar> createAvailabilityChecker(final SignedBeaconBlock block) {
-    // Block is pre-Deneb, blobs are not supported yet
-    if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
-      return AvailabilityChecker.NOOP_BLOBSIDECAR;
-    }
-    // Block is post-BlobSidecars
-    if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-      return AvailabilityChecker.NOOP_BLOBSIDECAR;
-    }
-
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
         blockBlobSidecarsTrackersPool.getOrCreateBlockBlobSidecarsTracker(block);
 

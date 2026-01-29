@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,8 +23,8 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationMilestoneValidat
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
@@ -42,7 +42,7 @@ public class DataColumnSidecarTopicHandler {
       final ForkInfo forkInfo,
       final Bytes4 forkDigest,
       final String topicName,
-      final DataColumnSidecarSchema dataColumnSidecarSchema,
+      final DataColumnSidecarSchema<DataColumnSidecar> dataColumnSidecarSchema,
       final int subnetId) {
     final Spec spec = recentChainData.getSpec();
     return new Eth2TopicHandler<>(

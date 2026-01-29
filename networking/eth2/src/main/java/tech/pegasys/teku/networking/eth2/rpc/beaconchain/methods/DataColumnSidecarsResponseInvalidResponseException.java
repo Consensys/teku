@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -41,7 +41,9 @@ public class DataColumnSidecarsResponseInvalidResponseException extends InvalidR
         "Inclusion verification for DataColumnSidecar has failed"),
     DATA_COLUMN_SIDECAR_SLOT_NOT_IN_RANGE("DataColumnSidecar's slot is not within requested range"),
     DATA_COLUMN_SIDECAR_UNEXPECTED_IDENTIFIER(
-        "DataColumnSidecar is not within requested identifiers");
+        "DataColumnSidecar is not within requested identifiers"),
+    DATA_COLUMN_SIDECAR_HEADER_INVALID_SIGNATURE(
+        "DataColumnSidecar's beacon block header signature verification failed");
 
     private final String description;
 

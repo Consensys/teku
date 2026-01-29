@@ -1,0 +1,22 @@
+{
+  "title" : "GetBlobsResponse",
+  "type" : "object",
+  "required" : [ "execution_optimistic", "finalized", "data" ],
+  "properties" : {
+    "execution_optimistic" : {
+      "type" : "boolean"
+    },
+    "finalized" : {
+      "type" : "boolean"
+    },
+    "data" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "pattern" : "^0x[a-fA-F0-9]{2,}$",
+        "description" : "SSZ hexadecimal",
+        "format" : "bytes"
+      }
+    }
+  }
+}

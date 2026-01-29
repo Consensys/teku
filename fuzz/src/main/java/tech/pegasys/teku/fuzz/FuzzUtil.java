@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -373,20 +373,15 @@ public class FuzzUtil {
             .getDepositRequestsSchema()
             .of(structuredInput.getDepositRequest());
 
-    try {
-      BeaconState postState =
-          structuredInput
-              .getState()
-              .updated(
-                  state ->
-                      spec.getBlockProcessor(state.getSlot())
-                          .processDepositRequests(state, depositRequests.asList()));
-      Bytes output = postState.sszSerialize();
-      return Optional.of(output.toArrayUnsafe());
-    } catch (BlockProcessingException e) {
-      // "expected error"
-      return Optional.empty();
-    }
+    BeaconState postState =
+        structuredInput
+            .getState()
+            .updated(
+                state ->
+                    spec.getExecutionRequestsProcessor(state.getSlot())
+                        .processDepositRequests(state, depositRequests.asList()));
+    Bytes output = postState.sszSerialize();
+    return Optional.of(output.toArrayUnsafe());
   }
 
   public Optional<byte[]> fuzzWithdrawalRequest(final byte[] input) {
@@ -398,24 +393,19 @@ public class FuzzUtil {
             .getWithdrawalRequestsSchema()
             .of(structuredInput.getWithdrawalRequest());
 
-    try {
-      BeaconState postState =
-          structuredInput
-              .getState()
-              .updated(
-                  state ->
-                      spec.getBlockProcessor(state.getSlot())
-                          .processWithdrawalRequests(
-                              state,
-                              withdrawalRequests.asList(),
-                              stateMutatorsElectra.createValidatorExitContextSupplier(
-                                  structuredInput.getState())));
-      Bytes output = postState.sszSerialize();
-      return Optional.of(output.toArrayUnsafe());
-    } catch (BlockProcessingException e) {
-      // "expected error"
-      return Optional.empty();
-    }
+    BeaconState postState =
+        structuredInput
+            .getState()
+            .updated(
+                state ->
+                    spec.getExecutionRequestsProcessor(state.getSlot())
+                        .processWithdrawalRequests(
+                            state,
+                            withdrawalRequests.asList(),
+                            stateMutatorsElectra.createValidatorExitContextSupplier(
+                                structuredInput.getState())));
+    Bytes output = postState.sszSerialize();
+    return Optional.of(output.toArrayUnsafe());
   }
 
   public Optional<byte[]> fuzzConsolidationRequest(final byte[] input) {
@@ -427,20 +417,15 @@ public class FuzzUtil {
             .getConsolidationRequestsSchema()
             .of(structuredInput.getConsolidationRequest());
 
-    try {
-      BeaconState postState =
-          structuredInput
-              .getState()
-              .updated(
-                  state ->
-                      spec.getBlockProcessor(state.getSlot())
-                          .processConsolidationRequests(state, consolidationRequests.asList()));
-      Bytes output = postState.sszSerialize();
-      return Optional.of(output.toArrayUnsafe());
-    } catch (BlockProcessingException e) {
-      // "expected error"
-      return Optional.empty();
-    }
+    BeaconState postState =
+        structuredInput
+            .getState()
+            .updated(
+                state ->
+                    spec.getExecutionRequestsProcessor(state.getSlot())
+                        .processConsolidationRequests(state, consolidationRequests.asList()));
+    Bytes output = postState.sszSerialize();
+    return Optional.of(output.toArrayUnsafe());
   }
 
   private <T extends SszData> T deserialize(final byte[] data, final SszSchema<T> type) {

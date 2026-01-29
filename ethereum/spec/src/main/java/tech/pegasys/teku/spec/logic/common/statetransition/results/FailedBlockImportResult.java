@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,18 +13,15 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.results;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public class FailedBlockImportResult implements BlockImportResult {
+class FailedBlockImportResult implements BlockImportResult {
   private final FailureReason failureReason;
   private final Optional<Throwable> cause;
 
-  @VisibleForTesting
-  public FailedBlockImportResult(
-      final FailureReason failureReason, final Optional<Throwable> cause) {
+  FailedBlockImportResult(final FailureReason failureReason, final Optional<Throwable> cause) {
     this.failureReason = failureReason;
     this.cause = cause;
   }

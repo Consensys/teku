@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -17,10 +17,11 @@ import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.DataColu
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.networking.eth2.peers.DataColumnSidecarSignatureValidator;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 
 public abstract class AbstractDataColumnSidecarValidator {
@@ -28,13 +29,16 @@ public abstract class AbstractDataColumnSidecarValidator {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final KZG kzg;
+  private final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator;
   final Peer peer;
 
-  public AbstractDataColumnSidecarValidator(final Peer peer, final Spec spec, final KZG kzg) {
+  public AbstractDataColumnSidecarValidator(
+      final Peer peer,
+      final Spec spec,
+      final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator) {
     this.peer = peer;
     this.spec = spec;
-    this.kzg = kzg;
+    this.dataColumnSidecarSignatureValidator = dataColumnSidecarSignatureValidator;
   }
 
   void verifyValidity(final DataColumnSidecar dataColumnSidecar) {
@@ -65,7 +69,7 @@ public abstract class AbstractDataColumnSidecarValidator {
   private boolean verifyDataColumnSidecarKzgProofs(final DataColumnSidecar dataColumnSidecar) {
     try {
       return MiscHelpersFulu.required(spec.atSlot(dataColumnSidecar.getSlot()).miscHelpers())
-          .verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar);
+          .verifyDataColumnSidecarKzgProofs(dataColumnSidecar);
     } catch (final Exception ex) {
       LOG.debug(
           "KZG verification failed for DataColumnSidecar {}", dataColumnSidecar.toLogString());
@@ -79,6 +83,10 @@ public abstract class AbstractDataColumnSidecarValidator {
       throw new DataColumnSidecarsResponseInvalidResponseException(
           peer, InvalidResponseType.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
     }
+  }
+
+  public SafeFuture<Boolean> verifySignature(final DataColumnSidecar dataColumnSidecar) {
+    return dataColumnSidecarSignatureValidator.validateSignature(dataColumnSidecar);
   }
 
   private boolean verifyDataColumnSidecarInclusionProof(final DataColumnSidecar dataColumnSidecar) {

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -30,6 +30,7 @@ public class Eth2ResponseHandlerTest {
   private final RuntimeException error = new RuntimeException("oops");
 
   @Test
+  @SuppressWarnings("deprecation")
   public void expectMultipleResponses_successful() {
     final IntList responsesReceived = new IntArrayList();
     final Eth2RpcResponseHandler<Integer, Void> handler =
@@ -52,7 +53,7 @@ public class Eth2ResponseHandlerTest {
     final IntList responsesReceived = new IntArrayList();
     final Eth2RpcResponseHandler<Integer, Void> handler =
         Eth2RpcResponseHandler.expectMultipleResponses(
-            RpcResponseListener.from(responsesReceived::add));
+            RpcResponseListener.from(i -> responsesReceived.add((int) i)));
 
     assertThat(handler.onResponse(1)).isCompleted();
     assertThat(handler.onResponse(2)).isCompleted();

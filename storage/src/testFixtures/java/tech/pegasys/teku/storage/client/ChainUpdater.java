@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
+// TODO-GLOAS: https://github.com/Consensys/teku/issues/10071
 public class ChainUpdater {
 
   public final RecentChainData recentChainData;
@@ -234,12 +235,12 @@ public class ChainUpdater {
 
   public SignedBlockAndState advanceChainUntil(final UInt64 slot, final BlockOptions blockOptions) {
     UInt64 currentSlot = chainBuilder.getLatestSlot();
-    SignedBlockAndState latestSigneBlockAndState = chainBuilder.getLatestBlockAndState();
+    SignedBlockAndState latestSignedBlockAndState = chainBuilder.getLatestBlockAndState();
     while (currentSlot.isLessThan(slot)) {
       currentSlot = currentSlot.increment();
-      latestSigneBlockAndState = advanceChain(currentSlot, blockOptions);
+      latestSignedBlockAndState = advanceChain(currentSlot, blockOptions);
     }
-    return latestSigneBlockAndState;
+    return latestSignedBlockAndState;
   }
 
   public SignedBlockAndState advanceChain(final UInt64 slot) {

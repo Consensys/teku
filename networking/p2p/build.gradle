@@ -19,7 +19,6 @@ dependencies {
 
   implementation 'io.libp2p:jvm-libp2p'
   implementation 'io.netty:netty-handler'
-  implementation 'io.projectreactor:reactor-core'
   implementation 'io.consensys.tuweni:tuweni-units'
   implementation 'io.consensys.tuweni:tuweni-crypto'
   implementation 'tech.pegasys.discovery:discovery'
@@ -30,7 +29,7 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:time'))
 
-  testImplementation 'org.hyperledger.besu.internal:metrics-core'
+  testImplementation 'org.hyperledger.besu.internal:besu-metrics-core'
 
   testFixturesApi 'io.consensys.tuweni:tuweni-bytes'
 
@@ -44,8 +43,8 @@ dependencies {
   testFixturesImplementation testFixtures(project(':infrastructure:time'))
   testFixturesImplementation project(':infrastructure:subscribers')
 
-  testFixturesImplementation 'org.hyperledger.besu:plugin-api'
-  testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
+  testFixturesImplementation 'org.hyperledger.besu:besu-plugin-api'
+  testFixturesImplementation 'org.hyperledger.besu.internal:besu-metrics-core'
   testFixturesImplementation 'io.libp2p:jvm-libp2p'
   testFixturesImplementation 'org.apache.logging.log4j:log4j-core'
 }

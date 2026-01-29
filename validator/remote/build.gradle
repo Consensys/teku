@@ -13,6 +13,7 @@ dependencies {
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:metrics')
   implementation project(':infrastructure:serviceutils')
+  implementation project(':infrastructure:version')
   implementation project(':validator:api')
   implementation project(':validator:beaconnode')
   implementation project(':validator:eventadapter')
@@ -29,6 +30,7 @@ dependencies {
   testImplementation 'com.squareup.okhttp3:mockwebserver'
   testImplementation 'org.assertj:assertj-core'
   testImplementation 'org.mockito:mockito-core'
+  testImplementation 'org.mock-server:mockserver-junit-jupiter'
 
   integrationTestImplementation testFixtures(project(':ethereum:spec'))
   integrationTestImplementation testFixtures(project(':infrastructure:ssz'))

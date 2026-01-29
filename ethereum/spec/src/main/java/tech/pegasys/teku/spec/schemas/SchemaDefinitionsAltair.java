@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -17,6 +17,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.AGGREGATE_AND_
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_BODY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_STATE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_BOOTSTRAP_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.METADATA_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGATE_AND_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
@@ -91,6 +92,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
     this.beaconBlockBodySchema = schemaRegistry.get(BEACON_BLOCK_BODY_SCHEMA);
     this.beaconBlockSchema = schemaRegistry.get(BEACON_BLOCK_SCHEMA);
     this.signedBeaconBlockSchema = schemaRegistry.get(SIGNED_BEACON_BLOCK_SCHEMA);
+
     this.syncCommitteeContributionSchema = SyncCommitteeContributionSchema.create(specConfig);
     this.contributionAndProofSchema =
         ContributionAndProofSchema.create(syncCommitteeContributionSchema);
@@ -99,7 +101,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
     this.metadataMessageSchema = schemaRegistry.get(METADATA_MESSAGE_SCHEMA);
     this.statusMessageSchema = schemaRegistry.get(STATUS_MESSAGE_SCHEMA);
     this.lightClientHeaderSchema = new LightClientHeaderSchema();
-    this.lightClientBootstrapSchema = new LightClientBootstrapSchema(specConfig);
+    this.lightClientBootstrapSchema = schemaRegistry.get(LIGHT_CLIENT_BOOTSTRAP_SCHEMA);
     this.lightClientUpdateSchema = new LightClientUpdateSchema(specConfig);
     this.lightClientUpdateResponseSchema = new LightClientUpdateResponseSchema(specConfig);
   }

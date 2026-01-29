@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -52,5 +52,11 @@ public class LogFormatter {
     return String.format(
         "DataColumnSidecar[block %s (%s), index %s, 1st cell %s, commitments %s, proofs %s]",
         formatAbbreviatedHashRoot(blockRoot), slot, index, blob, kzgCommitmentsSize, kzgProofsSize);
+  }
+
+  public static String formatExecutionPayload(
+      final UInt64 slot, final Bytes32 blockRoot, final UInt64 builderIndex) {
+    return String.format(
+        "%s (block root: %s, builder index: %s)", slot, formatHashRoot(blockRoot), builderIndex);
   }
 }

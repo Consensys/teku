@@ -48,6 +48,7 @@ dependencies {
     integrationTestImplementation project(':ethereum:weaksubjectivity')
 
     integrationTestImplementation project(':networking:p2p')
+    integrationTestImplementation project(':ethereum:performance-trackers')
     integrationTestImplementation 'com.squareup.okhttp3:okhttp'
     integrationTestImplementation 'org.jsoup:jsoup'
     integrationTestImplementation testFixtures(project(':ethereum:statetransition'))

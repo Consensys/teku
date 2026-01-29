@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -20,14 +20,20 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 
 public class ForkChoiceUtilDeneb extends ForkChoiceUtil {
+
+  private volatile AvailabilityCheckerFactory<BlobSidecar> blobSidecarAvailabilityCheckerFactory;
 
   public ForkChoiceUtilDeneb(
       final SpecConfig specConfig,
@@ -36,6 +42,11 @@ public class ForkChoiceUtilDeneb extends ForkChoiceUtil {
       final AttestationUtil attestationUtil,
       final MiscHelpers miscHelpers) {
     super(specConfig, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
+  }
+
+  public void setBlobSidecarAvailabilityCheckerFactory(
+      final AvailabilityCheckerFactory<BlobSidecar> factory) {
+    this.blobSidecarAvailabilityCheckerFactory = factory;
   }
 
   @Override
@@ -64,5 +75,15 @@ public class ForkChoiceUtilDeneb extends ForkChoiceUtil {
             .getRight();
 
     return maybeAvailabilityWindowStartSlot.max(firstDenebSlot);
+  }
+
+  @Override
+  public AvailabilityChecker<?> createAvailabilityChecker(final SignedBeaconBlock block) {
+    final AvailabilityCheckerFactory<BlobSidecar> factory =
+        this.blobSidecarAvailabilityCheckerFactory;
+    if (factory == null) {
+      throw new IllegalStateException("blobSidecarAvailabilityCheckerFactory not initialized");
+    }
+    return factory.createAvailabilityChecker(block);
   }
 }

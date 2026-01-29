@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,16 +15,12 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 
-import com.google.common.base.Throwables;
-import java.nio.channels.ClosedChannelException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -36,11 +32,8 @@ import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
-import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
@@ -50,19 +43,15 @@ import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCust
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.LoggingPeerId;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.ReqRespResponseLogger;
-import tech.pegasys.teku.storage.api.ThrottlingStorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
- * <a
- * href="https://github.com/ethereum/consensus-specs/blob/master/specs/fulu/p2p-interface.md#datacolumnsidecarsbyroot-v1">DataColumnSidecarsByRoot
- * v1</a>
+ * <a href="https://github.com/ethereum/consensus-specs/blob/master/specs/fulu/p2p-interface
+ * .md#datacolumnsidecarsbyroot-v1">DataColumnSidecarsByRoot v1</a>
  */
 public class DataColumnSidecarsByRootMessageHandler
     extends PeerRequiredLocalMessageHandler<
         DataColumnSidecarsByRootRequestMessage, DataColumnSidecar> {
-
-  private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
@@ -72,7 +61,6 @@ public class DataColumnSidecarsByRootMessageHandler
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalDataColumnSidecarsRequestedCounter;
   private final DasReqRespLogger dasLogger;
-  private final SpecConfigFulu specConfigFulu;
 
   public DataColumnSidecarsByRootMessageHandler(
       final Spec spec,
@@ -86,8 +74,6 @@ public class DataColumnSidecarsByRootMessageHandler
     this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
     this.dataColumnSidecarCustodySupplier = dataColumnSidecarCustodySupplier;
     this.dasLogger = dasLogger;
-    this.specConfigFulu =
-        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
     this.requestCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.NETWORK,
@@ -97,8 +83,9 @@ public class DataColumnSidecarsByRootMessageHandler
     this.totalDataColumnSidecarsRequestedCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.NETWORK,
-            "rpc_data_column_sidecars_by_root_requested_data_column_sidecars_total",
-            "Total number of data column sidecars requested in accepted data column sidecars by root requests from peers");
+            "rpc_data_column_sidecars_by_root_requested_sidecars_total",
+            "Total number of data column sidecars requested in accepted data column sidecars by root requests from "
+                + "peers");
   }
 
   private SafeFuture<Boolean> validateAndMaybeRespond(
@@ -111,22 +98,6 @@ public class DataColumnSidecarsByRootMessageHandler
                 maybeSidecar
                     .map(sideCar -> callback.respond(sideCar).thenApply(___ -> true))
                     .orElse(SafeFuture.completedFuture(false)));
-  }
-
-  @Override
-  public Optional<RpcException> validateRequest(
-      final String protocolId, final DataColumnSidecarsByRootRequestMessage request) {
-    final int maxRequestIdentifiers = specConfigFulu.getMaxRequestBlocksDeneb();
-    if (request.size() > maxRequestIdentifiers) {
-      requestCounter.labels("count_too_big").inc();
-      return Optional.of(
-          new RpcException(
-              INVALID_REQUEST_CODE,
-              String.format(
-                  "Only a maximum of %d by root identifiers are allowed per request",
-                  maxRequestIdentifiers)));
-    }
-    return Optional.empty();
   }
 
   @Override
@@ -194,10 +165,7 @@ public class DataColumnSidecarsByRootMessageHandler
               responseCallbackWithLogging.completeSuccessfully();
             })
         .finish(
-            err -> {
-              peer.adjustDataColumnSidecarsRequest(maybeRequestKey.get(), 0);
-              handleError(responseCallbackWithLogging, err);
-            });
+            err -> handleError(err, responseCallbackWithLogging, "data column sidecars by root"));
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalDataColumnSidecar(
@@ -224,7 +192,6 @@ public class DataColumnSidecarsByRootMessageHandler
    *   <li>The block root references a block greater than or equal to the minimum_request_epoch
    * </ul>
    */
-  @SuppressWarnings("unused")
   private SafeFuture<Void> validateMinimumRequestEpoch(
       final DataColumnIdentifier identifier, final Optional<DataColumnSidecar> maybeSidecar) {
     return maybeSidecar
@@ -233,7 +200,6 @@ public class DataColumnSidecarsByRootMessageHandler
             () ->
                 combinedChainDataClient
                     .getBlockByBlockRoot(identifier.blockRoot())
-                    .exceptionally(ThrottlingStorageQueryChannel::ignoreQueueIsFullException)
                     .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot)))
         .thenAcceptChecked(
             maybeSlot -> {
@@ -264,24 +230,6 @@ public class DataColumnSidecarsByRootMessageHandler
               }
               // Fallback to non-canonical sidecar if the canonical one is not found
               return getNonCanonicalDataColumnSidecar(identifier);
-            })
-        .exceptionally(ThrottlingStorageQueryChannel::ignoreQueueIsFullException);
-  }
-
-  private void handleError(
-      final ResponseCallback<DataColumnSidecar> callback, final Throwable error) {
-    final Throwable rootCause = Throwables.getRootCause(error);
-    if (rootCause instanceof RpcException) {
-      LOG.trace("Rejecting data column sidecars by root request", error);
-      callback.completeWithErrorResponse((RpcException) rootCause);
-    } else {
-      if (rootCause instanceof StreamClosedException
-          || rootCause instanceof ClosedChannelException) {
-        LOG.trace("Stream closed while sending requested data column sidecars", error);
-      } else {
-        LOG.error("Failed to process data column sidecars by root request", error);
-      }
-      callback.completeWithUnexpectedError(error);
-    }
+            });
   }
 }

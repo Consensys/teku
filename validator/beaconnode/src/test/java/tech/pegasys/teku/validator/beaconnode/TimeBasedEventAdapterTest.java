@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -226,5 +226,57 @@ class TimeBasedEventAdapterTest {
     timeProvider.advanceTimeByMillis(1);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(nextSlot);
+  }
+
+  @Test
+  void shouldScheduleEventsAtCorrectTimesStartingFromNextSlotForGloas() {
+    final Spec spec = TestSpecFactory.createMinimalGloas();
+    final TimeBasedEventAdapter eventAdapter =
+        new TimeBasedEventAdapter(
+            genesisDataProvider,
+            repeatingTaskScheduler,
+            timeProvider,
+            validatorTimingChannel,
+            spec);
+
+    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
+    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
+
+    final UInt64 nextSlot = UInt64.valueOf(25);
+    // Starting time is before the aggregation for the current slot should happen, but should still
+    // wait until the next slot to start
+    final int timeUntilNextSlot = millisPerSlot - 1;
+    timeProvider.advanceTimeByMillis(nextSlot.times(millisPerSlot).minus(timeUntilNextSlot));
+
+    assertThat(eventAdapter.start()).isCompleted();
+
+    // Should not fire any events immediately
+    asyncRunner.executeDueActionsRepeatedly();
+    verifyNoMoreInteractions(validatorTimingChannel);
+
+    // on slot and block production due should fire at the start of the slot
+    timeProvider.advanceTimeByMillis(timeUntilNextSlot);
+    asyncRunner.executeDueActionsRepeatedly();
+    verify(validatorTimingChannel).onSlot(nextSlot);
+    verify(validatorTimingChannel).onBlockProductionDue(nextSlot);
+
+    // on attestation creation due and on sync committee creation due should fire at 25 % of the
+    // slot
+    timeProvider.advanceTimeByMillis(millisPerSlot / 4);
+    asyncRunner.executeDueActionsRepeatedly();
+    verify(validatorTimingChannel).onAttestationCreationDue(nextSlot);
+    verify(validatorTimingChannel).onSyncCommitteeCreationDue(nextSlot);
+
+    // on attestation aggregation due and on contribution creation due should fire at 50 % of the
+    // slot
+    timeProvider.advanceTimeByMillis(millisPerSlot / 4);
+    asyncRunner.executeDueActionsRepeatedly();
+    verify(validatorTimingChannel).onAttestationAggregationDue(nextSlot);
+    verify(validatorTimingChannel).onContributionCreationDue(nextSlot);
+
+    // on payload attestation creation due should fire at 75% of the slot
+    timeProvider.advanceTimeByMillis(millisPerSlot / 4);
+    asyncRunner.executeDueActionsRepeatedly();
+    verify(validatorTimingChannel).onPayloadAttestationCreationDue(nextSlot);
   }
 }

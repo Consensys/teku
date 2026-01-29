@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -40,7 +40,7 @@ public class DepositsFromBlockSerializerTest {
                 dataStructureUtil.randomDepositEvent(5)));
     final byte[] bytes = serializer.serialize(event);
     final DepositsFromBlockEvent result = serializer.deserialize(bytes);
-    assertThat(result).isEqualToComparingFieldByField(event);
+    assertThat(result).usingDefaultComparator().isEqualTo(event);
   }
 
   @Test
@@ -53,6 +53,6 @@ public class DepositsFromBlockSerializerTest {
             Stream.of(dataStructureUtil.randomDepositEvent()));
     final byte[] bytes = serializer.serialize(event);
     final DepositsFromBlockEvent result = serializer.deserialize(bytes);
-    assertThat(result).isEqualToComparingFieldByField(event);
+    assertThat(result).usingDefaultComparator().isEqualTo(event);
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -19,8 +19,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Streams;
 import java.util.List;
 import java.util.stream.IntStream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
@@ -31,16 +29,8 @@ import tech.pegasys.teku.kzg.KZGCellWithColumnId;
 import tech.pegasys.teku.kzg.KZGProof;
 
 public class KzgRecoverCellsAndKzgProofsTestExecutor extends KzgTestExecutor {
-  private static final Logger LOG = LogManager.getLogger();
-
   @Override
   public void runTest(final TestDefinition testDefinition, final KZG kzg) throws Throwable {
-    if (testDefinition
-        .getTestName()
-        .startsWith("kzg-mainnet/recover_cells_and_kzg_proofs_case_invalid_shuffled")) {
-      LOG.error("SKIPPING TEST {}", testDefinition.getTestName());
-      return;
-    }
     final Data data = loadDataFile(testDefinition, Data.class);
     final List<KZGCellAndProof> expectedKzgCells = data.getOutput();
     List<KZGCellAndProof> actualKzgCells;

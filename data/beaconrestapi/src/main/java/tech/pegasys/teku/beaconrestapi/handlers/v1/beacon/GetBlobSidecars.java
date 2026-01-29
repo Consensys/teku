@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -72,6 +72,7 @@ public class GetBlobSidecars extends RestApiEndpoint {
                     If the `indices` parameter is specified, only the blob sidecars with the specified indices will be returned. There are no guarantees
                     for the returned blob sidecars in terms of ordering.
                 """)
+        .deprecated(true)
         .tags(TAG_BEACON)
         .pathParam(PARAMETER_BLOCK_ID)
         .queryListParam(BLOB_INDICES_PARAMETER)
@@ -113,10 +114,10 @@ public class GetBlobSidecars extends RestApiEndpoint {
             .getJsonTypeDefinition();
     return SerializableTypeDefinition.<BlobSidecarsAndMetaData>object()
         .name("GetBlobSidecarsResponse")
-        .withOptionalField("version", MILESTONE_TYPE, (b) -> Optional.of(b.getMilestone()))
-        .withOptionalField(
-            EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, (b) -> Optional.of(b.isExecutionOptimistic()))
-        .withOptionalField(FINALIZED, BOOLEAN_TYPE, (b) -> Optional.of(b.isFinalized()))
+        .withField("version", MILESTONE_TYPE, BlobSidecarsAndMetaData::getMilestone)
+        .withField(
+            EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, BlobSidecarsAndMetaData::isExecutionOptimistic)
+        .withField(FINALIZED, BOOLEAN_TYPE, BlobSidecarsAndMetaData::isFinalized)
         .withField("data", listOf(blobSidecarType), BlobSidecarsAndMetaData::getData)
         .build();
   }

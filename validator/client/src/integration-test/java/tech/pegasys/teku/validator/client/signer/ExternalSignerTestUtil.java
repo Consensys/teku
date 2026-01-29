@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -54,15 +54,15 @@ class ExternalSignerTestUtil {
       final long timeoutCount) {
 
     assertThat(
-            metricsSystem.getCounterValue(
+            metricsSystem.getLabelledCounterValue(
                 TekuMetricCategory.VALIDATOR, "external_signer_requests_total", "success"))
         .isEqualTo(successCount);
     assertThat(
-            metricsSystem.getCounterValue(
+            metricsSystem.getLabelledCounterValue(
                 TekuMetricCategory.VALIDATOR, "external_signer_requests_total", "failed"))
         .isEqualTo(failCount);
     assertThat(
-            metricsSystem.getCounterValue(
+            metricsSystem.getLabelledCounterValue(
                 TekuMetricCategory.VALIDATOR, "external_signer_requests_total", "timeout"))
         .isEqualTo(timeoutCount);
   }

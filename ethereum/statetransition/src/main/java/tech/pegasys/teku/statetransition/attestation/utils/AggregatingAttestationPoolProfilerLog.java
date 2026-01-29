@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -135,8 +135,10 @@ public class AggregatingAttestationPoolProfilerLog implements AggregatingAttesta
     attestations.forEach(
         attestation ->
             rewards.add(
-                blockProcessor.processAttestationProposerReward(
-                    mutableBeaconStateAltair, attestation, indexedAttestationProvider)));
+                blockProcessor
+                    .processAttestation(
+                        mutableBeaconStateAltair, attestation, indexedAttestationProvider)
+                    .proposerReward()));
 
     return rewards.stream()
         .filter(Optional::isPresent)

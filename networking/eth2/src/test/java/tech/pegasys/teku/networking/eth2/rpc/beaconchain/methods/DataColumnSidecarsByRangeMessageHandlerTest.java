@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -57,7 +57,7 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -158,7 +158,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
                     "Only a maximum of %s data column sidecars can be requested per request",
                     maxRequestDataColumnSidecars)));
     final long countTooBigCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK,
             "rpc_data_column_sidecars_by_range_requests_total",
             "count_too_big");
@@ -180,7 +180,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
                     "Only a maximum of %s data column sidecars can be requested per request",
                     maxRequestDataColumnSidecars)));
     final long countTooBigCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK,
             "rpc_data_column_sidecars_by_range_requests_total",
             "count_too_big");
@@ -206,7 +206,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
                     "Only a maximum of %s data column sidecars can be requested per request",
                     maxRequestDataColumnSidecars)));
     final long countTooBigCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK,
             "rpc_data_column_sidecars_by_range_requests_total",
             "count_too_big");
@@ -228,7 +228,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     // No adjustment
     verify(peer, never()).adjustDataColumnSidecarsRequest(any(), anyLong());
     final long rateLimitedCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK,
             "rpc_data_column_sidecars_by_range_requests_total",
             "rate_limited");

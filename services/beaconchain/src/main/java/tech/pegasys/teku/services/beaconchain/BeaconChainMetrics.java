@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import org.hyperledger.besu.plugin.services.metrics.LabelledSuppliedMetric;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
@@ -103,11 +105,19 @@ public class BeaconChainMetrics implements SlotEventsChannel {
         "head_root",
         "Root of the head block of the beacon chain",
         this::getHeadRootValue);
-    metricsSystem.createGauge(
-        TekuMetricCategory.BEACON,
-        "peer_count",
-        "Tracks number of connected peers, verified to be on the same chain",
-        p2pNetwork::getPeerCount);
+
+    final LabelledSuppliedMetric peerCountMetric =
+        metricsSystem.createLabelledSuppliedGauge(
+            TekuMetricCategory.BEACON,
+            "peer_count",
+            "Tracks number of connected peers, verified to be on the same chain",
+            "direction");
+    peerCountMetric.labels(
+        () -> p2pNetwork.streamPeers().filter(Eth2Peer::connectionInitiatedRemotely).count(),
+        "inbound");
+    peerCountMetric.labels(
+        () -> p2pNetwork.streamPeers().filter(Eth2Peer::connectionInitiatedLocally).count(),
+        "outbound");
 
     finalizedEpoch =
         SettableGauge.create(

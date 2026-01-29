@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -28,6 +28,8 @@ public class SszGenericTests {
           .put("ssz_generic/boolean", new SszGenericBooleanTestExecutor())
           .put("ssz_generic/containers", new SszGenericContainerTestExecutor())
           .put("ssz_generic/progressive_bitlist", TestExecutor.IGNORE_TESTS)
+          .put("ssz_generic/progressive_containers", TestExecutor.IGNORE_TESTS)
+          .put("ssz_generic/compatible_unions", TestExecutor.IGNORE_TESTS)
           .put("ssz_generic/uints", new SszGenericUIntTestExecutor())
           .build();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -24,6 +24,7 @@ import java.util.OptionalInt;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.fetch.DefaultFetchTaskFactory;
 import tech.pegasys.teku.beacon.sync.fetch.FetchTaskFactory;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
@@ -58,10 +59,12 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.blobs.BlockEventsListenerRouter;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
@@ -117,15 +120,16 @@ public class SyncingNodeManager {
     final MergeTransitionBlockValidator transitionBlockValidator =
         new MergeTransitionBlockValidator(spec, recentChainData);
 
+    final MetricsSystem metricsSystem = new StubMetricsSystem();
+
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,
             new InlineEventThread(),
             recentChainData,
-            BlobSidecarManager.NOOP,
             new NoopForkChoiceNotifier(),
             transitionBlockValidator,
-            new StubMetricsSystem());
+            metricsSystem);
 
     final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =
         eventChannels.getPublisher(ReceivedBlockEventsChannel.class);
@@ -133,7 +137,7 @@ public class SyncingNodeManager {
     final BlockGossipValidator blockGossipValidator =
         new BlockGossipValidator(
             spec,
-            new GossipValidationHelper(spec, recentChainData),
+            new GossipValidationHelper(spec, recentChainData, metricsSystem),
             receivedBlockEventsChannelPublisher);
     final BlockValidator blockValidator = new BlockValidator(blockGossipValidator);
 
@@ -156,12 +160,18 @@ public class SyncingNodeManager {
             forkChoice,
             WeakSubjectivityFactory.lenientValidator(),
             new ExecutionLayerChannelStub(spec, false));
+    final BlockEventsListenerRouter blockEventsListenerRouter =
+        new BlockEventsListenerRouter(
+            BlockBlobSidecarsTrackersPool.NOOP,
+            () -> DataAvailabilitySampler.NOOP,
+            recentChainData,
+            spec);
 
     final BlockManager blockManager =
         new BlockManager(
             recentChainData,
             blockImporter,
-            BlockBlobSidecarsTrackersPool.NOOP,
+            blockEventsListenerRouter,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,

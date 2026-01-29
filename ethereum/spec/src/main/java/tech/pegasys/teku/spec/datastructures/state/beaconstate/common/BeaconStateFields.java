@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -64,7 +64,7 @@ public enum BeaconStateFields implements SszFieldName {
   CURRENT_SYNC_COMMITTEE,
   NEXT_SYNC_COMMITTEE,
   // Bellatrix fields
-  LATEST_EXECUTION_PAYLOAD_HEADER,
+  LATEST_EXECUTION_PAYLOAD_HEADER, // removed in Gloas
   // Capella fields
   NEXT_WITHDRAWAL_INDEX,
   NEXT_WITHDRAWAL_VALIDATOR_INDEX,
@@ -82,11 +82,14 @@ public enum BeaconStateFields implements SszFieldName {
   // Fulu fields
   PROPOSER_LOOKAHEAD,
   // Gloas fields
+  LATEST_EXECUTION_PAYLOAD_BID,
+  BUILDERS,
+  NEXT_WITHDRAWAL_BUILDER_INDEX,
   EXECUTION_PAYLOAD_AVAILABILITY,
   BUILDER_PENDING_PAYMENTS,
   BUILDER_PENDING_WITHDRAWALS,
   LATEST_BLOCK_HASH,
-  LATEST_WITHDRAWALS_ROOT;
+  PAYLOAD_EXPECTED_WITHDRAWALS;
 
   private final String sszFieldName;
 

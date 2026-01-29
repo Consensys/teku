@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -103,17 +103,16 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     this.proposersDataManager = proposersDataManager;
     this.combinedChainDataClient = combinedChainDataClient;
     this.custodyGroupCountChannel = custodyGroupCountChannel;
+    this.custodyGroupSyncedCount = new AtomicInteger(0);
     final Optional<Integer> maybeCustodyCount =
         combinedChainDataClient.getCustodyGroupCount().map(UInt64::intValue);
     if (maybeCustodyCount.isEmpty() || maybeCustodyCount.get() < initCustodyGroupCount) {
-      LOG.info("Persisting initial custody group count to {}", initCustodyGroupCount);
       updateCustodyGroupCount(initCustodyGroupCount, maybeCustodyCount);
     } else {
       LOG.info("Using custody group count {} from store", maybeCustodyCount.get());
       updateCustodyGroupCount(maybeCustodyCount.get(), maybeCustodyCount);
     }
 
-    this.custodyGroupSyncedCount = new AtomicInteger(0);
     this.nodeId = nodeId;
   }
 
@@ -245,16 +244,16 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   private void updateCustodyGroupCount(
       final int newCustodyGroupCount, final Optional<Integer> maybeCustodyGroupCount) {
     if (maybeCustodyGroupCount.isEmpty() || maybeCustodyGroupCount.get() < newCustodyGroupCount) {
-      LOG.debug(
-          "Custody group count updated from {} to {}.",
-          maybeCustodyGroupCount.map(Object::toString).orElse("<not set>"),
-          newCustodyGroupCount);
+      LOG.info(
+          "Persisting custody group count of {} (old value: {}).",
+          newCustodyGroupCount,
+          maybeCustodyGroupCount.map(Object::toString).orElse("<not set>"));
       combinedChainDataClient.updateCustodyGroupCount(newCustodyGroupCount);
     }
-    if (custodyGroupCount.get() >= newCustodyGroupCount) {
-      return;
+    final int oldValue = custodyGroupCount.getAndSet(newCustodyGroupCount);
+    if (oldValue == INITIAL_VALUE) {
+      setCustodyGroupSyncedCount(newCustodyGroupCount);
     }
-    custodyGroupCount.set(newCustodyGroupCount);
     custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, getSamplingGroupCount());
     custodyGroupCountGauge.set(newCustodyGroupCount);
     isMaxCustodyGroups = newCustodyGroupCount == specConfigFulu.getNumberOfCustodyGroups();

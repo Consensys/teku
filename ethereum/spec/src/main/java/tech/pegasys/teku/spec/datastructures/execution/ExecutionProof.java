@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,13 +14,13 @@
 package tech.pegasys.teku.spec.datastructures.execution;
 
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container4;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container5;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class ExecutionProof
-    extends Container4<ExecutionProof, SszBytes32, SszUInt64, SszUInt64, SszByteList> {
+    extends Container5<ExecutionProof, SszBytes32, SszBytes32, SszUInt64, SszUInt64, SszByteList> {
 
   public ExecutionProof(final ExecutionProofSchema schema, final TreeNode node) {
     super(schema, node);
@@ -28,26 +28,31 @@ public class ExecutionProof
 
   public ExecutionProof(
       final ExecutionProofSchema schema,
+      final SszBytes32 blockRoot,
       final SszBytes32 blockHash,
       final SszUInt64 subnetId,
       final SszUInt64 version,
       final SszByteList proofData) {
-    super(schema, blockHash, subnetId, version, proofData);
+    super(schema, blockRoot, blockHash, subnetId, version, proofData);
   }
 
-  public SszBytes32 getBlockHash() {
+  public SszBytes32 getBlockRoot() {
     return getField0();
   }
 
-  public SszUInt64 getSubnetId() {
+  public SszBytes32 getBlockHash() {
     return getField1();
   }
 
-  public SszUInt64 getVersion() {
+  public SszUInt64 getSubnetId() {
     return getField2();
   }
 
-  public SszByteList getProofData() {
+  public SszUInt64 getVersion() {
     return getField3();
+  }
+
+  public SszByteList getProofData() {
+    return getField4();
   }
 }

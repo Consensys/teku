@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,12 +16,14 @@ package tech.pegasys.teku.networking.eth2.rpc.core.encodings.context;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public interface ForkDigestPayloadContext<TPayload extends SszData> {
 
@@ -64,6 +66,21 @@ public interface ForkDigestPayloadContext<TPayload extends SszData> {
         public SszSchema<DataColumnSidecar> getSchemaFromSchemaDefinitions(
             final SchemaDefinitions schemaDefinitions) {
           return SchemaDefinitionsFulu.required(schemaDefinitions).getDataColumnSidecarSchema();
+        }
+      };
+
+  ForkDigestPayloadContext<SignedExecutionPayloadEnvelope> SIGNED_EXECUTION_PAYLOAD_ENVELOPE =
+      new ForkDigestPayloadContext<>() {
+        @Override
+        public UInt64 getSlotFromPayload(final SignedExecutionPayloadEnvelope responsePayload) {
+          return responsePayload.getMessage().getSlot();
+        }
+
+        @Override
+        public SszSchema<SignedExecutionPayloadEnvelope> getSchemaFromSchemaDefinitions(
+            final SchemaDefinitions schemaDefinitions) {
+          return SchemaDefinitionsGloas.required(schemaDefinitions)
+              .getSignedExecutionPayloadEnvelopeSchema();
         }
       };
 

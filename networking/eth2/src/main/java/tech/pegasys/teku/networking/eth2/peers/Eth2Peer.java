@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,7 +23,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -33,9 +32,10 @@ import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
@@ -53,11 +53,12 @@ public interface Eth2Peer extends Peer, SyncSource {
       final StatusMessageFactory statusMessageFactory,
       final MetadataMessagesFactory metadataMessagesFactory,
       final PeerChainValidator peerChainValidator,
-      final RateTracker blockRequestTracker,
+      final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator,
+      final RateTracker blocksRequestTracker,
       final RateTracker blobSidecarsRequestTracker,
       final RateTracker dataColumnSidecarsRequestTracker,
+      final RateTracker executionPayloadEnvelopesRequestTracker,
       final RateTracker requestTracker,
-      final KZG kzg,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider) {
     return new DefaultEth2Peer(
@@ -68,11 +69,12 @@ public interface Eth2Peer extends Peer, SyncSource {
         statusMessageFactory,
         metadataMessagesFactory,
         peerChainValidator,
-        blockRequestTracker,
+        dataColumnSidecarSignatureValidator,
+        blocksRequestTracker,
         blobSidecarsRequestTracker,
         dataColumnSidecarsRequestTracker,
+        executionPayloadEnvelopesRequestTracker,
         requestTracker,
-        kzg,
         metricsSystem,
         timeProvider);
   }
@@ -114,6 +116,9 @@ public interface Eth2Peer extends Peer, SyncSource {
       List<DataColumnsByRootIdentifier> dataColumnIdentifiers,
       RpcResponseListener<DataColumnSidecar> listener);
 
+  SafeFuture<Void> requestExecutionPayloadEnvelopesByRoot(
+      List<Bytes32> beaconBlockRoots, RpcResponseListener<SignedExecutionPayloadEnvelope> listener);
+
   SafeFuture<Optional<SignedBeaconBlock>> requestBlockBySlot(UInt64 slot);
 
   SafeFuture<Optional<SignedBeaconBlock>> requestBlockByRoot(Bytes32 blockRoot);
@@ -130,22 +135,59 @@ public interface Eth2Peer extends Peer, SyncSource {
   <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
       final Eth2RpcMethod<I, O> method, final RpcRequestBodySelector<I> requestBodySelector);
 
-  Optional<RequestKey> approveBlocksRequest(
-      ResponseCallback<SignedBeaconBlock> callback, long blocksCount);
+  <T> Optional<RequestKey> approveObjectsRequest(
+      RequestObject requestObject, ResponseCallback<T> callback, long objectsCount);
 
-  void adjustBlocksRequest(RequestKey requestKey, long objectCount);
+  void adjustObjectsRequest(
+      RequestObject requestObject, RequestKey requestKey, long returnedObjectsCount);
 
-  Optional<RequestKey> approveBlobSidecarsRequest(
-      ResponseCallback<BlobSidecar> callback, long blobSidecarsCount);
+  default Optional<RequestKey> approveBlocksRequest(
+      final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
+    return approveObjectsRequest(RequestObject.BLOCK, callback, blocksCount);
+  }
 
-  void adjustBlobSidecarsRequest(RequestKey blobSidecarsRequest, long returnedBlobSidecarsCount);
+  default void adjustBlocksRequest(final RequestKey requestKey, final long returnedBlocksCount) {
+    adjustObjectsRequest(RequestObject.BLOCK, requestKey, returnedBlocksCount);
+  }
+
+  default Optional<RequestKey> approveBlobSidecarsRequest(
+      final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
+    return approveObjectsRequest(RequestObject.BLOB_SIDECAR, callback, blobSidecarsCount);
+  }
+
+  default void adjustBlobSidecarsRequest(
+      final RequestKey requestKey, final long returnedBlobSidecarsCount) {
+    adjustObjectsRequest(RequestObject.BLOB_SIDECAR, requestKey, returnedBlobSidecarsCount);
+  }
+
+  default Optional<RequestKey> approveDataColumnSidecarsRequest(
+      final ResponseCallback<DataColumnSidecar> callback, final long dataColumnSidecarsCount) {
+    return approveObjectsRequest(
+        RequestObject.DATA_COLUMN_SIDECAR, callback, dataColumnSidecarsCount);
+  }
+
+  default void adjustDataColumnSidecarsRequest(
+      final RequestKey requestKey, final long returnedDataColumnSidecarsCount) {
+    adjustObjectsRequest(
+        RequestObject.DATA_COLUMN_SIDECAR, requestKey, returnedDataColumnSidecarsCount);
+  }
+
+  default Optional<RequestKey> approveExecutionPayloadEnvelopesRequest(
+      final ResponseCallback<SignedExecutionPayloadEnvelope> callback,
+      final long executionPayloadEnvelopesCount) {
+    return approveObjectsRequest(
+        RequestObject.EXECUTION_PAYLOAD_ENVELOPE, callback, executionPayloadEnvelopesCount);
+  }
+
+  default void adjustExecutionPayloadEnvelopesRequest(
+      final RequestKey requestKey, final long returnedExecutionPayloadEnvelopesCount) {
+    adjustObjectsRequest(
+        RequestObject.EXECUTION_PAYLOAD_ENVELOPE,
+        requestKey,
+        returnedExecutionPayloadEnvelopesCount);
+  }
 
   long getAvailableDataColumnSidecarsRequestCount();
-
-  Optional<RequestKey> approveDataColumnSidecarsRequest(
-      ResponseCallback<DataColumnSidecar> callback, long dataColumnSidecarsCount);
-
-  void adjustDataColumnSidecarsRequest(RequestKey requestKey, long objectCount);
 
   boolean approveRequest();
 

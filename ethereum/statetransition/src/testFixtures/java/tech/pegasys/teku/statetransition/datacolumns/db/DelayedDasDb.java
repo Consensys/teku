@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 public class DelayedDasDb implements DataColumnSidecarDB {
@@ -49,11 +49,6 @@ public class DelayedDasDb implements DataColumnSidecarDB {
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot() {
-    return delay(delegate::getFirstSamplerIncompleteSlot);
-  }
-
-  @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
       final DataColumnSlotAndIdentifier identifier) {
     return delay(() -> delegate.getSidecar(identifier));
@@ -70,12 +65,17 @@ public class DelayedDasDb implements DataColumnSidecarDB {
   }
 
   @Override
-  public SafeFuture<Void> setFirstSamplerIncompleteSlot(final UInt64 slot) {
-    return delay(() -> delegate.setFirstSamplerIncompleteSlot(slot));
+  public SafeFuture<Void> addSidecar(final DataColumnSidecar sidecar) {
+    return delay(() -> delegate.addSidecar(sidecar));
   }
 
   @Override
-  public SafeFuture<Void> addSidecar(final DataColumnSidecar sidecar) {
-    return delay(() -> delegate.addSidecar(sidecar));
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot() {
+    return delay(delegate::getEarliestAvailableDataColumnSlot);
+  }
+
+  @Override
+  public SafeFuture<Void> setEarliestAvailableDataColumnSlot(final UInt64 slot) {
+    return delay(() -> delegate.setEarliestAvailableDataColumnSlot(slot));
   }
 }

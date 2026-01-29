@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -76,7 +76,7 @@ public class BlsToExecutionChangeGenerator {
     final Bytes32 domain =
         spec.atEpoch(epoch)
             .miscHelpers()
-            .computeDomain(Domain.DOMAIN_BLS_TO_EXECUTION_CHANGE, genesisValidatorRoot);
+            .computeDomain(Domain.BLS_TO_EXECUTION_CHANGE, genesisValidatorRoot);
     final SpecVersion specVersion = spec.atEpoch(epoch);
     return specVersion.miscHelpers().computeSigningRoot(blsToExecutionChange, domain);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -27,11 +27,13 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
+import tech.pegasys.teku.storage.client.BlobReconstructionProvider;
 import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -119,7 +121,9 @@ public class DataProvider {
     private boolean isLivenessTrackingEnabled = true;
     private IntSupplier rejectedExecutionSupplier;
     private BlobSidecarReconstructionProvider blobSidecarReconstructionProvider;
+    private BlobReconstructionProvider blobReconstructionProvider;
     private DataColumnSidecarManager dataColumnSidecarManager;
+    private CustodyGroupCountManager custodyGroupCountManager;
 
     public Builder recentChainData(final RecentChainData recentChainData) {
       this.recentChainData = recentChainData;
@@ -227,6 +231,12 @@ public class DataProvider {
       return this;
     }
 
+    public Builder blobReconstructionProvider(
+        final BlobReconstructionProvider blobReconstructionProvider) {
+      this.blobReconstructionProvider = blobReconstructionProvider;
+      return this;
+    }
+
     public Builder dataColumnSidecarManager(
         final DataColumnSidecarManager dataColumnSidecarManager) {
       this.dataColumnSidecarManager = dataColumnSidecarManager;
@@ -252,6 +262,7 @@ public class DataProvider {
               forkChoiceNotifier,
               recentChainData,
               dataColumnSidecarManager,
+              custodyGroupCountManager,
               spec);
       final ChainDataProvider chainDataProvider =
           new ChainDataProvider(
@@ -259,7 +270,8 @@ public class DataProvider {
               recentChainData,
               combinedChainDataClient,
               rewardCalculator,
-              blobSidecarReconstructionProvider);
+              blobSidecarReconstructionProvider,
+              blobReconstructionProvider);
       final SyncDataProvider syncDataProvider =
           new SyncDataProvider(syncService, rejectedExecutionSupplier);
       final ValidatorDataProvider validatorDataProvider =
@@ -285,6 +297,12 @@ public class DataProvider {
 
     public Builder rejectedExecutionSupplier(final IntSupplier rejectedExecutionCountSupplier) {
       this.rejectedExecutionSupplier = rejectedExecutionCountSupplier;
+      return this;
+    }
+
+    public Builder custodyGroupCountManager(
+        final CustodyGroupCountManager custodyGroupCountManager) {
+      this.custodyGroupCountManager = custodyGroupCountManager;
       return this;
     }
   }

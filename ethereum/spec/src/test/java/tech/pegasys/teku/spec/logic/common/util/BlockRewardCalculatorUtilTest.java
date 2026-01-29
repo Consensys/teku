@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil.BlockRewardData;
 import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
+import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair.AttestationProcessingResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlockRewardCalculatorUtilTest {
@@ -93,8 +94,8 @@ public class BlockRewardCalculatorUtilTest {
     // reward equals the number of attestations
     when(blockProcessorAltair.createIndexedAttestationProvider(any(), any()))
         .thenReturn(mock(AbstractBlockProcessor.IndexedAttestationProvider.class));
-    when(blockProcessorAltair.processAttestationProposerReward(any(), any(), any()))
-        .thenReturn(Optional.of(UInt64.ONE));
+    when(blockProcessorAltair.processAttestation(any(), any(), any()))
+        .thenReturn(new AttestationProcessingResult(Optional.of(UInt64.ONE), 0, UInt64.ZERO));
     final BeaconState preState = data.randomBeaconState();
     final BeaconBlock block =
         data.blockBuilder(preState.getSlot().increment().longValue())
@@ -104,15 +105,15 @@ public class BlockRewardCalculatorUtilTest {
     final BlockRewardData reward =
         calculator.calculateBlockRewards(block, blockProcessorAltair, preState);
     assertThat(reward.attestations()).isEqualTo(10L);
-    verify(blockProcessorAltair, times(10)).processAttestationProposerReward(any(), any(), any());
+    verify(blockProcessorAltair, times(10)).processAttestation(any(), any(), any());
   }
 
   @Test
   void getBlockRewardData_shouldOutputRewardData() {
     when(blockProcessorAltair.createIndexedAttestationProvider(any(), any()))
         .thenReturn(mock(AbstractBlockProcessor.IndexedAttestationProvider.class));
-    when(blockProcessorAltair.processAttestationProposerReward(any(), any(), any()))
-        .thenReturn(Optional.of(UInt64.ONE));
+    when(blockProcessorAltair.processAttestation(any(), any(), any()))
+        .thenReturn(new AttestationProcessingResult(Optional.of(UInt64.ONE), 0, UInt64.ZERO));
     final BeaconState preState = data.randomBeaconState();
     final BeaconBlock block =
         data.blockBuilder(preState.getSlot().increment().longValue())
@@ -133,7 +134,7 @@ public class BlockRewardCalculatorUtilTest {
                 140L,
                 3 * SINGLE_SLASHING_REWARD,
                 2 * SINGLE_SLASHING_REWARD));
-    verify(blockProcessorAltair, times(10)).processAttestationProposerReward(any(), any(), any());
+    verify(blockProcessorAltair, times(10)).processAttestation(any(), any(), any());
   }
 
   @Test

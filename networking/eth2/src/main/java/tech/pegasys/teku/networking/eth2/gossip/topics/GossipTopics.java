@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -19,9 +19,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 
 /**
@@ -73,6 +75,12 @@ public class GossipTopics {
         forkDigest, GossipTopicName.getDataColumnSidecarSubnetTopicName(subnetId), gossipEncoding);
   }
 
+  public static String getExecutionProofSubnetTopic(
+      final Bytes4 forkDigest, final int subnetId, final GossipEncoding gossipEncoding) {
+    return getTopic(
+        forkDigest, GossipTopicName.getExecutionProofSubnetTopicName(subnetId), gossipEncoding);
+  }
+
   public static Set<String> getAllDataColumnSidecarSubnetTopics(
       final GossipEncoding gossipEncoding, final Bytes4 forkDigest, final Spec spec) {
 
@@ -89,7 +97,8 @@ public class GossipTopics {
       final GossipEncoding gossipEncoding,
       final Bytes4 forkDigest,
       final Spec spec,
-      final SpecMilestone specMilestone) {
+      final SpecMilestone specMilestone,
+      final P2PConfig p2pConfig) {
     final Set<String> topics = new HashSet<>();
 
     for (int i = 0; i < spec.getNetworkingConfig().getAttestationSubnetCount(); i++) {
@@ -107,6 +116,12 @@ public class GossipTopics {
                     config.getBlobSidecarSubnetCount(), topics, forkDigest, gossipEncoding));
 
     topics.addAll(getAllDataColumnSidecarSubnetTopics(gossipEncoding, forkDigest, spec));
+
+    if (p2pConfig.isExecutionProofTopicEnabled()) {
+      for (int i = 0; i < Constants.MAX_EXECUTION_PROOF_SUBNETS; i++) {
+        topics.add(getExecutionProofSubnetTopic(forkDigest, i, gossipEncoding));
+      }
+    }
 
     for (GossipTopicName topicName : GossipTopicName.values()) {
       topics.add(GossipTopics.getTopic(forkDigest, topicName, gossipEncoding));

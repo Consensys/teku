@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -17,6 +17,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import org.iq80.leveldb.DB;
@@ -25,17 +27,31 @@ import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 
 public class LevelDbInstanceFactory {
   public static KvStoreAccessor create(
       final MetricsSystem metricsSystem,
       final MetricCategory metricCategory,
       final KvStoreConfiguration configuration,
-      final Collection<KvStoreColumn<?, ?>> columns)
+      final Collection<KvStoreColumn<?, ?>> columns,
+      final Collection<Bytes> deletedColumns,
+      final Collection<KvStoreVariable<?>> variables,
+      final Collection<Bytes> deletedVariables)
       throws DatabaseStorageException {
     checkArgument(
-        columns.stream().map(KvStoreColumn::getId).distinct().count() == columns.size(),
+        Stream.concat(columns.stream().map(KvStoreColumn::getId), deletedColumns.stream())
+                .distinct()
+                .count()
+            == columns.size() + deletedColumns.size(),
         "Column IDs are not distinct");
+
+    checkArgument(
+        Stream.concat(variables.stream().map(KvStoreVariable::getId), deletedVariables.stream())
+                .distinct()
+                .count()
+            == variables.size() + deletedVariables.size(),
+        "Variable IDs are not distinct");
     final Options options =
         new Options()
             .createIfMissing(true)

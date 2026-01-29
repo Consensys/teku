@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,6 +15,8 @@ package tech.pegasys.teku.ethereum.executionclient.rest;
 
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
+import com.google.common.collect.ImmutableMap;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -60,11 +62,6 @@ public class RestBuilderClient implements BuilderClient {
   private static final Map.Entry<String, String> ACCEPT_HEADER =
       Map.entry("Accept", "application/octet-stream;q=1.0,application/json;q=0.9");
 
-  private static final Map<String, String> GET_HEADER_HTTP_HEADERS_WITH_USER_AGENT =
-      Map.ofEntries(USER_AGENT_HEADER, ACCEPT_HEADER);
-  private static final Map<String, String> GET_HEADER_HTTP_HEADERS_WITHOUT_USER_AGENT =
-      Map.ofEntries(ACCEPT_HEADER);
-
   private static final AtomicBoolean LAST_RECEIVED_HEADER_WAS_IN_SSZ = new AtomicBoolean(false);
 
   private final Map<
@@ -101,7 +98,7 @@ public class RestBuilderClient implements BuilderClient {
   @Override
   public SafeFuture<Response<Void>> status() {
     return restClient.getAsync(
-        BuilderApiMethod.GET_STATUS.getPath(), options.builderStatusTimeout());
+        BuilderApiMethod.GET_STATUS.getPath(), buildHeadersWith(), options.builderStatusTimeout());
   }
 
   @Override
@@ -139,6 +136,7 @@ public class RestBuilderClient implements BuilderClient {
       final SszList<SignedValidatorRegistration> signedValidatorRegistrations) {
     return restClient.postAsync(
         BuilderApiMethod.REGISTER_VALIDATOR.getPath(),
+        buildHeadersWith(),
         signedValidatorRegistrations,
         false,
         options.builderRegisterValidatorTimeout());
@@ -148,6 +146,7 @@ public class RestBuilderClient implements BuilderClient {
       final SszList<SignedValidatorRegistration> signedValidatorRegistrations) {
     return restClient.postAsync(
         BuilderApiMethod.REGISTER_VALIDATOR.getPath(),
+        buildHeadersWith(),
         signedValidatorRegistrations,
         true,
         options.builderRegisterValidatorTimeout());
@@ -183,9 +182,7 @@ public class RestBuilderClient implements BuilderClient {
     return restClient
         .getAsync(
             BuilderApiMethod.GET_HEADER.resolvePath(urlParams),
-            setUserAgentHeader
-                ? GET_HEADER_HTTP_HEADERS_WITH_USER_AGENT
-                : GET_HEADER_HTTP_HEADERS_WITHOUT_USER_AGENT,
+            buildHeadersWith(ACCEPT_HEADER),
             responseTypeDefinition,
             options.builderProposalDelayTolerance())
         .thenApply(
@@ -215,9 +212,9 @@ public class RestBuilderClient implements BuilderClient {
     return restClient
         .postAsync(
             BuilderApiMethod.GET_PAYLOAD.getPath(),
-            Map.ofEntries(
-                Map.entry(HEADER_CONSENSUS_VERSION, milestone.name().toLowerCase(Locale.ROOT)),
-                ACCEPT_HEADER),
+            buildHeadersWith(
+                ACCEPT_HEADER,
+                Map.entry(HEADER_CONSENSUS_VERSION, milestone.name().toLowerCase(Locale.ROOT))),
             signedBlindedBeaconBlock,
             LAST_RECEIVED_HEADER_WAS_IN_SSZ.get(),
             responseTypeDefinition,
@@ -236,11 +233,22 @@ public class RestBuilderClient implements BuilderClient {
 
     return restClient.postAsync(
         BuilderApiMethod.GET_PAYLOAD_V2.getPath(),
-        Map.ofEntries(
+        buildHeadersWith(
             Map.entry(HEADER_CONSENSUS_VERSION, milestone.name().toLowerCase(Locale.ROOT))),
         signedBlindedBeaconBlock,
         LAST_RECEIVED_HEADER_WAS_IN_SSZ.get(),
         options.builderGetPayloadTimeout());
+  }
+
+  @SafeVarargs
+  public final Map<String, String> buildHeadersWith(final Map.Entry<String, String>... headers) {
+    final ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+    if (setUserAgentHeader) {
+      builder.put(USER_AGENT_HEADER);
+    }
+    Arrays.stream(headers).forEach(builder::put);
+
+    return builder.build();
   }
 
   private <T extends BuilderPayload>

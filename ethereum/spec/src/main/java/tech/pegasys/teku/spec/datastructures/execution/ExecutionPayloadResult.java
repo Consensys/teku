@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -12,6 +12,8 @@
  */
 
 package tech.pegasys.teku.spec.datastructures.execution;
+
+import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
@@ -59,6 +61,13 @@ public class ExecutionPayloadResult {
     return executionPayloadContext;
   }
 
+  public SafeFuture<GetPayloadResponse> getPayloadResponseFutureFromLocalFlowRequired() {
+    checkState(
+        getPayloadResponseFuture.isPresent(),
+        "GetPayloadResponse from local flow has been requested but it's not present");
+    return getPayloadResponseFuture.get();
+  }
+
   public Optional<SafeFuture<ExecutionPayload>> getExecutionPayloadFutureFromLocalFlow() {
     return getPayloadResponseFuture.map(
         getPayloadResponse ->
@@ -68,11 +77,6 @@ public class ExecutionPayloadResult {
   public Optional<SafeFuture<Optional<BlobsBundle>>> getBlobsBundleFutureFromLocalFlow() {
     return getPayloadResponseFuture.map(
         getPayloadResponse -> getPayloadResponse.thenApply(GetPayloadResponse::getBlobsBundle));
-  }
-
-  public Optional<SafeFuture<Optional<BlobsCellBundle>>> getBlobsCellBundleFutureFromLocalFlow() {
-    return getPayloadResponseFuture.map(
-        getPayloadResponse -> getPayloadResponse.thenApply(GetPayloadResponse::getBlobsCellBundle));
   }
 
   public Optional<SafeFuture<Optional<ExecutionRequests>>>

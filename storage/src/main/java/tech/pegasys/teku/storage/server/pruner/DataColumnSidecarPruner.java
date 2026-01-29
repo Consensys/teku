@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -117,7 +117,7 @@ public class DataColumnSidecarPruner extends Service {
     pruningActiveLabelledGauge.set(1, pruningMetricsType);
     final long start = System.currentTimeMillis();
     final UInt64 minCustodySlot = calculatePruneSlot();
-    LOG.info("Pruning data column sidecars before slot {}", minCustodySlot);
+    LOG.debug("Pruning data column sidecars before slot {}", minCustodySlot);
     database.pruneAllSidecars(minCustodySlot.minusMinZero(1), pruneLimit);
 
     pruningTimingsLabelledGauge.set(System.currentTimeMillis() - start, pruningMetricsType);

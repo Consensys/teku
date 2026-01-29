@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -25,10 +25,11 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -399,11 +400,6 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot() {
-    return SafeFuture.of(database::getFirstSamplerIncompleteSlot);
-  }
-
-  @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
       final DataColumnSlotAndIdentifier identifier) {
     return SafeFuture.of(() -> database.getSidecar(identifier));
@@ -427,12 +423,27 @@ public class ChainStorage
   }
 
   @Override
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalDataColumnIdentifiers(
+      final UInt64 slot) {
+    return SafeFuture.of(
+        () -> {
+          try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+              database.streamNonCanonicalDataColumnIdentifiers(slot)) {
+            return dataColumnIdentifiersStream.toList();
+          }
+        });
+  }
+
+  @Override
   public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(
       final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
     return SafeFuture.of(
         () -> {
           try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
-              database.streamDataColumnIdentifiers(startSlot, endSlot).limit(limit.longValue())) {
+              database
+                  .streamDataColumnIdentifiers(startSlot, endSlot)
+                  .limit(
+                      limit.isGreaterThan(Long.MAX_VALUE) ? Long.MAX_VALUE : limit.longValue())) {
             return dataColumnIdentifiersStream.toList();
           }
         });
@@ -444,22 +455,27 @@ public class ChainStorage
   }
 
   @Override
+  public SafeFuture<Optional<List<List<KZGProof>>>> getDataColumnSidecarsProofs(final UInt64 slot) {
+    return SafeFuture.of(() -> database.getDataColumnSidecarsProofs(slot));
+  }
+
+  @Override
   public SafeFuture<Void> onFirstCustodyIncompleteSlot(final UInt64 slot) {
     return SafeFuture.fromRunnable(() -> database.setFirstCustodyIncompleteSlot(slot));
   }
 
   @Override
-  public SafeFuture<Void> onFirstSamplerIncompleteSlot(final UInt64 slot) {
-    return SafeFuture.fromRunnable(() -> database.setFirstSamplerIncompleteSlot(slot));
+  public SafeFuture<Void> onEarliestAvailableDataColumnSlot(final UInt64 slot) {
+    return SafeFuture.fromRunnable(() -> database.setEarliestAvailableDataColumnSlot(slot));
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot() {
+    return SafeFuture.of(database::getEarliestAvailableDataColumnSlot);
   }
 
   @Override
   public SafeFuture<Void> onNewSidecar(final DataColumnSidecar sidecar) {
     return SafeFuture.fromRunnable(() -> database.addSidecar(sidecar));
-  }
-
-  @Override
-  public SafeFuture<Void> onNewNonCanonicalSidecar(final DataColumnSidecar sidecar) {
-    return SafeFuture.fromRunnable(() -> database.addNonCanonicalSidecar(sidecar));
   }
 }

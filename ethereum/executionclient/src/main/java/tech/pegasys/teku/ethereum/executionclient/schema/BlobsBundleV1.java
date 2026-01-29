@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -32,6 +32,7 @@ import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundleDeneb;
 
 public class BlobsBundleV1 {
   @JsonSerialize(contentUsing = BytesSerializer.class)
@@ -66,7 +67,7 @@ public class BlobsBundleV1 {
   }
 
   public BlobsBundle asInternalBlobsBundle(final BlobSchema blobSchema) {
-    return new BlobsBundle(
+    return new BlobsBundleDeneb(
         commitments.stream().map(KZGCommitment::new).toList(),
         proofs.stream().map(KZGProof::new).toList(),
         blobs.stream().map(blobBytes -> new Blob(blobSchema, blobBytes)).toList());

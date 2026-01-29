@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -12,8 +12,6 @@
  */
 
 package tech.pegasys.teku.cli.options;
-
-import static tech.pegasys.teku.storage.store.StoreConfig.DEFAULT_EARLIEST_AVAILABLE_BLOCK_SLOT_QUERY_FREQUENCY;
 
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -63,16 +61,6 @@ public class StoreOptions {
   private int checkpointStateCacheSize = StoreConfig.DEFAULT_CHECKPOINT_STATE_CACHE_SIZE;
 
   @Option(
-      names = {"--Xstore-earliest-available-block-slot-cache-seconds"},
-      hidden = true,
-      paramLabel = "<seconds>",
-      description =
-          "Only call earliest-available-block-slot every <SECONDS> seconds, which can reduce database contention serving large numbers of peers",
-      arity = "1")
-  private int earliestAvailableBlockSlotQueryFrequency =
-      DEFAULT_EARLIEST_AVAILABLE_BLOCK_SLOT_QUERY_FREQUENCY;
-
-  @Option(
       names = {"--Xstore-initial-canonical-block-root"},
       hidden = true,
       paramLabel = "<BlockRoot>",
@@ -87,7 +75,6 @@ public class StoreOptions {
                 .blockCacheSize(blockCacheSize)
                 .stateCacheSize(stateCacheSize)
                 .epochStateCacheSize(epochStateCacheSize)
-                .earliestAvailableBlockSlotFrequency(earliestAvailableBlockSlotQueryFrequency)
                 .checkpointStateCacheSize(checkpointStateCacheSize)
                 .initialCanonicalBlockRoot(initialCanonicalBlockRoot));
   }

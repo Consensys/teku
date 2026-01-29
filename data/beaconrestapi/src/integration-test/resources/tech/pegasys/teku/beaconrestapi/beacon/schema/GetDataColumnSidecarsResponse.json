@@ -16,7 +16,7 @@
     "data" : {
       "type" : "array",
       "items" : {
-        "$ref" : "#/components/schemas/DataColumnSidecar"
+        "$ref" : "#/components/schemas/DataColumnSidecarFulu"
       }
     }
   }

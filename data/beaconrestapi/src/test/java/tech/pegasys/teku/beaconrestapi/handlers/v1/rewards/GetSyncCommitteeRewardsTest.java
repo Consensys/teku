@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -40,7 +40,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetSyncCommitteeRewardsTest
     extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
@@ -48,8 +47,7 @@ public class GetSyncCommitteeRewardsTest
 
   @BeforeEach
   void setup() {
-    spec = TestSpecFactory.createMinimalAltair();
-    dataStructureUtil = new DataStructureUtil(spec);
+    setSpec(TestSpecFactory.createMinimalAltair());
     initialise(SpecMilestone.ALTAIR);
     genesis();
     final SyncAggregate syncAggregate =

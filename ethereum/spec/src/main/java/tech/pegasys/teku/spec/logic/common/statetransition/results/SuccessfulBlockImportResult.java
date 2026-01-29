@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,12 +18,12 @@ import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public class SuccessfulBlockImportResult implements BlockImportResult {
+class SuccessfulBlockImportResult implements BlockImportResult {
 
   private final SignedBeaconBlock block;
   private boolean blockOnCanonicalChain = false;
 
-  public SuccessfulBlockImportResult(final SignedBeaconBlock block) {
+  SuccessfulBlockImportResult(final SignedBeaconBlock block) {
     this.block = block;
   }
 

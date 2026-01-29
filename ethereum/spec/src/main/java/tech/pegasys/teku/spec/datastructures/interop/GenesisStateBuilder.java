@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -165,13 +165,6 @@ public class GenesisStateBuilder {
               // Deneb
               b.blobGasUsed(() -> UInt64.ZERO);
               b.excessBlobGas(() -> UInt64.ZERO);
-              // Gloas
-              b.parentBlockHash(() -> Bytes32.ZERO);
-              b.parentBlockRoot(() -> Bytes32.ZERO);
-              b.builderIndex(() -> UInt64.ZERO);
-              b.slot(() -> UInt64.ZERO);
-              b.value(() -> UInt64.ZERO);
-              b.blobKzgCommitmentsRoot(() -> Bytes32.ZERO);
             });
   }
 }

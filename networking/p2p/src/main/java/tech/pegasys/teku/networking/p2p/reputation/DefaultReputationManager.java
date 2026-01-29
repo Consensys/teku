@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -99,15 +99,29 @@ public class DefaultReputationManager implements ReputationManager {
   @Override
   public boolean adjustReputation(
       final PeerAddress peerAddress, final ReputationAdjustment effect) {
-    if (peerPools.getPeerConnectionType(peerAddress.getId()).equals(PeerConnectionType.STATIC)) {
-      return false;
-    }
     return getOrCreateReputation(peerAddress)
         .adjustReputation(effect, timeProvider.getTimeInSeconds());
   }
 
   private Reputation getOrCreateReputation(final PeerAddress peerAddress) {
-    return peerReputations.get(peerAddress.getId(), key -> new Reputation());
+    final boolean isStatic = isStaticPeer(peerAddress);
+    final Reputation reputation =
+        peerReputations.get(
+            peerAddress.getId(), key -> isStatic ? new StaticPeerReputation() : new Reputation());
+
+    if (isStatic != (reputation instanceof StaticPeerReputation)) {
+      // In case peer changed type after the cache was already populated
+      // we replace reputation with correct type
+      final Reputation newReputation = isStatic ? new StaticPeerReputation() : new Reputation();
+      peerReputations.invalidateWithNewValue(peerAddress.getId(), newReputation);
+      return newReputation;
+    }
+
+    return reputation;
+  }
+
+  private boolean isStaticPeer(final PeerAddress peerAddress) {
+    return peerPools.getPeerConnectionType(peerAddress.getId()).equals(PeerConnectionType.STATIC);
   }
 
   private static class Reputation {
@@ -150,7 +164,7 @@ public class DefaultReputationManager implements ReputationManager {
       }
     }
 
-    private boolean isLocallyConsideredUnsuitable(
+    private static boolean isLocallyConsideredUnsuitable(
         final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
       return locallyInitiated && reason.map(BAN_REASONS::contains).orElse(false);
     }
@@ -178,6 +192,26 @@ public class DefaultReputationManager implements ReputationManager {
           .add("suitableAfter", suitableAfter)
           .add("score", score)
           .toString();
+    }
+  }
+
+  private static class StaticPeerReputation extends Reputation {
+    @Override
+    public boolean shouldInitiateConnection(final UInt64 currentTime) {
+      return true;
+    }
+
+    @Override
+    public boolean adjustReputation(final ReputationAdjustment effect, final UInt64 currentTime) {
+      return false;
+    }
+
+    @Override
+    public void reportDisconnection(
+        final UInt64 disconnectTime,
+        final Optional<DisconnectReason> reason,
+        final boolean locallyInitiated) {
+      // Do nothing, static peers are not affected by disconnections
     }
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -37,20 +37,19 @@ public class WithoutPrecomputeBenchmark {
 
     @Setup(Level.Invocation)
     public void setup() {
-      config = new SidecarBenchmarkConfig(false);
+      config = new SidecarBenchmarkConfig(false, isRustEnabled);
     }
   }
 
   @Benchmark
   public void verifyDataColumnSidecarKzgProofsBatch(final ExecutionPlan plan) {
     plan.config.miscHelpersFulu.verifyDataColumnSidecarKzgProofsBatch(
-        plan.config.getKzg(plan.isRustEnabled), plan.config.dataColumnSidecars);
+        plan.config.dataColumnSidecars);
   }
 
   @Benchmark
   public void verifyDataColumnSidecarKzgProofs(final ExecutionPlan plan) {
     plan.config.miscHelpersFulu.verifyDataColumnSidecarKzgProofs(
-        plan.config.getKzg(plan.isRustEnabled),
         plan.config.dataColumnSidecars.stream().findAny().orElseThrow());
   }
 }

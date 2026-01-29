@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -21,6 +21,7 @@ import static org.mockito.Mockito.spy;
 import static tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.SSZ_SNAPPY;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getAttestationSubnetTopicName;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getBlobSidecarSubnetTopicName;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getExecutionProofSubnetTopicName;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getSyncCommitteeSubnetTopicName;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
@@ -34,12 +35,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.config.BlobScheduleEntry;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
@@ -58,6 +61,7 @@ class Eth2GossipTopicFilterTest {
   private Bytes4 currentForkDigest;
   private Eth2GossipTopicFilter filter;
   private Bytes4 nextForkDigest;
+  private P2PConfig p2pConfig;
 
   @BeforeEach
   void setUp(final SpecContext specContext) {
@@ -66,6 +70,7 @@ class Eth2GossipTopicFilterTest {
     // current milestone is actually the previous milestone
     currentSpecMilestone = specContext.getSpecMilestone().getPreviousMilestone();
     nextSpecMilestone = specContext.getSpecMilestone();
+
     spec =
         switch (nextSpecMilestone) {
           case PHASE0, ALTAIR, BELLATRIX, CAPELLA ->
@@ -93,12 +98,12 @@ class Eth2GossipTopicFilterTest {
                                           new BlobScheduleEntry(
                                               bpoFork.epoch(), bpoFork.maxBlobsPerBlock())))));
         };
-
+    p2pConfig = P2PConfig.builder().specProvider(spec).build();
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesis();
 
     recentChainData = spy(storageSystem.recentChainData());
-    filter = new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec);
+    filter = new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec, p2pConfig);
 
     currentForkDigest = recentChainData.getCurrentForkDigest().orElseThrow();
     nextForkDigest =
@@ -222,7 +227,7 @@ class Eth2GossipTopicFilterTest {
     storageSystem.chainUpdater().initializeGenesis();
 
     recentChainData = spy(storageSystem.recentChainData());
-    filter = new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec);
+    filter = new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec, p2pConfig);
 
     currentForkDigest = recentChainData.getCurrentForkDigest().orElseThrow();
     nextForkDigest =
@@ -235,6 +240,27 @@ class Eth2GossipTopicFilterTest {
     final String bpoTopic =
         GossipTopics.getTopic(bpoForkDigest, GossipTopicName.BEACON_BLOCK, SSZ_SNAPPY);
     assertThat(filter.isRelevantTopic(bpoTopic)).isTrue();
+  }
+
+  @TestTemplate
+  void shouldNotConsiderExecutionProofSubnetsRelevantByDefault() {
+    assumeThat(nextSpecMilestone).isEqualTo(ELECTRA);
+    for (int i = 0; i < Constants.MAX_EXECUTION_PROOF_SUBNETS; i++) {
+      assertThat(filter.isRelevantTopic(getTopicName(getExecutionProofSubnetTopicName(i))))
+          .isFalse();
+    }
+  }
+
+  @TestTemplate
+  void shouldConsiderExecutionProofSubnetsRelevantWhenEnabled() {
+    P2PConfig p2pConfigOverwritten =
+        P2PConfig.builder().specProvider(spec).executionProofTopicEnabled(true).build();
+    filter = new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec, p2pConfigOverwritten);
+    assumeThat(nextSpecMilestone).isEqualTo(ELECTRA);
+    for (int i = 0; i < Constants.MAX_EXECUTION_PROOF_SUBNETS; i++) {
+      assertThat(filter.isRelevantTopic(getTopicName(getExecutionProofSubnetTopicName(i))))
+          .isTrue();
+    }
   }
 
   private String getTopicName(final GossipTopicName name) {

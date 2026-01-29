@@ -4,8 +4,8 @@
 
 * [consensus-specs](https://github.com/ethereum/consensus-specs)
 * [beacon-APIs](https://github.com/ethereum/beacon-APIs)
-* [Prysm API](https://docs.prylabs.network/docs/how-prysm-works/ethereum-public-api)
-* [Lighthouse API](https://lighthouse-book.sigmaprime.io/api-bn.html)
+* [Prysm API](https://prysm.offchainlabs.com/docs/apis/prysm-public-api/)
+* [Lighthouse API](https://lighthouse-book.sigmaprime.io/api_bn.html)
 
 ## /node/genesis_time
 

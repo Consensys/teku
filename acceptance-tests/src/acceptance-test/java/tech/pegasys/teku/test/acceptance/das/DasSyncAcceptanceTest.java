@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -30,7 +30,6 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 public class DasSyncAcceptanceTest extends AcceptanceTestBase {
 
   private final int subnetCount = 128;
-  private final int defaultCustodySubnetCount = 4;
   private final int fuluEpoch = 1;
 
   @Test
@@ -41,7 +40,7 @@ public class DasSyncAcceptanceTest extends AcceptanceTestBase {
         createTekuBeaconNode(
             createConfigBuilder()
                 .withRealNetwork()
-                .withDasExtraCustodyGroupCount(subnetCount - defaultCustodySubnetCount)
+                .withCustodyGroupCountOverride(subnetCount)
                 .build());
 
     primaryNode.start();

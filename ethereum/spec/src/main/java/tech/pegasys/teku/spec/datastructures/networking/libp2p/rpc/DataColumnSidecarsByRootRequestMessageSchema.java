@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -24,7 +24,7 @@ public class DataColumnSidecarsByRootRequestMessageSchema
   public DataColumnSidecarsByRootRequestMessageSchema(
       final SpecConfigFulu specConfig,
       final DataColumnsByRootIdentifierSchema byRootIdentifierSchema) {
-    super(byRootIdentifierSchema, specConfig.getMaxRequestDataColumnSidecars());
+    super(byRootIdentifierSchema, specConfig.getMaxRequestBlocksDeneb());
   }
 
   @Override

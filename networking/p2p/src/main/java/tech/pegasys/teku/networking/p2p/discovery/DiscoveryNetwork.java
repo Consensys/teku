@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -143,10 +143,10 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             .sszSerialize());
   }
 
-  public void setDASTotalCustodySubnetCount(final int count) {
+  public void setDASTotalCustodyGroupCount(final int count) {
     if (count < 0) {
       throw new IllegalArgumentException(
-          String.format("Custody subnet count should be a positive number, but was %s", count));
+          String.format("Custody group count should be a positive number, but was %s", count));
     }
     LOG.debug("Setting cgc in ENR to: {}", count);
     discoveryService.updateCustomENRField(

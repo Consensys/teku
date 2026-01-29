@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -280,7 +280,7 @@ class MetricRecordingValidatorApiChannelTest {
   }
 
   private long getCounterValue(final String methodLabel, final RequestOutcome outcome) {
-    return metricsSystem.getCounterValue(
+    return metricsSystem.getLabelledCounterValue(
         TekuMetricCategory.VALIDATOR,
         MetricRecordingValidatorApiChannel.BEACON_NODE_REQUESTS_COUNTER_NAME,
         methodLabel,

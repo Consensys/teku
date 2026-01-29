@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -19,6 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -30,7 +31,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
-import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.store.UpdatableStore;
@@ -54,14 +55,13 @@ class CombinedChainDataClientTest {
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final ForkChoiceStrategy forkChoiceStrategy = mock(ForkChoiceStrategy.class);
   private final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
+  private final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler =
+      mock(LateBlockReorgPreparationHandler.class);
 
   private final UpdatableStore store = mock(UpdatableStore.class);
   private final CombinedChainDataClient client =
       new CombinedChainDataClient(
-          recentChainData,
-          historicalChainData,
-          spec,
-          new EarliestAvailableBlockSlot(historicalChainData, new SystemTimeProvider(), 0));
+          recentChainData, historicalChainData, spec, lateBlockReorgPreparationHandler, false);
   private final ChainHead chainHead = mock(ChainHead.class);
 
   final List<SignedBeaconBlock> nonCanonicalBlocks = new ArrayList<>();
@@ -77,6 +77,8 @@ class CombinedChainDataClientTest {
     when(forkChoiceStrategy.isOptimistic(any())).thenReturn(Optional.of(true));
     when(chainHead.isOptimistic()).thenReturn(false);
     when(chainHead.getSlot()).thenReturn(UInt64.valueOf(8428924L));
+    when(lateBlockReorgPreparationHandler.onLateBlockReorgPreparation(any(), any()))
+        .thenReturn(SafeFuture.COMPLETE);
   }
 
   @Test
@@ -162,26 +164,29 @@ class CombinedChainDataClientTest {
         Optional.of(spec.getBlockRootAtSlot(state, UInt64.ONE));
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(UInt64.ONE, recentBlockRoot.get());
+    final Runnable onLateBlockReorgPreparationCompleted = mock(Runnable.class);
     when(recentChainData.getBlockRootInEffectBySlot(UInt64.ONE)).thenReturn(recentBlockRoot);
     when(recentChainData.getStore()).thenReturn(store);
     when(store.retrieveStateAtSlot(slotAndBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
     final SafeFuture<Optional<BeaconState>> future =
-        client.getStateForBlockProduction(UInt64.ONE, false);
+        client.getStateForBlockProduction(UInt64.ONE, false, onLateBlockReorgPreparationCompleted);
     assertThat(future.get()).contains(state);
+    verify(onLateBlockReorgPreparationCompleted, never()).run();
     // getStateAtSlotExact
     verify(recentChainData).getBlockRootInEffectBySlot(UInt64.ONE);
     verify(store).retrieveStateAtSlot(slotAndBlockRoot);
   }
 
   @Test
-  void getStateForBlockProduction_whenEnabledAndHaveNoBestBlockRoot()
+  void getStateForBlockProduction_whenEnabledAndHaveNoChainHead()
       throws ExecutionException, InterruptedException {
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(2));
     final Optional<Bytes32> recentBlockRoot =
         Optional.of(spec.getBlockRootAtSlot(state, UInt64.ONE));
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(UInt64.ONE, recentBlockRoot.get());
+    final Runnable onLateBlockReorgPreparationCompleted = mock(Runnable.class);
     when(recentChainData.getStore()).thenReturn(store);
 
     when(recentChainData.getBestBlockRoot()).thenReturn(Optional.empty());
@@ -190,59 +195,87 @@ class CombinedChainDataClientTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
 
     final SafeFuture<Optional<BeaconState>> future =
-        client.getStateForBlockProduction(UInt64.ONE, true);
+        client.getStateForBlockProduction(UInt64.ONE, true, onLateBlockReorgPreparationCompleted);
     assertThat(future.get()).contains(state);
+    verify(onLateBlockReorgPreparationCompleted, never()).run();
     // getStateAtSlotExact
     verify(recentChainData).getBlockRootInEffectBySlot(UInt64.ONE);
     verify(store).retrieveStateAtSlot(slotAndBlockRoot);
   }
 
   @Test
-  void getStateForBlockProduction_whenEnabledAndBestBlockRootMatches()
+  void getStateForBlockProduction_whenEnabledAndHeadChainMatches()
       throws ExecutionException, InterruptedException {
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(2));
-    final Optional<Bytes32> recentBlockRoot =
-        Optional.of(spec.getBlockRootAtSlot(state, UInt64.ONE));
-    final SlotAndBlockRoot slotAndBlockRoot =
-        new SlotAndBlockRoot(UInt64.ONE, recentBlockRoot.get());
+
+    final ChainHead chainHead = mock(ChainHead.class);
+    final Bytes32 recentBlockRoot = spec.getBlockRootAtSlot(state, UInt64.ONE);
+    final Runnable onLateBlockReorgPreparationCompleted = mock(Runnable.class);
+
+    when(recentChainData.getChainHead()).thenReturn(Optional.of(chainHead));
+    when(chainHead.getRoot()).thenReturn(recentBlockRoot);
+
+    final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(UInt64.ONE, recentBlockRoot);
     when(recentChainData.getStore()).thenReturn(store);
 
-    when(recentChainData.getBestBlockRoot()).thenReturn(recentBlockRoot);
-    when(recentChainData.getProposerHead(any(), any())).thenReturn(recentBlockRoot.get());
-    when(recentChainData.getBlockRootInEffectBySlot(UInt64.ONE)).thenReturn(recentBlockRoot);
+    when(recentChainData.getProposerHead(any(), any())).thenReturn(recentBlockRoot);
+    when(recentChainData.getBlockRootInEffectBySlot(UInt64.ONE))
+        .thenReturn(Optional.of(recentBlockRoot));
     when(store.retrieveStateAtSlot(slotAndBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
 
     final SafeFuture<Optional<BeaconState>> future =
-        client.getStateForBlockProduction(UInt64.ONE, true);
+        client.getStateForBlockProduction(UInt64.ONE, true, onLateBlockReorgPreparationCompleted);
     assertThat(future.get()).contains(state);
+    verify(onLateBlockReorgPreparationCompleted, never()).run();
     // getStateAtSlotExact
     verify(recentChainData).getBlockRootInEffectBySlot(UInt64.ONE);
     verify(store).retrieveStateAtSlot(slotAndBlockRoot);
   }
 
   @Test
-  void getStateForBlockProduction_whenEnabledAndBestBlockRootDifferent()
+  void getStateForBlockProduction_whenEnabledAndChainHeadDifferent()
       throws ExecutionException, InterruptedException {
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(2));
     final Bytes32 proposerHead = dataStructureUtil.randomBytes32();
     final BeaconState proposerState = dataStructureUtil.randomBeaconState(UInt64.ONE);
-    final Optional<Bytes32> recentBlockRoot =
-        Optional.of(spec.getBlockRootAtSlot(state, UInt64.ONE));
-    final SlotAndBlockRoot slotAndBlockRoot =
-        new SlotAndBlockRoot(UInt64.ONE, recentBlockRoot.get());
+    final ChainHead chainHead = mock(ChainHead.class);
+    final Bytes32 recentBlockRoot = spec.getBlockRootAtSlot(state, UInt64.ONE);
+    final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(UInt64.ONE, recentBlockRoot);
+    final Runnable onLateBlockReorgPreparationCompleted = mock(Runnable.class);
     when(recentChainData.getStore()).thenReturn(store);
 
-    when(recentChainData.getBestBlockRoot()).thenReturn(recentBlockRoot);
+    when(recentChainData.getChainHead()).thenReturn(Optional.of(chainHead));
+    when(chainHead.getRoot()).thenReturn(recentBlockRoot);
     when(recentChainData.getProposerHead(any(), any())).thenReturn(proposerHead);
-    when(recentChainData.getBlockRootInEffectBySlot(UInt64.ONE)).thenReturn(recentBlockRoot);
+    when(recentChainData.getSlotForBlockRoot(proposerHead)).thenReturn(Optional.of(UInt64.ZERO));
+    when(recentChainData.getBlockRootInEffectBySlot(UInt64.ONE))
+        .thenReturn(Optional.of(recentBlockRoot));
     when(store.retrieveBlockState(proposerHead))
         .thenReturn(SafeFuture.completedFuture(Optional.of(proposerState)));
 
+    final SafeFuture<Void> lateBlockReorgPreparationFuture = new SafeFuture<>();
+
+    when(lateBlockReorgPreparationHandler.onLateBlockReorgPreparation(UInt64.ZERO, recentBlockRoot))
+        .thenReturn(lateBlockReorgPreparationFuture);
+
+    when(store.retrieveStateAtSlot(slotAndBlockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
+
     final SafeFuture<Optional<BeaconState>> future =
-        client.getStateForBlockProduction(UInt64.ONE, true);
-    assertThat(future.get()).contains(proposerState);
+        client.getStateForBlockProduction(UInt64.ONE, true, onLateBlockReorgPreparationCompleted);
+
+    // should be pending until late block reorg preparation completes
+    assertThat(future).isNotDone();
+    verify(onLateBlockReorgPreparationCompleted, never()).run();
+    // should retrieve state while waiting
     verify(store).retrieveBlockState(proposerHead);
+
+    lateBlockReorgPreparationFuture.complete(null);
+    verify(onLateBlockReorgPreparationCompleted).run();
+
+    assertThat(future.get()).contains(proposerState);
+
     verify(store, never()).retrieveStateAtSlot(slotAndBlockRoot);
   }
 
@@ -316,6 +349,24 @@ class CombinedChainDataClientTest {
     when(recentChainData.getStore()).thenReturn(null);
     final SafeFuture<Optional<BeaconState>> maybeFinalizedState = client.getBestFinalizedState();
     assertThat(maybeFinalizedState.get()).isEmpty();
+  }
+
+  @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
+  void getEarliestAvailableDataColumnSlot_WithFallback_shouldRespectConfig() {
+    client.getEarliestAvailableDataColumnSlotWithFallback();
+
+    verify(historicalChainData).getEarliestDataColumnSidecarSlot();
+
+    final CombinedChainDataClient clientWithEarliestAvailableDataColumnSlotSupport =
+        new CombinedChainDataClient(
+            recentChainData, historicalChainData, spec, lateBlockReorgPreparationHandler, true);
+
+    clientWithEarliestAvailableDataColumnSlotSupport
+        .getEarliestAvailableDataColumnSlotWithFallback();
+    verify(historicalChainData).getEarliestAvailableDataColumnSlot();
+
+    verifyNoMoreInteractions(historicalChainData);
   }
 
   private void setupGetBlobSidecar(

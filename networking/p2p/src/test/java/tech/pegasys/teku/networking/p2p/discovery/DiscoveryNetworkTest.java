@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -47,6 +47,8 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.network.p2p.peer.SimplePeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
@@ -90,6 +92,8 @@ class DiscoveryNetworkTest {
   final Bytes4 currentForkDigest =
       spec.computeForkDigest(genesisValidatorsRoot, currentForkInfo.getFork().getEpoch());
   final Fork nextFork = forks.get(1);
+
+  private final TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0L);
 
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Peer> p2pNetwork = mock(P2PNetwork.class);
@@ -190,6 +194,7 @@ class DiscoveryNetworkTest {
             .discoveryConfig(discoveryConfig)
             .p2pConfig(networkConfig)
             .spec(spec)
+            .timeProvider(timeProvider)
             .currentSchemaDefinitionsSupplier(spec::getGenesisSchemaDefinitions)
             .build();
     assertThat(network.getEnr()).isEmpty();
@@ -341,7 +346,7 @@ class DiscoveryNetworkTest {
   @ParameterizedTest
   @MethodSource("getCgcFixtures")
   public void cgcIsCorrectlyEncoded(final String hexString, final Integer cgc) {
-    discoveryNetwork.setDASTotalCustodySubnetCount(cgc);
+    discoveryNetwork.setDASTotalCustodyGroupCount(cgc);
     verify(discoveryService)
         .updateCustomENRField(DAS_CUSTODY_GROUP_COUNT_ENR_FIELD, Bytes.fromHexString(hexString));
   }

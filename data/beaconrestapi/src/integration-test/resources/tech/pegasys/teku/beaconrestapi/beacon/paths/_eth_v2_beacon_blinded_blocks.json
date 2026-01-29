@@ -49,7 +49,7 @@
             }, {
               "$ref" : "#/components/schemas/SignedBlindedBeaconBlockElectra"
             }, {
-              "$ref" : "#/components/schemas/SignedBlindedBeaconBlockGloas"
+              "$ref" : "#/components/schemas/SignedBeaconBlockGloas"
             } ]
           }
         }

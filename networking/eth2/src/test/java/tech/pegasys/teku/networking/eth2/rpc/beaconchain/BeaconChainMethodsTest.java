@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -65,7 +65,7 @@ public class BeaconChainMethodsTest {
   final RecentChainData recentChainData = mock(RecentChainData.class);
   final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   final StatusMessageFactory statusMessageFactory =
-      new StatusMessageFactory(spec, combinedChainDataClient);
+      new StatusMessageFactory(spec, combinedChainDataClient, metricsSystem);
   final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
 
   @BeforeEach
@@ -175,6 +175,30 @@ public class BeaconChainMethodsTest {
                     .contains(
                         "/eth2/beacon_chain/req/status/1/ssz_snappy",
                         "/eth2/beacon_chain/req/status/2/ssz_snappy"));
+  }
+
+  @Test
+  public void shouldCreateExecutionPayloadEnvelopesByRootWithGloasEnabled() {
+    final BeaconChainMethods methods = getMethods(TestSpecFactory.createMinimalGloas());
+
+    assertThat(methods.executionPayloadEnvelopesByRoot())
+        .hasValueSatisfying(
+            method ->
+                assertThat(method.getIds())
+                    .containsExactly(
+                        "/eth2/beacon_chain/req/execution_payload_envelopes_by_root/1/ssz_snappy"));
+  }
+
+  @Test
+  public void shouldCreateExecutionPayloadEnvelopesByRangeWithGloasEnabled() {
+    final BeaconChainMethods methods = getMethods(TestSpecFactory.createMinimalGloas());
+
+    assertThat(methods.executionPayloadEnvelopesByRange())
+        .hasValueSatisfying(
+            method ->
+                assertThat(method.getIds())
+                    .containsExactly(
+                        "/eth2/beacon_chain/req/execution_payload_envelopes_by_range/1/ssz_snappy"));
   }
 
   private BeaconChainMethods getMethods() {

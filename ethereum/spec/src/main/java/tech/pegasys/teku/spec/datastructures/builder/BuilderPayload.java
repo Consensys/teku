@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,15 +15,11 @@ package tech.pegasys.teku.spec.datastructures.builder;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleDeneb;
-import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleFulu;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
 public interface BuilderPayload extends SszContainer {
 
   ExecutionPayload getExecutionPayload();
 
-  Optional<BlobsBundleDeneb> getOptionalBlobsBundle();
-
-  Optional<BlobsBundleFulu> getOptionalBlobsCellBundle();
+  Optional<BlobsBundle> getOptionalBlobsBundle();
 }

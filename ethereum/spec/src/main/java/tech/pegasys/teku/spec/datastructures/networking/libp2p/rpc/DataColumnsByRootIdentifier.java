@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 
 public class DataColumnsByRootIdentifier
     extends Container2<DataColumnsByRootIdentifier, SszBytes32, SszUInt64List> {
@@ -29,7 +29,7 @@ public class DataColumnsByRootIdentifier
   public static DataColumnsByRootIdentifier createFromSidecar(
       final DataColumnSidecar sidecar, final DataColumnsByRootIdentifierSchema schema) {
     return new DataColumnsByRootIdentifier(
-        sidecar.getBlockRoot(), List.of(sidecar.getIndex()), schema);
+        sidecar.getBeaconBlockRoot(), List.of(sidecar.getIndex()), schema);
   }
 
   DataColumnsByRootIdentifier(final TreeNode node, final DataColumnsByRootIdentifierSchema schema) {

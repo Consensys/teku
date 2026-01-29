@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
+import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.validator.api.InteropConfig;
@@ -36,6 +37,7 @@ public class BeaconChainConfiguration {
   private final StoreConfig storeConfig;
   private final PowchainConfiguration powchainConfiguration;
   private final Spec spec;
+  private final ZkChainConfiguration zkChainConfiguration;
 
   private final BeaconChainControllerFactory beaconChainControllerFactory;
   private final MetricsConfig metricsConfig;
@@ -52,7 +54,8 @@ public class BeaconChainConfiguration {
       final StoreConfig storeConfig,
       final Spec spec,
       final BeaconChainControllerFactory beaconChainControllerFactory,
-      final MetricsConfig metricsConfig) {
+      final MetricsConfig metricsConfig,
+      final ZkChainConfiguration zkChainConfiguration) {
     this.eth2NetworkConfiguration = eth2NetworkConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
     this.validatorConfig = validatorConfig;
@@ -65,6 +68,7 @@ public class BeaconChainConfiguration {
     this.spec = spec;
     this.beaconChainControllerFactory = beaconChainControllerFactory;
     this.metricsConfig = metricsConfig;
+    this.zkChainConfiguration = zkChainConfiguration;
   }
 
   public Spec getSpec() {
@@ -113,5 +117,9 @@ public class BeaconChainConfiguration {
 
   public BeaconChainControllerFactory getBeaconChainControllerFactory() {
     return beaconChainControllerFactory;
+  }
+
+  public ZkChainConfiguration zkChainConfiguration() {
+    return zkChainConfiguration;
   }
 }

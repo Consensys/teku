@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -31,7 +31,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -54,14 +53,12 @@ public class BlobSidecarGossipValidator {
   private final GossipValidationHelper gossipValidationHelper;
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
   private final MiscHelpersDeneb miscHelpersDeneb;
-  private final KZG kzg;
 
   public static BlobSidecarGossipValidator create(
       final Spec spec,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final GossipValidationHelper validationHelper,
-      final MiscHelpersDeneb miscHelpersDeneb,
-      final KZG kzg) {
+      final MiscHelpersDeneb miscHelpersDeneb) {
 
     final Optional<Integer> maybeMaxBlobsPerBlock = spec.getMaxBlobsPerBlockForHighestMilestone();
 
@@ -75,7 +72,6 @@ public class BlobSidecarGossipValidator {
         invalidBlockRoots,
         validationHelper,
         miscHelpersDeneb,
-        kzg,
         LimitedSet.createSynchronized(validInfoSize),
         LimitedSet.createSynchronized(validSignedBlockHeadersSize));
   }
@@ -90,14 +86,12 @@ public class BlobSidecarGossipValidator {
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final GossipValidationHelper gossipValidationHelper,
       final MiscHelpersDeneb miscHelpersDeneb,
-      final KZG kzg,
       final Set<SlotProposerIndexAndBlobIndex> receivedValidBlobSidecarInfoSet,
       final Set<Bytes32> validSignedBlockHeaders) {
     this.spec = spec;
     this.invalidBlockRoots = invalidBlockRoots;
     this.gossipValidationHelper = gossipValidationHelper;
     this.miscHelpersDeneb = miscHelpersDeneb;
-    this.kzg = kzg;
     this.receivedValidBlobSidecarInfoSet = receivedValidBlobSidecarInfoSet;
     this.validSignedBlockHeaders = validSignedBlockHeaders;
   }
@@ -218,7 +212,7 @@ public class BlobSidecarGossipValidator {
      * [REJECT] The sidecar's blob is valid as verified by
      * `verify_blob_kzg_proof(blob_sidecar.blob, blob_sidecar.kzg_commitment, blob_sidecar.kzg_proof)`.
      */
-    if (!miscHelpersDeneb.verifyBlobKzgProof(kzg, blobSidecar)) {
+    if (!miscHelpersDeneb.verifyBlobKzgProof(blobSidecar)) {
       return completedFuture(reject("BlobSidecar does not pass kzg validation"));
     }
 
@@ -300,7 +294,7 @@ public class BlobSidecarGossipValidator {
      * [REJECT] The sidecar's blob is valid as verified by
      * `verify_blob_kzg_proof(blob_sidecar.blob, blob_sidecar.kzg_commitment, blob_sidecar.kzg_proof)`.
      */
-    if (!miscHelpersDeneb.verifyBlobKzgProof(kzg, blobSidecar)) {
+    if (!miscHelpersDeneb.verifyBlobKzgProof(blobSidecar)) {
       return completedFuture(reject("BlobSidecar does not pass kzg validation"));
     }
 

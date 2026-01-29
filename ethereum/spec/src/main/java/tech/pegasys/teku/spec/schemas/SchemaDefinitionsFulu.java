@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -20,20 +20,16 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SC
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECARS_BY_RANGE_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECAR_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AND_BLOBS_CELL_BUNDLE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.MATRIX_ENTRY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PROPOSER_LOOKAHEAD_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.CellSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntrySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.fulu.BeaconBlockBodyBuilderFulu;
-import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
-import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundleSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
@@ -43,11 +39,10 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
 
   private final CellSchema cellSchema;
   private final DataColumnSchema dataColumnSchema;
-  private final DataColumnSidecarSchema dataColumnSidecarSchema;
+  private final DataColumnSidecarSchema<DataColumnSidecar> dataColumnSidecarSchema;
   private final DataColumnsByRootIdentifierSchema dataColumnsByRootIdentifierSchema;
   private final MatrixEntrySchema matrixEntrySchema;
   private final SszUInt64VectorSchema<?> proposerLookaheadSchema;
-  private final ExecutionPayloadAndBlobsCellBundleSchema executionPayloadAndBlobsCellBundleSchema;
 
   private final DataColumnSidecarsByRootRequestMessageSchema
       dataColumnSidecarsByRootRequestMessageSchema;
@@ -59,13 +54,11 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
     super(schemaRegistry);
     this.cellSchema = schemaRegistry.get(CELL_SCHEMA);
     this.dataColumnSchema = schemaRegistry.get(DATA_COLUMN_SCHEMA);
-    this.dataColumnSidecarSchema = schemaRegistry.get(DATA_COLUMN_SIDECAR_SCHEMA);
+    this.dataColumnSidecarSchema = schemaRegistry.get(DATA_COLUMN_SIDECAR_SCHEMA).toBaseSchema();
     this.dataColumnsByRootIdentifierSchema =
         schemaRegistry.get(DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA);
     this.matrixEntrySchema = schemaRegistry.get(MATRIX_ENTRY_SCHEMA);
     this.proposerLookaheadSchema = schemaRegistry.get(PROPOSER_LOOKAHEAD_SCHEMA);
-    this.executionPayloadAndBlobsCellBundleSchema =
-        schemaRegistry.get(EXECUTION_PAYLOAD_AND_BLOBS_CELL_BUNDLE_SCHEMA);
     this.dataColumnSidecarsByRootRequestMessageSchema =
         schemaRegistry.get(DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA);
     this.dataColumnSidecarsByRangeRequestMessageSchema =
@@ -81,13 +74,6 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
     return (SchemaDefinitionsFulu) schemaDefinitions;
   }
 
-  @Override
-  public BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
-    return new BeaconBlockBodyBuilderFulu(
-        getBeaconBlockBodySchema().toVersionElectra().orElseThrow(),
-        getBlindedBeaconBlockBodySchema().toBlindedVersionElectra().orElseThrow());
-  }
-
   public CellSchema getCellSchema() {
     return cellSchema;
   }
@@ -96,7 +82,7 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
     return dataColumnSchema;
   }
 
-  public DataColumnSidecarSchema getDataColumnSidecarSchema() {
+  public DataColumnSidecarSchema<DataColumnSidecar> getDataColumnSidecarSchema() {
     return dataColumnSidecarSchema;
   }
 
@@ -110,15 +96,6 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
 
   public SszUInt64VectorSchema<?> getProposerLookaheadSchema() {
     return proposerLookaheadSchema;
-  }
-
-  public ExecutionPayloadAndBlobsCellBundleSchema getExecutionPayloadAndBlobsCellBundleSchema() {
-    return executionPayloadAndBlobsCellBundleSchema;
-  }
-
-  @Override
-  public BuilderPayloadSchema<?> getBuilderPayloadSchema() {
-    return getExecutionPayloadAndBlobsCellBundleSchema();
   }
 
   public DataColumnSidecarsByRootRequestMessageSchema

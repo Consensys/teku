@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -35,7 +35,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
@@ -110,7 +110,7 @@ public class DataColumnSidecarsByRootIntegrationTest extends AbstractRpcMethodIn
                         sidecar ->
                             dataColumnsIdentifierSchema
                                 .orElseThrow()
-                                .create(sidecar.getBlockRoot(), sidecar.getIndex())))
+                                .create(sidecar.getBeaconBlockRoot(), sidecar.getIndex())))
             .toList();
 
     final List<DataColumnSidecar> dataColumnSidecars =

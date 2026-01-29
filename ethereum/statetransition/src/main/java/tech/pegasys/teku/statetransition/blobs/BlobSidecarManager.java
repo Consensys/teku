@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -50,7 +50,7 @@ public interface BlobSidecarManager extends AvailabilityCheckerFactory<BlobSidec
         @Override
         public AvailabilityChecker<BlobSidecar> createAvailabilityChecker(
             final SignedBeaconBlock block) {
-          return AvailabilityChecker.NOOP_BLOBSIDECAR;
+          return AvailabilityChecker.NOOP_BLOB_SIDECAR;
         }
 
         @Override

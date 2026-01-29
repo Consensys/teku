@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -39,8 +39,7 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   void shouldEnableDenebByDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     final Spec spec = config.eth2NetworkConfiguration().getSpec();
-    assertThat(spec.getForkSchedule().getHighestSupportedMilestone())
-        .isEqualTo(SpecMilestone.ELECTRA);
+    assertThat(spec.getForkSchedule().getHighestSupportedMilestone()).isEqualTo(SpecMilestone.FULU);
   }
 
   @Test
@@ -68,6 +67,33 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     final Optional<String> trustedSetup = config.eth2NetworkConfiguration().getTrustedSetup();
     assertThat(trustedSetup)
         .matches(ts -> ts.map(path -> path.endsWith("mainnet-trusted-setup.txt")).orElse(false));
+  }
+
+  @Test
+  void shouldPrepareBlockProductionIsEnabledByDefaultOnMainnet() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    assertThat(config.eth2NetworkConfiguration().isPrepareBlockProductionEnabled()).isTrue();
+  }
+
+  @Test
+  void shouldPrepareBlockProductionIsEnabledByDefaultOnHoodi() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments("--network", "hoodi");
+    assertThat(config.eth2NetworkConfiguration().isPrepareBlockProductionEnabled()).isTrue();
+  }
+
+  @Test
+  void shouldDisablePrepareBlockProduction() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xprepare-block-production-enabled", "false");
+    assertThat(config.eth2NetworkConfiguration().isPrepareBlockProductionEnabled()).isFalse();
+  }
+
+  @Test
+  void shouldDisablePrepareBlockProductionForGnosis() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments(
+            "--network", "gnosis", "--Xprepare-block-production-enabled", "true");
+    assertThat(config.eth2NetworkConfiguration().isPrepareBlockProductionEnabled()).isFalse();
   }
 
   @Test
@@ -109,22 +135,6 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments("--Xfork-choice-late-block-reorg-enabled", value);
     assertThat(config.eth2NetworkConfiguration().isForkChoiceLateBlockReorgEnabled())
         .isEqualTo(Boolean.valueOf(value));
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {"true", "false"})
-  void shouldSetAggregatingAttestationPoolV2Enabled(final String value) {
-    final TekuConfiguration config =
-        getTekuConfigurationFromArguments("--Xaggregating-attestation-pool-v2-enabled", value);
-    assertThat(config.eth2NetworkConfiguration().isAggregatingAttestationPoolV2Enabled())
-        .isEqualTo(Boolean.valueOf(value));
-  }
-
-  @Test
-  void shouldAggregatingAttestationPoolV2EnabledEnabledByDefault() {
-    final TekuConfiguration config = getTekuConfigurationFromArguments();
-    assertThat(config.eth2NetworkConfiguration().isAggregatingAttestationPoolV2Enabled())
-        .isEqualTo(true);
   }
 
   @Test

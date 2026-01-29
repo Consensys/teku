@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -63,15 +63,17 @@ public class ReferenceTestFinder {
               }
 
               // TODO-GLOAS: Short circuit to limit what tests we run for Gloas while it is under
-              // development
-              // This is temporary and should be removed once we are up-to-date with Gloas specs
-              // (see https://github.com/Consensys/teku-internal/issues/221)
+              // development. This is temporary and should be removed once we are up-to-date with
+              // Gloas specs (see https://github.com/Consensys/teku-internal/issues/221)
               if (fork.equals(TestFork.GLOAS)) {
                 return Stream.of(
+                        new BlsTestFinder(),
+                        new KzgTestFinder(),
                         new SszTestFinder("ssz_generic"),
                         new SszTestFinder("ssz_static"),
-                        // Temporarily adding only specific test types that we support
-                        new PyspecTestFinder("fork/fork", "networking/", "rewards/"))
+                        new ShufflingTestFinder(),
+                        new PyspecTestFinder(List.of(), List.of("fork_choice/")),
+                        new MerkleProofTestFinder())
                     .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
               }
 

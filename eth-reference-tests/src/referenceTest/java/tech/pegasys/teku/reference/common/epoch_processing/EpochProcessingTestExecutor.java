@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -87,6 +87,9 @@ public class EpochProcessingTestExecutor implements TestExecutor {
           .put(
               "epoch_processing/proposer_lookahead",
               new EpochProcessingTestExecutor(EpochOperation.PROPOSER_LOOKAHEAD))
+          .put(
+              "epoch_processing/builder_pending_payments",
+              new EpochProcessingTestExecutor(EpochOperation.BUILDER_PENDING_PAYMENTS))
           .build();
 
   private final EpochOperation operation;
@@ -109,6 +112,7 @@ public class EpochProcessingTestExecutor implements TestExecutor {
     if (testDefinition.getTestDirectory().resolve(postStateFileName).toFile().exists()) {
       final BeaconState expectedPostState = loadStateFromSsz(testDefinition, postStateFileName);
       final BeaconState result = executeOperation(preState, processor);
+
       assertThat(result).isEqualTo(expectedPostState);
     } else {
       assertThatThrownBy(() -> executeOperation(preState, processor))

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
+import tech.pegasys.teku.spec.logic.versions.capella.withdrawals.WithdrawalsHelpersCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
@@ -54,7 +55,8 @@ public class BlockProcessorDeneb extends BlockProcessorCapella {
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
       final OperationValidator operationValidator,
-      final SchemaDefinitionsDeneb schemaDefinitions) {
+      final SchemaDefinitionsDeneb schemaDefinitions,
+      final WithdrawalsHelpersCapella withdrawalsHelpers) {
     super(
         specConfig,
         predicates,
@@ -67,7 +69,8 @@ public class BlockProcessorDeneb extends BlockProcessorCapella {
         attestationUtil,
         validatorsUtil,
         operationValidator,
-        SchemaDefinitionsCapella.required(schemaDefinitions));
+        SchemaDefinitionsCapella.required(schemaDefinitions),
+        withdrawalsHelpers);
   }
 
   public int getMaxBlobsPerBlock(final BeaconState state) {

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,6 +18,7 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.mock.MockP2PNetwork;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -61,6 +62,12 @@ public class NoOpEth2P2PNetwork extends MockP2PNetwork<Eth2Peer> implements Eth2
   public void unsubscribeFromDataColumnSidecarSubnetId(final int subnetId) {}
 
   @Override
+  public void subscribeToExecutionProofSubnetId(final int subnetId) {}
+
+  @Override
+  public void unsubscribeFromExecutionProofSubnetId(final int subnetId) {}
+
+  @Override
   public MetadataMessage getMetadata() {
     return spec.getGenesisSchemaDefinitions().getMetadataMessageSchema().createDefault();
   }
@@ -84,4 +91,8 @@ public class NoOpEth2P2PNetwork extends MockP2PNetwork<Eth2Peer> implements Eth2
   @Override
   public void publishSignedBlsToExecutionChange(
       final SignedBlsToExecutionChange signedBlsToExecutionChange) {}
+
+  @Override
+  public void publishPayloadAttestationMessage(
+      final PayloadAttestationMessage payloadAttestationMessage) {}
 }

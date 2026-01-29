@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -25,7 +25,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -33,9 +32,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndV
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 
 class DataColumnSidecarAvailabilityCheckerTest {
-
-  private final KZG kzg = mock(KZG.class);
-
   private final Spec spec = mock(Spec.class);
 
   private final SignedBeaconBlock block = mock(SignedBeaconBlock.class);
@@ -47,7 +43,7 @@ class DataColumnSidecarAvailabilityCheckerTest {
 
   @BeforeEach
   void setup() {
-    checker = new DataColumnSidecarAvailabilityChecker(das, kzg, spec, block);
+    checker = new DataColumnSidecarAvailabilityChecker(das, spec, block);
     when(block.getMessage()).thenReturn(beaconBlock);
   }
 

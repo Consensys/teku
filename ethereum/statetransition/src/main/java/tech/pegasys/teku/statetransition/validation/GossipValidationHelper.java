@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,13 +16,17 @@ package tech.pegasys.teku.statetransition.validation;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -30,15 +34,16 @@ public class GossipValidationHelper {
 
   private final Spec spec;
   private final RecentChainData recentChainData;
-  private final UInt64 maxOffsetTimeInSeconds;
+  private final int maxOffsetTimeInMillis;
+  private final AttestationStateSelector attestationStateSelector;
 
-  public GossipValidationHelper(final Spec spec, final RecentChainData recentChainData) {
+  public GossipValidationHelper(
+      final Spec spec, final RecentChainData recentChainData, final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.recentChainData = recentChainData;
-    this.maxOffsetTimeInSeconds =
-        UInt64.valueOf(
-            Math.round(
-                (float) spec.getNetworkingConfig().getMaximumGossipClockDisparity() / 1000.0));
+    this.maxOffsetTimeInMillis = spec.getNetworkingConfig().getMaximumGossipClockDisparity();
+    this.attestationStateSelector =
+        new AttestationStateSelector(spec, recentChainData, metricsSystem);
   }
 
   public boolean isSlotFinalized(final UInt64 slot) {
@@ -47,11 +52,28 @@ public class GossipValidationHelper {
     return slot.isLessThanOrEqualTo(finalizedSlot);
   }
 
+  public boolean isBeforeFinalizedSlot(final UInt64 slot) {
+    final UInt64 finalizedSlot =
+        recentChainData.getStore().getFinalizedCheckpoint().getEpochStartSlot(spec);
+    return slot.isLessThan(finalizedSlot);
+  }
+
   public boolean isSlotFromFuture(final UInt64 slot) {
     final ReadOnlyStore store = recentChainData.getStore();
-    final UInt64 maxTime = store.getTimeSeconds().plus(maxOffsetTimeInSeconds);
-    final UInt64 maxCurrSlot = spec.getCurrentSlot(maxTime, store.getGenesisTime());
+    final UInt64 maxTime = store.getTimeInMillis().plus(maxOffsetTimeInMillis);
+    final UInt64 maxCurrSlot =
+        spec.getCurrentSlotFromTimeMillis(maxTime, store.getGenesisTimeMillis());
     return slot.isGreaterThan(maxCurrSlot);
+  }
+
+  public boolean isSlotCurrent(final UInt64 slot) {
+    final UInt64 slotStartTimeMillis =
+        spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
+    final UInt64 slotEndTimeMillis = slotStartTimeMillis.plus(spec.getSlotDurationMillis(slot));
+    final UInt64 currentTimeMillis = getCurrentTimeMillis();
+    return currentTimeMillis.isGreaterThanOrEqualTo(
+            slotStartTimeMillis.minusMinZero(maxOffsetTimeInMillis))
+        && currentTimeMillis.isLessThanOrEqualTo(slotEndTimeMillis.plus(maxOffsetTimeInMillis));
   }
 
   public boolean isSignatureValidWithRespectToProposerIndex(
@@ -59,8 +81,17 @@ public class GossipValidationHelper {
       final UInt64 proposerIndex,
       final BLSSignature signature,
       final BeaconState postState) {
-
     return spec.getValidatorPubKey(postState, proposerIndex)
+        .map(publicKey -> BLS.verify(publicKey, signingRoot, signature))
+        .orElse(false);
+  }
+
+  public boolean isSignatureValidWithRespectToBuilderIndex(
+      final Bytes signingRoot,
+      final UInt64 builderIndex,
+      final BLSSignature signature,
+      final BeaconState postState) {
+    return spec.getBuilderPubKey(postState, builderIndex)
         .map(publicKey -> BLS.verify(publicKey, signingRoot, signature))
         .orElse(false);
   }
@@ -77,6 +108,11 @@ public class GossipValidationHelper {
         ? recentChainData.retrieveStateAtSlot(
             new SlotAndBlockRoot(firstSlotInBlockEpoch, parentBlockRoot))
         : recentChainData.retrieveBlockState(parentBlockRoot);
+  }
+
+  public SafeFuture<Optional<BeaconState>> getStateAtSlotAndBlockRoot(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return recentChainData.retrieveStateAtSlot(slotAndBlockRoot);
   }
 
   public boolean currentFinalizedCheckpointIsAncestorOfBlock(
@@ -102,7 +138,33 @@ public class GossipValidationHelper {
     return recentChainData.containsBlock(blockRoot);
   }
 
-  public UInt64 getMaxOffsetTimeInSeconds() {
-    return maxOffsetTimeInSeconds;
+  int getMaxOffsetTimeInMillis() {
+    return maxOffsetTimeInMillis;
+  }
+
+  public SafeFuture<Optional<BeaconState>> getStateForAttestationValidation(
+      final AttestationData attestationData) {
+    return attestationStateSelector.getStateToValidate(attestationData);
+  }
+
+  public UInt64 getGenesisTime() {
+    return recentChainData.getGenesisTime();
+  }
+
+  public UInt64 getCurrentTimeMillis() {
+    return recentChainData.getStore().getTimeInMillis();
+  }
+
+  public ReadOnlyForkChoiceStrategy getForkChoiceStrategy() {
+    return recentChainData.getForkChoiceStrategy().orElseThrow();
+  }
+
+  public SafeFuture<Optional<BeaconBlock>> retrieveBlockByRoot(final Bytes32 root) {
+    return recentChainData.retrieveBlockByRoot(root);
+  }
+
+  public boolean isValidatorInPayloadTimelinessCommittee(
+      final UInt64 validatorIndex, final BeaconState state, final UInt64 slot) {
+    return spec.getPtc(state, slot).contains(validatorIndex.intValue());
   }
 }

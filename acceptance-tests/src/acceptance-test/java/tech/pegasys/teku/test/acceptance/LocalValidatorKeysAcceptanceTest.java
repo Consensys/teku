@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -84,7 +84,7 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     api.assertLocalValidatorListing(validatorKeystores.getPublicKeys());
 
     api.assertValidatorGasLimit(
-        validatorKeystores.getPublicKeys().get(1), UInt64.valueOf(45_000_000));
+        validatorKeystores.getPublicKeys().get(1), UInt64.valueOf(60_000_000));
 
     // generate voluntary exit
     api.generateVoluntaryExitAndCheckValidatorIndex(validatorKeystores.getPublicKeys().get(1), 1);

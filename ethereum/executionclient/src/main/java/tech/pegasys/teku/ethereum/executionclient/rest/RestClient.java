@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -26,7 +26,8 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 public interface RestClient {
   Map<String, String> NO_HEADERS = Collections.emptyMap();
 
-  SafeFuture<Response<Void>> getAsync(String apiPath, Duration timeout);
+  SafeFuture<Response<Void>> getAsync(
+      String apiPath, Map<String, String> headers, Duration timeout);
 
   <TResp extends SszData> SafeFuture<Response<BuilderApiResponse<TResp>>> getAsync(
       String apiPath,

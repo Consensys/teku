@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.config;
 
 import java.time.Duration;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Constants {
 
@@ -23,6 +22,11 @@ public class Constants {
 
   // Teku Networking Specific
   public static final int VALID_BLOCK_SET_SIZE = 1000;
+  // Target holding 2 slots worth of payload attestations
+  public static final int VALID_PAYLOAD_ATTESTATION_SET_SIZE = 512 * 2;
+  // The cache is used for the `payload_present` voting and gossip validation, so no need for a long
+  // term caching
+  public static final int RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE = 32;
   // Target holding two slots worth of aggregators (16 aggregators, 64 committees and 2 slots)
   public static final int VALID_AGGREGATE_SET_SIZE = 16 * 64 * 2;
   // Target 2 different attestation data (aggregators normally agree) for two slots
@@ -70,5 +74,5 @@ public class Constants {
   public static final int EPOCHS_PER_VALIDATOR_REGISTRATION_SUBMISSION = 1;
 
   // ZkChain prototype
-  public static final UInt64 MAX_EXECUTION_PROOF_SUBNETS = UInt64.valueOf(8);
+  public static final long MAX_EXECUTION_PROOF_SUBNETS = 8;
 }

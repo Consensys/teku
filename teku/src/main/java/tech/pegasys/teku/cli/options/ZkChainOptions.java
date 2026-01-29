@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
+import java.time.Duration;
 import picocli.CommandLine;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
@@ -48,12 +49,22 @@ public class ZkChainOptions {
   private int statelessMinProofsRequired =
       ZkChainConfiguration.DEFAULT_STATELESS_MIN_PROOFS_REQUIRED;
 
+  @CommandLine.Option(
+      hidden = true,
+      names = {"--Xstateless-proofs-generation-delay"},
+      paramLabel = "<DURATION>",
+      description = "Proof generation artificial delay in milliseconds.",
+      arity = "1")
+  private long statelessProofGenerationDelay =
+      ZkChainConfiguration.DEFAULT_PROOF_GENERATION_DELAY.toMillis();
+
   public void configure(final TekuConfiguration.Builder builder) {
     builder.zkchain(
         zkChainConfiguration ->
             zkChainConfiguration
                 .statelessValidationEnabled(statelessValidationEnabled)
                 .generateExecutionProofsEnabled(generateExecutionProofsEnabled)
-                .statelessMinProofsRequired(statelessMinProofsRequired));
+                .statelessMinProofsRequired(statelessMinProofsRequired)
+                .proofDelayDurationInMs(Duration.ofMillis(statelessProofGenerationDelay)));
   }
 }

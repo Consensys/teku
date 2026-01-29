@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -113,7 +113,7 @@ public class DepositStorageTest {
     assertThat(future).isCompleted();
 
     assertThat(eventsChannel.getOrderedList()).containsExactly(genesis100, postGenesisDeposits);
-    assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis100);
+    assertThat(eventsChannel.getGenesis()).usingDefaultComparator().isEqualTo(genesis100);
     assertThat(future.get().getLastProcessedBlockNumber())
         .isEqualTo(postGenesisDeposits.getBlockNumber().bigIntegerValue());
     assertThat(future.get().getLastProcessedDepositIndex())
@@ -221,7 +221,7 @@ public class DepositStorageTest {
     assertThat(future).isCompleted();
     assertThat(eventsChannel.getOrderedList())
         .containsExactly(block99, block100, genesis100, block101);
-    assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis100);
+    assertThat(eventsChannel.getGenesis()).usingDefaultComparator().isEqualTo(genesis100);
 
     assertThat(future.get().getLastProcessedBlockNumber())
         .isEqualTo(block101.getBlockNumber().bigIntegerValue());
@@ -317,7 +317,7 @@ public class DepositStorageTest {
     SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
     assertThat(future).isCompleted();
     assertThat(eventsChannel.getOrderedList()).containsExactly(block99, block100, genesis100);
-    assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis100);
+    assertThat(eventsChannel.getGenesis()).usingDefaultComparator().isEqualTo(genesis100);
 
     assertThat(future.get().getLastProcessedBlockNumber())
         .isEqualTo(genesis100.getBlockNumber().bigIntegerValue());
@@ -338,7 +338,7 @@ public class DepositStorageTest {
     SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
     assertThat(future).isCompleted();
     assertThat(eventsChannel.getOrderedList()).containsExactly(genesis100);
-    assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis100);
+    assertThat(eventsChannel.getGenesis()).usingDefaultComparator().isEqualTo(genesis100);
 
     assertThat(future.get().getLastProcessedBlockNumber())
         .isEqualTo(genesis100.getBlockNumber().bigIntegerValue());
@@ -359,7 +359,7 @@ public class DepositStorageTest {
     SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
     assertThat(future).isCompleted();
     assertThat(eventsChannel.getOrderedList()).containsExactly(block99, genesis100);
-    assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis100);
+    assertThat(eventsChannel.getGenesis()).usingDefaultComparator().isEqualTo(genesis100);
 
     assertThat(future.get().getLastProcessedBlockNumber())
         .isEqualTo(genesis100.getBlockNumber().bigIntegerValue());

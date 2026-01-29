@@ -1,16 +1,20 @@
 # Changelog
 
 ## Upcoming Breaking Changes
- - `GOSSIP_MAX_SIZE`, `MAX_CHUNK_SIZE`, `TTFB_TIMEOUT` and `RESP_TIMEOUT` configuration variables will NOT be supported after the Fusaka Mainnet release. These variables should be removed from any custom network configs.
-
+ 
 ## Current Releases
 
 ## Unreleased Changes
 
 ### Breaking Changes
+ - Removed development cli arg `--Xp2p-reworked-sidecar-recovery-enabled`.
 
 ### Additions and Improvements
 
+- New CLI flag `--rest-api-getblobs-sidecars-download-enabled` allows the beacon node to serve `getBlobs` REST API responses by attempting to fetch missing blob sidecars from the p2p network. The new flag `--rest-api-getblobs-sidecars-download-timeout` controls the network fetch timeout (default: 5 seconds). 
+
+
 ### Bug Fixes
- - `ephemery` network now defaults to loading configuration and bootnodes directly from https://ephemery.dev.
+
+- added `DOMAIN_BLS_TO_EXECUTION_CHANGE` to spec api output.
 

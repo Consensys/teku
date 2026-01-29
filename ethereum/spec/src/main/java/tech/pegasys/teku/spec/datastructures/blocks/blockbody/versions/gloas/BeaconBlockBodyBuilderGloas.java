@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -20,20 +20,19 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.fulu.BeaconBlockBodyBuilderFulu;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyBuilderElectra;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
-public class BeaconBlockBodyBuilderGloas extends BeaconBlockBodyBuilderFulu {
+public class BeaconBlockBodyBuilderGloas extends BeaconBlockBodyBuilderElectra {
 
-  private SignedExecutionPayloadHeader signedExecutionPayloadHeader;
+  private SignedExecutionPayloadBid signedExecutionPayloadBid;
   private SszList<PayloadAttestation> payloadAttestations;
 
   public BeaconBlockBodyBuilderGloas(
-      final BeaconBlockBodySchema<? extends BeaconBlockBodyGloas> schema,
-      final BeaconBlockBodySchema<? extends BlindedBeaconBlockBodyGloas> blindedSchema) {
-    super(schema, blindedSchema);
+      final BeaconBlockBodySchema<? extends BeaconBlockBodyGloas> schema) {
+    super(schema, null);
   }
 
   @Override
@@ -52,14 +51,14 @@ public class BeaconBlockBodyBuilderGloas extends BeaconBlockBodyBuilderFulu {
   }
 
   @Override
-  public Boolean supportsSignedExecutionPayloadHeader() {
+  public Boolean supportsSignedExecutionPayloadBid() {
     return true;
   }
 
   @Override
-  public BeaconBlockBodyBuilder signedExecutionPayloadHeader(
-      final SignedExecutionPayloadHeader signedExecutionPayloadHeader) {
-    this.signedExecutionPayloadHeader = signedExecutionPayloadHeader;
+  public BeaconBlockBodyBuilder signedExecutionPayloadBid(
+      final SignedExecutionPayloadBid signedExecutionPayloadBid) {
+    this.signedExecutionPayloadBid = signedExecutionPayloadBid;
     return this;
   }
 
@@ -90,38 +89,19 @@ public class BeaconBlockBodyBuilderGloas extends BeaconBlockBodyBuilderFulu {
     checkNotNull(syncAggregate, "syncAggregate must be specified");
     checkNotNull(blsToExecutionChanges, "blsToExecutionChanges must be specified");
     // new fields
-    checkNotNull(signedExecutionPayloadHeader, "signedExecutionPayloadHeader must be specified");
+    checkNotNull(signedExecutionPayloadBid, "signedExecutionPayloadBid must be specified");
     checkNotNull(payloadAttestations, "payloadAttestations must be specified");
   }
 
   @Override
   protected Boolean isBlinded() {
     // in ePBS always build non-blinded blocks, since the "blinded" concept has been dropped
-    // this method is adapted only for testing purposes
-    return schema == null && blindedSchema != null;
+    return false;
   }
 
   @Override
   public BeaconBlockBody build() {
     validate();
-    if (isBlinded()) {
-      final BlindedBeaconBlockBodySchemaGloasImpl schema =
-          getAndValidateSchema(true, BlindedBeaconBlockBodySchemaGloasImpl.class);
-      return new BlindedBeaconBlockBodyGloasImpl(
-          schema,
-          new SszSignature(randaoReveal),
-          eth1Data,
-          SszBytes32.of(graffiti),
-          proposerSlashings,
-          attesterSlashings,
-          attestations,
-          deposits,
-          voluntaryExits,
-          syncAggregate,
-          getBlsToExecutionChanges(),
-          signedExecutionPayloadHeader,
-          payloadAttestations);
-    }
     final BeaconBlockBodySchemaGloasImpl schema =
         getAndValidateSchema(false, BeaconBlockBodySchemaGloasImpl.class);
     return new BeaconBlockBodyGloasImpl(
@@ -136,7 +116,7 @@ public class BeaconBlockBodyBuilderGloas extends BeaconBlockBodyBuilderFulu {
         voluntaryExits,
         syncAggregate,
         getBlsToExecutionChanges(),
-        signedExecutionPayloadHeader,
+        signedExecutionPayloadBid,
         payloadAttestations);
   }
 }

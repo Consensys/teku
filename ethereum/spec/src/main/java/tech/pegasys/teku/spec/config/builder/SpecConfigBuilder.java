@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -35,6 +36,8 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.config.SpecConfigPhase0;
+import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifierImpl;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
 public class SpecConfigBuilder {
@@ -161,6 +164,8 @@ public class SpecConfigBuilder {
   private UInt64 gloasForkEpoch = FAR_FUTURE_EPOCH;
 
   private BLSSignatureVerifier blsSignatureVerifier = BLSSignatureVerifier.SIMPLE;
+  private Supplier<BatchSignatureVerifier> batchSignatureVerifierSupplier =
+      BatchSignatureVerifierImpl::new;
 
   private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.valueOf(256000000000L);
   private final BuilderChain<SpecConfig, SpecConfigGloas> builderChain =
@@ -299,6 +304,7 @@ public class SpecConfigBuilder {
                 aggregateDueBps,
                 proposerReorgCutoffBps,
                 blsSignatureVerifier,
+                batchSignatureVerifierSupplier,
                 altairForkVersion,
                 altairForkEpoch,
                 bellatrixForkVersion,
@@ -966,6 +972,12 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder blsSignatureVerifier(final BLSSignatureVerifier blsSignatureVerifier) {
     this.blsSignatureVerifier = blsSignatureVerifier;
+    return this;
+  }
+
+  public SpecConfigBuilder batchSignatureVerifierSupplier(
+      final Supplier<BatchSignatureVerifier> batchSignatureVerifierSupplier) {
+    this.batchSignatureVerifierSupplier = batchSignatureVerifierSupplier;
     return this;
   }
 

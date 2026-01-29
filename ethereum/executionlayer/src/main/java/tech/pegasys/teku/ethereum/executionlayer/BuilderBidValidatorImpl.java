@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 
 public class BuilderBidValidatorImpl implements BuilderBidValidator {
@@ -118,7 +119,9 @@ public class BuilderBidValidatorImpl implements BuilderBidValidator {
     // checking payload gas limit against the validator gas limit preference (if there is an
     // inconsistency, there would be a log warning only instead of an exception)
     final UInt64 parentGasLimit =
-        state.toVersionBellatrix().orElseThrow().getLatestExecutionPayloadHeader().getGasLimit();
+        BeaconStateBellatrix.required(state)
+            .getLatestExecutionPayloadHeaderRequired()
+            .getGasLimit();
     final UInt64 preferredGasLimit = validatorRegistration.getGasLimit();
     final UInt64 proposedGasLimit = executionPayloadHeader.getGasLimit();
 

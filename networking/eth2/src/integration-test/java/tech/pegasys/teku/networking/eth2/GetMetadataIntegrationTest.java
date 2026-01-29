@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -20,7 +20,6 @@ import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -120,19 +119,6 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
     assertThat(md3.getAttnets().getBit(8)).isTrue();
   }
 
-  @ParameterizedTest(name = "{0}->{1}")
-  @MethodSource("generateSpecTransition")
-  public void requestMetadata_shouldIncludeCustodySubnetCount(
-      final SpecMilestone baseMilestone, final SpecMilestone nextMilestone) throws Exception {
-    setUp(baseMilestone, Optional.of(nextMilestone));
-    final PeerAndNetwork peerAndNetwork = createRemotePeerAndNetwork(true, true);
-    final Eth2Peer peer = peerAndNetwork.peer();
-    MetadataMessage md1 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
-
-    Assumptions.assumeTrue(md1 instanceof MetadataMessageFulu, "Milestone skipped");
-    assertThat(((MetadataMessageFulu) md1).getCustodyGroupCount().isGreaterThan(0)).isTrue();
-  }
-
   @ParameterizedTest(name = "{0} => {1}, nextSpecEnabledLocally={2}, nextSpecEnabledRemotely={3}")
   @MethodSource("generateSpecTransitionWithCombinationParams")
   public void requestMetadata_withDisparateVersionsEnabled(
@@ -154,16 +140,7 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
     final MetadataMessage metadata = safeJoin(res);
     assertThat(metadata).isInstanceOf(expectedType);
 
-    // There will be update of custody_group_count in these cases
-    final boolean shouldUpdateSeqNumber =
-        nextMilestone.isGreaterThan(SpecMilestone.FULU)
-            || (nextMilestone == SpecMilestone.FULU && nextSpecEnabledRemotely);
-
-    if (shouldUpdateSeqNumber) {
-      assertThat(metadata.getSeqNumber()).isGreaterThan(UInt64.ZERO);
-    } else {
-      assertThat(metadata.getSeqNumber()).isEqualTo(UInt64.ZERO);
-    }
+    assertThat(metadata.getSeqNumber()).isEqualTo(UInt64.ZERO);
   }
 
   private static Class<?> milestoneToMetadataClass(final SpecMilestone milestone) {

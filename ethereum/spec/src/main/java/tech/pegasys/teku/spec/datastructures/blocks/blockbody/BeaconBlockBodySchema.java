@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -30,8 +30,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Bli
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodySchemaElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BlindedBeaconBlockBodySchemaGloas;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -56,10 +54,6 @@ public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszCon
   SszListSchema<Deposit, ?> getDepositsSchema();
 
   SszListSchema<SignedVoluntaryExit, ?> getVoluntaryExitsSchema();
-
-  default SszListSchema<PayloadAttestation, ?> getPayloadAttestationsSchema() {
-    throw new UnsupportedOperationException("PayloadAttestations not supported until Gloas");
-  }
 
   default Optional<BeaconBlockBodySchemaAltair<?>> toVersionAltair() {
     return Optional.empty();
@@ -98,10 +92,6 @@ public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszCon
   }
 
   default Optional<BlindedBeaconBlockBodySchemaElectra<?>> toBlindedVersionElectra() {
-    return Optional.empty();
-  }
-
-  default Optional<BlindedBeaconBlockBodySchemaGloas<?>> toBlindedVersionGloas() {
     return Optional.empty();
   }
 

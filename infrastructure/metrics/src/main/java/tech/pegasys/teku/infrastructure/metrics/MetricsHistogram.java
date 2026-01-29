@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -76,7 +76,7 @@ public class MetricsHistogram {
     @Override
     public void close() throws IOException {
       if (closed.compareAndSet(false, true)) {
-        histogram.observe(timeProvider.getTimeInMillis().minus(start).doubleValue() / 1000);
+        histogram.observe(timeProvider.getTimeInMillis().minusMinZero(start).doubleValue() / 1000);
       }
     }
 

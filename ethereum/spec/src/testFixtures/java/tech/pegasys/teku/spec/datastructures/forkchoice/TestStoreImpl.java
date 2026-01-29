@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -56,7 +57,10 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   protected Optional<UInt64> earliestBlobSidecarSlot;
   protected Optional<Bytes32> latestCanonicalBlockRoot;
   protected Optional<UInt64> custodyGroupCount;
+  protected Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads;
+  protected Map<Bytes32, BeaconState> executionPayloadStates;
   protected Optional<Bytes32> proposerBoostRoot = Optional.empty();
+
   protected final TestReadOnlyForkChoiceStrategy forkChoiceStrategy =
       new TestReadOnlyForkChoiceStrategy();
 
@@ -76,7 +80,9 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
       final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot,
       final Optional<Bytes32> maybeLatestCanonicalBlockRoot,
-      final Optional<UInt64> maybeCustodyGroupCount) {
+      final Optional<UInt64> maybeCustodyGroupCount,
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads,
+      final Map<Bytes32, BeaconState> executionPayloadStates) {
     this.spec = spec;
     this.timeMillis = secondsToMillis(time);
     this.genesisTime = genesisTime;
@@ -93,6 +99,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     this.earliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
     this.latestCanonicalBlockRoot = maybeLatestCanonicalBlockRoot;
     this.custodyGroupCount = maybeCustodyGroupCount;
+    this.executionPayloads = executionPayloads;
+    this.executionPayloadStates = executionPayloadStates;
   }
 
   // Readonly methods
@@ -302,6 +310,14 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     if (earliestBlobSidecarSlot.isEmpty()) {
       earliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
     }
+  }
+
+  @Override
+  public void putExecutionPayloadAndState(
+      final SignedExecutionPayloadEnvelope executionPayload, final BeaconState state) {
+    final Bytes32 beaconBlockRoot = executionPayload.getBeaconBlockRoot();
+    executionPayloads.put(beaconBlockRoot, executionPayload);
+    executionPayloadStates.put(beaconBlockRoot, state);
   }
 
   @Override

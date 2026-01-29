@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -22,14 +22,14 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 
 public class DataColumnSidecarDBStub implements DataColumnSidecarDB {
 
   private Optional<UInt64> firstCustodyIncompleteSlot = Optional.empty();
-  private Optional<UInt64> firstSamplerIncompleteSlot = Optional.empty();
+  private Optional<UInt64> earliestAvailableDataSlot = Optional.empty();
   private final NavigableMap<DataColumnSlotAndIdentifier, DataColumnSidecar> db = new TreeMap<>();
   private final AtomicLong dbReadCounter = new AtomicLong();
   private final AtomicLong dbWriteCounter = new AtomicLong();
@@ -45,19 +45,6 @@ public class DataColumnSidecarDBStub implements DataColumnSidecarDB {
   public SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot() {
     dbReadCounter.incrementAndGet();
     return SafeFuture.completedFuture(firstCustodyIncompleteSlot);
-  }
-
-  @Override
-  public SafeFuture<Void> setFirstSamplerIncompleteSlot(final UInt64 slot) {
-    dbWriteCounter.incrementAndGet();
-    this.firstSamplerIncompleteSlot = Optional.of(slot);
-    return SafeFuture.COMPLETE;
-  }
-
-  @Override
-  public SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot() {
-    dbReadCounter.incrementAndGet();
-    return SafeFuture.completedFuture(firstSamplerIncompleteSlot);
   }
 
   @Override
@@ -86,6 +73,19 @@ public class DataColumnSidecarDBStub implements DataColumnSidecarDB {
             .stream()
             .sorted()
             .toList());
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot() {
+    dbReadCounter.incrementAndGet();
+    return SafeFuture.completedFuture(earliestAvailableDataSlot);
+  }
+
+  @Override
+  public SafeFuture<Void> setEarliestAvailableDataColumnSlot(final UInt64 slot) {
+    dbWriteCounter.incrementAndGet();
+    this.earliestAvailableDataSlot = Optional.of(slot);
+    return SafeFuture.COMPLETE;
   }
 
   public AtomicLong getDbReadCounter() {

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -26,6 +26,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
 
 import java.util.List;
 import java.util.Optional;
@@ -57,11 +58,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsDeneb;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
@@ -69,6 +72,7 @@ import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.duties.execution.ExecutionPayloadBidEventsChannel;
 import tech.pegasys.teku.validator.client.signer.BlockContainerSigner;
 import tech.pegasys.teku.validator.client.signer.MilestoneBasedBlockContainerSigner;
 
@@ -94,6 +98,8 @@ class BlockProductionDutyTest {
       new MilestoneBasedBlockContainerSigner(spec);
   private final ValidatorDutyMetrics validatorDutyMetrics =
       spy(ValidatorDutyMetrics.create(new StubMetricsSystem()));
+  private final ExecutionPayloadBidEventsChannel executionPayloadBidEventsChannelPublisher =
+      mock(ExecutionPayloadBidEventsChannel.class);
   private BlockProductionDuty duty;
 
   @BeforeEach
@@ -106,22 +112,14 @@ class BlockProductionDutyTest {
             validatorApiChannel,
             blockContainerSigner,
             spec,
-            validatorDutyMetrics);
+            validatorDutyMetrics,
+            executionPayloadBidEventsChannelPublisher);
     when(forkProvider.getForkInfo(any())).thenReturn(completedFuture(fork));
   }
 
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   public void shouldCreateAndPublishBlock(final boolean isBlindedBlocksEnabled) {
-    duty =
-        new BlockProductionDuty(
-            validator,
-            CAPELLA_SLOT,
-            forkProvider,
-            validatorApiChannel,
-            blockContainerSigner,
-            spec,
-            validatorDutyMetrics);
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
     final BlockContainerAndMetaData blockContainerAndMetaData;
@@ -168,15 +166,7 @@ class BlockProductionDutyTest {
 
   @Test
   public void forDeneb_shouldCreateAndPublishBlockContents() {
-    duty =
-        new BlockProductionDuty(
-            validator,
-            denebSlot,
-            forkProvider,
-            validatorApiChannel,
-            blockContainerSigner,
-            spec,
-            validatorDutyMetrics);
+    duty = createBlockProductionDutyForDeneb();
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
@@ -256,15 +246,7 @@ class BlockProductionDutyTest {
 
   @Test
   public void forDeneb_shouldCreateAndPublishBlindedBlock() {
-    duty =
-        new BlockProductionDuty(
-            validator,
-            denebSlot,
-            forkProvider,
-            validatorApiChannel,
-            blockContainerSigner,
-            spec,
-            validatorDutyMetrics);
+    duty = createBlockProductionDutyForDeneb();
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
@@ -319,15 +301,7 @@ class BlockProductionDutyTest {
 
   @Test
   public void forDeneb_shouldFailWhenNoKzgProofs() {
-    duty =
-        new BlockProductionDuty(
-            validator,
-            denebSlot,
-            forkProvider,
-            validatorApiChannel,
-            blockContainerSigner,
-            spec,
-            validatorDutyMetrics);
+    duty = createBlockProductionDutyForDeneb();
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
@@ -362,15 +336,7 @@ class BlockProductionDutyTest {
 
   @Test
   public void forDeneb_shouldFailWhenNoBlobs() {
-    duty =
-        new BlockProductionDuty(
-            validator,
-            denebSlot,
-            forkProvider,
-            validatorApiChannel,
-            blockContainerSigner,
-            spec,
-            validatorDutyMetrics);
+    duty = createBlockProductionDutyForDeneb();
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
@@ -505,15 +471,6 @@ class BlockProductionDutyTest {
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   public void shouldUseBlockV3ToCreateAndPublishBlock(final boolean isBlindedBlocksEnabled) {
-    duty =
-        new BlockProductionDuty(
-            validator,
-            CAPELLA_SLOT,
-            forkProvider,
-            validatorApiChannel,
-            blockContainerSigner,
-            spec,
-            validatorDutyMetrics);
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
     final BlockContainerAndMetaData blockContainerAndMetaData;
@@ -570,7 +527,8 @@ class BlockProductionDutyTest {
             validatorApiChannel,
             blockContainerSigner,
             spec,
-            validatorDutyMetrics);
+            validatorDutyMetrics,
+            executionPayloadBidEventsChannelPublisher);
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
@@ -649,6 +607,59 @@ class BlockProductionDutyTest {
         .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SEND));
   }
 
+  @Test
+  public void forGloas_shouldCreateAndPublishBlockAndNotifyBidEventsSubscribersWhenSelfBuiltBid() {
+    final UInt64 slot = UInt64.valueOf(42);
+    final Spec spec = TestSpecFactory.createMinimalGloas();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final BlockContainerSigner blockContainerSigner = new MilestoneBasedBlockContainerSigner(spec);
+    duty =
+        new BlockProductionDuty(
+            validator,
+            UInt64.valueOf(42),
+            forkProvider,
+            validatorApiChannel,
+            blockContainerSigner,
+            spec,
+            validatorDutyMetrics,
+            executionPayloadBidEventsChannelPublisher);
+
+    final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
+    final BLSSignature blockSignature = dataStructureUtil.randomSignature();
+
+    final ExecutionPayloadBid bid =
+        dataStructureUtil.randomExecutionPayloadBid(slot, BUILDER_INDEX_SELF_BUILD);
+    final BeaconBlockBody blockBody =
+        dataStructureUtil.randomBeaconBlockBody(
+            builder ->
+                builder.signedExecutionPayloadBid(
+                    SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions())
+                        .getSignedExecutionPayloadBidSchema()
+                        .create(bid, dataStructureUtil.randomSignature())));
+
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlockContainerAndMetaData(
+            dataStructureUtil.randomBeaconBlock(slot, blockBody), slot);
+
+    final BeaconBlock unsignedBlock = blockContainerAndMetaData.blockContainer().getBlock();
+
+    when(signer.createRandaoReveal(spec.computeEpochAtSlot(slot), fork))
+        .thenReturn(completedFuture(randaoReveal));
+    when(validatorApiChannel.createUnsignedBlock(
+            slot, randaoReveal, Optional.of(graffiti), Optional.empty()))
+        .thenReturn(completedFuture(Optional.of(blockContainerAndMetaData)));
+    when(signer.signBlock(unsignedBlock, fork)).thenReturn(completedFuture(blockSignature));
+    final SignedBeaconBlock signedBlock =
+        dataStructureUtil.signedBlock(unsignedBlock, blockSignature);
+    when(validatorApiChannel.sendSignedBlock(signedBlock, BroadcastValidationLevel.GOSSIP))
+        .thenReturn(completedFuture(SendSignedBlockResult.success(signedBlock.getRoot())));
+
+    performAndReportDuty(slot);
+
+    verify(executionPayloadBidEventsChannelPublisher)
+        .onSelfBuiltBidIncludedInBlock(validator, fork, bid);
+  }
+
   public void assertDutyFails(final RuntimeException error) {
     assertDutyFails(error, CAPELLA_SLOT);
   }
@@ -666,6 +677,18 @@ class BlockProductionDutyTest {
     assertThat(expectedError.getCause()).isEqualTo(actualError.getCause());
     assertThat(expectedError.getMessage()).isEqualTo(actualError.getMessage());
     verifyNoMoreInteractions(validatorLogger);
+  }
+
+  private BlockProductionDuty createBlockProductionDutyForDeneb() {
+    return new BlockProductionDuty(
+        validator,
+        denebSlot,
+        forkProvider,
+        validatorApiChannel,
+        blockContainerSigner,
+        spec,
+        validatorDutyMetrics,
+        executionPayloadBidEventsChannelPublisher);
   }
 
   private void performAndReportDuty() {
@@ -757,11 +780,6 @@ class BlockProductionDutyTest {
 
     @Override
     public Bytes getExtraData() {
-      return null;
-    }
-
-    @Override
-    public Bytes32 getPayloadHash() {
       return null;
     }
 

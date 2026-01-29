@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -20,6 +20,7 @@ import java.util.Comparator;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetworkBuilder;
 import tech.pegasys.teku.spec.Spec;
@@ -58,6 +59,7 @@ public class GossipTopicsTest {
   public void maxSubscribedTopicsConstantIsLargeEnough() {
     final SpecMilestone latestMilestone = SpecMilestone.getHighestMilestone();
     final Spec spec = TestSpecFactory.createMainnet(latestMilestone);
+    final P2PConfig p2pConfig = P2PConfig.builder().specProvider(spec).build();
 
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesis();
@@ -76,7 +78,8 @@ public class GossipTopicsTest {
                       spec.forMilestone(milestone)
                           .miscHelpers()
                           .computeForkDigest(fork.getCurrentVersion(), genesisValidatorsRoot);
-                  return GossipTopics.getAllTopics(gossipEncoding, forkDigest, spec, milestone)
+                  return GossipTopics.getAllTopics(
+                          gossipEncoding, forkDigest, spec, milestone, p2pConfig)
                       .size();
                 })
             .sum();

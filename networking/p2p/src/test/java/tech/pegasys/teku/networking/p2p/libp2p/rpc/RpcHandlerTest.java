@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -39,6 +39,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler.Controller;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
@@ -55,8 +57,9 @@ public class RpcHandlerTest {
 
   StubAsyncRunner asyncRunner = new StubAsyncRunner();
   RpcMethod<RpcRequestHandler, RpcRequest, RpcResponseHandler<?>> rpcMethod = mock(RpcMethod.class);
+  StubMetricsSystem metricsSystem = new StubMetricsSystem();
   RpcHandler<RpcRequestHandler, RpcRequest, RpcResponseHandler<?>> rpcHandler =
-      new RpcHandler<>(asyncRunner, rpcMethod);
+      new RpcHandler<>(asyncRunner, rpcMethod, metricsSystem);
 
   Connection connection = mock(Connection.class);
   Session session = mock(Session.class);
@@ -71,6 +74,7 @@ public class RpcHandlerTest {
   RpcStream rpcStream = mock(RpcStream.class);
   final RpcResponseHandler<?> responseHandler = mock(RpcResponseHandler.class);
   final RpcRequest request = mock(RpcRequest.class);
+  final String protocolId = "test";
 
   @BeforeEach
   void init() {
@@ -96,7 +100,7 @@ public class RpcHandlerTest {
     streamPromise.getController().complete(controller);
 
     assertThat(future).isNotDone();
-    stream.getProtocol().complete("test");
+    stream.getProtocol().complete(protocolId);
 
     assertThat(future).isNotDone();
     writeFuture.complete(null);
@@ -113,6 +117,10 @@ public class RpcHandlerTest {
     verify(controller, never()).closeAbruptly();
     assertThat(future).isCompletedWithValue(controller);
     assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
+
+    assertRequestsTotalCounterValue(1);
+    assertRequestsSentCounterValue(protocolId, 1);
+    assertRequestsFailedCounterValue(0);
   }
 
   @Test
@@ -127,14 +135,17 @@ public class RpcHandlerTest {
     streamPromise.getController().complete(controller);
 
     assertThat(future).isNotDone();
-    stream.getProtocol().complete("test");
+    stream.getProtocol().complete(protocolId);
 
     assertThat(future).isCompletedExceptionally();
+
+    assertRequestsTotalCounterValue(1);
+    assertRequestsSentCounterValue(protocolId, 0);
+    assertRequestsFailedCounterValue(1);
   }
 
   @Test
   void sendRequestWithBodySelector_positiveCase() {
-    final String protocolId = "test";
     final VersionBasedRpcRequestBodySelector<RpcRequest> bodySelector =
         new VersionBasedRpcRequestBodySelector<>(Map.of(protocolId, request));
 
@@ -165,6 +176,10 @@ public class RpcHandlerTest {
     verify(controller, never()).closeAbruptly();
     assertThat(future).isCompletedWithValue(controller);
     assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
+
+    assertRequestsTotalCounterValue(1);
+    assertRequestsSentCounterValue(protocolId, 1);
+    assertRequestsFailedCounterValue(0);
   }
 
   @Test
@@ -181,9 +196,13 @@ public class RpcHandlerTest {
     streamPromise.getController().complete(controller);
 
     assertThat(future).isNotDone();
-    stream.getProtocol().complete("test");
+    stream.getProtocol().complete(protocolId);
 
     assertThat(future).isCompletedExceptionally();
+
+    assertRequestsTotalCounterValue(1);
+    assertRequestsSentCounterValue(protocolId, 0);
+    assertRequestsFailedCounterValue(1);
   }
 
   @Test
@@ -195,6 +214,10 @@ public class RpcHandlerTest {
         rpcHandler.sendRequest(connection, request, responseHandler);
 
     assertThatSafeFuture(future).isCompletedExceptionallyWith(PeerDisconnectedException.class);
+
+    assertRequestsTotalCounterValue(1);
+    assertRequestsSentCounterValue(protocolId, 0);
+    assertRequestsFailedCounterValue(1);
   }
 
   @Test
@@ -207,6 +230,10 @@ public class RpcHandlerTest {
     verify(connection, never()).muxerSession();
     assertThatThrownBy(future::get).hasRootCauseInstanceOf(PeerDisconnectedException.class);
     assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
+
+    assertRequestsTotalCounterValue(1);
+    assertRequestsSentCounterValue(protocolId, 0);
+    assertRequestsFailedCounterValue(1);
   }
 
   @ParameterizedTest(name = "closeStream={0}, exceedTimeout={1}")
@@ -227,6 +254,10 @@ public class RpcHandlerTest {
 
     assertThatThrownBy(future::get).hasRootCauseInstanceOf(expectedException);
     assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
+
+    assertRequestsTotalCounterValue(1);
+    assertRequestsSentCounterValue(protocolId, 0);
+    assertRequestsFailedCounterValue(1);
   }
 
   @ParameterizedTest(name = "closeStream={0}, exceedTimeout={1}")
@@ -249,6 +280,10 @@ public class RpcHandlerTest {
     assertThatThrownBy(future::get).hasRootCauseInstanceOf(expectedException);
     assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
     verify(stream).close();
+
+    assertRequestsTotalCounterValue(1);
+    assertRequestsSentCounterValue(protocolId, 0);
+    assertRequestsFailedCounterValue(1);
   }
 
   @ParameterizedTest(name = "closeStream={0}, exceedTimeout={1}")
@@ -272,6 +307,10 @@ public class RpcHandlerTest {
     assertThatThrownBy(future::get).hasRootCauseInstanceOf(expectedException);
     assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
     verify(stream).close();
+
+    assertRequestsTotalCounterValue(1);
+    assertRequestsSentCounterValue(protocolId, 0);
+    assertRequestsFailedCounterValue(1);
   }
 
   @ParameterizedTest(name = "closeStream={0}, exceedTimeout={1}")
@@ -282,7 +321,7 @@ public class RpcHandlerTest {
         rpcHandler.sendRequest(connection, request, responseHandler);
 
     streamPromise.getStream().complete(stream);
-    stream.getProtocol().complete("test");
+    stream.getProtocol().complete(protocolId);
     assertThat(future).isNotDone();
 
     final Class<? extends Exception> expectedException =
@@ -295,6 +334,10 @@ public class RpcHandlerTest {
     assertThatThrownBy(future::get).hasRootCauseInstanceOf(expectedException);
     assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
     verify(stream).close();
+
+    assertRequestsTotalCounterValue(1);
+    assertRequestsSentCounterValue(protocolId, 0);
+    assertRequestsFailedCounterValue(1);
   }
 
   @ParameterizedTest(name = "closeStream={0}, exceedTimeout={1}")
@@ -306,7 +349,7 @@ public class RpcHandlerTest {
 
     streamPromise.getStream().complete(stream);
     streamPromise.getController().complete(controller);
-    stream.getProtocol().complete("test");
+    stream.getProtocol().complete(protocolId);
     assertThat(future).isNotDone();
 
     final Class<? extends Exception> expectedException =
@@ -319,6 +362,10 @@ public class RpcHandlerTest {
     assertThatThrownBy(future::get).hasRootCauseInstanceOf(expectedException);
     assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
     verify(stream).close();
+
+    assertRequestsTotalCounterValue(1);
+    assertRequestsSentCounterValue(protocolId, 0);
+    assertRequestsFailedCounterValue(1);
   }
 
   @SuppressWarnings("UnnecessaryAsync")
@@ -341,5 +388,22 @@ public class RpcHandlerTest {
   public static java.util.stream.Stream<Arguments> getInterruptParams() {
     return java.util.stream.Stream.of(
         Arguments.of(true, false), Arguments.of(false, true), Arguments.of(true, true));
+  }
+
+  private void assertRequestsSentCounterValue(final String protocolId, final long expectedValue) {
+    assertThat(
+            metricsSystem.getLabelledCounterValue(
+                TekuMetricCategory.LIBP2P, "rpc_requests_sent", protocolId))
+        .isEqualTo(expectedValue);
+  }
+
+  private void assertRequestsTotalCounterValue(final long expectedValue) {
+    assertThat(metricsSystem.getCounterValue(TekuMetricCategory.LIBP2P, "rpc_requests_total"))
+        .isEqualTo(expectedValue);
+  }
+
+  private void assertRequestsFailedCounterValue(final long expectedValue) {
+    assertThat(metricsSystem.getCounterValue(TekuMetricCategory.LIBP2P, "rpc_requests_failed"))
+        .isEqualTo(expectedValue);
   }
 }

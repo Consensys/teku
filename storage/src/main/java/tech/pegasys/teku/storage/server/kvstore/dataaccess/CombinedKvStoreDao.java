@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -34,8 +34,9 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -432,6 +433,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public Optional<UInt64> getEarliestAvailableDataColumnSlot() {
+    return db.get(schema.getVariableEarliestAvailableDataColumnSlot());
+  }
+
+  @Override
   public Map<String, Long> getColumnCounts(final Optional<String> maybeColumnFilter) {
     final Map<String, Long> columnCounts = new LinkedHashMap<>();
     schema
@@ -470,8 +476,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
             "EARLIEST_BLOCK_SLOT_AVAILABLE", getEarliestFinalizedBlockSlot().map(Objects::toString))
         .put(
             "FIRST_CUSTODY_INCOMPLETE_SLOT", getFirstCustodyIncompleteSlot().map(Objects::toString))
-        .put(
-            "FIRST_SAMPLER_INCOMPLETE_SLOT", getFirstSamplerIncompleteSlot().map(Objects::toString))
         .put("MIN_GENESIS_TIME_BLOCK", getMinGenesisTimeBlock().map(Objects::toString))
         .put(
             "OPTIMISTIC_TRANSITION_BLOCK_SLOT",
@@ -611,11 +615,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public Optional<UInt64> getFirstSamplerIncompleteSlot() {
-    return db.get(schema.getVariableFirstSamplerIncompleteSlot());
-  }
-
-  @Override
   public Optional<Bytes> getSidecar(final DataColumnSlotAndIdentifier identifier) {
     return db.get(schema.getColumnSidecarByColumnSlotAndIdentifier(), identifier);
   }
@@ -664,6 +663,16 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     return db.getFirstEntry(schema.getColumnSidecarByColumnSlotAndIdentifier())
         .map(ColumnEntry::getKey)
         .map(DataColumnSlotAndIdentifier::slot);
+  }
+
+  @Override
+  public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
+    return db.getLastKey(schema.getColumnDataColumnSidecarsProofsBySlot());
+  }
+
+  @Override
+  public Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(final UInt64 slot) {
+    return db.get(schema.getColumnDataColumnSidecarsProofsBySlot(), slot);
   }
 
   static class V4CombinedUpdater<S extends SchemaCombined> implements CombinedUpdater {
@@ -807,6 +816,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     @Override
     public void setEarliestBlobSidecarSlot(final UInt64 slot) {
       transaction.put(schema.getVariableEarliestBlobSidecarSlot(), slot);
+    }
+
+    @Override
+    public void setEarliestAvailableDataColumnSlot(final UInt64 slot) {
+      transaction.put(schema.getVariableEarliestAvailableDataColumnSlot(), slot);
     }
 
     @Override
@@ -963,16 +977,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void setFirstSamplerIncompleteSlot(final UInt64 slot) {
-      transaction.put(schema.getVariableFirstSamplerIncompleteSlot(), slot);
-    }
-
-    @Override
     public void addSidecar(final DataColumnSidecar sidecar) {
       transaction.put(
           schema.getColumnSidecarByColumnSlotAndIdentifier(),
           new DataColumnSlotAndIdentifier(
-              sidecar.getSlot(), sidecar.getBlockRoot(), sidecar.getIndex()),
+              sidecar.getSlot(), sidecar.getBeaconBlockRoot(), sidecar.getIndex()),
           sidecar.sszSerialize());
     }
 
@@ -981,7 +990,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
       transaction.put(
           schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(),
           new DataColumnSlotAndIdentifier(
-              sidecar.getSlot(), sidecar.getBlockRoot(), sidecar.getIndex()),
+              sidecar.getSlot(), sidecar.getBeaconBlockRoot(), sidecar.getIndex()),
           sidecar.sszSerialize());
     }
 
@@ -994,6 +1003,17 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     public void removeNonCanonicalSidecar(final DataColumnSlotAndIdentifier identifier) {
       transaction.delete(
           schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(), identifier);
+    }
+
+    @Override
+    public void addDataColumnSidecarsProofs(
+        final UInt64 slot, final List<List<KZGProof>> kzgProofs) {
+      transaction.put(schema.getColumnDataColumnSidecarsProofsBySlot(), slot, kzgProofs);
+    }
+
+    @Override
+    public void removeDataColumnSidecarsProofs(final UInt64 slot) {
+      transaction.delete(schema.getColumnDataColumnSidecarsProofsBySlot(), slot);
     }
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -17,7 +17,9 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Bea
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.BUILDER_PENDING_WITHDRAWALS;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.EXECUTION_PAYLOAD_AVAILABILITY;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.LATEST_BLOCK_HASH;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.LATEST_WITHDRAWALS_ROOT;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.LATEST_EXECUTION_PAYLOAD_BID;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.NEXT_WITHDRAWAL_BUILDER_INDEX;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PAYLOAD_EXPECTED_WITHDRAWALS;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -27,10 +29,17 @@ import tech.pegasys.teku.infrastructure.ssz.SszMutableVector;
 import tech.pegasys.teku.infrastructure.ssz.SszVector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.MutableBeaconStateFulu;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingWithdrawal;
 
 public interface MutableBeaconStateGloas extends MutableBeaconStateFulu, BeaconStateGloas {
   static MutableBeaconStateGloas required(final MutableBeaconState state) {
@@ -43,11 +52,39 @@ public interface MutableBeaconStateGloas extends MutableBeaconStateFulu, BeaconS
   }
 
   @Override
+  default void setLatestExecutionPayloadHeader(
+      final ExecutionPayloadHeader executionPayloadHeader) {
+    // NO-OP (`latest_execution_payload_header` has been removed in Gloas)
+  }
+
+  @Override
   BeaconStateGloas commitChanges();
 
   @Override
   default Optional<MutableBeaconStateGloas> toMutableVersionGloas() {
     return Optional.of(this);
+  }
+
+  default void setLatestExecutionPayloadBid(final ExecutionPayloadBid latestExecutionPayloadBid) {
+    final int fieldIndex = getSchema().getFieldIndex(LATEST_EXECUTION_PAYLOAD_BID);
+    set(fieldIndex, latestExecutionPayloadBid);
+  }
+
+  // Builder Registry
+  @Override
+  default SszMutableList<Builder> getBuilders() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.BUILDERS);
+    return getAnyByRef(fieldIndex);
+  }
+
+  default void setBuilders(final SszList<Builder> builders) {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.BUILDERS);
+    set(fieldIndex, builders);
+  }
+
+  default void setNextWithdrawalBuilderIndex(final UInt64 nextWithdrawalBuilderIndex) {
+    final int fieldIndex = getSchema().getFieldIndex(NEXT_WITHDRAWAL_BUILDER_INDEX);
+    set(fieldIndex, SszUInt64.of(nextWithdrawalBuilderIndex));
   }
 
   default void setExecutionPayloadAvailability(final SszBitvector executionPayloadAvailability) {
@@ -84,8 +121,8 @@ public interface MutableBeaconStateGloas extends MutableBeaconStateFulu, BeaconS
     set(fieldIndex, SszBytes32.of(latestBlockHash));
   }
 
-  default void setLatestWithdrawalsRoot(final Bytes32 latestWithdrawalsRoot) {
-    final int fieldIndex = getSchema().getFieldIndex(LATEST_WITHDRAWALS_ROOT);
-    set(fieldIndex, SszBytes32.of(latestWithdrawalsRoot));
+  default void setPayloadExpectedWithdrawals(final SszList<Withdrawal> payloadExpectedWithdrawals) {
+    final int fieldIndex = getSchema().getFieldIndex(PAYLOAD_EXPECTED_WITHDRAWALS);
+    set(fieldIndex, payloadExpectedWithdrawals);
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -106,11 +106,8 @@ public class DepositSender implements AutoCloseable {
         totalNumberOfDeposits == 1 ? "a transaction" : totalNumberOfDeposits + " transactions";
     final String reply =
         consoleAdapter.readLine(
-            "You are about to submit "
-                + transactionPart
-                + " of %s Eth to contract address [%s].\nThis is irreversible, please make sure you understand the consequences. Are you sure you want to continue? [y/n]",
-            eth,
-            contractAddress);
+            "You are about to submit %s of %s Eth to contract address [%s].\nThis is irreversible, please make sure you understand the consequences. Are you sure you want to continue? [y/n]",
+            transactionPart, eth, contractAddress);
     if ("y".equalsIgnoreCase(reply)) {
       return;
     }

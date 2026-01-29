@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -46,16 +46,18 @@ public class SyncSourceFactory {
   }
 
   public SyncSource getOrCreateSyncSource(final Eth2Peer peer, final Spec spec) {
-    // Limit request rates for blocks/blobs to just a little under what we'd accept (see
-    // Eth2PeerFactory)
+    // Limit request rates for blocks/blobs/execution payloads to just a little under what we'd
+    // accept (see Eth2PeerFactory)
     final int maxBlocksPerMinute = this.maxBlocksPerMinute - batchSize - 1;
     final Optional<Integer> maybeMaxBlobsPerBlock = spec.getMaxBlobsPerBlockForHighestMilestone();
     final Optional<Integer> maybeMaxBlobSidecarsPerMinute =
         maybeMaxBlobsPerBlock.map(
             maxBlobsPerBlock -> this.maxBlobSidecarsPerMinute - (batchSize * maxBlobsPerBlock) - 1);
-    final Optional<Integer> maxDataColumnSidecarsPerMinute =
+    final Optional<Integer> maybeMaxDataColumnSidecarsPerMinute =
         spec.getNumberOfDataColumns()
-            .map(dataColumnsPerBlock -> maxBlocksPerMinute * dataColumnsPerBlock.intValue());
+            .map(dataColumnsPerBlock -> maxBlocksPerMinute * dataColumnsPerBlock);
+    final Optional<Integer> maybeMaxExecutionPayloadEnvelopesPerMinute =
+        spec.getNetworkingConfigGloas().map(__ -> maxBlocksPerMinute);
     return syncSourcesByPeer.computeIfAbsent(
         peer,
         source ->
@@ -66,7 +68,8 @@ public class SyncSourceFactory {
                 maxBlocksPerMinute,
                 maybeMaxBlobsPerBlock,
                 maybeMaxBlobSidecarsPerMinute,
-                maxDataColumnSidecarsPerMinute));
+                maybeMaxDataColumnSidecarsPerMinute,
+                maybeMaxExecutionPayloadEnvelopesPerMinute));
   }
 
   public void onPeerDisconnected(final Eth2Peer peer) {

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -19,9 +19,7 @@ import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Optional;
 import java.util.OptionalInt;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -29,25 +27,23 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.StateTooOldException;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil.SlotInclusionGossipValidationResult;
-import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.spec.logic.common.util.AttestationValidationResult;
 
 public class AttestationValidator {
 
   private final Spec spec;
-  private final RecentChainData recentChainData;
   private final AsyncBLSSignatureVerifier signatureVerifier;
-  private final AttestationStateSelector stateSelector;
+  private final GossipValidationHelper gossipValidationHelper;
 
   public AttestationValidator(
       final Spec spec,
-      final RecentChainData recentChainData,
       final AsyncBLSSignatureVerifier signatureVerifier,
-      final MetricsSystem metricsSystem) {
-    this.recentChainData = recentChainData;
+      final GossipValidationHelper gossipValidationHelper) {
     this.spec = spec;
     this.signatureVerifier = signatureVerifier;
-    this.stateSelector = new AttestationStateSelector(spec, recentChainData, metricsSystem);
+    this.gossipValidationHelper = gossipValidationHelper;
   }
 
   public SafeFuture<InternalValidationResult> validate(
@@ -112,22 +108,33 @@ public class AttestationValidator {
       }
     }
 
-    if (attestation.isSingleAttestation() || attestation.requiresCommitteeBits()) {
-      // [REJECT] attestation.data.index == 0
-      if (!attestation.getData().getIndex().isZero()) {
-        return SafeFuture.completedFuture(
-            InternalValidationResultWithState.reject(
-                "Rejecting attestation because attestation data index must be 0"));
-      }
+    final AttestationUtil attestationUtil = spec.atSlot(data.getSlot()).getAttestationUtil();
+
+    final AttestationValidationResult attestationIndexValidationResult =
+        attestationUtil.validateIndexValue(attestation.getData().getIndex());
+    if (!attestationIndexValidationResult.isValid()) {
+      return SafeFuture.completedFuture(
+          InternalValidationResultWithState.reject(
+              attestationIndexValidationResult.getReason().orElse("Invalid attestation data")));
     }
 
-    final UInt64 genesisTime = recentChainData.getGenesisTime();
-    final UInt64 currentTimeMillis = recentChainData.getStore().getTimeInMillis();
+    final AttestationValidationResult payloadStatusValidationResult =
+        attestationUtil.validatePayloadStatus(
+            attestation.getData(),
+            gossipValidationHelper.getSlotForBlockRoot(attestation.getData().getBeaconBlockRoot()));
+    if (!payloadStatusValidationResult.isValid()) {
+      return SafeFuture.completedFuture(
+          InternalValidationResultWithState.reject(
+              payloadStatusValidationResult.getReason().orElse("Invalid payload status")));
+    }
 
     final Optional<SlotInclusionGossipValidationResult> slotInclusionGossipValidationResult =
         spec.atSlot(data.getSlot())
             .getAttestationUtil()
-            .performSlotInclusionGossipValidation(attestation, genesisTime, currentTimeMillis);
+            .performSlotInclusionGossipValidation(
+                attestation,
+                gossipValidationHelper.getGenesisTime(),
+                gossipValidationHelper.getCurrentTimeMillis());
 
     if (slotInclusionGossipValidationResult.isPresent()) {
       return switch (slotInclusionGossipValidationResult.get()) {
@@ -139,12 +146,12 @@ public class AttestationValidator {
     // The block being voted for (attestation.data.beacon_block_root) passes validation.
     // It must pass validation to be in the store.
     // If it's not in the store, it may not have been processed yet so save for future.
-    if (!recentChainData.containsBlock(data.getBeaconBlockRoot())) {
+    if (!gossipValidationHelper.isBlockAvailable(data.getBeaconBlockRoot())) {
       return completedFuture(InternalValidationResultWithState.saveForFuture());
     }
 
-    return stateSelector
-        .getStateToValidate(attestation.getData())
+    return gossipValidationHelper
+        .getStateForAttestationValidation(attestation.getData())
         .thenCompose(
             maybeState -> {
               if (maybeState.isEmpty()) {
@@ -205,7 +212,7 @@ public class AttestationValidator {
                         // The attestation's target block is an ancestor of the block named in the
                         // LMD vote
                         if (!spec.getAncestor(
-                                recentChainData.getForkChoiceStrategy().orElseThrow(),
+                                gossipValidationHelper.getForkChoiceStrategy(),
                                 data.getBeaconBlockRoot(),
                                 spec.computeStartSlotAtEpoch(data.getTarget().getEpoch()))
                             .map(

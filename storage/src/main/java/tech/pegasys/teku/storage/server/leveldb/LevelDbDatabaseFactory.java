@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -44,13 +44,22 @@ public class LevelDbDatabaseFactory {
     final SchemaFinalizedSnapshotStateAdapter schemaFinalized = combinedSchema.asSchemaFinalized();
     final KvStoreAccessor hotDb =
         LevelDbInstanceFactory.create(
-            metricsSystem, STORAGE_HOT_DB, hotConfiguration, schemaHot.getAllColumns());
+            metricsSystem,
+            STORAGE_HOT_DB,
+            hotConfiguration,
+            schemaHot.getAllColumns(),
+            schemaHot.getDeletedColumnIds(),
+            schemaHot.getAllVariables(),
+            schemaHot.getDeletedVariableIds());
     final KvStoreAccessor finalizedDb =
         LevelDbInstanceFactory.create(
             metricsSystem,
             STORAGE_FINALIZED_DB,
             finalizedConfiguration,
-            schemaFinalized.getAllColumns());
+            schemaFinalized.getAllColumns(),
+            schemaFinalized.getDeletedColumnIds(),
+            schemaFinalized.getAllVariables(),
+            schemaFinalized.getDeletedVariableIds());
     return KvStoreDatabase.createV4(
         hotDb,
         finalizedDb,
@@ -72,7 +81,13 @@ public class LevelDbDatabaseFactory {
     final V6SchemaCombinedSnapshot schema = V6SchemaCombinedSnapshot.createV6(spec);
     final KvStoreAccessor db =
         LevelDbInstanceFactory.create(
-            metricsSystem, STORAGE, hotConfiguration, schema.getAllColumns());
+            metricsSystem,
+            STORAGE,
+            hotConfiguration,
+            schema.getAllColumns(),
+            schema.getDeletedColumnIds(),
+            schema.getAllVariables(),
+            schema.getDeletedVariableIds());
 
     return KvStoreDatabase.createWithStateSnapshots(
         db, schema, stateStorageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
@@ -89,7 +104,13 @@ public class LevelDbDatabaseFactory {
     final V6SchemaCombinedTreeState schema = new V6SchemaCombinedTreeState(spec);
     final KvStoreAccessor db =
         LevelDbInstanceFactory.create(
-            metricsSystem, STORAGE, hotConfiguration, schema.getAllColumns());
+            metricsSystem,
+            STORAGE,
+            hotConfiguration,
+            schema.getAllColumns(),
+            schema.getDeletedColumnIds(),
+            schema.getAllVariables(),
+            schema.getDeletedVariableIds());
     return KvStoreDatabase.createWithStateTree(
         metricsSystem,
         db,

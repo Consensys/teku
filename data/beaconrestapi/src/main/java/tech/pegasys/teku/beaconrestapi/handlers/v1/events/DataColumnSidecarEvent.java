@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public class DataColumnSidecarEvent extends Event<DataColumnSidecarEvent.DataColumnSidecarData> {
@@ -54,10 +54,10 @@ public class DataColumnSidecarEvent extends Event<DataColumnSidecarEvent.DataCol
 
   public static DataColumnSidecarEvent create(final DataColumnSidecar dataColumnSidecar) {
     return new DataColumnSidecarEvent(
-        dataColumnSidecar.getBlockRoot(),
+        dataColumnSidecar.getBeaconBlockRoot(),
         dataColumnSidecar.getIndex(),
         dataColumnSidecar.getSlot(),
-        dataColumnSidecar.getSszKZGCommitments().asList().stream()
+        dataColumnSidecar.getKzgCommitments().asList().stream()
             .map(SszKZGCommitment::getKZGCommitment)
             .toList());
   }

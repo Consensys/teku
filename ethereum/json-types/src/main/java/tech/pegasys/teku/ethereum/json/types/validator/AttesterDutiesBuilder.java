@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ethereum.json.types.validator;
 
 import static tech.pegasys.teku.ethereum.json.types.validator.AttesterDutyBuilder.ATTESTER_DUTY_TYPE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.DEPENDENT_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
@@ -29,7 +30,7 @@ public class AttesterDutiesBuilder {
           .initializer(AttesterDutiesBuilder::new)
           .finisher(AttesterDutiesBuilder::build)
           .withField(
-              "dependent_root",
+              DEPENDENT_ROOT,
               BYTES32_TYPE,
               AttesterDuties::getDependentRoot,
               AttesterDutiesBuilder::dependentRoot)

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,11 +18,15 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
@@ -36,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.ExecutionPayloadProcessingException;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 
 public class DefaultOperationProcessor implements OperationProcessor {
@@ -122,6 +127,17 @@ public class DefaultOperationProcessor implements OperationProcessor {
   }
 
   @Override
+  public void processExecutionPayload(
+      final MutableBeaconState state,
+      final SignedExecutionPayloadEnvelope signedEnvelope,
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      throws ExecutionPayloadProcessingException {
+    spec.getExecutionPayloadProcessor(state.getSlot())
+        .processExecutionPayload(
+            signedEnvelope, state, BLSSignatureVerifier.SIMPLE, payloadExecutor, true);
+  }
+
+  @Override
   public void processBlsToExecutionChange(
       final MutableBeaconState state, final SignedBlsToExecutionChange blsToExecutionChange)
       throws BlockProcessingException {
@@ -137,33 +153,50 @@ public class DefaultOperationProcessor implements OperationProcessor {
   public void processWithdrawals(
       final MutableBeaconState state, final ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException {
-    spec.getBlockProcessor(state.getSlot()).processWithdrawals(state, payloadSummary);
+    spec.getBlockProcessor(state.getSlot()).processWithdrawals(state, Optional.of(payloadSummary));
   }
 
   @Override
   public void processDepositRequest(
-      final MutableBeaconState state, final List<DepositRequest> depositRequests)
-      throws BlockProcessingException {
-    spec.getBlockProcessor(state.getSlot()).processDepositRequests(state, depositRequests);
+      final MutableBeaconState state, final List<DepositRequest> depositRequests) {
+    spec.getExecutionRequestsProcessor(state.getSlot())
+        .processDepositRequests(state, depositRequests);
   }
 
   @Override
   public void processWithdrawalRequest(
-      final MutableBeaconState state, final List<WithdrawalRequest> withdrawalRequests)
-      throws BlockProcessingException {
+      final MutableBeaconState state, final List<WithdrawalRequest> withdrawalRequests) {
     final Supplier<ValidatorExitContext> validatorExitContextSupplier =
         spec.atSlot(state.getSlot())
             .beaconStateMutators()
             .createValidatorExitContextSupplier(state);
-    spec.getBlockProcessor(state.getSlot())
+    spec.getExecutionRequestsProcessor(state.getSlot())
         .processWithdrawalRequests(state, withdrawalRequests, validatorExitContextSupplier);
   }
 
   @Override
   public void processConsolidationRequests(
-      final MutableBeaconState state, final List<ConsolidationRequest> consolidationRequests)
+      final MutableBeaconState state, final List<ConsolidationRequest> consolidationRequests) {
+    spec.getExecutionRequestsProcessor(state.getSlot())
+        .processConsolidationRequests(state, consolidationRequests);
+  }
+
+  @Override
+  public void processExecutionPayloadBid(
+      final MutableBeaconState state, final BeaconBlock beaconBlock)
+      throws BlockProcessingException {
+    spec.getBlockProcessor(beaconBlock.getSlot()).processExecutionPayloadBid(state, beaconBlock);
+  }
+
+  @Override
+  public void processPayloadAttestation(
+      final MutableBeaconState state, final PayloadAttestation payloadAttestation)
       throws BlockProcessingException {
     spec.getBlockProcessor(state.getSlot())
-        .processConsolidationRequests(state, consolidationRequests);
+        .processPayloadAttestations(
+            state,
+            BeaconBlockBodySchemaGloas.required(beaconBlockBodySchema)
+                .getPayloadAttestationsSchema()
+                .of(payloadAttestation));
   }
 }
