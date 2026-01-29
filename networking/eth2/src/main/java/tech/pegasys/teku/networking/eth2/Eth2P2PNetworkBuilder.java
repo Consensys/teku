@@ -583,8 +583,8 @@ public class Eth2P2PNetworkBuilder {
                         syncCommitteeSubnetService,
                         dataColumnSidecarSubnetTopicProvider,
                         dataColumnSidecarSubnetService,
-                        config.getTargetAttestationSubnetSubscriberCount(),
                         config.getTargetSubnetSubscriberCount(),
+                        config.getTargetPerSubnetSubscriberCount(),
                         subnetPeerCountGauge),
                 reputationManager,
                 Collections::shuffle))

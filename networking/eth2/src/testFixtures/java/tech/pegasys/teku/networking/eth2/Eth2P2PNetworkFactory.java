@@ -354,7 +354,7 @@ public class Eth2P2PNetworkFactory {
                                 syncCommitteeSubnetService,
                                 dataColumnSidecarSubnetTopicProvider,
                                 dataColumnSidecarSubnetService,
-                                config.getTargetAttestationSubnetSubscriberCount(),
+                                config.getTargetSubnetSubscriberCount(),
                                 OptionalInt.empty(),
                                 subnetPeerCountGauge),
                         reputationManager,
@@ -584,7 +584,7 @@ public class Eth2P2PNetworkFactory {
 
       return P2PConfig.builder()
           .specProvider(spec)
-          .targetAttestationSubnetSubscriberCount(2)
+          .targetSubnetSubscriberCount(2)
           .network(b -> b.listenPort(port).wireLogs(w -> w.logWireMuxFrames(true)))
           .discovery(
               d ->
