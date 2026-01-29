@@ -178,7 +178,7 @@ public class SimpleSidecarRetriever
       final RetrieveRequest request, final RequestTracker ongoingRequestsTracker) {
     final Stream<ConnectedPeer> matchingPeers = findMatchingPeers(request, ongoingRequestsTracker);
 
-    // taking first the peers which were not requested yet, then peers which are less busy
+    // Preferring peers with the best response rate, then preferring less busy peers among equals
     final Comparator<ConnectedPeer> comparator =
         Comparator.comparing(ConnectedPeer::getResponseScore)
             .thenComparing(
@@ -371,16 +371,19 @@ public class SimpleSidecarRetriever
     public void countSidecarRequest() {
       final int current = sidecarsRequested.incrementAndGet();
       if (current == Integer.MAX_VALUE) {
-        sidecarsRequested.set(1);
-        sidecarsReceived.set(1);
+        resetCounters();
       }
+    }
+
+    private void resetCounters() {
+      sidecarsRequested.set(1);
+      sidecarsReceived.set(1);
     }
 
     public void countSidecarReceived() {
       final int current = sidecarsReceived.incrementAndGet();
       if (current == Integer.MAX_VALUE) {
-        sidecarsRequested.set(1);
-        sidecarsReceived.set(1);
+        resetCounters();
       }
     }
 
