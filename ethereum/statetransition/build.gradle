@@ -1,6 +1,6 @@
 idea {
   module {
-    testSourceDirs += sourceSets.jmh.java.srcDirs
+    testSources.from(sourceSets.jmh.java.srcDirs)
   }
 }
 
