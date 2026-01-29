@@ -375,7 +375,7 @@ public class Eth2P2PNetworkFactory {
                         metricsSystem,
                         network,
                         gossipEncoding,
-                        config.isExecutionProofTopicEnabled()))
+                        config))
             .forEach(gossipForkManagerBuilder::fork);
 
         final GossipForkManager gossipForkManager = gossipForkManagerBuilder.build();
@@ -404,7 +404,7 @@ public class Eth2P2PNetworkFactory {
         final NoOpMetricsSystem metricsSystem,
         final DiscoveryNetwork<?> network,
         final GossipEncoding gossipEncoding,
-        final boolean isExecutionProofTopicEnabled) {
+        final P2PConfig p2PConfig) {
       return switch (forkAndSpecMilestone.getSpecMilestone()) {
         case PHASE0 ->
             new GossipForkSubscriptionsPhase0(
@@ -518,7 +518,7 @@ public class Eth2P2PNetworkFactory {
                 signedBlsToExecutionChangeProcessor,
                 debugDataDumper,
                 executionProofOperationProcessor,
-                isExecutionProofTopicEnabled);
+                    p2PConfig);
         case FULU ->
             new GossipForkSubscriptionsFulu(
                 forkAndSpecMilestone.getFork(),
@@ -541,8 +541,9 @@ public class Eth2P2PNetworkFactory {
                 dataColumnSidecarOperationProcessor,
                 debugDataDumper,
                 DasGossipLogger.NOOP,
-                executionProofOperationProcessor,
-                isExecutionProofTopicEnabled);
+                    executionProofOperationProcessor,
+                    p2PConfig
+                );
         case GLOAS ->
             new GossipForkSubscriptionsGloas(
                 forkAndSpecMilestone.getFork(),
@@ -569,7 +570,7 @@ public class Eth2P2PNetworkFactory {
                 debugDataDumper,
                 DasGossipLogger.NOOP,
                 executionProofOperationProcessor,
-                isExecutionProofTopicEnabled);
+                    p2PConfig);
       };
     }
 

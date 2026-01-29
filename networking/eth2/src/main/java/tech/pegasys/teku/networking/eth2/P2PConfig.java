@@ -99,6 +99,7 @@ public class P2PConfig {
   private final boolean reworkedSidecarSyncEnabled;
   private final boolean columnsDataAvailabilityHalfCheckEnabled;
   private final boolean executionProofTopicEnabled;
+  private final boolean subscribeAllCustodySubnetsEnabled;
 
   private P2PConfig(
       final Spec spec,
@@ -128,7 +129,8 @@ public class P2PConfig {
       final Integer reworkedSidecarSyncBatchSize,
       final Integer reworkedSidecarSyncPollPeriod,
       final boolean columnsDataAvailabilityHalfCheckEnabled,
-      final boolean executionProofTopicEnabled) {
+      final boolean executionProofTopicEnabled,
+      final boolean subscribeAllCustodySubnetsEnabled) {
     this.spec = spec;
     this.networkConfig = networkConfig;
     this.discoveryConfig = discoveryConfig;
@@ -158,6 +160,7 @@ public class P2PConfig {
     this.reworkedSidecarSyncPollPeriod = reworkedSidecarSyncPollPeriod;
     this.columnsDataAvailabilityHalfCheckEnabled = columnsDataAvailabilityHalfCheckEnabled;
     this.executionProofTopicEnabled = executionProofTopicEnabled;
+    this.subscribeAllCustodySubnetsEnabled = subscribeAllCustodySubnetsEnabled;
   }
 
   public static Builder builder() {
@@ -284,6 +287,10 @@ public class P2PConfig {
     return columnsDataAvailabilityHalfCheckEnabled;
   }
 
+  public boolean isSubscribedToAllCustodySubnetsEnabled() {
+    return subscribeAllCustodySubnetsEnabled;
+  }
+
   public static class Builder {
     private final NetworkConfig.Builder networkConfig = NetworkConfig.builder();
     private final DiscoveryConfig.Builder discoveryConfig = DiscoveryConfig.builder();
@@ -392,7 +399,8 @@ public class P2PConfig {
           reworkedSidecarSyncBatchSize,
           reworkedSidecarSyncPollPeriod,
           columnsDataAvailabilityHalfCheckEnabled,
-          executionProofTopicEnabled);
+          executionProofTopicEnabled,
+          subscribeAllCustodySubnetsEnabled);
     }
 
     private void validate() {

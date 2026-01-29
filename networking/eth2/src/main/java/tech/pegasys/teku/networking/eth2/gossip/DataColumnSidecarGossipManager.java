@@ -21,12 +21,15 @@ import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 public class DataColumnSidecarGossipManager implements GossipManager {
   private final DataColumnSidecarSubnetSubscriptions subnetSubscriptions;
   private final DasGossipLogger dasGossipLogger;
+  private final boolean subscribedToAllCustodySubnetsEnabled;
 
   public DataColumnSidecarGossipManager(
       final DataColumnSidecarSubnetSubscriptions dataColumnSidecarSubnetSubscriptions,
-      final DasGossipLogger dasGossipLogger) {
+      final DasGossipLogger dasGossipLogger,
+      final boolean subscribeAllCustodySubnetsEnabled) {
     subnetSubscriptions = dataColumnSidecarSubnetSubscriptions;
     this.dasGossipLogger = dasGossipLogger;
+    this.subscribedToAllCustodySubnetsEnabled = subscribeAllCustodySubnetsEnabled;
   }
 
   public void publish(final DataColumnSidecar dataColumnSidecar) {
@@ -55,5 +58,10 @@ public class DataColumnSidecarGossipManager implements GossipManager {
   @Override
   public void unsubscribe() {
     subnetSubscriptions.unsubscribe();
+  }
+
+  @Override
+  public boolean isEnabledDuringOptimisticSync(){
+    return subscribedToAllCustodySubnetsEnabled;
   }
 }

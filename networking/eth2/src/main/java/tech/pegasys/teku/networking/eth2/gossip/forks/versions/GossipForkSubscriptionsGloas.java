@@ -17,6 +17,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadBidGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.PayloadAttestationMessageGossipManager;
@@ -83,7 +84,7 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
       final DebugDataDumper debugDataDumper,
       final DasGossipLogger dasGossipLogger,
       final OperationProcessor<ExecutionProof> executionProcessorOperationProcessor,
-      final boolean isExecutionProofTopicEnabled) {
+      final P2PConfig p2pConfig) {
     super(
         fork,
         spec,
@@ -106,7 +107,7 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
         debugDataDumper,
         dasGossipLogger,
         executionProcessorOperationProcessor,
-        isExecutionProofTopicEnabled);
+            p2pConfig);
     this.executionPayloadProcessor = executionPayloadOperationProcessor;
     this.payloadAttestationMessageProcessor = payloadAttestationMessageOperationProcessor;
     this.executionPayloadBidProcessor = executionPayloadBidOperationProcessor;

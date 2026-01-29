@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
@@ -67,7 +68,7 @@ public class GossipForkSubscriptionsFuluBpo extends GossipForkSubscriptionsFulu 
       final DebugDataDumper debugDataDumper,
       final DasGossipLogger dasGossipLogger,
       final BlobParameters bpo,
-      final boolean isExecutionProofTopicEnabled) {
+      final P2PConfig p2PConfig) {
     super(
         fork,
         spec,
@@ -90,7 +91,7 @@ public class GossipForkSubscriptionsFuluBpo extends GossipForkSubscriptionsFulu 
         debugDataDumper,
         dasGossipLogger,
         executionProofOperationProcessor,
-        isExecutionProofTopicEnabled);
+            p2PConfig);
     this.bpo = bpo;
   }
 
