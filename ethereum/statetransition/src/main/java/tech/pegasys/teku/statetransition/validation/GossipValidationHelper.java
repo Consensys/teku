@@ -112,7 +112,7 @@ public class GossipValidationHelper {
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlotAndBlockRoot(
       final SlotAndBlockRoot slotAndBlockRoot) {
-    return recentChainData.retrieveStateAtSlot(slotAndBlockRoot);
+    return recentChainData.retrieveBlockState(slotAndBlockRoot);
   }
 
   public boolean currentFinalizedCheckpointIsAncestorOfBlock(
