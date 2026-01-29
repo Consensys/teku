@@ -50,8 +50,20 @@ import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil.InclusionP
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationResult;
 
 /**
- * This class supposed to implement gossip validation rules as per <a
- * href="https://github.com/ethereum/consensus-specs/blob/master/specs/fulu/p2p-interface.md#data_column_sidecar_subnet_id">spec</a>
+ * Gossip validator for Data Column Sidecars supporting both Fulu and Gloas forks.
+ *
+ * <p>Uses fork-specific {@link DataColumnSidecarUtil} implementations to handle validation
+ * differences between forks. Fulu sidecars contain signed block headers and validate parent block
+ * availability and header signatures. Gloas sidecars (ePBS) have no headers and validate against
+ * execution payload bids instead.
+ *
+ * @see DataColumnSidecarUtil
+ * @see <a
+ *     href="https://github.com/ethereum/consensus-specs/blob/master/specs/fulu/p2p-interface.md#data_column_sidecar_subnet_id">Fulu
+ *     Spec</a>
+ * @see <a
+ *     href="https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/p2p-interface.md#data_column_sidecar_subnet_id">Gloas
+ *     Spec</a>
  */
 public class DataColumnSidecarGossipValidator {
 
