@@ -151,6 +151,7 @@ import tech.pegasys.teku.statetransition.attestation.utils.AggregatingAttestatio
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.blobs.BlockEventsListenerRouter;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
@@ -889,7 +890,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initExecutionPayloadManager() {
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
       final ExecutionPayloadGossipValidator executionPayloadGossipValidator =
-          new ExecutionPayloadGossipValidator();
+          new ExecutionPayloadGossipValidator(spec, gossipValidationHelper, invalidBlockRoots);
       executionPayloadManager =
           new DefaultExecutionPayloadManager(
               beaconAsyncRunner, executionPayloadGossipValidator, forkChoice, executionLayer);
@@ -2082,11 +2083,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
             ? Optional.of(BlockImportMetrics.create(metricsSystem))
             : Optional.empty();
 
+    final BlockEventsListenerRouter blockEventsListenerRouter =
+        new BlockEventsListenerRouter(
+            blockBlobSidecarsTrackersPool, () -> dataAvailabilitySampler, recentChainData, spec);
+
     blockManager =
         new BlockManager(
             recentChainData,
             blockImporter,
-            blockBlobSidecarsTrackersPool,
+            blockEventsListenerRouter,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,
