@@ -150,15 +150,14 @@ public class ExecutionPayloadBidGossipValidator {
               /*
                * [REJECT] bid.builder_index is a valid, active, and non-slashed builder index.
                */
-
-              final UInt64 builderIndex = bid.getBuilderIndex();
-              if (!gossipValidationHelper.isValidBuilderIndex(builderIndex, state, bid.getSlot())) {
+              if (!gossipValidationHelper.isValidBuilderIndex(
+                  bid.getBuilderIndex(), state, bid.getSlot())) {
                 LOG.trace(
                     "Invalid builder index {}. Builder should be valid, active and non-slashed.",
-                    builderIndex);
+                    bid.getBuilderIndex());
                 return reject(
                     "Invalid builder index %s. Builder should be valid, active and non-slashed.",
-                    builderIndex);
+                    bid.getBuilderIndex());
               }
 
               /*
@@ -208,7 +207,7 @@ public class ExecutionPayloadBidGossipValidator {
                     "Another payload execution bid from Builder with index %s already processed while validating bid for slot %s",
                     bid.getBuilderIndex(), bid.getSlot());
               }
-              // Only update highest bid tracking for accepted bids
+              // Only update the highest bid tracking for accepted bids
               highestBids.merge(bidValueKey, bid.getValue(), UInt64::max);
               return ACCEPT;
             });
