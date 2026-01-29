@@ -47,6 +47,16 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
  */
 public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
 
+  /**
+   * Perform slot timing gossip validation checks Gossip rule: [IGNORE] The sidecar is not from a
+   * future slot (with a MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. validate that
+   * block_header.slot <= current_slot (a client MAY queue future sidecars for processing at the
+   * appropriate slot).
+   *
+   * @param dataColumnSidecar the data column sidecar to validate
+   * @param isSlotFromFuture function to check if a slot is from the future
+   * @return validation result, empty if it passes
+   */
   @Override
   public Optional<SlotInclusionGossipValidationResult> performSlotTimingValidation(
       final DataColumnSidecar dataColumnSidecar, final Predicate<UInt64> isSlotFromFuture) {
@@ -59,12 +69,6 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
 
     final BeaconBlockHeader header = maybeSignedBlockHeader.get().getMessage();
 
-    /*
-     * [IGNORE] The sidecar is not from a future slot (with a MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance)
-     * -- i.e. validate that block_header.slot <= current_slot
-     * (a client MAY queue future sidecars for processing at the appropriate slot).
-     */
-
     if (isSlotFromFuture.test(header.getSlot())) {
       return Optional.of(SlotInclusionGossipValidationResult.SAVE_FOR_FUTURE);
     }
@@ -72,6 +76,15 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     return Optional.empty();
   }
 
+  /**
+   * Perform slot finalization gossip validation checks Gossip rule [IGNORE] The sidecar is from a
+   * slot greater than the latest finalized slot -- i.e. validate that block_header.slot >
+   * compute_start_slot_at_epoch(state.finalized_checkpoint.epoch)
+   *
+   * @param dataColumnSidecar the data column sidecar to validate
+   * @param isSlotFinalized function to check if a slot is finalized
+   * @return validation result, empty if it passes
+   */
   @Override
   public Optional<SlotInclusionGossipValidationResult> performSlotFinalizationValidation(
       final DataColumnSidecar dataColumnSidecar, final Predicate<UInt64> isSlotFinalized) {
@@ -84,11 +97,6 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
 
     final BeaconBlockHeader header = maybeSignedBlockHeader.get().getMessage();
 
-    /*
-     * [IGNORE] The sidecar is from a slot greater than the latest finalized slot
-     * -- i.e. validate that block_header.slot > compute_start_slot_at_epoch(state.finalized_checkpoint.epoch)
-     */
-
     if (isSlotFinalized.test(header.getSlot())) {
       return Optional.of(SlotInclusionGossipValidationResult.IGNORE);
     }
@@ -96,10 +104,14 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     return Optional.empty();
   }
 
-  /*
-   * [IGNORE] The sidecar's block's parent (defined by block_header.parent_root) has been seen
-   * (via gossip or non-gossip sources)
-   * (a client MAY queue sidecars for processing once the parent block is retrieved).
+  /**
+   * Check if the referenced block has been seen. Gossip rule: [IGNORE] The sidecar's block's parent
+   * (defined by block_header.parent_root) has been seen (via gossip or non-gossip sources) (a
+   * client MAY queue sidecars for processing once the parent block is retrieved).
+   *
+   * @param dataColumnSidecar the data column sidecar to validate
+   * @param isBlockRootSeen function to check if a block root has been seen
+   * @return true if the referenced block has been seen
    */
   @Override
   public boolean isBlockSeen(
@@ -115,6 +127,14 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     return isBlockRootSeen.apply(header.getParentRoot());
   }
 
+  /**
+   * Validate that the sidecar's KZG commitments root matches the block's KZG commitments root.
+   *
+   * @param dataColumnSidecar the data column sidecar to validate
+   * @param getBlockKzgCommitmentsRoot function to get the block's kzg commitments root by block
+   *     root
+   * @return validation result
+   */
   @Override
   public DataColumnSidecarValidationResult validateKzgCommitmentsRoot(
       final DataColumnSidecar dataColumnSidecar,
@@ -123,6 +143,13 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     return DataColumnSidecarValidationResult.valid();
   }
 
+  /**
+   * Validate that the sidecar's slot matches the referenced block's slot.
+   *
+   * @param dataColumnSidecar the data column sidecar to validate
+   * @param getSlotForBlockRoot function to get the slot for a block root
+   * @return validation result
+   */
   @Override
   public DataColumnSidecarValidationResult validateBlockSlot(
       final DataColumnSidecar dataColumnSidecar,
@@ -131,11 +158,22 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     return DataColumnSidecarValidationResult.valid();
   }
 
+  /**
+   * Validate parent block for the data column sidecar. Gossip rule: [REJECT] The sidecar's block's
+   * parent (defined by block_header.parent_root) passes validation. [REJECT] The sidecar is from a
+   * higher slot than the sidecar's block's parent (defined by block_header.parent_root). [REJECT]
+   * The current finalized_checkpoint is an ancestor of the sidecar's block -- i.e.
+   * get_checkpoint_block(store, block_header.parent_root, store.finalized_checkpoint.epoch) ==
+   * store.finalized_checkpoint.root.
+   *
+   * @param blockHeader the block header from the sidecar
+   * @param parentBlockSlot the slot of the parent block
+   * @param invalidBlockRoots map of invalid block roots
+   * @param currentFinalizedCheckpointIsAncestorOfBlock function to check finalized checkpoint
+   *     ancestry
+   * @return validation result
+   */
   /*
-   * [REJECT] The sidecar's block's parent (defined by block_header.parent_root) passes validation.
-   * [REJECT] The sidecar is from a higher slot than the sidecar's block's parent (defined by block_header.parent_root).
-   * [REJECT] The current finalized_checkpoint is an ancestor of the sidecar's block
-   * -- i.e. get_checkpoint_block(store, block_header.parent_root, store.finalized_checkpoint.epoch) == store.finalized_checkpoint.root.
    */
   @Override
   public DataColumnSidecarValidationResult validateParentBlock(
@@ -144,26 +182,16 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final BiPredicate<UInt64, Bytes32> currentFinalizedCheckpointIsAncestorOfBlock) {
 
-    /*
-     * [REJECT] The sidecar's block's parent (defined by block_header.parent_root) passes validation.
-     */
     if (invalidBlockRoots.containsKey(blockHeader.getParentRoot())) {
       return DataColumnSidecarValidationResult.invalid(
           "DataColumnSidecar block header has an invalid parent root");
     }
 
-    /*
-     * [REJECT] The sidecar is from a higher slot than the sidecar's block's parent (defined by block_header.parent_root).
-     */
     if (!blockHeader.getSlot().isGreaterThan(parentBlockSlot)) {
       return DataColumnSidecarValidationResult.invalid(
           "Parent block slot is after DataColumnSidecar slot");
     }
 
-    /*
-     * [REJECT] The current finalized_checkpoint is an ancestor of the sidecar's block
-     * -- i.e. get_checkpoint_block(store, block_header.parent_root, store.finalized_checkpoint.epoch) == store.finalized_checkpoint.root.
-     */
     if (!currentFinalizedCheckpointIsAncestorOfBlock.test(
         blockHeader.getSlot(), blockHeader.getParentRoot())) {
       return DataColumnSidecarValidationResult.invalid(
@@ -173,6 +201,12 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     return DataColumnSidecarValidationResult.valid();
   }
 
+  /**
+   * Extract the tracking key from a data column dataColumnSidecar.
+   *
+   * @param dataColumnSidecar the data column dataColumnSidecar
+   * @return the fork-appropriate tracking key
+   */
   @Override
   public DataColumnSidecarTrackingKey extractTrackingKey(
       final DataColumnSidecar dataColumnSidecar) {
@@ -182,6 +216,13 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
         header.getSlot(), header.getProposerIndex(), dataColumnSidecar.getIndex());
   }
 
+  /**
+   * Extract tracking key from block header and dataColumnSidecar for late validation check.
+   *
+   * @param header the beacon block header (may be null for Gloas)
+   * @param dataColumnSidecar the data column dataColumnSidecar
+   * @return the fork-appropriate tracking key
+   */
   @Override
   public DataColumnSidecarTrackingKey extractTrackingKeyFromHeader(
       final BeaconBlockHeader header, final DataColumnSidecar dataColumnSidecar) {
@@ -189,6 +230,13 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
         header.getSlot(), header.getProposerIndex(), dataColumnSidecar.getIndex());
   }
 
+  /**
+   * Verify structural validity of the data column dataColumnSidecar.
+   *
+   * @param specLogic the fork-specific SpecLogic containing MiscHelpers
+   * @param dataColumnSidecar the data column dataColumnSidecar
+   * @return true if structure is valid
+   */
   @Override
   public boolean verifyDataColumnSidecarStructure(
       final SpecLogic specLogic, final DataColumnSidecar dataColumnSidecar) {
@@ -196,9 +244,15 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     return miscHelpersFulu.verifyDataColumnSidecar(dataColumnSidecar);
   }
 
-  /*
-   * [REJECT] The sidecar's kzg_commitments field inclusion proof is valid as verified by
-   *   verify_data_column_sidecar_inclusion_proof(sidecar)
+  /**
+   * Verify inclusion proof if applicable. Gossip rule: [REJECT] The sidecar's kzg_commitments field
+   * inclusion proof is valid as verified by verify_data_column_sidecar_inclusion_proof(sidecar)
+   *
+   * @param specLogic the fork-specific SpecLogic containing MiscHelpers
+   * @param dataColumnSidecar the data column sidecar
+   * @param validInclusionProofInfoSet cache of previously validated inclusion proofs for
+   *     optimization
+   * @return true if inclusion proof is valid or not applicable
    */
   @Override
   public boolean verifyInclusionProof(
@@ -227,6 +281,13 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     }
   }
 
+  /**
+   * Verify KZG proofs for the data column sidecar.
+   *
+   * @param specLogic the fork-specific SpecLogic containing MiscHelpers
+   * @param dataColumnSidecar the data column sidecar
+   * @return true if KZG proofs are valid
+   */
   /*
    * [REJECT] The sidecar's column data is valid as verified by verify_data_column_sidecar_kzg_proofs(sidecar)
    */
@@ -237,6 +298,14 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     return miscHelpersFulu.verifyDataColumnSidecarKzgProofs(dataColumnSidecar);
   }
 
+  /**
+   * Get signature verification data if applicable.
+   *
+   * @param spec the Spec instance for domain and signing root computation
+   * @param state the beacon state for proposer lookup
+   * @param dataColumnSidecar the data column dataColumnSidecar
+   * @return Optional containing signature verification data if applicable
+   */
   @Override
   public Optional<SignatureVerificationData> getSignatureVerificationData(
       final Spec spec, final BeaconState state, final DataColumnSidecar dataColumnSidecar) {
@@ -257,12 +326,25 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
             signingRoot, header.getProposerIndex(), signedBlockHeader.getSignature()));
   }
 
+  /**
+   * Get beacon block header if applicable.
+   *
+   * @param dataColumnSidecar the data column dataColumnSidecar
+   * @return Optional containing the header if applicable
+   */
   @Override
   public Optional<BeaconBlockHeader> getBlockHeader(final DataColumnSidecar dataColumnSidecar) {
     return Optional.of(
         DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader().getMessage());
   }
 
+  /**
+   * Cache validated header/proof info for optimization if applicable.
+   *
+   * @param dataColumnSidecar the validated data column dataColumnSidecar
+   * @param validSignedBlockHeaders cache of validated signed block header hashes
+   * @param validInclusionProofInfoSet cache of validated inclusion proof info
+   */
   @Override
   public void cacheValidatedInfo(
       final DataColumnSidecar dataColumnSidecar,

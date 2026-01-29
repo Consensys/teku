@@ -43,21 +43,40 @@ import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
  */
 public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
 
+  /**
+   * Perform slot timing gossip validation checks
+   *
+   * @param dataColumnSidecar the data column sidecar to validate
+   * @param isSlotFromFuture function to check if a slot is from the future
+   * @return validation result, empty if it passes
+   */
   @Override
   public Optional<SlotInclusionGossipValidationResult> performSlotTimingValidation(
       final DataColumnSidecar dataColumnSidecar, final Predicate<UInt64> isSlotFromFuture) {
     return Optional.empty();
   }
 
+  /**
+   * Perform slot finalization gossip validation checks
+   *
+   * @param dataColumnSidecar the data column sidecar to validate
+   * @param isSlotFinalized function to check if a slot is finalized
+   * @return validation result, empty if it passes
+   */
   @Override
   public Optional<SlotInclusionGossipValidationResult> performSlotFinalizationValidation(
       final DataColumnSidecar dataColumnSidecar, final Predicate<UInt64> isSlotFinalized) {
     return Optional.empty();
   }
 
-  /*
-   * [IGNORE] The sidecar's beacon_block_root has been seen via a valid signed execution payload bid.
-   * A client MAY queue the sidecar for processing once the block is retrieved.
+  /**
+   * Check if the referenced block has been seen. Gossip rule: [IGNORE] The sidecar's
+   * beacon_block_root has been seen via a valid signed execution payload bid. A client MAY queue
+   * the sidecar for processing once the block is retrieved.
+   *
+   * @param dataColumnSidecar the data column sidecar to validate
+   * @param isBlockRootSeen function to check if a block root has been seen
+   * @return true if the referenced block has been seen
    */
   @Override
   public boolean isBlockSeen(
@@ -65,9 +84,15 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
     return isBlockRootSeen.apply(dataColumnSidecar.getBeaconBlockRoot());
   }
 
-  /*
-   * [REJECT] The hash of the sidecar's kzg_commitments matches the blob_kzg_commitments_root
-   * in the corresponding builder's bid for sidecar.beacon_block_root
+  /**
+   * Validate that the sidecar's KZG commitments root matches the block's KZG commitments root.
+   * Gossip rule: [REJECT] The hash of the sidecar's kzg_commitments matches the
+   * blob_kzg_commitments_root in the corresponding builder's bid for sidecar.beacon_block_root
+   *
+   * @param dataColumnSidecar the data column sidecar to validate
+   * @param getBlockKzgCommitmentsRoot function to get the block's kzg commitments root by block
+   *     root
+   * @return validation result
    */
   @Override
   public DataColumnSidecarValidationResult validateKzgCommitmentsRoot(
@@ -96,8 +121,13 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
     return DataColumnSidecarValidationResult.valid();
   }
 
-  /*
-   * [REJECT] The sidecar's slot matches the slot of the block with root beacon_block_root
+  /**
+   * Validate that the sidecar's slot matches the referenced block's slot. Gossip rule: [REJECT] The
+   * sidecar's slot matches the slot of the block with root beacon_block_root
+   *
+   * @param dataColumnSidecar the data column sidecar to validate
+   * @param getSlotForBlockRoot function to get the slot for a block root
+   * @return validation result
    */
   @Override
   public DataColumnSidecarValidationResult validateBlockSlot(
@@ -119,6 +149,16 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
     return DataColumnSidecarValidationResult.valid();
   }
 
+  /**
+   * Validate parent block for the data column sidecar.
+   *
+   * @param dataColumnSidecar the block header from the sidecar
+   * @param parentBlockSlot the slot of the parent block
+   * @param invalidBlockRoots map of invalid block roots
+   * @param currentFinalizedCheckpointIsAncestorOfBlock function to check finalized checkpoint
+   *     ancestry
+   * @return validation result
+   */
   @Override
   public DataColumnSidecarValidationResult validateParentBlock(
       final BeaconBlockHeader dataColumnSidecar,
@@ -129,12 +169,25 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
     return DataColumnSidecarValidationResult.valid();
   }
 
+  /**
+   * Extract tracking key from block header and dataColumnSidecar for late validation check.
+   *
+   * @param header the beacon block header (may be null for Gloas)
+   * @param dataColumnSidecar the data column dataColumnSidecar
+   * @return the fork-appropriate tracking key
+   */
   @Override
   public DataColumnSidecarTrackingKey extractTrackingKeyFromHeader(
       final BeaconBlockHeader header, final DataColumnSidecar dataColumnSidecar) {
     return extractTrackingKey(dataColumnSidecar);
   }
 
+  /**
+   * Extract the tracking key from a data column dataColumnSidecar.
+   *
+   * @param dataColumnSidecar the data column dataColumnSidecar
+   * @return the fork-appropriate tracking key
+   */
   @Override
   public DataColumnSidecarTrackingKey extractTrackingKey(
       final DataColumnSidecar dataColumnSidecar) {
@@ -142,6 +195,13 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
         dataColumnSidecar.getBeaconBlockRoot(), dataColumnSidecar.getIndex());
   }
 
+  /**
+   * Verify structural validity of the data column dataColumnSidecar.
+   *
+   * @param specLogic the fork-specific SpecLogic containing MiscHelpers
+   * @param dataColumnSidecar the data column dataColumnSidecar
+   * @return true if structure is valid
+   */
   @Override
   public boolean verifyDataColumnSidecarStructure(
       final SpecLogic specLogic, final DataColumnSidecar dataColumnSidecar) {
@@ -149,6 +209,15 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
     return miscHelpersGloas.verifyDataColumnSidecar(dataColumnSidecar);
   }
 
+  /**
+   * Verify inclusion proof if applicable.
+   *
+   * @param specLogic the fork-specific SpecLogic containing MiscHelpers
+   * @param dataColumnSidecar the data column sidecar
+   * @param validInclusionProofInfoSet cache of previously validated inclusion proofs for
+   *     optimization
+   * @return true if inclusion proof is valid or not applicable
+   */
   @Override
   public boolean verifyInclusionProof(
       final SpecLogic specLogic,
@@ -158,9 +227,13 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
     return true;
   }
 
-  /*
-   * [REJECT] The sidecar's column data is valid as verified by
-   *   verify_data_column_sidecar_kzg_proofs(sidecar)
+  /**
+   * Verify KZG proofs for the data column sidecar. Gossip rule: [REJECT] The sidecar's column data
+   * is valid as verified by verify_data_column_sidecar_kzg_proofs(sidecar)
+   *
+   * @param specLogic the fork-specific SpecLogic containing MiscHelpers
+   * @param dataColumnSidecar the data column sidecar
+   * @return true if KZG proofs are valid
    */
   @Override
   public boolean verifyDataColumnSidecarKzgProofs(
@@ -169,6 +242,14 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
     return miscHelpersGloas.verifyDataColumnSidecarKzgProofs(dataColumnSidecar);
   }
 
+  /**
+   * Get signature verification data if applicable.
+   *
+   * @param spec the Spec instance for domain and signing root computation
+   * @param state the beacon state for proposer lookup
+   * @param dataColumnSidecar the data column dataColumnSidecar
+   * @return Optional containing signature verification data if applicable
+   */
   @Override
   public Optional<SignatureVerificationData> getSignatureVerificationData(
       final Spec spec, final BeaconState state, final DataColumnSidecar dataColumnSidecar) {
@@ -176,12 +257,25 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
     return Optional.empty();
   }
 
+  /**
+   * Get beacon block header if applicable.
+   *
+   * @param dataColumnSidecar the data column dataColumnSidecar
+   * @return Optional containing the header if applicable
+   */
   @Override
   public Optional<BeaconBlockHeader> getBlockHeader(final DataColumnSidecar dataColumnSidecar) {
     // Gloas sidecars don't contain block headers
     return Optional.empty();
   }
 
+  /**
+   * Cache validated header/proof info for optimization if applicable.
+   *
+   * @param dataColumnSidecar the validated data column dataColumnSidecar
+   * @param validSignedBlockHeaders cache of validated signed block header hashes
+   * @param validInclusionProofInfoSet cache of validated inclusion proof info
+   */
   @Override
   public void cacheValidatedInfo(
       final DataColumnSidecar dataColumnSidecar,
