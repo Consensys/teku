@@ -51,6 +51,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
   private final BatchDataColumnsByRootReqResp byRootRpc;
   private final DataColumnsByRootIdentifierSchema byRootSchema;
   private final Spec spec;
+  private final int cellsTargetPerRequest;
 
   public DataColumnReqRespBatchingImpl(
       final BatchDataColumnsByRootReqResp byRootRpc,
@@ -59,6 +60,10 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
     this.byRootRpc = byRootRpc;
     this.byRootSchema = byRootSchema;
     this.spec = spec;
+    this.cellsTargetPerRequest =
+        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
+                .getMaxRequestDataColumnSidecars()
+            * 2;
   }
 
   private record RequestEntry(
@@ -111,11 +116,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
     // for 21 max blobs it will be 1560 sidecars per request, 12+ full blocks
     // for 72 max blobs it will be 455 sidecars per request, ~3.5 full blocks
     final int maxBlobs = getMaxBlobsForRequests(nodeRequests);
-    final int maxSidecarsInRequest =
-        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
-                .getMaxRequestDataColumnSidecars()
-            * 2
-            / maxBlobs;
+    final int maxSidecarsInRequest = cellsTargetPerRequest / maxBlobs;
     final List<List<DataColumnsByRootIdentifier>> byRootBatches =
         partitionRequests(byRootIdentifiers, maxSidecarsInRequest);
 
