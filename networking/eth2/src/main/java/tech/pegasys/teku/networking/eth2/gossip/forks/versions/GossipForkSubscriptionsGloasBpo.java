@@ -101,7 +101,7 @@ public class GossipForkSubscriptionsGloasBpo extends GossipForkSubscriptionsGloa
         debugDataDumper,
         dasGossipLogger,
         executionProofOperationProcessor,
-            p2PConfig);
+        p2PConfig);
     this.bpo = bpo;
   }
 

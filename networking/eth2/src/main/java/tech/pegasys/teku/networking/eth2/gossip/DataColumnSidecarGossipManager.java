@@ -61,7 +61,7 @@ public class DataColumnSidecarGossipManager implements GossipManager {
   }
 
   @Override
-  public boolean isEnabledDuringOptimisticSync(){
+  public boolean isEnabledDuringOptimisticSync() {
     return subscribedToAllCustodySubnetsEnabled;
   }
 }

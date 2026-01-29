@@ -120,7 +120,10 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
             forkDigest);
 
     this.dataColumnSidecarGossipManager =
-        new DataColumnSidecarGossipManager(dataColumnSidecarSubnetSubscriptions, dasGossipLogger, p2pConfig.isSubscribedToAllCustodySubnetsEnabled());
+        new DataColumnSidecarGossipManager(
+            dataColumnSidecarSubnetSubscriptions,
+            dasGossipLogger,
+            p2pConfig.isSubscribedToAllCustodySubnetsEnabled());
 
     addGossipManager(dataColumnSidecarGossipManager);
   }

@@ -91,7 +91,7 @@ public class GossipForkSubscriptionsFuluBpo extends GossipForkSubscriptionsFulu 
         debugDataDumper,
         dasGossipLogger,
         executionProofOperationProcessor,
-            p2PConfig);
+        p2PConfig);
     this.bpo = bpo;
   }
 
