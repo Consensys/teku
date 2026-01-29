@@ -24,6 +24,9 @@ public class Constants {
   public static final int VALID_BLOCK_SET_SIZE = 1000;
   // Target holding 2 slots worth of payload attestations
   public static final int VALID_PAYLOAD_ATTESTATION_SET_SIZE = 512 * 2;
+  // The cache is used for the `payload_present` voting and gossip validation, so no need for a long
+  // term caching
+  public static final int RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE = 32;
   // Target holding two slots worth of aggregators (16 aggregators, 64 committees and 2 slots)
   public static final int VALID_AGGREGATE_SET_SIZE = 16 * 64 * 2;
   // Target 2 different attestation data (aggregators normally agree) for two slots

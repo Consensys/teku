@@ -33,6 +33,8 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
@@ -268,5 +270,26 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
 
               return false;
             });
+  }
+
+  @Override
+  public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
+    LOG.debug("Sampler received block {} - origin: {}", block.getSlotAndBlockRoot(), remoteOrigin);
+    getOrCreateTracker(block.getSlot(), block.getRoot());
+  }
+
+  @Override
+  public void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {
+    final DataColumnSamplingTracker removed =
+        recentlySampledColumnsByRoot.remove(slotAndBlockRoot.getBlockRoot());
+    if (removed != null) {
+      removed.completionFuture().cancel(true);
+      LOG.debug("Removed data column sampling tracker {}", removed);
+    }
+  }
+
+  @Override
+  public void enableBlockImportOnCompletion(final SignedBeaconBlock block) {
+    // nothing to do
   }
 }
