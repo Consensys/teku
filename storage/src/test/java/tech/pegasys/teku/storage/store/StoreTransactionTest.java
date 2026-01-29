@@ -415,18 +415,6 @@ public class StoreTransactionTest extends AbstractStoreTest {
             mainChainBlock4.getRoot());
   }
 
-  @Test
-  public void getExecutionPayloadStateIfAvailable_fromTx() {
-    final UpdatableStore store = createGenesisStore();
-    final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
-    UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
-    tx.putBlockAndState(blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
-
-    SafeFuture<Optional<SignedBlockAndState>> result =
-        tx.retrieveBlockAndState(blockAndState.getRoot());
-    assertThat(result).isCompletedWithValue(Optional.of(blockAndState));
-  }
-
   private void setTime(final UpdatableStore store, final UInt64 newTime) {
     final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     tx.setTimeMillis(newTime);

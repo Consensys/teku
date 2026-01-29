@@ -1103,18 +1103,24 @@ class Store extends CacheableStore {
     return maybeEpochStates;
   }
 
-  void removeStateAndBlock(final Bytes32 root) {
-    blocks.remove(root);
-    blockStates.remove(root);
+  void removeBlockAndState(final Bytes32 blockRoot) {
+    blocks.remove(blockRoot);
+    blockStates.remove(blockRoot);
     maybeEpochStates.ifPresent(
         epochStates -> {
-          if (!finalizedAnchor.getRoot().equals(root)) {
-            final StateAndBlockSummary stateAndBlockSummary = epochStates.remove(root);
+          if (!finalizedAnchor.getRoot().equals(blockRoot)) {
+            final StateAndBlockSummary stateAndBlockSummary = epochStates.remove(blockRoot);
             if (stateAndBlockSummary != null) {
               LOG.trace("epochCache REM {}", stateAndBlockSummary::getSlot);
             }
           }
         });
+  }
+
+  void removeExecutionPayloadAndState(final Bytes32 blockRoot) {
+    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 remove execution payload when we
+    // implement storing it
+    executionPayloadStates.remove(blockRoot);
   }
 
   void updateFinalizedAnchor(final AnchorPoint latestFinalized) {
