@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.Constants.HIGHEST_BID_SET_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_SLOTS_TO_TRACK_BUILDERS_BIDS;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
@@ -88,19 +87,17 @@ public class ExecutionPayloadBidGossipValidator {
      */
     final SlotAndBlockHash bidValueKey =
         new SlotAndBlockHash(bid.getSlot(), bid.getParentBlockHash());
-    if (highestBids.containsKey(bidValueKey)) {
-      final UInt64 existingBidValue = highestBids.getOrDefault(bidValueKey, ZERO);
-      if (bid.getValue().isLessThanOrEqualTo(existingBidValue)) {
-        LOG.trace(
-            "Already received a bid with a equal or higher value {} for block with parent hash {}. Current bid's value is {}",
-            existingBidValue,
-            bid.getParentBlockHash(),
-            bid.getValue());
-        return completedFuture(
-            ignore(
-                "Already received a bid with equal or higher value %s for block with parent hash %s. Current bid's value is %s",
-                existingBidValue, bid.getParentBlockHash(), bid.getValue()));
-      }
+    final UInt64 existingBidValue = highestBids.get(bidValueKey);
+    if (existingBidValue != null && bid.getValue().isLessThanOrEqualTo(existingBidValue)) {
+      LOG.trace(
+          "Already received a bid with a equal or higher value {} for block with parent hash {}. Current bid's value is {}",
+          existingBidValue,
+          bid.getParentBlockHash(),
+          bid.getValue());
+      return completedFuture(
+          ignore(
+              "Already received a bid with equal or higher value %s for block with parent hash %s. Current bid's value is %s",
+              existingBidValue, bid.getParentBlockHash(), bid.getValue()));
     }
 
     /*
