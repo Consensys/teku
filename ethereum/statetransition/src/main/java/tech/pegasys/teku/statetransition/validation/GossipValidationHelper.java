@@ -165,8 +165,7 @@ public class GossipValidationHelper {
 
   public boolean isValidBuilderIndex(
       final UInt64 builderIndex, final BeaconState state, final UInt64 slot) {
-    if (builderIndex.isGreaterThanOrEqualTo(state.getValidators().size())
-        || builderIndex.intValue() < 0) {
+    if (builderIndex.isGreaterThanOrEqualTo(state.getValidators().size())) {
       return false;
     }
     final int index = builderIndex.intValue();
