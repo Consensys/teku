@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -94,7 +94,6 @@ public class P2PConfig {
   private final boolean allTopicsFilterEnabled;
   private final int reworkedSidecarRecoveryTimeout;
   private final int reworkedSidecarDownloadTimeout;
-  private final boolean reworkedSidecarRecoveryEnabled;
   private final int reworkedSidecarSyncBatchSize;
   private final int reworkedSidecarSyncPollPeriod;
   private final boolean reworkedSidecarSyncEnabled;
@@ -123,7 +122,6 @@ public class P2PConfig {
       final boolean batchVerifyStrictThreadLimitEnabled,
       final boolean allTopicsFilterEnabled,
       final boolean isGossipBlobsAfterBlockEnabled,
-      final boolean reworkedSidecarRecoveryEnabled,
       final int reworkedSidecarRecoveryTimeout,
       final int reworkedSidecarDownloadTimeout,
       final boolean reworkedSidecarSyncEnabled,
@@ -153,7 +151,6 @@ public class P2PConfig {
     this.networkingSpecConfig = spec.getNetworkingConfig();
     this.allTopicsFilterEnabled = allTopicsFilterEnabled;
     this.isGossipBlobsAfterBlockEnabled = isGossipBlobsAfterBlockEnabled;
-    this.reworkedSidecarRecoveryEnabled = reworkedSidecarRecoveryEnabled;
     this.reworkedSidecarDownloadTimeout = reworkedSidecarDownloadTimeout;
     this.reworkedSidecarRecoveryTimeout = reworkedSidecarRecoveryTimeout;
     this.reworkedSidecarSyncEnabled = reworkedSidecarSyncEnabled;
@@ -263,10 +260,6 @@ public class P2PConfig {
     return isGossipBlobsAfterBlockEnabled;
   }
 
-  public boolean isReworkedSidecarRecoveryEnabled() {
-    return reworkedSidecarRecoveryEnabled;
-  }
-
   public int getReworkedSidecarRecoveryTimeout() {
     return reworkedSidecarRecoveryTimeout;
   }
@@ -320,7 +313,6 @@ public class P2PConfig {
         DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
     private boolean gossipBlobsAfterBlockEnabled = DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED;
     private boolean executionProofTopicEnabled = DEFAULT_EXECUTION_PROOF_GOSSIP_ENABLED;
-    private boolean reworkedSidecarRecoveryEnabled = true;
     private Integer reworkedSidecarRecoveryTimeout = DEFAULT_RECOVERY_TIMEOUT_MS;
     private Integer reworkedSidecarDownloadTimeout = DEFAULT_DOWNLOAD_TIMEOUT_MS;
 
@@ -394,7 +386,6 @@ public class P2PConfig {
           batchVerifyStrictThreadLimitEnabled,
           allTopicsFilterEnabled,
           gossipBlobsAfterBlockEnabled,
-          reworkedSidecarRecoveryEnabled,
           reworkedSidecarRecoveryTimeout,
           reworkedSidecarDownloadTimeout,
           reworkedSidecarSyncEnabled,
@@ -578,11 +569,6 @@ public class P2PConfig {
 
     public Builder reworkedSidecarDownloadTimeout(final Integer reworkedSidecarDownloadTimeout) {
       this.reworkedSidecarDownloadTimeout = reworkedSidecarDownloadTimeout;
-      return this;
-    }
-
-    public Builder reworkedSidecarRecoveryEnabled(final boolean reworkedSidecarRecoveryEnabled) {
-      this.reworkedSidecarRecoveryEnabled = reworkedSidecarRecoveryEnabled;
       return this;
     }
 

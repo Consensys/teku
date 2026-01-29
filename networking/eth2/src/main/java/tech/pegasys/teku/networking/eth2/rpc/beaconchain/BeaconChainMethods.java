@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -48,7 +48,6 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -613,7 +612,7 @@ public class BeaconChainMethods {
     final ExecutionPayloadEnvelopesByRangeMessageHandler
         executionPayloadEnvelopesByRangeMessageHandler =
             new ExecutionPayloadEnvelopesByRangeMessageHandler(
-                getSpecConfigGloas(spec), metricsSystem);
+                spec, metricsSystem, recentChainData);
 
     return Optional.of(
         new SingleProtocolEth2RpcMethod<>(
@@ -738,10 +737,6 @@ public class BeaconChainMethods {
 
   private static SpecConfigFulu getSpecConfigFulu(final Spec spec) {
     return SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
-  }
-
-  private static SpecConfigGloas getSpecConfigGloas(final Spec spec) {
-    return SpecConfigGloas.required(spec.forMilestone(SpecMilestone.GLOAS).getConfig());
   }
 
   public Collection<RpcMethod<?, ?, ?>> all() {

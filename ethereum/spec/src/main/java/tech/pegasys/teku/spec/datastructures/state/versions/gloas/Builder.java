@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.unsigned.ByteUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
@@ -40,7 +41,7 @@ public class Builder
       super(
           "Builder",
           namedSchema("pubkey", SszPublicKeySchema.INSTANCE),
-          namedSchema("version", SszPrimitiveSchemas.BYTE_SCHEMA),
+          namedSchema("version", SszPrimitiveSchemas.UINT8_SCHEMA),
           namedSchema("execution_address", SszByteVectorSchema.create(Bytes20.SIZE)),
           namedSchema("balance", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("deposit_epoch", SszPrimitiveSchemas.UINT64_SCHEMA),
@@ -61,7 +62,7 @@ public class Builder
 
   public Builder(
       final BLSPublicKey pubkey,
-      final Byte version,
+      final int version,
       final Eth1Address executionAddress,
       final UInt64 balance,
       final UInt64 depositEpoch,
@@ -69,7 +70,7 @@ public class Builder
     super(
         SSZ_SCHEMA,
         new SszPublicKey(pubkey),
-        SszByte.of(version),
+        SszByte.asUInt8(version),
         SszByteVector.fromBytes(executionAddress.getWrappedBytes()),
         SszUInt64.of(balance),
         SszUInt64.of(depositEpoch),
@@ -80,8 +81,8 @@ public class Builder
     return getField0().getBLSPublicKey();
   }
 
-  public Byte getVersion() {
-    return getField1().get();
+  public int getVersion() {
+    return ByteUtil.toUnsignedInt(getField1().get());
   }
 
   public Eth1Address getExecutionAddress() {
@@ -98,6 +99,26 @@ public class Builder
 
   public UInt64 getWithdrawableEpoch() {
     return getField5().get();
+  }
+
+  public Builder copyWithNewWithdrawableEpoch(final UInt64 withdrawableEpoch) {
+    return new Builder(
+        getPublicKey(),
+        getVersion(),
+        getExecutionAddress(),
+        getBalance(),
+        getDepositEpoch(),
+        withdrawableEpoch);
+  }
+
+  public Builder copyWithNewBalance(final UInt64 balance) {
+    return new Builder(
+        getPublicKey(),
+        getVersion(),
+        getExecutionAddress(),
+        balance,
+        getDepositEpoch(),
+        getWithdrawableEpoch());
   }
 
   @Override

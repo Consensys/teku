@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -151,6 +151,7 @@ import tech.pegasys.teku.statetransition.attestation.utils.AggregatingAttestatio
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.blobs.BlockEventsListenerRouter;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
@@ -189,7 +190,6 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DasPeerCustodyCou
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqResp;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqRespBatchingImpl;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
-import tech.pegasys.teku.statetransition.datacolumns.retriever.RecoveringSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.SimpleSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever;
 import tech.pegasys.teku.statetransition.execution.DefaultExecutionPayloadBidManager;
@@ -886,7 +886,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initExecutionPayloadManager() {
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
       final ExecutionPayloadGossipValidator executionPayloadGossipValidator =
-          new ExecutionPayloadGossipValidator();
+          new ExecutionPayloadGossipValidator(spec, gossipValidationHelper, invalidBlockRoots);
       executionPayloadManager =
           new DefaultExecutionPayloadManager(
               beaconAsyncRunner, executionPayloadGossipValidator, forkChoice, executionLayer);
@@ -1004,34 +1004,19 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     simpleSidecarRetriever = Optional.of(sidecarRetriever);
 
-    final DataColumnSidecarRetriever recoveringSidecarRetriever;
-    if (beaconConfig.p2pConfig().isReworkedSidecarRecoveryEnabled()) {
-      recoveringSidecarRetriever =
-          new SidecarRetriever(
-              sidecarRetriever,
-              miscHelpersFulu,
-              dbAccessor,
-              dasAsyncRunner,
-              Duration.ofMillis(beaconConfig.p2pConfig().getReworkedSidecarRecoveryTimeout()),
-              Duration.ofMillis(beaconConfig.p2pConfig().getReworkedSidecarDownloadTimeout()),
-              Duration.ofSeconds(15),
-              timeProvider,
-              specConfigFulu.getNumberOfColumns(),
-              custodyGroupCountManager,
-              metricsSystem);
-    } else {
-      recoveringSidecarRetriever =
-          new RecoveringSidecarRetriever(
-              sidecarRetriever,
-              miscHelpersFulu,
-              canonicalBlockResolver,
-              dbAccessor,
-              dasAsyncRunner,
-              Duration.ofMinutes(5),
-              Duration.ofSeconds(30),
-              timeProvider,
-              specConfigFulu.getNumberOfColumns());
-    }
+    final DataColumnSidecarRetriever recoveringSidecarRetriever =
+        new SidecarRetriever(
+            sidecarRetriever,
+            miscHelpersFulu,
+            dbAccessor,
+            dasAsyncRunner,
+            Duration.ofMillis(beaconConfig.p2pConfig().getReworkedSidecarRecoveryTimeout()),
+            Duration.ofMillis(beaconConfig.p2pConfig().getReworkedSidecarDownloadTimeout()),
+            Duration.ofSeconds(15),
+            timeProvider,
+            specConfigFulu.getNumberOfColumns(),
+            custodyGroupCountManager,
+            metricsSystem);
 
     if (beaconConfig.p2pConfig().isReworkedSidecarSyncEnabled()) {
       final DasCustodyBackfiller custodyBackfiller =
@@ -1443,7 +1428,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
 
     this.blobReconstructionProvider =
-        new BlobReconstructionProvider(combinedChainDataClient, networkRetriever, spec);
+        BlobReconstructionProvider.create(combinedChainDataClient, networkRetriever, spec);
   }
 
   protected void initDataProvider() {
@@ -2096,11 +2081,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
             ? Optional.of(BlockImportMetrics.create(metricsSystem))
             : Optional.empty();
 
+    final BlockEventsListenerRouter blockEventsListenerRouter =
+        new BlockEventsListenerRouter(
+            blockBlobSidecarsTrackersPool, () -> dataAvailabilitySampler, recentChainData, spec);
+
     blockManager =
         new BlockManager(
             recentChainData,
             blockImporter,
-            blockBlobSidecarsTrackersPool,
+            blockEventsListenerRouter,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,
