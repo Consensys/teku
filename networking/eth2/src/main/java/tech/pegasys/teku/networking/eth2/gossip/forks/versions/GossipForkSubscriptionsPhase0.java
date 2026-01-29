@@ -49,7 +49,6 @@ import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
-  private static final Logger LOG = LogManager.getLogger();
   private final List<GossipManager> gossipManagers = new ArrayList<>();
   private final Fork fork;
   protected final Spec spec;
@@ -119,7 +118,6 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
       final Bytes4 forkDigest = recentChainData.getForkDigest(getActivationEpoch());
       addGossipManagers(forkInfo, forkDigest);
     }
-    LOG.info("---GossipManagers {}", gossipManagers);
     gossipManagers.stream()
         .filter(manager -> manager.isEnabledDuringOptimisticSync() || !isOptimisticHead)
         .forEach(GossipManager::subscribe);
