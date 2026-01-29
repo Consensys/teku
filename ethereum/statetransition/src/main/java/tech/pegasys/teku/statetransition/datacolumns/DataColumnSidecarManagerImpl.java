@@ -57,7 +57,6 @@ public class DataColumnSidecarManagerImpl implements DataColumnSidecarManager {
   @Override
   public SafeFuture<InternalValidationResult> onDataColumnSidecarGossip(
       final DataColumnSidecar dataColumnSidecar, final Optional<UInt64> arrivalTimestamp) {
-    LOG.info("Received data column sidecar from GOSSIP: {}", dataColumnSidecar);
     final SafeFuture<InternalValidationResult> validation;
     try (Timer ignored = histogram.startTimer()) {
       validation = validator.validate(dataColumnSidecar);
