@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -12,6 +12,8 @@
  */
 
 package tech.pegasys.teku.statetransition.execution;
+
+import static tech.pegasys.teku.spec.config.Constants.RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE;
 
 import java.util.Optional;
 import java.util.Set;
@@ -32,10 +34,6 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 public class DefaultExecutionPayloadManager implements ExecutionPayloadManager {
 
   private static final Logger LOG = LogManager.getLogger();
-
-  // The cache is currently only used for the `payload_present` voting, so no need for a long term
-  // caching
-  private static final int RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE = 32;
 
   private final Set<Bytes32> recentSeenExecutionPayloads =
       LimitedSet.createSynchronized(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
