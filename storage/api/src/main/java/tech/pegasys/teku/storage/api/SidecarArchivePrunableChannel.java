@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2026
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,20 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.rpc.core;
+package tech.pegasys.teku.storage.api;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public interface ResponseCallback<T> {
-  SafeFuture<Void> respond(T data);
-
-  void respondAndCompleteSuccessfully(T data);
-
-  void completeSuccessfully();
-
-  void completeWithErrorResponse(RpcException error);
-
-  void completeWithUnexpectedError(Throwable error);
-
-  void alwaysRun(Runnable runnable);
+public interface SidecarArchivePrunableChannel extends VoidReturningChannelInterface {
+  SafeFuture<Void> onSidecarArchivePrunableSlot(UInt64 slot);
 }

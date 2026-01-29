@@ -66,6 +66,7 @@ import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
@@ -1221,6 +1222,76 @@ public class KvStoreDatabase implements Database {
     }
   }
 
+  @Override
+  public void archiveSidecarsProofs(
+      final UInt64 startSlot, final UInt64 tillSlotInclusive, final int archiveLimit) {
+    // TODO: inject halfColumns here
+    final int halfColumns = 64;
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnSidecars =
+        streamDataColumnIdentifiers(startSlot, tillSlotInclusive)) {
+
+      int archivedSlots = 0;
+
+      final Map<UInt64, List<DataColumnSlotAndIdentifier>> archiveMap = new HashMap<>();
+
+      dataColumnSidecars
+          // we need only extension
+          .filter(identifier -> identifier.columnIndex().isGreaterThanOrEqualTo(halfColumns))
+          .takeWhile(
+              item -> archiveMap.size() < archiveLimit || archiveMap.containsKey(item.slot()))
+          .forEach(
+              item -> archiveMap.computeIfAbsent(item.slot(), k -> new ArrayList<>()).add(item));
+
+      final List<UInt64> slots = archiveMap.keySet().stream().sorted().toList();
+
+      if (!slots.isEmpty()) {
+        LOG.debug(
+            "Archiving data column sidecar proofs from slots {} to {}",
+            slots.getFirst(),
+            slots.getLast());
+        try (final FinalizedUpdater updater = finalizedUpdater()) {
+          for (final UInt64 slot : slots) {
+            final List<DataColumnSlotAndIdentifier> keys =
+                archiveMap.get(slot).stream().sorted().toList();
+            final List<DataColumnSidecar> sidecars = new ArrayList<>();
+
+            for (final DataColumnSlotAndIdentifier key : keys) {
+              final Optional<Bytes> sidecar = dao.getSidecar(key);
+              // surprise, let's skip this slot
+              if (sidecar.isEmpty()) {
+                break;
+              }
+              sidecars.add(spec.deserializeSidecar(sidecar.get(), key.slot()));
+            }
+
+            // remove sidecars only if we have required 1/2
+            if (sidecars.size() == halfColumns) {
+              final List<List<KZGProof>> proofs =
+                  sidecars.stream()
+                      .map(
+                          sidecar ->
+                              sidecar.getKzgProofs().stream()
+                                  .map(SszKZGProof::getKZGProof)
+                                  .toList())
+                      .toList();
+              updater.addDataColumnSidecarsProofs(slot, proofs);
+              for (final DataColumnSlotAndIdentifier key : keys) {
+                updater.removeSidecar(key);
+              }
+              ++archivedSlots;
+            }
+          }
+          updater.commit();
+        }
+        LOG.debug("Archived data column sidecars in {} slots", archivedSlots);
+      }
+
+      if (archivedSlots >= archiveLimit) {
+        LOG.debug("Data column sidecars archivation reached the limit of {}", archiveLimit);
+      }
+    }
+  }
+
   boolean pruneDataColumnSidecars(
       final int pruneSlotLimit,
       final Stream<DataColumnSlotAndIdentifier> dataColumnSlotAndIdentifierStream,
@@ -1250,6 +1321,10 @@ public class KvStoreDatabase implements Database {
               updater.removeNonCanonicalSidecar(key);
             } else {
               updater.removeSidecar(key);
+            }
+
+            if (!nonCanonicalBlobSidecars) {
+              updater.removeDataColumnSidecarsProofs(slot);
             }
           }
 
