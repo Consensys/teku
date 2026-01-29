@@ -57,10 +57,8 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
         executionPayloadBidGossipValidator.validate(signedBid);
     validationResult.thenAccept(
         result -> {
-          switch (result.code()) {
-            // TODO-GLOAS handle bids
-            case ACCEPT, REJECT, SAVE_FOR_FUTURE, IGNORE -> {}
-          }
+          // TODO-GLOAS handle bids
+          throw new UnsupportedOperationException("Not yet implemented");
         });
     return validationResult;
   }
