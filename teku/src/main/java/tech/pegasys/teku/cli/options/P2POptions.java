@@ -209,6 +209,15 @@ public class P2POptions {
   private OptionalInt p2pUpperBound = OptionalInt.empty();
 
   @Option(
+      names = {"--Xp2p-target-attestation-subnet-subscriber-count"},
+      paramLabel = "<INTEGER>",
+      description = "Target number of peers subscribed to each attestation subnet",
+      arity = "1",
+      hidden = true)
+  private int p2pTargetAttestationSubnetSubscriberCount =
+      P2PConfig.DEFAULT_P2P_TARGET_ATTESTATION_SUBNET_SUBSCRIBER_COUNT;
+
+  @Option(
       names = {"--Xp2p-target-subnet-subscriber-count"},
       paramLabel = "<INTEGER>",
       description =
@@ -683,6 +692,7 @@ public class P2POptions {
                   .batchVerifyMaxThreads(batchVerifyMaxThreads)
                   .batchVerifyMaxBatchSize(batchVerifyMaxBatchSize)
                   .batchVerifyStrictThreadLimitEnabled(batchVerifyStrictThreadLimitEnabled)
+                  .targetAttestationSubnetSubscriberCount(p2pTargetAttestationSubnetSubscriberCount)
                   .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
                   .isGossipScoringEnabled(gossipScoringEnabled)
                   .peerBlocksRateLimit(peerBlocksRateLimit)

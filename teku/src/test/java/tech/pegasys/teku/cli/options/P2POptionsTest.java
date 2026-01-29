@@ -37,6 +37,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.assertj.core.api.Fail;
@@ -70,7 +71,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration tekuConfig = getTekuConfigurationFromFile("P2POptions_config.yaml");
 
     final P2PConfig p2pConfig = tekuConfig.p2p();
-    assertThat(p2pConfig.getTargetSubnetSubscriberCount()).isEqualTo(5);
+    assertThat(p2pConfig.getTargetAttestationSubnetSubscriberCount()).isEqualTo(5);
+    assertThat(p2pConfig.getTargetSubnetSubscriberCount()).isEqualTo(OptionalInt.of(2));
     assertThat(p2pConfig.getPeerBlocksRateLimit()).isEqualTo(100);
     assertThat(p2pConfig.getPeerBlobSidecarsRateLimit()).isEqualTo(400);
     assertThat(p2pConfig.getPeerRequestLimit()).isEqualTo(101);

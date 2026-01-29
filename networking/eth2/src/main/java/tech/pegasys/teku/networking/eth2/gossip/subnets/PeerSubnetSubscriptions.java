@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Streams;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -25,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -47,18 +47,21 @@ public class PeerSubnetSubscriptions {
   private final SubnetSubscriptions dataColumnSidecarSubnetSubscriptions;
   private final NodeIdToDataColumnSidecarSubnetsCalculator
       nodeIdToDataColumnSidecarSubnetsCalculator;
-  private final int targetSubnetSubscriberCount;
+  private final int targetAttestationSubnetSubscriberCount;
+  private final OptionalInt targetSubnetSubscriberCount;
 
   private PeerSubnetSubscriptions(
       final SubnetSubscriptions attestationSubnetSubscriptions,
       final SubnetSubscriptions syncCommitteeSubnetSubscriptions,
       final SubnetSubscriptions dataColumnSidecarSubnetSubscriptions,
       final NodeIdToDataColumnSidecarSubnetsCalculator nodeIdToDataColumnSidecarSubnetsCalculator,
-      final int targetSubnetSubscriberCount) {
+      final int targetAttestationSubnetSubscriberCount,
+      final OptionalInt targetSubnetSubscriberCount) {
     this.attestationSubnetSubscriptions = attestationSubnetSubscriptions;
     this.syncCommitteeSubnetSubscriptions = syncCommitteeSubnetSubscriptions;
     this.dataColumnSidecarSubnetSubscriptions = dataColumnSidecarSubnetSubscriptions;
     this.nodeIdToDataColumnSidecarSubnetsCalculator = nodeIdToDataColumnSidecarSubnetsCalculator;
+    this.targetAttestationSubnetSubscriberCount = targetAttestationSubnetSubscriberCount;
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
   }
 
@@ -71,7 +74,8 @@ public class PeerSubnetSubscriptions {
       final SubnetSubscriptionService syncCommitteeSubnetService,
       final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider,
       final SubnetSubscriptionService dataColumnSidecarSubnetService,
-      final int targetSubnetSubscriberCount,
+      final int targetAttestationSubnetSubscriberCount,
+      final OptionalInt targetSubnetSubscriberCount,
       final SettableLabelledGauge subnetPeerCountGauge) {
     final Map<String, Collection<NodeId>> subscribersByTopic = network.getSubscribersByTopic();
 
@@ -86,6 +90,7 @@ public class PeerSubnetSubscriptions {
 
     final PeerSubnetSubscriptions subscriptions =
         builder(currentSchemaDefinitions, SszBitvectorSchema.create(dataColumnSidecarSubnetCount))
+            .targetAttestationSubnetSubscriberCount(targetAttestationSubnetSubscriberCount)
             .targetSubnetSubscriberCount(targetSubnetSubscriberCount)
             .nodeIdToDataColumnSidecarSubnetsCalculator(nodeIdToDataColumnSidecarSubnetsCalculator)
             .attestationSubnetSubscriptions(
@@ -244,14 +249,61 @@ public class PeerSubnetSubscriptions {
   }
 
   public int getSubscribersRequired() {
-    return Streams.concat(
-            attestationSubnetSubscriptions.getSubscribersCount().stream(),
-            syncCommitteeSubnetSubscriptions.getSubscribersCount().stream(),
-            dataColumnSidecarSubnetSubscriptions.getSubscribersCount().stream())
-        .mapToInt(
-            subnetSubscribersCount ->
-                Math.max(0, targetSubnetSubscriberCount - subnetSubscribersCount))
-        .sum();
+    final OptionalInt minSubscribersCount = getMinSubscriberCount();
+    final OptionalInt targetSubscribersShortage = getTargetSubscribersShortage();
+    final int attestationSubscribersShortage =
+        minSubscribersCount.isPresent()
+            ? Math.max(targetAttestationSubnetSubscriberCount - minSubscribersCount.getAsInt(), 0)
+            : 0;
+    if (targetSubscribersShortage.isPresent()) {
+      return Math.max(targetSubscribersShortage.getAsInt(), attestationSubscribersShortage);
+    } else {
+      return attestationSubscribersShortage;
+    }
+  }
+
+  private OptionalInt getMinSubscriberCount() {
+    return optionalMin(
+        List.of(
+            attestationSubnetSubscriptions.getMinSubscriberCount(),
+            syncCommitteeSubnetSubscriptions.getMinSubscriberCount(),
+            dataColumnSidecarSubnetSubscriptions.getMinSubscriberCount()));
+  }
+
+  private OptionalInt getTargetSubscribersShortage() {
+    if (targetSubnetSubscriberCount.isEmpty()) {
+      return OptionalInt.empty();
+    }
+
+    final int attestationSubnetSubscribersShortage =
+        calcSubnetSubscribersShortage(
+            attestationSubnetSubscriptions, targetSubnetSubscriberCount.getAsInt());
+    final int syncCommitteeSubnetSubscribersShortage =
+        calcSubnetSubscribersShortage(
+            syncCommitteeSubnetSubscriptions, targetSubnetSubscriberCount.getAsInt());
+    final int dataColumnSidecarSubnetSubscribersShortage =
+        calcSubnetSubscribersShortage(
+            dataColumnSidecarSubnetSubscriptions, targetSubnetSubscriberCount.getAsInt());
+
+    return OptionalInt.of(
+        attestationSubnetSubscribersShortage
+            + syncCommitteeSubnetSubscribersShortage
+            + dataColumnSidecarSubnetSubscribersShortage);
+  }
+
+  protected int calcSubnetSubscribersShortage(
+      final SubnetSubscriptions subnetSubscriptions, final int perSubnetTarget) {
+    final long shortage =
+        perSubnetTarget * subnetSubscriptions.streamRelevantSubnets().count()
+            - subnetSubscriptions
+                .streamRelevantSubnets()
+                .mapToLong(subnetSubscriptions::getSubscriberCountForSubnet)
+                .sum();
+    return (int) Math.max(shortage, 0);
+  }
+
+  private static OptionalInt optionalMin(final List<OptionalInt> optionalInts) {
+    return optionalInts.stream().flatMapToInt(OptionalInt::stream).min();
   }
 
   public interface Factory {
@@ -295,8 +347,12 @@ public class PeerSubnetSubscriptions {
       return relevantSubnets.intStream();
     }
 
-    public List<Integer> getSubscribersCount() {
-      return streamRelevantSubnets().mapToObj(this::getSubscriberCountForSubnet).toList();
+    /**
+     * @return The minimum subscriber count across relevant subnets. Returns an empty value if is
+     *     there are no relevant subnets.
+     */
+    public OptionalInt getMinSubscriberCount() {
+      return streamRelevantSubnets().map(this::getSubscriberCountForSubnet).min();
     }
 
     public int getSubscriberCountForSubnet(final int subnetId) {
@@ -351,7 +407,8 @@ public class PeerSubnetSubscriptions {
     private final SubnetSubscriptions.Builder syncCommitteeSubnetSubscriptions;
     private final SubnetSubscriptions.Builder dataColumnSidecarSubnetSubscriptions;
     private NodeIdToDataColumnSidecarSubnetsCalculator nodeIdToDataColumnSidecarSubnetsCalculator;
-    private int targetSubnetSubscriberCount = 2;
+    private int targetAttestationSubnetSubscriberCount = 2;
+    private OptionalInt targetSubnetSubscriberCount = OptionalInt.empty();
 
     private Builder(
         final SchemaDefinitionsSupplier currentSchemaDefinitions,
@@ -370,14 +427,23 @@ public class PeerSubnetSubscriptions {
           syncCommitteeSubnetSubscriptions.build(),
           dataColumnSidecarSubnetSubscriptions.build(),
           nodeIdToDataColumnSidecarSubnetsCalculator,
+          targetAttestationSubnetSubscriberCount,
           targetSubnetSubscriberCount);
     }
 
-    public Builder targetSubnetSubscriberCount(final int targetSubnetSubscriberCount) {
-      if (targetSubnetSubscriberCount < 0) {
+    public Builder targetAttestationSubnetSubscriberCount(
+        final int targetAttestationSubnetSubscriberCount) {
+      if (targetAttestationSubnetSubscriberCount < 0) {
         throw new InvalidConfigurationException(
-            String.format("Invalid targetSubnetSubscriberCount: %d", targetSubnetSubscriberCount));
+            String.format(
+                "Invalid targetAttestationSubnetSubscriberCount: %d",
+                targetAttestationSubnetSubscriberCount));
       }
+      this.targetAttestationSubnetSubscriberCount = targetAttestationSubnetSubscriberCount;
+      return this;
+    }
+
+    public Builder targetSubnetSubscriberCount(final OptionalInt targetSubnetSubscriberCount) {
       this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
       return this;
     }

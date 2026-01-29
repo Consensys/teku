@@ -40,7 +40,8 @@ public class P2PConfig {
   public static final int DEFAULT_PEER_REQUEST_LIMIT = 100;
 
   public static final boolean DEFAULT_PEER_ALL_TOPIC_FILTER_ENABLED = true;
-  public static final int DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT = 2;
+  public static final int DEFAULT_P2P_TARGET_ATTESTATION_SUBNET_SUBSCRIBER_COUNT = 2;
+  public static final int DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT = -1;
   public static final boolean DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED = false;
   public static final boolean DEFAULT_GOSSIP_SCORING_ENABLED = true;
   public static final boolean DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED = true;
@@ -76,7 +77,8 @@ public class P2PConfig {
   private final NetworkingSpecConfig networkingSpecConfig;
 
   private final GossipEncoding gossipEncoding;
-  private final int targetSubnetSubscriberCount;
+  private final int targetAttestationSubnetSubscriberCount;
+  private final OptionalInt targetSubnetSubscriberCount;
   private final boolean subscribeAllSubnetsEnabled;
   private final int custodyGroupCountOverride;
   private final OptionalInt dasPublishWithholdColumnsEverySlots;
@@ -106,7 +108,8 @@ public class P2PConfig {
       final DiscoveryConfig discoveryConfig,
       final GossipConfigurator gossipConfigurator,
       final GossipEncoding gossipEncoding,
-      final int targetSubnetSubscriberCount,
+      final int targetAttestationSubnetSubscriberCount,
+      final OptionalInt targetSubnetSubscriberCount,
       final boolean subscribeAllSubnetsEnabled,
       final int custodyGroupCountOverride,
       final OptionalInt dasPublishWithholdColumnsEverySlots,
@@ -134,6 +137,7 @@ public class P2PConfig {
     this.discoveryConfig = discoveryConfig;
     this.gossipConfigurator = gossipConfigurator;
     this.gossipEncoding = gossipEncoding;
+    this.targetAttestationSubnetSubscriberCount = targetAttestationSubnetSubscriberCount;
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
     this.custodyGroupCountOverride = custodyGroupCountOverride;
@@ -184,7 +188,11 @@ public class P2PConfig {
     return gossipEncoding;
   }
 
-  public int getTargetSubnetSubscriberCount() {
+  public int getTargetAttestationSubnetSubscriberCount() {
+    return targetAttestationSubnetSubscriberCount;
+  }
+
+  public OptionalInt getTargetSubnetSubscriberCount() {
     return targetSubnetSubscriberCount;
   }
 
@@ -291,6 +299,8 @@ public class P2PConfig {
     private Spec spec;
     private Boolean isGossipScoringEnabled = DEFAULT_GOSSIP_SCORING_ENABLED;
     private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
+    private Integer targetAttestationSubnetSubscriberCount =
+        DEFAULT_P2P_TARGET_ATTESTATION_SUBNET_SUBSCRIBER_COUNT;
     private Integer targetSubnetSubscriberCount = DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
     private Boolean subscribeAllSubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
     private Boolean subscribeAllCustodySubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
@@ -363,6 +373,10 @@ public class P2PConfig {
         dasPublishWithholdColumnsEverySlotsOptional =
             OptionalInt.of(dasPublishWithholdColumnsEverySlots);
       }
+      final OptionalInt targetSubnetSubscriberCountOptional =
+          targetSubnetSubscriberCount >= 0
+              ? OptionalInt.of(targetSubnetSubscriberCount)
+              : OptionalInt.empty();
 
       return new P2PConfig(
           spec,
@@ -370,7 +384,8 @@ public class P2PConfig {
           discoveryConfig.build(),
           gossipConfigurator,
           gossipEncoding,
-          targetSubnetSubscriberCount,
+          targetAttestationSubnetSubscriberCount,
+          targetSubnetSubscriberCountOptional,
           subscribeAllSubnetsEnabled,
           custodyGroupCountOverride,
           dasPublishWithholdColumnsEverySlotsOptional,
@@ -421,12 +436,21 @@ public class P2PConfig {
       return this;
     }
 
+    public Builder targetAttestationSubnetSubscriberCount(
+        final Integer targetAttestationSubnetSubscriberCount) {
+      checkNotNull(targetAttestationSubnetSubscriberCount);
+      if (targetAttestationSubnetSubscriberCount < 0) {
+        throw new InvalidConfigurationException(
+            String.format(
+                "Invalid targetAttestationSubnetSubscriberCount: %d",
+                targetAttestationSubnetSubscriberCount));
+      }
+      this.targetAttestationSubnetSubscriberCount = targetAttestationSubnetSubscriberCount;
+      return this;
+    }
+
     public Builder targetSubnetSubscriberCount(final Integer targetSubnetSubscriberCount) {
       checkNotNull(targetSubnetSubscriberCount);
-      if (targetSubnetSubscriberCount < 0) {
-        throw new InvalidConfigurationException(
-            String.format("Invalid targetSubnetSubscriberCount: %d", targetSubnetSubscriberCount));
-      }
       this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
       return this;
     }

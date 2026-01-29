@@ -666,7 +666,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .data(b -> b.dataBasePath(dataPath))
         .p2p(
             b ->
-                b.targetSubnetSubscriberCount(2)
+                b.targetAttestationSubnetSubscriberCount(2)
                     .peerBlocksRateLimit(500)
                     .peerBlobSidecarsRateLimit(2000)
                     .peerRequestLimit(100))

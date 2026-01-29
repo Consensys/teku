@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -353,7 +354,8 @@ public class Eth2P2PNetworkFactory {
                                 syncCommitteeSubnetService,
                                 dataColumnSidecarSubnetTopicProvider,
                                 dataColumnSidecarSubnetService,
-                                config.getTargetSubnetSubscriberCount(),
+                                config.getTargetAttestationSubnetSubscriberCount(),
+                                OptionalInt.empty(),
                                 subnetPeerCountGauge),
                         reputationManager,
                         Collections::shuffle))
@@ -582,7 +584,7 @@ public class Eth2P2PNetworkFactory {
 
       return P2PConfig.builder()
           .specProvider(spec)
-          .targetSubnetSubscriberCount(2)
+          .targetAttestationSubnetSubscriberCount(2)
           .network(b -> b.listenPort(port).wireLogs(w -> w.logWireMuxFrames(true)))
           .discovery(
               d ->
