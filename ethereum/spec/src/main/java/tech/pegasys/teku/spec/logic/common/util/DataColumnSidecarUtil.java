@@ -53,8 +53,7 @@ public interface DataColumnSidecarUtil {
       DataColumnSidecar dataColumnSidecar, Function<Bytes32, Boolean> isBlockRootSeen);
 
   DataColumnSidecarValidationResult validateKzgCommitmentsRoot(
-      DataColumnSidecar dataColumnSidecar,
-      Function<Bytes32, Optional<BeaconBlock>> getBeaconBlockByRoot);
+      DataColumnSidecar dataColumnSidecar, BeaconBlock beaconBlock);
 
   DataColumnSidecarValidationResult validateBlockSlot(
       DataColumnSidecar dataColumnSidecar, Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot);

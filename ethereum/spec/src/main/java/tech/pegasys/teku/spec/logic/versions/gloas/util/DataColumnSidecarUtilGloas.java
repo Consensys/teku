@@ -20,14 +20,13 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarTrackingKey;
@@ -107,34 +106,33 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
    * blob_kzg_commitments_root in the corresponding builder's bid for sidecar.beacon_block_root
    *
    * @param dataColumnSidecar the data column sidecar to validate
-   * @param getBeaconBlockByRoot function to get the beacon block by root
+   * @param beaconBlock the beacon block of the corresponding builder's bid for
+   *     sidecar.beacon_block_root
    * @return validation result
    */
   @Override
   public DataColumnSidecarValidationResult validateKzgCommitmentsRoot(
-      final DataColumnSidecar dataColumnSidecar,
-      final Function<Bytes32, Optional<BeaconBlock>> getBeaconBlockByRoot) {
+      final DataColumnSidecar dataColumnSidecar, final BeaconBlock beaconBlock) {
 
-    final Bytes32 beaconBlockRoot = dataColumnSidecar.getBeaconBlockRoot();
-    final Optional<SszList<SszKZGCommitment>> maybeKzgCommitments =
-        getBeaconBlockByRoot
-            .apply(beaconBlockRoot)
-            .flatMap(beaconBlock -> beaconBlock.getBody().getOptionalBlobKzgCommitments());
-    if (maybeKzgCommitments.isEmpty()) {
+    final Optional<SignedExecutionPayloadBid> maybeSignedExecutionPayloadBid =
+        beaconBlock.getBody().getOptionalSignedExecutionPayloadBid();
+
+    if (maybeSignedExecutionPayloadBid.isEmpty()) {
       return DataColumnSidecarValidationResult.invalid(
-          "DataColumnSidecar's beacon_block_root does not correspond to a known execution payload bid");
+          "Missing DataColumnSidecar's corresponding payload execution bid");
     }
 
-    final Bytes32 commitmentsRoot = maybeKzgCommitments.get().hashTreeRoot();
+    final Bytes32 kzgCommitmentsRoot =
+        maybeSignedExecutionPayloadBid.get().getMessage().getBlobKzgCommitmentsRoot();
 
     final Bytes32 dataColumnSidecarCommitmentsRoot =
         dataColumnSidecar.getKzgCommitments().hashTreeRoot();
-    if (!commitmentsRoot.equals(dataColumnSidecarCommitmentsRoot)) {
+    if (!kzgCommitmentsRoot.equals(dataColumnSidecarCommitmentsRoot)) {
       return DataColumnSidecarValidationResult.invalid(
           () ->
               String.format(
-                  "DataColumnSidecar's kzg_commitments root %s does not match the bid's blob_kzg_commitments_root %s",
-                  dataColumnSidecarCommitmentsRoot, commitmentsRoot));
+                  "DataColumnSidecar's KZG commitments root %s does not match the bid's blob_kzg_commitments_root %s",
+                  dataColumnSidecarCommitmentsRoot, kzgCommitmentsRoot));
     }
 
     return DataColumnSidecarValidationResult.valid();

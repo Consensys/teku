@@ -148,13 +148,12 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
    * Validate that the sidecar's KZG commitments root matches the block's KZG commitments root.
    *
    * @param dataColumnSidecar the data column sidecar to validate
-   * @param getBeaconBlockByRoot function to get the beacon block by root
+   * @param beaconBlock the beacon block
    * @return validation result
    */
   @Override
   public DataColumnSidecarValidationResult validateKzgCommitmentsRoot(
-      final DataColumnSidecar dataColumnSidecar,
-      final Function<Bytes32, Optional<BeaconBlock>> getBeaconBlockByRoot) {
+      final DataColumnSidecar dataColumnSidecar, final BeaconBlock beaconBlock) {
     // Fulu does not validate the kzg commitments root (this is Gloas-specific)
     return DataColumnSidecarValidationResult.valid();
   }
