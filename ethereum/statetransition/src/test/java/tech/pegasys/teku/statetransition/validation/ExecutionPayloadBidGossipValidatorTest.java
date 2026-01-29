@@ -356,6 +356,39 @@ public class ExecutionPayloadBidGossipValidatorTest {
   }
 
   @TestTemplate
+  void shouldIgnoreBidWhenBuilderAddedDuringValidation() {
+    // Create an incomplete future that we control
+    final SafeFuture<Optional<BeaconState>> slowStateFuture = new SafeFuture<>();
+
+    // Mock the first bid's validation to use the slow future
+    when(gossipValidationHelper.getParentStateInBlockEpoch(slot.decrement(), parentBlockRoot, slot))
+        .thenReturn(slowStateFuture);
+
+    // Start validating the first bid (it will wait on slowStateFuture)
+    final SafeFuture<InternalValidationResult> firstBidResult = bidValidator.validate(signedBid);
+
+    // Reset the mock to return completed future for subsequent calls
+    when(gossipValidationHelper.getParentStateInBlockEpoch(slot.decrement(), parentBlockRoot, slot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(postState)));
+
+    // Validate and complete a second bid from the same builder while first is in flight
+    final SignedExecutionPayloadBid secondBid =
+        dataStructureUtil.randomSignedExecutionPayloadBid(signedBid.getMessage());
+    final SafeFuture<InternalValidationResult> secondBidResult = bidValidator.validate(secondBid);
+
+    // Wait for second bid to fully complete and add builder to set
+    assertThatSafeFuture(secondBidResult).isCompletedWithValue(ACCEPT);
+    secondBidResult.join();
+
+    // Now complete the first bid's validation - it should hit the race condition check
+    slowStateFuture.complete(Optional.of(postState));
+
+    // First bid should be ignored because builder was added by second bid
+    assertThatSafeFuture(firstBidResult)
+        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+  }
+
+  @TestTemplate
   void shouldEvictOldestSlotAfterMaxSlotsTracked() {
     final UInt64 startSlot = UInt64.valueOf(100);
     final UInt64 sameBuilder = builderIndex;

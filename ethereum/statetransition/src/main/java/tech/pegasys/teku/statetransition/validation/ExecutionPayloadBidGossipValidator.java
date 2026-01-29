@@ -201,10 +201,18 @@ public class ExecutionPayloadBidGossipValidator {
                 LOG.trace("Invalid payload execution bid signature");
                 return reject("Invalid payload execution bid signature");
               }
-              // handle race condition (new values might have come in while performing the checks)
-              // and update only if the new value is higher than the current value
+
+              if (!buildersForSlot.add(bid.getBuilderIndex())) {
+                LOG.trace(
+                    "Another payload execution bid from Builder with index {} already processed while validating bid for slot {}",
+                    bid.getBuilderIndex(),
+                    bid.getSlot());
+                return ignore(
+                    "Another payload execution bid from Builder with index %s already processed while validating bid for slot %s",
+                    bid.getBuilderIndex(), bid.getSlot());
+              }
+              // Only update highest bid tracking for accepted bids
               highestBids.merge(bidValueKey, bid.getValue(), UInt64::max);
-              buildersForSlot.add(bid.getBuilderIndex());
               return ACCEPT;
             });
   }
