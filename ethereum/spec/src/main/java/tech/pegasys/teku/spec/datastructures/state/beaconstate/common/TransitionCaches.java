@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 
+import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
@@ -22,8 +23,10 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
+import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.collections.cache.NoOpCache;
+import tech.pegasys.teku.infrastructure.collections.cache.StripedCache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ProgressiveTotalBalancesUpdates;
@@ -66,9 +69,28 @@ public class TransitionCaches {
         }
       };
 
-  /** Creates new instance with clean caches */
+  /**
+   * Creates new instance with clean caches. Uses: - CaffeineCache for beaconCommittee (high
+   * contention, hot path) - LRUCache for other bounded caches (lightweight, copied frequently) -
+   * StripedCache for unbounded validator caches (16x less lock contention)
+   */
   public static TransitionCaches createNewEmpty() {
-    return new TransitionCaches();
+    return new TransitionCaches(
+        LRUCache.create(MAX_ACTIVE_VALIDATORS_CACHE),
+        LRUCache.create(MAX_BEACON_PROPOSER_INDEX_CACHE),
+        CaffeineCache.create(MAX_BEACON_COMMITTEE_CACHE),
+        LRUCache.create(MAX_BEACON_COMMITTEES_SIZE_CACHE),
+        LRUCache.create(MAX_BEACON_COMMITTEE_CACHE),
+        LRUCache.create(MAX_TOTAL_ACTIVE_BALANCE_CACHE),
+        StripedCache.createUnbounded(),
+        new ValidatorIndexCache(StripedCache.createUnbounded()),
+        LRUCache.create(MAX_COMMITTEE_SHUFFLE_CACHE),
+        LRUCache.create(MAX_EFFECTIVE_BALANCE_CACHE),
+        LRUCache.create(MAX_SYNC_COMMITTEE_CACHE),
+        LRUCache.create(MAX_BASE_REWARD_PER_INCREMENT_CACHE),
+        ProgressiveTotalBalancesUpdates.NOOP,
+        StripedCache.createUnbounded(),
+        StripedCache.createUnbounded());
   }
 
   /** Returns the instance which doesn't cache anything */
@@ -95,22 +117,38 @@ public class TransitionCaches {
   private volatile Optional<TotalBalances> latestTotalBalances = Optional.empty();
   private volatile ProgressiveTotalBalancesUpdates progressiveTotalBalances;
 
-  private TransitionCaches() {
-    activeValidators = LRUCache.create(MAX_ACTIVE_VALIDATORS_CACHE);
-    beaconProposerIndex = LRUCache.create(MAX_BEACON_PROPOSER_INDEX_CACHE);
-    beaconCommittee = LRUCache.create(MAX_BEACON_COMMITTEE_CACHE);
-    beaconCommitteesSize = LRUCache.create(MAX_BEACON_COMMITTEES_SIZE_CACHE);
-    attestersTotalBalance = LRUCache.create(MAX_BEACON_COMMITTEE_CACHE);
-    totalActiveBalance = LRUCache.create(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
-    validatorsPubKeys = LRUCache.create(Integer.MAX_VALUE - 1);
-    validatorIndexCache = new ValidatorIndexCache();
-    committeeShuffle = LRUCache.create(MAX_COMMITTEE_SHUFFLE_CACHE);
-    effectiveBalances = LRUCache.create(MAX_EFFECTIVE_BALANCE_CACHE);
-    syncCommitteeCache = LRUCache.create(MAX_SYNC_COMMITTEE_CACHE);
-    baseRewardPerIncrement = LRUCache.create(MAX_BASE_REWARD_PER_INCREMENT_CACHE);
+  @FunctionalInterface
+  public interface CacheFactory {
+    <K, V> Cache<K, V> create(int capacity);
+  }
+
+  @FunctionalInterface
+  public interface UnboundedCacheFactory {
+    <K, V> Cache<K, V> create();
+  }
+
+  /**
+   * Constructor for benchmarking - allows testing different cache implementations for both bounded
+   * and unbounded caches.
+   */
+  @VisibleForTesting
+  public TransitionCaches(
+      final CacheFactory boundedCacheFactory, final UnboundedCacheFactory unboundedCacheFactory) {
+    activeValidators = boundedCacheFactory.create(MAX_ACTIVE_VALIDATORS_CACHE);
+    beaconProposerIndex = boundedCacheFactory.create(MAX_BEACON_PROPOSER_INDEX_CACHE);
+    beaconCommittee = boundedCacheFactory.create(MAX_BEACON_COMMITTEE_CACHE);
+    beaconCommitteesSize = boundedCacheFactory.create(MAX_BEACON_COMMITTEES_SIZE_CACHE);
+    attestersTotalBalance = boundedCacheFactory.create(MAX_BEACON_COMMITTEE_CACHE);
+    totalActiveBalance = boundedCacheFactory.create(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
+    validatorsPubKeys = unboundedCacheFactory.create();
+    validatorIndexCache = new ValidatorIndexCache(unboundedCacheFactory.create());
+    committeeShuffle = boundedCacheFactory.create(MAX_COMMITTEE_SHUFFLE_CACHE);
+    effectiveBalances = boundedCacheFactory.create(MAX_EFFECTIVE_BALANCE_CACHE);
+    syncCommitteeCache = boundedCacheFactory.create(MAX_SYNC_COMMITTEE_CACHE);
+    baseRewardPerIncrement = boundedCacheFactory.create(MAX_BASE_REWARD_PER_INCREMENT_CACHE);
     progressiveTotalBalances = ProgressiveTotalBalancesUpdates.NOOP;
-    buildersPubKeys = LRUCache.create(Integer.MAX_VALUE - 1);
-    builderIndexCache = LRUCache.create(Integer.MAX_VALUE - 1);
+    buildersPubKeys = unboundedCacheFactory.create();
+    builderIndexCache = unboundedCacheFactory.create();
   }
 
   private TransitionCaches(
@@ -250,14 +288,19 @@ public class TransitionCaches {
   }
 
   /**
-   * Makes an independent copy which contains all the data in this instance Modifications to
-   * returned caches shouldn't affect caches from this instance
+   * Makes an independent copy which contains all the data in this instance. Modifications to the
+   * returned caches shouldn't affect caches from this instance.
+   *
+   * <p>Note: beaconCommittee cache is shared (not copied) because CaffeineCache is thread-safe and
+   * designed for concurrent access. Committee lookups are deterministic and read-only during state
+   * transitions, so cache isolation is unnecessary. This avoids the expensive deep copy operation
+   * that was causing fork choice timeouts.
    */
   public TransitionCaches copy() {
     return new TransitionCaches(
         activeValidators.copy(),
         beaconProposerIndex.copy(),
-        beaconCommittee.copy(),
+        beaconCommittee, // Shared - CaffeineCache is thread-safe, avoids copy cost
         beaconCommitteesSize.copy(),
         attestersTotalBalance.copy(),
         totalActiveBalance.copy(),

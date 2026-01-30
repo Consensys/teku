@@ -18,8 +18,8 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
-import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.collections.cache.NoOpCache;
+import tech.pegasys.teku.infrastructure.collections.cache.StripedCache;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -39,9 +39,14 @@ public class ValidatorIndexCache {
     this.lastCachedIndex = new AtomicInteger(lastCachedIndex);
   }
 
+  /** Constructor for benchmarking - allows testing different cache implementations. */
+  @VisibleForTesting
+  ValidatorIndexCache(final Cache<BLSPublicKey, Integer> validatorIndices) {
+    this(validatorIndices, INDEX_NONE);
+  }
+
   public ValidatorIndexCache() {
-    this.validatorIndices = LRUCache.create(Integer.MAX_VALUE - 1);
-    this.lastCachedIndex = new AtomicInteger(INDEX_NONE);
+    this(StripedCache.createUnbounded());
   }
 
   public Optional<Integer> getValidatorIndex(
@@ -79,19 +84,22 @@ public class ValidatorIndexCache {
 
   private Optional<Integer> findIndexFromState(
       final SszList<Validator> validatorList, final BLSPublicKey publicKey) {
-    final int initialCacheSize = getCacheSize();
+    int lastAddedIndex = -1;
+
     for (int i = Math.max(lastCachedIndex.get() + 1, 0); i < validatorList.size(); i++) {
       final BLSPublicKey pubKey = validatorList.get(i).getPublicKey();
       validatorIndices.invalidateWithNewValue(pubKey, i);
+      lastAddedIndex = i;
+
       if (pubKey.equals(publicKey)) {
-        if (initialCacheSize < getCacheSize()) {
-          updateLastIndex(i);
-        }
+        updateLastIndex(lastAddedIndex);
         return Optional.of(i);
       }
     }
-    if (initialCacheSize < getCacheSize()) {
-      updateLastIndex(getCacheSize() - 1);
+
+    // If we scanned any validators, update lastCachedIndex
+    if (lastAddedIndex != -1) {
+      updateLastIndex(lastAddedIndex);
     }
     return Optional.empty();
   }
