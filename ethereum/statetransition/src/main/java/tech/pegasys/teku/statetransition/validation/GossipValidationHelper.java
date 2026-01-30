@@ -24,15 +24,15 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipValidationHelper {
@@ -165,14 +165,8 @@ public class GossipValidationHelper {
 
   public boolean isValidBuilderIndex(
       final UInt64 builderIndex, final BeaconState state, final UInt64 slot) {
-    if (builderIndex.isGreaterThanOrEqualTo(state.getValidators().size())) {
-      return false;
-    }
-    final int index = builderIndex.intValue();
-    final Validator builder = state.getValidators().get(index);
-    final boolean isActiveBuilder =
-        spec.atSlot(slot).predicates().isActiveValidator(builder, spec.computeEpochAtSlot(slot));
-    return !builder.isSlashed() && isActiveBuilder;
+    return PredicatesGloas.required(spec.atSlot(slot).predicates())
+        .isActiveBuilder(state, builderIndex);
   }
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlotAndBlockRoot(
@@ -203,14 +197,8 @@ public class GossipValidationHelper {
       final UInt64 builderIndex,
       final BeaconState state,
       final UInt64 slot) {
-    final UInt64 builderBalance = state.getBalances().get(builderIndex.intValue()).get();
-    final UInt64 minActivationBalance =
-        SpecConfigGloas.required(spec.atSlot(slot).getConfig()).getMinActivationBalance();
-    try {
-      return minActivationBalance.plus(bidValue).isLessThanOrEqualTo(builderBalance);
-    } catch (final ArithmeticException e) {
-      return false;
-    }
+    return BeaconStateAccessorsGloas.required(spec.atSlot(slot).beaconStateAccessors())
+        .canBuilderCoverBid(state, builderIndex, bidValue);
   }
 
   public boolean isBlockHashKnown(final Bytes32 blockHash, final Bytes32 blockRoot) {

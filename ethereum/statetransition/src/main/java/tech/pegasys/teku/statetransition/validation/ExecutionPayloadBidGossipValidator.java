@@ -148,7 +148,7 @@ public class ExecutionPayloadBidGossipValidator {
               final BeaconState state = maybeState.get();
 
               /*
-               * [REJECT] bid.builder_index is a valid, active, and non-slashed builder index.
+               * [REJECT] bid.builder_index is a valid/active builder index -- i.e. is_active_builder(state, bid.builder_index) returns True
                */
               if (!gossipValidationHelper.isValidBuilderIndex(
                   bid.getBuilderIndex(), state, bid.getSlot())) {
