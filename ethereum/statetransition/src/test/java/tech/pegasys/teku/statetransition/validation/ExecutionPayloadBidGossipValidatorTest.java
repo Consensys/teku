@@ -81,8 +81,6 @@ public class ExecutionPayloadBidGossipValidatorTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(postState)));
     when(gossipValidationHelper.isValidBuilderIndex(builderIndex, postState, slot))
         .thenReturn(true);
-    when(gossipValidationHelper.hasBuilderWithdrawalCredential(builderIndex, postState, slot))
-        .thenReturn(true);
     when(gossipValidationHelper.builderHasEnoughBalanceForBid(
             bid.getValue(), builderIndex, postState, slot))
         .thenReturn(true);
@@ -212,9 +210,6 @@ public class ExecutionPayloadBidGossipValidatorTest {
     when(gossipValidationHelper.builderHasEnoughBalanceForBid(
             higherValue, differentBuilderIndex, postState, slot))
         .thenReturn(true);
-    when(gossipValidationHelper.hasBuilderWithdrawalCredential(
-            differentBuilderIndex, postState, slot))
-        .thenReturn(true);
     // bad signature to make it fail validation
     when(gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
             any(), eq(higherValueInvalidBid.getMessage().getBuilderIndex()), any(), any()))
@@ -249,9 +244,6 @@ public class ExecutionPayloadBidGossipValidatorTest {
     when(gossipValidationHelper.getParentStateInBlockEpoch(
             slot, intermediateValueValidBid.getMessage().getParentBlockRoot(), slot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(postState)));
-    when(gossipValidationHelper.hasBuilderWithdrawalCredential(
-            intermediateBidBuilderIndex, postState, slot))
-        .thenReturn(true);
     when(gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
             any(), eq(intermediateValueValidBid.getMessage().getBuilderIndex()), any(), any()))
         .thenReturn(true);
@@ -290,15 +282,6 @@ public class ExecutionPayloadBidGossipValidatorTest {
             reject(
                 "Invalid builder index %s. Builder should be valid, active and non-slashed.",
                 builderIndex));
-  }
-
-  @TestTemplate
-  void shouldReject_whenBuilderLacksBuilderWithdrawalCredential() {
-    when(gossipValidationHelper.hasBuilderWithdrawalCredential(builderIndex, postState, slot))
-        .thenReturn(false);
-    assertThatSafeFuture(bidValidator.validate(signedBid))
-        .isCompletedWithValue(
-            reject("Builder with index %s must have builder withdrawal credential", builderIndex));
   }
 
   @TestTemplate
@@ -459,8 +442,6 @@ public class ExecutionPayloadBidGossipValidatorTest {
             slot.decrement(), message.getParentBlockRoot(), slot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(postState)));
     when(gossipValidationHelper.isValidBuilderIndex(builderIndex, postState, slot))
-        .thenReturn(true);
-    when(gossipValidationHelper.hasBuilderWithdrawalCredential(builderIndex, postState, slot))
         .thenReturn(true);
     when(gossipValidationHelper.builderHasEnoughBalanceForBid(
             bidValue, builderIndex, postState, slot))

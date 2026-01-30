@@ -78,6 +78,13 @@ public class ExecutionPayloadBidGossipValidator {
           ignore("Bid must be for current or next slot but was for slot %s", bid.getSlot()));
     }
 
+    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10259
+    /*
+     * [IGNORE] the SignedProposerPreferences where preferences.proposal_slot is equal to bid.slot has been seen.
+     * [REJECT] bid.fee_recipient matches the fee_recipient from the proposer's SignedProposerPreferences associated with bid.slot.
+     * [REJECT] bid.gas_limit matches the gas_limit from the proposer's SignedProposerPreferences associated with bid.slot.
+     */
+
     /*
      * [IGNORE] this is the first signed bid seen with a valid signature from the given builder for this slot.
      */
@@ -155,21 +162,6 @@ public class ExecutionPayloadBidGossipValidator {
                     bid.getBuilderIndex());
                 return reject(
                     "Invalid builder index %s. Builder should be valid, active and non-slashed.",
-                    bid.getBuilderIndex());
-              }
-
-              /*
-               * [REJECT] the builder's withdrawal credentials' prefix is BUILDER_WITHDRAWAL_PREFIX
-               * -- i.e. is_builder_withdrawal_credential(state.validators[bid.builder_index].withdrawal_credentials)
-               * returns True.
-               */
-              if (!gossipValidationHelper.hasBuilderWithdrawalCredential(
-                  bid.getBuilderIndex(), state, bid.getSlot())) {
-                LOG.trace(
-                    "Builder with index {} must have builder withdrawal credential",
-                    bid.getBuilderIndex());
-                return reject(
-                    "Builder with index %s must have builder withdrawal credential",
                     bid.getBuilderIndex());
               }
 

@@ -32,7 +32,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
-import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipValidationHelper {
@@ -165,7 +164,7 @@ public class GossipValidationHelper {
 
   public boolean isValidBuilderIndex(
       final UInt64 builderIndex, final BeaconState state, final UInt64 slot) {
-    return PredicatesGloas.required(spec.atSlot(slot).predicates())
+    return MiscHelpersGloas.required(spec.atSlot(slot).miscHelpers())
         .isActiveBuilder(state, builderIndex);
   }
 
@@ -184,12 +183,6 @@ public class GossipValidationHelper {
         .getCurrentSlot()
         .map(currentSlot -> slot.equals(currentSlot) || slot.equals(currentSlot.plus(ONE)))
         .orElse(false);
-  }
-
-  public boolean hasBuilderWithdrawalCredential(
-      final UInt64 builderIndex, final BeaconState state, final UInt64 slot) {
-    return MiscHelpersGloas.required(spec.atSlot(slot).miscHelpers())
-        .hasBuilderWithdrawalCredential(state.getValidators().get(builderIndex.intValue()));
   }
 
   public boolean builderHasEnoughBalanceForBid(
