@@ -105,7 +105,7 @@ public class GossipValidationHelper {
     final UInt64 firstSlotInBlockEpoch =
         spec.computeStartSlotAtEpoch(spec.computeEpochAtSlot(slot));
     return parentBlockSlot.isLessThan(firstSlotInBlockEpoch)
-        ? recentChainData.retrieveStateAtSlot(
+        ? recentChainData.retrieveBlockState(
             new SlotAndBlockRoot(firstSlotInBlockEpoch, parentBlockRoot))
         : recentChainData.retrieveBlockState(parentBlockRoot);
   }
