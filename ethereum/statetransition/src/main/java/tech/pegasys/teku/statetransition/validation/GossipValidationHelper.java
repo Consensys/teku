@@ -109,9 +109,14 @@ public class GossipValidationHelper {
     final UInt64 firstSlotInBlockEpoch =
         spec.computeStartSlotAtEpoch(spec.computeEpochAtSlot(slot));
     return parentBlockSlot.isLessThan(firstSlotInBlockEpoch)
-        ? recentChainData.retrieveStateAtSlot(
+        ? recentChainData.retrieveBlockState(
             new SlotAndBlockRoot(firstSlotInBlockEpoch, parentBlockRoot))
         : recentChainData.retrieveBlockState(parentBlockRoot);
+  }
+
+  public SafeFuture<Optional<BeaconState>> getStateAtSlotAndBlockRoot(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return recentChainData.retrieveBlockState(slotAndBlockRoot);
   }
 
   public boolean currentFinalizedCheckpointIsAncestorOfBlock(
@@ -166,11 +171,6 @@ public class GossipValidationHelper {
       final UInt64 builderIndex, final BeaconState state, final UInt64 slot) {
     return MiscHelpersGloas.required(spec.atSlot(slot).miscHelpers())
         .isActiveBuilder(state, builderIndex);
-  }
-
-  public SafeFuture<Optional<BeaconState>> getStateAtSlotAndBlockRoot(
-      final SlotAndBlockRoot slotAndBlockRoot) {
-    return recentChainData.retrieveStateAtSlot(slotAndBlockRoot);
   }
 
   public boolean isValidatorInPayloadTimelinessCommittee(
