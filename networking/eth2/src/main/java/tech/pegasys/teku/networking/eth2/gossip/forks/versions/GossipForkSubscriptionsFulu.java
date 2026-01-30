@@ -24,6 +24,9 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetS
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -119,11 +122,13 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
             forkInfo,
             forkDigest);
 
+
+
     this.dataColumnSidecarGossipManager =
         new DataColumnSidecarGossipManager(
             dataColumnSidecarSubnetSubscriptions,
             dasGossipLogger,
-            p2pConfig.isSubscribedToAllCustodySubnetsEnabled());
+            isSuperNode());
 
     addGossipManager(dataColumnSidecarGossipManager);
   }
@@ -152,5 +157,22 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
   @Override
   public void unsubscribeFromDataColumnSidecarSubnet(final int subnetId) {
     dataColumnSidecarGossipManager.unsubscribeFromSubnetId(subnetId);
+  }
+
+  private boolean isSuperNode(){
+    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+      if(p2pConfig.isSubscribedToAllCustodySubnetsEnabled()){
+        return true;
+      }
+      final SpecVersion specVersionFulu = spec.forMilestone(SpecMilestone.FULU);
+      final int totalCustodyGroups =
+             p2pConfig.getTotalCustodyGroupCount(specVersionFulu);
+      final int numberOfColumns =
+              SpecConfigFulu.required(specVersionFulu.getConfig()).getNumberOfColumns();
+      if (totalCustodyGroups == numberOfColumns) {
+        return true;
+      }
+    }
+    return false;
   }
 }
