@@ -289,7 +289,7 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
     if (spec.computeEpochAtSlot(head.getSlot()).equals(requiredEpoch)) {
       return head.getState().thenApply(Optional::of);
     } else {
-      return recentChainData.retrieveStateAtSlot(
+      return recentChainData.retrieveBlockState(
           new SlotAndBlockRoot(spec.computeStartSlotAtEpoch(requiredEpoch), head.getRoot()));
     }
   }
