@@ -194,6 +194,20 @@ public class ChainBuilder {
         .map(SignedExecutionPayloadAndState::executionPayload);
   }
 
+  public List<SignedExecutionPayloadEnvelope> getExecutionPayload(
+      final UInt64 startSlot, final UInt64 count) {
+    final List<UInt64> slots =
+        executionPayloads.keySet().stream()
+            .filter(slot -> slot.isGreaterThanOrEqualTo(startSlot))
+            .filter(slot -> slot.isLessThanOrEqualTo(startSlot.plus(count)))
+            .sorted()
+            .toList();
+    return slots.stream()
+        .map(executionPayloads::get)
+        .map(SignedExecutionPayloadAndState::executionPayload)
+        .toList();
+  }
+
   public List<BlobSidecar> getBlobSidecars(final Bytes32 blockRoot) {
     return Optional.ofNullable(blobSidecarsByHash.get(blockRoot)).orElse(Collections.emptyList());
   }
