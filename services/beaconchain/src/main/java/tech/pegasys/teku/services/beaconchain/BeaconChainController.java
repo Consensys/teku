@@ -879,7 +879,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initExecutionPayloadBidManager() {
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
       final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator =
-          new ExecutionPayloadBidGossipValidator(spec, gossipValidationHelper);
+          new ExecutionPayloadBidGossipValidator(
+              spec, gossipValidationHelper, beaconConfig.getMinBidIncrementPercentage());
       executionPayloadBidManager =
           new DefaultExecutionPayloadBidManager(spec, executionPayloadBidGossipValidator);
     } else {

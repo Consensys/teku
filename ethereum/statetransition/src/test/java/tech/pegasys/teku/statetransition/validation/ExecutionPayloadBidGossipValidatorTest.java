@@ -47,6 +47,8 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @TestSpecContext(milestone = {SpecMilestone.GLOAS})
 public class ExecutionPayloadBidGossipValidatorTest {
+  private static final int MIN_BID_INCREMENT_PERCENTAGE = 1;
+
   private final Spec spec = mock(Spec.class);
   private final GossipValidationHelper gossipValidationHelper = mock(GossipValidationHelper.class);
   private ExecutionPayloadBidGossipValidator bidValidator;
@@ -62,7 +64,9 @@ public class ExecutionPayloadBidGossipValidatorTest {
   @BeforeEach
   void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
     this.dataStructureUtil = specContext.getDataStructureUtil();
-    this.bidValidator = new ExecutionPayloadBidGossipValidator(spec, gossipValidationHelper);
+    this.bidValidator =
+        new ExecutionPayloadBidGossipValidator(
+            spec, gossipValidationHelper, MIN_BID_INCREMENT_PERCENTAGE);
 
     signedBid = dataStructureUtil.randomSignedExecutionPayloadBid(UInt64.ZERO);
     bid = signedBid.getMessage();
@@ -132,60 +136,42 @@ public class ExecutionPayloadBidGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldIgnore_whenBidValueIsLowerThanSeen() {
-    // a higher value bid is accepted
-    assertThatSafeFuture(bidValidator.validate(signedBid)).isCompletedWithValue(ACCEPT);
-
-    // a lower value bid from a different builder with the same parent block hash and slot
-    final UInt64 lowerBidValue = bid.getValue().minus(1);
+  void shouldNotCacheHigherBidIfInvalid() {
+    // valid, lower value bid is accepted and cached
+    final UInt64 lowerValue = UInt64.valueOf(10000);
     final SignedExecutionPayloadBid lowerValueBid =
         dataStructureUtil.randomSignedExecutionPayloadBid(
             dataStructureUtil.randomExecutionPayloadBid(
-                parentBlockHash,
-                slot,
-                builderIndex.plus(1),
-                lowerBidValue,
-                bid.getExecutionPayment()));
+                parentBlockHash, slot, builderIndex, lowerValue, UInt64.ZERO));
 
-    assertThatSafeFuture(bidValidator.validate(lowerValueBid))
-        .isCompletedWithValue(
-            ignore(
-                "Already received a bid with equal or higher value %s for block with parent hash %s. Current bid's value is %s",
-                bid.getValue(), parentBlockHash, lowerBidValue));
-  }
+    // Mock validation for the lower value bid
+    when(gossipValidationHelper.isBlockHashKnown(
+            parentBlockHash, lowerValueBid.getMessage().getParentBlockRoot()))
+        .thenReturn(true);
+    when(gossipValidationHelper.getSlotForBlockRoot(
+            lowerValueBid.getMessage().getParentBlockRoot()))
+        .thenReturn(Optional.of(slot.decrement()));
+    when(gossipValidationHelper.getParentStateInBlockEpoch(
+            slot.decrement(), lowerValueBid.getMessage().getParentBlockRoot(), slot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(postState)));
+    when(gossipValidationHelper.isValidBuilderIndex(builderIndex, postState, slot))
+        .thenReturn(true);
+    when(gossipValidationHelper.builderHasEnoughBalanceForBid(
+            lowerValue, builderIndex, postState, slot))
+        .thenReturn(true);
+    when(gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
+            any(), eq(builderIndex), any(), any()))
+        .thenReturn(true);
 
-  @TestTemplate
-  void shouldIgnore_whenBidWithSameValueIsSeen() {
-    // a first bid is accepted
-    assertThatSafeFuture(bidValidator.validate(signedBid)).isCompletedWithValue(ACCEPT);
+    assertThatSafeFuture(bidValidator.validate(lowerValueBid)).isCompletedWithValue(ACCEPT);
 
-    // a same value bid from a different builder with the same parent block hash and slot
-    final SignedExecutionPayloadBid sameValueBid =
-        dataStructureUtil.randomSignedExecutionPayloadBid(
-            dataStructureUtil.randomExecutionPayloadBid(
-                parentBlockHash,
-                slot,
-                builderIndex.plus(1),
-                bid.getValue(),
-                bid.getExecutionPayment()));
-
-    assertThatSafeFuture(bidValidator.validate(sameValueBid))
-        .isCompletedWithValue(
-            ignore(
-                "Already received a bid with equal or higher value %s for block with parent hash %s. Current bid's value is %s",
-                bid.getValue(), parentBlockHash, bid.getValue()));
-  }
-
-  @TestTemplate
-  void shouldNotCacheHigherBidIfInvalid() {
-    // valid, lower value bid is accepted and cached
-    final UInt64 lowerValue = signedBid.getMessage().getValue();
-    assertThatSafeFuture(bidValidator.validate(signedBid)).isCompletedWithValue(ACCEPT);
-
-    // modified copy of the original bid with a higher value and different builder index
-    final UInt64 higherValue = lowerValue.plus(10);
+    // modified copy of the original bid with a higher value (at least 1% higher) and different
+    // builder index
+    // Add a large increment to ensure it's over threshold (2x MIN_BID_INCREMENT_PERCENTAGE)
+    final UInt64 higherValue =
+        lowerValue.plus(lowerValue.times(2 * MIN_BID_INCREMENT_PERCENTAGE).dividedBy(100));
     final UInt64 differentBuilderIndex = builderIndex.plus(1);
-    final ExecutionPayloadBid originalBidMessage = signedBid.getMessage();
+    final ExecutionPayloadBid originalBidMessage = lowerValueBid.getMessage();
     final ExecutionPayloadBid higherValueBidMessage =
         originalBidMessage
             .getSchema()
@@ -218,8 +204,10 @@ public class ExecutionPayloadBidGossipValidatorTest {
     assertThatSafeFuture(bidValidator.validate(higherValueInvalidBid))
         .isCompletedWithValue(reject("Invalid payload execution bid signature"));
 
-    // valid, intermediate value bid with a higher value that the initially cached one
-    final UInt64 intermediateValue = lowerValue.plus(5);
+    // valid, intermediate value bid with a value higher than the initially cached one
+    // (1.5x MIN_BID_INCREMENT_PERCENTAGE)
+    final UInt64 intermediateValue =
+        lowerValue.times(200 + (3 * MIN_BID_INCREMENT_PERCENTAGE)).dividedBy(200);
     final UInt64 intermediateBidBuilderIndex = builderIndex.plus(2);
     final SignedExecutionPayloadBid intermediateValueValidBid =
         dataStructureUtil.randomSignedExecutionPayloadBid(
@@ -426,6 +414,86 @@ public class ExecutionPayloadBidGossipValidatorTest {
             ignore(
                 "Already received a bid from builder with index %s at slot %s",
                 sameBuilder, cachedSlot));
+  }
+
+  @TestTemplate
+  void shouldAccept_whenBidMeetsMinimumIncrementThreshold() {
+    // First bid with known value
+    final UInt64 firstBidValue = UInt64.valueOf(10000);
+    final SignedExecutionPayloadBid firstBid =
+        dataStructureUtil.randomSignedExecutionPayloadBid(
+            dataStructureUtil.randomExecutionPayloadBid(
+                parentBlockHash, slot, builderIndex, firstBidValue, UInt64.ZERO));
+    mockBidValidation(firstBid, builderIndex, firstBidValue);
+    assertThatSafeFuture(bidValidator.validate(firstBid)).isCompletedWithValue(ACCEPT);
+
+    // Second bid at exactly MIN_BID_INCREMENT_PERCENTAGE higher
+    final UInt64 secondBidValue =
+        firstBidValue.times(100 + MIN_BID_INCREMENT_PERCENTAGE).dividedBy(100);
+    final UInt64 differentBuilderIndex = builderIndex.plus(1);
+    final SignedExecutionPayloadBid secondBid =
+        dataStructureUtil.randomSignedExecutionPayloadBid(
+            dataStructureUtil.randomExecutionPayloadBid(
+                parentBlockHash, slot, differentBuilderIndex, secondBidValue, UInt64.ZERO));
+
+    mockBidValidation(secondBid, differentBuilderIndex, secondBidValue);
+    assertThatSafeFuture(bidValidator.validate(secondBid)).isCompletedWithValue(ACCEPT);
+  }
+
+  @TestTemplate
+  void shouldIgnore_whenBidBelowMinimumIncrementThreshold() {
+    // First bid with known value
+    final UInt64 firstBidValue = UInt64.valueOf(10000);
+    final SignedExecutionPayloadBid firstBid =
+        dataStructureUtil.randomSignedExecutionPayloadBid(
+            dataStructureUtil.randomExecutionPayloadBid(
+                parentBlockHash, slot, builderIndex, firstBidValue, UInt64.ZERO));
+    mockBidValidation(firstBid, builderIndex, firstBidValue);
+    assertThatSafeFuture(bidValidator.validate(firstBid)).isCompletedWithValue(ACCEPT);
+
+    // Second bid at half the threshold percentage (below MIN_BID_INCREMENT_PERCENTAGE threshold)
+    final UInt64 secondBidValue =
+        firstBidValue.times(200 + MIN_BID_INCREMENT_PERCENTAGE).dividedBy(200);
+    final UInt64 differentBuilderIndex = builderIndex.plus(1);
+    final SignedExecutionPayloadBid secondBid =
+        dataStructureUtil.randomSignedExecutionPayloadBid(
+            dataStructureUtil.randomExecutionPayloadBid(
+                parentBlockHash, slot, differentBuilderIndex, secondBidValue, UInt64.ZERO));
+
+    // Calculate what the minimum required bid would be
+    final UInt64 minIncrement = firstBidValue.times(MIN_BID_INCREMENT_PERCENTAGE).dividedBy(100);
+    final UInt64 minRequiredBid = firstBidValue.plus(minIncrement);
+
+    mockBidValidation(secondBid, differentBuilderIndex, secondBidValue);
+    assertThatSafeFuture(bidValidator.validate(secondBid))
+        .isCompletedWithValue(
+            ignore(
+                "Bid value %s does not meet minimum increment threshold (%s%%). Current highest: %s, minimum required: %s",
+                secondBidValue, MIN_BID_INCREMENT_PERCENTAGE, firstBidValue, minRequiredBid));
+  }
+
+  @TestTemplate
+  void shouldAccept_whenBidWellAboveMinimumIncrementThreshold() {
+    // First bid with known value
+    final UInt64 firstBidValue = UInt64.valueOf(10000);
+    final SignedExecutionPayloadBid firstBid =
+        dataStructureUtil.randomSignedExecutionPayloadBid(
+            dataStructureUtil.randomExecutionPayloadBid(
+                parentBlockHash, slot, builderIndex, firstBidValue, UInt64.ZERO));
+    mockBidValidation(firstBid, builderIndex, firstBidValue);
+    assertThatSafeFuture(bidValidator.validate(firstBid)).isCompletedWithValue(ACCEPT);
+
+    // Second bid at 5x the threshold percentage (well above MIN_BID_INCREMENT_PERCENTAGE threshold)
+    final UInt64 secondBidValue =
+        firstBidValue.times(100 + (5 * MIN_BID_INCREMENT_PERCENTAGE)).dividedBy(100);
+    final UInt64 differentBuilderIndex = builderIndex.plus(1);
+    final SignedExecutionPayloadBid secondBid =
+        dataStructureUtil.randomSignedExecutionPayloadBid(
+            dataStructureUtil.randomExecutionPayloadBid(
+                parentBlockHash, slot, differentBuilderIndex, secondBidValue, UInt64.ZERO));
+
+    mockBidValidation(secondBid, differentBuilderIndex, secondBidValue);
+    assertThatSafeFuture(bidValidator.validate(secondBid)).isCompletedWithValue(ACCEPT);
   }
 
   private void mockBidValidation(

@@ -44,14 +44,18 @@ public class ExecutionPayloadBidGossipValidator {
 
   private final GossipValidationHelper gossipValidationHelper;
   private final SigningRootUtil signingRootUtil;
+  private final int minBidIncrementPercentage;
   private final Map<UInt64, Set<UInt64>> seenExecutionPayloadBids =
       LimitedMap.createSynchronizedLRU(MAX_SLOTS_TO_TRACK_BUILDERS_BIDS);
   private final Map<SlotAndBlockHash, UInt64> highestBids =
       LimitedMap.createSynchronizedLRU(HIGHEST_BID_SET_SIZE);
 
   public ExecutionPayloadBidGossipValidator(
-      final Spec spec, final GossipValidationHelper gossipValidationHelper) {
+      final Spec spec,
+      final GossipValidationHelper gossipValidationHelper,
+      final int minBidIncrementPercentage) {
     this.gossipValidationHelper = gossipValidationHelper;
+    this.minBidIncrementPercentage = minBidIncrementPercentage;
     signingRootUtil = new SigningRootUtil(spec);
   }
 
@@ -99,20 +103,28 @@ public class ExecutionPayloadBidGossipValidator {
 
     /*
      * [IGNORE] this bid is the highest value bid seen for the corresponding slot and the given parent block hash.
+     *
+     * Note: Implementations SHOULD include DoS prevention measures to
+     * mitigate spam from malicious builders submitting numerous bids with minimal value increments.
+     * Possible strategies include: (1) only forwarding bids that exceed the current highest bid by a
+     * minimum threshold, or (2) forwarding only the highest observed bid at regular time intervals.
+     *
      */
     final SlotAndBlockHash bidValueKey =
         new SlotAndBlockHash(bid.getSlot(), bid.getParentBlockHash());
-    final UInt64 existingBidValue = highestBids.get(bidValueKey);
-    if (existingBidValue != null && bid.getValue().isLessThanOrEqualTo(existingBidValue)) {
-      LOG.trace(
-          "Already received a bid with a equal or higher value {} for block with parent hash {}. Current bid's value is {}",
-          existingBidValue,
-          bid.getParentBlockHash(),
-          bid.getValue());
-      return completedFuture(
-          ignore(
-              "Already received a bid with equal or higher value %s for block with parent hash %s. Current bid's value is %s",
-              existingBidValue, bid.getParentBlockHash(), bid.getValue()));
+    final UInt64 existingBidValue = highestBids.getOrDefault(bidValueKey, UInt64.ZERO);
+    if (!existingBidValue.isZero()) {
+      final UInt64 minRequiredBid = calculateMinimumRequiredBid(existingBidValue);
+
+      if (bid.getValue().isLessThan(minRequiredBid)) {
+        LOG.trace(
+            "Bid value {} does not meet minimum increment threshold ({}%). Current highest: {}, minimum required: {}",
+            bid.getValue(), minBidIncrementPercentage, existingBidValue, minRequiredBid);
+        return completedFuture(
+            ignore(
+                "Bid value %s does not meet minimum increment threshold (%s%%). Current highest: %s, minimum required: %s",
+                bid.getValue(), minBidIncrementPercentage, existingBidValue, minRequiredBid));
+      }
     }
 
     /*
@@ -199,10 +211,62 @@ public class ExecutionPayloadBidGossipValidator {
                     "Another payload execution bid from Builder with index %s already processed while validating bid for slot %s",
                     bid.getBuilderIndex(), bid.getSlot());
               }
-              // Only update the highest bid tracking for accepted bids
-              highestBids.merge(bidValueKey, bid.getValue(), UInt64::max);
+
+              // Atomically check threshold and update highest bid
+              final UInt64 bidValue = bid.getValue();
+              final UInt64 resultValue =
+                  highestBids.compute(
+                      bidValueKey,
+                      (key, existingValue) -> computeNewHighestBid(existingValue, bidValue));
+
+              // If result is less than our bid, we were rejected due to race condition
+              if (resultValue.isLessThan(bidValue)) {
+                final UInt64 minRequired = calculateMinimumRequiredBid(resultValue);
+                LOG.trace(
+                    "Bid value {} does not meet minimum increment threshold ({}%) due to concurrent update. Current highest: {}, minimum required: {}",
+                    bidValue, minBidIncrementPercentage, resultValue, minRequired);
+                return ignore(
+                    "Bid value %s does not meet minimum increment threshold (%s%%) due to concurrent update. Current highest: %s, minimum required: %s",
+                    bidValue, minBidIncrementPercentage, resultValue, minRequired);
+              }
+
               return ACCEPT;
             });
+  }
+
+  /**
+   * Calculates the minimum required bid value based on the current highest bid and the configured
+   * minimum increment percentage.
+   *
+   * @param currentHighestBid the current highest bid value
+   * @return the minimum bid value required to exceed the threshold
+   */
+  private UInt64 calculateMinimumRequiredBid(final UInt64 currentHighestBid) {
+    final UInt64 minIncrement = currentHighestBid.times(minBidIncrementPercentage).dividedBy(100);
+    return currentHighestBid.plus(minIncrement);
+  }
+
+  /**
+   * Atomically computes the new highest bid value. This method is used within compute() to
+   * atomically check the threshold and update the highest bid.
+   *
+   * @param existingValue the current highest bid value (may be null for first bid)
+   * @param newBidValue the new bid value to evaluate
+   * @return the value to store (either existing if rejected, or new if accepted)
+   */
+  private UInt64 computeNewHighestBid(final UInt64 existingValue, final UInt64 newBidValue) {
+    // First bid, accept it
+    if (existingValue == null) {
+      return newBidValue;
+    }
+
+    final UInt64 minRequired = calculateMinimumRequiredBid(existingValue);
+    // Below threshold, keep existing
+    if (newBidValue.isLessThan(minRequired)) {
+      return existingValue;
+    }
+    // Accept the new bid if higher
+    return newBidValue.max(existingValue);
   }
 
   private boolean isSignatureValid(
