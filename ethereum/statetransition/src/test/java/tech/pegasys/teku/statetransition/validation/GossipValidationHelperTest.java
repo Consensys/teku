@@ -47,7 +47,6 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
@@ -426,7 +425,7 @@ public class GossipValidationHelperTest {
   }
 
   @TestTemplate
-  void isValidBuilder_shouldReturnTrueForActiveActiveBuilder(final SpecContext specContext) {
+  void isValidBuilder_shouldReturnTrueForActiveBuilder(final SpecContext specContext) {
     specContext.assumeGloasActive();
     final UInt64 finalizedEpoch = UInt64.valueOf(4);
     final UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch);
@@ -434,14 +433,14 @@ public class GossipValidationHelperTest {
     final SignedBlockAndState blockAndState = storageSystem.chainUpdater().finalizeCurrentChain();
     final BeaconState originalState = blockAndState.getState();
     final UInt64 slot = originalState.getSlot();
-    final UInt64 validIndex = UInt64.valueOf(0);
+    final UInt64 builderIndex = UInt64.valueOf(0);
     final BeaconState modifiedState =
         originalState.updated(
             mutableState ->
                 MutableBeaconStateGloas.required(mutableState)
                     .getBuilders()
                     .append(dataStructureUtil.builderBuilder().depositEpoch(ZERO).build()));
-    assertThat(gossipValidationHelper.isActiveBuilder(validIndex, modifiedState, slot)).isTrue();
+    assertThat(gossipValidationHelper.isActiveBuilder(builderIndex, modifiedState, slot)).isTrue();
   }
 
   @TestTemplate
@@ -454,50 +453,27 @@ public class GossipValidationHelperTest {
   }
 
   @TestTemplate
-  void isActiveBuilder_shouldReturnFalseForSlashedValidator(final SpecContext specContext) {
+  void isActiveBuilder_shouldReturnFalseForInactive(final SpecContext specContext) {
     specContext.assumeGloasActive();
-    final BeaconState originalState = recentChainData.getBestState().orElseThrow().getImmediately();
+    final UInt64 finalizedEpoch = UInt64.valueOf(4);
+    final UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch);
+    storageSystem.chainUpdater().advanceChainUntil(finalizedSlot);
+    final SignedBlockAndState blockAndState = storageSystem.chainUpdater().finalizeCurrentChain();
+    final BeaconState originalState = blockAndState.getState();
     final UInt64 slot = originalState.getSlot();
-    final Validator slashedValidator =
-        dataStructureUtil
-            .validatorBuilder()
-            .slashed(true)
-            .activationEpoch(spec.computeEpochAtSlot(slot))
-            .build();
+    final UInt64 builderIndex = UInt64.valueOf(0);
     final BeaconState modifiedState =
         originalState.updated(
-            mutableState -> {
-              final SszMutableList<Validator> validators = mutableState.getValidators();
-              validators.append(slashedValidator);
-              mutableState.setValidators(validators);
-              mutableState.setSlot(slot);
-            });
-    final UInt64 slashedValidatorIndex =
-        UInt64.valueOf(modifiedState.getValidators().size()).decrement();
-    assertThat(gossipValidationHelper.isActiveBuilder(slashedValidatorIndex, modifiedState, slot))
-        .isFalse();
-  }
-
-  @TestTemplate
-  void isActiveBuilder_shouldReturnFalseForInactiveValidator(final SpecContext specContext) {
-    specContext.assumeGloasActive();
-    final BeaconState originalState = recentChainData.getBestState().orElseThrow().getImmediately();
-    final UInt64 slot = originalState.getSlot();
-    final UInt64 currentEpoch = spec.computeEpochAtSlot(slot);
-
-    final Validator incativeValidator =
-        dataStructureUtil.validatorBuilder().exitEpoch(currentEpoch).build();
-    final BeaconState modifiedState =
-        originalState.updated(
-            mutableState -> {
-              final SszMutableList<Validator> validators = mutableState.getValidators();
-              validators.append(incativeValidator);
-              mutableState.setValidators(validators);
-              mutableState.setSlot(slot);
-            });
-    final UInt64 inactiveIndex = UInt64.valueOf(modifiedState.getValidators().size()).decrement();
-    assertThat(gossipValidationHelper.isActiveBuilder(inactiveIndex, modifiedState, slot))
-        .isFalse();
+            mutableState ->
+                MutableBeaconStateGloas.required(mutableState)
+                    .getBuilders()
+                    .append(
+                        dataStructureUtil
+                            .builderBuilder()
+                            .depositEpoch(
+                                originalState.getFinalizedCheckpoint().getEpoch().increment())
+                            .build()));
+    assertThat(gossipValidationHelper.isActiveBuilder(builderIndex, modifiedState, slot)).isFalse();
   }
 
   private UInt64 getSlotStartTimeMillis(final UInt64 slot) {
