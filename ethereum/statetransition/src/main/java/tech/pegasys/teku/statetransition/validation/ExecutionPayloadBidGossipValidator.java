@@ -214,20 +214,20 @@ public class ExecutionPayloadBidGossipValidator {
 
               // Atomically check threshold and update highest bid
               final UInt64 bidValue = bid.getValue();
-              final UInt64 resultValue =
+              final UInt64 actualHighestBid =
                   highestBids.compute(
                       bidValueKey,
                       (key, existingValue) -> computeNewHighestBid(existingValue, bidValue));
 
-              // If result is less than our bid, we were rejected due to race condition
-              if (resultValue.isLessThan(bidValue)) {
-                final UInt64 minRequired = calculateMinimumRequiredBid(resultValue);
+              // If actual highest doesn't equal our bid, we were rejected (threshold not met)
+              if (!actualHighestBid.equals(bidValue)) {
+                final UInt64 minRequired = calculateMinimumRequiredBid(actualHighestBid);
                 LOG.trace(
                     "Bid value {} does not meet minimum increment threshold ({}%) due to concurrent update. Current highest: {}, minimum required: {}",
-                    bidValue, minBidIncrementPercentage, resultValue, minRequired);
+                    bidValue, minBidIncrementPercentage, actualHighestBid, minRequired);
                 return ignore(
                     "Bid value %s does not meet minimum increment threshold (%s%%) due to concurrent update. Current highest: %s, minimum required: %s",
-                    bidValue, minBidIncrementPercentage, resultValue, minRequired);
+                    bidValue, minBidIncrementPercentage, actualHighestBid, minRequired);
               }
 
               return ACCEPT;

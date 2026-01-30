@@ -163,7 +163,8 @@ public class ExecutionPayloadBidGossipValidatorTest {
 
     assertThatSafeFuture(bidValidator.validate(lowerValueBid)).isCompletedWithValue(ACCEPT);
 
-    // modified copy of the original bid with a higher value (at least 1% higher) and different
+    // modified copy of the original bid with a higher value (at least MIN_BID_INCREMENT_PERCENTAGE
+    // higher) and different
     // builder index
     // Add a large increment to ensure it's over threshold (2x MIN_BID_INCREMENT_PERCENTAGE)
     final UInt64 higherValue =
