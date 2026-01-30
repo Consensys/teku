@@ -70,12 +70,20 @@ public class ExecutionPayloadBidGossipValidator {
     }
 
     /*
+     * [IGNORE] bid.slot is the current slot or the next slot.
+     */
+    if (!gossipValidationHelper.isSlotCurrentOrNext(bid.getSlot())) {
+      LOG.trace("Bid must be for current or next slot but was for slot {}", bid.getSlot());
+      return completedFuture(
+          ignore("Bid must be for current or next slot but was for slot %s", bid.getSlot()));
+    }
+
+    /*
      * [IGNORE] this is the first signed bid seen with a valid signature from the given builder for this slot.
      */
-    final Set<UInt64> buildersForSlot =
-        seenExecutionPayloadBids.computeIfAbsent(
-            bid.getSlot(), __ -> ConcurrentHashMap.newKeySet());
-    if (buildersForSlot.contains(bid.getBuilderIndex())) {
+    if (seenExecutionPayloadBids
+        .getOrDefault(bid.getSlot(), Set.of())
+        .contains(bid.getBuilderIndex())) {
       return completedFuture(
           ignore(
               "Already received a bid from builder with index %s at slot %s",
@@ -98,16 +106,6 @@ public class ExecutionPayloadBidGossipValidator {
           ignore(
               "Already received a bid with equal or higher value %s for block with parent hash %s. Current bid's value is %s",
               existingBidValue, bid.getParentBlockHash(), bid.getValue()));
-    }
-
-    /*
-     * [IGNORE] bid.slot is the current slot or the next slot.
-     */
-
-    if (!gossipValidationHelper.isSlotCurrentOrNext(bid.getSlot())) {
-      LOG.trace("Bid must be for current or next slot but was for slot {}", bid.getSlot());
-      return completedFuture(
-          ignore("Bid must be for current or next slot but was for slot %s", bid.getSlot()));
     }
 
     /*
@@ -198,7 +196,9 @@ public class ExecutionPayloadBidGossipValidator {
                 return reject("Invalid payload execution bid signature");
               }
 
-              if (!buildersForSlot.add(bid.getBuilderIndex())) {
+              if (!seenExecutionPayloadBids
+                  .computeIfAbsent(bid.getSlot(), __ -> ConcurrentHashMap.newKeySet())
+                  .add(bid.getBuilderIndex())) {
                 LOG.trace(
                     "Another payload execution bid from Builder with index {} already processed while validating bid for slot {}",
                     bid.getBuilderIndex(),
