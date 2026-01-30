@@ -657,6 +657,15 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
     return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }
 
+  public SafeFuture<List<SignedExecutionPayloadEnvelope>>
+      retrieveSignedExecutionPayloadEnvelopeByRange(final UInt64 startSlot, final UInt64 count) {
+    if (store == null) {
+      return SafeFuture.completedFuture(Collections.emptyList());
+    }
+    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+  }
+
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(final Bytes32 blockRoot) {
     if (store == null) {
       return EmptyStoreResults.EMPTY_STATE_FUTURE;
