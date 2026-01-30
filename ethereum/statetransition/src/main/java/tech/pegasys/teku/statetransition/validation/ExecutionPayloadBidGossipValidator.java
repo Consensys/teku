@@ -167,7 +167,7 @@ public class ExecutionPayloadBidGossipValidator {
               /*
                * [REJECT] bid.builder_index is a valid/active builder index -- i.e. is_active_builder(state, bid.builder_index) returns True
                */
-              if (!gossipValidationHelper.isValidBuilderIndex(
+              if (!gossipValidationHelper.isActiveBuilder(
                   bid.getBuilderIndex(), state, bid.getSlot())) {
                 LOG.trace(
                     "Invalid builder index {}. Builder should be valid, active and non-slashed.",

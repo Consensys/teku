@@ -162,7 +162,7 @@ public class GossipValidationHelper {
     return recentChainData.retrieveBlockByRoot(root);
   }
 
-  public boolean isValidBuilderIndex(
+  public boolean isActiveBuilder(
       final UInt64 builderIndex, final BeaconState state, final UInt64 slot) {
     return MiscHelpersGloas.required(spec.atSlot(slot).miscHelpers())
         .isActiveBuilder(state, builderIndex);

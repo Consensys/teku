@@ -83,8 +83,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
         .thenReturn(Optional.of(slot.decrement()));
     when(gossipValidationHelper.getParentStateInBlockEpoch(slot.decrement(), parentBlockRoot, slot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(postState)));
-    when(gossipValidationHelper.isValidBuilderIndex(builderIndex, postState, slot))
-        .thenReturn(true);
+    when(gossipValidationHelper.isActiveBuilder(builderIndex, postState, slot)).thenReturn(true);
     when(gossipValidationHelper.builderHasEnoughBalanceForBid(
             bid.getValue(), builderIndex, postState, slot))
         .thenReturn(true);
@@ -154,8 +153,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
     when(gossipValidationHelper.getParentStateInBlockEpoch(
             slot.decrement(), lowerValueBid.getMessage().getParentBlockRoot(), slot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(postState)));
-    when(gossipValidationHelper.isValidBuilderIndex(builderIndex, postState, slot))
-        .thenReturn(true);
+    when(gossipValidationHelper.isActiveBuilder(builderIndex, postState, slot)).thenReturn(true);
     when(gossipValidationHelper.builderHasEnoughBalanceForBid(
             lowerValue, builderIndex, postState, slot))
         .thenReturn(true);
@@ -191,7 +189,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
     final SignedExecutionPayloadBid higherValueInvalidBid =
         dataStructureUtil.randomSignedExecutionPayloadBid(higherValueBidMessage);
 
-    when(gossipValidationHelper.isValidBuilderIndex(differentBuilderIndex, postState, slot))
+    when(gossipValidationHelper.isActiveBuilder(differentBuilderIndex, postState, slot))
         .thenReturn(true);
     when(gossipValidationHelper.builderHasEnoughBalanceForBid(
             higherValue, differentBuilderIndex, postState, slot))
@@ -221,7 +219,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
     when(gossipValidationHelper.isBlockHashKnown(
             parentBlockHash, intermediateValueValidBid.getMessage().getParentBlockRoot()))
         .thenReturn(true);
-    when(gossipValidationHelper.isValidBuilderIndex(intermediateBidBuilderIndex, postState, slot))
+    when(gossipValidationHelper.isActiveBuilder(intermediateBidBuilderIndex, postState, slot))
         .thenReturn(true);
     when(gossipValidationHelper.getSlotForBlockRoot(
             intermediateValueValidBid.getMessage().getParentBlockRoot()))
@@ -263,8 +261,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
 
   @TestTemplate
   void shouldReject_whenBuilderIndexIsInvalid() {
-    when(gossipValidationHelper.isValidBuilderIndex(builderIndex, postState, slot))
-        .thenReturn(false);
+    when(gossipValidationHelper.isActiveBuilder(builderIndex, postState, slot)).thenReturn(false);
     assertThatSafeFuture(bidValidator.validate(signedBid))
         .isCompletedWithValue(
             reject(
@@ -509,8 +506,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
     when(gossipValidationHelper.getParentStateInBlockEpoch(
             slot.decrement(), message.getParentBlockRoot(), slot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(postState)));
-    when(gossipValidationHelper.isValidBuilderIndex(builderIndex, postState, slot))
-        .thenReturn(true);
+    when(gossipValidationHelper.isActiveBuilder(builderIndex, postState, slot)).thenReturn(true);
     when(gossipValidationHelper.builderHasEnoughBalanceForBid(
             bidValue, builderIndex, postState, slot))
         .thenReturn(true);
