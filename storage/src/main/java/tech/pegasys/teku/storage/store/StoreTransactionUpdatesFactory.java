@@ -135,9 +135,14 @@ class StoreTransactionUpdatesFactory {
 
     // Prune collections
     calculatePrunedHotBlockRoots();
-    prunedHotBlockRoots.forEach(hotBlocks::remove);
-    prunedHotBlockRoots.forEach(hotBlockAndStates::remove);
-    prunedHotBlockRoots.forEach(hotExecutionPayloadAndStates::remove);
+    prunedHotBlockRoots
+        .keySet()
+        .forEach(
+            blockRoot -> {
+              hotBlocks.remove(blockRoot);
+              hotBlockAndStates.remove(blockRoot);
+              hotExecutionPayloadAndStates.remove(blockRoot);
+            });
 
     final Optional<FinalizedChainData> finalizedChainData =
         Optional.of(
