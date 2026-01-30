@@ -40,7 +40,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.SpecLogic;
@@ -305,11 +304,6 @@ public class DataColumnSidecarGossipValidator {
       return completedFuture(SAVE_FOR_FUTURE);
     }
 
-    if (maybeBlockHeader.isPresent()) {
-      return validateWithBlockHeader(
-          dataColumnSidecar, specLogic, dataColumnSidecarUtil, maybeBlockHeader.get());
-    }
-
     final DataColumnSidecarValidationResult blockSlotMatchResult =
         dataColumnSidecarUtil.validateBlockSlot(
             dataColumnSidecar, gossipValidationHelper::getSlotForBlockRoot);
@@ -321,56 +315,38 @@ public class DataColumnSidecarGossipValidator {
                   .orElse("DataColumnSidecar slot doesn't match the corresponding block slot")));
     }
 
-    return performWithBlockValidation(dataColumnSidecar, dataColumnSidecarUtil)
+    if (maybeBlockHeader.isPresent()) {
+      return validateWithBlockHeader(
+          dataColumnSidecar, specLogic, dataColumnSidecarUtil, maybeBlockHeader.get());
+    }
+
+    // Perform async block validation (fork-specific)
+    return dataColumnSidecarUtil
+        .validateBidKzgCommitmentsRoot(
+            dataColumnSidecar, gossipValidationHelper::retrieveBlockByRoot)
         .thenCompose(
-            maybeResult ->
-                maybeResult
-                    .map(SafeFuture::completedFuture)
-                    .orElseGet(
-                        () ->
-                            validateKzgProofsAndFinalize(
-                                dataColumnSidecar, specLogic, validationHelper)));
-  }
-
-  private SafeFuture<Optional<InternalValidationResult>> performWithBlockValidation(
-      final DataColumnSidecar dataColumnSidecar,
-      final DataColumnSidecarUtil dataColumnSidecarUtil) {
-    final Bytes32 beaconBlockRoot = dataColumnSidecar.getBeaconBlockRoot();
-
-    return gossipValidationHelper
-        .retrieveBlockByRoot(beaconBlockRoot)
-        .thenApply(
-            maybeBeaconBlock -> {
-              if (maybeBeaconBlock.isEmpty()) {
-                LOG.trace(
-                    "Block with root {} is unavailable. Saving for future processing",
-                    beaconBlockRoot);
-                return Optional.of(SAVE_FOR_FUTURE);
-              }
-
-              final BeaconBlock beaconBlock = maybeBeaconBlock.get();
-
-              /*
-               * [REJECT] The hash of the sidecar's kzg_commitments matches the blob_kzg_commitments_root
-               * in the corresponding builder's bid for sidecar.beacon_block_root.
-               */
-              final DataColumnSidecarValidationResult kzgCommitmentRootValidationResult =
-                  dataColumnSidecarUtil.validateKzgCommitmentsRoot(dataColumnSidecar, beaconBlock);
-
-              if (!kzgCommitmentRootValidationResult.isValid()) {
-                LOG.trace(
-                    "DataColumnSidecar KZG commitments validation failed: {}",
-                    kzgCommitmentRootValidationResult
+            maybeKzgCommitmentsRootValidationResult -> {
+              if (maybeKzgCommitmentsRootValidationResult.isPresent()) {
+                final DataColumnSidecarValidationResult kzgCommitmentsRootValidationResult =
+                    maybeKzgCommitmentsRootValidationResult.get();
+                final String reason =
+                    kzgCommitmentsRootValidationResult
                         .getReason()
-                        .orElse("Unable to validate DataColumnSidecar KZG commitments root"));
-                return Optional.of(
-                    reject(
-                        kzgCommitmentRootValidationResult
-                            .getReason()
-                            .orElse("Unable to validate DataColumnSidecar KZG commitments root")));
-              }
+                        .orElse("DataColumnSidecar kzg commitments root validation failed");
+                if (kzgCommitmentsRootValidationResult.isSaveForFuture()) {
+                  LOG.trace(
+                      "Block unavailable during kzg commitments root validation. Saving for future processing: {}",
+                      reason);
+                  return SafeFuture.completedFuture(SAVE_FOR_FUTURE);
+                }
 
-              return Optional.empty();
+                if (!kzgCommitmentsRootValidationResult.isValid()) {
+                  LOG.trace("DataColumnSidecar kzg commitments root validation failed: {}", reason);
+                  return SafeFuture.completedFuture(reject(reason));
+                }
+              }
+              // Validation passed, continue with KZG proofs
+              return validateKzgProofsAndFinalize(dataColumnSidecar, specLogic, validationHelper);
             });
   }
 
@@ -495,7 +471,7 @@ public class DataColumnSidecarGossipValidator {
       final DataColumnSidecarUtil validationHelper) {
 
     /*
-     * [REJECT] The sidecar's column data is valid as verified by verify_data_column_sidecar_kzg_proofs
+     * [REJECT] The sidecar's column data is valid as verified by verify_data_column_sidecar_kzg_proofs(sidecar).
      */
     try (MetricsHistogram.Timer ignored =
         dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {

@@ -22,6 +22,7 @@ import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -52,9 +53,6 @@ public interface DataColumnSidecarUtil {
   boolean isBlockWithBidSeen(
       DataColumnSidecar dataColumnSidecar, Function<Bytes32, Boolean> isBlockRootSeen);
 
-  DataColumnSidecarValidationResult validateKzgCommitmentsRoot(
-      DataColumnSidecar dataColumnSidecar, BeaconBlock beaconBlock);
-
   DataColumnSidecarValidationResult validateBlockSlot(
       DataColumnSidecar dataColumnSidecar, Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot);
 
@@ -63,6 +61,10 @@ public interface DataColumnSidecarUtil {
       UInt64 parentBlockSlot,
       Map<Bytes32, BlockImportResult> invalidBlockRoots,
       BiPredicate<UInt64, Bytes32> currentFinalizedCheckpointIsAncestorOfBlock);
+
+  SafeFuture<Optional<DataColumnSidecarValidationResult>> validateBidKzgCommitmentsRoot(
+      DataColumnSidecar dataColumnSidecar,
+      Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot);
 
   DataColumnSidecarTrackingKey extractTrackingKey(DataColumnSidecar dataColumnSidecar);
 

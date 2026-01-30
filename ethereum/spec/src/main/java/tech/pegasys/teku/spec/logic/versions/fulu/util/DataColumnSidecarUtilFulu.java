@@ -21,6 +21,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
@@ -142,20 +143,6 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
       final DataColumnSidecar dataColumnSidecar, final Function<Bytes32, Boolean> isBlockRootSeen) {
     // Fulu doesn't require block with bid check (Gloas-specific validation)
     return true;
-  }
-
-  /**
-   * Validate that the sidecar's KZG commitments root matches the block's KZG commitments root.
-   *
-   * @param dataColumnSidecar the data column sidecar to validate
-   * @param beaconBlock the beacon block
-   * @return validation result
-   */
-  @Override
-  public DataColumnSidecarValidationResult validateKzgCommitmentsRoot(
-      final DataColumnSidecar dataColumnSidecar, final BeaconBlock beaconBlock) {
-    // Fulu does not validate the kzg commitments root (this is Gloas-specific)
-    return DataColumnSidecarValidationResult.valid();
   }
 
   /**
@@ -376,5 +363,21 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
             dataColumnSidecar.getKzgCommitments().hashTreeRoot(),
             fuluSidecar.getKzgCommitmentsInclusionProof().hashTreeRoot(),
             fuluSidecar.getBlockBodyRoot()));
+  }
+
+  /**
+   * Perform async block validation. Fulu sidecars contain signed block headers, so no async block
+   * retrieval is needed.
+   *
+   * @param dataColumnSidecar the data column sidecar to validate
+   * @param retrieveBlockByRoot function to retrieve full block by root
+   * @return completed future with empty result (no validation needed for Fulu)
+   */
+  @Override
+  public SafeFuture<Optional<DataColumnSidecarValidationResult>> validateBidKzgCommitmentsRoot(
+      final DataColumnSidecar dataColumnSidecar,
+      final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
+    // Fulu sidecars already contain the header, no block validation needed
+    return SafeFuture.completedFuture(Optional.empty());
   }
 }

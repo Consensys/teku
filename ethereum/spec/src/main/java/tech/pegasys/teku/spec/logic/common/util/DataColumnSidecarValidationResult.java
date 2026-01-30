@@ -29,19 +29,31 @@ import java.util.function.Supplier;
  *       {@link #invalid(Supplier)} factory methods. The failure reason is wrapped in a {@link
  *       Supplier} to enable lazy evaluation. This avoids the cost of constructing complex reason
  *       strings unless the reason is actually requested via {@link #getReason()}.
+ *   <li>For missing dependencies (e.g., block not yet available), use {@link
+ *       #saveForFuture(String)} to indicate the sidecar should be queued for later processing.
  * </ul>
  */
 public class DataColumnSidecarValidationResult {
 
-  public static final DataColumnSidecarValidationResult VALID =
-      new DataColumnSidecarValidationResult(true, Optional.empty());
+  public boolean isSaveForFuture() {
+    return type == ResultType.SAVE_FOR_FUTURE;
+  }
 
-  private final boolean isValid;
+  public enum ResultType {
+    VALID,
+    INVALID,
+    SAVE_FOR_FUTURE
+  }
+
+  public static final DataColumnSidecarValidationResult VALID =
+      new DataColumnSidecarValidationResult(ResultType.VALID, Optional.empty());
+
+  private final ResultType type;
   private final Optional<Supplier<String>> reason;
 
   private DataColumnSidecarValidationResult(
-      final boolean isValid, final Optional<Supplier<String>> reason) {
-    this.isValid = isValid;
+      final ResultType type, final Optional<Supplier<String>> reason) {
+    this.type = type;
     this.reason = reason;
   }
 
@@ -50,15 +62,24 @@ public class DataColumnSidecarValidationResult {
   }
 
   public static DataColumnSidecarValidationResult invalid(final Supplier<String> reason) {
-    return new DataColumnSidecarValidationResult(false, Optional.of(reason));
+    return new DataColumnSidecarValidationResult(ResultType.INVALID, Optional.of(reason));
   }
 
   public static DataColumnSidecarValidationResult invalid(final String reason) {
-    return new DataColumnSidecarValidationResult(false, Optional.of(() -> reason));
+    return new DataColumnSidecarValidationResult(ResultType.INVALID, Optional.of(() -> reason));
+  }
+
+  public static DataColumnSidecarValidationResult saveForFuture(final String reason) {
+    return new DataColumnSidecarValidationResult(
+        ResultType.SAVE_FOR_FUTURE, Optional.of(() -> reason));
   }
 
   public boolean isValid() {
-    return isValid;
+    return type == ResultType.VALID;
+  }
+
+  public ResultType getType() {
+    return type;
   }
 
   public Optional<String> getReason() {

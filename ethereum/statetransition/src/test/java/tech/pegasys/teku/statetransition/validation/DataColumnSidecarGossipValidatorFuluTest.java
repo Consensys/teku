@@ -396,8 +396,6 @@ public class DataColumnSidecarGossipValidatorFuluTest
             });
     when(validationHelper.verifyDataColumnSidecarStructure(any(), any())).thenReturn(true);
     when(validationHelper.verifyDataColumnSidecarKzgProofs(any(), any())).thenReturn(true);
-    when(validationHelper.validateKzgCommitmentsRoot(any(), any()))
-        .thenReturn(DataColumnSidecarValidationResult.valid());
     when(validationHelper.validateBlockSlot(any(), any()))
         .thenReturn(DataColumnSidecarValidationResult.valid());
     when(validationHelper.validateParentBlock(any(), any(), any(), any()))
