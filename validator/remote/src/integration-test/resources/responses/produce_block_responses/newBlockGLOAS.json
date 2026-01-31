@@ -332,16 +332,16 @@
       ],
       "signed_execution_payload_bid": {
         "message": {
-          "parent_block_hash": "0x0c15f142b0175c6e8491002de9596cba91433934b44834491c80e04920a257ea",
-          "parent_block_root": "0xd3b10243d034be9fa5c8caaa6ebf2e537e3a3c7e91eeb91a93fc15f1917f314a",
-          "block_hash": "0xe6d2fc4270809de49a0b32d641484320853d3b1047b7e2d4c07d59b96ce0e8d4",
-          "prev_randao": "0x4678df4290faf93c645a36af63f4a921a44c36ead7a2ae77a503aba2afc47d8a",
-          "fee_recipient": "0x5999d9423046d981599d9dda377dbeeeaa4f357c",
-          "gas_limit": "4822007335809147728",
-          "builder_index": "740284",
-          "slot": "1310451960",
-          "value": "4820354852592463600",
-          "execution_payment": "4759212943510379790",
+          "parent_block_hash": "0xf9f3f64210cc7c298f4e990115d157ed8b403aa2fe7f0b8feefe9c814641a05f",
+          "parent_block_root": "0x4678df4290faf93c645a36af63f4a921a44c36ead7a2ae77a503aba2afc47d8a",
+          "block_hash": "0x5999d9423046d981599d9dda377dbeeeaa4f357c8d6bd731d384ee6a8a253515",
+          "prev_randao": "0x2036eb4250633bb379d46758bce28087974638c66a115d034a012412fb020f75",
+          "fee_recipient": "0x3357e542f0ae1af86f17cf83906b95549e493758",
+          "gas_limit": "4759212943510379790",
+          "builder_index": "1125033",
+          "slot": "21512915928",
+          "value": "4826964785459200112",
+          "execution_payment": "4833574722620903920",
           "blob_kzg_commitments_root": "0x08400642aee83f31d60723f5fabaa1c58bbc110432a5935f43af6c943fc4fe96"
         },
         "signature": "0xb58eaaba3ba51d7098d65fbec3829ace78576a2276fd9c97c293aabdb634a2c50f52611f48088da5d4a5b5fa2c5f4c0513d8dd91c8534b50a7b8ae0072583612610ada0c81a261641c66ac542428cedf20f1b954ad03505fc058b40ce0bf4182"
