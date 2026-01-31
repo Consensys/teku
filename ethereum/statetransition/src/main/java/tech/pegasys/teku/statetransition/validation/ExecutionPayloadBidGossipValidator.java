@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -212,15 +213,19 @@ public class ExecutionPayloadBidGossipValidator {
                     bid.getBuilderIndex(), bid.getSlot());
               }
 
-              // Atomically check threshold and update highest bid
+              // Atomically check threshold and update the highest bid
               final UInt64 bidValue = bid.getValue();
+              final AtomicReference<UInt64> existingBidRef = new AtomicReference<>();
               final UInt64 actualHighestBid =
                   highestBids.compute(
                       bidValueKey,
-                      (key, existingValue) -> computeNewHighestBid(existingValue, bidValue));
+                      (key, existingValue) -> {
+                        existingBidRef.set(existingValue);
+                        return computeNewHighestBid(existingValue, bidValue);
+                      });
 
-              // If actual highest doesn't equal our bid, we were rejected (threshold not met)
-              if (!actualHighestBid.equals(bidValue)) {
+              // Check if our bid was actually accepted
+              if (!wasBidAccepted(bidValue, existingBidRef.get(), actualHighestBid)) {
                 final UInt64 minRequired = calculateMinimumRequiredBid(actualHighestBid);
                 LOG.trace(
                     "Bid value {} does not meet minimum increment threshold ({}%) due to concurrent update. Current highest: {}, minimum required: {}",
@@ -267,6 +272,33 @@ public class ExecutionPayloadBidGossipValidator {
     }
     // Accept the new bid if higher
     return newBidValue.max(existingValue);
+  }
+
+  /**
+   * Determines if a bid was actually accepted based on the atomic compute operation result. This
+   * method correctly handles the case where bidValue equals existingBid (which would fail the
+   * threshold check but pass a naive equality test).
+   *
+   * @param bidValue the bid value that was submitted
+   * @param existingBid the bid value that existed before compute (may be null for first bid)
+   * @param actualHighestBid the resulting highest bid value after compute
+   * @return true if the bid was accepted, false if rejected due to threshold
+   */
+  private boolean wasBidAccepted(
+      final UInt64 bidValue, final UInt64 existingBid, final UInt64 actualHighestBid) {
+    // The bid must be the current highest
+    if (!actualHighestBid.equals(bidValue)) {
+      return false;
+    }
+
+    // First bid is always accepted (no threshold to check)
+    if (existingBid == null) {
+      return true;
+    }
+
+    // New bids must meet the minimum increment threshold
+    final UInt64 minRequired = calculateMinimumRequiredBid(existingBid);
+    return bidValue.isGreaterThanOrEqualTo(minRequired);
   }
 
   private boolean isSignatureValid(
