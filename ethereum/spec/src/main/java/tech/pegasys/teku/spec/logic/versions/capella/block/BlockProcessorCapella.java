@@ -140,7 +140,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
 
     safelyProcess(
         () ->
-            processBlsToExecutionChangesNoValidation(
+            processBlsToExecutionChanges(
                 MutableBeaconStateCapella.required(state),
                 body.getOptionalBlsToExecutionChanges()
                     .orElseThrow(
@@ -149,6 +149,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
                                 "BlsToExecutionChanges was not found during block processing."))));
   }
 
+  // process_bls_to_execution_change
   @Override
   public void processBlsToExecutionChanges(
       final MutableBeaconState state,
@@ -160,16 +161,8 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
     if (!result.isValid()) {
       throw new BlockProcessingException(result.getFailureReason());
     }
-    processBlsToExecutionChangesNoValidation(
-        MutableBeaconStateCapella.required(state), blsToExecutionChanges);
-  }
 
-  // process_bls_to_execution_change
-  private void processBlsToExecutionChangesNoValidation(
-      final MutableBeaconStateCapella state,
-      final SszList<SignedBlsToExecutionChange> signedBlsToExecutionChanges) {
-
-    for (SignedBlsToExecutionChange signedBlsToExecutionChange : signedBlsToExecutionChanges) {
+    for (SignedBlsToExecutionChange signedBlsToExecutionChange : blsToExecutionChanges) {
       BlsToExecutionChange addressChange = signedBlsToExecutionChange.getMessage();
       final int validatorIndex = addressChange.getValidatorIndex().intValue();
       Validator validator = state.getValidators().get(validatorIndex);
