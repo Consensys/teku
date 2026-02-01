@@ -125,8 +125,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
                 () ->
                     new BlockProcessingException(
                         "BlsToExecutionChanges was not found during block processing.")),
-        signatureVerifier,
-        false);
+        signatureVerifier);
   }
 
   @Override
@@ -157,7 +156,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       throws BlockProcessingException {
     final BlockValidationResult result =
         verifyBlsToExecutionChangesPreProcessing(
-            state, blsToExecutionChanges, BLSSignatureVerifier.SIMPLE, true);
+            state, blsToExecutionChanges, BLSSignatureVerifier.SIMPLE);
     if (!result.isValid()) {
       throw new BlockProcessingException(result.getFailureReason());
     }
@@ -166,7 +165,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   }
 
   // process_bls_to_execution_change
-  public void processBlsToExecutionChangesNoValidation(
+  private void processBlsToExecutionChangesNoValidation(
       final MutableBeaconStateCapella state,
       final SszList<SignedBlsToExecutionChange> signedBlsToExecutionChanges) {
 
@@ -201,8 +200,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   BlockValidationResult verifyBlsToExecutionChangesPreProcessing(
       final BeaconState genericState,
       final SszList<SignedBlsToExecutionChange> signedBlsToExecutionChanges,
-      final BLSSignatureVerifier signatureVerifier,
-      final boolean executeValidationRules) {
+      final BLSSignatureVerifier signatureVerifier) {
 
     final Set<UInt64> validatorsSeenInBlock = new HashSet<>();
     for (SignedBlsToExecutionChange signedBlsToExecutionChange : signedBlsToExecutionChanges) {
@@ -213,13 +211,11 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
             "Duplicated BlsToExecutionChange for validator " + addressChange.getValidatorIndex());
       }
 
-      if (executeValidationRules) {
-        final Optional<OperationInvalidReason> operationInvalidReason =
-            operationValidator.validateBlsToExecutionChange(
-                genericState.getFork(), genericState, addressChange);
-        if (operationInvalidReason.isPresent()) {
-          return BlockValidationResult.failed(operationInvalidReason.get().describe());
-        }
+      final Optional<OperationInvalidReason> operationInvalidReason =
+          operationValidator.validateBlsToExecutionChange(
+              genericState.getFork(), genericState, addressChange);
+      if (operationInvalidReason.isPresent()) {
+        return BlockValidationResult.failed(operationInvalidReason.get().describe());
       }
 
       boolean signatureValid =
