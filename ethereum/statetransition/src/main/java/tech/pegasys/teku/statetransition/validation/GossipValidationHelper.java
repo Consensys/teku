@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -28,6 +30,8 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrate
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipValidationHelper {
@@ -76,22 +80,22 @@ public class GossipValidationHelper {
         && currentTimeMillis.isLessThanOrEqualTo(slotEndTimeMillis.plus(maxOffsetTimeInMillis));
   }
 
-  public boolean isSignatureValidWithRespectToProposerIndex(
-      final Bytes signingRoot,
-      final UInt64 proposerIndex,
-      final BLSSignature signature,
-      final BeaconState postState) {
-    return spec.getValidatorPubKey(postState, proposerIndex)
-        .map(publicKey -> BLS.verify(publicKey, signingRoot, signature))
-        .orElse(false);
-  }
-
   public boolean isSignatureValidWithRespectToBuilderIndex(
       final Bytes signingRoot,
       final UInt64 builderIndex,
       final BLSSignature signature,
-      final BeaconState postState) {
-    return spec.getBuilderPubKey(postState, builderIndex)
+      final BeaconState state) {
+    return spec.getBuilderPubKey(state, builderIndex)
+        .map(publicKey -> BLS.verify(publicKey, signingRoot, signature))
+        .orElse(false);
+  }
+
+  public boolean isSignatureValidWithRespectToProposerIndex(
+      final Bytes signingRoot,
+      final UInt64 proposerIndex,
+      final BLSSignature signature,
+      final BeaconState state) {
+    return spec.getValidatorPubKey(state, proposerIndex)
         .map(publicKey -> BLS.verify(publicKey, signingRoot, signature))
         .orElse(false);
   }
@@ -163,8 +167,36 @@ public class GossipValidationHelper {
     return recentChainData.retrieveBlockByRoot(root);
   }
 
+  public boolean isActiveBuilder(
+      final UInt64 builderIndex, final BeaconState state, final UInt64 slot) {
+    return MiscHelpersGloas.required(spec.atSlot(slot).miscHelpers())
+        .isActiveBuilder(state, builderIndex);
+  }
+
   public boolean isValidatorInPayloadTimelinessCommittee(
       final UInt64 validatorIndex, final BeaconState state, final UInt64 slot) {
     return spec.getPtc(state, slot).contains(validatorIndex.intValue());
+  }
+
+  public boolean isSlotCurrentOrNext(final UInt64 slot) {
+    return recentChainData
+        .getCurrentSlot()
+        .map(currentSlot -> slot.equals(currentSlot) || slot.equals(currentSlot.plus(ONE)))
+        .orElse(false);
+  }
+
+  public boolean builderHasEnoughBalanceForBid(
+      final UInt64 bidValue,
+      final UInt64 builderIndex,
+      final BeaconState state,
+      final UInt64 slot) {
+    return BeaconStateAccessorsGloas.required(spec.atSlot(slot).beaconStateAccessors())
+        .canBuilderCoverBid(state, builderIndex, bidValue);
+  }
+
+  public boolean isBlockHashKnown(final Bytes32 blockHash, final Bytes32 blockRoot) {
+    final Optional<Bytes32> maybeBlockHash =
+        recentChainData.getExecutionBlockHashForBlockRoot(blockRoot);
+    return maybeBlockHash.isPresent() && blockHash.equals(maybeBlockHash.get());
   }
 }
