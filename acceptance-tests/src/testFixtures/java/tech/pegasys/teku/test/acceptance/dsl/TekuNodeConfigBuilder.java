@@ -476,12 +476,6 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
-  public TekuNodeConfigBuilder withSubscribeAllCustodySubnetsEnabled() {
-    LOG.debug("p2p-subscribe-all-custody-subnets-enabled=true");
-    configMap.put("p2p-subscribe-all-custody-subnets-enabled", true);
-    return this;
-  }
-
   public TekuNodeConfigBuilder withDepositsFrom(final BesuNode eth1Node) {
     mustBe(NodeType.BEACON_NODE);
     configMap.put("Xinterop-enabled", false);
