@@ -1040,7 +1040,7 @@ class ForkChoiceNotifierTest {
     final Bytes32 bestBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final BeaconState state =
         recentChainData
-            .retrieveStateAtSlot(new SlotAndBlockRoot(blockSlot, bestBlockRoot))
+            .retrieveBlockState(new SlotAndBlockRoot(blockSlot, bestBlockRoot))
             .join()
             .orElseThrow();
     return withProposerForSlot(getCurrentForkChoiceState(), state, blockSlot);

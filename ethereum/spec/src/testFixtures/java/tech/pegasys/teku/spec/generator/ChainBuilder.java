@@ -381,12 +381,13 @@ public class ChainBuilder {
     return resultToState(getBlockAndStateAtSlot(slot));
   }
 
-  public SignedExecutionPayloadAndState getExecutionPayloadAndStateAtSlot(final UInt64 slot) {
-    return executionPayloads.get(slot);
+  public Optional<SignedExecutionPayloadAndState> getExecutionPayloadAndStateAtSlot(
+      final UInt64 slot) {
+    return Optional.ofNullable(executionPayloads.get(slot));
   }
 
-  public BeaconState getExecutionPayloadStateAtSlot(final UInt64 slot) {
-    return resultToState(getExecutionPayloadAndStateAtSlot(slot));
+  public Optional<BeaconState> getExecutionPayloadStateAtSlot(final UInt64 slot) {
+    return getExecutionPayloadAndStateAtSlot(slot).map(SignedExecutionPayloadAndState::state);
   }
 
   public SignedBlockAndState getLatestBlockAndStateAtSlot(final long slot) {
@@ -698,7 +699,7 @@ public class ChainBuilder {
     final SignedBlockAndState latestBlockAndState = getLatestBlockAndState();
     final BeaconState preState =
         // build on top of the execution payload state if an execution payload has been processed
-        Optional.ofNullable(getExecutionPayloadStateAtSlot(latestBlockAndState.getSlot()))
+        getExecutionPayloadStateAtSlot(latestBlockAndState.getSlot())
             .orElse(latestBlockAndState.getState());
     final Bytes32 parentRoot = latestBlockAndState.getBlock().getMessage().hashTreeRoot();
 
@@ -1032,10 +1033,6 @@ public class ChainBuilder {
 
   private SignedBeaconBlock resultToBlock(final SignedBlockAndState result) {
     return Optional.ofNullable(result).map(SignedBlockAndState::getBlock).orElse(null);
-  }
-
-  private BeaconState resultToState(final SignedExecutionPayloadAndState result) {
-    return Optional.ofNullable(result).map(SignedExecutionPayloadAndState::state).orElse(null);
   }
 
   public SignedContributionAndProofTestBuilder createValidSignedContributionAndProofBuilder() {

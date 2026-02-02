@@ -214,7 +214,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final ExecutionLayerChannel executionLayer) {
     recentChainData.setBlockTimelinessIfEmpty(block);
     return recentChainData
-        .retrieveStateAtSlot(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
+        .retrieveBlockState(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
         .thenPeek(__ -> blockImportPerformance.ifPresent(BlockImportPerformance::preStateRetrieved))
         .thenCompose(
             blockSlotState ->
@@ -231,7 +231,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final SignedExecutionPayloadEnvelope signedEnvelope,
       final ExecutionLayerChannel executionLayer) {
     return recentChainData
-        .retrieveStateAtSlot(signedEnvelope.getSlotAndBlockRoot())
+        .retrieveBlockState(signedEnvelope.getSlotAndBlockRoot())
         .thenCompose(blockState -> onExecutionPayload(signedEnvelope, blockState, executionLayer));
   }
 
