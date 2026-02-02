@@ -164,9 +164,7 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
       final int totalCustodyGroups = p2pConfig.getTotalCustodyGroupCount(specVersionFulu);
       final int numberOfColumns =
           SpecConfigFulu.required(specVersionFulu.getConfig()).getNumberOfColumns();
-      if (totalCustodyGroups == numberOfColumns) {
-        return true;
-      }
+      return totalCustodyGroups == numberOfColumns;
     }
     return false;
   }
