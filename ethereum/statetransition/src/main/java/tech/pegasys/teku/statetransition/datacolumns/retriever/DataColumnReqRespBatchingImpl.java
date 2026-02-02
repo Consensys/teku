@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
-import com.google.common.collect.Lists;
+import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -21,9 +21,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,6 +35,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStreamHandler;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
@@ -41,17 +47,23 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
   private static final Logger LOG = LogManager.getLogger();
-  // 64 slots * 128 columns at max = 8192, half of MAX_REQUEST_DATA_COLUMN_SIDECARS
-  private static final int MAX_BATCH_SIZE = 64;
 
   private final BatchDataColumnsByRootReqResp byRootRpc;
   private final DataColumnsByRootIdentifierSchema byRootSchema;
+  private final Spec spec;
+  private final int cellsTargetPerRequest;
 
   public DataColumnReqRespBatchingImpl(
       final BatchDataColumnsByRootReqResp byRootRpc,
-      final DataColumnsByRootIdentifierSchema byRootSchema) {
+      final DataColumnsByRootIdentifierSchema byRootSchema,
+      final Spec spec) {
     this.byRootRpc = byRootRpc;
     this.byRootSchema = byRootSchema;
+    this.spec = spec;
+    this.cellsTargetPerRequest =
+        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
+                .getMaxRequestDataColumnSidecars()
+            * 2;
   }
 
   private record RequestEntry(
@@ -100,14 +112,61 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
                     byRootSchema.create(
                         byRootRequest.root(), byRootRequest.columns().stream().toList()))
             .toList();
+
+    // for 21 max blobs it will be 1560 sidecars per request, 12+ full blocks
+    // for 72 max blobs it will be 455 sidecars per request, ~3.5 full blocks
+    final int maxBlobs = getMaxBlobsForRequests(nodeRequests);
+    final int maxSidecarsInRequest = cellsTargetPerRequest / maxBlobs;
     final List<List<DataColumnsByRootIdentifier>> byRootBatches =
-        Lists.partition(byRootIdentifiers, MAX_BATCH_SIZE);
+        partitionRequests(byRootIdentifiers, maxSidecarsInRequest);
 
     final AsyncStream<DataColumnSidecar> byRootStream =
         AsyncStream.createUnsafe(byRootBatches.iterator())
             .flatMap(byRootBatch -> byRootRpc.requestDataColumnSidecarsByRoot(nodeId, byRootBatch));
 
     byRootStream.consume(createResponseHandler(nodeRequests));
+  }
+
+  int getMaxBlobsForRequests(final List<RequestEntry> nodeRequests) {
+    final UInt64 lastSlot = nodeRequests.getLast().columnIdentifier.slot();
+    final Optional<Integer> maybeMaxBlobs = spec.getMaxBlobsPerBlockAtSlot(lastSlot);
+    return maybeMaxBlobs.orElseGet(
+        () ->
+            SpecConfigElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig())
+                .getMaxBlobsPerBlock());
+  }
+
+  @VisibleForTesting
+  List<List<DataColumnsByRootIdentifier>> partitionRequests(
+      final List<DataColumnsByRootIdentifier> byRootIdentifiers, final int maxSize) {
+    final List<List<DataColumnsByRootIdentifier>> result = new ArrayList<>();
+    IdentifiersList currentBatch = new IdentifiersList(new ArrayList<>(), new AtomicInteger(0));
+    for (final DataColumnsByRootIdentifier byRootIdentifier : byRootIdentifiers) {
+      if (currentBatch.count().get() >= maxSize) {
+        result.add(currentBatch.dataColumnsByRootIdentifiers());
+        currentBatch = new IdentifiersList(new ArrayList<>(), new AtomicInteger(0));
+      }
+      currentBatch.dataColumnsByRootIdentifiers().add(byRootIdentifier);
+      currentBatch.count().addAndGet(byRootIdentifier.getColumns().size());
+    }
+    if (!currentBatch.dataColumnsByRootIdentifiers().isEmpty()) {
+      result.add(currentBatch.dataColumnsByRootIdentifiers());
+    }
+
+    return result;
+  }
+
+  record IdentifiersList(
+      List<DataColumnsByRootIdentifier> dataColumnsByRootIdentifiers, AtomicInteger count) {
+    IdentifiersList(
+        final List<DataColumnsByRootIdentifier> dataColumnsByRootIdentifiers,
+        final AtomicInteger count) {
+      if (!dataColumnsByRootIdentifiers.isEmpty() || count.get() != 0) {
+        throw new IllegalArgumentException();
+      }
+      this.dataColumnsByRootIdentifiers = dataColumnsByRootIdentifiers;
+      this.count = count;
+    }
   }
 
   private List<ByRootRequest> groupByRootRequests(final List<RequestEntry> nodeRequests) {

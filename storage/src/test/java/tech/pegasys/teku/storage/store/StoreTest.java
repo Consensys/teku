@@ -494,9 +494,9 @@ class StoreTest extends AbstractStoreTest {
     tx.commit().join();
 
     final Store s = (Store) store;
-    assertThat(store.retrieveStateAtSlot(stateAndBlockAtSlot(16, chainBuilder))).isCompleted();
-    assertThat(store.retrieveStateAtSlot(stateAndBlockAtSlot(24, chainBuilder))).isCompleted();
-    assertThat(store.retrieveStateAtSlot(stateAndBlockAtSlot(8, chainBuilder))).isCompleted();
+    assertThat(store.retrieveBlockState(stateAndBlockAtSlot(16, chainBuilder))).isCompleted();
+    assertThat(store.retrieveBlockState(stateAndBlockAtSlot(24, chainBuilder))).isCompleted();
+    assertThat(store.retrieveBlockState(stateAndBlockAtSlot(8, chainBuilder))).isCompleted();
     assertThat(
             s.getEpochStates().orElseThrow().values().stream()
                 .map(StateAndBlockSummary::getSlot)
