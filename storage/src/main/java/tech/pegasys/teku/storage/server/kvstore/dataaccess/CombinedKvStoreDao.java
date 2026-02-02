@@ -480,7 +480,10 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
         .put(
             "OPTIMISTIC_TRANSITION_BLOCK_SLOT",
             getOptimisticTransitionBlockSlot().map(Objects::toString))
-        .put("CUSTODY_GROUP_COUNT", getCustodyGroupCount().map(Objects::toString));
+        .put("CUSTODY_GROUP_COUNT", getCustodyGroupCount().map(Objects::toString))
+        .put(
+            "EARLIEST_AVAILABLE_DATA_COLUMN_SLOT",
+            getEarliestAvailableDataColumnSlot().map(Objects::toString));
 
     // get a list of the known keys, so that we can add missing variables
     final Map<String, Optional<String>> knownVariables = knownVariablesBuilder.build();
