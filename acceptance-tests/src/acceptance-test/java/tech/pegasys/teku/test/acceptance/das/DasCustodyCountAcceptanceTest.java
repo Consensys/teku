@@ -133,7 +133,7 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
     // so copying DB and starting new node with old DB to check restart behavior
     final TekuBeaconNode tekuNode2 =
         createTekuBeaconNode(
-            beaconNode(genesisTime, besuNode, initialStateData, Optional.of(validatorKeys), false));
+            beaconNode(genesisTime, besuNode, initialStateData, Optional.empty(), false));
     tekuNode2.copyContentsToWorkingDirectory(dataDirectory);
 
     tekuNode2.start();
@@ -195,7 +195,7 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
     // so copying DB and starting new node with old DB to check restart behavior
     final TekuBeaconNode tekuNode2 =
         createTekuBeaconNode(
-            beaconNode(genesisTime, besuNode, initialStateData, Optional.of(validatorKeys), false));
+            beaconNode(genesisTime, besuNode, initialStateData, Optional.of(validatorKeys), true));
     tekuNode2.copyContentsToWorkingDirectory(dataDirectory);
 
     tekuNode2.start();
