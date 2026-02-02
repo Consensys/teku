@@ -51,7 +51,7 @@ public class TestPeerManager implements DataColumnPeerManager, DataColumnReqResp
     if (peer == null) {
       return 0;
     } else {
-      return peer.getCurrentRequestLimit();
+      return peer.getAvailableRequestCount();
     }
   }
 

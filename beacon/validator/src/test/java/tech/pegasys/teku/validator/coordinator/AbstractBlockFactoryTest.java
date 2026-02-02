@@ -226,7 +226,7 @@ public abstract class AbstractBlockFactoryTest {
     final Bytes32 bestBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final BeaconState blockSlotState =
         recentChainData
-            .retrieveStateAtSlot(new SlotAndBlockRoot(UInt64.valueOf(blockSlot), bestBlockRoot))
+            .retrieveBlockState(new SlotAndBlockRoot(UInt64.valueOf(blockSlot), bestBlockRoot))
             .join()
             .orElseThrow();
 

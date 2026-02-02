@@ -51,14 +51,15 @@ public class StoreAssertions {
             "checkpointStateRequestRegenerateCounter",
             "checkpointStateRequestMissCounter",
             "metricsSystem",
-            "states",
+            "blockStates",
             "stateProvider",
             "checkpointStates",
             "forkChoiceStrategy",
             "maybeEpochStates",
             "epochStatesCountGauge",
             "blobSidecars",
-            "blobSidecarsBlocksCountGauge")
+            "blobSidecarsBlocksCountGauge",
+            "executionPayloadStates")
         .isEqualTo(expectedState);
     assertThat(actualState.getOrderedBlockRoots())
         .containsExactlyElementsOf(expectedState.getOrderedBlockRoots());

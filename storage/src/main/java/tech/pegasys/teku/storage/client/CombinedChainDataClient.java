@@ -251,7 +251,7 @@ public class CombinedChainDataClient {
     final Optional<Bytes32> recentBlockRoot = recentChainData.getBlockRootInEffectBySlot(slot);
     if (recentBlockRoot.isPresent()) {
       return getStore()
-          .retrieveStateAtSlot(new SlotAndBlockRoot(slot, recentBlockRoot.get()))
+          .retrieveBlockState(new SlotAndBlockRoot(slot, recentBlockRoot.get()))
           .thenCompose(
               maybeState ->
                   maybeState.isPresent()
@@ -309,7 +309,7 @@ public class CombinedChainDataClient {
         recentChainData.getBlockRootInEffectBySlot(slot, chainHead);
     if (recentBlockRoot.isPresent()) {
       return getStore()
-          .retrieveStateAtSlot(new SlotAndBlockRoot(slot, recentBlockRoot.get()))
+          .retrieveBlockState(new SlotAndBlockRoot(slot, recentBlockRoot.get()))
           .thenCompose(
               maybeState ->
                   maybeState.isPresent()
@@ -863,7 +863,7 @@ public class CombinedChainDataClient {
       return STATE_NOT_AVAILABLE;
     }
     return store
-        .retrieveStateAtSlot(slotAndBlockRoot)
+        .retrieveBlockState(slotAndBlockRoot)
         .thenCompose(
             maybeState -> {
               if (maybeState.isPresent()) {
