@@ -126,7 +126,7 @@ class SyncCommitteeStateUtilsTest {
 
     final BeaconStateAltair generatedState =
         dataStructureUtil.stateBuilderAltair().slot(generatedStateSlot).build();
-    when(recentChainData.retrieveStateAtSlot(
+    when(recentChainData.retrieveBlockState(
             new SlotAndBlockRoot(generatedStateSlot, chainHead.getRoot())))
         .thenReturn(SafeFuture.completedFuture(Optional.of(generatedState)));
 
@@ -147,7 +147,7 @@ class SyncCommitteeStateUtilsTest {
     when(recentChainData.getSlotForBlockRoot(blockRoot)).thenReturn(Optional.of(blockSlot));
 
     assertThatSafeFuture(stateUtils.getStateForSyncCommittee(slot)).isCompletedWithEmptyOptional();
-    verify(recentChainData, never()).retrieveStateAtSlot(any());
+    verify(recentChainData, never()).retrieveBlockState(any(SlotAndBlockRoot.class));
   }
 
   private void assertRetrievedStateIsSuitable(final UInt64 slot, final BeaconState state) {
