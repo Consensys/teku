@@ -126,19 +126,21 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
             message.getStartSlot(), message.getCount());
 
     future
-        .thenApply(
+        .thenCompose(
             payloads -> {
-              payloads.forEach(
-                  payload ->
-                      callback
-                          .respond(payload)
-                          .thenRun(sentExecutionPayloadEnvelopes::incrementAndGet)
-                          .finishError(LOG));
-              return null;
+              final List<SafeFuture<Void>> responseFutures =
+                  payloads.stream()
+                      .map(
+                          payload ->
+                              callback
+                                  .respond(payload)
+                                  .thenRun(sentExecutionPayloadEnvelopes::incrementAndGet))
+                      .toList();
+              return SafeFuture.allOf(responseFutures.toArray(SafeFuture[]::new));
             })
         .finish(
             () -> {
-              if (sentExecutionPayloadEnvelopes.get() != message.size()) {
+              if (sentExecutionPayloadEnvelopes.get() != message.getCount().longValue()) {
                 peer.adjustExecutionPayloadEnvelopesRequest(
                     maybeRequestKey.get(), sentExecutionPayloadEnvelopes.get());
               }

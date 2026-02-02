@@ -79,7 +79,7 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandlerTest {
         .thenAnswer(
             i ->
                 SafeFuture.completedFuture(
-                    chainBuilder.getExecutionPayload(i.getArgument(0), i.getArgument(1))));
+                    chainBuilder.getExecutionPayloads(i.getArgument(0), i.getArgument(1))));
 
     when(callback.respond(any())).thenReturn(SafeFuture.COMPLETE);
   }

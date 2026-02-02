@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -194,16 +195,17 @@ public class ChainBuilder {
         .map(SignedExecutionPayloadAndState::executionPayload);
   }
 
-  public List<SignedExecutionPayloadEnvelope> getExecutionPayload(
+  public List<SignedExecutionPayloadEnvelope> getExecutionPayloads(
       final UInt64 startSlot, final UInt64 count) {
-    final List<UInt64> slots =
-        executionPayloads.keySet().stream()
-            .filter(slot -> slot.isGreaterThanOrEqualTo(startSlot))
-            .filter(slot -> slot.isLessThanOrEqualTo(startSlot.plus(count)))
-            .sorted()
-            .toList();
-    return slots.stream()
-        .map(executionPayloads::get)
+    return executionPayloads.values().stream()
+        .filter(
+            signedExecutionPayloadAndState -> {
+              final UInt64 slot =
+                  signedExecutionPayloadAndState.executionPayload().getMessage().getSlot();
+              return slot.isGreaterThanOrEqualTo(startSlot)
+                  && slot.isLessThan(startSlot.plus(count));
+            })
+        .sorted(Comparator.comparing(e -> e.executionPayload().getMessage().getSlot()))
         .map(SignedExecutionPayloadAndState::executionPayload)
         .toList();
   }
