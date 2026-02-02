@@ -153,9 +153,6 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandlerTest {
     handler.onIncomingMessage(PROTOCOL_ID, peer, message, callback);
 
     // Requesting 5 execution payload envelopes
-    verify(peer)
-        .approveExecutionPayloadEnvelopesRequest(
-            any(), eq(Long.valueOf(executionPayloadEnvelopes.size())));
     verify(peer).approveExecutionPayloadEnvelopesRequest(any(), eq(payloadCount.longValue()));
     verify(callback, times(5)).respond(any());
     for (final SignedExecutionPayloadEnvelope executionPayloadEnvelope :

@@ -15,6 +15,8 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 
+import com.google.common.annotations.VisibleForTesting;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -118,7 +120,6 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
       requestCounter.labels("rate_limited").inc();
       return;
     }
-    final AtomicInteger sentExecutionPayloadEnvelopes = new AtomicInteger(0);
     requestCounter.labels("ok").inc();
     totalExecutionPayloadEnvelopesRequestedCounter.inc(message.getCount().longValue());
     final SafeFuture<List<SignedExecutionPayloadEnvelope>> future =
@@ -128,24 +129,63 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
     future
         .thenCompose(
             payloads -> {
-              final List<SafeFuture<Void>> responseFutures =
-                  payloads.stream()
-                      .map(
-                          payload ->
-                              callback
-                                  .respond(payload)
-                                  .thenRun(sentExecutionPayloadEnvelopes::incrementAndGet))
-                      .toList();
-              return SafeFuture.allOf(responseFutures.toArray(SafeFuture[]::new));
+              final RequestState requestState = new RequestState(callback, payloads);
+              if (payloads.isEmpty() || requestState.isComplete()) {
+                return SafeFuture.completedFuture(requestState);
+              }
+              return sendExecutionPayloadEnvelopes(requestState);
             })
         .finish(
-            () -> {
-              if (sentExecutionPayloadEnvelopes.get() != message.getCount().longValue()) {
+            requestState -> {
+              if (requestState.getSentCount() != message.getCount().longValue()) {
                 peer.adjustExecutionPayloadEnvelopesRequest(
-                    maybeRequestKey.get(), sentExecutionPayloadEnvelopes.get());
+                    maybeRequestKey.get(), requestState.getSentCount());
               }
               callback.completeSuccessfully();
             },
             err -> handleError(err, callback, "execution payload envelopes by range"));
+  }
+
+  private SafeFuture<RequestState> sendExecutionPayloadEnvelopes(final RequestState requestState) {
+    return requestState
+        .sendNextPayload()
+        .thenCompose(
+            __ -> {
+              if (requestState.isComplete()) {
+                return SafeFuture.completedFuture(requestState);
+              } else {
+                return sendExecutionPayloadEnvelopes(requestState);
+              }
+            });
+  }
+
+  @VisibleForTesting
+  static class RequestState {
+    private final ResponseCallback<SignedExecutionPayloadEnvelope> callback;
+    private final Iterator<SignedExecutionPayloadEnvelope> payloadIterator;
+    private final AtomicInteger sentExecutionPayloadEnvelopes = new AtomicInteger(0);
+
+    RequestState(
+        final ResponseCallback<SignedExecutionPayloadEnvelope> callback,
+        final List<SignedExecutionPayloadEnvelope> payloads) {
+      this.callback = callback;
+      this.payloadIterator = payloads.iterator();
+    }
+
+    SafeFuture<Void> sendNextPayload() {
+      if (!payloadIterator.hasNext()) {
+        return SafeFuture.COMPLETE;
+      }
+      final SignedExecutionPayloadEnvelope payload = payloadIterator.next();
+      return callback.respond(payload).thenRun(sentExecutionPayloadEnvelopes::incrementAndGet);
+    }
+
+    boolean isComplete() {
+      return !payloadIterator.hasNext();
+    }
+
+    int getSentCount() {
+      return sentExecutionPayloadEnvelopes.get();
+    }
   }
 }
