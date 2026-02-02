@@ -16,10 +16,7 @@ package tech.pegasys.teku.test.acceptance.dsl;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -111,12 +108,6 @@ public abstract class TekuNode extends Node {
   @Override
   public void stop() {
     stop(true);
-  }
-
-  public void withPersistentStore(final Path tempDir) throws IOException {
-    final Path dbPath = tempDir.resolve("tekudb");
-    Files.createDirectory(dbPath);
-    withWritableMountPoint(dbPath.toAbsolutePath().toString(), DATA_PATH);
   }
 
   public void startEventListener(final EventType... eventTypes) {
