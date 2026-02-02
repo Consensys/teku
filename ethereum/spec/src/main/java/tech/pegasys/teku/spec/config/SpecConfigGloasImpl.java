@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -21,9 +21,12 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   private final int aggregateDueBps;
   private final int attestationDueBps;
   private final int contributionDueBps;
+  private final long builderRegistryLimit;
   private final long builderPendingWithdrawalsLimit;
+  private final int maxBuildersPerWithdrawalsSweep;
   private final int maxPayloadAttestations;
   private final int maxRequestPayloads;
+  private final int minBuilderWithdrawabilityDelay;
   private final int payloadAttestationDueBps;
   private final int ptcSize;
   private final int syncMessageDueBps;
@@ -33,9 +36,12 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
       final int aggregateDueBps,
       final int attestationDueBps,
       final int contributionDueBps,
+      final long builderRegistryLimit,
       final long builderPendingWithdrawalsLimit,
+      final int maxBuildersPerWithdrawalsSweep,
       final int maxPayloadAttestations,
       final int maxRequestPayloads,
+      final int minBuilderWithdrawabilityDelay,
       final int payloadAttestationDueBps,
       final int ptcSize,
       final int syncMessageDueBps) {
@@ -43,10 +49,13 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
     this.aggregateDueBps = aggregateDueBps;
     this.attestationDueBps = attestationDueBps;
     this.contributionDueBps = contributionDueBps;
+    this.builderRegistryLimit = builderRegistryLimit;
     this.builderPendingWithdrawalsLimit = builderPendingWithdrawalsLimit;
+    this.maxBuildersPerWithdrawalsSweep = maxBuildersPerWithdrawalsSweep;
     this.maxPayloadAttestations = maxPayloadAttestations;
     this.maxRequestPayloads = maxRequestPayloads;
     this.ptcSize = ptcSize;
+    this.minBuilderWithdrawabilityDelay = minBuilderWithdrawabilityDelay;
     this.payloadAttestationDueBps = payloadAttestationDueBps;
     this.syncMessageDueBps = syncMessageDueBps;
   }
@@ -72,6 +81,11 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   }
 
   @Override
+  public int getMinBuilderWithdrawabilityDelay() {
+    return minBuilderWithdrawabilityDelay;
+  }
+
+  @Override
   public int getPayloadAttestationDueBps() {
     return payloadAttestationDueBps;
   }
@@ -87,8 +101,18 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   }
 
   @Override
+  public long getBuilderRegistryLimit() {
+    return builderRegistryLimit;
+  }
+
+  @Override
   public long getBuilderPendingWithdrawalsLimit() {
     return builderPendingWithdrawalsLimit;
+  }
+
+  @Override
+  public int getMaxBuildersPerWithdrawalsSweep() {
+    return maxBuildersPerWithdrawalsSweep;
   }
 
   @Override
@@ -120,10 +144,13 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
         && contributionDueBps == that.contributionDueBps
         && maxPayloadAttestations == that.maxPayloadAttestations
         && maxRequestPayloads == that.maxRequestPayloads
+        && minBuilderWithdrawabilityDelay == that.minBuilderWithdrawabilityDelay
         && payloadAttestationDueBps == that.payloadAttestationDueBps
         && ptcSize == that.ptcSize
         && syncMessageDueBps == that.syncMessageDueBps
-        && builderPendingWithdrawalsLimit == that.builderPendingWithdrawalsLimit;
+        && builderRegistryLimit == that.builderRegistryLimit
+        && builderPendingWithdrawalsLimit == that.builderPendingWithdrawalsLimit
+        && maxBuildersPerWithdrawalsSweep == that.maxBuildersPerWithdrawalsSweep;
   }
 
   @Override
@@ -133,9 +160,12 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
         aggregateDueBps,
         attestationDueBps,
         contributionDueBps,
+        builderRegistryLimit,
         builderPendingWithdrawalsLimit,
+        maxBuildersPerWithdrawalsSweep,
         maxPayloadAttestations,
         maxRequestPayloads,
+        minBuilderWithdrawabilityDelay,
         payloadAttestationDueBps,
         ptcSize,
         syncMessageDueBps);

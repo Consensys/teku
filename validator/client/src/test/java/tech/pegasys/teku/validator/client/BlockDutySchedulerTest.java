@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -26,7 +26,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.validator.client.BlockDutyScheduler.LOOKAHEAD_EPOCHS;
 
 import java.util.List;
 import java.util.Map;
@@ -54,7 +53,7 @@ import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
   private BlockDutyScheduler dutyScheduler;
 
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private Spec spec = TestSpecFactory.createMinimalPhase0();
   private final TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
 
   private final BlockDutyFactory blockDutyFactory = mock(BlockDutyFactory.class);
@@ -112,6 +111,13 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     dutyScheduler.onBlockProductionDue(blockProposerSlot);
     // But shouldn't produce another block and get ourselves slashed.
     verifyNoMoreInteractions(blockCreationDuty);
+  }
+
+  @Test
+  public void lookaheadIsCurrentEpochBeforeFulu() {
+    spec = TestSpecFactory.createMinimalElectra();
+    createDutySchedulerWithRealDuties();
+    assertThat(dutyScheduler.getLookAheadEpochs(UInt64.ONE)).isEqualTo(0);
   }
 
   @Test
@@ -253,7 +259,8 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
   public void shouldNotProduceBlockIfCurrentEpochIsTooFarBeforeSlotEpoch() {
     createDutySchedulerWithMockDuties();
     // first slot of epoch 1
-    final UInt64 slot = spec.computeStartSlotAtEpoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1));
+    final int lookAheadEpochs = dutyScheduler.getLookAheadEpochs(ONE);
+    final UInt64 slot = spec.computeStartSlotAtEpoch(UInt64.valueOf(lookAheadEpochs + 1));
     dutyScheduler.onSlot(ONE); // epoch 0
     dutyScheduler.onBlockProductionDue(slot);
     verify(scheduledDuties, never()).performProductionDuty(slot);
@@ -263,8 +270,9 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
   public void shouldProduceBlockIfCurrentEpochIsAtBoundaryOfLookaheadEpoch() {
     createDutySchedulerWithMockDuties();
     // last slot of epoch 0
+    final int lookAheadEpochs = dutyScheduler.getLookAheadEpochs(ZERO);
     final UInt64 slot =
-        spec.computeStartSlotAtEpoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1)).decrement();
+        spec.computeStartSlotAtEpoch(UInt64.valueOf(lookAheadEpochs + 1)).decrement();
     when(scheduledDuties.performProductionDuty(slot))
         .thenReturn(SafeFuture.completedFuture(DutyResult.success(Bytes32.ZERO)));
 

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolverStub;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarDBStub;
@@ -144,7 +145,7 @@ public class SidecarRetrieverTest {
   @Test
   void onNewValidatedSidecar_callsDelegateRetriever() {
     final DataColumnSidecar sidecar = dataStructureUtil.randomDataColumnSidecar();
-    retriever.onNewValidatedSidecar(sidecar);
+    retriever.onNewValidatedSidecar(sidecar, RemoteOrigin.GOSSIP);
     assertThat(delegateRetriever.validatedSidecars).containsExactly(sidecar);
   }
 
@@ -246,15 +247,15 @@ public class SidecarRetrieverTest {
   private void verifyMetrics(
       final int cancelledCount, final int downloadedCount, final int recoveredCount) {
     assertThat(
-            metricsSystem.getCounterValue(
+            metricsSystem.getLabelledCounterValue(
                 TekuMetricCategory.BEACON, RECOVERY_METRIC_NAME, CANCELLED))
         .isEqualTo(cancelledCount);
     assertThat(
-            metricsSystem.getCounterValue(
+            metricsSystem.getLabelledCounterValue(
                 TekuMetricCategory.BEACON, RECOVERY_METRIC_NAME, DOWNLOADED))
         .isEqualTo(downloadedCount);
     assertThat(
-            metricsSystem.getCounterValue(
+            metricsSystem.getLabelledCounterValue(
                 TekuMetricCategory.BEACON, RECOVERY_METRIC_NAME, RECOVERED))
         .isEqualTo(recoveredCount);
   }

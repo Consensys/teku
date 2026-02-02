@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -48,6 +48,10 @@ public class DasPreSampler {
   }
 
   private boolean isSamplingRequired(final SignedBeaconBlock block) {
+    if (block == null) {
+      LOG.debug("SignedBeaconBlock was unexpectedly null");
+      return false;
+    }
     return sampler.checkSamplingEligibility(block.getMessage()) == REQUIRED;
   }
 
@@ -77,7 +81,8 @@ public class DasPreSampler {
         .thenAccept(
             columnsInCustody ->
                 columnsInCustody.forEach(
-                    columnId -> sampler.onAlreadyKnownDataColumn(columnId, RemoteOrigin.CUSTODY)))
+                    columnId ->
+                        sampler.onNewValidatedDataColumnSidecar(columnId, RemoteOrigin.CUSTODY)))
         .always(
             () ->
                 sampler

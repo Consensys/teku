@@ -1,7 +1,10 @@
-version: v1.6.0-beta.2
+version: v1.7.0-alpha.1
 style: full
 
 specrefs:
+  auto_standardize_names: true
+  auto_add_missing_entries: true
+
   files:
     - configs.yml
     - constants.yml
@@ -16,7 +19,6 @@ specrefs:
       - BASIS_POINTS#phase0
       - DOMAIN_APPLICATION_MASK
       - ENDIANNESS
-      - INTERVALS_PER_SLOT#phase0
 
       # Constants for max values, defined elsewhere
       - UINT256_MAX
@@ -40,6 +42,10 @@ specrefs:
       - RANDOM_CHALLENGE_KZG_CELL_BATCH_DOMAIN
 
       # Not implemented: gloas
+      - PTC_TIMELINESS_INDEX#gloas
+      - NUM_BLOCK_TIMELINESS_DEADLINES#gloas
+      - DOMAIN_PROPOSER_PREFERENCES#gloas
+      - ATTESTATION_TIMELINESS_INDEX#gloas
       - PAYLOAD_STATUS_EMPTY#gloas
       - PAYLOAD_STATUS_FULL#gloas
       - PAYLOAD_STATUS_PENDING#gloas
@@ -57,6 +63,8 @@ specrefs:
 
       # Not implemented: gloas
       - ForkChoiceNode#gloas
+      - ProposerPreferences#gloas
+      - SignedProposerPreferences#gloas
 
     dataclasses:
       # Not defined, implemented differently
@@ -77,7 +85,6 @@ specrefs:
       - bytes_to_kzg_commitment#deneb
       - bytes_to_kzg_proof#deneb
       - compute_blob_kzg_proof#deneb
-      - compute_fork_version#fulu
       - compute_challenge#deneb
       - compute_kzg_proof#deneb
       - compute_kzg_proof_impl#deneb
@@ -168,14 +175,6 @@ specrefs:
       - upgrade_lc_update_to_electra
       - validate_light_client_update
 
-      # This function was added to the specs in Fulu
-      # Backported in the specs, but not necessary before Fulu
-      - compute_fork_version#altair
-      - compute_fork_version#bellatrix
-      - compute_fork_version#capella
-      - compute_fork_version#deneb
-      - compute_fork_version#electra
-
       # Still need to implement this for Electra
       - compute_weak_subjectivity_period#electra
 
@@ -212,6 +211,11 @@ specrefs:
       - update_unrealized_checkpoints#phase0
       - validate_target_epoch_against_current_time#phase0
       - xor#phase0
+      - compute_proposer_score#phase0
+      - get_attestation_score#phase0
+      - is_proposer_equivocation#phase0
+      - record_block_timeliness#phase0
+      - update_proposer_boost_root#phase0
 
       # Not implemented: altair
       - compute_subnets_for_sync_committee#altair
@@ -220,7 +224,6 @@ specrefs:
       - get_sync_committee_message#altair
       - get_sync_committee_selection_proof#altair
       - get_sync_subcommittee_pubkeys#altair
-      - process_epoch#altair
       - process_justification_and_finalization#altair
       - process_rewards_and_penalties#altair
       - process_slashings#altair
@@ -241,7 +244,6 @@ specrefs:
 
       # Not implemented: capella
       - prepare_execution_payload#capella
-      - process_epoch#capella
       - process_execution_payload#capella
 
       # Not implemented: deneb
@@ -259,28 +261,23 @@ specrefs:
       - is_within_weak_subjectivity_period#electra
       - normalize_merkle_branch#electra
       - prepare_execution_payload#electra
-      - process_epoch#electra
       - process_execution_payload#electra
       - process_voluntary_exit#electra
+      - is_eligible_for_partial_withdrawals#electra
+      - get_validators_sweep_withdrawals#electra
 
       # Not implemented: fulu
       - compute_matrix#fulu
       - get_data_column_sidecars#fulu
       - get_data_column_sidecars_from_block#fulu
       - get_data_column_sidecars_from_column_sidecar#fulu
-      - process_epoch#fulu
       - recover_matrix#fulu
 
       # Not implemented: gloas
-      - compute_balance_weighted_acceptance#gloas
-      - compute_balance_weighted_selection#gloas
-      - compute_fork_version#gloas
-      - compute_proposer_indices#gloas
       - get_aggregate_due_ms#gloas
       - get_ancestor#gloas
       - get_attestation_due_ms#gloas
       - get_attestation_participation_flag_indices#gloas
-      - get_builder_payment_quorum_threshold#gloas
       - get_checkpoint_block#gloas
       - get_contribution_due_ms#gloas
       - get_data_column_sidecars#gloas
@@ -291,28 +288,17 @@ specrefs:
       - get_expected_withdrawals#gloas
       - get_forkchoice_store#gloas
       - get_head#gloas
-      - get_indexed_payload_attestation#gloas
-      - get_next_sync_committee_indices#gloas
       - get_node_children#gloas
       - get_parent_payload_status#gloas
       - get_payload_attestation_message_signature#gloas
       - get_payload_status_tiebreaker#gloas
-      - get_pending_balance_to_withdraw#gloas
-      - get_ptc#gloas
       - get_ptc_assignment#gloas
       - get_sync_message_due_ms#gloas
       - get_weight#gloas
-      - has_builder_withdrawal_credential#gloas
-      - has_compounding_withdrawal_credential#gloas
-      - is_attestation_same_slot#gloas
-      - is_builder_payment_withdrawable#gloas
-      - is_builder_withdrawal_credential#gloas
       - is_merge_transition_complete#gloas
-      - is_parent_block_full#gloas
       - is_parent_node_full#gloas
       - is_payload_timely#gloas
       - is_supporting_vote#gloas
-      - is_valid_indexed_payload_attestation#gloas
       - notify_ptc_messages#gloas
       - on_block#gloas
       - on_execution_payload#gloas
@@ -320,21 +306,21 @@ specrefs:
       - prepare_execution_payload#gloas
       - process_attestation#gloas
       - process_block#gloas
-      - process_builder_pending_payments#gloas
-      - process_epoch#gloas
-      - process_execution_payload#gloas
-      - process_execution_payload_bid#gloas
-      - process_operations#gloas
-      - process_payload_attestation#gloas
       - process_proposer_slashing#gloas
       - process_slot#gloas
-      - process_withdrawals#gloas
-      - remove_flag#gloas
       - should_extend_payload#gloas
       - update_latest_messages#gloas
-      - upgrade_to_gloas#gloas
       - validate_merge_block#gloas
       - validate_on_attestation#gloas
       - verify_data_column_sidecar#gloas
-      - verify_execution_payload_bid_signature#gloas
-      - verify_execution_payload_envelope_signature#gloas
+      - get_attestation_score#gloas
+      - get_proposer_preferences_signature#gloas
+      - get_upcoming_proposal_slots#gloas
+      - is_head_late#gloas
+      - is_head_weak#gloas
+      - is_parent_strong#gloas
+      - is_valid_proposal_slot#gloas
+      - process_voluntary_exit#gloas
+      - record_block_timeliness#gloas
+      - should_apply_proposer_boost#gloas
+      - update_proposer_boost_root#gloas

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -64,6 +65,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -96,6 +98,7 @@ public class TekuBeaconNode extends TekuNode {
   public static final String LOCAL_VALIDATOR_LIVENESS_URL = "/eth/v1/validator/liveness/{epoch}";
   public static final String POST_PROPOSER_SLASHING_URL = "/eth/v1/beacon/pool/proposer_slashings";
   public static final String POST_ATTESTER_SLASHING_URL = "/eth/v1/beacon/pool/attester_slashings";
+  public static final String PUT_LOG_LEVEL_URL = "/teku/v1/admin/log_level";
   private final TekuNodeConfig config;
   private final Spec spec;
 
@@ -230,6 +233,13 @@ public class TekuBeaconNode extends TekuNode {
       output.put(entry.index(), entry.isLive());
     }
     return output;
+  }
+
+  public void setLogLevel(final String queryString, final String level) throws IOException {
+    httpClient.put(
+        getRestApiUrl(),
+        PUT_LOG_LEVEL_URL,
+        String.format("{\"level\":\"%s\", \"log_filter\":[\"%s\"]}", level, queryString));
   }
 
   public void postProposerSlashing(
@@ -496,7 +506,10 @@ public class TekuBeaconNode extends TekuNode {
     LOG.debug("Non default execution payload found at slot " + slot);
   }
 
-  public void waitForBlockSatisfying(final ThrowingConsumer<? super SignedBeaconBlock> assertions) {
+  public void waitForBlockSatisfying(
+      final ThrowingConsumer<? super SignedBeaconBlock> assertions,
+      final int timeout,
+      final TimeUnit timeUnit) {
     LOG.debug("Wait for a block satisfying certain assertions");
 
     waitFor(
@@ -505,8 +518,12 @@ public class TekuBeaconNode extends TekuNode {
           assertThat(block).isPresent();
           assertThat(block.get()).satisfies(assertions);
         },
-        1,
-        MINUTES);
+        timeout,
+        timeUnit);
+  }
+
+  public void waitForBlockSatisfying(final ThrowingConsumer<? super SignedBeaconBlock> assertions) {
+    waitForBlockSatisfying(assertions, 1, MINUTES);
   }
 
   public void waitForGenesisWithNonDefaultExecutionPayload() {
@@ -607,6 +624,28 @@ public class TekuBeaconNode extends TekuNode {
     return fetchBeaconHeadRootData().map(Pair::getLeft);
   }
 
+  private Optional<Bytes32> fetchBlockRoot(final String blockId) throws IOException {
+    final String result =
+        httpClient.get(getRestApiUrl(), "/eth/v1/beacon/blocks/" + blockId + "/root");
+    if (result.isEmpty()) {
+      return Optional.empty();
+    }
+    final JsonNode jsonNode = OBJECT_MAPPER.readTree(result);
+    final Bytes32 root = Bytes32.fromHexString(jsonNode.get("data").get("root").asText());
+    return Optional.of(root);
+  }
+
+  public Bytes32 waitForBlockAtSlot(final UInt64 slot) {
+    final AtomicReference<Bytes32> block = new AtomicReference<>(null);
+    waitFor(
+        () -> {
+          final Optional<Bytes32> blockRoot = fetchBlockRoot(slot.toString());
+          assertThat(blockRoot).isPresent();
+          block.set(blockRoot.get());
+        });
+    return block.get();
+  }
+
   private Optional<UInt64> getFinalizedEpoch() {
     try {
       final String result =
@@ -627,6 +666,10 @@ public class TekuBeaconNode extends TekuNode {
 
   private Optional<SignedBeaconBlock> fetchHeadBlock() throws IOException {
     final String blockId = "head";
+    return fetchBlock(blockId);
+  }
+
+  private Optional<SignedBeaconBlock> fetchBlock(final String blockId) throws IOException {
     final String result = httpClient.get(getRestApiUrl(), "/eth/v2/beacon/blocks/" + blockId);
     if (result.isEmpty()) {
       return Optional.empty();
@@ -659,6 +702,14 @@ public class TekuBeaconNode extends TekuNode {
                   .getJsonTypeDefinition());
       return Optional.of(JsonUtil.parse(result.get(), jsonTypeDefinition));
     }
+  }
+
+  public SignedBeaconBlock getFinalizedBlock() throws IOException {
+    return fetchBlock("finalized").orElseThrow();
+  }
+
+  public SignedBeaconBlock getHeadBlock() throws IOException {
+    return fetchBlock("head").orElseThrow();
   }
 
   private Optional<BeaconState> fetchHeadState() throws IOException {
@@ -697,6 +748,31 @@ public class TekuBeaconNode extends TekuNode {
         httpClient.get(getRestApiUrl(), "/eth/v1/debug/beacon/data_column_sidecars/" + blockId);
     final JsonNode jsonNode = OBJECT_MAPPER.readTree(result);
     return jsonNode.get("data").size();
+  }
+
+  public Optional<List<Blob>> getBlobsAtSlot(final UInt64 slot) throws IOException {
+    final Bytes result =
+        httpClient.getAsBytes(
+            getRestApiUrl(),
+            "/eth/v1/beacon/blobs/" + slot,
+            Map.of("Accept", "application/octet-stream"));
+    if (result.isEmpty()) {
+      return Optional.empty();
+    } else {
+      return Optional.of(spec.deserializeBlobsInBlock(result, slot).asList());
+    }
+  }
+
+  public void waitForCustodyBackfill(final UInt64 slot, final int expectedCustodyCount) {
+    waitFor(
+        () -> {
+          final Optional<SignedBeaconBlock> maybeBlock = getBlockAtSlot(slot);
+          assertThat(maybeBlock).isPresent();
+          assertThat(getDataColumnSidecarCount(maybeBlock.get().getRoot().toHexString()))
+              .isEqualTo(expectedCustodyCount);
+        },
+        3,
+        MINUTES);
   }
 
   public void waitForValidators(final int numberOfValidators) {

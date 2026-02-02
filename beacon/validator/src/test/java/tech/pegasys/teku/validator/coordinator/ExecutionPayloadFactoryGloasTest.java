@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -46,7 +46,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.Be
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
-import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -156,7 +155,6 @@ class ExecutionPayloadFactoryGloasTest {
     final BeaconState state = blockAndState.getState();
     final SpecVersion specVersion = spec.atSlot(state.getSlot());
     final MiscHelpers miscHelpers = specVersion.miscHelpers();
-    final BeaconStateAccessors beaconStateAccessors = specVersion.beaconStateAccessors();
     final ExecutionPayloadBid bid = getBidFromBlock(blockAndState.getBlock());
     final ExecutionPayload executionPayload =
         dataStructureUtil.randomExecutionPayload(
@@ -166,9 +164,7 @@ class ExecutionPayloadFactoryGloasTest {
                     .parentHash(BeaconStateGloas.required(state).getLatestBlockHash())
                     .gasLimit(bid.getGasLimit())
                     .blockHash(bid.getBlockHash())
-                    .prevRandao(
-                        beaconStateAccessors.getRandaoMix(
-                            state, beaconStateAccessors.getCurrentEpoch(state)))
+                    .prevRandao(bid.getPrevRandao())
                     .timestamp(
                         miscHelpers.computeTimeAtSlot(state.getGenesisTime(), state.getSlot()))
                     .withdrawals(Collections::emptyList));

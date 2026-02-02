@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,14 +13,17 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.helpers;
 
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_FLAG;
 import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.BUILDER_WITHDRAWAL_BYTE;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 
@@ -39,13 +42,6 @@ public class PredicatesGloas extends PredicatesElectra {
     super(specConfig);
   }
 
-  // Check if ``validator`` has an 0x02 or 0x03 prefixed withdrawal credential.
-  @Override
-  public boolean hasCompoundingWithdrawalCredential(final Validator validator) {
-    return isCompoundingWithdrawalCredential(validator.getWithdrawalCredentials())
-        || isBuilderWithdrawalCredential(validator.getWithdrawalCredentials());
-  }
-
   /**
    * is_parent_block_full
    *
@@ -60,12 +56,25 @@ public class PredicatesGloas extends PredicatesElectra {
         .equals(BeaconStateGloas.required(state).getLatestBlockHash());
   }
 
-  public boolean isBuilderWithdrawalCredential(final Bytes32 withdrawalCredentials) {
-    return withdrawalCredentials.get(0) == BUILDER_WITHDRAWAL_BYTE;
+  public boolean isBuilderIndex(final UInt64 validatorIndex) {
+    return (validatorIndex.longValue() & BUILDER_INDEX_FLAG.longValue()) != 0;
   }
 
-  public boolean hasBuilderWithdrawalCredential(final Validator validator) {
-    return isBuilderWithdrawalCredential(validator.getWithdrawalCredentials());
+  // Check if the builder at ``builder_index`` is active for the given ``state``.
+  public boolean isActiveBuilder(final BeaconState state, final UInt64 builderIndex) {
+    final BeaconStateGloas beaconStateGloas = BeaconStateGloas.required(state);
+    if (builderIndex.isGreaterThanOrEqualTo(beaconStateGloas.getBuilders().size())) {
+      return false;
+    }
+    final Builder builder = beaconStateGloas.getBuilders().get(builderIndex.intValue());
+    // Placement in builder list is finalized
+    return builder.getDepositEpoch().isLessThan(state.getFinalizedCheckpoint().getEpoch())
+        // Has not initiated exit
+        && builder.getWithdrawableEpoch().equals(FAR_FUTURE_EPOCH);
+  }
+
+  public boolean isBuilderWithdrawalCredential(final Bytes32 withdrawalCredentials) {
+    return withdrawalCredentials.get(0) == BUILDER_WITHDRAWAL_BYTE;
   }
 
   @Override

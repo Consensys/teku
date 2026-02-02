@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,7 +14,9 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Duration;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -44,6 +46,45 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
     assertThat(config.getRestApiCorsAllowedOrigins())
         .containsExactly("127.1.2.3", "origin.allowed.com");
     assertThat(config.getMaxUrlLength()).isEqualTo(65535);
+  }
+
+  @Test
+  public void getBlobsApiRelatedConfig_defaultsAreCorrect() {
+    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.isGetBlobsSidecarsDownloadEnabled()).isFalse();
+    assertThat(config.getGetBlobsSidecarsDownloadTimeoutSeconds())
+        .isGreaterThanOrEqualTo(Duration.ZERO);
+  }
+
+  @Test
+  public void getBlobsApiP2pSidecarDownloadEnabled_canBeEnabled() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--rest-api-getblobs-sidecars-download-enabled");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.isGetBlobsSidecarsDownloadEnabled()).isTrue();
+  }
+
+  @Test
+  public void getBlobsApiP2pSidecarDownloadTimeoutSeconds_canChanged() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--rest-api-getblobs-sidecars-download-timeout", "12");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.getGetBlobsSidecarsDownloadTimeoutSeconds())
+        .isEqualTo(Duration.ofSeconds(12));
+  }
+
+  @Test
+  public void getBlobsApiP2pSidecarDownloadTimeoutSeconds_wrongValues() {
+    assertThatThrownBy(
+        () ->
+            getTekuConfigurationFromArguments(
+                "--rest-api-getblobs-sidecars-download-timeout", "0"));
+
+    assertThatThrownBy(
+        () ->
+            getTekuConfigurationFromArguments(
+                "--rest-api-getblobs-sidecars-download-timeout", "-2"));
   }
 
   @Test
@@ -197,5 +238,18 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
         getTekuConfigurationFromArguments("--Xrest-api-validator-threads=15");
     final int validatorThreads = getConfig(tekuConfiguration).getValidatorThreads();
     assertThat(validatorThreads).isEqualTo(15);
+  }
+
+  @Test
+  void columnsDataAvailabilityHalfCheckEnabled_disabledByDefault() {
+    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+    assertThat(tekuConfiguration.p2p().isColumnsDataAvailabilityHalfCheckEnabled()).isFalse();
+  }
+
+  @Test
+  void columnsDataAvailabilityHalfCheckEnabled_toggles() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xcolumns-data-availability-half-check-enabled");
+    assertThat(tekuConfiguration.p2p().isColumnsDataAvailabilityHalfCheckEnabled()).isTrue();
   }
 }

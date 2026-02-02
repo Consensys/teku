@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -17,5 +17,6 @@ public class LightClientConstants {
   // Altair
   public static final int FINALIZED_ROOT_GINDEX = 105;
   public static final int CURRENT_SYNC_COMMITTEE_GINDEX = 54;
+  public static final int CURRENT_SYNC_COMMITTEE_GINDEX_ELECTRA = 86;
   public static final int NEXT_SYNC_COMMITTEE_GINDEX = 55;
 }

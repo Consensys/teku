@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -79,10 +79,10 @@ public class BlockFactoryPhase0 implements BlockFactory {
                 requestedBuilderBoostFactor,
                 blockProductionPerformance),
             blockProductionPerformance)
-        .thenApply(this::beaconBlockAndStateToBlockContainerAndMetaData);
+        .thenApply(this::blockAndStateToBlockContainerAndMetaData);
   }
 
-  protected BlockContainerAndMetaData beaconBlockAndStateToBlockContainerAndMetaData(
+  private BlockContainerAndMetaData blockAndStateToBlockContainerAndMetaData(
       final BeaconBlockAndState blockAndState) {
     final SlotCaches slotCaches = BeaconStateCache.getSlotCaches(blockAndState.getState());
     return new BlockContainerAndMetaData(

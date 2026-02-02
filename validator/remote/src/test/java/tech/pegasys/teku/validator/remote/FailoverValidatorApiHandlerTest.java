@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -934,7 +934,7 @@ class FailoverValidatorApiHandlerTest {
       final RemoteValidatorApiChannel apiChannel,
       final String methodLabel,
       final RequestOutcome outcome) {
-    return stubMetricsSystem.getCounterValue(
+    return stubMetricsSystem.getLabelledCounterValue(
         TekuMetricCategory.VALIDATOR,
         FailoverValidatorApiHandler.REMOTE_BEACON_NODES_REQUESTS_COUNTER_NAME,
         apiChannel.getEndpoint().toString(),

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
 import static tech.pegasys.teku.spec.constants.EthConstants.GWEI_TO_WEI;
 
 import java.util.Collections;
@@ -61,6 +62,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
@@ -97,6 +99,7 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -122,6 +125,8 @@ public abstract class AbstractBlockFactoryTest {
       mock(ExecutionPayloadBidManager.class);
   protected final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
+  protected final PayloadAttestationPool payloadAttestationPool =
+      mock(PayloadAttestationPool.class);
   protected final DepositProvider depositProvider = mock(DepositProvider.class);
   protected final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
   protected final StubMetricsSystem metricsSystem = new StubMetricsSystem();
@@ -175,6 +180,8 @@ public abstract class AbstractBlockFactoryTest {
     final SszList<SignedVoluntaryExit> voluntaryExits = blockBodyLists.createVoluntaryExits();
     final SszList<SignedBlsToExecutionChange> blsToExecutionChanges =
         blockBodyLists.createBlsToExecutionChanges();
+    final SszList<PayloadAttestation> payloadAttestations =
+        blockBodyLists.createPayloadAttestations();
 
     final SpecMilestone milestone = spec.atSlot(newSlot).getMilestone();
 
@@ -200,6 +207,8 @@ public abstract class AbstractBlockFactoryTest {
     when(proposerSlashingPool.getItemsForBlock(any(), any(), any())).thenReturn(proposerSlashings);
     when(voluntaryExitPool.getItemsForBlock(any(), any(), any())).thenReturn(voluntaryExits);
     when(blsToExecutionChangePool.getItemsForBlock(any())).thenReturn(blsToExecutionChanges);
+    when(payloadAttestationPool.getPayloadAttestationsForBlock(any(), any()))
+        .thenReturn(payloadAttestations);
     when(eth1DataCache.getEth1Vote(any())).thenReturn(ETH1_DATA);
     if (blinded) {
       when(forkChoiceNotifier.getPayloadId(any(), any()))
@@ -217,7 +226,7 @@ public abstract class AbstractBlockFactoryTest {
     final Bytes32 bestBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final BeaconState blockSlotState =
         recentChainData
-            .retrieveStateAtSlot(new SlotAndBlockRoot(UInt64.valueOf(blockSlot), bestBlockRoot))
+            .retrieveBlockState(new SlotAndBlockRoot(UInt64.valueOf(blockSlot), bestBlockRoot))
             .join()
             .orElseThrow();
 
@@ -274,22 +283,10 @@ public abstract class AbstractBlockFactoryTest {
     }
 
     if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
-      // set the execution value to the value from the bid
-      blockExecutionValue =
-          GWEI_TO_WEI.multiply(
-              block
-                  .getBody()
-                  .getOptionalSignedExecutionPayloadBid()
-                  .orElseThrow()
-                  .getMessage()
-                  .getValue()
-                  .longValue());
       assertThat(block.getBody().getOptionalSignedExecutionPayloadBid())
           .hasValueSatisfying(
               signedBid -> assertThat(signedBid.getMessage()).isEqualTo(executionPayloadBid));
-      // TODO-GLOAS: add assertions for payload attestations
-      // https://github.com/Consensys/teku/issues/9959
-      assertThat(block.getBody().getOptionalPayloadAttestations()).isPresent();
+      assertThat(block.getBody().getOptionalPayloadAttestations()).hasValue(payloadAttestations);
     } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
       assertThat(block.getBody().getOptionalBlobKzgCommitments())
           .hasValueSatisfying(
@@ -602,11 +599,13 @@ public abstract class AbstractBlockFactoryTest {
                           executionPayload.getParentHash(),
                           state.getLatestBlockHeader().getRoot(),
                           executionPayload.getBlockHash(),
+                          executionPayload.getPrevRandao(),
                           executionPayload.getFeeRecipient(),
                           executionPayload.getGasLimit(),
                           // self-built for simplification
-                          UInt64.valueOf(spec.getBeaconProposerIndex(state, slot)),
+                          BUILDER_INDEX_SELF_BUILD,
                           slot,
+                          ZERO,
                           ZERO,
                           blobsBundle
                               .map(blobKzgCommitmentsSchema::createFromBlobsBundle)

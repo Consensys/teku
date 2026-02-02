@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -50,6 +50,7 @@ import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
+import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.statetransition.validation.signatures.SimpleSignatureVerificationService;
@@ -73,12 +74,14 @@ class AttestationManagerIntegrationTest {
       new AggregateGenerator(spec, storageSystem.chainBuilder().getValidatorKeys());
 
   private final AggregatingAttestationPool attestationPool =
-      new AggregatingAttestationPoolV1(
+      new AggregatingAttestationPoolV2(
           spec,
           recentChainData,
           new NoOpMetricsSystem(),
+          DEFAULT_MAXIMUM_ATTESTATION_COUNT,
           AggregatingAttestationPoolProfiler.NOOP,
-          DEFAULT_MAXIMUM_ATTESTATION_COUNT);
+          Integer.MAX_VALUE,
+          Integer.MAX_VALUE);
   private final MergeTransitionBlockValidator transitionBlockValidator =
       new MergeTransitionBlockValidator(spec, recentChainData);
   private final ForkChoice forkChoice =
@@ -100,9 +103,10 @@ class AttestationManagerIntegrationTest {
           "attestations");
   private final SignatureVerificationService signatureVerificationService =
       new SimpleSignatureVerificationService();
+  private final GossipValidationHelper gossipValidationHelper =
+      new GossipValidationHelper(spec, recentChainData, storageSystem.getMetricsSystem());
   private final AttestationValidator attestationValidator =
-      new AttestationValidator(
-          spec, recentChainData, signatureVerificationService, storageSystem.getMetricsSystem());
+      new AttestationValidator(spec, signatureVerificationService, gossipValidationHelper);
   private final ActiveValidatorChannel activeValidatorChannel = mock(ActiveValidatorChannel.class);
 
   private final AttestationManager attestationManager =

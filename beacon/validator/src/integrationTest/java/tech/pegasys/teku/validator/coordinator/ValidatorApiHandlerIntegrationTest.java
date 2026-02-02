@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -26,6 +26,7 @@ import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidatio
 
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
@@ -68,9 +69,12 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
+import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -116,6 +120,8 @@ public class ValidatorApiHandlerIntegrationTest {
   private final NetworkDataProvider networkDataProvider = mock(NetworkDataProvider.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
   private final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
+  private final ExecutionPayloadManager executionPayloadManager =
+      mock(ExecutionPayloadManager.class);
   private final ExecutionPayloadFactory executionPayloadFactory =
       mock(ExecutionPayloadFactory.class);
   private final ExecutionPayloadPublisher executionPayloadPublisher =
@@ -128,6 +134,7 @@ public class ValidatorApiHandlerIntegrationTest {
       mock(SyncCommitteeContributionPool.class);
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
       mock(SyncCommitteeSubscriptionManager.class);
+  private final PayloadAttestationPool payloadAttestationPool = mock(PayloadAttestationPool.class);
 
   private final DutyMetrics dutyMetrics = mock(DutyMetrics.class);
 
@@ -209,7 +216,11 @@ public class ValidatorApiHandlerIntegrationTest {
                 blobSidecarGossipChannel,
                 dataColumnSidecarGossipChannel,
                 dutyMetrics,
+                CustodyGroupCountManager.NOOP,
+                OptionalInt.empty(),
                 P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED),
+            payloadAttestationPool,
+            executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
             ExecutionProofManager.NOOP);

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -244,10 +245,22 @@ public class V4FinalizedKvStoreDao {
     }
   }
 
-  public Optional<UInt64> getEarliestAvailableDataColumnSlot() {
+  public Optional<UInt64> getEarliestDataSidecarColumnSlot() {
     return db.getFirstEntry(schema.getColumnSidecarByColumnSlotAndIdentifier())
         .map(ColumnEntry::getKey)
         .map(DataColumnSlotAndIdentifier::slot);
+  }
+
+  public Optional<UInt64> getEarliestAvailableDataColumnSlot() {
+    return db.get(schema.getVariableEarliestAvailableDataColumnSlot());
+  }
+
+  public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
+    return db.getLastKey(schema.getColumnDataColumnSidecarsProofsBySlot());
+  }
+
+  public Optional<List<List<KZGProof>>> getDataColumnSidecarProofs(final UInt64 slot) {
+    return db.get(schema.getColumnDataColumnSidecarsProofsBySlot(), slot);
   }
 
   public <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
@@ -476,6 +489,11 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
+    public void setEarliestAvailableDataColumnSlot(final UInt64 slot) {
+      transaction.put(schema.getVariableEarliestAvailableDataColumnSlot(), slot);
+    }
+
+    @Override
     public void setEarliestBlockSlot(final UInt64 slot) {
       transaction.put(schema.getVariableEarliestBlockSlot(), slot);
     }
@@ -517,6 +535,17 @@ public class V4FinalizedKvStoreDao {
     public void removeNonCanonicalSidecar(final DataColumnSlotAndIdentifier identifier) {
       transaction.delete(
           schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(), identifier);
+    }
+
+    @Override
+    public void addDataColumnSidecarsProofs(
+        final UInt64 slot, final List<List<KZGProof>> kzgProofs) {
+      transaction.put(schema.getColumnDataColumnSidecarsProofsBySlot(), slot, kzgProofs);
+    }
+
+    @Override
+    public void removeDataColumnSidecarsProofs(final UInt64 slot) {
+      transaction.delete(schema.getColumnDataColumnSidecarsProofsBySlot(), slot);
     }
 
     @Override

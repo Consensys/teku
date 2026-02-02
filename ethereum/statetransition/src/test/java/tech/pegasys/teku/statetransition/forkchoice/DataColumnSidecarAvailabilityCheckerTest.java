@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,8 +16,6 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -101,34 +99,7 @@ class DataColumnSidecarAvailabilityCheckerTest {
     when(das.checkDataAvailability(any(), any()))
         .thenReturn(SafeFuture.completedFuture(listOfIndices));
     assertThat(checker.initiateDataAvailabilityCheck()).isTrue();
-
-    // do not call check yet
-    verify(das, never()).checkDataAvailability(any(), any());
-
     assertThat(checker.getAvailabilityCheckResult().get())
         .isEqualTo(DataAndValidationResult.validResult(listOfIndices));
-  }
-
-  @Test
-  void shouldNotCallSamplerMultipleTimesWhenGetAvailabilityCheckResultCalledMultipleTimes() {
-    when(das.checkSamplingEligibility(block.getMessage()))
-        .thenReturn(DataAvailabilitySampler.SamplingEligibilityStatus.REQUIRED);
-    when(das.checkDataAvailability(any(), any())).thenReturn(new SafeFuture<>());
-    assertThat(checker.initiateDataAvailabilityCheck()).isTrue();
-
-    // do not call check yet
-    verify(das, never()).checkDataAvailability(any(), any());
-
-    final SafeFuture<DataAndValidationResult<UInt64>> result1 =
-        checker.getAvailabilityCheckResult();
-
-    verify(das).checkDataAvailability(any(), any());
-
-    final SafeFuture<DataAndValidationResult<UInt64>> result2 =
-        checker.getAvailabilityCheckResult();
-
-    // still only called once
-    verify(das).checkDataAvailability(any(), any());
-    assertThat(result1).isSameAs(result2);
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -42,7 +42,6 @@ import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetAllBlobSidecarsAtSlotTest extends AbstractMigratedBeaconHandlerTest {
 
@@ -51,8 +50,7 @@ public class GetAllBlobSidecarsAtSlotTest extends AbstractMigratedBeaconHandlerT
 
   @BeforeEach
   void setup() {
-    spec = TestSpecFactory.createMinimalDeneb();
-    dataStructureUtil = new DataStructureUtil(spec);
+    setSpec(TestSpecFactory.createMinimalDeneb());
     setHandler(new GetAllBlobSidecarsAtSlot(chainDataProvider, schemaDefinitionCache));
     request.setPathParameter(SLOT, "1");
     request.setListQueryParameters(

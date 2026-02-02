@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -24,9 +24,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl.GAUGE_BLOB_SIDECARS_LABEL;
 import static tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl.GAUGE_BLOB_SIDECARS_TRACKERS_LABEL;
-import static tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl.MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS;
-import static tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl.MIN_WAIT_MILLIS;
-import static tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl.TARGET_WAIT_MILLIS;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -77,8 +74,9 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   private final UInt64 futureTolerance = UInt64.valueOf(2);
   private final ObservableMetricsSystem metricsSystem =
       new PrometheusMetricsSystem(Set.of(TekuMetricCategory.BEACON), false);
-  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
-  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+  private final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(0);
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner(stubTimeProvider);
+  private final RPCFetchDelayProvider rpcFetchDelayProvider = mock(RPCFetchDelayProvider.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final ExecutionLayerChannel executionLayer = mock(ExecutionLayerChannel.class);
   BlockBlobSidecarsTrackersPoolImpl blockBlobSidecarsTrackersPool;
@@ -109,12 +107,12 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             .createPoolForBlockBlobSidecarsTrackers(
                 blockImportChannel,
                 spec,
-                timeProvider,
                 asyncRunner,
                 recentChainData,
                 executionLayer,
                 () -> blobSidecarGossipValidator,
                 blobSidecarPublisher,
+                rpcFetchDelayProvider,
                 historicalTolerance,
                 futureTolerance,
                 maxItems,
@@ -130,6 +128,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     when(executionLayer.engineGetBlobAndProofs(any(), eq(currentSlot)))
         .thenReturn(SafeFuture.completedFuture(List.of()));
     when(blobSidecarPublisher.apply(any())).thenReturn(SafeFuture.COMPLETE);
+    when(rpcFetchDelayProvider.calculate(any())).thenReturn(Duration.ZERO);
     setSlot(currentSlot);
   }
 
@@ -289,26 +288,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   }
 
   @Test
-  public void onNewBlock_shouldIgnorePreDenebBlocks() {
-    final Spec spec = TestSpecFactory.createMainnetCapella();
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
-    blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
-
-    assertThat(blockBlobSidecarsTrackersPool.containsBlock(block.getRoot())).isFalse();
-    assertThat(requiredBlockRootEvents).isEmpty();
-    assertThat(requiredBlockRootDroppedEvents).isEmpty();
-    assertThat(requiredBlobSidecarEvents).isEmpty();
-    assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
-
-    assertBlobSidecarsCount(0);
-    assertBlobSidecarsTrackersCount(0);
-  }
-
-  @Test
-  public void
-      onNewBlobSidecar_onNewBlock_onCompletedBlockAndBlobSidecars_shouldIgnoreAlreadyImportedBlocks() {
+  public void onNewBlobSidecar_onCompletedBlockAndBlobSidecars_shouldIgnoreAlreadyImportedBlocks() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
     final BlobSidecar blobSidecar =
         dataStructureUtil
@@ -319,7 +299,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     when(recentChainData.containsBlock(blobSidecar.getBlockRoot())).thenReturn(true);
 
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar, RemoteOrigin.GOSSIP);
-    blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
     blockBlobSidecarsTrackersPool.onCompletedBlockAndBlobSidecars(block, List.of(blobSidecar));
 
     assertThat(blockBlobSidecarsTrackersPool.containsBlock(block.getRoot())).isFalse();
@@ -755,13 +734,23 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     when(executionLayer.engineGetBlobAndProofs(any(), any()))
         .thenReturn(SafeFuture.completedFuture(List.of(Optional.empty(), Optional.empty())));
 
+    // RPC delay 1s
+    when(rpcFetchDelayProvider.calculate(currentSlot)).thenReturn(Duration.ofSeconds(1));
+
     blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
 
-    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    verify(rpcFetchDelayProvider).calculate(currentSlot);
 
-    asyncRunner.executeQueuedActions();
+    assertThat(asyncRunner.countDelayedActions()).isEqualTo(2);
+
+    asyncRunner.executeDueActions();
 
     verify(executionLayer).engineGetBlobAndProofs(any(), any());
+
+    // let RPC fetch delay expire
+    stubTimeProvider.advanceTimeBySeconds(1);
+
+    asyncRunner.executeDueActions();
 
     assertThat(requiredBlockRootEvents).isEmpty();
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
@@ -885,7 +874,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
 
-    blockBlobSidecarsTrackersPool.removeAllForBlock(block.getRoot());
+    blockBlobSidecarsTrackersPool.removeAllForBlock(block.getSlotAndBlockRoot());
 
     assertThat(requiredBlobSidecarDroppedEvents).containsExactlyElementsOf(missingBlobs);
 
@@ -972,7 +961,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
 
-    blockBlobSidecarsTrackersPool.removeAllForBlock(signedBeaconBlock.getRoot());
+    blockBlobSidecarsTrackersPool.removeAllForBlock(signedBeaconBlock.getSlotAndBlockRoot());
 
     assertThat(requiredBlockRootDroppedEvents).containsExactly(signedBeaconBlock.getRoot());
 
@@ -1007,112 +996,10 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
 
-    blockBlobSidecarsTrackersPool.removeAllForBlock(signedBeaconBlock.getRoot());
+    blockBlobSidecarsTrackersPool.removeAllForBlock(signedBeaconBlock.getSlotAndBlockRoot());
 
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
     assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
-  }
-
-  @Test
-  void shouldRespectTargetWhenBlockIsEarly() {
-    final SlotAndBlockRoot slotAndBlockRoot =
-        new SlotAndBlockRoot(currentSlot, dataStructureUtil.randomBytes32());
-
-    final UInt64 startSlotInSeconds = UInt64.valueOf(10);
-
-    when(recentChainData.computeTimeAtSlot(currentSlot)).thenReturn(startSlotInSeconds);
-
-    // blocks arrives at slot start
-    timeProvider.advanceTimeBySeconds(startSlotInSeconds.longValue());
-
-    final Duration fetchDelay =
-        blockBlobSidecarsTrackersPool.calculateRpcFetchDelay(slotAndBlockRoot);
-
-    // we can wait the full target
-    assertThat(fetchDelay).isEqualTo(Duration.ofMillis(TARGET_WAIT_MILLIS.longValue()));
-  }
-
-  @Test
-  void calculateBlockFetchDelay_shouldRespectMinimumWhenRpcIsLate() {
-    final SlotAndBlockRoot slotAndBlockRoot =
-        new SlotAndBlockRoot(currentSlot, dataStructureUtil.randomBytes32());
-
-    final UInt64 startSlotInSeconds = UInt64.valueOf(10);
-    final UInt64 startSlotInMillis = startSlotInSeconds.times(1_000);
-
-    when(recentChainData.computeTimeAtSlot(currentSlot)).thenReturn(startSlotInSeconds);
-
-    // blocks arrives 200ms before attestation due
-    timeProvider.advanceTimeByMillis(startSlotInMillis.plus(3_800).longValue());
-
-    final Duration fetchDelay =
-        blockBlobSidecarsTrackersPool.calculateRpcFetchDelay(slotAndBlockRoot);
-
-    // we can wait the full target
-    assertThat(fetchDelay).isEqualTo(Duration.ofMillis(MIN_WAIT_MILLIS.longValue()));
-  }
-
-  @Test
-  void calculateBlockFetchDelay_shouldRespectTargetWhenRpcIsVeryLate() {
-    final SlotAndBlockRoot slotAndBlockRoot =
-        new SlotAndBlockRoot(currentSlot, dataStructureUtil.randomBytes32());
-
-    final UInt64 startSlotInSeconds = UInt64.valueOf(10);
-
-    when(recentChainData.computeTimeAtSlot(currentSlot)).thenReturn(startSlotInSeconds);
-
-    // blocks arrives 1s after attestation due
-    timeProvider.advanceTimeBySeconds(startSlotInSeconds.plus(5).longValue());
-
-    final Duration fetchDelay =
-        blockBlobSidecarsTrackersPool.calculateRpcFetchDelay(slotAndBlockRoot);
-
-    // we can wait the full target
-    assertThat(fetchDelay).isEqualTo(Duration.ofMillis(TARGET_WAIT_MILLIS.longValue()));
-  }
-
-  @Test
-  void calculateRpcFetchDelay_shouldRespectAttestationDueLimit() {
-    final SlotAndBlockRoot slotAndBlockRoot =
-        new SlotAndBlockRoot(currentSlot, dataStructureUtil.randomBytes32());
-
-    final UInt64 startSlotInSeconds = UInt64.valueOf(10);
-    final UInt64 startSlotInMillis = startSlotInSeconds.times(1_000);
-
-    when(recentChainData.computeTimeAtSlot(currentSlot)).thenReturn(startSlotInSeconds);
-
-    final UInt64 millisecondsIntoAttDueLimit = UInt64.valueOf(200);
-
-    // block arrival is 200ms over the max wait relative to the attestation due
-    final UInt64 blockArrivalTimeMillis =
-        startSlotInMillis
-            .plus(4_000)
-            .minus(MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS)
-            .plus(millisecondsIntoAttDueLimit)
-            .minus(TARGET_WAIT_MILLIS);
-
-    timeProvider.advanceTimeByMillis(blockArrivalTimeMillis.longValue());
-
-    final Duration fetchDelay =
-        blockBlobSidecarsTrackersPool.calculateRpcFetchDelay(slotAndBlockRoot);
-
-    // we can only wait 200ms less than target
-    // note the extra 1ms is from the difference of 1/3 slot time vs the 3333 basis points
-    assertThat(fetchDelay)
-        .isEqualTo(
-            Duration.ofMillis(
-                TARGET_WAIT_MILLIS.minus(millisecondsIntoAttDueLimit).minus(1).longValue()));
-  }
-
-  @Test
-  void calculateRpcFetchDelay_shouldReturnZeroIfSlotIsOld() {
-    final SlotAndBlockRoot slotAndBlockRoot =
-        new SlotAndBlockRoot(currentSlot.minus(1), dataStructureUtil.randomBytes32());
-
-    final Duration fetchDelay =
-        blockBlobSidecarsTrackersPool.calculateRpcFetchDelay(slotAndBlockRoot);
-
-    assertThat(fetchDelay).isEqualTo(Duration.ZERO);
   }
 
   @Test
@@ -1297,33 +1184,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   }
 
   @Test
-  public void onNewBlock_shouldIgnoreFuluBlocks() {
-    final Spec specFulu = TestSpecFactory.createMainnetFulu();
-    final BlockBlobSidecarsTrackersPoolImpl blockBlobSidecarsTrackersPoolCustom =
-        new PoolFactory(new StubMetricsSystem())
-            .createPoolForBlockBlobSidecarsTrackers(
-                blockImportChannel,
-                specFulu,
-                timeProvider,
-                asyncRunner,
-                recentChainData,
-                executionLayer,
-                () -> blobSidecarGossipValidator,
-                blobSidecarPublisher,
-                historicalTolerance,
-                futureTolerance,
-                maxItems,
-                BlockBlobSidecarsTracker::new);
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
-    blockBlobSidecarsTrackersPoolCustom.onSlot(currentSlot);
-    blockBlobSidecarsTrackersPoolCustom.onNewBlock(block, Optional.empty());
-
-    assertThat(blockBlobSidecarsTrackersPoolCustom.containsBlock(block.getRoot())).isFalse();
-    assertThat(blockBlobSidecarsTrackersPoolCustom.getTotalBlobSidecarsTrackers()).isEqualTo(0);
-  }
-
-  @Test
   public void onNewBlobSidecar_shouldIgnoreFuluBlobSidecars() {
     final Spec specFulu = TestSpecFactory.createMainnetFulu();
     final BlockBlobSidecarsTrackersPoolImpl blockBlobSidecarsTrackersPoolCustom =
@@ -1331,12 +1191,12 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             .createPoolForBlockBlobSidecarsTrackers(
                 blockImportChannel,
                 specFulu,
-                timeProvider,
                 asyncRunner,
                 recentChainData,
                 executionLayer,
                 () -> blobSidecarGossipValidator,
                 blobSidecarPublisher,
+                RPCFetchDelayProvider.NO_DELAY,
                 historicalTolerance,
                 futureTolerance,
                 maxItems,

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,32 +13,48 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.util;
 
-import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
-import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochProcessorGloas;
 
 public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
 
   public ForkChoiceUtilGloas(
-      final SpecConfig specConfig,
-      final BeaconStateAccessors beaconStateAccessors,
-      final EpochProcessor epochProcessor,
-      final AttestationUtil attestationUtil,
-      final MiscHelpers miscHelpers) {
+      final SpecConfigGloas specConfig,
+      final BeaconStateAccessorsGloas beaconStateAccessors,
+      final EpochProcessorGloas epochProcessor,
+      final AttestationUtilGloas attestationUtil,
+      final MiscHelpersGloas miscHelpers) {
     super(specConfig, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
   }
 
   @Override
+  public void applyExecutionPayloadToStore(
+      final MutableStore store,
+      final SignedExecutionPayloadEnvelope signedEnvelope,
+      final BeaconState postState) {
+    // Add new execution payload to store
+    store.putExecutionPayloadAndState(signedEnvelope, postState);
+  }
+
+  // Checking of blob data availability is delayed until the processing of the execution payload
+  @Override
   public AvailabilityChecker<?> createAvailabilityChecker(final SignedBeaconBlock block) {
-    // TODO-GLOAS: in ePBS, data availability is delayed until the processing of the execution
-    // payload.
-    // We may have a dedicated availability checker for the execution stage.
-    // If it will be the case, this will remain a NOOP
-    return AvailabilityChecker.NOOP;
+    return AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR;
+  }
+
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 add a real data availability check
+  // (not required for devnet-0)
+  @Override
+  public AvailabilityChecker<?> createAvailabilityChecker(
+      final SignedExecutionPayloadEnvelope executionPayload) {
+    return AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR;
   }
 }

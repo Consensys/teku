@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -56,7 +56,9 @@ public class TransitionCaches {
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
-          ProgressiveTotalBalancesUpdates.NOOP) {
+          ProgressiveTotalBalancesUpdates.NOOP,
+          NoOpCache.getNoOpCache(),
+          NoOpCache.getNoOpCache()) {
 
         @Override
         public TransitionCaches copy() {
@@ -85,6 +87,8 @@ public class TransitionCaches {
   private final Cache<Bytes32, IntList> committeeShuffle;
   private final Cache<UInt64, List<UInt64>> effectiveBalances;
   private final Cache<UInt64, UInt64> baseRewardPerIncrement;
+  private final Cache<UInt64, BLSPublicKey> buildersPubKeys;
+  private final Cache<BLSPublicKey, Integer> builderIndexCache;
 
   private final Cache<UInt64, Map<UInt64, SyncSubcommitteeAssignments>> syncCommitteeCache;
 
@@ -105,6 +109,8 @@ public class TransitionCaches {
     syncCommitteeCache = LRUCache.create(MAX_SYNC_COMMITTEE_CACHE);
     baseRewardPerIncrement = LRUCache.create(MAX_BASE_REWARD_PER_INCREMENT_CACHE);
     progressiveTotalBalances = ProgressiveTotalBalancesUpdates.NOOP;
+    buildersPubKeys = LRUCache.create(Integer.MAX_VALUE - 1);
+    builderIndexCache = LRUCache.create(Integer.MAX_VALUE - 1);
   }
 
   private TransitionCaches(
@@ -120,7 +126,9 @@ public class TransitionCaches {
       final Cache<UInt64, List<UInt64>> effectiveBalances,
       final Cache<UInt64, Map<UInt64, SyncSubcommitteeAssignments>> syncCommitteeCache,
       final Cache<UInt64, UInt64> baseRewardPerIncrement,
-      final ProgressiveTotalBalancesUpdates progressiveTotalBalances) {
+      final ProgressiveTotalBalancesUpdates progressiveTotalBalances,
+      final Cache<UInt64, BLSPublicKey> buildersPubKeys,
+      final Cache<BLSPublicKey, Integer> builderIndexCache) {
     this.activeValidators = activeValidators;
     this.beaconProposerIndex = beaconProposerIndex;
     this.beaconCommittee = beaconCommittee;
@@ -134,6 +142,8 @@ public class TransitionCaches {
     this.syncCommitteeCache = syncCommitteeCache;
     this.baseRewardPerIncrement = baseRewardPerIncrement;
     this.progressiveTotalBalances = progressiveTotalBalances;
+    this.buildersPubKeys = buildersPubKeys;
+    this.builderIndexCache = builderIndexCache;
   }
 
   public void setLatestTotalBalances(final TotalBalances totalBalances) {
@@ -224,6 +234,21 @@ public class TransitionCaches {
     return baseRewardPerIncrement;
   }
 
+  /** (builder index) -> (builder pub key) cache */
+  public Cache<UInt64, BLSPublicKey> getBuildersPubKeys() {
+    return buildersPubKeys;
+  }
+
+  /**
+   * (builder pub key) -> (builder index) cache
+   *
+   * <p>More complicated cache such as the {@link ValidatorIndexCache} is not required since the
+   * builders in the state are expected to be a tiny number initially
+   */
+  public Cache<BLSPublicKey, Integer> getBuilderIndexCache() {
+    return builderIndexCache;
+  }
+
   /**
    * Makes an independent copy which contains all the data in this instance Modifications to
    * returned caches shouldn't affect caches from this instance
@@ -242,6 +267,8 @@ public class TransitionCaches {
         effectiveBalances.copy(),
         syncCommitteeCache.copy(),
         baseRewardPerIncrement.copy(),
-        progressiveTotalBalances.copy());
+        progressiveTotalBalances.copy(),
+        buildersPubKeys.copy(),
+        builderIndexCache.copy());
   }
 }

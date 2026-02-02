@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+
 import java.util.Optional;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -49,13 +52,22 @@ public interface ExecutionPayloadSummary {
 
   Bytes getExtraData();
 
-  Bytes32 getPayloadHash();
-
   boolean isDefaultPayload();
 
   Optional<Bytes32> getOptionalWithdrawalsRoot();
 
   default String toLogString() {
     return LogFormatter.formatBlock(getBlockNumber(), getBlockHash());
+  }
+
+  default UInt64 computeGasPercentage(final Logger logger) {
+    try {
+      return getGasLimit().isGreaterThan(0L)
+          ? getGasUsed().times(100).dividedBy(getGasLimit())
+          : ZERO;
+    } catch (final ArithmeticException ex) {
+      logger.debug("Failed to compute gas percentage", ex);
+      return UInt64.ZERO;
+    }
   }
 }

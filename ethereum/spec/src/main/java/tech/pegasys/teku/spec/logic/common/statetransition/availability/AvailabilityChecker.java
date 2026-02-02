@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,10 +15,10 @@ package tech.pegasys.teku.spec.logic.common.statetransition.availability;
 
 import static tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult.notRequiredResultFuture;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
@@ -44,8 +44,8 @@ public interface AvailabilityChecker<Data> {
   AvailabilityChecker<ExecutionProof> NOOP_EXECUTION_PROOF = new NOOP<>();
 
   /**
-   * Similar to {@link OptimisticExecutionPayloadExecutor#optimisticallyExecute(
-   * ExecutionPayloadHeader, NewPayloadRequest)}
+   * Similar to {@link OptimisticExecutionPayloadExecutor#optimisticallyExecute(Optional,
+   * NewPayloadRequest)}
    *
    * @return true if data availability check is initiated or false to immediately fail the
    *     validation

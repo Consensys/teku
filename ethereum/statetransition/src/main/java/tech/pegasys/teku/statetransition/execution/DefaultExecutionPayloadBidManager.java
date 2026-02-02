@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.execution;
 
 import static tech.pegasys.teku.infrastructure.logging.Converter.weiToEth;
 import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatAbbreviatedHashRoot;
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
 
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
+import tech.pegasys.teku.statetransition.validation.ExecutionPayloadBidGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidManager {
@@ -38,15 +40,28 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
+  private final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator;
 
-  public DefaultExecutionPayloadBidManager(final Spec spec) {
+  public DefaultExecutionPayloadBidManager(
+      final Spec spec,
+      final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator) {
     this.spec = spec;
+    this.executionPayloadBidGossipValidator = executionPayloadBidGossipValidator;
   }
 
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9960 (not required for devnet-0)
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<InternalValidationResult> validateAndAddBid(
       final SignedExecutionPayloadBid signedBid, final RemoteBidOrigin remoteBidOrigin) {
+    final SafeFuture<InternalValidationResult> validationResult =
+        executionPayloadBidGossipValidator.validate(signedBid);
+    validationResult.thenAccept(
+        result -> {
+          switch (result.code()) {
+            // TODO-GLOAS handle bids
+            case ACCEPT, REJECT, SAVE_FOR_FUTURE, IGNORE -> {}
+          }
+        });
     return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }
 
@@ -87,13 +102,12 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
             .getBlobKzgCommitmentsSchema()
             .createFromBlobsBundle(getPayloadResponse.getBlobsBundle().orElseThrow())
             .hashTreeRoot();
-    // proposer is the builder
-    final UInt64 builderIndex = UInt64.valueOf(spec.getBeaconProposerIndex(state, slot));
+    // For self-builds, use `BUILDER_INDEX_SELF_BUILD`
     final ExecutionPayloadBid bid =
         schemaDefinitions
             .getExecutionPayloadBidSchema()
             .createLocalSelfBuiltBid(
-                builderIndex, slot, state, executionPayload, blobKzgCommitmentsRoot);
+                BUILDER_INDEX_SELF_BUILD, slot, state, executionPayload, blobKzgCommitmentsRoot);
     // Using G2_POINT_AT_INFINITY as signature for self-builds
     return schemaDefinitions
         .getSignedExecutionPayloadBidSchema()

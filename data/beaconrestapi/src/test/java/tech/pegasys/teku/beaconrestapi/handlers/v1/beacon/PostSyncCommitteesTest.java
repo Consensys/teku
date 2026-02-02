@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -38,15 +38,13 @@ import tech.pegasys.teku.beaconrestapi.schema.ErrorListBadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
 public class PostSyncCommitteesTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   void setup() {
-    spec = TestSpecFactory.createMinimalAltair();
-    dataStructureUtil = new DataStructureUtil(spec);
+    setSpec(TestSpecFactory.createMinimalAltair());
     setHandler(new PostSyncCommittees(validatorDataProvider));
   }
 

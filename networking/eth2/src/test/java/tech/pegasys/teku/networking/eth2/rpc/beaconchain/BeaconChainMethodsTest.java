@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -65,7 +65,7 @@ public class BeaconChainMethodsTest {
   final RecentChainData recentChainData = mock(RecentChainData.class);
   final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   final StatusMessageFactory statusMessageFactory =
-      new StatusMessageFactory(spec, combinedChainDataClient);
+      new StatusMessageFactory(spec, combinedChainDataClient, metricsSystem);
   final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
 
   @BeforeEach

@@ -7,9 +7,14 @@
 ## Unreleased Changes
 
 ### Breaking Changes
+ - Removed development cli arg `--Xp2p-reworked-sidecar-recovery-enabled`.
 
 ### Additions and Improvements
- - 🚀 Added mainnet configuration for the FULU fork 🦓 due at epoch 411392, December 3, 2025, 09:49:11pm UTC
- - Implemented `/eth/v1/beacon/states/{state_id}/proposer_lookahead` which will be accessible after the Fulu fork.
+
+- New CLI flag `--rest-api-getblobs-sidecars-download-enabled` allows the beacon node to serve `getBlobs` REST API responses by attempting to fetch missing blob sidecars from the p2p network. The new flag `--rest-api-getblobs-sidecars-download-timeout` controls the network fetch timeout (default: 5 seconds). 
+
 
 ### Bug Fixes
+
+- Added `DOMAIN_BLS_TO_EXECUTION_CHANGE` to spec api output.
+

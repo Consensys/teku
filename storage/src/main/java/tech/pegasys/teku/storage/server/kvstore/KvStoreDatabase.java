@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -46,6 +46,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -1158,6 +1159,29 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public Optional<UInt64> getEarliestAvailableDataColumnSlot() {
+    return dao.getEarliestAvailableDataColumnSlot();
+  }
+
+  @Override
+  public void setEarliestAvailableDataColumnSlot(final UInt64 slot) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.setEarliestAvailableDataColumnSlot(slot);
+      updater.commit();
+    }
+  }
+
+  @Override
+  public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
+    return dao.getLastDataColumnSidecarsProofsSlot();
+  }
+
+  @Override
+  public Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(final UInt64 slot) {
+    return dao.getDataColumnSidecarsProofs(slot);
+  }
+
+  @Override
   public void setFirstCustodyIncompleteSlot(final UInt64 slot) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.setFirstCustodyIncompleteSlot(slot);
@@ -1203,7 +1227,7 @@ public class KvStoreDatabase implements Database {
       final boolean nonCanonicalBlobSidecars) {
 
     int prunedSlots = 0;
-
+    Optional<UInt64> earliestSidecarSlot = Optional.empty();
     final Map<UInt64, List<DataColumnSlotAndIdentifier>> prunableMap = new HashMap<>();
 
     dataColumnSlotAndIdentifierStream
@@ -1229,8 +1253,13 @@ public class KvStoreDatabase implements Database {
             }
           }
 
+          if (!nonCanonicalBlobSidecars) {
+            earliestSidecarSlot = Optional.of(slot.plus(1));
+          }
+
           ++prunedSlots;
         }
+        earliestSidecarSlot.ifPresent(updater::setEarliestAvailableDataColumnSlot);
         updater.commit();
       }
       LOG.debug("Pruned data column sidecars in {} slots", prunedSlots);

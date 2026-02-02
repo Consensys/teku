@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -152,7 +152,7 @@ public class LibP2PNetworkBuilder {
   }
 
   protected List<? extends RpcHandler<?, ?, ?>> createRpcHandlers() {
-    return rpcMethods.stream().map(m -> new RpcHandler<>(asyncRunner, m)).toList();
+    return rpcMethods.stream().map(m -> new RpcHandler<>(asyncRunner, m, metricsSystem)).toList();
   }
 
   protected LibP2PGossipNetwork createGossipNetwork() {

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -29,7 +29,7 @@ import tech.pegasys.teku.storage.server.Database;
 
 public class FinalizedStateCache {
 
-  private static final long MAX_REGENERATE_LOTS = 10_000L;
+  private static final long MAX_REGENERATE_SLOTS = 10_000L;
 
   /**
    * Note this is a best effort basis to track what states are cached. Slots are added here slightly
@@ -52,7 +52,7 @@ public class FinalizedStateCache {
         maximumCacheSize,
         useSoftReferences,
         stateRebuildTimeoutSeconds,
-        MAX_REGENERATE_LOTS);
+        MAX_REGENERATE_SLOTS);
   }
 
   FinalizedStateCache(

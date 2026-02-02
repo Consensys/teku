@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -169,7 +169,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
             });
 
     final long countTooBigCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK,
             "rpc_blob_sidecars_by_root_requests_total",
             "count_too_big");
@@ -194,7 +194,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
     verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
     final long rateLimitedCount =
-        metricsSystem.getCounterValue(
+        metricsSystem.getLabelledCounterValue(
             TekuMetricCategory.NETWORK, "rpc_blob_sidecars_by_root_requests_total", "rate_limited");
 
     assertThat(rateLimitedCount).isOne();

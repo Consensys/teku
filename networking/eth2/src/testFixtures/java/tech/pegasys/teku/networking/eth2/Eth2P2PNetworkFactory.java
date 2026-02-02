@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -232,7 +232,11 @@ public class Eth2P2PNetworkFactory {
             new SubnetSubscriptionService();
         final CombinedChainDataClient combinedChainDataClient =
             new CombinedChainDataClient(
-                recentChainData, historicalChainData, spec, LateBlockReorgPreparationHandler.NOOP);
+                recentChainData,
+                historicalChainData,
+                spec,
+                LateBlockReorgPreparationHandler.NOOP,
+                config.isReworkedSidecarSyncEnabled());
         final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider =
             new DataColumnSidecarSubnetTopicProvider(
                 combinedChainDataClient.getRecentChainData(), gossipEncoding);
@@ -258,7 +262,7 @@ public class Eth2P2PNetworkFactory {
                 attestationSubnetService,
                 syncCommitteeSubnetService,
                 rpcEncoding,
-                new StatusMessageFactory(spec, combinedChainDataClient),
+                new StatusMessageFactory(spec, combinedChainDataClient, METRICS_SYSTEM),
                 requiredCheckpoint,
                 eth2RpcPingInterval,
                 eth2RpcOutstandingPingThreshold,

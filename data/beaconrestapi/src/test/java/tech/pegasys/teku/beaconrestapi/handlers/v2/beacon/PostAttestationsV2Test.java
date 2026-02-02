@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -48,7 +48,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
 @TestSpecContext(milestone = {PHASE0, ELECTRA})
@@ -58,9 +57,8 @@ public class PostAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   void setUp(final TestSpecInvocationContextProvider.SpecContext specContext) {
-    spec = specContext.getSpec();
+    setSpec(specContext.getSpec());
     specMilestone = specContext.getSpecMilestone();
-    schemaDefinitionCache = new SchemaDefinitionCache(spec);
     setHandler(new PostAttestationsV2(validatorDataProvider, spec, schemaDefinitionCache));
   }
 

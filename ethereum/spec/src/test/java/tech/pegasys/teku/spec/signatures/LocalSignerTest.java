@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -225,7 +225,7 @@ class LocalSignerTest {
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
-                "pToYn303XI2b3xhMp9gnkHdWYTISbpMUYns6iy3BL+n5YBt/zrsS6I1tAJ67Aw0sBhc2NIyt2BH8va1gc9pMhFTUwM068fTEHiGBy9rlOv2xMsKwkH01Jjz0ukS7bgDw"));
+                "oqAJB5J1ISU11HJPOsdcPqraS+qkbFCIVlMLhEBH6VScj3VhIKDGK1cYkuCI0QoYDSP9EOgK57nHR0ducduzDP2SIMvOmOo8pg+ecdLXqjydA5sxkdBkCjIjD6kixm0x"));
 
     final SafeFuture<BLSSignature> result = signer.signExecutionPayloadBid(bid, fork);
     asyncRunner.executeQueuedActions();
@@ -245,7 +245,7 @@ class LocalSignerTest {
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
-                "lj8tDRzsm+L87EpnFKCF6h+KNxkw2z7C+ltZ3lLy+AqqjFLCTTvUvrhn2w1WkEgnDRSytxINuWt+cvn1f9dJ83ZurN+Q/0uHtSeXujENLFK4Msbxbh+PzM+nxI4Ixc71"));
+                "rYQ+MMyhTXyzCx4e2GMAI56Fz9vy204+O6UzWa7xyXg149jpP/gNeOD4j5/tmodSEsKlYCQgvinEFQR6XDI7jnNC6we5meqlPcGUlXCrb1UHPz+EifQ0E+saZZsU5Ssf"));
 
     final SafeFuture<BLSSignature> result = signer.signExecutionPayloadEnvelope(envelope, fork);
     asyncRunner.executeQueuedActions();
@@ -265,7 +265,7 @@ class LocalSignerTest {
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
-                "ldhpHqJ1c6qzpC5imB8DjWLmPSL9SvoBsGQc8PuW6GmsoioKu54BTpRjiJk6h7DMDQNC5mcYQc3rzNDaDs/bpIpfSkvMyLCsvTKkRnDQzEIgng/ONDSHj2U4o89tkSZD"));
+                "tvf+z4784dw1b8XIDKuCBIAeGGQimNn0a6rH5s0NK3H8jKMgIKKadvR5Ui02bBtCGJwR7iLDGMF3KdzkMspzyVb1D+hdL600LttoSBp+HM+NJ0xsT5ajwNk1yO0RzajH"));
 
     final SafeFuture<BLSSignature> result =
         signer.signPayloadAttestationData(payloadAttestationData, fork);

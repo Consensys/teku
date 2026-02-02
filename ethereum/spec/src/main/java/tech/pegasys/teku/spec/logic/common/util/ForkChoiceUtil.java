@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -397,6 +398,13 @@ public class ForkChoiceUtil {
         signedBlock, postState, blockCheckpoints, blobSidecars, earliestBlobSidecarsSlot);
   }
 
+  public void applyExecutionPayloadToStore(
+      final MutableStore store,
+      final SignedExecutionPayloadEnvelope signedEnvelope,
+      final BeaconState postState) {
+    // NO-OP until Gloas
+  }
+
   private UInt64 getFinalizedCheckpointStartSlot(final ReadOnlyStore store) {
     final UInt64 finalizedEpoch = store.getFinalizedCheckpoint().getEpoch();
     return miscHelpers.computeStartSlotAtEpoch(finalizedEpoch);
@@ -538,6 +546,11 @@ public class ForkChoiceUtil {
   }
 
   public AvailabilityChecker<?> createAvailabilityChecker(final SignedBeaconBlock block) {
+    return AvailabilityChecker.NOOP;
+  }
+
+  public AvailabilityChecker<?> createAvailabilityChecker(
+      final SignedExecutionPayloadEnvelope executionPayload) {
     return AvailabilityChecker.NOOP;
   }
 }

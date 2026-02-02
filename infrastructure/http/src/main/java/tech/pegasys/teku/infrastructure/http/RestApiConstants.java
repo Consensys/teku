@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -161,6 +161,7 @@ public class RestApiConstants {
   public static final String SYNCING_STATUS_DESCRIPTION =
       "Customize syncing status instead of default status code (" + SC_PARTIAL_CONTENT + ")";
 
+  public static final String DEPENDENT_ROOT = "dependent_root";
   public static final String EXECUTION_OPTIMISTIC = "execution_optimistic";
   public static final String FINALIZED = "finalized";
   public static final String EXECUTION_PAYLOAD_BLINDED = "execution_payload_blinded";

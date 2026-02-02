@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -234,6 +234,19 @@ public class Eth2NetworkOptions {
   private UInt64 gloasForkEpoch;
 
   @Option(
+      names = {"--Xmin-bid-increment-percentage"},
+      hidden = true,
+      paramLabel = "<INTEGER>",
+      description =
+          "Minimum bid increment percentage for execution payload bid gossip validation. "
+              + "New bids must exceed the current highest bid by at least this percentage. "
+              + "Used for DoS protection against bid spamming. Default: 1 (1%)",
+      arity = "1",
+      defaultValue = "1",
+      showDefaultValue = Visibility.ALWAYS)
+  private int minBidIncrementPercentage = 1;
+
+  @Option(
       names = {"--Xnetwork-total-terminal-difficulty-override"},
       hidden = true,
       paramLabel = "<uint256>",
@@ -365,17 +378,6 @@ public class Eth2NetworkOptions {
   private String epochsStoreBlobs;
 
   @Option(
-      names = {"--Xaggregating-attestation-pool-v2-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Enable the new aggregating attestation pool.",
-      arity = "0..1",
-      fallbackValue = "true",
-      showDefaultValue = Visibility.ALWAYS,
-      hidden = true)
-  private boolean aggregatingAttestationPoolV2Enabled =
-      Eth2NetworkConfiguration.DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED;
-
-  @Option(
       names = {"--Xaggregating-attestation-pool-profiling-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Enable the profiler for the aggregating attestation pool",
@@ -418,6 +420,7 @@ public class Eth2NetworkOptions {
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.eth2NetworkConfig(this::configureEth2Network);
+    builder.minBidIncrementPercentage(minBidIncrementPercentage);
   }
 
   private Eth2NetworkConfiguration createEth2NetworkConfig(
@@ -503,7 +506,6 @@ public class Eth2NetworkOptions {
         .asyncBeaconChainMaxThreads(asyncBeaconChainMaxThreads)
         .forkChoiceLateBlockReorgEnabled(forkChoiceLateBlockReorgEnabled)
         .prepareBlockProductionEnabled(prepareBlockProductionEnabled)
-        .aggregatingAttestationPoolV2Enabled(aggregatingAttestationPoolV2Enabled)
         .aggregatingAttestationPoolProfilingEnabled(aggregatingAttestationPoolProfilingEnabled)
         .aggregatingAttestationPoolV2BlockAggregationTimeLimit(
             aggregatingAttestationPoolV2BlockAggregationTimeLimit)

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -37,6 +37,7 @@ import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.PtcDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
@@ -52,6 +53,8 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration
 import tech.pegasys.teku.spec.datastructures.epbs.SlotAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
@@ -66,6 +69,7 @@ import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
+import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -158,6 +162,14 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Optional<PtcDuties>> getPtcDuties(
+      final UInt64 epoch, final IntCollection validatorIndices) {
+    return tryRequestUntilSuccess(
+        apiChannel -> apiChannel.getPtcDuties(epoch, validatorIndices),
+        BeaconNodeRequestLabels.GET_PTC_DUTIES_METHOD);
+  }
+
+  @Override
   public SafeFuture<Optional<PeerCount>> getPeerCount() {
     return tryRequestUntilSuccess(
         ValidatorApiChannel::getPeerCount, BeaconNodeRequestLabels.GET_PEER_COUNT_METHOD);
@@ -217,6 +229,14 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
         apiChannel ->
             apiChannel.createSyncCommitteeContribution(slot, subcommitteeIndex, beaconBlockRoot),
         BeaconNodeRequestLabels.CREATE_SYNC_COMMITTEE_CONTRIBUTION_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Optional<PayloadAttestationData>> createPayloadAttestationData(
+      final UInt64 slot) {
+    return tryRequestUntilSuccess(
+        apiChannel -> apiChannel.createPayloadAttestationData(slot),
+        BeaconNodeRequestLabels.CREATE_PAYLOAD_ATTESTATION_METHOD);
   }
 
   @Override
@@ -299,6 +319,15 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     return relayRequest(
         apiChannel -> apiChannel.sendSignedContributionAndProofs(signedContributionAndProofs),
         BeaconNodeRequestLabels.SEND_CONTRIBUTIONS_AND_PROOFS_METHOD,
+        failoversPublishSignedDuties);
+  }
+
+  @Override
+  public SafeFuture<List<SubmitDataError>> sendPayloadAttestationMessages(
+      final List<PayloadAttestationMessage> payloadAttestationMessages) {
+    return relayRequest(
+        apiChannel -> apiChannel.sendPayloadAttestationMessages(payloadAttestationMessages),
+        BeaconNodeRequestLabels.SEND_PAYLOAD_ATTESTATION_MESSAGES_METHOD,
         failoversPublishSignedDuties);
   }
 
@@ -386,7 +415,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Void> publishSignedExecutionPayload(
+  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
     return relayRequest(
         apiChannel -> apiChannel.publishSignedExecutionPayload(signedExecutionPayload),

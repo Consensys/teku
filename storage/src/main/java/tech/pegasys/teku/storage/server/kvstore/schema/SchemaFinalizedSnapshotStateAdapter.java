@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,11 +15,13 @@ package tech.pegasys.teku.storage.server.kvstore.schema;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
@@ -60,6 +62,10 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return delegate.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier();
   }
 
+  public KvStoreColumn<UInt64, List<List<KZGProof>>> getColumnDataColumnSidecarsProofsBySlot() {
+    return delegate.getColumnDataColumnSidecarsProofsBySlot();
+  }
+
   public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
     return ImmutableMap.<String, KvStoreColumn<?, ?>>builder()
         .put("SLOTS_BY_FINALIZED_ROOT", getColumnSlotsByFinalizedRoot())
@@ -78,6 +84,7 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
         .put(
             "NON_CANONICAL_SIDECAR_BY_COLUMN_SLOT_AND_IDENTIFIER",
             getColumnNonCanonicalSidecarByColumnSlotAndIdentifier())
+        .put("DATA_COLUMN_SIDECARS_PROOFS_BY_SLOT", getColumnDataColumnSidecarsProofsBySlot())
         .build();
   }
 
@@ -129,6 +136,10 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return delegate.getVariableEarliestBlobSidecarSlot();
   }
 
+  public KvStoreVariable<UInt64> getVariableEarliestAvailableDataColumnSlot() {
+    return delegate.getVariableEarliestAvailableDataColumnSlot();
+  }
+
   public KvStoreVariable<UInt64> getVariableEarliestBlockSlot() {
     return delegate.getVariableEarliestBlockSlot();
   }
@@ -146,6 +157,8 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
         "EARLIEST_BLOCK_SLOT_AVAILABLE",
         getVariableEarliestBlockSlot(),
         "FIRST_CUSTODY_INCOMPLETE_SLOT",
-        getVariableFirstCustodyIncompleteSlot());
+        getVariableFirstCustodyIncompleteSlot(),
+        "EARLIEST_AVAILABLE_DATA_COLUMN_SLOT",
+        getVariableEarliestAvailableDataColumnSlot());
   }
 }

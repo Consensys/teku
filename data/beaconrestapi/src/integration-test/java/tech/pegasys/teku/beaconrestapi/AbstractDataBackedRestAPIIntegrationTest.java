@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -39,12 +39,17 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
+import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.NetworkDataProvider;
+import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.RewardCalculator;
 import tech.pegasys.teku.beacon.sync.SyncService;
+import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionAndPublishingPerformanceFactory;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -53,6 +58,8 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -71,12 +78,17 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.validation.SignedBlsToExecutionChangeValidator;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
@@ -88,7 +100,15 @@ import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
+import tech.pegasys.teku.validator.coordinator.BlockFactory;
+import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
+import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactory;
+import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
+import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
+import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
+import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
 
 @SuppressWarnings("unchecked")
 public abstract class AbstractDataBackedRestAPIIntegrationTest {
@@ -119,7 +139,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   // Mocks
   protected final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
   protected final SyncService syncService = mock(SyncService.class);
-  protected final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
+  protected ValidatorApiHandler validatorApiHandler = mock(ValidatorApiHandler.class);
+  protected ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   protected final EventChannels eventChannels = mock(EventChannels.class);
   protected final AggregatingAttestationPool attestationPool =
       mock(AggregatingAttestationPool.class);
@@ -128,6 +149,34 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
   protected final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
 
+  protected final BlockProductionAndPublishingPerformanceFactory
+      blockProductionAndPublishingFactory =
+          mock(BlockProductionAndPublishingPerformanceFactory.class);
+  protected final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
+  protected final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
+  protected final NetworkDataProvider networkDataProvider = mock(NetworkDataProvider.class);
+  protected final SyncStateProvider syncStateProvider = mock(SyncStateProvider.class);
+  protected final BlockFactory blockFactory = mock(BlockFactory.class);
+  protected final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
+  protected final SyncCommitteeMessagePool syncCommitteeMessagePool =
+      mock(SyncCommitteeMessagePool.class);
+  protected final BlockPublisher blockPublisher = mock(BlockPublisher.class);
+  protected final AttestationTopicSubscriber attestationTopicSubscriber =
+      mock(AttestationTopicSubscriber.class);
+  protected final ActiveValidatorTracker activeValidatorTracker =
+      mock(ActiveValidatorTracker.class);
+  protected final DutyMetrics dutyMetrics = mock(DutyMetrics.class);
+  protected final PerformanceTracker performanceTracker = mock(PerformanceTracker.class);
+  protected final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
+      mock(SyncCommitteeSubscriptionManager.class);
+  protected final PayloadAttestationPool payloadAttestationPool = PayloadAttestationPool.NOOP;
+  protected final ExecutionPayloadManager executionPayloadManager =
+      mock(ExecutionPayloadManager.class);
+  protected final ExecutionPayloadFactory executionPayloadFactory =
+      mock(ExecutionPayloadFactory.class);
+  protected final ExecutionPayloadPublisher executionPayloadPublisher =
+      mock(ExecutionPayloadPublisher.class);
+  protected final ExecutionProofManager executionProofManager = mock(ExecutionProofManager.class);
   protected RewardCalculator rewardCalculator = mock(RewardCalculator.class);
 
   protected OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
@@ -258,6 +307,41 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     setupStorage(StateStorageMode.ARCHIVE, false, SpecMilestone.PHASE0);
     // Start API
     setupAndStartRestAPI(config);
+  }
+
+  protected void startRestApiAtGenesisWithValidatorApiHandler(final SpecMilestone specMilestone) {
+
+    setupStorage(StateStorageMode.ARCHIVE, false, specMilestone, true);
+    validatorApiHandler =
+        new ValidatorApiHandler(
+            chainDataProvider,
+            nodeDataProvider,
+            networkDataProvider,
+            storageSystem.combinedChainDataClient(),
+            syncStateProvider,
+            blockFactory,
+            attestationPool,
+            attestationManager,
+            attestationTopicSubscriber,
+            activeValidatorTracker,
+            dutyMetrics,
+            performanceTracker,
+            spec,
+            forkChoiceTrigger,
+            proposersDataManager,
+            syncCommitteeMessagePool,
+            syncCommitteeContributionPool,
+            syncCommitteeSubscriptionManager,
+            blockProductionAndPublishingFactory,
+            blockPublisher,
+            payloadAttestationPool,
+            executionPayloadManager,
+            executionPayloadFactory,
+            executionPayloadPublisher,
+            executionProofManager);
+    validatorApiChannel = validatorApiHandler;
+    chainUpdater.initializeGenesis();
+    setupAndStartRestAPI();
   }
 
   protected void startRestAPIAtGenesis(final SpecMilestone specMilestone) {

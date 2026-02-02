@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -17,7 +17,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container9;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container11;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -25,12 +25,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.epbs.SlotAndBuilderIndex;
 
 public class ExecutionPayloadBid
-    extends Container9<
+    extends Container11<
         ExecutionPayloadBid,
         SszBytes32,
         SszBytes32,
         SszBytes32,
+        SszBytes32,
         SszByteVector,
+        SszUInt64,
         SszUInt64,
         SszUInt64,
         SszUInt64,
@@ -42,22 +44,26 @@ public class ExecutionPayloadBid
       final Bytes32 parentBlockHash,
       final Bytes32 parentBlockRoot,
       final Bytes32 blockHash,
+      final Bytes32 prevRandao,
       final Bytes20 feeRecipient,
       final UInt64 gasLimit,
       final UInt64 builderIndex,
       final UInt64 slot,
       final UInt64 value,
+      final UInt64 executionPayment,
       final Bytes32 blobKzgCommitmentsRoot) {
     super(
         schema,
         SszBytes32.of(parentBlockHash),
         SszBytes32.of(parentBlockRoot),
         SszBytes32.of(blockHash),
+        SszBytes32.of(prevRandao),
         SszByteVector.fromBytes(feeRecipient.getWrappedBytes()),
         SszUInt64.of(gasLimit),
         SszUInt64.of(builderIndex),
         SszUInt64.of(slot),
         SszUInt64.of(value),
+        SszUInt64.of(executionPayment),
         SszBytes32.of(blobKzgCommitmentsRoot));
   }
 
@@ -78,28 +84,36 @@ public class ExecutionPayloadBid
     return getField2().get();
   }
 
+  public Bytes32 getPrevRandao() {
+    return getField3().get();
+  }
+
   public Eth1Address getFeeRecipient() {
-    return Eth1Address.fromBytes(getField3().getBytes());
+    return Eth1Address.fromBytes(getField4().getBytes());
   }
 
   public UInt64 getGasLimit() {
-    return getField4().get();
-  }
-
-  public UInt64 getBuilderIndex() {
     return getField5().get();
   }
 
-  public UInt64 getSlot() {
+  public UInt64 getBuilderIndex() {
     return getField6().get();
   }
 
-  public UInt64 getValue() {
+  public UInt64 getSlot() {
     return getField7().get();
   }
 
-  public Bytes32 getBlobKzgCommitmentsRoot() {
+  public UInt64 getValue() {
     return getField8().get();
+  }
+
+  public UInt64 getExecutionPayment() {
+    return getField9().get();
+  }
+
+  public Bytes32 getBlobKzgCommitmentsRoot() {
+    return getField10().get();
   }
 
   public SlotAndBuilderIndex getSlotAndBuilderIndex() {

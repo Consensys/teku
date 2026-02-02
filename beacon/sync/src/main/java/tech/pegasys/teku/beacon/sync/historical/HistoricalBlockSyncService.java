@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -272,7 +272,7 @@ public class HistoricalBlockSyncService extends Service {
             })
         .thenAccept(
             newValue -> {
-              if (newValue != null && newValue.getSlot().isLessThanOrEqualTo(params.getMaxSlot())) {
+              if (newValue != null && newValue.getSlot().isLessThanOrEqualTo(params.maxSlot())) {
                 LOG.trace("Synced historical blocks to slot {}", newValue.getSlot());
                 earliestBlock = newValue;
                 updateSyncMetrics();
@@ -292,8 +292,8 @@ public class HistoricalBlockSyncService extends Service {
         spec,
         blobSidecarManager,
         peer,
-        params.getMaxSlot(),
-        params.getBlockRoot(),
+        params.maxSlot(),
+        params.blockRoot(),
         batchSize);
   }
 
@@ -335,7 +335,7 @@ public class HistoricalBlockSyncService extends Service {
                 p.getStatus()
                     .getFinalizedCheckpoint()
                     .getEpochStartSlot(spec)
-                    .isGreaterThan(earliestBlock.getSlot()))
+                    .isGreaterThanOrEqualTo(earliestBlock.getSlot()))
         .findAny();
   }
 
@@ -347,21 +347,5 @@ public class HistoricalBlockSyncService extends Service {
     }
   }
 
-  private static class MaxMissingBlockParams {
-    private final Bytes32 blockRoot;
-    private final UInt64 maxSlot;
-
-    private MaxMissingBlockParams(final Bytes32 blockRoot, final UInt64 maxSlot) {
-      this.maxSlot = maxSlot;
-      this.blockRoot = blockRoot;
-    }
-
-    public Bytes32 getBlockRoot() {
-      return blockRoot;
-    }
-
-    public UInt64 getMaxSlot() {
-      return maxSlot;
-    }
-  }
+  private record MaxMissingBlockParams(Bytes32 blockRoot, UInt64 maxSlot) {}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -26,8 +26,8 @@ import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 public class LightClientBootstrapSchema
     extends ContainerSchema3<
         LightClientBootstrap, LightClientHeader, SyncCommittee, SszBytes32Vector> {
-
-  public LightClientBootstrapSchema(final SpecConfigAltair specConfigAltair) {
+  protected LightClientBootstrapSchema(
+      final SpecConfigAltair specConfigAltair, final int syncCommitteeGindex) {
     super(
         "LightClientBootstrap",
         namedSchema("header", new LightClientHeaderSchema()),
@@ -35,7 +35,11 @@ public class LightClientBootstrapSchema
             "current_sync_committee", new SyncCommittee.SyncCommitteeSchema(specConfigAltair)),
         namedSchema(
             "current_sync_committee_branch",
-            SszBytes32VectorSchema.create(MathHelpers.floorLog2(CURRENT_SYNC_COMMITTEE_GINDEX))));
+            SszBytes32VectorSchema.create(MathHelpers.floorLog2(syncCommitteeGindex))));
+  }
+
+  public LightClientBootstrapSchema(final SpecConfigAltair specConfigAltair) {
+    this(specConfigAltair, CURRENT_SYNC_COMMITTEE_GINDEX);
   }
 
   public LightClientBootstrap create(

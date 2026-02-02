@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -404,6 +404,13 @@ public class HistoricalBatchFetcher {
   }
 
   private void validateBlobSidecars(final SignedBeaconBlock block) {
+    // while we know that start or end of batch fulfills requirement, other side of the batch could
+    // be outside
+    // the requirement bounds
+    if (!blobSidecarManager.isAvailabilityRequiredAtSlot(block.getSlot())) {
+      return;
+    }
+
     final List<BlobSidecar> blobSidecars =
         blobSidecarsBySlotToImport.getOrDefault(
             block.getSlotAndBlockRoot(), Collections.emptyList());

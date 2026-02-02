@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlindBlockUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
+import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
@@ -127,6 +128,11 @@ public class DelegatingSpecLogic implements SpecLogic {
   @Override
   public Optional<ExecutionPayloadProcessor> getExecutionPayloadProcessor() {
     return specLogic.getExecutionPayloadProcessor();
+  }
+
+  @Override
+  public Optional<ExecutionPayloadProposalUtil> getExecutionPayloadProposalUtil() {
+    return specLogic.getExecutionPayloadProposalUtil();
   }
 
   @Override

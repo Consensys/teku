@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,8 +15,6 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 
-import com.google.common.base.Throwables;
-import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
@@ -32,7 +30,6 @@ import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
-import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -145,7 +142,7 @@ public class BlobSidecarsByRootMessageHandler
           }
           callback.completeSuccessfully();
         },
-        err -> handleError(callback, err));
+        err -> handleError(err, callback, "blob sidecars by root"));
   }
 
   private int getMaxRequestBlobSidecars() {
@@ -203,21 +200,5 @@ public class BlobSidecarsByRootMessageHandler
   private SafeFuture<Optional<BlobSidecar>> retrieveBlobSidecar(final BlobIdentifier identifier) {
     return combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(
         identifier.getBlockRoot(), identifier.getIndex());
-  }
-
-  private void handleError(final ResponseCallback<BlobSidecar> callback, final Throwable error) {
-    final Throwable rootCause = Throwables.getRootCause(error);
-    if (rootCause instanceof RpcException) {
-      LOG.trace("Rejecting blob sidecars by root request", error);
-      callback.completeWithErrorResponse((RpcException) rootCause);
-    } else {
-      if (rootCause instanceof StreamClosedException
-          || rootCause instanceof ClosedChannelException) {
-        LOG.trace("Stream closed while sending requested blob sidecars", error);
-      } else {
-        LOG.error("Failed to process blob sidecars by root request", error);
-      }
-      callback.completeWithUnexpectedError(error);
-    }
   }
 }

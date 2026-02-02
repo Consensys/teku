@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -104,9 +104,12 @@ public class BeaconRestApiTypes {
   public static final ParameterMetadata<String> PARAMETER_BLOCK_ID =
       new ParameterMetadata<>(PARAM_BLOCK_ID, CoreTypes.string(PARAM_BLOCK_ID_DESCRIPTION, "head"));
 
-  public static final ParameterMetadata<Bytes32> BLOCK_ROOT_PARAMETER =
+  public static final ParameterMetadata<String> BLOCK_ROOT_PARAMETER =
       new ParameterMetadata<>(
-          BLOCK_ROOT, BYTES32_TYPE.withDescription("Block root. Hex encoded with 0x prefix."));
+          BLOCK_ROOT,
+          CoreTypes.string(
+              "Block root. Hex encoded with 0x prefix.",
+              "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2"));
 
   public static final ParameterMetadata<UInt64> SLOT_PARAMETER =
       new ParameterMetadata<>(

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.lightclient;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.BLOCK_ROOT_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getMultipleSchemaDefinitionFromMilestone;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -22,10 +23,13 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
@@ -36,7 +40,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
 public class GetLightClientBootstrap extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/light_client/bootstrap/{block_root}";
@@ -73,7 +76,7 @@ public class GetLightClientBootstrap extends RestApiEndpoint {
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    final Bytes32 blockRoot = request.getPathParameter(BLOCK_ROOT_PARAMETER);
+    final Bytes32 blockRoot = Bytes32.fromHexString(request.getPathParameter(BLOCK_ROOT_PARAMETER));
     final SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> future =
         chainDataProvider.getLightClientBoostrap(blockRoot);
 
@@ -91,18 +94,52 @@ public class GetLightClientBootstrap extends RestApiEndpoint {
                     .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
-  private static SerializableTypeDefinition<ObjectAndMetaData<LightClientBootstrap>>
-      getResponseType(final SchemaDefinitionCache schemaDefinitionCache) {
+  static SerializableTypeDefinition<ObjectAndMetaData<LightClientBootstrap>> getResponseType(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+
+    final List<MilestoneDependentTypesUtil.ConditionalSchemaGetter<LightClientBootstrap>>
+        schemaGetters = generateLightClientBootstrapSchemaGetters(schemaDefinitionCache);
     final SerializableTypeDefinition<LightClientBootstrap> lightClientBootstrapType =
-        SchemaDefinitionsAltair.required(
-                schemaDefinitionCache.getSchemaDefinition(SpecMilestone.ALTAIR))
-            .getLightClientBootstrapSchema()
-            .getJsonTypeDefinition();
+        getMultipleSchemaDefinitionFromMilestone(
+            schemaDefinitionCache, "LightClientBootstrap", schemaGetters);
 
     return SerializableTypeDefinition.<ObjectAndMetaData<LightClientBootstrap>>object()
         .name("GetLightClientBootstrapResponse")
         .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
         .withField("data", lightClientBootstrapType, ObjectAndMetaData::getData)
         .build();
+  }
+
+  private static List<MilestoneDependentTypesUtil.ConditionalSchemaGetter<LightClientBootstrap>>
+      generateLightClientBootstrapSchemaGetters(final SchemaDefinitionCache schemaDefinitionCache) {
+    final List<MilestoneDependentTypesUtil.ConditionalSchemaGetter<LightClientBootstrap>>
+        schemaGetterList = new ArrayList<>();
+
+    schemaGetterList.add(
+        new MilestoneDependentTypesUtil.ConditionalSchemaGetter<LightClientBootstrap>(
+            (bootstrap, milestone) ->
+                schemaDefinitionCache
+                        .milestoneAtSlot(bootstrap.getLightClientHeader().getBeacon().getSlot())
+                        .equals(milestone)
+                    && milestone.isGreaterThan(SpecMilestone.PHASE0)
+                    && milestone.isLessThan(SpecMilestone.ELECTRA),
+            SpecMilestone.ALTAIR,
+            schemaDefinitions ->
+                schemaDefinitions.toVersionAltair().orElseThrow().getLightClientBootstrapSchema()));
+    schemaGetterList.add(
+        new MilestoneDependentTypesUtil.ConditionalSchemaGetter<>(
+            (bootstrap, milestone) ->
+                schemaDefinitionCache
+                        .milestoneAtSlot(bootstrap.getLightClientHeader().getBeacon().getSlot())
+                        .equals(milestone)
+                    && milestone.isGreaterThan(SpecMilestone.DENEB),
+            SpecMilestone.ELECTRA,
+            schemaDefinitions ->
+                schemaDefinitions
+                    .toVersionElectra()
+                    .orElseThrow()
+                    .getLightClientBootstrapSchema()));
+
+    return schemaGetterList;
   }
 }

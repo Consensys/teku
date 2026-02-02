@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,7 +15,7 @@ package tech.pegasys.teku.validator.client.duties;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.logging.Converter.weiToEth;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.duties.execution.ExecutionPayloadBidEventsChannel;
 import tech.pegasys.teku.validator.client.signer.BlockContainerSigner;
 
 public class BlockProductionDuty implements Duty {
@@ -54,6 +56,7 @@ public class BlockProductionDuty implements Duty {
   private final BlockContainerSigner blockContainerSigner;
   private final Spec spec;
   private final ValidatorDutyMetrics validatorDutyMetrics;
+  private final ExecutionPayloadBidEventsChannel executionPayloadBidEventsChannelPublisher;
 
   public BlockProductionDuty(
       final Validator validator,
@@ -62,7 +65,8 @@ public class BlockProductionDuty implements Duty {
       final ValidatorApiChannel validatorApiChannel,
       final BlockContainerSigner blockContainerSigner,
       final Spec spec,
-      final ValidatorDutyMetrics validatorDutyMetrics) {
+      final ValidatorDutyMetrics validatorDutyMetrics,
+      final ExecutionPayloadBidEventsChannel executionPayloadBidEventsChannelPublisher) {
     this.validator = validator;
     this.slot = slot;
     this.forkProvider = forkProvider;
@@ -70,6 +74,7 @@ public class BlockProductionDuty implements Duty {
     this.blockContainerSigner = blockContainerSigner;
     this.spec = spec;
     this.validatorDutyMetrics = validatorDutyMetrics;
+    this.executionPayloadBidEventsChannelPublisher = executionPayloadBidEventsChannelPublisher;
   }
 
   @Override
@@ -99,7 +104,9 @@ public class BlockProductionDuty implements Duty {
         .thenCompose(
             signedBlockContainer ->
                 validatorDutyMetrics.record(
-                    () -> sendBlock(signedBlockContainer), this, ValidatorDutyMetricsSteps.SEND))
+                    () -> sendBlock(signedBlockContainer, forkInfo),
+                    this,
+                    ValidatorDutyMetricsSteps.SEND))
         .exceptionally(
             error -> {
               LOG.debug(
@@ -148,15 +155,22 @@ public class BlockProductionDuty implements Duty {
     return blockContainerSigner.sign(blockContainer, validator, forkInfo);
   }
 
-  private SafeFuture<DutyResult> sendBlock(final SignedBlockContainer signedBlockContainer) {
+  private SafeFuture<DutyResult> sendBlock(
+      final SignedBlockContainer signedBlockContainer, final ForkInfo forkInfo) {
     return validatorApiChannel
         .sendSignedBlock(signedBlockContainer, BroadcastValidationLevel.GOSSIP)
         .thenApply(
             result -> {
               if (result.isPublished()) {
+                final BeaconBlockBody blockBody =
+                    signedBlockContainer.getSignedBlock().getMessage().getBody();
+                blockBody
+                    .getOptionalSignedExecutionPayloadBid()
+                    .ifPresent(
+                        signedBid ->
+                            notifyExecutionPayloadBidEventsSubscribers(signedBid, forkInfo));
                 return DutyResult.success(
-                    signedBlockContainer.getRoot(),
-                    getBlockSummary(signedBlockContainer.getSignedBlock().getMessage().getBody()));
+                    signedBlockContainer.getRoot(), getBlockSummary(blockBody));
               }
               return DutyResult.forError(
                   validator.getPublicKey(),
@@ -193,20 +207,10 @@ public class BlockProductionDuty implements Duty {
 
   private String getExecutionSummaryFromExecutionPayloadSummary(
       final ExecutionPayloadSummary summary) {
-    UInt64 gasPercentage;
-    try {
-      gasPercentage =
-          summary.getGasLimit().isGreaterThan(0L)
-              ? summary.getGasUsed().times(100).dividedBy(summary.getGasLimit())
-              : ZERO;
-    } catch (final ArithmeticException e) {
-      gasPercentage = UInt64.ZERO;
-      LOG.debug("Failed to compute percentage", e);
-    }
     return String.format(
         "%s (%s%%) gas, EL block: %s (%s)",
         summary.getGasUsed(),
-        gasPercentage,
+        summary.computeGasPercentage(LOG),
         summary.getBlockHash().toUnprefixedHexString(),
         summary.getBlockNumber());
   }
@@ -217,6 +221,15 @@ public class BlockProductionDuty implements Duty {
         bid.getBuilderIndex(),
         bid.getGasLimit(),
         LogFormatter.formatAbbreviatedHashRoot(bid.getBlockHash()));
+  }
+
+  private void notifyExecutionPayloadBidEventsSubscribers(
+      final SignedExecutionPayloadBid signedBid, final ForkInfo forkInfo) {
+    // BUILDER_INDEX_SELF_BUILD indicates a self-built bid
+    if (signedBid.getMessage().getBuilderIndex().equals(BUILDER_INDEX_SELF_BUILD)) {
+      executionPayloadBidEventsChannelPublisher.onSelfBuiltBidIncludedInBlock(
+          validator, forkInfo, signedBid.getMessage());
+    }
   }
 
   @Override

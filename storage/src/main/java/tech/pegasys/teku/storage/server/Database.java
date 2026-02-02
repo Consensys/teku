@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -26,6 +26,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
@@ -281,6 +282,14 @@ public interface Database extends AutoCloseable {
   }
 
   Optional<UInt64> getEarliestDataColumnSidecarSlot();
+
+  Optional<UInt64> getEarliestAvailableDataColumnSlot();
+
+  Optional<UInt64> getLastDataColumnSidecarsProofsSlot();
+
+  Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(UInt64 slot);
+
+  void setEarliestAvailableDataColumnSlot(UInt64 slot);
 
   void setFirstCustodyIncompleteSlot(UInt64 slot);
 

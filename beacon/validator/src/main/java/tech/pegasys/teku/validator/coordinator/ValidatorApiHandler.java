@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -25,6 +25,7 @@ import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidatio
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.GOSSIP;
 
 import com.google.common.annotations.VisibleForTesting;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.ints.IntSets;
@@ -57,6 +58,8 @@ import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuty;
+import tech.pegasys.teku.ethereum.json.types.validator.PtcDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.PtcDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
@@ -70,15 +73,19 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
@@ -95,17 +102,21 @@ import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
+import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -151,6 +162,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final ProposersDataManager proposersDataManager;
   private final BlockPublisher blockPublisher;
+  private final PayloadAttestationPool payloadAttestationPool;
+  private final ExecutionPayloadManager executionPayloadManager;
   private final ExecutionPayloadFactory executionPayloadFactory;
   private final ExecutionPayloadPublisher executionPayloadPublisher;
 
@@ -179,6 +192,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final BlockProductionAndPublishingPerformanceFactory
           blockProductionAndPublishingPerformanceFactory,
       final BlockPublisher blockPublisher,
+      final PayloadAttestationPool payloadAttestationPool,
+      final ExecutionPayloadManager executionPayloadManager,
       final ExecutionPayloadFactory executionPayloadFactory,
       final ExecutionPayloadPublisher executionPayloadPublisher,
       final ExecutionProofManager executionProofManager) {
@@ -203,6 +218,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
     this.proposersDataManager = proposersDataManager;
     this.blockPublisher = blockPublisher;
+    this.payloadAttestationPool = payloadAttestationPool;
+    this.executionPayloadManager = executionPayloadManager;
     this.executionPayloadFactory = executionPayloadFactory;
     this.executionPayloadPublisher = executionPayloadPublisher;
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
@@ -299,19 +316,75 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
-    if (epoch.isGreaterThan(combinedChainDataClient.getCurrentEpoch().plus(DUTY_EPOCH_TOLERANCE))) {
+    final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
+    final int tolerance = spec.getSpecConfig(epoch).getMinSeedLookahead() + DUTY_EPOCH_TOLERANCE;
+    LOG.trace("Proposer duty tolerance is {} epochs", tolerance);
+    if (epoch.isGreaterThan(currentEpoch.plus(tolerance))) {
       return SafeFuture.failedFuture(
           new IllegalArgumentException(
               String.format(
-                  "Proposer duties were requested for a future epoch (current: %s, requested: %s).",
-                  combinedChainDataClient.getCurrentEpoch().toString(), epoch)));
+                  "Proposer duties were requested %s epochs ahead, only 1 epoch in future is supported.",
+                  epoch.minus(currentEpoch).toString())));
     }
-    LOG.trace("Retrieving proposer duties from epoch {}", epoch);
+
+    final UInt64 stateSlot =
+        spec.atEpoch(epoch).getBlockProposalUtil().getStateSlotForProposerDuties(spec, epoch);
+    LOG.debug(
+        "Retrieving proposer duties for epoch {}, current epoch {}, state query slot {}",
+        epoch,
+        currentEpoch,
+        stateSlot);
     return combinedChainDataClient
-        .getStateAtSlotExact(spec.computeStartSlotAtEpoch(epoch))
+        .getStateAtSlotExact(stateSlot)
+        .thenApply(maybeState -> maybeState.map(state -> getProposerDutiesFromState(state, epoch)));
+  }
+
+  @Override
+  public SafeFuture<Optional<PtcDuties>> getPtcDuties(
+      final UInt64 epoch, final IntCollection validatorIndices) {
+    if (isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
+    if (epoch.isGreaterThan(
+        combinedChainDataClient
+            .getCurrentEpoch()
+            .plus(spec.getSpecConfig(epoch).getMinSeedLookahead() + DUTY_EPOCH_TOLERANCE))) {
+      return SafeFuture.failedFuture(
+          new IllegalArgumentException(
+              String.format(
+                  "Ptc duties were requested %s epochs ahead, only 1 epoch in future is supported.",
+                  epoch.minus(combinedChainDataClient.getCurrentEpoch()).toString())));
+    }
+    final UInt64 slot = spec.computeStartSlotAtEpoch(epoch.minusMinZero(1));
+    LOG.trace("Retrieving ptc duties from epoch {} using state at slot {}", epoch, slot);
+    return combinedChainDataClient
+        .getStateAtSlotExact(slot)
         .thenApply(
-            optionalState ->
-                optionalState.map(state -> getProposerDutiesFromIndicesAndState(state, epoch)));
+            maybeState ->
+                maybeState.map(
+                    state -> getPtcDutiesFromIndicesAndState(state, epoch, validatorIndices)));
+  }
+
+  private PtcDuties getPtcDutiesFromIndicesAndState(
+      final BeaconState state, final UInt64 epoch, final IntCollection validatorIndices) {
+    final Bytes32 dependentRoot =
+        epoch.isGreaterThan(spec.getCurrentEpoch(state))
+            ? spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state)
+            : spec.atEpoch(epoch).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
+    final List<PtcDuty> duties = new ArrayList<>();
+    final Int2ObjectMap<UInt64> validatorIndexToPtcAssignmentMap =
+        spec.getValidatorIndexToPtcAssignmentMap(state, epoch);
+    validatorIndices.forEach(
+        i -> {
+          final UInt64 ptcDutySlot = validatorIndexToPtcAssignmentMap.get(i);
+          final UInt64 validatorIndex = UInt64.valueOf(i);
+          if (ptcDutySlot != null) {
+            spec.getValidatorPubKey(state, validatorIndex)
+                .ifPresent(
+                    publicKey -> duties.add(new PtcDuty(publicKey, validatorIndex, ptcDutySlot)));
+          }
+        });
+    return new PtcDuties(combinedChainDataClient.isChainHeadOptimistic(), dependentRoot, duties);
   }
 
   @Override
@@ -406,6 +479,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
         prepareBlockProductionInternal(slot);
     final BlockProductionPerformance blockProductionPerformance =
         blockProductionContext.blockProductionPerformance;
+
+    blockProductionPerformance.validatorBlockRequested();
 
     return blockProductionContext
         .stateFuture
@@ -575,6 +650,34 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   }
 
   @Override
+  public SafeFuture<Optional<PayloadAttestationData>> createPayloadAttestationData(
+      final UInt64 slot) {
+    if (isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
+    return combinedChainDataClient
+        .getBlockInEffectAtSlot(slot)
+        .thenApply(
+            maybeBlock -> {
+              if (maybeBlock.isEmpty()) {
+                return Optional.empty();
+              }
+              final SignedBeaconBlock block = maybeBlock.get();
+              final PayloadAttestationData payloadAttestationData =
+                  SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions())
+                      .getPayloadAttestationDataSchema()
+                      .create(
+                          block.getRoot(),
+                          slot,
+                          executionPayloadManager.isExecutionPayloadRecentlySeen(block.getRoot()),
+                          // TODO-GLOAS: `blob_data_available` field usage not spec yet, so
+                          // hardcoding it to false
+                          false);
+              return Optional.of(payloadAttestationData);
+            });
+  }
+
+  @Override
   public SafeFuture<Void> subscribeToBeaconCommittee(
       final List<CommitteeSubscriptionRequest> requests) {
     return SafeFuture.fromRunnable(() -> processCommitteeSubscriptionRequests(requests));
@@ -722,7 +825,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
 
     final boolean isLocallyCreated = isLocallyCreatedBlock(maybeBlindedBlockContainer);
 
-    LOG.info("stating to publish block at slot {}", maybeBlindedBlockContainer.getSlot());
+    LOG.info("starting to publish block at slot {}", maybeBlindedBlockContainer.getSlot());
 
     return blockPublisher
         .sendSignedBlock(
@@ -805,6 +908,14 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   }
 
   @Override
+  public SafeFuture<List<SubmitDataError>> sendPayloadAttestationMessages(
+      final List<PayloadAttestationMessage> payloadAttestationMessages) {
+    return SafeFuture.collectAll(
+            payloadAttestationMessages.stream().map(payloadAttestationPool::addLocal))
+        .thenApply(this::convertAttestationProcessingResultsToErrorList);
+  }
+
+  @Override
   public SafeFuture<Void> prepareBeaconProposer(
       final Collection<BeaconPreparableProposer> beaconPreparableProposers) {
     return SafeFuture.fromRunnable(
@@ -884,9 +995,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   }
 
   @Override
-  public SafeFuture<Void> publishSignedExecutionPayload(
+  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
-    return executionPayloadPublisher.publishSignedExecutionPayload(signedExecutionPayload);
+    return executionPayloadPublisher
+        .publishSignedExecutionPayload(signedExecutionPayload)
+        .exceptionally(
+            ex -> {
+              final String reason = getRootCauseMessage(ex);
+              return PublishSignedExecutionPayloadResult.rejected(
+                  signedExecutionPayload.getBeaconBlockRoot(), reason);
+            });
   }
 
   private Optional<SubmitDataError> fromInternalValidationResult(
@@ -905,13 +1023,20 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     return !syncStateProvider.getCurrentSyncState().isInSync();
   }
 
-  private ProposerDuties getProposerDutiesFromIndicesAndState(
-      final BeaconState state, final UInt64 epoch) {
+  private ProposerDuties getProposerDutiesFromState(final BeaconState state, final UInt64 epoch) {
     final List<ProposerDuty> result = getProposalSlotsForEpoch(state, epoch);
+    if (spec.atEpoch(epoch).getMilestone().isLessThan(SpecMilestone.FULU)) {
+      return new ProposerDuties(
+          spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state),
+          result,
+          combinedChainDataClient.isChainHeadOptimistic());
+    }
+    final Bytes32 dependentRoot =
+        epoch.isGreaterThanOrEqualTo(spec.getCurrentEpoch(state))
+            ? spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state)
+            : spec.atEpoch(epoch).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
     return new ProposerDuties(
-        spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state),
-        result,
-        combinedChainDataClient.isChainHeadOptimistic());
+        dependentRoot, result, combinedChainDataClient.isChainHeadOptimistic());
   }
 
   private SafeFuture<Optional<BeaconState>> getStateForCommitteeDuties(

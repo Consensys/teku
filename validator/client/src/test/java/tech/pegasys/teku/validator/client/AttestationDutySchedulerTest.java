@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -28,7 +28,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.validator.client.AttestationDutyScheduler.LOOKAHEAD_EPOCHS;
 
 import java.util.List;
 import java.util.Map;
@@ -316,8 +315,9 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   @Test
   public void shouldNotProcessAggregationIfCurrentEpochIsTooFarBeforeSlotEpoch() {
     createDutySchedulerWithMockDuties();
+    final int lookAheadEpoch = dutyScheduler.getLookAheadEpochs(UInt64.valueOf(2));
     // first slot of epoch 2
-    final UInt64 slot = spec.computeStartSlotAtEpoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1));
+    final UInt64 slot = spec.computeStartSlotAtEpoch(UInt64.valueOf(lookAheadEpoch + 1));
     dutyScheduler.onSlot(ONE); // epoch 0
     dutyScheduler.onAttestationAggregationDue(slot);
     verify(scheduledDuties, never()).performAggregationDuty(slot);
@@ -326,8 +326,9 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   @Test
   public void shouldNotProcessAttestationIfCurrentEpochIsTooFarBeforeSlotEpoch() {
     createDutySchedulerWithMockDuties();
+    final int lookAheadEpoch = dutyScheduler.getLookAheadEpochs(UInt64.valueOf(2));
     // first slot of epoch 2
-    final UInt64 slot = spec.computeStartSlotAtEpoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1));
+    final UInt64 slot = spec.computeStartSlotAtEpoch(UInt64.valueOf(lookAheadEpoch + 1));
     dutyScheduler.onSlot(ONE); // epoch 0
     dutyScheduler.onAttestationCreationDue(slot);
     verify(scheduledDuties, never()).performProductionDuty(slot);
@@ -336,9 +337,10 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   @Test
   public void shouldProcessAggregationIfCurrentEpochIsAtBoundaryOfLookaheadEpoch() {
     createDutySchedulerWithMockDuties();
+    final int lookAheadEpoch = dutyScheduler.getLookAheadEpochs(UInt64.valueOf(1));
     // last slot of epoch 1
     final UInt64 slot =
-        spec.computeStartSlotAtEpoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1)).decrement();
+        spec.computeStartSlotAtEpoch(UInt64.valueOf(lookAheadEpoch + 1)).decrement();
     dutyScheduler.onSlot(ONE); // epoch 0
     dutyScheduler.onAttestationAggregationDue(slot);
     verify(scheduledDuties).performAggregationDuty(slot);
@@ -347,9 +349,10 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   @Test
   public void shouldProcessAttestationIfCurrentEpochIsAtBoundaryOfLookaheadEpoch() {
     createDutySchedulerWithMockDuties();
+    final int lookAheadEpoch = dutyScheduler.getLookAheadEpochs(UInt64.valueOf(1));
     // last slot of epoch 1
     final UInt64 slot =
-        spec.computeStartSlotAtEpoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1)).decrement();
+        spec.computeStartSlotAtEpoch(UInt64.valueOf(lookAheadEpoch + 1)).decrement();
     dutyScheduler.onSlot(ONE); // epoch 0
     dutyScheduler.onAttestationCreationDue(slot);
     verify(scheduledDuties).performProductionDuty(slot);

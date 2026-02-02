@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -25,11 +25,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class DatabaseVersionTest {
   @Test
   void defaultVersion() {
-    if (DatabaseVersion.isLevelDbSupported()) {
-      assertThat(DatabaseVersion.DEFAULT_VERSION).isEqualTo(DatabaseVersion.LEVELDB2);
-    } else {
-      assertThat(DatabaseVersion.DEFAULT_VERSION).isEqualTo(DatabaseVersion.V5);
-    }
+    assertThat(DatabaseVersion.DEFAULT_VERSION).isEqualTo(DatabaseVersion.V6);
   }
 
   @ParameterizedTest

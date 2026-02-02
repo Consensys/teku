@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -41,6 +41,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -75,6 +77,8 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Optional<UInt64> maybeEarliestBlobSidecarTransactionSlot = Optional.empty();
   Optional<Bytes32> maybeLatestCanonicalBlockRoot = Optional.empty();
   Optional<UInt64> maybeCustodyGroupCount = Optional.empty();
+  Map<Bytes32, SignedExecutionPayloadAndState> executionPayloadData = new HashMap<>();
+
   private final UpdatableStore.StoreUpdateHandler updateHandler;
 
   StoreTransaction(
@@ -106,6 +110,14 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     putStateRoot(state.hashTreeRoot(), block.getSlotAndBlockRoot());
   }
 
+  @Override
+  public void putExecutionPayloadAndState(
+      final SignedExecutionPayloadEnvelope executionPayload, final BeaconState state) {
+    executionPayloadData.put(
+        executionPayload.getBeaconBlockRoot(),
+        new SignedExecutionPayloadAndState(executionPayload, state));
+  }
+
   private boolean needToUpdateEarliestBlobSidecarSlot(
       final Optional<UInt64> maybeNewEarliestBlobSidecarSlot) {
     // New value is absent - false
@@ -118,11 +130,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     }
     // New value is smaller than an old one - true
     final UInt64 newEarliestBlobSidecarSlot = maybeNewEarliestBlobSidecarSlot.get();
-    if (newEarliestBlobSidecarSlot.isLessThan(maybeEarliestBlobSidecarTransactionSlot.get())) {
-      return true;
-    } else {
-      return false;
-    }
+    return newEarliestBlobSidecarSlot.isLessThan(maybeEarliestBlobSidecarTransactionSlot.get());
   }
 
   @Override
@@ -371,6 +379,13 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
+  public Optional<BeaconState> getExecutionPayloadStateIfAvailable(final Bytes32 blockRoot) {
+    return Optional.ofNullable(executionPayloadData.get(blockRoot))
+        .map(SignedExecutionPayloadAndState::state)
+        .or(() -> store.getExecutionPayloadStateIfAvailable(blockRoot));
+  }
+
+  @Override
   public SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlock(final Bytes32 blockRoot) {
     if (blockData.containsKey(blockRoot)) {
       return SafeFuture.completedFuture(
@@ -408,6 +423,21 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
+  public SafeFuture<Optional<BeaconState>> retrieveBlockState(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    SignedBlockAndState inMemoryCheckpointBlockState =
+        blockData.get(slotAndBlockRoot.getBlockRoot());
+    if (inMemoryCheckpointBlockState != null) {
+      // Not executing the task via the task queue to avoid caching the result before the tx is
+      // committed
+      return new StateAtSlotTask(
+              spec, slotAndBlockRoot, fromBlockAndState(inMemoryCheckpointBlockState))
+          .performTask();
+    }
+    return store.retrieveBlockState(slotAndBlockRoot);
+  }
+
+  @Override
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(final Checkpoint checkpoint) {
     SignedBlockAndState inMemoryCheckpointBlockState = blockData.get(checkpoint.getRoot());
     if (inMemoryCheckpointBlockState != null) {
@@ -420,21 +450,6 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
           .performTask();
     }
     return store.retrieveCheckpointState(checkpoint);
-  }
-
-  @Override
-  public SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(
-      final SlotAndBlockRoot slotAndBlockRoot) {
-    SignedBlockAndState inMemoryCheckpointBlockState =
-        blockData.get(slotAndBlockRoot.getBlockRoot());
-    if (inMemoryCheckpointBlockState != null) {
-      // Not executing the task via the task queue to avoid caching the result before the tx is
-      // committed
-      return new StateAtSlotTask(
-              spec, slotAndBlockRoot, fromBlockAndState(inMemoryCheckpointBlockState))
-          .performTask();
-    }
-    return store.retrieveStateAtSlot(slotAndBlockRoot);
   }
 
   @Override

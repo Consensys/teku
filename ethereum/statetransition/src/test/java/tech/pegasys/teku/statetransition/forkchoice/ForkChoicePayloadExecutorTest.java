@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -69,7 +69,8 @@ class ForkChoicePayloadExecutorTest {
   @Test
   void optimisticallyExecute_shouldSendToExecutionEngineAndReturnTrue() {
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
-    final boolean result = payloadExecutor.optimisticallyExecute(payloadHeader, payloadRequest);
+    final boolean result =
+        payloadExecutor.optimisticallyExecute(Optional.of(payloadHeader), payloadRequest);
     verify(executionLayer).engineNewPayload(payloadRequest, UInt64.ZERO);
     assertThat(result).isTrue();
   }
@@ -78,7 +79,7 @@ class ForkChoicePayloadExecutorTest {
   void optimisticallyExecute_shouldNotExecuteDefaultPayload() {
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
     final boolean result =
-        payloadExecutor.optimisticallyExecute(payloadHeader, defaultPayloadRequest);
+        payloadExecutor.optimisticallyExecute(Optional.of(payloadHeader), defaultPayloadRequest);
     verify(executionLayer, never()).engineNewPayload(any(), any());
     assertThat(result).isTrue();
     assertThat(payloadExecutor.getExecutionResult())
@@ -92,7 +93,7 @@ class ForkChoicePayloadExecutorTest {
     when(executionLayer.eth1GetPowBlock(payload.getParentHash())).thenReturn(new SafeFuture<>());
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
     final boolean result =
-        payloadExecutor.optimisticallyExecute(defaultPayloadHeader, payloadRequest);
+        payloadExecutor.optimisticallyExecute(Optional.of(defaultPayloadHeader), payloadRequest);
 
     // Should execute first and then begin validation of the transition block conditions.
     verify(executionLayer).engineNewPayload(payloadRequest, UInt64.ZERO);
@@ -106,7 +107,7 @@ class ForkChoicePayloadExecutorTest {
         .thenReturn(SafeFuture.failedFuture(new Error()));
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
     final boolean execution =
-        payloadExecutor.optimisticallyExecute(defaultPayloadHeader, payloadRequest);
+        payloadExecutor.optimisticallyExecute(Optional.of(defaultPayloadHeader), payloadRequest);
 
     // Should not attempt to validate transition conditions because execute payload failed
     verify(transitionValidator, never()).verifyTransitionBlock(defaultPayloadHeader, block);
@@ -125,7 +126,7 @@ class ForkChoicePayloadExecutorTest {
         .thenReturn(SafeFuture.failedFuture(new Error()));
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
     final boolean execution =
-        payloadExecutor.optimisticallyExecute(defaultPayloadHeader, payloadRequest);
+        payloadExecutor.optimisticallyExecute(Optional.of(defaultPayloadHeader), payloadRequest);
 
     verify(transitionValidator).verifyTransitionBlock(defaultPayloadHeader, block);
     verify(executionLayer).engineNewPayload(payloadRequest, UInt64.ZERO);
@@ -142,7 +143,7 @@ class ForkChoicePayloadExecutorTest {
         .thenReturn(SafeFuture.completedFuture(expectedResult));
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
     final boolean execution =
-        payloadExecutor.optimisticallyExecute(defaultPayloadHeader, payloadRequest);
+        payloadExecutor.optimisticallyExecute(Optional.of(defaultPayloadHeader), payloadRequest);
 
     verify(executionLayer).engineNewPayload(payloadRequest, UInt64.ZERO);
     verify(transitionValidator, never()).verifyTransitionBlock(defaultPayloadHeader, block);
@@ -164,7 +165,7 @@ class ForkChoicePayloadExecutorTest {
     when(transitionValidator.verifyTransitionBlock(payloadHeader, block))
         .thenReturn(SafeFuture.completedFuture(PayloadValidationResult.VALID));
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
-    payloadExecutor.optimisticallyExecute(payloadHeader, payloadRequest);
+    payloadExecutor.optimisticallyExecute(Optional.of(payloadHeader), payloadRequest);
 
     final SafeFuture<PayloadValidationResult> result = payloadExecutor.getExecutionResult();
     assertThat(result).isNotCompleted();

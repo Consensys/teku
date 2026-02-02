@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -62,8 +62,12 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -77,12 +81,15 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.generator.ChainProperties;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
@@ -367,6 +374,48 @@ public class DatabaseTest {
 
     // check if the pruned blob was written to disk. Not validating contents here.
     assertThat(getSlotBlobsArchiveFile(block5Sidecar0)).exists();
+  }
+
+  @TestTemplate
+  public void verifyDataColumnSidecarsPruningSetsDbVariable(final DatabaseContext context)
+      throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+
+    // no sidecars, earliest slot 0, because of genesis Fulu
+    assertThat(database.getEarliestDataColumnSidecarSlot()).isEmpty();
+
+    final DataColumnSidecar dataColumnSidecarSlot0 =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.valueOf(0)), UInt64.valueOf(0));
+    final DataColumnSidecar dataColumnSidecarSlot1 =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.valueOf(1)), UInt64.valueOf(1));
+    final DataColumnSidecar dataColumnSidecarSlot2 =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.valueOf(2)), UInt64.valueOf(2));
+    final DataColumnSidecar dataColumnSidecarSlot3 =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.valueOf(3)), UInt64.valueOf(3));
+
+    // add blobs out of order
+    database.addSidecar(dataColumnSidecarSlot1);
+    database.addSidecar(dataColumnSidecarSlot0);
+    database.addSidecar(dataColumnSidecarSlot3);
+    database.addSidecar(dataColumnSidecarSlot2);
+
+    assertThat(database.getSidecarColumnCount()).isEqualTo(4L);
+
+    // This variable only gets set by pruner or backfiller
+    assertThat(database.getEarliestAvailableDataColumnSlot()).isEmpty();
+
+    // let's prune with limit to 1, will prune slot 0
+    database.pruneAllSidecars(UInt64.MAX_VALUE, 1);
+
+    assertThat(database.getEarliestAvailableDataColumnSlot()).contains(ONE);
+
+    database.pruneAllSidecars(UInt64.MAX_VALUE, 2);
+    assertThat(database.getEarliestAvailableDataColumnSlot()).contains(UInt64.valueOf(3));
   }
 
   private Path getSlotBlobsArchiveFile(final BlobSidecar blobSidecar) {
@@ -2355,6 +2404,18 @@ public class DatabaseTest {
   }
 
   @TestTemplate
+  public void setEarliestAvailableDataColumnSlot_isOperative(final DatabaseContext context)
+      throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+    assertThat(database.getEarliestAvailableDataColumnSlot().isEmpty()).isTrue();
+
+    final UInt64 earliestSlot = UInt64.valueOf(123);
+    database.setEarliestAvailableDataColumnSlot(UInt64.valueOf(123));
+    assertThat(database.getEarliestAvailableDataColumnSlot()).contains(earliestSlot);
+  }
+
+  @TestTemplate
   public void streamDataColumnIdentifiers_isOperative(final DatabaseContext context)
       throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalFulu());
@@ -2592,6 +2653,60 @@ public class DatabaseTest {
         database.streamNonCanonicalDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
     }
+  }
+
+  @TestTemplate
+  public void dataColumnSidecarsProofs_lifecycle(final DatabaseContext context) throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+
+    final SignedBeaconBlockHeader header = dataStructureUtil.randomSignedBeaconBlockHeader();
+    // we need to build sidecars with the same number of cells in each
+    final List<KZGCommitment> kzgCommitments = dataStructureUtil.randomKZGCommitments(14);
+    final SszList<SszKZGCommitment> sszKZGCommitments =
+        SchemaDefinitionsFulu.required(spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions())
+            .getDataColumnSidecarSchema()
+            .getKzgCommitmentsSchema()
+            .createFromElements(kzgCommitments.stream().map(SszKZGCommitment::new).toList());
+    final List<DataColumnSidecar> dataColumnSidecarsExtension =
+        Stream.iterate(UInt64.valueOf(64), UInt64::increment)
+            .limit(64)
+            .map(
+                index ->
+                    dataStructureUtil.randomDataColumnSidecar(header, sszKZGCommitments, index))
+            .toList();
+    final List<List<KZGProof>> expectedProofs =
+        dataColumnSidecarsExtension.stream()
+            .map(
+                dataColumnSidecar ->
+                    dataColumnSidecar.getKzgProofs().stream()
+                        .map(SszKZGProof::getKZGProof)
+                        .toList())
+            .toList();
+
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.addDataColumnSidecarsProofs(
+          header.getMessage().getSlot(),
+          dataColumnSidecarsExtension.stream()
+              .map(
+                  sidecar -> sidecar.getKzgProofs().stream().map(SszKZGProof::getKZGProof).toList())
+              .toList());
+      updater.commit();
+    }
+
+    assertThat(database.getLastDataColumnSidecarsProofsSlot())
+        .contains(header.getMessage().getSlot());
+    assertThat(database.getDataColumnSidecarsProofs(header.getMessage().getSlot()))
+        .contains(expectedProofs);
+
+    // remove it
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.removeDataColumnSidecarsProofs(header.getMessage().getSlot());
+      updater.commit();
+    }
+
+    assertThat(database.getLastDataColumnSidecarsProofsSlot()).isEmpty();
+    assertThat(database.getDataColumnSidecarsProofs(header.getMessage().getSlot())).isEmpty();
   }
 
   private List<Map.Entry<Bytes32, UInt64>> getFinalizedStateRootsList() {

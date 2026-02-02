@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,16 +15,12 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 
-import com.google.common.base.Throwables;
-import java.nio.channels.ClosedChannelException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -36,7 +32,6 @@ import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
-import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -57,8 +52,6 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 public class DataColumnSidecarsByRootMessageHandler
     extends PeerRequiredLocalMessageHandler<
         DataColumnSidecarsByRootRequestMessage, DataColumnSidecar> {
-
-  private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
@@ -171,7 +164,8 @@ public class DataColumnSidecarsByRootMessageHandler
               }
               responseCallbackWithLogging.completeSuccessfully();
             })
-        .finish(err -> handleError(responseCallbackWithLogging, err));
+        .finish(
+            err -> handleError(err, responseCallbackWithLogging, "data column sidecars by root"));
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalDataColumnSidecar(
@@ -198,7 +192,6 @@ public class DataColumnSidecarsByRootMessageHandler
    *   <li>The block root references a block greater than or equal to the minimum_request_epoch
    * </ul>
    */
-  @SuppressWarnings("unused")
   private SafeFuture<Void> validateMinimumRequestEpoch(
       final DataColumnIdentifier identifier, final Optional<DataColumnSidecar> maybeSidecar) {
     return maybeSidecar
@@ -238,22 +231,5 @@ public class DataColumnSidecarsByRootMessageHandler
               // Fallback to non-canonical sidecar if the canonical one is not found
               return getNonCanonicalDataColumnSidecar(identifier);
             });
-  }
-
-  private void handleError(
-      final ResponseCallback<DataColumnSidecar> callback, final Throwable error) {
-    final Throwable rootCause = Throwables.getRootCause(error);
-    if (rootCause instanceof RpcException) {
-      LOG.trace("Rejecting data column sidecars by root request", error);
-      callback.completeWithErrorResponse((RpcException) rootCause);
-    } else {
-      if (rootCause instanceof StreamClosedException
-          || rootCause instanceof ClosedChannelException) {
-        LOG.trace("Stream closed while sending requested data column sidecars", error);
-      } else {
-        LOG.error("Failed to process data column sidecars by root request", error);
-      }
-      callback.completeWithUnexpectedError(error);
-    }
   }
 }

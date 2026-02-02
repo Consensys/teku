@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -120,6 +120,8 @@ public class SlotBasedScheduledDuties<P extends Duty, A extends Duty> implements
 
   @Override
   public boolean requiresRecalculation(final Bytes32 newDependentRoot) {
+    LOG.trace(
+        "current dependent root {}, new dependent root {}", getDependentRoot(), newDependentRoot);
     final boolean requiresRecalculation = !getDependentRoot().equals(newDependentRoot);
     if (requiresRecalculation) {
       LOG.debug(

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -74,12 +74,6 @@ public class DataColumnSidecarManagerImpl implements DataColumnSidecarManager {
                 listener -> listener.onNewValidSidecar(dataColumnSidecar, RemoteOrigin.GOSSIP));
           }
         });
-  }
-
-  @Override
-  public void onDataColumnSidecarPublish(
-      final DataColumnSidecar sidecar, final RemoteOrigin origin) {
-    validDataColumnSidecarsSubscribers.forEach(l -> l.onNewValidSidecar(sidecar, origin));
   }
 
   @Override

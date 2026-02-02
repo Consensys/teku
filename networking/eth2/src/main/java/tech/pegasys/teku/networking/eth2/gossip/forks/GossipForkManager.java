@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -261,6 +262,14 @@ public class GossipForkManager {
         message,
         "signed bls to execution change",
         GossipForkSubscriptions::publishSignedBlsToExecutionChangeMessage);
+  }
+
+  public void publishPayloadAttestationMessage(final PayloadAttestationMessage message) {
+    publishMessage(
+        message.getData().getSlot(),
+        message,
+        "payload attestation message",
+        GossipForkSubscriptions::publishPayloadAttestationMessage);
   }
 
   private synchronized <T> void publishMessage(

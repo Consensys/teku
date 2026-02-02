@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.async.TaskQueue;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -227,6 +228,11 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot() {
+    return taskQueue.queueTask(delegate::getEarliestAvailableDataColumnSlot);
+  }
+
+  @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
       final DataColumnSlotAndIdentifier identifier) {
     return taskQueue.queueTask(() -> delegate.getSidecar(identifier));
@@ -258,5 +264,10 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
   @Override
   public SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot() {
     return taskQueue.queueTask(delegate::getEarliestDataColumnSidecarSlot);
+  }
+
+  @Override
+  public SafeFuture<Optional<List<List<KZGProof>>>> getDataColumnSidecarsProofs(final UInt64 slot) {
+    return taskQueue.queueTask(() -> delegate.getDataColumnSidecarsProofs(slot));
   }
 }

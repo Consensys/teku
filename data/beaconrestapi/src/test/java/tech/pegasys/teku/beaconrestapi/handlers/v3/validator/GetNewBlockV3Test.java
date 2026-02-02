@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -49,7 +49,6 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @TestSpecContext(allMilestones = true)
 public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
@@ -59,8 +58,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   public void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
-    spec = specContext.getSpec();
-    dataStructureUtil = new DataStructureUtil(spec);
+    setSpec(specContext.getSpec());
     specMilestone = specContext.getSpecMilestone();
     setHandler(new GetNewBlockV3(validatorDataProvider, schemaDefinitionCache));
     request.setPathParameter(SLOT, "1");

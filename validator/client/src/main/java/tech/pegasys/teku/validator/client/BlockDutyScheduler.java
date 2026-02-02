@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.validator.client;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.response.ValidatorStatus;
@@ -27,11 +27,11 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 
 public class BlockDutyScheduler extends AbstractDutyScheduler {
-  static final int LOOKAHEAD_EPOCHS = 0;
+  private static final Logger LOG = LogManager.getLogger();
 
   public BlockDutyScheduler(
       final MetricsSystem metricsSystem, final DutyLoader<?> dutyLoader, final Spec spec) {
-    super(metricsSystem, "block", dutyLoader, LOOKAHEAD_EPOCHS, spec);
+    super(metricsSystem, "block", dutyLoader, spec);
 
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,
@@ -72,11 +72,20 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
       final Bytes32 currentTargetRoot,
       final UInt64 headEpoch,
       final UInt64 dutyEpoch) {
-    checkArgument(
-        dutyEpoch.isGreaterThanOrEqualTo(headEpoch),
-        "Attempting to calculate dependent root for duty epoch %s that is before the updated head epoch %s",
-        dutyEpoch,
-        headEpoch);
-    return headEpoch.equals(dutyEpoch) ? currentTargetRoot : headBlockRoot;
+    return spec.atEpoch(dutyEpoch)
+        .getBlockProposalUtil()
+        .getBlockProposalDependentRoot(
+            headBlockRoot, previousTargetRoot, currentTargetRoot, headEpoch, dutyEpoch);
+  }
+
+  @Override
+  public int getLookAheadEpochs(final UInt64 epoch) {
+    final int lookAheadEpochs =
+        spec.atEpoch(epoch).getBlockProposalUtil().getProposerLookAheadEpochs();
+    LOG.trace(
+        "LookAhead period for block duty at milestone {} is {}",
+        () -> spec.atEpoch(epoch).getMilestone(),
+        () -> lookAheadEpochs);
+    return lookAheadEpochs;
   }
 }

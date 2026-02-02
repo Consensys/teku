@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static io.libp2p.crypto.keys.Secp256k1Kt.unmarshalSecp256k1PrivateKey;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -257,6 +258,13 @@ public class TekuNodeConfigBuilder {
     mustBe(NodeType.BEACON_NODE);
     LOG.debug("P2P enabled");
     configMap.put("p2p-enabled", true);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withDiscoveryNetwork() {
+    mustBe(NodeType.BEACON_NODE);
+    LOG.debug("p2p-discovery-enabled: {}", true);
+    configMap.put("p2p-discovery-enabled", true);
     return this;
   }
 
@@ -612,8 +620,18 @@ public class TekuNodeConfigBuilder {
 
   public TekuNodeConfigBuilder withStubExecutionEngine() {
     mustBe(NodeType.BEACON_NODE);
+
     LOG.debug("ee-endpoint={}", "unsafe-test-stub");
     configMap.put("ee-endpoint", "unsafe-test-stub");
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withStubExecutionEngine(final int fixedBlobNumber) {
+    mustBe(NodeType.BEACON_NODE);
+    checkArgument(fixedBlobNumber >= 0, "fixed-blob-number must be >= 0");
+    final String endpoint = "unsafe-test-stub:blobs=" + fixedBlobNumber;
+    LOG.debug("ee-endpoint={}", endpoint);
+    configMap.put("ee-endpoint", endpoint);
     return this;
   }
 
@@ -642,9 +660,55 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
-  public TekuNodeConfigBuilder withDasExtraCustodyGroupCount(final int extraCustodySubnetCount) {
-    LOG.debug("Xdas-extra-custody-group-count: {}", extraCustodySubnetCount);
-    configMap.put("Xdas-extra-custody-group-count", extraCustodySubnetCount);
+  public TekuNodeConfigBuilder withCustodyGroupCountOverride(final int custodyGroupCount) {
+    LOG.debug("Xcustody-group-count-override: {}", custodyGroupCount);
+    configMap.put("Xcustody-group-count-override", custodyGroupCount);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withSubscribeAllCustodySubnetsEnabled() {
+    LOG.debug("p2p-subscribe-all-custody-subnets-enabled: {}", true);
+    configMap.put("p2p-subscribe-all-custody-subnets-enabled", true);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withCheckpointSyncUrl(final String checkpointSyncUrl) {
+    LOG.debug("checkpoint-sync-url: {}", checkpointSyncUrl);
+    configMap.put("checkpoint-sync-url", checkpointSyncUrl);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withDasPublishWithholdColumnsEverySlots(
+      final int dasPublishWithholdColumnsEverySlots) {
+    LOG.debug("Xdas-publish-withhold-columns-every-slots: {}", dasPublishWithholdColumnsEverySlots);
+    configMap.put("Xdas-publish-withhold-columns-every-slots", dasPublishWithholdColumnsEverySlots);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withDasDisableElRecovery() {
+    LOG.debug("Xdas-disable-el-recovery: {}", true);
+    configMap.put("Xdas-disable-el-recovery", true);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withReworkedCustodySync() {
+    LOG.debug("Xp2p-reworked-sidecar-custody-sync-enabled: {}", true);
+    configMap.put("Xp2p-reworked-sidecar-custody-sync-enabled", true);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withGetBlobsSidecarsDownloadApiEnabled() {
+    LOG.debug("--rest-api-getblobs-sidecars-download-enabled: {}", true);
+    configMap.put("rest-api-getblobs-sidecars-download-enabled", true);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withReworkedRecoveryTimeouts(
+      final int recoveryTimeout, final int downloadTimeout) {
+    LOG.debug("Xp2p-sidecar-cancel-timeout-ms: {}", recoveryTimeout);
+    configMap.put("Xp2p-sidecar-cancel-timeout-ms", recoveryTimeout);
+    LOG.debug("Xp2p-sidecar-download-timeout-ms: {}", downloadTimeout);
+    configMap.put("Xp2p-sidecar-download-timeout-ms", downloadTimeout);
     return this;
   }
 

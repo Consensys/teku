@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -156,6 +156,16 @@ public class BeaconBlockBodySchemaGloasImpl
     return new BeaconBlockBodyGloasImpl(this);
   }
 
+  @Override
+  public BeaconBlockBodyGloasImpl createFromBackingNode(final TreeNode node) {
+    return new BeaconBlockBodyGloasImpl(this, node);
+  }
+
+  @Override
+  public LongList getBlindedNodeGeneralizedIndices() {
+    return LongList.of();
+  }
+
   @SuppressWarnings("unchecked")
   @Override
   public SszListSchema<ProposerSlashing, ?> getProposerSlashingsSchema() {
@@ -196,11 +206,6 @@ public class BeaconBlockBodySchemaGloasImpl
   }
 
   @Override
-  public BeaconBlockBodyGloasImpl createFromBackingNode(final TreeNode node) {
-    return new BeaconBlockBodyGloasImpl(this, node);
-  }
-
-  @Override
   public ExecutionPayloadSchema<?> getExecutionPayloadSchema() {
     throw new UnsupportedOperationException("ExecutionPayload was removed in Gloas");
   }
@@ -223,8 +228,8 @@ public class BeaconBlockBodySchemaGloasImpl
   }
 
   @Override
-  public LongList getBlindedNodeGeneralizedIndices() {
-    return LongList.of();
+  public ExecutionRequestsSchema getExecutionRequestsSchema() {
+    throw new UnsupportedOperationException("ExecutionRequests were removed in Gloas");
   }
 
   @SuppressWarnings("unchecked")
@@ -232,10 +237,5 @@ public class BeaconBlockBodySchemaGloasImpl
   public SszListSchema<PayloadAttestation, ?> getPayloadAttestationsSchema() {
     return (SszListSchema<PayloadAttestation, ?>)
         getChildSchema(getFieldIndex(BlockBodyFields.PAYLOAD_ATTESTATIONS));
-  }
-
-  @Override
-  public ExecutionRequestsSchema getExecutionRequestsSchema() {
-    throw new UnsupportedOperationException("ExecutionRequests were removed in Gloas");
   }
 }

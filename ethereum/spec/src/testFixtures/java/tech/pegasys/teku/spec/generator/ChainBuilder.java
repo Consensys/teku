@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -56,6 +56,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -79,6 +82,7 @@ import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil.ExecutionPayloadProposalData;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
@@ -87,7 +91,10 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.signatures.LocalSigner;
 import tech.pegasys.teku.spec.signatures.Signer;
 
-/** A utility for building small, valid chains of blocks with states for testing */
+/**
+ * A utility for building small, valid chains of blocks with states (and execution payloads with
+ * states) for testing
+ */
 public class ChainBuilder {
   private static final List<BLSKeyPair> DEFAULT_VALIDATOR_KEYS =
       Collections.unmodifiableList(new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 3));
@@ -107,7 +114,13 @@ public class ChainBuilder {
   private final NavigableMap<SlotAndBlockRoot, List<DataColumnSidecar>> dataColumnSidecars =
       new TreeMap<>();
   private final Map<Bytes32, List<DataColumnSidecar>> dataColumnSidecarsByHash = new HashMap<>();
+  // Gloas
+  private final NavigableMap<UInt64, SignedExecutionPayloadAndState> executionPayloads =
+      new TreeMap<>();
+  private final Map<Bytes32, SignedExecutionPayloadAndState> executionPayloadsByHash =
+      new HashMap<>();
   private final BlockProposalTestUtil blockProposalTestUtil;
+  private final ExecutionPayloadProposalTestUtil executionPayloadProposalTestUtil;
   private final BlobsUtil blobsUtil;
 
   private ChainBuilder(
@@ -116,7 +129,8 @@ public class ChainBuilder {
       final Map<UInt64, SignedBlockAndState> existingBlocks,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> existingBlobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot,
-      final Map<SlotAndBlockRoot, List<DataColumnSidecar>> existingDataColumnSidecars) {
+      final Map<SlotAndBlockRoot, List<DataColumnSidecar>> existingDataColumnSidecars,
+      final Map<UInt64, SignedExecutionPayloadAndState> existingExecutionPayloads) {
     this.spec = spec;
     this.validatorKeys = validatorKeys;
     this.blobsUtil = new BlobsUtil(spec);
@@ -124,6 +138,7 @@ public class ChainBuilder {
     this.attesterSlashingGenerator = new AttesterSlashingGenerator(spec, validatorKeys);
     this.proposerSlashingGenerator = new ProposerSlashingGenerator(spec, validatorKeys);
     this.blockProposalTestUtil = new BlockProposalTestUtil(spec);
+    this.executionPayloadProposalTestUtil = new ExecutionPayloadProposalTestUtil(spec);
     blocks.putAll(existingBlocks);
     existingBlocks.values().forEach(b -> blocksByHash.put(b.getRoot(), b));
     blobSidecars.putAll(existingBlobSidecars);
@@ -145,6 +160,10 @@ public class ChainBuilder {
                 dataColumnSidecarsByHash.put(dc.getFirst().getBeaconBlockRoot(), dc);
               }
             });
+    executionPayloads.putAll(existingExecutionPayloads);
+    existingExecutionPayloads
+        .values()
+        .forEach(e -> executionPayloadsByHash.put(e.executionPayload().getBeaconBlockRoot(), e));
   }
 
   public static ChainBuilder create(final Spec spec) {
@@ -158,6 +177,7 @@ public class ChainBuilder {
         Collections.emptyMap(),
         Collections.emptyMap(),
         Optional.empty(),
+        Collections.emptyMap(),
         Collections.emptyMap());
   }
 
@@ -167,6 +187,11 @@ public class ChainBuilder {
 
   public Optional<SignedBlockAndState> getBlockAndState(final Bytes32 blockRoot) {
     return Optional.ofNullable(blocksByHash.get(blockRoot));
+  }
+
+  public Optional<SignedExecutionPayloadEnvelope> getExecutionPayload(final Bytes32 blockRoot) {
+    return Optional.ofNullable(executionPayloadsByHash.get(blockRoot))
+        .map(SignedExecutionPayloadAndState::executionPayload);
   }
 
   public List<BlobSidecar> getBlobSidecars(final Bytes32 blockRoot) {
@@ -205,7 +230,13 @@ public class ChainBuilder {
    */
   public ChainBuilder fork() {
     return new ChainBuilder(
-        spec, validatorKeys, blocks, blobSidecars, earliestBlobSidecarSlot, dataColumnSidecars);
+        spec,
+        validatorKeys,
+        blocks,
+        blobSidecars,
+        earliestBlobSidecarSlot,
+        dataColumnSidecars,
+        executionPayloads);
   }
 
   public List<BLSKeyPair> getValidatorKeys() {
@@ -269,6 +300,23 @@ public class ChainBuilder {
     return streamDataColumnSidecars(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot), columns);
   }
 
+  public Stream<SignedExecutionPayloadAndState> streamExecutionPayloadsAndStates(
+      final UInt64 fromSlot) {
+    return streamExecutionPayloadsAndStates(fromSlot, getLatestSlot());
+  }
+
+  public Stream<SignedExecutionPayloadAndState> streamExecutionPayloadsAndStates(
+      final long fromSlot, final long toSlot) {
+    return streamExecutionPayloadsAndStates(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot));
+  }
+
+  public Stream<SignedExecutionPayloadAndState> streamExecutionPayloadsAndStates(
+      final UInt64 fromSlot, final UInt64 toSlot) {
+    return executionPayloads.values().stream()
+        .filter(b -> b.executionPayload().getMessage().getSlot().isGreaterThanOrEqualTo(fromSlot))
+        .filter(b -> b.executionPayload().getMessage().getSlot().isLessThanOrEqualTo(toSlot));
+  }
+
   public Stream<Map.Entry<SlotAndBlockRoot, List<DataColumnSidecar>>> streamDataColumnSidecars(
       final UInt64 fromSlot, final UInt64 toSlot, final List<UInt64> columns) {
     return dataColumnSidecars.entrySet().stream()
@@ -315,6 +363,15 @@ public class ChainBuilder {
 
   public BeaconState getStateAtSlot(final UInt64 slot) {
     return resultToState(getBlockAndStateAtSlot(slot));
+  }
+
+  public Optional<SignedExecutionPayloadAndState> getExecutionPayloadAndStateAtSlot(
+      final UInt64 slot) {
+    return Optional.ofNullable(executionPayloads.get(slot));
+  }
+
+  public Optional<BeaconState> getExecutionPayloadStateAtSlot(final UInt64 slot) {
+    return getExecutionPayloadAndStateAtSlot(slot).map(SignedExecutionPayloadAndState::state);
   }
 
   public SignedBlockAndState getLatestBlockAndStateAtSlot(final long slot) {
@@ -615,13 +672,23 @@ public class ChainBuilder {
     dataColumnSidecarsByHash.put(slotAndBlockRoot.getBlockRoot(), dataColumnSidecars);
   }
 
+  private void trackExecutionPayload(final SignedExecutionPayloadAndState executionPayload) {
+    executionPayloads.put(
+        executionPayload.executionPayload().getMessage().getSlot(), executionPayload);
+    executionPayloadsByHash.put(
+        executionPayload.executionPayload().getBeaconBlockRoot(), executionPayload);
+  }
+
   private SignedBlockAndState appendNewBlockToChain(final UInt64 slot, final BlockOptions options) {
     final SignedBlockAndState latestBlockAndState = getLatestBlockAndState();
-    final BeaconState preState = latestBlockAndState.getState();
+    final BeaconState preState =
+        // build on top of the execution payload state if an execution payload has been processed
+        getExecutionPayloadStateAtSlot(latestBlockAndState.getSlot())
+            .orElse(latestBlockAndState.getState());
     final Bytes32 parentRoot = latestBlockAndState.getBlock().getMessage().hashTreeRoot();
 
     int proposerIndex = blockProposalTestUtil.getProposerIndexForSlot(preState, slot);
-    if (options.getWrongProposer()) {
+    if (options.isWrongProposerEnabled()) {
       proposerIndex = (proposerIndex == 0 ? 1 : proposerIndex - 1);
     }
     final Signer signer = getSigner(proposerIndex);
@@ -674,6 +741,23 @@ public class ChainBuilder {
                 proposerSlashings);
       }
       trackBlock(nextBlockAndState);
+
+      // ePBS
+      final Optional<ExecutionPayloadProposalData> executionPayloadProposalData =
+          blockProposalTestUtil.getExecutionPayloadProposalData(slot);
+      if (!options.isWithholdExecutionPayloadEnabled()
+          && executionPayloadProposalData.isPresent()) {
+        final SignedExecutionPayloadAndState nextExecutionPayloadAndState =
+            safeJoin(
+                executionPayloadProposalTestUtil.createExecutionPayload(
+                    signer,
+                    slot,
+                    nextBlockAndState.toUnsigned(),
+                    executionPayloadProposalData.get(),
+                    options.isSkipStateTransitionEnabled()));
+        trackExecutionPayload(nextExecutionPayloadAndState);
+      }
+
       return nextBlockAndState;
     } catch (EpochProcessingException | SlotProcessingException e) {
       throw new RuntimeException(e);
@@ -706,9 +790,10 @@ public class ChainBuilder {
             options.getTerminalBlockHash(),
             options.getExecutionPayload(),
             options.getSyncAggregate(),
-            options.getBlsToExecutionChange(),
+            options.getBlsToExecutionChanges(),
             options.getKzgCommitments(),
-            options.getSkipStateTransition()));
+            options.getPayloadAttestations(),
+            options.isSkipStateTransitionEnabled()));
   }
 
   private SignedBlockAndState generateBlockWithBlobSidecars(
@@ -767,10 +852,11 @@ public class ChainBuilder {
                   options.getTerminalBlockHash(),
                   options.getExecutionPayload(),
                   options.getSyncAggregate(),
-                  options.getBlsToExecutionChange(),
+                  options.getBlsToExecutionChanges(),
                   blobsUtil,
                   blobs,
-                  options.getSkipStateTransition()));
+                  options.getPayloadAttestations(),
+                  options.isSkipStateTransitionEnabled()));
     } else {
       nextBlockAndState =
           safeJoin(
@@ -789,9 +875,10 @@ public class ChainBuilder {
                   options.getTerminalBlockHash(),
                   options.getExecutionPayload(),
                   options.getSyncAggregate(),
-                  options.getBlsToExecutionChange(),
+                  options.getBlsToExecutionChanges(),
                   options.getKzgCommitments(),
-                  options.getSkipStateTransition()));
+                  options.getPayloadAttestations(),
+                  options.isSkipStateTransitionEnabled()));
     }
 
     if (options.isStoreBlobSidecarsEnabled()) {
@@ -875,10 +962,11 @@ public class ChainBuilder {
                   options.getTerminalBlockHash(),
                   options.getExecutionPayload(),
                   options.getSyncAggregate(),
-                  options.getBlsToExecutionChange(),
+                  options.getBlsToExecutionChanges(),
                   blobsUtil,
                   blobs,
-                  options.getSkipStateTransition()));
+                  options.getPayloadAttestations(),
+                  options.isSkipStateTransitionEnabled()));
     } else {
       nextBlockAndState =
           safeJoin(
@@ -897,9 +985,10 @@ public class ChainBuilder {
                   options.getTerminalBlockHash(),
                   options.getExecutionPayload(),
                   options.getSyncAggregate(),
-                  options.getBlsToExecutionChange(),
+                  options.getBlsToExecutionChanges(),
                   options.getKzgCommitments(),
-                  options.getSkipStateTransition()));
+                  options.getPayloadAttestations(),
+                  options.isSkipStateTransitionEnabled()));
     }
 
     if (options.isStoreDataColumnSidecarsEnabled()) {
@@ -1045,10 +1134,10 @@ public class ChainBuilder {
     private Optional<Bytes32> terminalBlockHash = Optional.empty();
     private Optional<ExecutionPayload> executionPayload = Optional.empty();
     private Optional<SyncAggregate> syncAggregate = Optional.empty();
-    private Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange = Optional.empty();
+    private Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges = Optional.empty();
     private Optional<SszList<SszKZGCommitment>> kzgCommitments = Optional.empty();
+    private Optional<SszList<PayloadAttestation>> payloadAttestations = Optional.empty();
     private Optional<List<Blob>> blobs = Optional.empty();
-    private Optional<KZGProof> kzgProof = Optional.empty();
     private Optional<List<BlobSidecar>> blobSidecars = Optional.empty();
     private Optional<List<DataColumnSidecar>> dataColumnSidecars = Optional.empty();
     private boolean generateRandomBlobs = false;
@@ -1057,6 +1146,7 @@ public class ChainBuilder {
     private boolean storeDataColumnSidecars = true;
     private boolean skipStateTransition = false;
     private boolean wrongProposer = false;
+    private boolean withholdExecutionPayload = false;
 
     private BlockOptions() {}
 
@@ -1099,19 +1189,14 @@ public class ChainBuilder {
       return this;
     }
 
-    public BlockOptions setBlsToExecutionChange(
-        final SszList<SignedBlsToExecutionChange> blsToExecutionChange) {
-      this.blsToExecutionChange = Optional.of(blsToExecutionChange);
+    public BlockOptions setBlsToExecutionChanges(
+        final SszList<SignedBlsToExecutionChange> blsToExecutionChanges) {
+      this.blsToExecutionChanges = Optional.of(blsToExecutionChanges);
       return this;
     }
 
     public BlockOptions setBlobs(final List<Blob> blobs) {
       this.blobs = Optional.of(blobs);
-      return this;
-    }
-
-    public BlockOptions setKzgProof(final KZGProof kzgProof) {
-      this.kzgProof = Optional.of(kzgProof);
       return this;
     }
 
@@ -1127,6 +1212,12 @@ public class ChainBuilder {
 
     public BlockOptions setKzgCommitments(final SszList<SszKZGCommitment> kzgCommitments) {
       this.kzgCommitments = Optional.of(kzgCommitments);
+      return this;
+    }
+
+    public BlockOptions setPayloadAttestations(
+        final SszList<PayloadAttestation> payloadAttestations) {
+      this.payloadAttestations = Optional.of(payloadAttestations);
       return this;
     }
 
@@ -1171,8 +1262,21 @@ public class ChainBuilder {
       return this;
     }
 
+    public BlockOptions setWithholdExecutionPayload(final boolean withholdExecutionPayload) {
+      this.withholdExecutionPayload = withholdExecutionPayload;
+      return this;
+    }
+
     private List<Attestation> getAttestations() {
       return attestations;
+    }
+
+    public List<AttesterSlashing> getAttesterSlashings() {
+      return attesterSlashings;
+    }
+
+    public List<ProposerSlashing> getProposerSlashings() {
+      return proposerSlashings;
     }
 
     public Optional<Eth1Data> getEth1Data() {
@@ -1195,12 +1299,16 @@ public class ChainBuilder {
       return syncAggregate;
     }
 
-    public Optional<SszList<SignedBlsToExecutionChange>> getBlsToExecutionChange() {
-      return blsToExecutionChange;
+    public Optional<SszList<SignedBlsToExecutionChange>> getBlsToExecutionChanges() {
+      return blsToExecutionChanges;
     }
 
     public Optional<SszList<SszKZGCommitment>> getKzgCommitments() {
       return kzgCommitments;
+    }
+
+    public Optional<SszList<PayloadAttestation>> getPayloadAttestations() {
+      return payloadAttestations;
     }
 
     public Optional<List<Blob>> getBlobs() {
@@ -1223,11 +1331,7 @@ public class ChainBuilder {
       return storeDataColumnSidecars;
     }
 
-    public Optional<KZGProof> getKzgProof() {
-      return kzgProof;
-    }
-
-    public boolean getSkipStateTransition() {
+    public boolean isSkipStateTransitionEnabled() {
       return skipStateTransition;
     }
 
@@ -1239,16 +1343,12 @@ public class ChainBuilder {
       return generateRandomBlobsCount;
     }
 
-    public boolean getWrongProposer() {
+    public boolean isWrongProposerEnabled() {
       return wrongProposer;
     }
 
-    public List<AttesterSlashing> getAttesterSlashings() {
-      return attesterSlashings;
-    }
-
-    public List<ProposerSlashing> getProposerSlashings() {
-      return proposerSlashings;
+    public boolean isWithholdExecutionPayloadEnabled() {
+      return withholdExecutionPayload;
     }
   }
 }

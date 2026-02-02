@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,9 +23,9 @@ public class SignedExecutionPayloadBid
 
   SignedExecutionPayloadBid(
       final SignedExecutionPayloadBidSchema schema,
-      final ExecutionPayloadBid executionPayloadBid,
+      final ExecutionPayloadBid message,
       final BLSSignature signature) {
-    super(schema, executionPayloadBid, new SszSignature(signature));
+    super(schema, message, new SszSignature(signature));
   }
 
   SignedExecutionPayloadBid(

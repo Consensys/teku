@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -178,7 +178,7 @@ public class Eth2P2PNetworkBuilder {
     final RpcEncoding rpcEncoding =
         RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
     if (statusMessageFactory == null) {
-      statusMessageFactory = new StatusMessageFactory(spec, combinedChainDataClient);
+      statusMessageFactory = new StatusMessageFactory(spec, combinedChainDataClient, metricsSystem);
       eventChannels.subscribe(SlotEventsChannel.class, statusMessageFactory);
     }
     if (metadataMessagesFactory != null && spec.isMilestoneSupported(SpecMilestone.FULU)) {
@@ -634,7 +634,7 @@ public class Eth2P2PNetworkBuilder {
   }
 
   private void assertNotNull(final String fieldName, final Object fieldValue) {
-    checkState(fieldValue != null, "Field " + fieldName + " must be set.");
+    checkState(fieldValue != null, "Field %s must be set.", fieldName);
   }
 
   public Eth2P2PNetworkBuilder config(final P2PConfig config) {

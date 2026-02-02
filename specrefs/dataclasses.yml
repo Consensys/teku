@@ -1,4 +1,4 @@
-- name: BlobParameters
+- name: BlobParameters#fulu
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/BlobParameters.java
   spec: |
@@ -8,7 +8,7 @@
         max_blobs_per_block: uint64
     </spec>
 
-- name: BlobsBundleDeneb
+- name: BlobsBundle#deneb
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/BlobsBundle.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/builder/BlobsBundleSchema.java
@@ -22,7 +22,7 @@
         blobs: List[Blob, MAX_BLOB_COMMITMENTS_PER_BLOCK]
     </spec>
 
-- name: BlobsBundleFulu
+- name: BlobsBundle#fulu
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/BlobsBundle.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/builder/BlobsBundleSchema.java
@@ -37,7 +37,47 @@
         blobs: List[Blob, MAX_BLOB_COMMITMENTS_PER_BLOCK]
     </spec>
 
-- name: GetPayloadResponseV1
+- name: ExpectedWithdrawals#capella
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/withdrawals/WithdrawalsHelpers.java
+      search: record ExpectedWithdrawals(
+  spec: |
+    <spec dataclass="ExpectedWithdrawals" fork="capella" hash="73becb4c">
+    class ExpectedWithdrawals(object):
+        withdrawals: Sequence[Withdrawal]
+        processed_sweep_withdrawals_count: uint64
+    </spec>
+
+- name: ExpectedWithdrawals#electra
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/withdrawals/WithdrawalsHelpers.java
+      search: record ExpectedWithdrawals(
+  spec: |
+    <spec dataclass="ExpectedWithdrawals" fork="electra" hash="a3827f01">
+    class ExpectedWithdrawals(object):
+        withdrawals: Sequence[Withdrawal]
+        # [New in Electra:EIP7251]
+        processed_partial_withdrawals_count: uint64
+        processed_sweep_withdrawals_count: uint64
+    </spec>
+
+- name: ExpectedWithdrawals#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/withdrawals/WithdrawalsHelpers.java
+      search: record ExpectedWithdrawals(
+  spec: |
+    <spec dataclass="ExpectedWithdrawals" fork="gloas" hash="b32cc9c9">
+    class ExpectedWithdrawals(object):
+        withdrawals: Sequence[Withdrawal]
+        # [New in Gloas:EIP7732]
+        processed_builder_withdrawals_count: uint64
+        processed_partial_withdrawals_count: uint64
+        # [New in Gloas:EIP7732]
+        processed_builders_sweep_count: uint64
+        processed_sweep_withdrawals_count: uint64
+    </spec>
+
+- name: GetPayloadResponse#bellatrix
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/GetPayloadResponse.java
     - file: ethereum/executionclient/src/main/java/tech/pegasys/teku/ethereum/executionclient/methods/EngineGetPayloadV1.java
@@ -47,7 +87,7 @@
         execution_payload: ExecutionPayload
     </spec>
 
-- name: GetPayloadResponseV2
+- name: GetPayloadResponse#capella
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/GetPayloadResponse.java
     - file: ethereum/executionclient/src/main/java/tech/pegasys/teku/ethereum/executionclient/schema/GetPayloadV2Response.java
@@ -58,7 +98,7 @@
         block_value: uint256
     </spec>
 
-- name: GetPayloadResponseV3
+- name: GetPayloadResponse#deneb
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/GetPayloadResponse.java
     - file: ethereum/executionclient/src/main/java/tech/pegasys/teku/ethereum/executionclient/schema/GetPayloadV3Response.java
@@ -71,7 +111,7 @@
         blobs_bundle: BlobsBundle
     </spec>
 
-- name: GetPayloadResponseV4
+- name: GetPayloadResponse#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/GetPayloadResponse.java
     - file: ethereum/executionclient/src/main/java/tech/pegasys/teku/ethereum/executionclient/schema/GetPayloadV4Response.java
@@ -85,7 +125,7 @@
         execution_requests: Sequence[bytes]
     </spec>
 
-- name: GetPayloadResponseV5
+- name: GetPayloadResponse#fulu
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/GetPayloadResponse.java
     - file: ethereum/executionclient/src/main/java/tech/pegasys/teku/ethereum/executionclient/schema/GetPayloadV5Response.java
@@ -99,7 +139,58 @@
         execution_requests: Sequence[bytes]
     </spec>
 
-- name: NewPayloadRequest
+- name: LatestMessage#phase0
+  sources: []
+  spec: |
+    <spec dataclass="LatestMessage" fork="phase0" hash="44e832d0">
+    @dataclass(eq=True, frozen=True)
+    class LatestMessage(object):
+        epoch: Epoch
+        root: Root
+    </spec>
+
+- name: LatestMessage#gloas
+  sources: []
+  spec: |
+    <spec dataclass="LatestMessage" fork="gloas" style="diff" hash="a0030894">
+    --- phase0
+    +++ gloas
+    @@ -1,4 +1,5 @@
+     @dataclass(eq=True, frozen=True)
+     class LatestMessage(object):
+    -    epoch: Epoch
+    +    slot: Slot
+         root: Root
+    +    payload_present: boolean
+    </spec>
+
+- name: LightClientStore#altair
+  sources: []
+  spec: |
+    <spec dataclass="LightClientStore" fork="altair" hash="24725cec">
+    class LightClientStore(object):
+        # Header that is finalized
+        finalized_header: LightClientHeader
+        # Sync committees corresponding to the finalized header
+        current_sync_committee: SyncCommittee
+        next_sync_committee: SyncCommittee
+        # Best available header to switch finalized head to if we see nothing else
+        best_valid_update: Optional[LightClientUpdate]
+        # Most recent available reasonably-safe header
+        optimistic_header: LightClientHeader
+        # Max number of active participants in a sync committee (used to calculate safety threshold)
+        previous_max_active_participants: uint64
+        current_max_active_participants: uint64
+    </spec>
+
+- name: LightClientStore#capella
+  sources: []
+  spec: |
+    <spec dataclass="LightClientStore" fork="capella" style="diff" hash="04b41062">
+
+    </spec>
+
+- name: NewPayloadRequest#bellatrix
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/NewPayloadRequest.java
   spec: |
@@ -107,12 +198,22 @@
     class NewPayloadRequest(object):
         execution_payload: ExecutionPayload
     </spec>
+
+- name: NewPayloadRequest#deneb
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/NewPayloadRequest.java
+  spec: |
     <spec dataclass="NewPayloadRequest" fork="deneb" hash="26cf2e26">
     class NewPayloadRequest(object):
         execution_payload: ExecutionPayload
         versioned_hashes: Sequence[VersionedHash]
         parent_beacon_block_root: Root
     </spec>
+
+- name: NewPayloadRequest#electra
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/NewPayloadRequest.java
+  spec: |
     <spec dataclass="NewPayloadRequest" fork="electra" hash="b1f69cc9">
     class NewPayloadRequest(object):
         execution_payload: ExecutionPayload
@@ -122,7 +223,18 @@
         execution_requests: ExecutionRequests
     </spec>
 
-- name: PayloadAttributesV1
+- name: OptimisticStore#bellatrix
+  sources: []
+  spec: |
+    <spec dataclass="OptimisticStore" fork="bellatrix" hash="a2b2182c">
+    class OptimisticStore(object):
+        optimistic_roots: Set[Root]
+        head_block_root: Root
+        blocks: Dict[Root, BeaconBlock] = field(default_factory=dict)
+        block_states: Dict[Root, BeaconState] = field(default_factory=dict)
+    </spec>
+
+- name: PayloadAttributes#bellatrix
   sources:
     - file: ethereum/executionclient/src/main/java/tech/pegasys/teku/ethereum/executionclient/schema/PayloadAttributesV1.java
   spec: |
@@ -133,7 +245,7 @@
         suggested_fee_recipient: ExecutionAddress
     </spec>
 
-- name: PayloadAttributesV2
+- name: PayloadAttributes#capella
   sources:
     - file: ethereum/executionclient/src/main/java/tech/pegasys/teku/ethereum/executionclient/schema/PayloadAttributesV2.java
   spec: |
@@ -146,7 +258,7 @@
         withdrawals: Sequence[Withdrawal]
     </spec>
 
-- name: PayloadAttributesV3
+- name: PayloadAttributes#deneb
   sources:
     - file: ethereum/executionclient/src/main/java/tech/pegasys/teku/ethereum/executionclient/schema/PayloadAttributesV3.java
   spec: |
@@ -158,4 +270,46 @@
         withdrawals: Sequence[Withdrawal]
         # [New in Deneb:EIP4788]
         parent_beacon_block_root: Root
+    </spec>
+
+- name: Store#phase0
+  sources: []
+  spec: |
+    <spec dataclass="Store" fork="phase0" hash="abe525d6">
+    class Store(object):
+        time: uint64
+        genesis_time: uint64
+        justified_checkpoint: Checkpoint
+        finalized_checkpoint: Checkpoint
+        unrealized_justified_checkpoint: Checkpoint
+        unrealized_finalized_checkpoint: Checkpoint
+        proposer_boost_root: Root
+        equivocating_indices: Set[ValidatorIndex]
+        blocks: Dict[Root, BeaconBlock] = field(default_factory=dict)
+        block_states: Dict[Root, BeaconState] = field(default_factory=dict)
+        block_timeliness: Dict[Root, boolean] = field(default_factory=dict)
+        checkpoint_states: Dict[Checkpoint, BeaconState] = field(default_factory=dict)
+        latest_messages: Dict[ValidatorIndex, LatestMessage] = field(default_factory=dict)
+        unrealized_justifications: Dict[Root, Checkpoint] = field(default_factory=dict)
+    </spec>
+
+- name: Store#gloas
+  sources: []
+  spec: |
+    <spec dataclass="Store" fork="gloas" style="diff" hash="4dbfec46">
+    --- phase0
+    +++ gloas
+    @@ -9,7 +9,11 @@
+         equivocating_indices: Set[ValidatorIndex]
+         blocks: Dict[Root, BeaconBlock] = field(default_factory=dict)
+         block_states: Dict[Root, BeaconState] = field(default_factory=dict)
+    -    block_timeliness: Dict[Root, boolean] = field(default_factory=dict)
+    +    block_timeliness: Dict[Root, Vector[boolean, NUM_BLOCK_TIMELINESS_DEADLINES]] = field(
+    +        default_factory=dict
+    +    )
+         checkpoint_states: Dict[Checkpoint, BeaconState] = field(default_factory=dict)
+         latest_messages: Dict[ValidatorIndex, LatestMessage] = field(default_factory=dict)
+         unrealized_justifications: Dict[Root, Checkpoint] = field(default_factory=dict)
+    +    execution_payload_states: Dict[Root, BeaconState] = field(default_factory=dict)
+    +    ptc_vote: Dict[Root, Vector[boolean, PTC_SIZE]] = field(default_factory=dict)
     </spec>

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.util.CancelableFuture;
 
 public class DelayedDataColumnSidecarRetriever implements DataColumnSidecarRetriever {
@@ -53,7 +54,8 @@ public class DelayedDataColumnSidecarRetriever implements DataColumnSidecarRetri
   public void flush() {}
 
   @Override
-  public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {}
+  public void onNewValidatedSidecar(
+      final DataColumnSidecar sidecar, final RemoteOrigin remoteOrigin) {}
 
   @Override
   public void start() {}

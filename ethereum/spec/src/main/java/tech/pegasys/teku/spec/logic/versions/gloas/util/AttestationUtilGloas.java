@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.gloas.util;
 
 import com.google.common.collect.Comparators;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
@@ -23,7 +24,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.util.AttestationValidationResult;
 import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
@@ -63,5 +66,36 @@ public class AttestationUtilGloas extends AttestationUtilElectra {
     final Bytes signingRoot =
         miscHelpers.computeSigningRoot(indexedPayloadAttestation.getData(), domain);
     return BLS.fastAggregateVerify(pubKeys, signingRoot, indexedPayloadAttestation.getSignature());
+  }
+
+  @Override
+  public AttestationValidationResult validateIndexValue(final UInt64 index) {
+    // [REJECT] attestation.data.index < 2
+    if (!index.isLessThan(2)) {
+      return AttestationValidationResult.invalid(
+          () ->
+              String.format("Attestation data index must be 0 or 1 for Gloas, but was %s.", index));
+    }
+    return AttestationValidationResult.VALID;
+  }
+
+  @Override
+  public AttestationValidationResult validatePayloadStatus(
+      final AttestationData attestationData, final Optional<UInt64> maybeBlockSlot) {
+    // [REJECT] attestation.data.index == 0 if block.slot == attestation.data.slot.
+    return maybeBlockSlot
+        .map(
+            blockSlot -> {
+              if (blockSlot.equals(attestationData.getSlot())
+                  && !attestationData.getIndex().isZero()) {
+                return AttestationValidationResult.invalid(
+                    () ->
+                        String.format(
+                            "Payload status must be 0, but was %s.", attestationData.getIndex()));
+              } else {
+                return AttestationValidationResult.VALID;
+              }
+            })
+        .orElse(AttestationValidationResult.VALID);
   }
 }

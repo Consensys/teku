@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.NodeSlot;
@@ -52,6 +54,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 
 class BeaconChainMetricsTest {
+
   private static final UInt64 NODE_SLOT_VALUE = UInt64.valueOf(100L);
   private final Spec spec = TestSpecFactory.createMainnetPhase0();
   private final int slotsPerHistoricalRoot =
@@ -167,9 +170,31 @@ class BeaconChainMetricsTest {
   }
 
   @Test
-  void getPeerCount_shouldSupplyValue() {
-    when(eth2P2PNetwork.getPeerCount()).thenReturn(1);
-    assertThat(metricsSystem.getGauge(BEACON, "peer_count").getValue()).isEqualTo(1);
+  void getPeerCount_shouldSupplyValueIncludingConnectionDirectionLabel() {
+    final List<Eth2Peer> peers =
+        IntStream.range(0, 9)
+            .mapToObj(
+                i -> {
+                  final Eth2Peer peer = mock(Eth2Peer.class);
+                  if (i % 2 == 0) {
+                    // outbound
+                    when(peer.connectionInitiatedLocally()).thenReturn(true);
+                    when(peer.connectionInitiatedRemotely()).thenReturn(false);
+                  } else {
+                    // inbound
+                    when(peer.connectionInitiatedLocally()).thenReturn(false);
+                    when(peer.connectionInitiatedRemotely()).thenReturn(true);
+                  }
+                  return peer;
+                })
+            .toList();
+
+    when(eth2P2PNetwork.streamPeers()).thenAnswer(__ -> peers.stream());
+
+    assertThat(metricsSystem.getLabelledGauge(BEACON, "peer_count").getValue("inbound"))
+        .hasValue(4);
+    assertThat(metricsSystem.getLabelledGauge(BEACON, "peer_count").getValue("outbound"))
+        .hasValue(5);
   }
 
   @Test

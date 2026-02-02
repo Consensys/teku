@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,7 +18,6 @@ import static tech.pegasys.teku.infrastructure.time.SystemTimeProvider.SYSTEM_TI
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.MAX_EPOCHS_STORE_BLOBS;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import io.vertx.core.Vertx;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -53,7 +52,6 @@ import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
 public abstract class AbstractNode implements Node {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Vertx vertx = Vertx.vertx();
   private final ExecutorService threadPool =
       Executors.newCachedThreadPool(
           new ThreadFactoryBuilder().setDaemon(true).setNameFormat("events-%d").build());
@@ -254,7 +252,6 @@ public abstract class AbstractNode implements Node {
         .thenCompose(__ -> metricsEndpoint.stop())
         .orTimeout(5, TimeUnit.SECONDS)
         .handleException(error -> LOG.debug("Failed to stop metrics", error))
-        .thenRun(vertx::close)
         .join();
   }
 }

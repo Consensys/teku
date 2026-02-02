@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -30,13 +30,15 @@ import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
 public class ValidatorsUtil {
-  private final SpecConfig specConfig;
-  private final MiscHelpers miscHelpers;
+
+  protected final SpecConfig specConfig;
+  protected final MiscHelpers miscHelpers;
   private final BeaconStateAccessors beaconStateAccessors;
 
   public ValidatorsUtil(
@@ -120,9 +122,9 @@ public class ValidatorsUtil {
         epoch.compareTo(nextEpoch) <= 0, "get_committee_assignment: Epoch number too high");
 
     final UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
-    for (UInt64 slot = startSlot;
-        slot.isLessThan(startSlot.plus(specConfig.getSlotsPerEpoch()));
-        slot = slot.plus(UInt64.ONE)) {
+    final UInt64 endSlotExclusive = startSlot.plus(specConfig.getSlotsPerEpoch());
+
+    for (UInt64 slot = startSlot; slot.isLessThan(endSlotExclusive); slot = slot.plus(UInt64.ONE)) {
 
       for (UInt64 index = UInt64.ZERO;
           index.compareTo(committeeCountPerSlot) < 0;
@@ -134,6 +136,18 @@ public class ValidatorsUtil {
       }
     }
     return Optional.empty();
+  }
+
+  public Optional<UInt64> getPtcAssignment(
+      final BeaconState state, final UInt64 epoch, final int validatorIndex) {
+    // NO-OP in Phase0
+    return Optional.empty();
+  }
+
+  public Int2ObjectMap<UInt64> getValidatorIndexToPtcAssignmentMap(
+      final BeaconState state, final UInt64 epoch) {
+    // NO-OP in Phase0
+    return new Int2ObjectOpenHashMap<>();
   }
 
   public EpochAttestationSchedule getAttestationCommitteesAtEpoch(
@@ -164,8 +178,8 @@ public class ValidatorsUtil {
   }
 
   public UInt64 getPendingBalanceToWithdraw(final BeaconState state, final int validatorIndex) {
-    return state.toVersionElectra().orElseThrow().getPendingPartialWithdrawals().stream()
-        .filter(withdrawal -> withdrawal.getValidatorIndex() == validatorIndex)
+    return BeaconStateElectra.required(state).getPendingPartialWithdrawals().stream()
+        .filter(withdrawal -> withdrawal.getValidatorIndex().intValue() == validatorIndex)
         .map(PendingPartialWithdrawal::getAmount)
         .reduce(UInt64::plus)
         .orElse(UInt64.ZERO);

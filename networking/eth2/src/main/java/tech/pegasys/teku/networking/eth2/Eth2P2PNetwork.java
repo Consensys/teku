@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -61,4 +62,6 @@ public interface Eth2P2PNetwork extends P2PNetwork<Eth2Peer> {
   void publishVoluntaryExit(SignedVoluntaryExit signedVoluntaryExit);
 
   void publishSignedBlsToExecutionChange(SignedBlsToExecutionChange signedBlsToExecutionChange);
+
+  void publishPayloadAttestationMessage(PayloadAttestationMessage payloadAttestationMessage);
 }

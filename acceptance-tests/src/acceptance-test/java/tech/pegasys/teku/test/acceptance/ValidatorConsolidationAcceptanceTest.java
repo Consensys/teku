@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -40,7 +40,7 @@ public class ValidatorConsolidationAcceptanceTest extends AcceptanceTestBase {
   void consolidateValidator() throws Exception {
     final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
     final int genesisTime =
-        currentTime.intValue() + 30; // genesis in 30 seconds to give node time to start
+        currentTime.intValue() + 45; // genesis in 45 seconds to give node time to start
 
     final BesuNode besuNode = createBesuNode(genesisTime);
     besuNode.start();

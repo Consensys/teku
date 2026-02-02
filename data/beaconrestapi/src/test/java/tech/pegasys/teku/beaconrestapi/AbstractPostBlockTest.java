@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -35,8 +35,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandlerTest {
@@ -46,9 +44,7 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
   public abstract boolean isBlinded();
 
   protected void setupDeneb() {
-    spec = TestSpecFactory.createMinimalDeneb();
-    schemaDefinitionCache = new SchemaDefinitionCache(spec);
-    dataStructureUtil = new DataStructureUtil(spec);
+    setSpec(TestSpecFactory.createMinimalDeneb());
     setup();
   }
 

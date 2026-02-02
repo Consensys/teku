@@ -1,0 +1,40 @@
+{
+  "get" : {
+    "tags" : [ "Teku" ],
+    "operationId" : "getCustodyOverview",
+    "summary" : "Get Custody Overview",
+    "description" : "Retrieves current custody overview.",
+    "responses" : {
+      "200" : {
+        "description" : "Request successful",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetCustodyOverviewResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

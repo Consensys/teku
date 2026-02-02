@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -42,7 +42,7 @@ public class CapellaRemoteSignerAcceptanceTest extends AcceptanceTestBase {
   void capellaWithRemoteSigner() throws Exception {
     final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
     final int genesisTime =
-        currentTime.intValue() + 30; // genesis needs added time for nodes to startup
+        currentTime.intValue() + 45; // genesis needs added time for nodes to startup
 
     final Web3SignerNode web3SignerNode =
         createWeb3SignerNode(

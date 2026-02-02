@@ -1,4 +1,4 @@
-- name: AggregateAndProof
+- name: AggregateAndProof#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/AggregateAndProof.java
   spec: |
@@ -8,6 +8,11 @@
         aggregate: Attestation
         selection_proof: BLSSignature
     </spec>
+
+- name: AggregateAndProof#electra
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/AggregateAndProof.java
+  spec: |
     <spec container="AggregateAndProof" fork="electra" hash="a7f482d7">
     class AggregateAndProof(Container):
         aggregator_index: ValidatorIndex
@@ -16,7 +21,7 @@
         selection_proof: BLSSignature
     </spec>
 
-- name: AttestationPhase0
+- name: Attestation#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/Attestation.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/AttestationSchema.java
@@ -30,7 +35,7 @@
         signature: BLSSignature
     </spec>
 
-- name: AttestationElectra
+- name: Attestation#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/Attestation.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/AttestationSchema.java
@@ -47,7 +52,7 @@
         committee_bits: Bitvector[MAX_COMMITTEES_PER_SLOT]
     </spec>
 
-- name: AttestationData
+- name: AttestationData#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/AttestationData.java
   spec: |
@@ -60,7 +65,7 @@
         target: Checkpoint
     </spec>
 
-- name: AttesterSlashing
+- name: AttesterSlashing#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/AttesterSlashing.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/AttesterSlashingSchema.java
@@ -70,6 +75,12 @@
         attestation_1: IndexedAttestation
         attestation_2: IndexedAttestation
     </spec>
+
+- name: AttesterSlashing#electra
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/AttesterSlashing.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/AttesterSlashingSchema.java
+  spec: |
     <spec container="AttesterSlashing" fork="electra" hash="2b9f773d">
     class AttesterSlashing(Container):
         # [Modified in Electra:EIP7549]
@@ -78,7 +89,7 @@
         attestation_2: IndexedAttestation
     </spec>
 
-- name: BLSToExecutionChange
+- name: BLSToExecutionChange#capella
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/BlsToExecutionChange.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/BlsToExecutionChangeSchema.java
@@ -90,7 +101,7 @@
         to_execution_address: ExecutionAddress
     </spec>
 
-- name: BeaconBlock
+- name: BeaconBlock#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/BeaconBlock.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/BeaconBlockSchema.java
@@ -104,7 +115,7 @@
         body: BeaconBlockBody
     </spec>
 
-- name: BeaconBlockBodyPhase0
+- name: BeaconBlockBody#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/phase0/BeaconBlockBodyPhase0.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/phase0/BeaconBlockBodyBuilderPhase0.java
@@ -122,7 +133,7 @@
         voluntary_exits: List[SignedVoluntaryExit, MAX_VOLUNTARY_EXITS]
     </spec>
 
-- name: BeaconBlockBodyAltair
+- name: BeaconBlockBody#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/altair/BeaconBlockBodyAltair.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/altair/BeaconBlockBodyAltairImpl.java
@@ -144,7 +155,7 @@
         sync_aggregate: SyncAggregate
     </spec>
 
-- name: BeaconBlockBodyBellatrix
+- name: BeaconBlockBody#bellatrix
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/bellatrix/BeaconBlockBodyBellatrix.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/bellatrix/BeaconBlockBodyBellatrixImpl.java
@@ -167,7 +178,7 @@
         execution_payload: ExecutionPayload
     </spec>
 
-- name: BeaconBlockBodyCapella
+- name: BeaconBlockBody#capella
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/capella/BeaconBlockBodyCapella.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/capella/BeaconBlockBodyCapellaImpl.java
@@ -191,7 +202,7 @@
         bls_to_execution_changes: List[SignedBLSToExecutionChange, MAX_BLS_TO_EXECUTION_CHANGES]
     </spec>
 
-- name: BeaconBlockBodyDeneb
+- name: BeaconBlockBody#deneb
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/deneb/BeaconBlockBodyDeneb.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/deneb/BeaconBlockBodyDenebImpl.java
@@ -217,7 +228,7 @@
         blob_kzg_commitments: List[KZGCommitment, MAX_BLOB_COMMITMENTS_PER_BLOCK]
     </spec>
 
-- name: BeaconBlockBodyElectra
+- name: BeaconBlockBody#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/electra/BeaconBlockBodyElectra.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/electra/BeaconBlockBodyElectraImpl.java
@@ -245,7 +256,7 @@
         execution_requests: ExecutionRequests
     </spec>
 
-- name: BeaconBlockBodyGloas
+- name: BeaconBlockBody#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/gloas/BeaconBlockBodyGloas.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/gloas/BeaconBlockBodyGloasImpl.java
@@ -277,7 +288,7 @@
         payload_attestations: List[PayloadAttestation, MAX_PAYLOAD_ATTESTATIONS]
     </spec>
 
-- name: BeaconBlockHeader
+- name: BeaconBlockHeader#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/BeaconBlockHeader.java
   spec: |
@@ -290,7 +301,7 @@
         body_root: Root
     </spec>
 
-- name: BeaconStatePhase0
+- name: BeaconState#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/phase0/BeaconStatePhase0.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/phase0/BeaconStatePhase0Impl.java
@@ -323,7 +334,7 @@
         finalized_checkpoint: Checkpoint
     </spec>
 
-- name: BeaconStateAltair
+- name: BeaconState#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/altair/BeaconStateAltair.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/altair/BeaconStateAltairImpl.java
@@ -364,7 +375,7 @@
         next_sync_committee: SyncCommittee
     </spec>
 
-- name: BeaconStateBellatrix
+- name: BeaconState#bellatrix
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/bellatrix/BeaconStateBellatrix.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/bellatrix/BeaconStateBellatrixImpl.java
@@ -402,7 +413,7 @@
         latest_execution_payload_header: ExecutionPayloadHeader
     </spec>
 
-- name: BeaconStateCapella
+- name: BeaconState#capella
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/capella/BeaconStateCapella.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/capella/BeaconStateCapellaImpl.java
@@ -446,7 +457,7 @@
         historical_summaries: List[HistoricalSummary, HISTORICAL_ROOTS_LIMIT]
     </spec>
 
-- name: BeaconStateDeneb
+- name: BeaconState#deneb
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/deneb/BeaconStateDeneb.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/deneb/BeaconStateDenebImpl.java
@@ -487,7 +498,7 @@
         historical_summaries: List[HistoricalSummary, HISTORICAL_ROOTS_LIMIT]
     </spec>
 
-- name: BeaconStateElectra
+- name: BeaconState#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/electra/BeaconStateElectra.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/electra/BeaconStateElectraImpl.java
@@ -545,7 +556,7 @@
         pending_consolidations: List[PendingConsolidation, PENDING_CONSOLIDATIONS_LIMIT]
     </spec>
 
-- name: BeaconStateFulu
+- name: BeaconState#fulu
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/fulu/BeaconStateFulu.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/fulu/BeaconStateFuluImpl.java
@@ -596,7 +607,7 @@
         proposer_lookahead: Vector[ValidatorIndex, (MIN_SEED_LOOKAHEAD + 1) * SLOTS_PER_EPOCH]
     </spec>
 
-- name: BeaconStateGloas
+- name: BeaconState#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/gloas/BeaconStateGloas.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/gloas/BeaconStateGloasImpl.java
@@ -604,7 +615,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/gloas/MutableBeaconStateGloas.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/gloas/MutableBeaconStateGloasImpl.java
   spec: |
-    <spec container="BeaconState" fork="gloas" hash="5da9e0b9">
+    <spec container="BeaconState" fork="gloas" hash="c33b0db2">
     class BeaconState(Container):
         genesis_time: uint64
         genesis_validators_root: Root
@@ -648,6 +659,10 @@
         pending_consolidations: List[PendingConsolidation, PENDING_CONSOLIDATIONS_LIMIT]
         proposer_lookahead: Vector[ValidatorIndex, (MIN_SEED_LOOKAHEAD + 1) * SLOTS_PER_EPOCH]
         # [New in Gloas:EIP7732]
+        builders: List[Builder, BUILDER_REGISTRY_LIMIT]
+        # [New in Gloas:EIP7732]
+        next_withdrawal_builder_index: BuilderIndex
+        # [New in Gloas:EIP7732]
         execution_payload_availability: Bitvector[SLOTS_PER_HISTORICAL_ROOT]
         # [New in Gloas:EIP7732]
         builder_pending_payments: Vector[BuilderPendingPayment, 2 * SLOTS_PER_EPOCH]
@@ -656,10 +671,10 @@
         # [New in Gloas:EIP7732]
         latest_block_hash: Hash32
         # [New in Gloas:EIP7732]
-        latest_withdrawals_root: Root
+        payload_expected_withdrawals: List[Withdrawal, MAX_WITHDRAWALS_PER_PAYLOAD]
     </spec>
 
-- name: BlobIdentifier
+- name: BlobIdentifier#deneb
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/networking/libp2p/rpc/BlobIdentifier.java
   spec: |
@@ -669,7 +684,7 @@
         index: BlobIndex
     </spec>
 
-- name: BlobSidecar
+- name: BlobSidecar#deneb
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/deneb/BlobSidecar.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/deneb/BlobSidecarSchema.java
@@ -684,10 +699,24 @@
         kzg_commitment_inclusion_proof: Vector[Bytes32, KZG_COMMITMENT_INCLUSION_PROOF_DEPTH]
     </spec>
 
-- name: BuilderPendingPayment
+- name: Builder#gloas
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/BuilderPendingPayment.java
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/BuilderPendingPaymentSchema.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/gloas/Builder.java
+  spec: |
+    <spec container="Builder" fork="gloas" hash="ae177179">
+    class Builder(Container):
+        pubkey: BLSPubkey
+        version: uint8
+        execution_address: ExecutionAddress
+        balance: Gwei
+        deposit_epoch: Epoch
+        withdrawable_epoch: Epoch
+    </spec>
+
+- name: BuilderPendingPayment#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/gloas/BuilderPendingPayment.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/gloas/BuilderPendingPaymentSchema.java
   spec: |
     <spec container="BuilderPendingPayment" fork="gloas" hash="73cf1649">
     class BuilderPendingPayment(Container):
@@ -695,20 +724,19 @@
         withdrawal: BuilderPendingWithdrawal
     </spec>
 
-- name: BuilderPendingWithdrawal
+- name: BuilderPendingWithdrawal#gloas
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/BuilderPendingWithdrawal.java
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/BuilderPendingWithdrawalSchema.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/gloas/BuilderPendingWithdrawal.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/gloas/BuilderPendingWithdrawalSchema.java
   spec: |
-    <spec container="BuilderPendingWithdrawal" fork="gloas" hash="ead16c8b">
+    <spec container="BuilderPendingWithdrawal" fork="gloas" hash="0579f0ac">
     class BuilderPendingWithdrawal(Container):
         fee_recipient: ExecutionAddress
         amount: Gwei
-        builder_index: ValidatorIndex
-        withdrawable_epoch: Epoch
+        builder_index: BuilderIndex
     </spec>
 
-- name: Checkpoint
+- name: Checkpoint#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/Checkpoint.java
   spec: |
@@ -718,7 +746,7 @@
         root: Root
     </spec>
 
-- name: ConsolidationRequest
+- name: ConsolidationRequest#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ConsolidationRequest.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ConsolidationRequestSchema.java
@@ -730,7 +758,7 @@
         target_pubkey: BLSPubkey
     </spec>
 
-- name: ContributionAndProof
+- name: ContributionAndProof#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/altair/ContributionAndProof.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/altair/ContributionAndProofSchema.java
@@ -742,7 +770,7 @@
         selection_proof: BLSSignature
     </spec>
 
-- name: DataColumnSidecarFulu
+- name: DataColumnSidecar#fulu
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/fulu/DataColumnSidecarFulu.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/fulu/DataColumnSidecarSchemaFulu.java
@@ -757,7 +785,7 @@
         kzg_commitments_inclusion_proof: Vector[Bytes32, KZG_COMMITMENTS_INCLUSION_PROOF_DEPTH]
     </spec>
 
-- name: DataColumnSidecarGloas
+- name: DataColumnSidecar#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/gloas/DataColumnSidecarGloas.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/gloas/DataColumnSidecarSchemaGloas.java
@@ -778,7 +806,7 @@
         beacon_block_root: Root
     </spec>
 
-- name: DataColumnsByRootIdentifier
+- name: DataColumnsByRootIdentifier#fulu
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/networking/libp2p/rpc/DataColumnsByRootIdentifier.java
   spec: |
@@ -788,7 +816,7 @@
         columns: List[ColumnIndex, NUMBER_OF_COLUMNS]
     </spec>
 
-- name: Deposit
+- name: Deposit#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/Deposit.java
   spec: |
@@ -798,7 +826,7 @@
         data: DepositData
     </spec>
 
-- name: DepositData
+- name: DepositData#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/DepositData.java
   spec: |
@@ -810,7 +838,7 @@
         signature: BLSSignature
     </spec>
 
-- name: DepositMessage
+- name: DepositMessage#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/DepositMessage.java
   spec: |
@@ -821,7 +849,7 @@
         amount: Gwei
     </spec>
 
-- name: DepositRequest
+- name: DepositRequest#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/DepositRequest.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/DepositRequestSchema.java
@@ -835,7 +863,17 @@
         index: uint64
     </spec>
 
-- name: Eth1Data
+- name: Eth1Block#phase0
+  sources: []
+  spec: |
+    <spec container="Eth1Block" fork="phase0" hash="0a5c6b45">
+    class Eth1Block(Container):
+        timestamp: uint64
+        deposit_root: Root
+        deposit_count: uint64
+    </spec>
+
+- name: Eth1Data#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/Eth1Data.java
   spec: |
@@ -846,7 +884,7 @@
         block_hash: Hash32
     </spec>
 
-- name: ExecutionPayloadBellatrix
+- name: ExecutionPayload#bellatrix
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/bellatrix/ExecutionPayloadBellatrix.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/bellatrix/ExecutionPayloadBuilderBellatrix.java
@@ -870,7 +908,7 @@
         transactions: List[Transaction, MAX_TRANSACTIONS_PER_PAYLOAD]
     </spec>
 
-- name: ExecutionPayloadCapella
+- name: ExecutionPayload#capella
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/capella/ExecutionPayloadCapella.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/capella/ExecutionPayloadCapellaImpl.java
@@ -897,7 +935,7 @@
         withdrawals: List[Withdrawal, MAX_WITHDRAWALS_PER_PAYLOAD]
     </spec>
 
-- name: ExecutionPayloadDeneb
+- name: ExecutionPayload#deneb
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/deneb/ExecutionPayloadDeneb.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/deneb/ExecutionPayloadDenebImpl.java
@@ -927,41 +965,43 @@
         excess_blob_gas: uint64
     </spec>
 
-- name: ExecutionPayloadBid
+- name: ExecutionPayloadBid#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ExecutionPayloadBid.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ExecutionPayloadBidSchema.java
   spec: |
-    <spec container="ExecutionPayloadBid" fork="gloas" hash="175bc24b">
+    <spec container="ExecutionPayloadBid" fork="gloas" hash="aa71ba16">
     class ExecutionPayloadBid(Container):
         parent_block_hash: Hash32
         parent_block_root: Root
         block_hash: Hash32
+        prev_randao: Bytes32
         fee_recipient: ExecutionAddress
         gas_limit: uint64
-        builder_index: ValidatorIndex
+        builder_index: BuilderIndex
         slot: Slot
         value: Gwei
+        execution_payment: Gwei
         blob_kzg_commitments_root: Root
     </spec>
 
-- name: ExecutionPayloadEnvelope
+- name: ExecutionPayloadEnvelope#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ExecutionPayloadEnvelope.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ExecutionPayloadEnvelopeSchema.java
   spec: |
-    <spec container="ExecutionPayloadEnvelope" fork="gloas" hash="898d1db9">
+    <spec container="ExecutionPayloadEnvelope" fork="gloas" hash="cd522f7f">
     class ExecutionPayloadEnvelope(Container):
         payload: ExecutionPayload
         execution_requests: ExecutionRequests
-        builder_index: ValidatorIndex
+        builder_index: BuilderIndex
         beacon_block_root: Root
         slot: Slot
         blob_kzg_commitments: List[KZGCommitment, MAX_BLOB_COMMITMENTS_PER_BLOCK]
         state_root: Root
     </spec>
 
-- name: ExecutionPayloadHeaderBellatrix
+- name: ExecutionPayloadHeader#bellatrix
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/bellatrix/ExecutionPayloadHeaderBellatrix.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/bellatrix/ExecutionPayloadHeaderBuilderBellatrix.java
@@ -985,7 +1025,7 @@
         transactions_root: Root
     </spec>
 
-- name: ExecutionPayloadHeaderCapella
+- name: ExecutionPayloadHeader#capella
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/capella/ExecutionPayloadHeaderCapella.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/capella/ExecutionPayloadHeaderCapellaImpl.java
@@ -1012,7 +1052,7 @@
         withdrawals_root: Root
     </spec>
 
-- name: ExecutionPayloadHeaderDeneb
+- name: ExecutionPayloadHeader#deneb
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/deneb/ExecutionPayloadHeaderDeneb.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/deneb/ExecutionPayloadHeaderDenebImpl.java
@@ -1042,7 +1082,7 @@
         excess_blob_gas: uint64
     </spec>
 
-- name: ExecutionRequests
+- name: ExecutionRequests#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ExecutionRequests.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ExecutionRequestsBuilderElectra.java
@@ -1058,7 +1098,7 @@
         consolidations: List[ConsolidationRequest, MAX_CONSOLIDATION_REQUESTS_PER_PAYLOAD]
     </spec>
 
-- name: Fork
+- name: Fork#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/Fork.java
   spec: |
@@ -1069,7 +1109,16 @@
         epoch: Epoch
     </spec>
 
-- name: ForkData
+- name: ForkChoiceNode#gloas
+  sources: []
+  spec: |
+    <spec container="ForkChoiceNode" fork="gloas" hash="755a4b34">
+    class ForkChoiceNode(Container):
+        root: Root
+        payload_status: PayloadStatus  # One of PAYLOAD_STATUS_* values
+    </spec>
+
+- name: ForkData#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/ForkData.java
   spec: |
@@ -1079,7 +1128,7 @@
         genesis_validators_root: Root
     </spec>
 
-- name: HistoricalBatch
+- name: HistoricalBatch#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/HistoricalBatch.java
   spec: |
@@ -1089,7 +1138,7 @@
         state_roots: Vector[Root, SLOTS_PER_HISTORICAL_ROOT]
     </spec>
 
-- name: HistoricalSummary
+- name: HistoricalSummary#capella
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/capella/HistoricalSummary.java
   spec: |
@@ -1099,7 +1148,7 @@
         state_summary_root: Root
     </spec>
 
-- name: IndexedAttestation
+- name: IndexedAttestation#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/IndexedAttestation.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/IndexedAttestationSchema.java
@@ -1112,7 +1161,7 @@
         signature: BLSSignature
     </spec>
 
-- name: IndexedAttestationElectra
+- name: IndexedAttestation#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/IndexedAttestation.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/IndexedAttestationSchema.java
@@ -1126,7 +1175,7 @@
         signature: BLSSignature
     </spec>
 
-- name: IndexedPayloadAttestation
+- name: IndexedPayloadAttestation#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/IndexedPayloadAttestation.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/IndexedPayloadAttestationSchema.java
@@ -1138,7 +1187,7 @@
         signature: BLSSignature
     </spec>
 
-- name: LightClientBootstrap
+- name: LightClientBootstrap#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientBootstrap.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientBootstrapSchema.java
@@ -1152,7 +1201,37 @@
         current_sync_committee_branch: CurrentSyncCommitteeBranch
     </spec>
 
-- name: LightClientHeader
+- name: LightClientBootstrap#capella
+  sources: []
+  spec: |
+    <spec container="LightClientBootstrap" fork="capella" style="diff" hash="85f4f5fe">
+
+    </spec>
+
+- name: LightClientFinalityUpdate#altair
+  sources: []
+  spec: |
+    <spec container="LightClientFinalityUpdate" fork="altair" hash="d392e9f3">
+    class LightClientFinalityUpdate(Container):
+        # Header attested to by the sync committee
+        attested_header: LightClientHeader
+        # Finalized header corresponding to `attested_header.beacon.state_root`
+        finalized_header: LightClientHeader
+        finality_branch: FinalityBranch
+        # Sync committee aggregate signature
+        sync_aggregate: SyncAggregate
+        # Slot at which the aggregate signature was created (untrusted)
+        signature_slot: Slot
+    </spec>
+
+- name: LightClientFinalityUpdate#capella
+  sources: []
+  spec: |
+    <spec container="LightClientFinalityUpdate" fork="capella" style="diff" hash="9d2b55dd">
+
+    </spec>
+
+- name: LightClientHeader#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientHeader.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientHeaderSchema.java
@@ -1162,7 +1241,40 @@
         beacon: BeaconBlockHeader
     </spec>
 
-- name: LightClientUpdate
+- name: LightClientHeader#capella
+  sources: []
+  spec: |
+    <spec container="LightClientHeader" fork="capella" style="diff" hash="b625e61e">
+    --- altair
+    +++ capella
+    @@ -1,2 +1,4 @@
+     class LightClientHeader(Container):
+         beacon: BeaconBlockHeader
+    +    execution: ExecutionPayloadHeader
+    +    execution_branch: ExecutionBranch
+    </spec>
+
+- name: LightClientOptimisticUpdate#altair
+  sources: []
+  spec: |
+    <spec container="LightClientOptimisticUpdate" fork="altair" hash="0818d65f">
+    class LightClientOptimisticUpdate(Container):
+        # Header attested to by the sync committee
+        attested_header: LightClientHeader
+        # Sync committee aggregate signature
+        sync_aggregate: SyncAggregate
+        # Slot at which the aggregate signature was created (untrusted)
+        signature_slot: Slot
+    </spec>
+
+- name: LightClientOptimisticUpdate#capella
+  sources: []
+  spec: |
+    <spec container="LightClientOptimisticUpdate" fork="capella" style="diff" hash="bdce7b1d">
+
+    </spec>
+
+- name: LightClientUpdate#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientUpdate.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientUpdateSchema.java
@@ -1183,7 +1295,14 @@
         signature_slot: Slot
     </spec>
 
-- name: MatrixEntry
+- name: LightClientUpdate#capella
+  sources: []
+  spec: |
+    <spec container="LightClientUpdate" fork="capella" style="diff" hash="8d215165">
+
+    </spec>
+
+- name: MatrixEntry#fulu
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/fulu/MatrixEntry.java
   spec: |
@@ -1195,7 +1314,7 @@
         row_index: RowIndex
     </spec>
 
-- name: PayloadAttestation
+- name: PayloadAttestation#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/PayloadAttestation.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/PayloadAttestationSchema.java
@@ -1207,7 +1326,7 @@
         signature: BLSSignature
     </spec>
 
-- name: PayloadAttestationData
+- name: PayloadAttestationData#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/PayloadAttestationData.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/PayloadAttestationDataSchema.java
@@ -1220,7 +1339,7 @@
         blob_data_available: boolean
     </spec>
 
-- name: PayloadAttestationMessage
+- name: PayloadAttestationMessage#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/PayloadAttestationMessage.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/PayloadAttestationMessageSchema.java
@@ -1232,7 +1351,7 @@
         signature: BLSSignature
     </spec>
 
-- name: PendingAttestation
+- name: PendingAttestation#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/PendingAttestation.java
   spec: |
@@ -1244,7 +1363,7 @@
         proposer_index: ValidatorIndex
     </spec>
 
-- name: PendingConsolidation
+- name: PendingConsolidation#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/electra/PendingConsolidation.java
   spec: |
@@ -1254,7 +1373,7 @@
         target_index: ValidatorIndex
     </spec>
 
-- name: PendingDeposit
+- name: PendingDeposit#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/electra/PendingDeposit.java
   spec: |
@@ -1267,7 +1386,7 @@
         slot: Slot
     </spec>
 
-- name: PendingPartialWithdrawal
+- name: PendingPartialWithdrawal#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/electra/PendingPartialWithdrawal.java
   spec: |
@@ -1278,7 +1397,7 @@
         withdrawable_epoch: Epoch
     </spec>
 
-- name: PowBlock
+- name: PowBlock#bellatrix
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/PowBlock.java
   spec: |
@@ -1289,7 +1408,18 @@
         total_difficulty: uint256
     </spec>
 
-- name: ProposerSlashing
+- name: ProposerPreferences#gloas
+  sources: []
+  spec: |
+    <spec container="ProposerPreferences" fork="gloas" hash="2a38b149">
+    class ProposerPreferences(Container):
+        proposal_slot: Slot
+        validator_index: ValidatorIndex
+        fee_recipient: ExecutionAddress
+        gas_limit: uint64
+    </spec>
+
+- name: ProposerSlashing#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/ProposerSlashing.java
   spec: |
@@ -1299,7 +1429,7 @@
         signed_header_2: SignedBeaconBlockHeader
     </spec>
 
-- name: SignedAggregateAndProof
+- name: SignedAggregateAndProof#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/SignedAggregateAndProof.java
   spec: |
@@ -1308,6 +1438,11 @@
         message: AggregateAndProof
         signature: BLSSignature
     </spec>
+
+- name: SignedAggregateAndProof#electra
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/SignedAggregateAndProof.java
+  spec: |
     <spec container="SignedAggregateAndProof" fork="electra" hash="7e784e12">
     class SignedAggregateAndProof(Container):
         # [Modified in Electra:EIP7549]
@@ -1315,7 +1450,7 @@
         signature: BLSSignature
     </spec>
 
-- name: SignedBLSToExecutionChange
+- name: SignedBLSToExecutionChange#capella
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/SignedBlsToExecutionChange.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/SignedBlsToExecutionChangeSchema.java
@@ -1326,7 +1461,7 @@
         signature: BLSSignature
     </spec>
 
-- name: SignedBeaconBlock
+- name: SignedBeaconBlock#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/SignedBeaconBlock.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/SignedBeaconBlockSchema.java
@@ -1337,7 +1472,7 @@
         signature: BLSSignature
     </spec>
 
-- name: SignedBeaconBlockHeader
+- name: SignedBeaconBlockHeader#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/SignedBeaconBlockHeader.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/SignedBeaconBlockHeaderSchema.java
@@ -1348,7 +1483,7 @@
         signature: BLSSignature
     </spec>
 
-- name: SignedContributionAndProof
+- name: SignedContributionAndProof#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/altair/SignedContributionAndProof.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/altair/SignedContributionAndProofSchema.java
@@ -1359,7 +1494,7 @@
         signature: BLSSignature
     </spec>
 
-- name: SignedExecutionPayloadBid
+- name: SignedExecutionPayloadBid#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/SignedExecutionPayloadBid.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/SignedExecutionPayloadBidSchema.java
@@ -1370,7 +1505,7 @@
         signature: BLSSignature
     </spec>
 
-- name: SignedExecutionPayloadEnvelope
+- name: SignedExecutionPayloadEnvelope#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/SignedExecutionPayloadEnvelope.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/SignedExecutionPayloadEnvelopeSchema.java
@@ -1381,7 +1516,16 @@
         signature: BLSSignature
     </spec>
 
-- name: SignedVoluntaryExit
+- name: SignedProposerPreferences#gloas
+  sources: []
+  spec: |
+    <spec container="SignedProposerPreferences" fork="gloas" hash="2142774c">
+    class SignedProposerPreferences(Container):
+        message: ProposerPreferences
+        signature: BLSSignature
+    </spec>
+
+- name: SignedVoluntaryExit#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/SignedVoluntaryExit.java
   spec: |
@@ -1391,7 +1535,7 @@
         signature: BLSSignature
     </spec>
 
-- name: SigningData
+- name: SigningData#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/SigningData.java
   spec: |
@@ -1401,7 +1545,7 @@
         domain: Domain
     </spec>
 
-- name: SingleAttestation
+- name: SingleAttestation#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/SingleAttestation.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/SingleAttestationSchema.java
@@ -1414,7 +1558,7 @@
         signature: BLSSignature
     </spec>
 
-- name: SyncAggregate
+- name: SyncAggregate#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/altair/SyncAggregate.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/altair/SyncAggregateSchema.java
@@ -1425,7 +1569,7 @@
         sync_committee_signature: BLSSignature
     </spec>
 
-- name: SyncAggregatorSelectionData
+- name: SyncAggregatorSelectionData#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/altair/SyncAggregatorSelectionData.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/altair/SyncAggregatorSelectionDataSchema.java
@@ -1436,7 +1580,7 @@
         subcommittee_index: uint64
     </spec>
 
-- name: SyncCommittee
+- name: SyncCommittee#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/SyncCommittee.java
   spec: |
@@ -1446,7 +1590,7 @@
         aggregate_pubkey: BLSPubkey
     </spec>
 
-- name: SyncCommitteeContribution
+- name: SyncCommitteeContribution#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/altair/SyncCommitteeContribution.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/altair/SyncCommitteeContributionSchema.java
@@ -1460,7 +1604,7 @@
         signature: BLSSignature
     </spec>
 
-- name: SyncCommitteeMessage
+- name: SyncCommitteeMessage#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/altair/SyncCommitteeMessage.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/altair/SyncCommitteeMessageSchema.java
@@ -1473,7 +1617,7 @@
         signature: BLSSignature
     </spec>
 
-- name: Validator
+- name: Validator#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/Validator.java
   spec: |
@@ -1489,7 +1633,7 @@
         withdrawable_epoch: Epoch
     </spec>
 
-- name: VoluntaryExit
+- name: VoluntaryExit#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/VoluntaryExit.java
   spec: |
@@ -1499,7 +1643,7 @@
         validator_index: ValidatorIndex
     </spec>
 
-- name: Withdrawal
+- name: Withdrawal#capella
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/capella/Withdrawal.java
   spec: |
@@ -1511,7 +1655,7 @@
         amount: Gwei
     </spec>
 
-- name: WithdrawalRequest
+- name: WithdrawalRequest#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/WithdrawalRequest.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/WithdrawalRequestSchema.java

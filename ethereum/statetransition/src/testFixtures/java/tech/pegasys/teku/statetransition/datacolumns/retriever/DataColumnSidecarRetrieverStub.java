@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
 public class DataColumnSidecarRetrieverStub implements DataColumnSidecarRetriever {
   private static final Logger LOG = LogManager.getLogger();
@@ -62,7 +63,8 @@ public class DataColumnSidecarRetrieverStub implements DataColumnSidecarRetrieve
   }
 
   @Override
-  public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {
+  public void onNewValidatedSidecar(
+      final DataColumnSidecar sidecar, final RemoteOrigin remoteOrigin) {
     final DataColumnSlotAndIdentifier columnId =
         DataColumnSlotAndIdentifier.fromDataColumn(sidecar);
     LOG.debug("onNewValidatedSidecar {}", columnId);

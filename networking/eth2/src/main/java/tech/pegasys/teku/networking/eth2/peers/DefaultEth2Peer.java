@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,12 +13,14 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
+import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Suppliers;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -104,9 +106,9 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       Subscribers.create(true);
   private final AtomicInteger outstandingRequests = new AtomicInteger(0);
   private final AtomicInteger unansweredPings = new AtomicInteger();
-  private final RateTracker blockRequestTracker;
-  private final RateTracker blobSidecarsRequestTracker;
-  private final RateTracker dataColumnSidecarsRequestTracker;
+  // used to rate limit the number of objects returned to a peer
+  private final EnumMap<RequestObject, RateTracker> requestObjectsTrackers;
+  // used to rate limit the number of requests from a peer
   private final RateTracker requestTracker;
   private final MetricsSystem metricsSystem;
   private final TimeProvider timeProvider;
@@ -133,9 +135,10 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final MetadataMessagesFactory metadataMessagesFactory,
       final PeerChainValidator peerChainValidator,
       final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator,
-      final RateTracker blockRequestTracker,
+      final RateTracker blocksRequestTracker,
       final RateTracker blobSidecarsRequestTracker,
       final RateTracker dataColumnSidecarsRequestTracker,
+      final RateTracker executionPayloadEnvelopesRequestTracker,
       final RateTracker requestTracker,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider) {
@@ -147,9 +150,15 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     this.metadataMessagesFactory = metadataMessagesFactory;
     this.peerChainValidator = peerChainValidator;
     this.dataColumnSidecarSignatureValidator = dataColumnSidecarSignatureValidator;
-    this.blockRequestTracker = blockRequestTracker;
-    this.blobSidecarsRequestTracker = blobSidecarsRequestTracker;
-    this.dataColumnSidecarsRequestTracker = dataColumnSidecarsRequestTracker;
+    requestObjectsTrackers = new EnumMap<>(RequestObject.class);
+    requestObjectsTrackers.put(RequestObject.BLOCK, blocksRequestTracker);
+    requestObjectsTrackers.put(RequestObject.BLOB_SIDECAR, blobSidecarsRequestTracker);
+    requestObjectsTrackers.put(RequestObject.DATA_COLUMN_SIDECAR, dataColumnSidecarsRequestTracker);
+    requestObjectsTrackers.put(
+        RequestObject.EXECUTION_PAYLOAD_ENVELOPE, executionPayloadEnvelopesRequestTracker);
+    checkState(
+        requestObjectsTrackers.size() == RequestObject.values().length,
+        "NOT all request objects trackers have been configured");
     this.requestTracker = requestTracker;
     this.metricsSystem = metricsSystem;
     this.timeProvider = timeProvider;
@@ -566,48 +575,26 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
-  public Optional<RequestKey> approveBlocksRequest(
-      final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
-    return getRequestKeyIfAvailable("blocks", blockRequestTracker, blocksCount, callback);
-  }
-
-  @Override
-  public void adjustBlocksRequest(final RequestKey requestKey, final long objectCount) {
-    adjustObjectsRequest(blockRequestTracker, requestKey, objectCount);
-  }
-
-  @Override
-  public Optional<RequestKey> approveBlobSidecarsRequest(
-      final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
+  public <T> Optional<RequestKey> approveObjectsRequest(
+      final RequestObject requestObject,
+      final ResponseCallback<T> callback,
+      final long objectsCount) {
     return getRequestKeyIfAvailable(
-        "blob sidecars", blobSidecarsRequestTracker, blobSidecarsCount, callback);
+        requestObject, requestObjectsTrackers.get(requestObject), objectsCount, callback);
   }
 
   @Override
-  public void adjustBlobSidecarsRequest(
-      final RequestKey blobSidecarsRequest, final long returnedBlobSidecarsCount) {
+  public void adjustObjectsRequest(
+      final RequestObject requestObject,
+      final RequestKey requestKey,
+      final long returnedObjectsCount) {
     adjustObjectsRequest(
-        blobSidecarsRequestTracker, blobSidecarsRequest, returnedBlobSidecarsCount);
+        requestObjectsTrackers.get(requestObject), requestKey, returnedObjectsCount);
   }
 
   @Override
   public long getAvailableDataColumnSidecarsRequestCount() {
-    return dataColumnSidecarsRequestTracker.getAvailableObjectCount();
-  }
-
-  @Override
-  public Optional<RequestKey> approveDataColumnSidecarsRequest(
-      final ResponseCallback<DataColumnSidecar> callback, final long dataColumnSidecarsCount) {
-    return getRequestKeyIfAvailable(
-        "data column sidecars",
-        dataColumnSidecarsRequestTracker,
-        dataColumnSidecarsCount,
-        callback);
-  }
-
-  @Override
-  public void adjustDataColumnSidecarsRequest(final RequestKey requestKey, final long objectCount) {
-    adjustObjectsRequest(dataColumnSidecarsRequestTracker, requestKey, objectCount);
+    return requestObjectsTrackers.get(RequestObject.DATA_COLUMN_SIDECAR).getAvailableObjectCount();
   }
 
   @Override
@@ -651,13 +638,14 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   private <T> Optional<RequestKey> getRequestKeyIfAvailable(
-      final String requestType,
-      final RateTracker requestTracker,
+      final RequestObject requestObject,
+      final RateTracker requestObjectsTracker,
       final long objectsCount,
       final ResponseCallback<T> callback) {
-    final Optional<RequestKey> maybeRequestKey = requestTracker.generateRequestKey(objectsCount);
+    final Optional<RequestKey> maybeRequestKey =
+        requestObjectsTracker.generateRequestKey(objectsCount);
     if (maybeRequestKey.isEmpty()) {
-      LOG.debug("Peer {} disconnected due to {} rate limits", getId(), requestType);
+      LOG.debug("Peer {} disconnected due to {} rate limits", getId(), requestObject);
       callback.completeWithErrorResponse(
           new RpcException(INVALID_REQUEST_CODE, "Peer has been rate limited"));
       disconnectCleanly(DisconnectReason.RATE_LIMITING).finishStackTrace();

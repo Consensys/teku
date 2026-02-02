@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -73,6 +73,12 @@ public abstract class AbstractMigratedBeaconHandlerTest {
         UInt64.valueOf(currentSlot),
         UInt64.valueOf(startSlot),
         UInt64.valueOf(highestSlot));
+  }
+
+  protected void setSpec(final Spec spec) {
+    this.spec = spec;
+    this.dataStructureUtil = new DataStructureUtil(this.spec);
+    schemaDefinitionCache = new SchemaDefinitionCache(this.spec);
   }
 
   protected <T> ObjectAndMetaData<T> withMetaData(final T value) {

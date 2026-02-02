@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -78,6 +78,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.epbs.ExecutionPayloadAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -113,6 +115,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProces
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil.ExecutionPayloadProposalData;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
@@ -121,6 +124,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
@@ -586,6 +590,13 @@ public class Spec {
         .computeSigningRoot(proof, domain);
   }
 
+  public Bytes computeSigningRoot(
+      final ExecutionPayloadEnvelope executionPayloadEnvelope, final Bytes32 domain) {
+    return atSlot(executionPayloadEnvelope.getSlot())
+        .miscHelpers()
+        .computeSigningRoot(executionPayloadEnvelope, domain);
+  }
+
   public Bytes computeSigningRoot(final UInt64 slot, final Bytes32 domain) {
     return atSlot(slot).miscHelpers().computeSigningRoot(slot, domain);
   }
@@ -910,6 +921,22 @@ public class Spec {
             blockProductionPerformance);
   }
 
+  // Execution Payload Proposal
+  public SafeFuture<ExecutionPayloadAndState> createNewUnsignedExecutionPayload(
+      final UInt64 proposalSlot,
+      final UInt64 builderIndex,
+      final BeaconBlockAndState blockAndState,
+      final SafeFuture<ExecutionPayloadProposalData> executionPayloadProposalDataFuture) {
+    return atSlot(proposalSlot)
+        .getExecutionPayloadProposalUtil()
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Attempting to use execution payload proposal util when spec does not have execution payload proposal util"))
+        .createNewUnsignedExecutionPayload(
+            proposalSlot, builderIndex, blockAndState, executionPayloadProposalDataFuture);
+  }
+
   // Blind Block Utils
 
   public SafeFuture<Optional<SignedBeaconBlock>> unblindSignedBeaconBlock(
@@ -1092,6 +1119,33 @@ public class Spec {
     return atEpoch(epoch)
         .getValidatorsUtil()
         .getValidatorIndexToCommitteeAssignmentMap(state, epoch);
+  }
+
+  // get_ptc_assignment
+  public Optional<UInt64> getPtcAssignment(
+      final BeaconState state, final UInt64 epoch, final int validatorIndex) {
+    return atEpoch(epoch).getValidatorsUtil().getPtcAssignment(state, epoch, validatorIndex);
+  }
+
+  public Int2ObjectMap<UInt64> getValidatorIndexToPtcAssignmentMap(
+      final BeaconState state, final UInt64 epoch) {
+    return atEpoch(epoch).getValidatorsUtil().getValidatorIndexToPtcAssignmentMap(state, epoch);
+  }
+
+  // get_ptc
+  public IntList getPtc(final BeaconState state, final UInt64 slot) {
+    return BeaconStateAccessorsGloas.required(atSlot(slot).beaconStateAccessors())
+        .getPtc(state, slot);
+  }
+
+  // Builder Utils
+  public Optional<BLSPublicKey> getBuilderPubKey(
+      final BeaconState state, final UInt64 builderIndex) {
+    return atState(state).beaconStateAccessors().getBuilderPubKey(state, builderIndex);
+  }
+
+  public Optional<Integer> getBuilderIndex(final BeaconState state, final BLSPublicKey publicKey) {
+    return atState(state).beaconStateAccessors().getBuilderIndex(state, publicKey);
   }
 
   // Attestation helpers
