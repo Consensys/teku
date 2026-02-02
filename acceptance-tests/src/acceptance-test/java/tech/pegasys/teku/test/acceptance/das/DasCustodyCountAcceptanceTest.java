@@ -18,11 +18,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.common.io.Resources;
 import java.io.File;
 import java.net.URL;
-import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -97,8 +95,7 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
   }
 
   @Test
-  void shouldSetCorrectCustodyAndSamplingCount_onFullNodeAfterRestart()
-      throws Exception {
+  void shouldSetCorrectCustodyAndSamplingCount_onFullNodeAfterRestart() throws Exception {
     final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
     final int genesisTime =
         currentTime.intValue() + 30; // genesis in 30 seconds to give node time to start
@@ -150,8 +147,7 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
   }
 
   @Test
-  void shouldSetCorrectCustodyAndSamplingCount_onSuperNodeAfterRestart()
-      throws Exception {
+  void shouldSetCorrectCustodyAndSamplingCount_onSuperNodeAfterRestart() throws Exception {
     final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
     final int genesisTime =
         currentTime.intValue() + 30; // genesis in 30 seconds to give node time to start
