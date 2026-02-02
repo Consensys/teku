@@ -43,8 +43,7 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   @Test
-  void shouldSetCorrectCustodyAndSamplingCount_onValidatorNodeAfterRestart(
-      @TempDir final Path tempDir) throws Exception {
+  void shouldSetCorrectCustodyAndSamplingCount_onValidatorNodeAfterRestart() throws Exception {
     final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
     final int genesisTime =
         currentTime.intValue() + 30; // genesis in 30 seconds to give node time to start
@@ -98,7 +97,7 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
   }
 
   @Test
-  void shouldSetCorrectCustodyAndSamplingCount_onFullNodeAfterRestart(@TempDir final Path tempDir)
+  void shouldSetCorrectCustodyAndSamplingCount_onFullNodeAfterRestart()
       throws Exception {
     final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
     final int genesisTime =
@@ -151,7 +150,7 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
   }
 
   @Test
-  void shouldSetCorrectCustodyAndSamplingCount_onSuperNodeAfterRestart(@TempDir final Path tempDir)
+  void shouldSetCorrectCustodyAndSamplingCount_onSuperNodeAfterRestart()
       throws Exception {
     final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
     final int genesisTime =
