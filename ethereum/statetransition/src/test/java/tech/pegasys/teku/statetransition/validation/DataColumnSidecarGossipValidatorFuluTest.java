@@ -42,7 +42,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidec
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationResult;
@@ -153,8 +152,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
     when(mockSpec.getDataColumnSidecarUtil(any(UInt64.class))).thenReturn(mockValidationHelper);
 
     // Make structure validation fail
-    when(mockValidationHelper.verifyDataColumnSidecarStructure(
-            any(MiscHelpers.class), any(DataColumnSidecar.class)))
+    when(mockValidationHelper.verifyDataColumnSidecarStructure(any(DataColumnSidecar.class)))
         .thenReturn(false);
 
     // Create a validator with the mocked spec
@@ -394,8 +392,8 @@ public class DataColumnSidecarGossipValidatorFuluTest
               return Optional.of(
                   DataColumnSidecarFulu.required(sidecar).getSignedBlockHeader().getMessage());
             });
-    when(validationHelper.verifyDataColumnSidecarStructure(any(), any())).thenReturn(true);
-    when(validationHelper.verifyDataColumnSidecarKzgProofs(any(), any())).thenReturn(true);
+    when(validationHelper.verifyDataColumnSidecarStructure(any())).thenReturn(true);
+    when(validationHelper.verifyDataColumnSidecarKzgProofs(any())).thenReturn(true);
     when(validationHelper.validateBlockSlot(any(), any()))
         .thenReturn(DataColumnSidecarValidationResult.valid());
     when(validationHelper.validateParentBlock(any(), any(), any(), any()))
@@ -425,7 +423,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
               return new FuluTrackingKey(
                   header.getSlot(), header.getProposerIndex(), sidecar.getIndex());
             });
-    when(validationHelper.verifyInclusionProof(any(), any(), any())).thenReturn(true);
+    when(validationHelper.verifyInclusionProof(any(), any())).thenReturn(true);
     when(validationHelper.getSignatureVerificationData(any(), any(), any()))
         .thenAnswer(
             invocation -> {

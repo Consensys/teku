@@ -232,7 +232,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
         new GloasStateUpgrade(config, schemaDefinitions, beaconStateAccessors);
 
     // Data column sidecar util
-    final DataColumnSidecarUtil dataColumnSidecarUtil = new DataColumnSidecarUtilGloas();
+    final DataColumnSidecarUtil dataColumnSidecarUtil = new DataColumnSidecarUtilGloas(miscHelpers);
 
     return new SpecLogicGloas(
         predicates,

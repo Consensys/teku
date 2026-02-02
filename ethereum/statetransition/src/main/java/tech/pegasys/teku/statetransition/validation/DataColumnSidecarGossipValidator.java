@@ -42,8 +42,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.SpecLogic;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarTrackingKey;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
@@ -202,20 +200,17 @@ public class DataColumnSidecarGossipValidator {
 
   public SafeFuture<InternalValidationResult> validate(final DataColumnSidecar dataColumnSidecar) {
     final UInt64 slot = dataColumnSidecar.getSlot();
-    final SpecLogic specLogic = spec.atSlot(slot);
     final DataColumnSidecarUtil dataColumnSidecarUtil = spec.getDataColumnSidecarUtil(slot);
     final Optional<BeaconBlockHeader> maybeBlockHeader =
         dataColumnSidecarUtil.getBlockHeader(dataColumnSidecar);
 
     totalDataColumnSidecarsProcessingRequestsCounter.inc();
 
-    return validateDataColumnSidecar(
-        dataColumnSidecar, specLogic.miscHelpers(), dataColumnSidecarUtil, maybeBlockHeader);
+    return validateDataColumnSidecar(dataColumnSidecar, dataColumnSidecarUtil, maybeBlockHeader);
   }
 
   private SafeFuture<InternalValidationResult> validateDataColumnSidecar(
       final DataColumnSidecar dataColumnSidecar,
-      final MiscHelpers miscHelpers,
       final DataColumnSidecarUtil dataColumnSidecarUtil,
       final Optional<BeaconBlockHeader> maybeBlockHeader) {
 
@@ -224,7 +219,7 @@ public class DataColumnSidecarGossipValidator {
      *
      * Common to both Fulu and Gloas.
      */
-    if (!dataColumnSidecarUtil.verifyDataColumnSidecarStructure(miscHelpers, dataColumnSidecar)) {
+    if (!dataColumnSidecarUtil.verifyDataColumnSidecarStructure(dataColumnSidecar)) {
       return SafeFuture.completedFuture(reject("DataColumnSidecar has invalid structure"));
     }
 
@@ -315,7 +310,7 @@ public class DataColumnSidecarGossipValidator {
 
     if (maybeBlockHeader.isPresent()) {
       return validateWithBlockHeader(
-          dataColumnSidecar, miscHelpers, dataColumnSidecarUtil, maybeBlockHeader.get());
+          dataColumnSidecar, dataColumnSidecarUtil, maybeBlockHeader.get());
     }
 
     // Perform async block validation (fork-specific)
@@ -344,14 +339,12 @@ public class DataColumnSidecarGossipValidator {
                 }
               }
               // Validation passed, continue with KZG proofs
-              return validateKzgProofsAndFinalize(
-                  dataColumnSidecar, miscHelpers, dataColumnSidecarUtil);
+              return validateKzgProofsAndFinalize(dataColumnSidecar, dataColumnSidecarUtil);
             });
   }
 
   private SafeFuture<InternalValidationResult> validateWithBlockHeader(
       final DataColumnSidecar dataColumnSidecar,
-      final MiscHelpers miscHelpers,
       final DataColumnSidecarUtil dataColumnSidecarUtil,
       final BeaconBlockHeader blockHeader) {
 
@@ -359,8 +352,7 @@ public class DataColumnSidecarGossipValidator {
     final Bytes32 headerHash =
         DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader().hashTreeRoot();
     if (validSignedBlockHeaders.contains(headerHash)) {
-      return validateWithKnownValidHeader(
-          miscHelpers, dataColumnSidecarUtil, dataColumnSidecar, blockHeader);
+      return validateWithKnownValidHeader(dataColumnSidecarUtil, dataColumnSidecar, blockHeader);
     }
 
     /*
@@ -391,14 +383,14 @@ public class DataColumnSidecarGossipValidator {
 
     // Verify inclusion proof
     final Optional<InternalValidationResult> inclusionProofResult =
-        verifyInclusionProofWithMetrics(dataColumnSidecarUtil, miscHelpers, dataColumnSidecar);
+        verifyInclusionProofWithMetrics(dataColumnSidecarUtil, dataColumnSidecar);
     if (inclusionProofResult.isPresent()) {
       return SafeFuture.completedFuture(inclusionProofResult.get());
     }
 
     // Verify KZG proofs
     final Optional<InternalValidationResult> kzgProofResult =
-        verifyKzgProofsWithMetrics(dataColumnSidecarUtil, miscHelpers, dataColumnSidecar);
+        verifyKzgProofsWithMetrics(dataColumnSidecarUtil, dataColumnSidecar);
     if (kzgProofResult.isPresent()) {
       return SafeFuture.completedFuture(kzgProofResult.get());
     }
@@ -466,7 +458,6 @@ public class DataColumnSidecarGossipValidator {
 
   private SafeFuture<InternalValidationResult> validateKzgProofsAndFinalize(
       final DataColumnSidecar dataColumnSidecar,
-      final MiscHelpers miscHelpers,
       final DataColumnSidecarUtil dataColumnSidecarUtil) {
 
     /*
@@ -474,7 +465,7 @@ public class DataColumnSidecarGossipValidator {
      */
     try (MetricsHistogram.Timer ignored =
         dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-      if (!dataColumnSidecarUtil.verifyDataColumnSidecarKzgProofs(miscHelpers, dataColumnSidecar)) {
+      if (!dataColumnSidecarUtil.verifyDataColumnSidecarKzgProofs(dataColumnSidecar)) {
         return SafeFuture.completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
       }
     } catch (final Throwable t) {
@@ -496,7 +487,6 @@ public class DataColumnSidecarGossipValidator {
   }
 
   private SafeFuture<InternalValidationResult> validateWithKnownValidHeader(
-      final MiscHelpers miscHelpers,
       final DataColumnSidecarUtil dataColumnSidecarUtil,
       final DataColumnSidecar dataColumnSidecar,
       final BeaconBlockHeader blockHeader) {
@@ -512,14 +502,14 @@ public class DataColumnSidecarGossipValidator {
 
     // Verify inclusion proof
     final Optional<InternalValidationResult> inclusionProofResult =
-        verifyInclusionProofWithMetrics(dataColumnSidecarUtil, miscHelpers, dataColumnSidecar);
+        verifyInclusionProofWithMetrics(dataColumnSidecarUtil, dataColumnSidecar);
     if (inclusionProofResult.isPresent()) {
       return SafeFuture.completedFuture(inclusionProofResult.get());
     }
 
     // Verify KZG proofs
     final Optional<InternalValidationResult> kzgProofResult =
-        verifyKzgProofsWithMetrics(dataColumnSidecarUtil, miscHelpers, dataColumnSidecar);
+        verifyKzgProofsWithMetrics(dataColumnSidecarUtil, dataColumnSidecar);
     if (kzgProofResult.isPresent()) {
       return SafeFuture.completedFuture(kzgProofResult.get());
     }
@@ -535,8 +525,7 @@ public class DataColumnSidecarGossipValidator {
   }
 
   private Optional<InternalValidationResult> verifyInclusionProofWithMetrics(
-      final DataColumnSidecarUtil validationHelper,
-      final MiscHelpers miscHelpers,
+      final DataColumnSidecarUtil dataColumnSidecarUtil,
       final DataColumnSidecar dataColumnSidecar) {
 
     /*
@@ -545,8 +534,8 @@ public class DataColumnSidecarGossipValidator {
      */
     try (MetricsHistogram.Timer ignored =
         dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer()) {
-      if (!validationHelper.verifyInclusionProof(
-          miscHelpers, dataColumnSidecar, validInclusionProofInfoSet)) {
+      if (!dataColumnSidecarUtil.verifyInclusionProof(
+          dataColumnSidecar, validInclusionProofInfoSet)) {
         return Optional.of(reject("DataColumnSidecar inclusion proof validation failed"));
       }
     } catch (final Throwable t) {
@@ -558,7 +547,6 @@ public class DataColumnSidecarGossipValidator {
 
   private Optional<InternalValidationResult> verifyKzgProofsWithMetrics(
       final DataColumnSidecarUtil dataColumnSidecarUtil,
-      final MiscHelpers miscHelpers,
       final DataColumnSidecar dataColumnSidecar) {
 
     /*
@@ -567,7 +555,7 @@ public class DataColumnSidecarGossipValidator {
      */
     try (MetricsHistogram.Timer ignored =
         dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-      if (!dataColumnSidecarUtil.verifyDataColumnSidecarKzgProofs(miscHelpers, dataColumnSidecar)) {
+      if (!dataColumnSidecarUtil.verifyDataColumnSidecarKzgProofs(dataColumnSidecar)) {
         return Optional.of(reject("DataColumnSidecar does not pass kzg validation"));
       }
     } catch (final Throwable t) {
@@ -596,9 +584,9 @@ public class DataColumnSidecarGossipValidator {
   private boolean markForEquivocation(
       final DataColumnSidecarUtil dataColumnSidecarUtil,
       final BeaconBlockHeader beaconBlockHeader,
-      final DataColumnSidecar sidecar) {
+      final DataColumnSidecar dataColumnSidecar) {
     final DataColumnSidecarTrackingKey key =
-        dataColumnSidecarUtil.extractTrackingKeyFromHeader(beaconBlockHeader, sidecar);
+        dataColumnSidecarUtil.extractTrackingKeyFromHeader(beaconBlockHeader, dataColumnSidecar);
     return receivedValidDataColumnSidecarInfoSet.add(key);
   }
 

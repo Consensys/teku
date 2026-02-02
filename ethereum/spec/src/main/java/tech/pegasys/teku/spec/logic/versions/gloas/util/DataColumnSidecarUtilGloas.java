@@ -28,7 +28,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarTrackingKey;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
@@ -46,43 +45,30 @@ import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
  */
 public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
 
-  /**
-   * Perform slot timing gossip validation checks
-   *
-   * @param dataColumnSidecar the data column sidecar to validate
-   * @param isSlotFromFuture function to check if a slot is from the future
-   * @return validation result, empty if it passes
-   */
+  private final MiscHelpersGloas miscHelpersGloas;
+
+  public DataColumnSidecarUtilGloas(final MiscHelpersGloas miscHelpersGloas) {
+    this.miscHelpersGloas = miscHelpersGloas;
+  }
+
   @Override
   public Optional<SlotInclusionGossipValidationResult> performSlotTimingValidation(
       final DataColumnSidecar dataColumnSidecar, final Predicate<UInt64> isSlotFromFuture) {
+    // Non applicable for Gloas
     return Optional.empty();
   }
 
-  /**
-   * Perform slot finalization gossip validation checks
-   *
-   * @param dataColumnSidecar the data column sidecar to validate
-   * @param isSlotFinalized function to check if a slot is finalized
-   * @return validation result, empty if it passes
-   */
   @Override
   public Optional<SlotInclusionGossipValidationResult> performSlotFinalizationValidation(
       final DataColumnSidecar dataColumnSidecar, final Predicate<UInt64> isSlotFinalized) {
+    // Non applicable for Gloas
     return Optional.empty();
   }
 
-  /**
-   * Check if the sidecar's block parent has been seen. Not applicable to Gloas as Gloas sidecars
-   * don't contain block headers with parent references.
-   *
-   * @param dataColumnSidecar the data column sidecar to validate
-   * @param isBlockRootSeen function to check if a block root has been seen
-   * @return true (always valid for Gloas)
-   */
   @Override
   public boolean isBlockParentSeen(
       final DataColumnSidecar dataColumnSidecar, final Function<Bytes32, Boolean> isBlockRootSeen) {
+    // Not applicable to Gloas as sidecars don't contain block headers with parent references.
     return true;
   }
 
@@ -178,29 +164,16 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
   /**
    * Verify structural validity of the data column dataColumnSidecar.
    *
-   * @param miscHelpers the MiscHelpers
    * @param dataColumnSidecar the data column dataColumnSidecar
    * @return true if structure is valid
    */
   @Override
-  public boolean verifyDataColumnSidecarStructure(
-      final MiscHelpers miscHelpers, final DataColumnSidecar dataColumnSidecar) {
-    final MiscHelpersGloas miscHelpersGloas = MiscHelpersGloas.required(miscHelpers);
+  public boolean verifyDataColumnSidecarStructure(final DataColumnSidecar dataColumnSidecar) {
     return miscHelpersGloas.verifyDataColumnSidecar(dataColumnSidecar);
   }
 
-  /**
-   * Verify inclusion proof if applicable.
-   *
-   * @param miscHelpers the MiscHelpers
-   * @param dataColumnSidecar the data column sidecar
-   * @param validInclusionProofInfoSet cache of previously validated inclusion proofs for
-   *     optimization
-   * @return true if inclusion proof is valid or not applicable
-   */
   @Override
   public boolean verifyInclusionProof(
-      final MiscHelpers miscHelpers,
       final DataColumnSidecar dataColumnSidecar,
       final Set<InclusionProofInfo> validInclusionProofInfoSet) {
     // Gloas doesn't have inclusion proof requirement (no header in Gloas sidecars)
@@ -211,25 +184,14 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
    * Verify KZG proofs for the data column sidecar. Gossip rule: [REJECT] The sidecar's column data
    * is valid as verified by verify_data_column_sidecar_kzg_proofs(sidecar)
    *
-   * @param miscHelpers the MiscHelpers
    * @param dataColumnSidecar the data column sidecar
    * @return true if KZG proofs are valid
    */
   @Override
-  public boolean verifyDataColumnSidecarKzgProofs(
-      final MiscHelpers miscHelpers, final DataColumnSidecar dataColumnSidecar) {
-    final MiscHelpersGloas miscHelpersGloas = MiscHelpersGloas.required(miscHelpers);
+  public boolean verifyDataColumnSidecarKzgProofs(final DataColumnSidecar dataColumnSidecar) {
     return miscHelpersGloas.verifyDataColumnSidecarKzgProofs(dataColumnSidecar);
   }
 
-  /**
-   * Get signature verification data if applicable.
-   *
-   * @param spec the Spec instance for domain and signing root computation
-   * @param state the beacon state for proposer lookup
-   * @param dataColumnSidecar the data column dataColumnSidecar
-   * @return Optional containing signature verification data if applicable
-   */
   @Override
   public Optional<SignatureVerificationData> getSignatureVerificationData(
       final Spec spec, final BeaconState state, final DataColumnSidecar dataColumnSidecar) {
@@ -237,25 +199,12 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
     return Optional.empty();
   }
 
-  /**
-   * Get beacon block header if applicable.
-   *
-   * @param dataColumnSidecar the data column dataColumnSidecar
-   * @return Optional containing the header if applicable
-   */
   @Override
   public Optional<BeaconBlockHeader> getBlockHeader(final DataColumnSidecar dataColumnSidecar) {
     // Gloas sidecars don't contain block headers
     return Optional.empty();
   }
 
-  /**
-   * Cache validated header/proof info for optimization if applicable.
-   *
-   * @param dataColumnSidecar the validated data column dataColumnSidecar
-   * @param validSignedBlockHeaders cache of validated signed block header hashes
-   * @param validInclusionProofInfoSet cache of validated inclusion proof info
-   */
   @Override
   public void cacheValidatedInfo(
       final DataColumnSidecar dataColumnSidecar,

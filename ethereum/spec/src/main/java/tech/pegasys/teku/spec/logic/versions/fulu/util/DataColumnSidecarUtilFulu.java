@@ -31,7 +31,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarTrackingKey;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
@@ -48,6 +47,12 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
  * <p>Fulu sidecars include signed block headers
  */
 public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
+
+  private final MiscHelpersFulu miscHelpersFulu;
+
+  public DataColumnSidecarUtilFulu(final MiscHelpersFulu miscHelpersFulu) {
+    this.miscHelpersFulu = miscHelpersFulu;
+  }
 
   /**
    * Perform slot timing gossip validation checks Gossip rule: [IGNORE] The sidecar is not from a
@@ -242,14 +247,11 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   /**
    * Verify structural validity of the data column dataColumnSidecar.
    *
-   * @param miscHelpers the MiscHelpers
    * @param dataColumnSidecar the data column dataColumnSidecar
    * @return true if structure is valid
    */
   @Override
-  public boolean verifyDataColumnSidecarStructure(
-      final MiscHelpers miscHelpers, final DataColumnSidecar dataColumnSidecar) {
-    final MiscHelpersFulu miscHelpersFulu = MiscHelpersFulu.required(miscHelpers);
+  public boolean verifyDataColumnSidecarStructure(final DataColumnSidecar dataColumnSidecar) {
     return miscHelpersFulu.verifyDataColumnSidecar(dataColumnSidecar);
   }
 
@@ -257,7 +259,6 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
    * Verify inclusion proof if applicable. Gossip rule: [REJECT] The sidecar's kzg_commitments field
    * inclusion proof is valid as verified by verify_data_column_sidecar_inclusion_proof(sidecar)
    *
-   * @param miscHelpers the MiscHelpers
    * @param dataColumnSidecar the data column sidecar
    * @param validInclusionProofInfoSet cache of previously validated inclusion proofs for
    *     optimization
@@ -265,7 +266,6 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
    */
   @Override
   public boolean verifyInclusionProof(
-      final MiscHelpers miscHelpers,
       final DataColumnSidecar dataColumnSidecar,
       final Set<InclusionProofInfo> validInclusionProofInfoSet) {
     final DataColumnSidecarFulu fuluSidecar = DataColumnSidecarFulu.required(dataColumnSidecar);
@@ -283,7 +283,6 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
 
     // Verify inclusion proof
     try {
-      final MiscHelpersFulu miscHelpersFulu = MiscHelpersFulu.required(miscHelpers);
       return miscHelpersFulu.verifyDataColumnSidecarInclusionProof(dataColumnSidecar);
     } catch (final Throwable t) {
       return false;
@@ -293,7 +292,6 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   /**
    * Verify KZG proofs for the data column sidecar.
    *
-   * @param miscHelpers the MiscHelpers
    * @param dataColumnSidecar the data column sidecar
    * @return true if KZG proofs are valid
    */
@@ -301,9 +299,7 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
    * [REJECT] The sidecar's column data is valid as verified by verify_data_column_sidecar_kzg_proofs(sidecar)
    */
   @Override
-  public boolean verifyDataColumnSidecarKzgProofs(
-      final MiscHelpers miscHelpers, final DataColumnSidecar dataColumnSidecar) {
-    final MiscHelpersFulu miscHelpersFulu = MiscHelpersFulu.required(miscHelpers);
+  public boolean verifyDataColumnSidecarKzgProofs(final DataColumnSidecar dataColumnSidecar) {
     return miscHelpersFulu.verifyDataColumnSidecarKzgProofs(dataColumnSidecar);
   }
 
@@ -359,17 +355,18 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
       final DataColumnSidecar dataColumnSidecar,
       final Set<Bytes32> validSignedBlockHeaders,
       final Set<InclusionProofInfo> validInclusionProofInfoSet) {
-    final DataColumnSidecarFulu fuluSidecar = DataColumnSidecarFulu.required(dataColumnSidecar);
+    final DataColumnSidecarFulu dataColumnSidecarFulu =
+        DataColumnSidecarFulu.required(dataColumnSidecar);
 
     // Cache signed block header hash for known valid header optimization
-    validSignedBlockHeaders.add(fuluSidecar.getSignedBlockHeader().hashTreeRoot());
+    validSignedBlockHeaders.add(dataColumnSidecarFulu.getSignedBlockHeader().hashTreeRoot());
 
     // Cache inclusion proof info for future validations
     validInclusionProofInfoSet.add(
         new InclusionProofInfo(
             dataColumnSidecar.getKzgCommitments().hashTreeRoot(),
-            fuluSidecar.getKzgCommitmentsInclusionProof().hashTreeRoot(),
-            fuluSidecar.getBlockBodyRoot()));
+            dataColumnSidecarFulu.getKzgCommitmentsInclusionProof().hashTreeRoot(),
+            dataColumnSidecarFulu.getBlockBodyRoot()));
   }
 
   /**

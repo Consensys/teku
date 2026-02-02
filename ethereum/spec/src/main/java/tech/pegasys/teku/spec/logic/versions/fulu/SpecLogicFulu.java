@@ -217,7 +217,7 @@ public class SpecLogicFulu extends AbstractSpecLogic {
         new FuluStateUpgrade(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
 
     // Data column sidecar util
-    final DataColumnSidecarUtil dataColumnSidecarUtil = new DataColumnSidecarUtilFulu();
+    final DataColumnSidecarUtil dataColumnSidecarUtil = new DataColumnSidecarUtilFulu(miscHelpers);
 
     return new SpecLogicFulu(
         predicates,
