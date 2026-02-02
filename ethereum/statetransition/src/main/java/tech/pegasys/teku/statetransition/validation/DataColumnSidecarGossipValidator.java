@@ -203,20 +203,20 @@ public class DataColumnSidecarGossipValidator {
   public SafeFuture<InternalValidationResult> validate(final DataColumnSidecar dataColumnSidecar) {
     final UInt64 slot = dataColumnSidecar.getSlot();
     final SpecLogic specLogic = spec.atSlot(slot);
-    final DataColumnSidecarUtil validationHelper = spec.getDataColumnSidecarUtil(slot);
+    final DataColumnSidecarUtil dataColumnSidecarUtil = spec.getDataColumnSidecarUtil(slot);
     final Optional<BeaconBlockHeader> maybeBlockHeader =
-        validationHelper.getBlockHeader(dataColumnSidecar);
+        dataColumnSidecarUtil.getBlockHeader(dataColumnSidecar);
 
     totalDataColumnSidecarsProcessingRequestsCounter.inc();
 
     return validateDataColumnSidecar(
-        dataColumnSidecar, specLogic.miscHelpers(), validationHelper, maybeBlockHeader);
+        dataColumnSidecar, specLogic.miscHelpers(), dataColumnSidecarUtil, maybeBlockHeader);
   }
 
   private SafeFuture<InternalValidationResult> validateDataColumnSidecar(
       final DataColumnSidecar dataColumnSidecar,
       final MiscHelpers miscHelpers,
-      final DataColumnSidecarUtil validationHelper,
+      final DataColumnSidecarUtil dataColumnSidecarUtil,
       final Optional<BeaconBlockHeader> maybeBlockHeader) {
 
     /*
@@ -224,7 +224,7 @@ public class DataColumnSidecarGossipValidator {
      *
      * Common to both Fulu and Gloas.
      */
-    if (!validationHelper.verifyDataColumnSidecarStructure(miscHelpers, dataColumnSidecar)) {
+    if (!dataColumnSidecarUtil.verifyDataColumnSidecarStructure(miscHelpers, dataColumnSidecar)) {
       return SafeFuture.completedFuture(reject("DataColumnSidecar has invalid structure"));
     }
 
@@ -233,7 +233,7 @@ public class DataColumnSidecarGossipValidator {
      * - Fulu: (block_header.slot, block_header.proposer_index, sidecar.index)
      * - Gloas: (sidecar.beacon_block_root, sidecar.index)
      */
-    if (!isFirstValidForTrackingKey(validationHelper, dataColumnSidecar)) {
+    if (!isFirstValidForTrackingKey(dataColumnSidecarUtil, dataColumnSidecar)) {
       return completedFuture(
           ignore(
               "DataColumnSidecar is not the first valid for its tracking key. It will be dropped."));
@@ -244,9 +244,6 @@ public class DataColumnSidecarGossipValidator {
      * Already done in {@link tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.DataColumnSidecarTopicHandler.TopicSubnetIdAwareOperationProcessor#process(
      *        DataColumnSidecar, Optional<UInt64>)}
      */
-
-    final DataColumnSidecarUtil dataColumnSidecarUtil =
-        spec.getDataColumnSidecarUtil(dataColumnSidecar.getSlot());
 
     final Optional<DataColumnSidecarUtil.SlotInclusionGossipValidationResult>
         maybeSlotTimingValidationResult =
@@ -347,7 +344,8 @@ public class DataColumnSidecarGossipValidator {
                 }
               }
               // Validation passed, continue with KZG proofs
-              return validateKzgProofsAndFinalize(dataColumnSidecar, miscHelpers, validationHelper);
+              return validateKzgProofsAndFinalize(
+                  dataColumnSidecar, miscHelpers, dataColumnSidecarUtil);
             });
   }
 
@@ -469,14 +467,14 @@ public class DataColumnSidecarGossipValidator {
   private SafeFuture<InternalValidationResult> validateKzgProofsAndFinalize(
       final DataColumnSidecar dataColumnSidecar,
       final MiscHelpers miscHelpers,
-      final DataColumnSidecarUtil validationHelper) {
+      final DataColumnSidecarUtil dataColumnSidecarUtil) {
 
     /*
      * [REJECT] The sidecar's column data is valid as verified by verify_data_column_sidecar_kzg_proofs(sidecar).
      */
     try (MetricsHistogram.Timer ignored =
         dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-      if (!validationHelper.verifyDataColumnSidecarKzgProofs(miscHelpers, dataColumnSidecar)) {
+      if (!dataColumnSidecarUtil.verifyDataColumnSidecarKzgProofs(miscHelpers, dataColumnSidecar)) {
         return SafeFuture.completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
       }
     } catch (final Throwable t) {
@@ -486,7 +484,8 @@ public class DataColumnSidecarGossipValidator {
     /*
      * Final check for equivocation
      */
-    final DataColumnSidecarTrackingKey key = validationHelper.extractTrackingKey(dataColumnSidecar);
+    final DataColumnSidecarTrackingKey key =
+        dataColumnSidecarUtil.extractTrackingKey(dataColumnSidecar);
     if (!receivedValidDataColumnSidecarInfoSet.add(key)) {
       return completedFuture(
           ignore(
@@ -498,7 +497,7 @@ public class DataColumnSidecarGossipValidator {
 
   private SafeFuture<InternalValidationResult> validateWithKnownValidHeader(
       final MiscHelpers miscHelpers,
-      final DataColumnSidecarUtil validationHelper,
+      final DataColumnSidecarUtil dataColumnSidecarUtil,
       final DataColumnSidecar dataColumnSidecar,
       final BeaconBlockHeader blockHeader) {
 
@@ -513,20 +512,20 @@ public class DataColumnSidecarGossipValidator {
 
     // Verify inclusion proof
     final Optional<InternalValidationResult> inclusionProofResult =
-        verifyInclusionProofWithMetrics(validationHelper, miscHelpers, dataColumnSidecar);
+        verifyInclusionProofWithMetrics(dataColumnSidecarUtil, miscHelpers, dataColumnSidecar);
     if (inclusionProofResult.isPresent()) {
       return SafeFuture.completedFuture(inclusionProofResult.get());
     }
 
     // Verify KZG proofs
     final Optional<InternalValidationResult> kzgProofResult =
-        verifyKzgProofsWithMetrics(validationHelper, miscHelpers, dataColumnSidecar);
+        verifyKzgProofsWithMetrics(dataColumnSidecarUtil, miscHelpers, dataColumnSidecar);
     if (kzgProofResult.isPresent()) {
       return SafeFuture.completedFuture(kzgProofResult.get());
     }
 
     // Final equivocation check
-    if (!markForEquivocation(validationHelper, blockHeader, dataColumnSidecar)) {
+    if (!markForEquivocation(dataColumnSidecarUtil, blockHeader, dataColumnSidecar)) {
       return SafeFuture.completedFuture(
           ignore(
               "DataColumnSidecar is not the first valid for its tracking key. It will be dropped."));
@@ -558,7 +557,7 @@ public class DataColumnSidecarGossipValidator {
   }
 
   private Optional<InternalValidationResult> verifyKzgProofsWithMetrics(
-      final DataColumnSidecarUtil validationHelper,
+      final DataColumnSidecarUtil dataColumnSidecarUtil,
       final MiscHelpers miscHelpers,
       final DataColumnSidecar dataColumnSidecar) {
 
@@ -568,7 +567,7 @@ public class DataColumnSidecarGossipValidator {
      */
     try (MetricsHistogram.Timer ignored =
         dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-      if (!validationHelper.verifyDataColumnSidecarKzgProofs(miscHelpers, dataColumnSidecar)) {
+      if (!dataColumnSidecarUtil.verifyDataColumnSidecarKzgProofs(miscHelpers, dataColumnSidecar)) {
         return Optional.of(reject("DataColumnSidecar does not pass kzg validation"));
       }
     } catch (final Throwable t) {
@@ -588,23 +587,26 @@ public class DataColumnSidecarGossipValidator {
       return;
     }
 
-    final DataColumnSidecarUtil validationHelper =
+    final DataColumnSidecarUtil dataColumnSidecarUtil =
         spec.getDataColumnSidecarUtil(beaconBlockHeader.getSlot());
-    sidecars.forEach(sidecar -> markForEquivocation(validationHelper, beaconBlockHeader, sidecar));
+    sidecars.forEach(
+        sidecar -> markForEquivocation(dataColumnSidecarUtil, beaconBlockHeader, sidecar));
   }
 
   private boolean markForEquivocation(
-      final DataColumnSidecarUtil validationHelper,
+      final DataColumnSidecarUtil dataColumnSidecarUtil,
       final BeaconBlockHeader beaconBlockHeader,
       final DataColumnSidecar sidecar) {
     final DataColumnSidecarTrackingKey key =
-        validationHelper.extractTrackingKeyFromHeader(beaconBlockHeader, sidecar);
+        dataColumnSidecarUtil.extractTrackingKeyFromHeader(beaconBlockHeader, sidecar);
     return receivedValidDataColumnSidecarInfoSet.add(key);
   }
 
   private boolean isFirstValidForTrackingKey(
-      final DataColumnSidecarUtil validationHelper, final DataColumnSidecar dataColumnSidecar) {
-    final DataColumnSidecarTrackingKey key = validationHelper.extractTrackingKey(dataColumnSidecar);
+      final DataColumnSidecarUtil dataColumnSidecarUtil,
+      final DataColumnSidecar dataColumnSidecar) {
+    final DataColumnSidecarTrackingKey key =
+        dataColumnSidecarUtil.extractTrackingKey(dataColumnSidecar);
     return !receivedValidDataColumnSidecarInfoSet.contains(key);
   }
 

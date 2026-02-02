@@ -73,8 +73,8 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
   }
 
   /**
-   * Check if the sidecar's block parent has been seen. Gossip rule: Not applicable to Gloas as
-   * Gloas sidecars don't contain block headers with parent references.
+   * Check if the sidecar's block parent has been seen. Not applicable to Gloas as Gloas sidecars
+   * don't contain block headers with parent references.
    *
    * @param dataColumnSidecar the data column sidecar to validate
    * @param isBlockRootSeen function to check if a block root has been seen

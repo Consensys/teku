@@ -79,7 +79,7 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   }
 
   /**
-   * Perform slot finalization gossip validation checks Gossip rule [IGNORE] The sidecar is from a
+   * Perform slot finalization gossip validation checks. Gossip rule: [IGNORE] The sidecar is from a
    * slot greater than the latest finalized slot -- i.e. validate that block_header.slot >
    * compute_start_slot_at_epoch(state.finalized_checkpoint.epoch)
    *
@@ -130,9 +130,9 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   }
 
   /**
-   * Check if the referenced block with bid has been seen. Gossip rule: Not applicable to Fulu as
-   * this check is Gloas-specific. Gloas requires validating that the sidecar's beacon_block_root
-   * has been seen via a valid signed execution payload bid.
+   * Check if the referenced block with bid has been seen. Not applicable to Fulu as this check is
+   * Gloas-specific. Gloas requires validating that the sidecar's beacon_block_root has been seen
+   * via a valid signed execution payload bid.
    *
    * @param dataColumnSidecar the data column sidecar to validate
    * @param isBlockRootSeen function to check if a block root has been seen
@@ -161,12 +161,19 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   }
 
   /**
-   * Validate parent block for the data column sidecar. Gossip rule: [REJECT] The sidecar's block's
-   * parent (defined by block_header.parent_root) passes validation. [REJECT] The sidecar is from a
-   * higher slot than the sidecar's block's parent (defined by block_header.parent_root). [REJECT]
-   * The current finalized_checkpoint is an ancestor of the sidecar's block -- i.e.
-   * get_checkpoint_block(store, block_header.parent_root, store.finalized_checkpoint.epoch) ==
-   * store.finalized_checkpoint.root.
+   * Validate parent block for the data column sidecar.
+   *
+   * <p>Gossip rules:
+   *
+   * <ul>
+   *   <li>[REJECT] The sidecar's block's parent (defined by block_header.parent_root) passes
+   *       validation.
+   *   <li>[REJECT] The sidecar is from a higher slot than the sidecar's block's parent (defined by
+   *       block_header.parent_root).
+   *   <li>[REJECT] The current finalized_checkpoint is an ancestor of the sidecar's block -- i.e.
+   *       get_checkpoint_block(store, block_header.parent_root, store.finalized_checkpoint.epoch)
+   *       == store.finalized_checkpoint.root.
+   * </ul>
    *
    * @param blockHeader the block header from the sidecar
    * @param parentBlockSlot the slot of the parent block
