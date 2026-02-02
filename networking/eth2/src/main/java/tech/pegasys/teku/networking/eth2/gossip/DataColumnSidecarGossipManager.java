@@ -14,8 +14,6 @@
 package tech.pegasys.teku.networking.eth2.gossip;
 
 import java.util.Optional;
-import java.util.function.Supplier;
-
 import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetSubscriptions;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;

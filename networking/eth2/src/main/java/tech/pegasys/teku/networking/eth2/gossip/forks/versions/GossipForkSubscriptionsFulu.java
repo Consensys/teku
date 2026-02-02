@@ -122,13 +122,9 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
             forkInfo,
             forkDigest);
 
-
-
     this.dataColumnSidecarGossipManager =
         new DataColumnSidecarGossipManager(
-            dataColumnSidecarSubnetSubscriptions,
-            dasGossipLogger,
-            isSuperNode());
+            dataColumnSidecarSubnetSubscriptions, dasGossipLogger, isSuperNode());
 
     addGossipManager(dataColumnSidecarGossipManager);
   }
@@ -159,16 +155,15 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
     dataColumnSidecarGossipManager.unsubscribeFromSubnetId(subnetId);
   }
 
-  private boolean isSuperNode(){
+  private boolean isSuperNode() {
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      if(p2pConfig.isSubscribedToAllCustodySubnetsEnabled()){
+      if (p2pConfig.isSubscribedToAllCustodySubnetsEnabled()) {
         return true;
       }
       final SpecVersion specVersionFulu = spec.forMilestone(SpecMilestone.FULU);
-      final int totalCustodyGroups =
-             p2pConfig.getTotalCustodyGroupCount(specVersionFulu);
+      final int totalCustodyGroups = p2pConfig.getTotalCustodyGroupCount(specVersionFulu);
       final int numberOfColumns =
-              SpecConfigFulu.required(specVersionFulu.getConfig()).getNumberOfColumns();
+          SpecConfigFulu.required(specVersionFulu.getConfig()).getNumberOfColumns();
       if (totalCustodyGroups == numberOfColumns) {
         return true;
       }
