@@ -42,7 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidec
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.SpecLogic;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationResult;
@@ -154,7 +154,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
 
     // Make structure validation fail
     when(mockValidationHelper.verifyDataColumnSidecarStructure(
-            any(SpecLogic.class), any(DataColumnSidecar.class)))
+            any(MiscHelpers.class), any(DataColumnSidecar.class)))
         .thenReturn(false);
 
     // Create a validator with the mocked spec

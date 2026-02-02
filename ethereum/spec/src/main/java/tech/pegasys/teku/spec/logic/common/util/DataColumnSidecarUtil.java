@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.SpecLogic;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 
 /**
@@ -72,15 +72,15 @@ public interface DataColumnSidecarUtil {
       BeaconBlockHeader header, DataColumnSidecar dataColumnSidecar);
 
   boolean verifyDataColumnSidecarStructure(
-      SpecLogic specLogic, DataColumnSidecar dataColumnSidecar);
+      MiscHelpers miscHelpers, DataColumnSidecar dataColumnSidecar);
 
   boolean verifyInclusionProof(
-      SpecLogic specLogic,
+      MiscHelpers miscHelpers,
       DataColumnSidecar dataColumnSidecar,
       Set<InclusionProofInfo> validInclusionProofInfoSet);
 
   boolean verifyDataColumnSidecarKzgProofs(
-      SpecLogic specLogic, DataColumnSidecar dataColumnSidecar);
+      MiscHelpers miscHelpers, DataColumnSidecar dataColumnSidecar);
 
   Optional<SignatureVerificationData> getSignatureVerificationData(
       Spec spec, BeaconState state, DataColumnSidecar dataColumnSidecar);

@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
-import tech.pegasys.teku.spec.logic.SpecLogic;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.GloasTrackingKey;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -135,7 +135,7 @@ public class DataColumnSidecarGossipValidatorGloasTest
 
     // Make structure validation fail
     when(mockValidationHelper.verifyDataColumnSidecarStructure(
-            any(SpecLogic.class), any(DataColumnSidecar.class)))
+            any(MiscHelpers.class), any(DataColumnSidecar.class)))
         .thenReturn(false);
 
     // Create a validator with the mocked spec

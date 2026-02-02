@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.SpecLogic;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarTrackingKey;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
@@ -178,21 +178,21 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
   /**
    * Verify structural validity of the data column dataColumnSidecar.
    *
-   * @param specLogic the fork-specific SpecLogic containing MiscHelpers
+   * @param miscHelpers the MiscHelpers
    * @param dataColumnSidecar the data column dataColumnSidecar
    * @return true if structure is valid
    */
   @Override
   public boolean verifyDataColumnSidecarStructure(
-      final SpecLogic specLogic, final DataColumnSidecar dataColumnSidecar) {
-    final MiscHelpersGloas miscHelpersGloas = MiscHelpersGloas.required(specLogic.miscHelpers());
+      final MiscHelpers miscHelpers, final DataColumnSidecar dataColumnSidecar) {
+    final MiscHelpersGloas miscHelpersGloas = MiscHelpersGloas.required(miscHelpers);
     return miscHelpersGloas.verifyDataColumnSidecar(dataColumnSidecar);
   }
 
   /**
    * Verify inclusion proof if applicable.
    *
-   * @param specLogic the fork-specific SpecLogic containing MiscHelpers
+   * @param miscHelpers the MiscHelpers
    * @param dataColumnSidecar the data column sidecar
    * @param validInclusionProofInfoSet cache of previously validated inclusion proofs for
    *     optimization
@@ -200,7 +200,7 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
    */
   @Override
   public boolean verifyInclusionProof(
-      final SpecLogic specLogic,
+      final MiscHelpers miscHelpers,
       final DataColumnSidecar dataColumnSidecar,
       final Set<InclusionProofInfo> validInclusionProofInfoSet) {
     // Gloas doesn't have inclusion proof requirement (no header in Gloas sidecars)
@@ -211,14 +211,14 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
    * Verify KZG proofs for the data column sidecar. Gossip rule: [REJECT] The sidecar's column data
    * is valid as verified by verify_data_column_sidecar_kzg_proofs(sidecar)
    *
-   * @param specLogic the fork-specific SpecLogic containing MiscHelpers
+   * @param miscHelpers the MiscHelpers
    * @param dataColumnSidecar the data column sidecar
    * @return true if KZG proofs are valid
    */
   @Override
   public boolean verifyDataColumnSidecarKzgProofs(
-      final SpecLogic specLogic, final DataColumnSidecar dataColumnSidecar) {
-    final MiscHelpersGloas miscHelpersGloas = MiscHelpersGloas.required(specLogic.miscHelpers());
+      final MiscHelpers miscHelpers, final DataColumnSidecar dataColumnSidecar) {
+    final MiscHelpersGloas miscHelpersGloas = MiscHelpersGloas.required(miscHelpers);
     return miscHelpersGloas.verifyDataColumnSidecarKzgProofs(dataColumnSidecar);
   }
 
