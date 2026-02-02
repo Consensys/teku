@@ -62,8 +62,11 @@ public class PredicatesGloas extends PredicatesElectra {
 
   // Check if the builder at ``builder_index`` is active for the given ``state``.
   public boolean isActiveBuilder(final BeaconState state, final UInt64 builderIndex) {
-    final Builder builder =
-        BeaconStateGloas.required(state).getBuilders().get(builderIndex.intValue());
+    final BeaconStateGloas beaconStateGloas = BeaconStateGloas.required(state);
+    if (builderIndex.isGreaterThanOrEqualTo(beaconStateGloas.getBuilders().size())) {
+      return false;
+    }
+    final Builder builder = beaconStateGloas.getBuilders().get(builderIndex.intValue());
     // Placement in builder list is finalized
     return builder.getDepositEpoch().isLessThan(state.getFinalizedCheckpoint().getEpoch())
         // Has not initiated exit

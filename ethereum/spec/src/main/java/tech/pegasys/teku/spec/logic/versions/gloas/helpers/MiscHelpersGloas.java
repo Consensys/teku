@@ -35,7 +35,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntry;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
@@ -162,8 +161,8 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
         extendedMatrix);
   }
 
-  public boolean hasBuilderWithdrawalCredential(final Validator validator) {
-    return predicates.isBuilderWithdrawalCredential(validator.getWithdrawalCredentials());
+  public boolean isActiveBuilder(final BeaconState state, final UInt64 builderIndex) {
+    return predicates.isActiveBuilder(state, builderIndex);
   }
 
   @Override
