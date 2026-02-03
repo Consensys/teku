@@ -13,87 +13,46 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
-import static tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationError.ResultType.BAD_PROPOSER;
-import static tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationError.ResultType.BAD_SIGNATURE;
-import static tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationError.ResultType.BAD_SLOT;
-import static tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationError.ResultType.BLOCK_UNAVAILABLE;
-import static tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationError.ResultType.DUPLICATE;
-import static tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationError.ResultType.FROM_FUTURE;
-import static tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationError.ResultType.INVALID_BLOCK;
-import static tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationError.ResultType.INVALID_KZG_COMMITMENTS;
-import static tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationError.ResultType.SLOT_NOT_FINALIZED;
-import static tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationError.ResultType.STATE_UNAVAILABLE;
+/**
+ * Domain-specific validation errors for Data Column Sidecars.
+ *
+ * <ul>
+ *   <li>{@link Critical} - Malformed or cryptographically invalid data (REJECT)
+ *   <li>{@link Transient} - Temporarily unavailable dependencies (IGNORE)
+ *   <li>{@link Timing} - Timing-related issues requiring deferred processing (SAVE_FOR_FUTURE)
+ * </ul>
+ *
+ * <p>The gossip validation layer is responsible for mapping these domain errors to network actions.
+ * The fork validation layer only reports what is wrong, not how to handle it.
+ */
+public sealed interface DataColumnSidecarValidationError
+    permits DataColumnSidecarValidationError.Critical,
+        DataColumnSidecarValidationError.Transient,
+        DataColumnSidecarValidationError.Timing {
 
-import java.util.function.Supplier;
+  String description();
 
-public class DataColumnSidecarValidationError {
-
-  public enum ResultType {
-    BAD_SLOT,
-    INVALID_BLOCK,
-    INVALID_KZG_COMMITMENTS,
-    DUPLICATE,
-    STATE_UNAVAILABLE,
-    BLOCK_UNAVAILABLE,
-    BAD_SIGNATURE,
-    BAD_PROPOSER,
-    FROM_FUTURE,
-    SLOT_NOT_FINALIZED
+  // Malformed or cryptographically invalid data
+  record Critical(String details) implements DataColumnSidecarValidationError {
+    @Override
+    public String description() {
+      return details;
+    }
   }
 
-  private final ResultType type;
-  private final Supplier<String> reason;
-
-  private DataColumnSidecarValidationError(final ResultType type, final Supplier<String> reason) {
-    this.type = type;
-    this.reason = reason;
+  // Temporarily unavailable data
+  record Transient(String details) implements DataColumnSidecarValidationError {
+    @Override
+    public String description() {
+      return details;
+    }
   }
 
-  public static DataColumnSidecarValidationError invalidSlot(final String reason) {
-    return new DataColumnSidecarValidationError(BAD_SLOT, () -> reason);
-  }
-
-  public static DataColumnSidecarValidationError badSignature(final String reason) {
-    return new DataColumnSidecarValidationError(BAD_SIGNATURE, () -> reason);
-  }
-
-  public static DataColumnSidecarValidationError badProposer(final String reason) {
-    return new DataColumnSidecarValidationError(BAD_PROPOSER, () -> reason);
-  }
-
-  public static DataColumnSidecarValidationError invalidBlock(final String reason) {
-    return new DataColumnSidecarValidationError(INVALID_BLOCK, () -> reason);
-  }
-
-  public static DataColumnSidecarValidationError invalidKzgCommitments(final String reason) {
-    return new DataColumnSidecarValidationError(INVALID_KZG_COMMITMENTS, () -> reason);
-  }
-
-  public static DataColumnSidecarValidationError duplicate(final String reason) {
-    return new DataColumnSidecarValidationError(DUPLICATE, () -> reason);
-  }
-
-  public static DataColumnSidecarValidationError stateUnavailable(final String reason) {
-    return new DataColumnSidecarValidationError(STATE_UNAVAILABLE, () -> reason);
-  }
-
-  public static DataColumnSidecarValidationError blockUnavailable(final String reason) {
-    return new DataColumnSidecarValidationError(BLOCK_UNAVAILABLE, () -> reason);
-  }
-
-  public static DataColumnSidecarValidationError fromFuture(final String reason) {
-    return new DataColumnSidecarValidationError(FROM_FUTURE, () -> reason);
-  }
-
-  public static DataColumnSidecarValidationError slotNotFinalized(final String reason) {
-    return new DataColumnSidecarValidationError(SLOT_NOT_FINALIZED, () -> reason);
-  }
-
-  public ResultType getType() {
-    return type;
-  }
-
-  public String getReason() {
-    return reason.get();
+  // Timing-related issues requiring deferred processing
+  record Timing(String details) implements DataColumnSidecarValidationError {
+    @Override
+    public String description() {
+      return details;
+    }
   }
 }

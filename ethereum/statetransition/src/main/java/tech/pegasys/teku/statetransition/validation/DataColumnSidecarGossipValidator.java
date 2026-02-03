@@ -373,12 +373,10 @@ public class DataColumnSidecarGossipValidator {
 
   private InternalValidationResult toInternalValidationResult(
       final DataColumnSidecarValidationError dataColumnSidecarValidationError) {
-    final String reason = dataColumnSidecarValidationError.getReason();
-    return switch (dataColumnSidecarValidationError.getType()) {
-      case INVALID_BLOCK, BAD_SLOT, BAD_SIGNATURE, INVALID_KZG_COMMITMENTS, BAD_PROPOSER ->
-          reject(reason);
-      case DUPLICATE, STATE_UNAVAILABLE, SLOT_NOT_FINALIZED -> ignore(reason);
-      case BLOCK_UNAVAILABLE, FROM_FUTURE -> saveForFuture(reason);
+    return switch (dataColumnSidecarValidationError) {
+      case DataColumnSidecarValidationError.Critical c -> reject(c.description());
+      case DataColumnSidecarValidationError.Transient t -> ignore(t.description());
+      case DataColumnSidecarValidationError.Timing tm -> saveForFuture(tm.description());
     };
   }
 

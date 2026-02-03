@@ -71,8 +71,10 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
         DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader().getMessage();
     if (isSlotFromFuture.test(header.getSlot())) {
       return Optional.of(
-          DataColumnSidecarValidationError.fromFuture(
-              "DataColumnSidecar block header slot is from the future. It will be saved for future processing"));
+          new DataColumnSidecarValidationError.Timing(
+              String.format(
+                  "DataColumnSidecar block header slot %s is from the future. It will be saved for future processing",
+                  header.getSlot())));
     }
     return Optional.empty();
   }
@@ -93,8 +95,10 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
         DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader().getMessage();
     if (isSlotFinalized.test(header.getSlot())) {
       return Optional.of(
-          DataColumnSidecarValidationError.slotNotFinalized(
-              "DataColumnSidecar is from a slot greater than the latest finalized slot. Ignoring"));
+          new DataColumnSidecarValidationError.Transient(
+              String.format(
+                  "DataColumnSidecar is from slot %s greater than the latest finalized slot. Ignoring",
+                  header.getSlot())));
     }
     return Optional.empty();
   }
@@ -180,27 +184,35 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     final Optional<UInt64> maybeParentBlockSlot = getBlockSlot.apply(blockHeader.getParentRoot());
     if (maybeParentBlockSlot.isEmpty()) {
       return Optional.of(
-          DataColumnSidecarValidationError.blockUnavailable(
-              "DataColumnSidecar block header parent block does not exist. It will be saved for future processing"));
+          new DataColumnSidecarValidationError.Timing(
+              String.format(
+                  "DataColumnSidecar block header parent block with root %s does not exist. It will be saved for future processing",
+                  blockHeader.getParentRoot())));
     }
-    final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
     if (invalidBlockRoots.containsKey(blockHeader.getParentRoot())) {
       return Optional.of(
-          DataColumnSidecarValidationError.invalidBlock(
-              "DataColumnSidecar block header has an invalid parent root"));
+          new DataColumnSidecarValidationError.Critical(
+              String.format(
+                  "DataColumnSidecar block header parent with root %s is an invalid block",
+                  blockHeader.getParentRoot())));
     }
 
+    final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
     if (!blockHeader.getSlot().isGreaterThan(parentBlockSlot)) {
       return Optional.of(
-          DataColumnSidecarValidationError.invalidSlot(
-              "Parent block slot is after DataColumnSidecar slot"));
+          new DataColumnSidecarValidationError.Critical(
+              String.format(
+                  "Parent block slot %s is after DataColumnSidecar slot %s",
+                  parentBlockSlot, blockHeader.getSlot())));
     }
 
     if (!currentFinalizedCheckpointIsAncestorOfBlock.test(
         blockHeader.getSlot(), blockHeader.getParentRoot())) {
       return Optional.of(
-          DataColumnSidecarValidationError.invalidSlot(
-              "DataColumnSidecar block header does not descend from finalized checkpoint"));
+          new DataColumnSidecarValidationError.Critical(
+              String.format(
+                  "DataColumnSidecar block header at slot %s and with parent root %s does not descend from finalized checkpoint",
+                  blockHeader.getSlot(), blockHeader.getParentRoot())));
     }
 
     return Optional.empty();
@@ -389,8 +401,10 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     if (maybeParentBlockSlot.isEmpty()) {
       return SafeFuture.completedFuture(
           Optional.of(
-              DataColumnSidecarValidationError.blockUnavailable(
-                  "DataColumnSidecar parent block is unavailable. Saving for future processing")));
+              new DataColumnSidecarValidationError.Timing(
+                  String.format(
+                      "DataColumnSidecar parent block with root %s is unavailable. Saving for future processing",
+                      parentBlockRoot))));
     }
     return retrieveBeaconState
         .apply(
@@ -400,8 +414,10 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
             maybePostState -> {
               if (maybePostState.isEmpty()) {
                 return Optional.of(
-                    DataColumnSidecarValidationError.stateUnavailable(
-                        "DataColumnSidecar block header state wasn't available. Must have been pruned by finalized."));
+                    new DataColumnSidecarValidationError.Transient(
+                        String.format(
+                            "DataColumnSidecar block header state at slot %s wasn't available.",
+                            dataColumnSidecar.getSlot())));
               }
               final BeaconState postState = maybePostState.get();
 
@@ -416,9 +432,9 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
                   new ProposerValidationData(
                       blockHeader.getProposerIndex(), blockHeader.getSlot(), postState))) {
                 return Optional.of(
-                    DataColumnSidecarValidationError.badProposer(
+                    new DataColumnSidecarValidationError.Critical(
                         String.format(
-                            "DataColumnSidecar block header proposed by incorrect proposer (%s)",
+                            "DataColumnSidecar block header proposed by incorrect proposer with index %s",
                             blockHeader.getProposerIndex())));
               }
 
@@ -433,7 +449,7 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
                     maybeSignatureData.get();
                 if (!isSignatureValidWithRespectToProposerIndex.apply(signatureData)) {
                   return Optional.of(
-                      DataColumnSidecarValidationError.badSignature(
+                      new DataColumnSidecarValidationError.Critical(
                           "DataColumnSidecar block header signature is invalid"));
                 }
               }

@@ -104,12 +104,14 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
     final Optional<UInt64> blockSlot = getSlotForBlockRoot.apply(beaconBlockRoot);
     if (blockSlot.isEmpty()) {
       return Optional.of(
-          DataColumnSidecarValidationError.blockUnavailable(
-              "DataColumnSidecar's beacon_block_root does not correspond to a known block. It will be saved for future processing"));
+          new DataColumnSidecarValidationError.Timing(
+              String.format(
+                  "DataColumnSidecar's beacon_block_root %s does not correspond to a known block. It will be saved for future processing",
+                  beaconBlockRoot)));
     }
     if (!blockSlot.get().equals(dataColumnSidecar.getSlot())) {
       return Optional.of(
-          DataColumnSidecarValidationError.invalidSlot(
+          new DataColumnSidecarValidationError.Critical(
               String.format(
                   "DataColumnSidecar's slot %s does not match the block slot %s for beacon_block_root %s",
                   dataColumnSidecar.getSlot(), blockSlot.get(), beaconBlockRoot)));
@@ -222,8 +224,10 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
             maybeBeaconBlock -> {
               if (maybeBeaconBlock.isEmpty()) {
                 return Optional.of(
-                    DataColumnSidecarValidationError.blockUnavailable(
-                        "DataColumnSidecar's beacon_block_root does not correspond to a known block"));
+                    new DataColumnSidecarValidationError.Timing(
+                        String.format(
+                            "DataColumnSidecar's beacon_block_root %s does not correspond to a known block",
+                            beaconBlockRoot)));
               }
               final BeaconBlock beaconBlock = maybeBeaconBlock.get();
               return validateKzgCommitmentsRoot(dataColumnSidecar, beaconBlock);
@@ -257,7 +261,7 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
         dataColumnSidecar.getKzgCommitments().hashTreeRoot();
     if (!kzgCommitmentsRoot.equals(dataColumnSidecarCommitmentsRoot)) {
       return Optional.of(
-          DataColumnSidecarValidationError.invalidKzgCommitments(
+          new DataColumnSidecarValidationError.Critical(
               String.format(
                   "DataColumnSidecar's KZG commitments root %s does not match the bid's blob_kzg_commitments_root %s",
                   dataColumnSidecarCommitmentsRoot, kzgCommitmentsRoot)));
