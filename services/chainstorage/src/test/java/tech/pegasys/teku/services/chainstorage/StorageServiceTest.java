@@ -139,4 +139,15 @@ class StorageServiceTest {
     assertThat(statePruner.isRunning()).isTrue();
     assertThat(statePruner.getPruneInterval()).isEqualTo(customPruningInterval);
   }
+
+  @Test
+  void shouldStartSuccessfullyWhenForceClearDbEnabled() {
+    // Set forceClearDb to true
+    when(storageConfiguration.isForceClearDb()).thenReturn(true);
+    when(storageConfiguration.getDataStorageMode()).thenReturn(StateStorageMode.PRUNE);
+
+    // Service should start successfully even with forceClearDb enabled
+    final SafeFuture<?> future = storageService.doStart();
+    assertThat(future).isCompleted();
+  }
 }
