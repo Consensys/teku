@@ -105,17 +105,15 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
     final Optional<UInt64> blockSlot = getSlotForBlockRoot.apply(beaconBlockRoot);
     if (blockSlot.isEmpty()) {
       return Optional.of(
-          new DataColumnSidecarValidationError.Timing(
-              String.format(
-                  "DataColumnSidecar's beacon_block_root %s does not correspond to a known block. It will be saved for future processing",
-                  beaconBlockRoot)));
+          DataColumnSidecarValidationError.Timing.format(
+              "DataColumnSidecar's beacon_block_root %s does not correspond to a known block. It will be saved for future processing",
+              beaconBlockRoot));
     }
     if (!blockSlot.get().equals(dataColumnSidecar.getSlot())) {
       return Optional.of(
-          new DataColumnSidecarValidationError.Critical(
-              String.format(
-                  "DataColumnSidecar's slot %s does not match the block slot %s for beacon_block_root %s",
-                  dataColumnSidecar.getSlot(), blockSlot.get(), beaconBlockRoot)));
+          DataColumnSidecarValidationError.Critical.format(
+              "DataColumnSidecar's slot %s does not match the block slot %s for beacon_block_root %s",
+              dataColumnSidecar.getSlot(), blockSlot.get(), beaconBlockRoot));
     }
     return Optional.empty();
   }
@@ -225,10 +223,9 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
             maybeBeaconBlock -> {
               if (maybeBeaconBlock.isEmpty()) {
                 return Optional.of(
-                    new DataColumnSidecarValidationError.Timing(
-                        String.format(
-                            "DataColumnSidecar's beacon_block_root %s does not correspond to a known block",
-                            beaconBlockRoot)));
+                    DataColumnSidecarValidationError.Timing.format(
+                        "DataColumnSidecar's beacon_block_root %s does not correspond to a known block",
+                        beaconBlockRoot));
               }
               final BeaconBlock beaconBlock = maybeBeaconBlock.get();
               return validateKzgCommitmentsRoot(dataColumnSidecar, beaconBlock);
@@ -239,7 +236,6 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
   public SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithState(
       final DataColumnSidecar dataColumnSidecar,
       final Spec spec,
-      final Set<DataColumnSidecarTrackingKey> receivedValidDataColumnSidecarInfoSet,
       final Set<InclusionProofInfo> validInclusionProofInfoSet,
       final Set<Bytes32> validSignedBlockHeaders,
       final Function<Bytes32, Optional<UInt64>> getBlockSlot,
@@ -262,10 +258,9 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
         dataColumnSidecar.getKzgCommitments().hashTreeRoot();
     if (!kzgCommitmentsRoot.equals(dataColumnSidecarCommitmentsRoot)) {
       return Optional.of(
-          new DataColumnSidecarValidationError.Critical(
-              String.format(
-                  "DataColumnSidecar's KZG commitments root %s does not match the bid's blob_kzg_commitments_root %s",
-                  dataColumnSidecarCommitmentsRoot, kzgCommitmentsRoot)));
+          DataColumnSidecarValidationError.Critical.format(
+              "DataColumnSidecar's KZG commitments root %s does not match the bid's blob_kzg_commitments_root %s",
+              dataColumnSidecarCommitmentsRoot, kzgCommitmentsRoot));
     }
     return Optional.empty();
   }

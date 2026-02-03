@@ -336,7 +336,6 @@ public class DataColumnSidecarGossipValidator {
         dataColumnSidecarUtil.validateWithState(
             dataColumnSidecar,
             spec,
-            receivedValidDataColumnSidecarInfoSet,
             validInclusionProofInfoSet,
             validSignedBlockHeaders,
             gossipValidationHelper::getSlotForBlockRoot,

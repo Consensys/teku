@@ -71,7 +71,6 @@ public interface DataColumnSidecarUtil {
   SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithState(
       DataColumnSidecar dataColumnSidecar,
       Spec spec,
-      Set<DataColumnSidecarTrackingKey> receivedValidDataColumnSidecarInfoSet,
       Set<InclusionProofInfo> validInclusionProofInfoSet,
       Set<Bytes32> validSignedBlockHeaders,
       Function<Bytes32, Optional<UInt64>> getBlockSlot,

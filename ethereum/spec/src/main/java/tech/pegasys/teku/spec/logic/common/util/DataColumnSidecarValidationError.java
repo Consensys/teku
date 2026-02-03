@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
+import com.google.errorprone.annotations.FormatMethod;
+import java.util.function.Supplier;
+
 /**
  * Domain-specific validation errors for Data Column Sidecars.
  *
@@ -24,35 +27,45 @@ package tech.pegasys.teku.spec.logic.common.util;
  *
  * <p>The gossip validation layer is responsible for mapping these domain errors to network actions.
  * The fork validation layer only reports what is wrong, not how to handle it.
+ *
+ * <p>Error descriptions are lazily evaluated using static factory methods to avoid unnecessary
+ * string formatting when the description isn't accessed.
  */
 public sealed interface DataColumnSidecarValidationError
     permits DataColumnSidecarValidationError.Critical,
         DataColumnSidecarValidationError.Transient,
         DataColumnSidecarValidationError.Timing {
 
-  String description();
+  Supplier<String> detailsSupplier();
+
+  default String description() {
+    return detailsSupplier().get();
+  }
 
   // Malformed or cryptographically invalid data
-  record Critical(String details) implements DataColumnSidecarValidationError {
-    @Override
-    public String description() {
-      return details;
+  record Critical(Supplier<String> detailsSupplier) implements DataColumnSidecarValidationError {
+
+    @FormatMethod
+    public static Critical format(final String format, final Object... args) {
+      return new Critical(() -> String.format(format, args));
     }
   }
 
   // Temporarily unavailable data
-  record Transient(String details) implements DataColumnSidecarValidationError {
-    @Override
-    public String description() {
-      return details;
+  record Transient(Supplier<String> detailsSupplier) implements DataColumnSidecarValidationError {
+
+    @FormatMethod
+    public static Transient format(final String format, final Object... args) {
+      return new Transient(() -> String.format(format, args));
     }
   }
 
   // Timing-related issues requiring deferred processing
-  record Timing(String details) implements DataColumnSidecarValidationError {
-    @Override
-    public String description() {
-      return details;
+  record Timing(Supplier<String> detailsSupplier) implements DataColumnSidecarValidationError {
+
+    @FormatMethod
+    public static Timing format(final String format, final Object... args) {
+      return new Timing(() -> String.format(format, args));
     }
   }
 }
