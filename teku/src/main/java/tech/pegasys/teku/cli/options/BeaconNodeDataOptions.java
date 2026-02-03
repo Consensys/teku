@@ -223,6 +223,18 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       arity = "0..1")
   private boolean debugDataDumpingEnabled = DEFAULT_DEBUG_DATA_DUMPING_ENABLED;
 
+  @CommandLine.Option(
+      names = {"--force-clear-db"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Force deletion of the beacon chain database on startup. "
+              + "This will delete all chain data but preserve validator slashing protection. "
+              + "Use with caution - all historical chain data will be lost.",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean forceClearDb = false;
+
   @Override
   protected DataConfig.Builder configureDataConfig(final DataConfig.Builder config) {
     return super.configureDataConfig(config)
@@ -250,7 +262,8 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .blobsArchivePath(blobsArchivePath)
                 .retainedSlots(dataStorageRetainedSlots)
                 .statePruningInterval(Duration.ofSeconds(statePruningIntervalSeconds))
-                .statePruningLimit(statePruningLimit));
+                .statePruningLimit(statePruningLimit)
+                .forceClearDb(forceClearDb));
     builder.sync(
         b ->
             b.fetchAllHistoricBlocks(dataStorageMode.storesAllBlocks())
