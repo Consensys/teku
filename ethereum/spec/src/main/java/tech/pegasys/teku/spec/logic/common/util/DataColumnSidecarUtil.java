@@ -32,11 +32,14 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 
 /**
- * Fork-aware utility for Data Column Sidecar gossip validation. This interface defines the contract
- * for fork-specific validation logic.
+ * Fork-specific utility for data column sidecar gossip validation.
  *
- * <p>Different fork implementations provide fork-specific behavior. Methods that don't apply to a
- * particular fork return {@link DataColumnSidecarValidationError#VALID}.
+ * <p>Implementations provide fork-specific validation logic (e.g., Fulu validates signed headers
+ * and inclusion proofs, Gloas validates execution payload bids).
+ *
+ * <p>Return conventions: validation methods return {@code Optional.empty()} when validation passes
+ * or is not applicable; boolean methods return {@code true} for valid/applicable, {@code false}
+ * otherwise.
  */
 public interface DataColumnSidecarUtil {
 

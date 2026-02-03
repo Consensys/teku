@@ -308,7 +308,7 @@ public class DataColumnSidecarGossipValidatorGloasTest
   }
 
   @Test
-  void shouldRejectWhenBlockNotFound() {
+  void shouldBeSavedForFutureWhenBlockUnavailable() {
     // Mock getSlotForBlockRoot to return the correct slot
     when(gossipValidationHelper.getSlotForBlockRoot(beaconBlockRoot)).thenReturn(Optional.of(slot));
     // Mock retrieveBlockByRoot to return empty (block not found)
