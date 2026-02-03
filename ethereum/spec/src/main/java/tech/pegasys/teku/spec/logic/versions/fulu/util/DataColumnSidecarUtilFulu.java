@@ -133,13 +133,6 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     return true;
   }
 
-  /**
-   * Validate that the sidecar's slot matches the referenced block's slot.
-   *
-   * @param dataColumnSidecar the data column sidecar to validate
-   * @param getSlotForBlockRoot function to get the slot for a block root
-   * @return validation result
-   */
   @Override
   public Optional<DataColumnSidecarValidationError> validateBlockSlot(
       final DataColumnSidecar dataColumnSidecar,
@@ -294,13 +287,11 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   }
 
   /**
-   * Verify KZG proofs for the data column sidecar.
+   * Verify KZG proofs for the data column sidecar. Gossip rule: [REJECT] The sidecar's column data
+   * is valid as verified by verify_data_column_sidecar_kzg_proofs(sidecar)
    *
    * @param dataColumnSidecar the data column sidecar
    * @return true if KZG proofs are valid
-   */
-  /*
-   * [REJECT] The sidecar's column data is valid as verified by verify_data_column_sidecar_kzg_proofs(sidecar)
    */
   @Override
   public boolean verifyDataColumnSidecarKzgProofs(final DataColumnSidecar dataColumnSidecar) {
@@ -361,14 +352,6 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
             dataColumnSidecarFulu.getBlockBodyRoot()));
   }
 
-  /**
-   * Perform async block validation. Fulu sidecars contain signed block headers, so no async block
-   * retrieval is needed.
-   *
-   * @param dataColumnSidecar the data column sidecar to validate
-   * @param retrieveBlockByRoot function to retrieve full block by root
-   * @return completed future with empty result (no validation needed for Fulu)
-   */
   @Override
   public SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithBlock(
       final DataColumnSidecar dataColumnSidecar,
@@ -377,6 +360,37 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     return SafeFuture.completedFuture(Optional.empty());
   }
 
+  /**
+   * Perform state-dependent validation for Fulu data column sidecars. Validates proposer
+   * correctness and header signature by retrieving the parent block's post state. Implements the
+   * following gossip rules:
+   *
+   * <ul>
+   *   <li>[REJECT] The sidecar is proposed by the expected proposer_index for the block's slot in
+   *       the context of the current shuffling (defined by
+   *       block_header.parent_root/block_header.slot). If the proposer_index cannot immediately be
+   *       verified against the expected shuffling, the sidecar MAY be queued for later processing
+   *       while proposers for the block's branch are calculated -- in such a case do not REJECT,
+   *       instead IGNORE this message.
+   *   <li>[REJECT] The proposer signature of sidecar.signed_block_header is valid with respect to
+   *       the block_header.proposer_index pubkey.
+   * </ul>
+   *
+   * <p>Optimization: If the signed block header has been fully validated before (cached in
+   * validSignedBlockHeaders), all state-dependent checks are skipped.
+   *
+   * @param dataColumnSidecar the data column sidecar to validate
+   * @param spec the Spec instance for domain and signing root computation
+   * @param receivedValidDataColumnSidecarInfoSet tracking keys for already-validated sidecars
+   * @param validInclusionProofInfoSet cache of validated inclusion proofs for optimization
+   * @param validSignedBlockHeaders cache of validated signed block header hashes for optimization
+   * @param getBlockSlot function to get the slot for a block root
+   * @param retrieveBeaconState function to retrieve beacon state at a specific slot/block
+   * @param isProposerTheExpectedProposer function to check if proposer index matches expected
+   * @param isSignatureValidWithRespectToProposerIndex function to verify proposer signature
+   * @return SafeFuture with optional validation error. Empty means validation passed, present means
+   *     validation found an issue (invalid/ignore/save for future).
+   */
   @Override
   public SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithState(
       final DataColumnSidecar dataColumnSidecar,
