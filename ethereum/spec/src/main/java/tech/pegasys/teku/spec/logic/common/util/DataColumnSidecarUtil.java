@@ -76,7 +76,7 @@ public interface DataColumnSidecarUtil {
       Function<Bytes32, Optional<UInt64>> getBlockSlot,
       Function<StateRetrievalData, SafeFuture<Optional<BeaconState>>> retrieveBeaconState,
       Function<ProposerValidationData, Boolean> isProposerTheExpectedProposer,
-      Function<SignatureVerificationData, Boolean> isSignatureValidWithRespectToBuilderIndex);
+      Function<SignatureVerificationData, Boolean> isSignatureValidWithRespectToProposerIndex);
 
   DataColumnSidecarTrackingKey extractTrackingKey(DataColumnSidecar dataColumnSidecar);
 
