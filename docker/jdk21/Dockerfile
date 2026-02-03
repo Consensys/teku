@@ -10,7 +10,7 @@ RUN JAVA_TOOL_OPTIONS="-Djdk.lang.Process.launchMechanism=vfork" $JAVA_HOME/bin/
          --output /javaruntime
 
 FROM mirror.gcr.io/library/ubuntu:24.04
-ENV JAVA_HOME /opt/java/openjdk
+ENV JAVA_HOME=/opt/java/openjdk
 ENV PATH "${JAVA_HOME}/bin:${PATH}"
 COPY --from=jre-build /javaruntime $JAVA_HOME
 
@@ -35,9 +35,9 @@ COPY --chown=teku:teku teku /opt/teku/
 # Default to UTF-8 locale
 ENV LANG C.UTF-8
 
-ENV TEKU_REST_API_INTERFACE "0.0.0.0"
-ENV TEKU_VALIDATOR_API_INTERFACE "0.0.0.0"
-ENV TEKU_METRICS_INTERFACE "0.0.0.0"
+ENV TEKU_REST_API_INTERFACE="0.0.0.0"
+ENV TEKU_VALIDATOR_API_INTERFACE="0.0.0.0"
+ENV TEKU_METRICS_INTERFACE="0.0.0.0"
 ENV PATH "/opt/teku/bin:${PATH}"
 
 ENV MALLOC_CONF "background_thread:true,dirty_decay_ms:1000,muzzy_decay_ms:1000"
