@@ -38,8 +38,9 @@ import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 /**
  * Gloas-specific implementation of {@link DataColumnSidecarUtil}.
  *
- * <p>Implements Gloas gossip validation rules as per
- * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/p2p-interface.md#data_column_sidecar_subnet_id
+ * <p>Implements Gloas gossip validation rules as per <a
+ * href="https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/p2p-interface.md#data_column_sidecar_subnet_id">data_column_sidecar_subnet_id
+ * p2p gossip rules</a>
  *
  * <p>Gloas sidecars do NOT include signed block headers, resulting in simplified validation
  */

@@ -19,6 +19,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -35,6 +37,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.GloasTrackingKey;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -276,7 +279,7 @@ public class DataColumnSidecarGossipValidatorGloasTest
 
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
-        .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
+        .isCompletedWithValue(SAVE_FOR_FUTURE);
   }
 
   @Test
@@ -288,7 +291,10 @@ public class DataColumnSidecarGossipValidatorGloasTest
 
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
+        .isCompletedWithValue(
+            reject(
+                "DataColumnSidecar's slot %s does not match the block slot %s for beacon_block_root %s",
+                slot, differentSlot, beaconBlockRoot));
   }
 
   @Test
@@ -311,7 +317,7 @@ public class DataColumnSidecarGossipValidatorGloasTest
 
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
-        .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
+        .isCompletedWithValue(SAVE_FOR_FUTURE);
   }
 
   @Test
@@ -322,8 +328,18 @@ public class DataColumnSidecarGossipValidatorGloasTest
     when(gossipValidationHelper.retrieveBlockByRoot(beaconBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(beaconBlock)));
 
+    final Bytes32 sidecarCommitmentsRoot = dataColumnSidecar.getKzgCommitments().hashTreeRoot();
+    final Bytes32 blockCommitmentsRoot =
+        BeaconBlockBodyGloas.required(beaconBlock.getBody())
+            .getSignedExecutionPayloadBid()
+            .getMessage()
+            .getBlobKzgCommitmentsRoot();
+
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
+        .isCompletedWithValue(
+            reject(
+                "DataColumnSidecar's KZG commitments root %s does not match the bid's blob_kzg_commitments_root %s",
+                sidecarCommitmentsRoot, blockCommitmentsRoot));
   }
 }

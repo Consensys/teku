@@ -19,6 +19,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.SAVE_FOR_FUTURE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import java.util.Map;
 import java.util.Optional;
@@ -113,7 +116,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
 
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
-        .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
+        .isCompletedWithValue(SAVE_FOR_FUTURE);
   }
 
   @Test
@@ -122,7 +125,10 @@ public class DataColumnSidecarGossipValidatorFuluTest
 
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
-        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+        .isCompletedWithValue(
+            ignore(
+                "DataColumnSidecar is from slot %s greater than the latest finalized slot. Ignoring",
+                slot));
   }
 
   @Test
@@ -159,7 +165,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
 
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
+        .isCompletedWithValue(reject("DataColumnSidecar block header signature is invalid"));
 
     assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
   }
@@ -170,7 +176,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
 
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
-        .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
+        .isCompletedWithValue(SAVE_FOR_FUTURE);
 
     assertValidationMetrics(Map.of(ValidationResultCode.SAVE_FOR_FUTURE, 1));
   }
@@ -237,7 +243,8 @@ public class DataColumnSidecarGossipValidatorFuluTest
 
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
-        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+        .isCompletedWithValue(
+            ignore("DataColumnSidecar block header state at slot %s wasn't available.", slot));
 
     assertValidationMetrics(Map.of(ValidationResultCode.IGNORE, 1));
   }
@@ -246,9 +253,18 @@ public class DataColumnSidecarGossipValidatorFuluTest
   void shouldRejectIfProposerIndexIsWrong() {
     when(gossipValidationHelper.isProposerTheExpectedProposer(any())).thenReturn(false);
 
+    final UInt64 proposerIndex =
+        DataColumnSidecarFulu.required(dataColumnSidecar)
+            .getSignedBlockHeader()
+            .getMessage()
+            .getProposerIndex();
+
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
+        .isCompletedWithValue(
+            reject(
+                "DataColumnSidecar block header proposed by incorrect proposer with index %s",
+                proposerIndex));
 
     assertValidationMetrics(Map.of(ValidationResultCode.REJECT, 1));
   }
