@@ -17,4 +17,5 @@
 ### Bug Fixes
 
 - Added `DOMAIN_BLS_TO_EXECUTION_CHANGE` to spec api output.
+- Fixed a ConcurrentModificationException in SidecarRetriever.
 

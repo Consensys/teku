@@ -190,42 +190,47 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
         rebuildTasks.size());
 
     // make sure requests are within their timeout
-    requests.values().forEach(request -> request.checkTimeout(currentTime));
+    // Create a snapshot to avoid ConcurrentModificationException when callback removes from map
+    new ArrayList<>(requests.values()).forEach(request -> request.checkTimeout(currentTime));
 
     final List<DataColumnSlotAndIdentifier> cancelledRequests = new ArrayList<>();
     // update state of any requests that are active
-    requests.forEach(
-        (columnId, request) -> {
-          if (!request.isFailedDownloading()) {
-            return;
-          }
-          if (custodyGroupCountManager.getCustodyGroupCount()
-              >= numberOfColumnsRequiredToReconstruct) {
-            final RebuildColumnsTask rebuildColumnsTask =
-                rebuildTasks.computeIfAbsent(
-                    request.getBlockRoot(),
-                    __ -> {
-                      LOG.debug(
-                          "Rebuilding columns for slot {} root {}",
-                          request.getSlot(),
-                          request.getBlockRoot());
-                      return new RebuildColumnsTask(
-                          request.getSlotAndBlockRoot(),
-                          currentTime,
-                          recoveryTimeout.minus(downloadTimeout),
-                          numberOfColumnsRequiredToReconstruct,
-                          sidecarDB,
-                          miscHelpersFulu);
-                    });
-            rebuildColumnsTask.addTask(request);
-          } else {
-            LOG.debug("Cancelled request for {}", columnId);
-            request.cancel();
-            // this will be cleaned to allow it to be added by another task, since its currently not
-            // recoverable.
-            cancelledRequests.add(columnId);
-          }
-        });
+    // Create a snapshot to avoid ConcurrentModificationException when callback removes from map
+    new ArrayList<>(requests.entrySet())
+        .forEach(
+            entry -> {
+              final DataColumnSlotAndIdentifier columnId = entry.getKey();
+              final PendingRecoveryRequest request = entry.getValue();
+              if (!request.isFailedDownloading()) {
+                return;
+              }
+              if (custodyGroupCountManager.getCustodyGroupCount()
+                  >= numberOfColumnsRequiredToReconstruct) {
+                final RebuildColumnsTask rebuildColumnsTask =
+                    rebuildTasks.computeIfAbsent(
+                        request.getBlockRoot(),
+                        __ -> {
+                          LOG.debug(
+                              "Rebuilding columns for slot {} root {}",
+                              request.getSlot(),
+                              request.getBlockRoot());
+                          return new RebuildColumnsTask(
+                              request.getSlotAndBlockRoot(),
+                              currentTime,
+                              recoveryTimeout.minus(downloadTimeout),
+                              numberOfColumnsRequiredToReconstruct,
+                              sidecarDB,
+                              miscHelpersFulu);
+                        });
+                rebuildColumnsTask.addTask(request);
+              } else {
+                LOG.debug("Cancelled request for {}", columnId);
+                request.cancel();
+                // this will be cleaned to allow it to be added by another task,
+                // since its currently not recoverable.
+                cancelledRequests.add(columnId);
+              }
+            });
     if (!cancelledRequests.isEmpty()) {
       LOG.debug("Removing {} pending requests", cancelledRequests.size());
       cancelledRequests.forEach(requests::remove);
