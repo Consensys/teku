@@ -11,7 +11,8 @@
 
 ### Additions and Improvements
 
-- New CLI flag `--rest-api-getblobs-sidecars-download-enabled` allows the beacon node to serve `getBlobs` REST API responses by attempting to fetch missing blob sidecars from the p2p network. The new flag `--rest-api-getblobs-sidecars-download-timeout` controls the network fetch timeout (default: 5 seconds).
+- New data columns sidecar backfiller enabled. It improves how the beacon node downloads past blobs related data it needs to custody.
+- New CLI flag `--rest-api-getblobs-sidecars-download-enabled` allows the beacon node to serve `getBlobs` REST API responses by attempting to fetch missing blob sidecars from the p2p network. The new flag `--rest-api-getblobs-sidecars-download-timeout` controls the network fetch timeout (default: 5 seconds). 
 - New CLI flag `--force-clear-db` to remove the beacon database on startup.
 
 
