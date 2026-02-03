@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.datacolumns.retriever.recovering;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever.CANCELLED;
@@ -23,6 +24,10 @@ import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,6 +53,7 @@ import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarDBStub;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
+import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetrieverStub;
 
 public class SidecarRetrieverTest {
@@ -77,7 +83,7 @@ public class SidecarRetrieverTest {
   private final DataColumnSidecarRetrieverStub delegateRetriever =
       new DataColumnSidecarRetrieverStub();
 
-  private final SidecarRetriever retriever =
+  private SidecarRetriever retriever =
       new SidecarRetriever(
           delegateRetriever,
           miscHelpers,
@@ -237,6 +243,40 @@ public class SidecarRetrieverTest {
     }
     verifyMetrics(1, 0, 0);
     assertThat(response).isCompletedExceptionally();
+  }
+
+  @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public void concurrentRecursiveUpdateTest() throws InterruptedException {
+    final DataColumnSidecarRetriever delegateRetriever = mock(DataColumnSidecarRetriever.class);
+    retriever =
+        new SidecarRetriever(
+            delegateRetriever,
+            miscHelpers,
+            dbAccessor,
+            stubAsyncRunner,
+            RECOVERY_TIMEOUT,
+            RECOVERY_TIMEOUT.dividedBy(2),
+            CHECK_INTERVAL,
+            timeProvider,
+            columnCount,
+            custodyManager,
+            metricsSystem);
+
+    when(delegateRetriever.retrieve(any())).thenReturn(SafeFuture.completedFuture(null));
+
+    final ExecutorService producerPool = Executors.newFixedThreadPool(4);
+    final CountDownLatch latch = new CountDownLatch(999);
+    for (int i = 0; i < 1000; i++) {
+      producerPool.submit(
+          () -> {
+            final DataColumnSidecar dataColumnSidecar = dataStructureUtil.randomDataColumnSidecar();
+            retriever.retrieve(DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar));
+            latch.countDown();
+          });
+    }
+
+    latch.await(1, TimeUnit.SECONDS);
   }
 
   static DataColumnSlotAndIdentifier createId(final BeaconBlock block, final int colIdx) {
