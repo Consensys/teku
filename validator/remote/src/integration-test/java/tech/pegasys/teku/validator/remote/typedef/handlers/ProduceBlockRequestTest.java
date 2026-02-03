@@ -43,7 +43,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
@@ -84,10 +83,6 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
     final ProduceBlockRequest.ProduceBlockResponse blockResponse =
         new ProduceBlockRequest.ProduceBlockResponse(beaconBlock);
-
-    System.out.println(
-        JsonUtil.prettySerialize(
-            beaconBlock, schemaDefinitions.getBeaconBlockSchema().getJsonTypeDefinition()));
 
     final String mockResponse = readExpectedJsonResource(specMilestone, false, false);
 
