@@ -45,13 +45,13 @@ public class AttestationUtilGloas extends AttestationUtilElectra {
   /**
    * is_valid_indexed_payload_attestation
    *
-   * <p>Check if ``indexed_payload_attestation`` is non-empty, has sorted indices, and has a valid
-   * aggregate signature.
+   * <p>Check if ``attestation`` is non-empty, has sorted indices, and has a valid aggregate
+   * signature.
    */
   public boolean isValidIndexedPayloadAttestation(
-      final BeaconState state, final IndexedPayloadAttestation indexedPayloadAttestation) {
+      final BeaconState state, final IndexedPayloadAttestation attestation) {
     // Verify indices are non-empty and sorted
-    final List<UInt64> indices = indexedPayloadAttestation.getAttestingIndices().asListUnboxed();
+    final List<UInt64> indices = attestation.getAttestingIndices().asListUnboxed();
     if (indices.isEmpty() || !Comparators.isInOrder(indices, UInt64::compareTo)) {
       return false;
     }
@@ -62,10 +62,11 @@ public class AttestationUtilGloas extends AttestationUtilElectra {
             .toList();
     final Bytes32 domain =
         beaconStateAccessors.getDomain(
-            state.getForkInfo(), Domain.PTC_ATTESTER, beaconStateAccessors.getCurrentEpoch(state));
-    final Bytes signingRoot =
-        miscHelpers.computeSigningRoot(indexedPayloadAttestation.getData(), domain);
-    return BLS.fastAggregateVerify(pubKeys, signingRoot, indexedPayloadAttestation.getSignature());
+            state.getForkInfo(),
+            Domain.PTC_ATTESTER,
+            miscHelpers.computeEpochAtSlot(attestation.getData().getSlot()));
+    final Bytes signingRoot = miscHelpers.computeSigningRoot(attestation.getData(), domain);
+    return BLS.fastAggregateVerify(pubKeys, signingRoot, attestation.getSignature());
   }
 
   @Override

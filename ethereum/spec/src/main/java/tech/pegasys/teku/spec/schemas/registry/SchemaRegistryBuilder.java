@@ -969,7 +969,8 @@ public class SchemaRegistryBuilder {
 
   private static SchemaProvider<?> createExecutionPayloadBidSchemaProvider() {
     return providerBuilder(EXECUTION_PAYLOAD_BID_SCHEMA)
-        .withCreator(GLOAS, (registry, specConfig, schemaName) -> new ExecutionPayloadBidSchema())
+        .withCreator(
+            GLOAS, (registry, specConfig, schemaName) -> new ExecutionPayloadBidSchema(registry))
         .build();
   }
 

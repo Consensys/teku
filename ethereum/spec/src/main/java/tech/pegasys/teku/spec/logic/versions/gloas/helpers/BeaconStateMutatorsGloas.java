@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.gloas.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.logic.common.helpers.Predicates.getExecutionAddressUnchecked;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -83,11 +84,17 @@ public class BeaconStateMutatorsGloas extends BeaconStateMutatorsElectra {
       final MutableBeaconState state,
       final BLSPublicKey pubkey,
       final Bytes32 withdrawalCredentials,
-      final UInt64 amount) {
+      final UInt64 amount,
+      final UInt64 slot) {
     final UInt64 index = beaconStateAccessorsGloas.getIndexForNewBuilder(state);
     final Builder builder =
-        beaconStateAccessorsGloas.getBuilderFromDeposit(
-            state, pubkey, withdrawalCredentials, amount);
+        new Builder(
+            pubkey,
+            withdrawalCredentials.get(0),
+            getExecutionAddressUnchecked(withdrawalCredentials),
+            amount,
+            miscHelpers.computeEpochAtSlot(slot),
+            FAR_FUTURE_EPOCH);
     final SszMutableList<Builder> builders = MutableBeaconStateGloas.required(state).getBuilders();
     if (index.isGreaterThanOrEqualTo(builders.size())) {
       LOG.debug("Adding new builder with index {} to state", builders.size());
@@ -111,7 +118,8 @@ public class BeaconStateMutatorsGloas extends BeaconStateMutatorsElectra {
       final BLSPublicKey pubkey,
       final Bytes32 withdrawalCredentials,
       final UInt64 amount,
-      final BLSSignature signature) {
+      final BLSSignature signature,
+      final UInt64 slot) {
     beaconStateAccessorsGloas
         .getBuilderIndex(state, pubkey)
         .ifPresentOrElse(
@@ -128,7 +136,7 @@ public class BeaconStateMutatorsGloas extends BeaconStateMutatorsElectra {
               // deposit contract
               if (miscHelpers.isValidDepositSignature(
                   pubkey, withdrawalCredentials, amount, signature)) {
-                addBuilderToRegistry(state, pubkey, withdrawalCredentials, amount);
+                addBuilderToRegistry(state, pubkey, withdrawalCredentials, amount, slot);
               }
             });
   }
