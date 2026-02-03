@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrate
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -100,6 +101,15 @@ public class GossipValidationHelper {
         .orElse(false);
   }
 
+  public boolean isSignatureValidWithRespectToProposerIndex(
+      final DataColumnSidecarUtil.SignatureVerificationData signatureVerificationData) {
+    return isSignatureValidWithRespectToProposerIndex(
+        signatureVerificationData.signingRoot(),
+        signatureVerificationData.proposerIndex(),
+        signatureVerificationData.signature(),
+        signatureVerificationData.state());
+  }
+
   /**
    * Retrieve the state for the parent block, applying the epoch transition if required to be able
    * to calculate the expected proposer for block.
@@ -112,6 +122,14 @@ public class GossipValidationHelper {
         ? recentChainData.retrieveBlockState(
             new SlotAndBlockRoot(firstSlotInBlockEpoch, parentBlockRoot))
         : recentChainData.retrieveBlockState(parentBlockRoot);
+  }
+
+  public SafeFuture<Optional<BeaconState>> getParentStateInBlockEpoch(
+      final DataColumnSidecarUtil.StateRetrievalData stateRetrievalData) {
+    return getParentStateInBlockEpoch(
+        stateRetrievalData.parentBlockSlot(),
+        stateRetrievalData.parentBlockRoot(),
+        stateRetrievalData.slot());
   }
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlotAndBlockRoot(
@@ -132,6 +150,14 @@ public class GossipValidationHelper {
       final UInt64 proposerIndex, final UInt64 slot, final BeaconState postState) {
     final int expectedProposerIndex = spec.getBeaconProposerIndex(postState, slot);
     return expectedProposerIndex == proposerIndex.longValue();
+  }
+
+  public boolean isProposerTheExpectedProposer(
+      final DataColumnSidecarUtil.ProposerValidationData proposerValidationData) {
+    return isProposerTheExpectedProposer(
+        proposerValidationData.proposerIndex(),
+        proposerValidationData.slot(),
+        proposerValidationData.postState());
   }
 
   public Optional<UInt64> getSlotForBlockRoot(final Bytes32 blockRoot) {

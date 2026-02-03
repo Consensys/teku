@@ -35,9 +35,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.GloasTrackingKey;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -84,31 +81,16 @@ public class DataColumnSidecarGossipValidatorGloasTest
         .thenReturn(Optional.of(slot));
     when(gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(any(), any()))
         .thenReturn(true);
-    when(gossipValidationHelper.getParentStateInBlockEpoch(any(), any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomBeaconState())));
-    when(gossipValidationHelper.isProposerTheExpectedProposer(any(), any(), any()))
-        .thenReturn(true);
-    // Mock block retrieval - dynamically return block with bid that has matching KZG commitments
-    // root. This is needed because each sidecar has different KZG commitments
+    // Gloas doesn't use state validation, so no need to mock state-related helpers
+    // Mock block retrieval - for the default setup, return a block with matching KZG commitments
+    // Note: Individual tests may override this mock for specific scenarios
+    final BeaconBlock defaultBlock =
+        dataStructureUtil.randomBeaconBlock(
+            slot,
+            dataStructureUtil.randomBeaconBlockBodyWithCommitments(
+                dataColumnSidecar.getKzgCommitments()));
     when(gossipValidationHelper.retrieveBlockByRoot(any(Bytes32.class)))
-        .thenAnswer(
-            invocation -> {
-              // Create a mock block with execution payload bid
-              final BeaconBlock mockBeaconBlock = mock(BeaconBlock.class);
-              final BeaconBlockBody mockBody = mock(BeaconBlockBody.class);
-              final SignedExecutionPayloadBid mockSignedBid = mock(SignedExecutionPayloadBid.class);
-              final ExecutionPayloadBid mockBid = mock(ExecutionPayloadBid.class);
-
-              when(mockBeaconBlock.getSlot()).thenReturn(slot);
-              when(mockBeaconBlock.getBody()).thenReturn(mockBody);
-              when(mockBody.getOptionalSignedExecutionPayloadBid())
-                  .thenReturn(Optional.of(mockSignedBid));
-              when(mockSignedBid.getMessage()).thenReturn(mockBid);
-              // Return the same KZG commitments root as the sidecar being validated
-              when(mockBid.getBlobKzgCommitmentsRoot())
-                  .thenReturn(dataColumnSidecar.getKzgCommitments().hashTreeRoot());
-              return SafeFuture.completedFuture(Optional.of(mockBeaconBlock));
-            });
+        .thenReturn(SafeFuture.completedFuture(Optional.of(defaultBlock)));
   }
 
   @Test
@@ -124,16 +106,17 @@ public class DataColumnSidecarGossipValidatorGloasTest
     final Spec mockSpec = mock(Spec.class);
     final SpecVersion mockSpecVersion = mock(SpecVersion.class);
     final SpecVersion mockGenesisSpec = mock(SpecVersion.class);
-    final DataColumnSidecarUtil mockValidationHelper = mock(DataColumnSidecarUtil.class);
+    final DataColumnSidecarUtil mockDataColumnSidecarUtil = mock(DataColumnSidecarUtil.class);
 
     when(mockSpec.atSlot(any(UInt64.class))).thenReturn(mockSpecVersion);
     when(mockSpec.getGenesisSpec()).thenReturn(mockGenesisSpec);
     when(mockGenesisSpec.getSlotsPerEpoch()).thenReturn(32);
     when(mockSpec.getNumberOfDataColumns()).thenReturn(Optional.of(128));
-    when(mockSpec.getDataColumnSidecarUtil(any(UInt64.class))).thenReturn(mockValidationHelper);
+    when(mockSpec.getDataColumnSidecarUtil(any(UInt64.class)))
+        .thenReturn(mockDataColumnSidecarUtil);
 
     // Make structure validation fail
-    when(mockValidationHelper.verifyDataColumnSidecarStructure(any(DataColumnSidecar.class)))
+    when(mockDataColumnSidecarUtil.verifyDataColumnSidecarStructure(any(DataColumnSidecar.class)))
         .thenReturn(false);
 
     // Create a validator with the mocked spec
@@ -184,6 +167,19 @@ public class DataColumnSidecarGossipValidatorGloasTest
   }
 
   @Test
+  void shouldNotValidateStateForGloas() {
+    // In Gloas, there's no state validation (validateWithState returns empty)
+    // State-related helpers should never be called
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+
+    // Verify that state validation helpers were never invoked
+    verify(gossipValidationHelper, never()).getParentStateInBlockEpoch(any(), any(), any());
+    verify(gossipValidationHelper, never()).isProposerTheExpectedProposer(any(), any(), any());
+  }
+
+  @Test
   void shouldTrackByBeaconBlockRootAndColumnIndex() {
     // First sidecar - should accept
     SafeFutureAssert.assertThatSafeFuture(
@@ -217,19 +213,13 @@ public class DataColumnSidecarGossipValidatorGloasTest
             .build();
 
     // Update mock to return block with bid that has matching KZG commitments for the new sidecar
-    final BeaconBlock mockBeaconBlock2 = mock(BeaconBlock.class);
-    final BeaconBlockBody mockBody2 = mock(BeaconBlockBody.class);
-    final SignedExecutionPayloadBid mockSignedBid2 = mock(SignedExecutionPayloadBid.class);
-    final ExecutionPayloadBid mockBid2 = mock(ExecutionPayloadBid.class);
-
-    when(mockBeaconBlock2.getSlot()).thenReturn(slot);
-    when(mockBeaconBlock2.getBody()).thenReturn(mockBody2);
-    when(mockBody2.getOptionalSignedExecutionPayloadBid()).thenReturn(Optional.of(mockSignedBid2));
-    when(mockSignedBid2.getMessage()).thenReturn(mockBid2);
-    when(mockBid2.getBlobKzgCommitmentsRoot())
-        .thenReturn(sidecarDifferentIndex.getKzgCommitments().hashTreeRoot());
+    final BeaconBlock secondBeaconblock =
+        dataStructureUtil.randomBeaconBlock(
+            slot,
+            dataStructureUtil.randomBeaconBlockBodyWithCommitments(
+                sidecarDifferentIndex.getKzgCommitments()));
     when(gossipValidationHelper.retrieveBlockByRoot(beaconBlockRoot))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(mockBeaconBlock2)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(secondBeaconblock)));
 
     // Different column index, should accept
     SafeFutureAssert.assertThatSafeFuture(
@@ -259,19 +249,13 @@ public class DataColumnSidecarGossipValidatorGloasTest
             .build();
 
     // Mock block for the different block root
-    final BeaconBlock mockBeaconBlock3 = mock(BeaconBlock.class);
-    final BeaconBlockBody mockBody3 = mock(BeaconBlockBody.class);
-    final SignedExecutionPayloadBid mockSignedBid3 = mock(SignedExecutionPayloadBid.class);
-    final ExecutionPayloadBid mockBid3 = mock(ExecutionPayloadBid.class);
-
-    when(mockBeaconBlock3.getSlot()).thenReturn(slot);
-    when(mockBeaconBlock3.getBody()).thenReturn(mockBody3);
-    when(mockBody3.getOptionalSignedExecutionPayloadBid()).thenReturn(Optional.of(mockSignedBid3));
-    when(mockSignedBid3.getMessage()).thenReturn(mockBid3);
-    when(mockBid3.getBlobKzgCommitmentsRoot())
-        .thenReturn(sidecarDifferentBlock.getKzgCommitments().hashTreeRoot());
+    final BeaconBlock thirdBeaconblock =
+        dataStructureUtil.randomBeaconBlock(
+            slot,
+            dataStructureUtil.randomBeaconBlockBodyWithCommitments(
+                sidecarDifferentBlock.getKzgCommitments()));
     when(gossipValidationHelper.retrieveBlockByRoot(differentBlockRoot))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(mockBeaconBlock3)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(thirdBeaconblock)));
 
     // Should accept - different block root means different tracking key
     SafeFutureAssert.assertThatSafeFuture(
@@ -333,44 +317,13 @@ public class DataColumnSidecarGossipValidatorGloasTest
   @Test
   void shouldRejectWhenKzgCommitmentsDoNotMatch() {
     // Create a block with bid that has different KZG commitments than the sidecar
-    final BeaconBlock mockBeaconBlock = mock(BeaconBlock.class);
-    final BeaconBlockBody mockBody = mock(BeaconBlockBody.class);
-    final SignedExecutionPayloadBid signedExecutionPayloadBid =
-        dataStructureUtil.randomSignedExecutionPayloadBid();
-
-    when(mockBeaconBlock.getSlot()).thenReturn(slot);
-    when(mockBeaconBlock.getBody()).thenReturn(mockBody);
-    when(mockBody.getOptionalSignedExecutionPayloadBid())
-        .thenReturn(Optional.of(signedExecutionPayloadBid));
+    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock();
 
     when(gossipValidationHelper.retrieveBlockByRoot(beaconBlockRoot))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(mockBeaconBlock)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconBlock)));
 
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
-  }
-
-  @Test
-  void shouldAcceptWhenKzgCommitmentsMatch() {
-    // Create a mock block with bid that has matching KZG commitments
-    final BeaconBlock mockBeaconBlock = mock(BeaconBlock.class);
-    final BeaconBlockBody mockBody = mock(BeaconBlockBody.class);
-    final SignedExecutionPayloadBid mockSignedBid = mock(SignedExecutionPayloadBid.class);
-    final ExecutionPayloadBid mockBid = mock(ExecutionPayloadBid.class);
-
-    when(mockBeaconBlock.getSlot()).thenReturn(slot);
-    when(mockBeaconBlock.getBody()).thenReturn(mockBody);
-    when(mockBody.getOptionalSignedExecutionPayloadBid()).thenReturn(Optional.of(mockSignedBid));
-    when(mockSignedBid.getMessage()).thenReturn(mockBid);
-    when(mockBid.getBlobKzgCommitmentsRoot())
-        .thenReturn(dataColumnSidecar.getKzgCommitments().hashTreeRoot());
-
-    when(gossipValidationHelper.retrieveBlockByRoot(beaconBlockRoot))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(mockBeaconBlock)));
-
-    SafeFutureAssert.assertThatSafeFuture(
-            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
-        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
   }
 }

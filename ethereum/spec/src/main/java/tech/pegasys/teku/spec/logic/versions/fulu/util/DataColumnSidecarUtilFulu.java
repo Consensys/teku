@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarTrackingKey;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
-import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationResult;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationError;
 import tech.pegasys.teku.spec.logic.common.util.FuluTrackingKey;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 
@@ -65,21 +65,15 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
    * @return validation result, empty if it passes
    */
   @Override
-  public Optional<SlotInclusionGossipValidationResult> performSlotTimingValidation(
+  public Optional<DataColumnSidecarValidationError> performSlotTimingValidation(
       final DataColumnSidecar dataColumnSidecar, final Predicate<UInt64> isSlotFromFuture) {
-    final Optional<SignedBeaconBlockHeader> maybeSignedBlockHeader =
-        dataColumnSidecar.getMaybeSignedBlockHeader();
-
-    if (maybeSignedBlockHeader.isEmpty()) {
-      return Optional.of(SlotInclusionGossipValidationResult.IGNORE);
-    }
-
-    final BeaconBlockHeader header = maybeSignedBlockHeader.get().getMessage();
-
+    final BeaconBlockHeader header =
+        DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader().getMessage();
     if (isSlotFromFuture.test(header.getSlot())) {
-      return Optional.of(SlotInclusionGossipValidationResult.SAVE_FOR_FUTURE);
+      return Optional.of(
+          DataColumnSidecarValidationError.fromFuture(
+              "DataColumnSidecar block header slot is from the future. It will be saved for future processing"));
     }
-
     return Optional.empty();
   }
 
@@ -93,21 +87,15 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
    * @return validation result, empty if it passes
    */
   @Override
-  public Optional<SlotInclusionGossipValidationResult> performSlotFinalizationValidation(
+  public Optional<DataColumnSidecarValidationError> performSlotFinalizationValidation(
       final DataColumnSidecar dataColumnSidecar, final Predicate<UInt64> isSlotFinalized) {
-    final Optional<SignedBeaconBlockHeader> maybeSignedBlockHeader =
-        dataColumnSidecar.getMaybeSignedBlockHeader();
-
-    if (maybeSignedBlockHeader.isEmpty()) {
-      return Optional.of(SlotInclusionGossipValidationResult.IGNORE);
-    }
-
-    final BeaconBlockHeader header = maybeSignedBlockHeader.get().getMessage();
-
+    final BeaconBlockHeader header =
+        DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader().getMessage();
     if (isSlotFinalized.test(header.getSlot())) {
-      return Optional.of(SlotInclusionGossipValidationResult.IGNORE);
+      return Optional.of(
+          DataColumnSidecarValidationError.slotNotFinalized(
+              "DataColumnSidecar is from a slot greater than the latest finalized slot. Ignoring"));
     }
-
     return Optional.empty();
   }
 
@@ -134,19 +122,10 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     return isBlockRootSeen.apply(header.getParentRoot());
   }
 
-  /**
-   * Check if the referenced block with bid has been seen. Not applicable to Fulu as this check is
-   * Gloas-specific. Gloas requires validating that the sidecar's beacon_block_root has been seen
-   * via a valid signed execution payload bid.
-   *
-   * @param dataColumnSidecar the data column sidecar to validate
-   * @param isBlockRootSeen function to check if a block root has been seen
-   * @return true (always valid for Fulu, as this is a Gloas-specific validation)
-   */
   @Override
-  public boolean isBlockWithBidSeen(
+  public boolean isBlockSeen(
       final DataColumnSidecar dataColumnSidecar, final Function<Bytes32, Boolean> isBlockRootSeen) {
-    // Fulu doesn't require block with bid check (Gloas-specific validation)
+    // Non-applicable for FULU
     return true;
   }
 
@@ -158,11 +137,11 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
    * @return validation result
    */
   @Override
-  public DataColumnSidecarValidationResult validateBlockSlot(
+  public Optional<DataColumnSidecarValidationError> validateBlockSlot(
       final DataColumnSidecar dataColumnSidecar,
       final Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot) {
     // Fulu does not validate block slot match (this is Gloas-specific)
-    return DataColumnSidecarValidationResult.valid();
+    return Optional.empty();
   }
 
   /**
@@ -180,8 +159,8 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
    *       == store.finalized_checkpoint.root.
    * </ul>
    *
-   * @param blockHeader the block header from the sidecar
-   * @param parentBlockSlot the slot of the parent block
+   * @param dataColumnSidecar the data column sidecar
+   * @param getBlockSlot function to get the block slot
    * @param invalidBlockRoots map of invalid block roots
    * @param currentFinalizedCheckpointIsAncestorOfBlock function to check finalized checkpoint
    *     ancestry
@@ -190,29 +169,41 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   /*
    */
   @Override
-  public DataColumnSidecarValidationResult validateParentBlock(
-      final BeaconBlockHeader blockHeader,
-      final UInt64 parentBlockSlot,
+  public Optional<DataColumnSidecarValidationError> validateParentBlock(
+      final DataColumnSidecar dataColumnSidecar,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
+      final Function<Bytes32, Optional<UInt64>> getBlockSlot,
       final BiPredicate<UInt64, Bytes32> currentFinalizedCheckpointIsAncestorOfBlock) {
-
+    final SignedBeaconBlockHeader signedBlockHeader =
+        DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader();
+    final BeaconBlockHeader blockHeader = signedBlockHeader.getMessage();
+    final Optional<UInt64> maybeParentBlockSlot = getBlockSlot.apply(blockHeader.getParentRoot());
+    if (maybeParentBlockSlot.isEmpty()) {
+      return Optional.of(
+          DataColumnSidecarValidationError.blockUnavailable(
+              "DataColumnSidecar block header parent block does not exist. It will be saved for future processing"));
+    }
+    final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
     if (invalidBlockRoots.containsKey(blockHeader.getParentRoot())) {
-      return DataColumnSidecarValidationResult.invalid(
-          "DataColumnSidecar block header has an invalid parent root");
+      return Optional.of(
+          DataColumnSidecarValidationError.invalidBlock(
+              "DataColumnSidecar block header has an invalid parent root"));
     }
 
     if (!blockHeader.getSlot().isGreaterThan(parentBlockSlot)) {
-      return DataColumnSidecarValidationResult.invalid(
-          "Parent block slot is after DataColumnSidecar slot");
+      return Optional.of(
+          DataColumnSidecarValidationError.invalidSlot(
+              "Parent block slot is after DataColumnSidecar slot"));
     }
 
     if (!currentFinalizedCheckpointIsAncestorOfBlock.test(
         blockHeader.getSlot(), blockHeader.getParentRoot())) {
-      return DataColumnSidecarValidationResult.invalid(
-          "DataColumnSidecar block header does not descend from finalized checkpoint");
+      return Optional.of(
+          DataColumnSidecarValidationError.invalidSlot(
+              "DataColumnSidecar block header does not descend from finalized checkpoint"));
     }
 
-    return DataColumnSidecarValidationResult.valid();
+    return Optional.empty();
   }
 
   /**
@@ -245,7 +236,8 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   }
 
   /**
-   * Verify structural validity of the data column dataColumnSidecar.
+   * Verify structural validity of the data column dataColumnSidecar. Gossip rule: [REJECT] The
+   * sidecar is valid as verified by verify_data_column_sidecar(sidecar).
    *
    * @param dataColumnSidecar the data column dataColumnSidecar
    * @return true if structure is valid
@@ -328,19 +320,7 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
 
     return Optional.of(
         new SignatureVerificationData(
-            signingRoot, header.getProposerIndex(), signedBlockHeader.getSignature()));
-  }
-
-  /**
-   * Get beacon block header if applicable.
-   *
-   * @param dataColumnSidecar the data column dataColumnSidecar
-   * @return Optional containing the header if applicable
-   */
-  @Override
-  public Optional<BeaconBlockHeader> getBlockHeader(final DataColumnSidecar dataColumnSidecar) {
-    return Optional.of(
-        DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader().getMessage());
+            signingRoot, header.getProposerIndex(), signedBlockHeader.getSignature(), state));
   }
 
   /**
@@ -378,10 +358,92 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
    * @return completed future with empty result (no validation needed for Fulu)
    */
   @Override
-  public SafeFuture<Optional<DataColumnSidecarValidationResult>> validateBidKzgCommitmentsRoot(
+  public SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithBlock(
       final DataColumnSidecar dataColumnSidecar,
       final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
     // Fulu sidecars already contain the header, no block validation needed
     return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
+  public SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithState(
+      final DataColumnSidecar dataColumnSidecar,
+      final Spec spec,
+      final Set<DataColumnSidecarTrackingKey> receivedValidDataColumnSidecarInfoSet,
+      final Set<InclusionProofInfo> validInclusionProofInfoSet,
+      final Set<Bytes32> validSignedBlockHeaders,
+      final Function<Bytes32, Optional<UInt64>> getBlockSlot,
+      final Function<StateRetrievalData, SafeFuture<Optional<BeaconState>>> retrieveBeaconState,
+      final Function<ProposerValidationData, Boolean> isProposerTheExpectedProposer,
+      final Function<SignatureVerificationData, Boolean>
+          isSignatureValidWithRespectToProposerIndex) {
+    final SignedBeaconBlockHeader signedBlockHeader =
+        DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader();
+    final BeaconBlockHeader blockHeader = signedBlockHeader.getMessage();
+    // Optimization: If we have already completely verified a sidecar with the same signed header
+    if (validSignedBlockHeaders.contains(signedBlockHeader.hashTreeRoot())) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    final Bytes32 parentBlockRoot = blockHeader.getParentRoot();
+    final Optional<UInt64> maybeParentBlockSlot = getBlockSlot.apply(parentBlockRoot);
+    if (maybeParentBlockSlot.isEmpty()) {
+      return SafeFuture.completedFuture(
+          Optional.of(
+              DataColumnSidecarValidationError.blockUnavailable(
+                  "DataColumnSidecar parent block is unavailable. Saving for future processing")));
+    }
+    return retrieveBeaconState
+        .apply(
+            new StateRetrievalData(
+                maybeParentBlockSlot.get(), parentBlockRoot, dataColumnSidecar.getSlot()))
+        .thenApply(
+            maybePostState -> {
+              if (maybePostState.isEmpty()) {
+                return Optional.of(
+                    DataColumnSidecarValidationError.stateUnavailable(
+                        "DataColumnSidecar block header state wasn't available. Must have been pruned by finalized."));
+              }
+              final BeaconState postState = maybePostState.get();
+
+              /*
+               * [REJECT] The sidecar is proposed by the expected proposer_index for the block's slot
+               * in the context of the current shuffling (defined by block_header.parent_root/block_header.slot).
+               * If the proposer_index cannot immediately be verified against the expected shuffling,
+               * the sidecar MAY be queued for later processing while proposers for the block's branch
+               * are calculated -- in such a case do not REJECT, instead IGNORE this message.
+               */
+              if (!isProposerTheExpectedProposer.apply(
+                  new ProposerValidationData(
+                      blockHeader.getProposerIndex(), blockHeader.getSlot(), postState))) {
+                return Optional.of(
+                    DataColumnSidecarValidationError.badProposer(
+                        String.format(
+                            "DataColumnSidecar block header proposed by incorrect proposer (%s)",
+                            blockHeader.getProposerIndex())));
+              }
+
+              /*
+               * [REJECT] The proposer signature of sidecar.signed_block_header,
+               * is valid with respect to the block_header.proposer_index pubkey.
+               */
+              final Optional<DataColumnSidecarUtil.SignatureVerificationData> maybeSignatureData =
+                  getSignatureVerificationData(spec, postState, dataColumnSidecar);
+              if (maybeSignatureData.isPresent()) {
+                final DataColumnSidecarUtil.SignatureVerificationData signatureData =
+                    maybeSignatureData.get();
+                if (!isSignatureValidWithRespectToProposerIndex.apply(signatureData)) {
+                  return Optional.of(
+                      DataColumnSidecarValidationError.badSignature(
+                          "DataColumnSidecar block header signature is invalid"));
+                }
+              }
+
+              // Cache validated info for optimization (tracking key added by caller after all
+              // validations)
+              cacheValidatedInfo(
+                  dataColumnSidecar, validSignedBlockHeaders, validInclusionProofInfoSet);
+
+              return Optional.empty();
+            });
   }
 }

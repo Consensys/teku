@@ -26,12 +26,12 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarTrackingKey;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
-import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationResult;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationError;
 import tech.pegasys.teku.spec.logic.common.util.GloasTrackingKey;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 
@@ -52,14 +52,14 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
   }
 
   @Override
-  public Optional<SlotInclusionGossipValidationResult> performSlotTimingValidation(
+  public Optional<DataColumnSidecarValidationError> performSlotTimingValidation(
       final DataColumnSidecar dataColumnSidecar, final Predicate<UInt64> isSlotFromFuture) {
     // Non applicable for Gloas
     return Optional.empty();
   }
 
   @Override
-  public Optional<SlotInclusionGossipValidationResult> performSlotFinalizationValidation(
+  public Optional<DataColumnSidecarValidationError> performSlotFinalizationValidation(
       final DataColumnSidecar dataColumnSidecar, final Predicate<UInt64> isSlotFinalized) {
     // Non applicable for Gloas
     return Optional.empty();
@@ -73,16 +73,17 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
   }
 
   /**
-   * Check if the referenced block has been seen. Gossip rule: [IGNORE] The sidecar's
-   * beacon_block_root has been seen via a valid signed execution payload bid. A client MAY queue
-   * the sidecar for processing once the block is retrieved.
+   * Check if the referenced block has been seen. Gossip rule: [IGNORE] A valid block for the
+   * sidecar's slot has been seen (via gossip or non-gossip sources). If not yet seen, a client MUST
+   * queue the sidecar for deferred validation and possible processing once the block is received or
+   * retrieved.
    *
    * @param dataColumnSidecar the data column sidecar to validate
    * @param isBlockRootSeen function to check if a block root has been seen
    * @return true if the referenced block has been seen
    */
   @Override
-  public boolean isBlockWithBidSeen(
+  public boolean isBlockSeen(
       final DataColumnSidecar dataColumnSidecar, final Function<Bytes32, Boolean> isBlockRootSeen) {
     return isBlockRootSeen.apply(dataColumnSidecar.getBeaconBlockRoot());
   }
@@ -96,43 +97,34 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
    * @return validation result
    */
   @Override
-  public DataColumnSidecarValidationResult validateBlockSlot(
+  public Optional<DataColumnSidecarValidationError> validateBlockSlot(
       final DataColumnSidecar dataColumnSidecar,
       final Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot) {
     final Bytes32 beaconBlockRoot = dataColumnSidecar.getBeaconBlockRoot();
     final Optional<UInt64> blockSlot = getSlotForBlockRoot.apply(beaconBlockRoot);
     if (blockSlot.isEmpty()) {
-      return DataColumnSidecarValidationResult.invalid(
-          "DataColumnSidecar's beacon_block_root does not correspond to a known block");
+      return Optional.of(
+          DataColumnSidecarValidationError.blockUnavailable(
+              "DataColumnSidecar's beacon_block_root does not correspond to a known block. It will be saved for future processing"));
     }
     if (!blockSlot.get().equals(dataColumnSidecar.getSlot())) {
-      return DataColumnSidecarValidationResult.invalid(
-          () ->
+      return Optional.of(
+          DataColumnSidecarValidationError.invalidSlot(
               String.format(
                   "DataColumnSidecar's slot %s does not match the block slot %s for beacon_block_root %s",
-                  dataColumnSidecar.getSlot(), blockSlot.get(), beaconBlockRoot));
+                  dataColumnSidecar.getSlot(), blockSlot.get(), beaconBlockRoot)));
     }
-    return DataColumnSidecarValidationResult.valid();
+    return Optional.empty();
   }
 
-  /**
-   * Validate parent block for the data column sidecar.
-   *
-   * @param dataColumnSidecar the block header from the sidecar
-   * @param parentBlockSlot the slot of the parent block
-   * @param invalidBlockRoots map of invalid block roots
-   * @param currentFinalizedCheckpointIsAncestorOfBlock function to check finalized checkpoint
-   *     ancestry
-   * @return validation result
-   */
   @Override
-  public DataColumnSidecarValidationResult validateParentBlock(
-      final BeaconBlockHeader dataColumnSidecar,
-      final UInt64 parentBlockSlot,
+  public Optional<DataColumnSidecarValidationError> validateParentBlock(
+      final DataColumnSidecar dataColumnSidecar,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
+      final Function<Bytes32, Optional<UInt64>> getBlockSlot,
       final BiPredicate<UInt64, Bytes32> currentFinalizedCheckpointIsAncestorOfBlock) {
     // Gloas does not validate parent block (no header in Gloas sidecars)
-    return DataColumnSidecarValidationResult.valid();
+    return Optional.empty();
   }
 
   /**
@@ -200,12 +192,6 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
   }
 
   @Override
-  public Optional<BeaconBlockHeader> getBlockHeader(final DataColumnSidecar dataColumnSidecar) {
-    // Gloas sidecars don't contain block headers
-    return Optional.empty();
-  }
-
-  @Override
   public void cacheValidatedInfo(
       final DataColumnSidecar dataColumnSidecar,
       final Set<Bytes32> validSignedBlockHeaders,
@@ -224,7 +210,7 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
    *     means validation found an issue (invalid/save for future).
    */
   @Override
-  public SafeFuture<Optional<DataColumnSidecarValidationResult>> validateBidKzgCommitmentsRoot(
+  public SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithBlock(
       final DataColumnSidecar dataColumnSidecar,
       final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
 
@@ -236,40 +222,46 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
             maybeBeaconBlock -> {
               if (maybeBeaconBlock.isEmpty()) {
                 return Optional.of(
-                    DataColumnSidecarValidationResult.saveForFuture(
+                    DataColumnSidecarValidationError.blockUnavailable(
                         "DataColumnSidecar's beacon_block_root does not correspond to a known block"));
               }
               final BeaconBlock beaconBlock = maybeBeaconBlock.get();
-              final DataColumnSidecarValidationResult kzgCommitmentsRootValidationResult =
-                  validateKzgCommitmentsRoot(dataColumnSidecar, beaconBlock);
-              if (!kzgCommitmentsRootValidationResult.isValid()) {
-                return Optional.of(kzgCommitmentsRootValidationResult);
-              }
-              return Optional.empty();
+              return validateKzgCommitmentsRoot(dataColumnSidecar, beaconBlock);
             });
   }
 
-  private DataColumnSidecarValidationResult validateKzgCommitmentsRoot(
+  @Override
+  public SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithState(
+      final DataColumnSidecar dataColumnSidecar,
+      final Spec spec,
+      final Set<DataColumnSidecarTrackingKey> receivedValidDataColumnSidecarInfoSet,
+      final Set<InclusionProofInfo> validInclusionProofInfoSet,
+      final Set<Bytes32> validSignedBlockHeaders,
+      final Function<Bytes32, Optional<UInt64>> getBlockSlot,
+      final Function<StateRetrievalData, SafeFuture<Optional<BeaconState>>> retrieveBeaconState,
+      final Function<ProposerValidationData, Boolean> isProposerTheExpectedProposer,
+      final Function<SignatureVerificationData, Boolean>
+          isSignatureValidWithRespectToProposerIndex) {
+    // Non-applicable for Gloas, no state validation required
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  private Optional<DataColumnSidecarValidationError> validateKzgCommitmentsRoot(
       final DataColumnSidecar dataColumnSidecar, final BeaconBlock beaconBlock) {
-
-    final Optional<SignedExecutionPayloadBid> maybeSignedExecutionPayloadBid =
-        beaconBlock.getBody().getOptionalSignedExecutionPayloadBid();
-    if (maybeSignedExecutionPayloadBid.isEmpty()) {
-      return DataColumnSidecarValidationResult.invalid(
-          "Missing DataColumnSidecar's corresponding payload execution bid");
-    }
-
     final Bytes32 kzgCommitmentsRoot =
-        maybeSignedExecutionPayloadBid.get().getMessage().getBlobKzgCommitmentsRoot();
+        BeaconBlockBodyGloas.required(beaconBlock.getBody())
+            .getSignedExecutionPayloadBid()
+            .getMessage()
+            .getBlobKzgCommitmentsRoot();
     final Bytes32 dataColumnSidecarCommitmentsRoot =
         dataColumnSidecar.getKzgCommitments().hashTreeRoot();
     if (!kzgCommitmentsRoot.equals(dataColumnSidecarCommitmentsRoot)) {
-      return DataColumnSidecarValidationResult.invalid(
-          () ->
+      return Optional.of(
+          DataColumnSidecarValidationError.invalidKzgCommitments(
               String.format(
                   "DataColumnSidecar's KZG commitments root %s does not match the bid's blob_kzg_commitments_root %s",
-                  dataColumnSidecarCommitmentsRoot, kzgCommitmentsRoot));
+                  dataColumnSidecarCommitmentsRoot, kzgCommitmentsRoot)));
     }
-    return DataColumnSidecarValidationResult.valid();
+    return Optional.empty();
   }
 }

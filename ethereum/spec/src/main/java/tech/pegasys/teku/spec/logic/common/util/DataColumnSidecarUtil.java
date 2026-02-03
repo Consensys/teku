@@ -36,34 +36,45 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
  * for fork-specific validation logic.
  *
  * <p>Different fork implementations provide fork-specific behavior. Methods that don't apply to a
- * particular fork return {@link DataColumnSidecarValidationResult#VALID}.
+ * particular fork return {@link DataColumnSidecarValidationError#VALID}.
  */
 public interface DataColumnSidecarUtil {
 
-  Optional<SlotInclusionGossipValidationResult> performSlotTimingValidation(
+  Optional<DataColumnSidecarValidationError> performSlotTimingValidation(
       DataColumnSidecar dataColumnSidecar, Predicate<UInt64> isSlotFromFuture);
 
-  Optional<SlotInclusionGossipValidationResult> performSlotFinalizationValidation(
+  Optional<DataColumnSidecarValidationError> performSlotFinalizationValidation(
       DataColumnSidecar dataColumnSidecar, Predicate<UInt64> isSlotFinalized);
 
   boolean isBlockParentSeen(
       DataColumnSidecar dataColumnSidecar, Function<Bytes32, Boolean> isBlockRootSeen);
 
-  boolean isBlockWithBidSeen(
+  boolean isBlockSeen(
       DataColumnSidecar dataColumnSidecar, Function<Bytes32, Boolean> isBlockRootSeen);
 
-  DataColumnSidecarValidationResult validateBlockSlot(
+  Optional<DataColumnSidecarValidationError> validateBlockSlot(
       DataColumnSidecar dataColumnSidecar, Function<Bytes32, Optional<UInt64>> getSlotForBlockRoot);
 
-  DataColumnSidecarValidationResult validateParentBlock(
-      BeaconBlockHeader blockHeader,
-      UInt64 parentBlockSlot,
+  Optional<DataColumnSidecarValidationError> validateParentBlock(
+      DataColumnSidecar dataColumnSidecar,
       Map<Bytes32, BlockImportResult> invalidBlockRoots,
+      Function<Bytes32, Optional<UInt64>> getBlockSlot,
       BiPredicate<UInt64, Bytes32> currentFinalizedCheckpointIsAncestorOfBlock);
 
-  SafeFuture<Optional<DataColumnSidecarValidationResult>> validateBidKzgCommitmentsRoot(
+  SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithBlock(
       DataColumnSidecar dataColumnSidecar,
       Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot);
+
+  SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithState(
+      DataColumnSidecar dataColumnSidecar,
+      Spec spec,
+      Set<DataColumnSidecarTrackingKey> receivedValidDataColumnSidecarInfoSet,
+      Set<InclusionProofInfo> validInclusionProofInfoSet,
+      Set<Bytes32> validSignedBlockHeaders,
+      Function<Bytes32, Optional<UInt64>> getBlockSlot,
+      Function<StateRetrievalData, SafeFuture<Optional<BeaconState>>> retrieveBeaconState,
+      Function<ProposerValidationData, Boolean> isProposerTheExpectedProposer,
+      Function<SignatureVerificationData, Boolean> isSignatureValidWithRespectToBuilderIndex);
 
   DataColumnSidecarTrackingKey extractTrackingKey(DataColumnSidecar dataColumnSidecar);
 
@@ -80,36 +91,18 @@ public interface DataColumnSidecarUtil {
   Optional<SignatureVerificationData> getSignatureVerificationData(
       Spec spec, BeaconState state, DataColumnSidecar dataColumnSidecar);
 
-  Optional<BeaconBlockHeader> getBlockHeader(DataColumnSidecar dataColumnSidecar);
-
   void cacheValidatedInfo(
       DataColumnSidecar dataColumnSidecar,
       Set<Bytes32> validSignedBlockHeaders,
       Set<InclusionProofInfo> validInclusionProofInfoSet);
 
-  /**
-   * Helper record for caching inclusion proof validation results.
-   *
-   * @param commitmentsRoot hash tree root of KZG commitments
-   * @param inclusionProofRoot hash tree root of inclusion proof
-   * @param bodyRoot the beacon block body root
-   */
   record InclusionProofInfo(
       Bytes32 commitmentsRoot, Bytes32 inclusionProofRoot, Bytes32 bodyRoot) {}
 
-  /**
-   * Helper record for signature verification data.
-   *
-   * @param signingRoot the signing root to verify
-   * @param proposerIndex the proposer index
-   * @param signature the BLS signature to verify
-   */
   record SignatureVerificationData(
-      Bytes signingRoot, UInt64 proposerIndex, BLSSignature signature) {}
+      Bytes signingRoot, UInt64 proposerIndex, BLSSignature signature, BeaconState state) {}
 
-  /** Result of slot inclusion gossip validation. */
-  enum SlotInclusionGossipValidationResult {
-    IGNORE,
-    SAVE_FOR_FUTURE
-  }
+  record StateRetrievalData(UInt64 parentBlockSlot, Bytes32 parentBlockRoot, UInt64 slot) {}
+
+  record ProposerValidationData(UInt64 proposerIndex, UInt64 slot, BeaconState postState) {}
 }
