@@ -58,7 +58,7 @@ public class EpochCachePrimer {
   private void primeCacheForBlockAtSlot(
       final MinimalBeaconBlockSummary headBlock, final UInt64 firstSlotOfEpoch) {
     recentChainData
-        .retrieveStateAtSlot(new SlotAndBlockRoot(firstSlotOfEpoch, headBlock.getRoot()))
+        .retrieveBlockState(new SlotAndBlockRoot(firstSlotOfEpoch, headBlock.getRoot()))
         .finish(
             maybeState -> maybeState.ifPresent(this::primeEpochStateCaches),
             error -> LOG.warn("Failed to precompute epoch transition", error));

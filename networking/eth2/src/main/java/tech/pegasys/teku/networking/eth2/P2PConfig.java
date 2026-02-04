@@ -59,6 +59,7 @@ public class P2PConfig {
 
   public static final int DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS = 30;
   public static final int DEFAULT_COLUMN_CUSTODY_BACKFILLER_BATCH_SIZE = 10;
+  public static final boolean DEFAULT_REWORKED_COLUMN_CUSTODY_BACKFILLER = true;
 
   // RocksDB is configured with 6 background jobs and threads (DEFAULT_MAX_BACKGROUND_JOBS and
   // DEFAULT_BACKGROUND_THREAD_COUNT)
@@ -316,7 +317,7 @@ public class P2PConfig {
     private Integer reworkedSidecarRecoveryTimeout = DEFAULT_RECOVERY_TIMEOUT_MS;
     private Integer reworkedSidecarDownloadTimeout = DEFAULT_DOWNLOAD_TIMEOUT_MS;
 
-    private boolean reworkedSidecarSyncEnabled = false;
+    private boolean reworkedSidecarSyncEnabled = DEFAULT_REWORKED_COLUMN_CUSTODY_BACKFILLER;
     private boolean columnsDataAvailabilityHalfCheckEnabled = false;
     private Integer reworkedSidecarSyncBatchSize = DEFAULT_COLUMN_CUSTODY_BACKFILLER_BATCH_SIZE;
     private Integer reworkedSidecarSyncPollPeriod =

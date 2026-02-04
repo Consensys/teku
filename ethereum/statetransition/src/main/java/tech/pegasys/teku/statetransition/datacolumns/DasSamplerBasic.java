@@ -27,12 +27,15 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
@@ -216,7 +219,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   }
 
   private boolean hasBlobs(final BeaconBlock block) {
-    return !block.getBody().getOptionalBlobKzgCommitments().orElseThrow().isEmpty();
+    return !block.getBody().getOptionalBlobKzgCommitments().map(SszList::isEmpty).orElse(true);
   }
 
   private boolean isInCustodyPeriod(final BeaconBlock block) {
@@ -268,5 +271,28 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
 
               return false;
             });
+  }
+
+  @Override
+  public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
+    LOG.debug("Sampler received block {} - origin: {}", block.getSlotAndBlockRoot(), remoteOrigin);
+    if (hasBlobs(block.getMessage())) {
+      getOrCreateTracker(block.getSlot(), block.getRoot());
+    }
+  }
+
+  @Override
+  public void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {
+    final DataColumnSamplingTracker removed =
+        recentlySampledColumnsByRoot.remove(slotAndBlockRoot.getBlockRoot());
+    if (removed != null) {
+      removed.completionFuture().cancel(true);
+      LOG.debug("Removed data column sampling tracker {}", removed);
+    }
+  }
+
+  @Override
+  public void enableBlockImportOnCompletion(final SignedBeaconBlock block) {
+    // nothing to do
   }
 }

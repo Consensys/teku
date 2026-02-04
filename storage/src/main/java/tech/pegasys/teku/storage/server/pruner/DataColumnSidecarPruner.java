@@ -106,6 +106,10 @@ public class DataColumnSidecarPruner extends Service {
     return SafeFuture.COMPLETE;
   }
 
+  /**
+   * NOTE: the column pruning must not update earliestAvailableDataColumnSlot db variable. That
+   * variable is fully maintained by DasCustodyBackfiller
+   */
   private void pruneDataColumnSidecars() {
 
     final Optional<UInt64> genesisTime = getGenesisTime();

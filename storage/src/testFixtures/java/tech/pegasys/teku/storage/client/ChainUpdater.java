@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -33,7 +34,6 @@ import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
-// TODO-GLOAS: https://github.com/Consensys/teku/issues/10071
 public class ChainUpdater {
 
   public final RecentChainData recentChainData;
@@ -181,12 +181,28 @@ public class ChainUpdater {
   }
 
   public void syncWith(final ChainBuilder otherChain) {
-    otherChain.streamBlocksAndStates().forEach(this::saveBlock);
+    otherChain
+        .streamBlocksAndStates()
+        .forEach(
+            block -> {
+              saveBlock(block);
+              otherChain
+                  .getExecutionPayloadAndStateAtSlot(block.getSlot())
+                  .ifPresent(this::saveExecutionPayload);
+            });
     updateBestBlock(otherChain.getLatestBlockAndState());
   }
 
   public void syncWithUpToSlot(final ChainBuilder otherChain, final long slot) {
-    otherChain.streamBlocksAndStates(0, slot).forEach(this::saveBlock);
+    otherChain
+        .streamBlocksAndStates(0, slot)
+        .forEach(
+            block -> {
+              saveBlock(block);
+              otherChain
+                  .getExecutionPayloadAndStateAtSlot(block.getSlot())
+                  .ifPresent(this::saveExecutionPayload);
+            });
     updateBestBlock(otherChain.getLatestBlockAndStateAtSlot(slot));
   }
 
@@ -255,6 +271,7 @@ public class ChainUpdater {
     } else {
       saveBlock(block, blobSidecars);
     }
+    chainBuilder.getExecutionPayloadAndStateAtSlot(slot).ifPresent(this::saveExecutionPayload);
     return block;
   }
 
@@ -318,6 +335,12 @@ public class ChainUpdater {
     if (blockTime.compareTo(recentChainData.getStore().getTimeSeconds()) > 0) {
       setTime(blockTime);
     }
+  }
+
+  public void saveExecutionPayload(final SignedExecutionPayloadAndState executionPayload) {
+    final StoreTransaction tx = recentChainData.startStoreTransaction();
+    tx.putExecutionPayloadAndState(executionPayload.executionPayload(), executionPayload.state());
+    assertThat(tx.commit()).isCompleted();
   }
 
   protected UInt64 getSlotTime(final UInt64 slot) {

@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -147,14 +148,15 @@ public class SimpleSidecarRetriever
 
     final SafeFuture<DataColumnSidecar> reqRespPromise =
         reqResp.requestDataColumnSidecar(match.peer.nodeId, match.request.columnId);
-    match.request.onPeerRequest(match.peer().nodeId);
+    match.peer.countSidecarRequest();
 
     final SafeFuture<Void> activeRpcRequest =
         reqRespPromise.handle(
             (sidecar, err) -> {
               reqRespCompleted(match.request, sidecar);
-
-              if (err != null) {
+              if (err == null) {
+                match.peer.countSidecarReceived();
+              } else {
                 LOG.debug(
                     "SimpleSidecarRetriever.Request failed for {} due to: {}",
                     () -> match.request.columnId,
@@ -176,10 +178,9 @@ public class SimpleSidecarRetriever
       final RetrieveRequest request, final RequestTracker ongoingRequestsTracker) {
     final Stream<ConnectedPeer> matchingPeers = findMatchingPeers(request, ongoingRequestsTracker);
 
-    // taking first the peers which were not requested yet, then peers which are less busy
+    // Preferring peers with the best response rate, then preferring less busy peers among equals
     final Comparator<ConnectedPeer> comparator =
-        Comparator.comparing((ConnectedPeer peer) -> request.getPeerRequestCount(peer.nodeId))
-            .reversed()
+        Comparator.comparing(ConnectedPeer::getResponseScore)
             .thenComparing(
                 (ConnectedPeer peer) ->
                     ongoingRequestsTracker.getAvailableRequestCount(peer.nodeId));
@@ -277,7 +278,14 @@ public class SimpleSidecarRetriever
     LOG.trace(
         "SimpleSidecarRetriever.peerConnected: 0x...{}", () -> nodeId.toHexString().substring(58));
     connectedPeers.computeIfAbsent(
-        nodeId, __ -> new ConnectedPeer(nodeId, maybeEarliestAvailableSlot));
+        nodeId,
+        __ ->
+            new ConnectedPeer(
+                nodeId,
+                maybeEarliestAvailableSlot,
+                miscHelpersFulu,
+                spec,
+                () -> custodyCountSupplier.getCustodyGroupCountForPeer(nodeId)));
   }
 
   @Override
@@ -288,39 +296,48 @@ public class SimpleSidecarRetriever
     connectedPeers.remove(nodeId);
   }
 
+  @VisibleForTesting
+  Map<UInt256, ConnectedPeer> getConnectedPeers() {
+    return connectedPeers;
+  }
+
   private record ActiveRequest(SafeFuture<Void> promise, ConnectedPeer peer) {}
 
   private static class RetrieveRequest {
     final DataColumnSlotAndIdentifier columnId;
     final SafeFuture<DataColumnSidecar> result = new SafeFuture<>();
-    final Map<UInt256, Integer> peerRequestCount = new HashMap<>();
     final AtomicBoolean activeRpcRequestSet = new AtomicBoolean(false);
     volatile ActiveRequest activeRpcRequest = null;
 
     private RetrieveRequest(final DataColumnSlotAndIdentifier columnId) {
       this.columnId = columnId;
     }
-
-    public void onPeerRequest(final UInt256 peerId) {
-      peerRequestCount.compute(peerId, (__, curCount) -> curCount == null ? 1 : curCount + 1);
-    }
-
-    public int getPeerRequestCount(final UInt256 peerId) {
-      return peerRequestCount.getOrDefault(peerId, 0);
-    }
   }
 
-  private class ConnectedPeer {
-    final UInt256 nodeId;
-    final Supplier<Optional<UInt64>> maybeEarliestAvailableSlot;
-    final Cache<CacheKey, Set<UInt64>> custodyIndicesCache = LRUCache.create(2);
+  static class ConnectedPeer {
+    private final UInt256 nodeId;
+    private final Supplier<Optional<UInt64>> maybeEarliestAvailableSlot;
+    private final Cache<CacheKey, Set<UInt64>> custodyIndicesCache = LRUCache.create(2);
+    private final MiscHelpersFulu miscHelpersFulu;
+    private final Spec spec;
+    private final Supplier<Integer> custodyCountSupplier;
+    // just to avoid starting with non-divisible 0/0
+    private final AtomicInteger sidecarsRequested = new AtomicInteger(1);
+    private final AtomicInteger sidecarsReceived = new AtomicInteger(1);
 
     private record CacheKey(SpecVersion specVersion, int custodyCount) {}
 
     public ConnectedPeer(
-        final UInt256 nodeId, final Supplier<Optional<UInt64>> maybeEarliestAvailableSlot) {
+        final UInt256 nodeId,
+        final Supplier<Optional<UInt64>> maybeEarliestAvailableSlot,
+        final MiscHelpersFulu miscHelpersFulu,
+        final Spec spec,
+        final Supplier<Integer> custodyCountSupplier) {
       this.nodeId = nodeId;
       this.maybeEarliestAvailableSlot = maybeEarliestAvailableSlot;
+      this.miscHelpersFulu = miscHelpersFulu;
+      this.spec = spec;
+      this.custodyCountSupplier = custodyCountSupplier;
     }
 
     private Set<UInt64> calcNodeCustodyIndices(final CacheKey cacheKey) {
@@ -330,8 +347,7 @@ public class SimpleSidecarRetriever
 
     private Set<UInt64> getNodeCustodyIndices(final SpecVersion specVersion) {
       return custodyIndicesCache.get(
-          new CacheKey(specVersion, custodyCountSupplier.getCustodyGroupCountForPeer(nodeId)),
-          this::calcNodeCustodyIndices);
+          new CacheKey(specVersion, custodyCountSupplier.get()), this::calcNodeCustodyIndices);
     }
 
     public boolean isCustodyFor(final DataColumnSlotAndIdentifier columnId) {
@@ -341,6 +357,44 @@ public class SimpleSidecarRetriever
     public boolean hasSlotAvailable(final UInt64 slot) {
       // if we don't have information, we consider it optimistically
       return maybeEarliestAvailableSlot.get().map(slot::isGreaterThanOrEqualTo).orElse(true);
+    }
+
+    /**
+     * Score is 0 to 10, where 10 is peer which always response well on all queries. Score is
+     * bucketed to 11 values, so another comparator could use different criteria to score several
+     * peers from one bucket.
+     */
+    public int getResponseScore() {
+      return (int) (sidecarsReceived.get() * 10.0F / sidecarsRequested.get());
+    }
+
+    public void countSidecarRequest() {
+      final int current = sidecarsRequested.incrementAndGet();
+      if (current == Integer.MAX_VALUE) {
+        resetCounters();
+      }
+    }
+
+    private void resetCounters() {
+      sidecarsRequested.set(1);
+      sidecarsReceived.set(1);
+    }
+
+    public void countSidecarReceived() {
+      final int current = sidecarsReceived.incrementAndGet();
+      if (current == Integer.MAX_VALUE) {
+        resetCounters();
+      }
+    }
+
+    @VisibleForTesting
+    AtomicInteger getSidecarsRequested() {
+      return sidecarsRequested;
+    }
+
+    @VisibleForTesting
+    AtomicInteger getSidecarsReceived() {
+      return sidecarsReceived;
     }
   }
 

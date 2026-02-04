@@ -664,12 +664,12 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
     return store.retrieveBlockState(blockRoot);
   }
 
-  public SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(
+  public SafeFuture<Optional<BeaconState>> retrieveBlockState(
       final SlotAndBlockRoot slotAndBlockRoot) {
     if (store == null) {
       return EmptyStoreResults.EMPTY_STATE_FUTURE;
     }
-    return store.retrieveStateAtSlot(slotAndBlockRoot);
+    return store.retrieveBlockState(slotAndBlockRoot);
   }
 
   public SafeFuture<Optional<BeaconState>> retrieveStateInEffectAtSlot(final UInt64 slot) {
@@ -777,10 +777,6 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
 
   public void setBlockTimelinessIfEmpty(final SignedBeaconBlock block) {
     lateBlockReorgLogic.setBlockTimelinessFromArrivalTime(block, store.getTimeInMillis());
-  }
-
-  public boolean isBlockLate(final Bytes32 root) {
-    return lateBlockReorgLogic.isBlockLate(root);
   }
 
   public Optional<UInt64> getCustodyGroupCount() {

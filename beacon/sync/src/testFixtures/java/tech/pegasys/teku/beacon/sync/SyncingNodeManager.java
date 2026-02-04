@@ -59,10 +59,12 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.blobs.BlockEventsListenerRouter;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
@@ -158,12 +160,18 @@ public class SyncingNodeManager {
             forkChoice,
             WeakSubjectivityFactory.lenientValidator(),
             new ExecutionLayerChannelStub(spec, false));
+    final BlockEventsListenerRouter blockEventsListenerRouter =
+        new BlockEventsListenerRouter(
+            BlockBlobSidecarsTrackersPool.NOOP,
+            () -> DataAvailabilitySampler.NOOP,
+            recentChainData,
+            spec);
 
     final BlockManager blockManager =
         new BlockManager(
             recentChainData,
             blockImporter,
-            BlockBlobSidecarsTrackersPool.NOOP,
+            blockEventsListenerRouter,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,

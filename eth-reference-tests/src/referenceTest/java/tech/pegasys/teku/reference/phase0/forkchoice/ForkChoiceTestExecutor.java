@@ -445,7 +445,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     // a sync where the attestation weighting is almost certainly useless.
     final BeaconState preState =
         safeJoin(
-                recentChainData.retrieveStateAtSlot(
+                recentChainData.retrieveBlockState(
                     new SlotAndBlockRoot(block.getSlot(), block.getParentRoot())))
             .orElseThrow();
     final VoteUpdater voteUpdater = recentChainData.startVoteUpdate();

@@ -41,6 +41,7 @@ public class BeaconChainConfiguration {
 
   private final BeaconChainControllerFactory beaconChainControllerFactory;
   private final MetricsConfig metricsConfig;
+  private final int minBidIncrementPercentage;
 
   public BeaconChainConfiguration(
       final Eth2NetworkConfiguration eth2NetworkConfiguration,
@@ -55,7 +56,8 @@ public class BeaconChainConfiguration {
       final Spec spec,
       final BeaconChainControllerFactory beaconChainControllerFactory,
       final MetricsConfig metricsConfig,
-      final ZkChainConfiguration zkChainConfiguration) {
+      final ZkChainConfiguration zkChainConfiguration,
+      final int minBidIncrementPercentage) {
     this.eth2NetworkConfiguration = eth2NetworkConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
     this.validatorConfig = validatorConfig;
@@ -69,6 +71,7 @@ public class BeaconChainConfiguration {
     this.beaconChainControllerFactory = beaconChainControllerFactory;
     this.metricsConfig = metricsConfig;
     this.zkChainConfiguration = zkChainConfiguration;
+    this.minBidIncrementPercentage = minBidIncrementPercentage;
   }
 
   public Spec getSpec() {
@@ -121,5 +124,9 @@ public class BeaconChainConfiguration {
 
   public ZkChainConfiguration zkChainConfiguration() {
     return zkChainConfiguration;
+  }
+
+  public int getMinBidIncrementPercentage() {
+    return minBidIncrementPercentage;
   }
 }

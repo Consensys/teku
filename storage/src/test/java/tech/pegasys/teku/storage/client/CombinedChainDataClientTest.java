@@ -167,7 +167,7 @@ class CombinedChainDataClientTest {
     final Runnable onLateBlockReorgPreparationCompleted = mock(Runnable.class);
     when(recentChainData.getBlockRootInEffectBySlot(UInt64.ONE)).thenReturn(recentBlockRoot);
     when(recentChainData.getStore()).thenReturn(store);
-    when(store.retrieveStateAtSlot(slotAndBlockRoot))
+    when(store.retrieveBlockState(slotAndBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
     final SafeFuture<Optional<BeaconState>> future =
         client.getStateForBlockProduction(UInt64.ONE, false, onLateBlockReorgPreparationCompleted);
@@ -175,7 +175,7 @@ class CombinedChainDataClientTest {
     verify(onLateBlockReorgPreparationCompleted, never()).run();
     // getStateAtSlotExact
     verify(recentChainData).getBlockRootInEffectBySlot(UInt64.ONE);
-    verify(store).retrieveStateAtSlot(slotAndBlockRoot);
+    verify(store).retrieveBlockState(slotAndBlockRoot);
   }
 
   @Test
@@ -191,7 +191,7 @@ class CombinedChainDataClientTest {
 
     when(recentChainData.getBestBlockRoot()).thenReturn(Optional.empty());
     when(recentChainData.getBlockRootInEffectBySlot(UInt64.ONE)).thenReturn(recentBlockRoot);
-    when(store.retrieveStateAtSlot(slotAndBlockRoot))
+    when(store.retrieveBlockState(slotAndBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
 
     final SafeFuture<Optional<BeaconState>> future =
@@ -200,7 +200,7 @@ class CombinedChainDataClientTest {
     verify(onLateBlockReorgPreparationCompleted, never()).run();
     // getStateAtSlotExact
     verify(recentChainData).getBlockRootInEffectBySlot(UInt64.ONE);
-    verify(store).retrieveStateAtSlot(slotAndBlockRoot);
+    verify(store).retrieveBlockState(slotAndBlockRoot);
   }
 
   @Test
@@ -221,7 +221,7 @@ class CombinedChainDataClientTest {
     when(recentChainData.getProposerHead(any(), any())).thenReturn(recentBlockRoot);
     when(recentChainData.getBlockRootInEffectBySlot(UInt64.ONE))
         .thenReturn(Optional.of(recentBlockRoot));
-    when(store.retrieveStateAtSlot(slotAndBlockRoot))
+    when(store.retrieveBlockState(slotAndBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
 
     final SafeFuture<Optional<BeaconState>> future =
@@ -230,7 +230,7 @@ class CombinedChainDataClientTest {
     verify(onLateBlockReorgPreparationCompleted, never()).run();
     // getStateAtSlotExact
     verify(recentChainData).getBlockRootInEffectBySlot(UInt64.ONE);
-    verify(store).retrieveStateAtSlot(slotAndBlockRoot);
+    verify(store).retrieveBlockState(slotAndBlockRoot);
   }
 
   @Test
@@ -259,7 +259,7 @@ class CombinedChainDataClientTest {
     when(lateBlockReorgPreparationHandler.onLateBlockReorgPreparation(UInt64.ZERO, recentBlockRoot))
         .thenReturn(lateBlockReorgPreparationFuture);
 
-    when(store.retrieveStateAtSlot(slotAndBlockRoot))
+    when(store.retrieveBlockState(slotAndBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
 
     final SafeFuture<Optional<BeaconState>> future =
@@ -276,7 +276,7 @@ class CombinedChainDataClientTest {
 
     assertThat(future.get()).contains(proposerState);
 
-    verify(store, never()).retrieveStateAtSlot(slotAndBlockRoot);
+    verify(store, never()).retrieveBlockState(slotAndBlockRoot);
   }
 
   @Test
@@ -334,7 +334,7 @@ class CombinedChainDataClientTest {
     when(store.getFinalizedCheckpoint()).thenReturn(finalized);
     when(recentChainData.getBlockRootInEffectBySlot(any()))
         .thenReturn(Optional.of(state.getLatestBlockHeader().getBodyRoot()));
-    when(store.retrieveStateAtSlot(any()))
+    when(store.retrieveBlockState(any(SlotAndBlockRoot.class)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
 
     final SafeFuture<Optional<BeaconState>> maybeFinalizedState = client.getBestFinalizedState();

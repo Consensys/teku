@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.validation.ExecutionPayloadBidGossipValidator;
 
 public class DefaultExecutionPayloadBidManagerTest {
 
@@ -44,8 +45,11 @@ public class DefaultExecutionPayloadBidManagerTest {
   private final BlockProductionPerformance blockProductionPerformance =
       mock(BlockProductionPerformance.class);
 
+  private final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator =
+      mock(ExecutionPayloadBidGossipValidator.class);
+
   private final DefaultExecutionPayloadBidManager executionPayloadBidManager =
-      new DefaultExecutionPayloadBidManager(spec);
+      new DefaultExecutionPayloadBidManager(spec, executionPayloadBidGossipValidator);
 
   @Test
   public void createsLocalBidForBlock() {

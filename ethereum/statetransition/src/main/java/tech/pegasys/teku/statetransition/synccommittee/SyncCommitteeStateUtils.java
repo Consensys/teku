@@ -65,7 +65,7 @@ public class SyncCommitteeStateUtils {
       return SafeFuture.completedFuture(Optional.empty());
     }
     return recentChainData
-        .retrieveStateAtSlot(
+        .retrieveBlockState(
             new SlotAndBlockRoot(chainHeadSlot.max(requiredSlot), chainHead.getRoot()))
         .thenApply(maybeState -> maybeState.flatMap(BeaconState::toVersionAltair));
   }

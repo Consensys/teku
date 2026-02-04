@@ -18,9 +18,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import tech.pegasys.teku.ethtests.TestFork;
+import tech.pegasys.teku.ethtests.TestSpecConfig;
+import tech.pegasys.teku.ethtests.finder.PyspecTestFinder.ForkAndConfig;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingFunction;
 
 @SuppressWarnings("MustBeClosedChecker")
@@ -62,28 +65,56 @@ public class ReferenceTestFinder {
                 return Stream.empty();
               }
 
-              // TODO-GLOAS: Short circuit to limit what tests we run for Gloas while it is under
-              // development. This is temporary and should be removed once we are up-to-date with
-              // Gloas specs (see https://github.com/Consensys/teku-internal/issues/221)
-              if (fork.equals(TestFork.GLOAS)) {
-                return Stream.of(
-                        new BlsTestFinder(),
-                        new KzgTestFinder(),
-                        new SszTestFinder("ssz_generic"),
-                        new SszTestFinder("ssz_static"),
-                        new ShufflingTestFinder(),
-                        new PyspecTestFinder(List.of(), List.of("fork_choice/")),
-                        new MerkleProofTestFinder())
-                    .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
-              }
-
               return Stream.of(
                       new BlsTestFinder(),
                       new KzgTestFinder(),
                       new SszTestFinder("ssz_generic"),
                       new SszTestFinder("ssz_static"),
                       new ShufflingTestFinder(),
-                      new PyspecTestFinder(),
+                      new PyspecTestFinder(
+                          Map.of(),
+                          // TODO: https://github.com/Consensys/teku/issues/10320 ignoring tests
+                          // which fail because of the proposer boost changes added in
+                          // https://github.com/ethereum/consensus-specs/pull/4807
+                          Map.of(
+                              new ForkAndConfig(TestFork.ALTAIR, TestSpecConfig.MINIMAL),
+                              List.of(
+                                  "fork_choice/get_head - voting_source_beyond_two_epoch",
+                                  "fork_choice/on_block - justified_update_always_if_better",
+                                  "fork_choice/on_block - justified_update_not_realized_finality"),
+                              new ForkAndConfig(TestFork.BELLATRIX, TestSpecConfig.MINIMAL),
+                              List.of(
+                                  "fork_choice/get_head - voting_source_beyond_two_epoch",
+                                  "fork_choice/on_block - justified_update_always_if_better",
+                                  "fork_choice/on_block - justified_update_not_realized_finality"),
+                              new ForkAndConfig(TestFork.CAPELLA, TestSpecConfig.MINIMAL),
+                              List.of(
+                                  "fork_choice/get_head - voting_source_beyond_two_epoch",
+                                  "fork_choice/on_block - justified_update_always_if_better",
+                                  "fork_choice/on_block - justified_update_not_realized_finality"),
+                              new ForkAndConfig(TestFork.DENEB, TestSpecConfig.MINIMAL),
+                              List.of(
+                                  "fork_choice/get_head - voting_source_beyond_two_epoch",
+                                  "fork_choice/on_block - justified_update_always_if_better",
+                                  "fork_choice/on_block - justified_update_not_realized_finality"),
+                              new ForkAndConfig(TestFork.ELECTRA, TestSpecConfig.MINIMAL),
+                              List.of(
+                                  "fork_choice/get_head - voting_source_beyond_two_epoch",
+                                  "fork_choice/on_block - justified_update_always_if_better",
+                                  "fork_choice/on_block - justified_update_not_realized_finality"),
+                              new ForkAndConfig(TestFork.FULU, TestSpecConfig.MINIMAL),
+                              List.of(
+                                  "fork_choice/get_head - voting_source_beyond_two_epoch",
+                                  "fork_choice/on_block - justified_update_always_if_better",
+                                  "fork_choice/on_block - justified_update_not_realized_finality"),
+                              // TODO-GLOAS: Limit what tests we run for Gloas while it is
+                              // under development. This is temporary and should be removed once we
+                              // are up-to-date with Gloas specs (see
+                              // https://github.com/Consensys/teku-internal/issues/221)
+                              new ForkAndConfig(TestFork.GLOAS, TestSpecConfig.MAINNET),
+                              List.of("fork_choice/"),
+                              new ForkAndConfig(TestFork.GLOAS, TestSpecConfig.MINIMAL),
+                              List.of("fork_choice/"))),
                       new MerkleProofTestFinder())
                   .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
             });

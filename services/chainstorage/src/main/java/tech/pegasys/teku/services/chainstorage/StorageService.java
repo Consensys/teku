@@ -103,13 +103,21 @@ public class StorageService extends Service implements StorageServiceFacade {
                       serviceConfig.getDataDirLayout().getBeaconDataDirectory(),
                       config,
                       maybeNetwork);
+              if (config.isForceClearDb()) {
+                LOG.warn(
+                    "Force clear database flag is set. Deleting all beacon chain database files. "
+                        + "Validator slashing protection data will be preserved.");
+                final BeaconDatabaseReset databaseReset = new BeaconDatabaseReset();
+                databaseReset.clearBeaconDatabase(serviceConfig);
+              }
               try {
                 database = dbFactory.createDatabase();
               } catch (EphemeryException e) {
-                final EphemeryDatabaseReset ephemeryDatabaseReset = new EphemeryDatabaseReset();
+                final BeaconDatabaseReset beaconDatabaseReset = new BeaconDatabaseReset();
                 LOG.warn(
                     "Ephemery network deposit contract id has updated, resetting the stored database and slashing protection data.");
-                database = ephemeryDatabaseReset.resetDatabaseAndCreate(serviceConfig, dbFactory);
+                database =
+                    beaconDatabaseReset.resetStorageForEphemeryAndCreate(serviceConfig, dbFactory);
               }
 
               final SettableLabelledGauge pruningTimingsLabelledGauge =

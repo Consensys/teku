@@ -311,4 +311,17 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         .hasMessageContaining(
             "Invalid value for option '--Xdata-column-sidecar-recovery-max-delay'");
   }
+
+  @Test
+  void shouldUseDefaultMinBidIncrementPercentage() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    assertThat(config.beaconChain().getMinBidIncrementPercentage()).isEqualTo(1);
+  }
+
+  @Test
+  void shouldUseCustomMinBidIncrementPercentage() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xmin-bid-increment-percentage", "5");
+    assertThat(config.beaconChain().getMinBidIncrementPercentage()).isEqualTo(5);
+  }
 }

@@ -3178,17 +3178,22 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayloadBid randomExecutionPayloadBid() {
-    return randomExecutionPayloadBid(randomSlot(), randomBuilderIndex());
+    return randomExecutionPayloadBid(randomUInt64());
+  }
+
+  public ExecutionPayloadBid randomExecutionPayloadBid(final UInt64 executionPayment) {
+    return randomExecutionPayloadBid(
+        randomBytes32(), randomSlot(), randomBuilderIndex(), randomUInt64(), executionPayment);
   }
 
   public ExecutionPayloadBid randomExecutionPayloadBid(
-      final UInt64 slot, final UInt64 builderIndex) {
+      final UInt64 slot, final UInt64 builderIndex, final Bytes32 blockHash) {
     return getGloasSchemaDefinitions()
         .getExecutionPayloadBidSchema()
         .create(
             randomBytes32(),
             randomBytes32(),
-            randomBytes32(),
+            blockHash,
             randomBytes32(),
             randomEth1Address(),
             randomUInt64(),
@@ -3199,10 +3204,49 @@ public final class DataStructureUtil {
             randomBytes32());
   }
 
+  public ExecutionPayloadBid randomExecutionPayloadBid(
+      final UInt64 slot, final UInt64 builderIndex) {
+    return randomExecutionPayloadBid(
+        randomBytes32(), slot, builderIndex, randomUInt64(), randomUInt64());
+  }
+
+  public ExecutionPayloadBid randomExecutionPayloadBid(
+      final Bytes32 parentBlockHash,
+      final UInt64 slot,
+      final UInt64 builderIndex,
+      final UInt64 value,
+      final UInt64 executionPayment) {
+    return getGloasSchemaDefinitions()
+        .getExecutionPayloadBidSchema()
+        .create(
+            parentBlockHash,
+            randomBytes32(),
+            randomBytes32(),
+            randomBytes32(),
+            randomEth1Address(),
+            randomUInt64(),
+            builderIndex,
+            slot,
+            value,
+            executionPayment,
+            randomBytes32());
+  }
+
   public SignedExecutionPayloadBid randomSignedExecutionPayloadBid() {
+    return randomSignedExecutionPayloadBid(randomExecutionPayloadBid());
+  }
+
+  public SignedExecutionPayloadBid randomSignedExecutionPayloadBid(final UInt64 executionPayment) {
     return getGloasSchemaDefinitions()
         .getSignedExecutionPayloadBidSchema()
-        .create(randomExecutionPayloadBid(), randomSignature());
+        .create(randomExecutionPayloadBid(executionPayment), randomSignature());
+  }
+
+  public SignedExecutionPayloadBid randomSignedExecutionPayloadBid(
+      final ExecutionPayloadBid executionPayloadBid) {
+    return getGloasSchemaDefinitions()
+        .getSignedExecutionPayloadBidSchema()
+        .create(executionPayloadBid, randomSignature());
   }
 
   public SignedExecutionPayloadBid randomSignedExecutionPayloadBidWithCommitments(

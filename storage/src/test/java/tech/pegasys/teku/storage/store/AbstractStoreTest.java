@@ -45,12 +45,16 @@ import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 
 public abstract class AbstractStoreTest {
-  protected final Spec spec = TestSpecFactory.createMinimalDeneb();
+  protected final Spec spec = getSpec();
   protected final StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
   protected final ChainBuilder chainBuilder = ChainBuilder.create(spec);
   protected final StoreConfig defaultStoreConfig = StoreConfig.createDefault();
 
   protected final ForkChoiceStrategy dummyForkChoiceStrategy = mock(ForkChoiceStrategy.class);
+
+  protected Spec getSpec() {
+    return TestSpecFactory.createMinimalDeneb();
+  }
 
   protected void processChainWithLimitedCache(
       final BiConsumer<UpdatableStore, SignedBlockAndState> chainProcessor) {

@@ -292,15 +292,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   @Override
   public synchronized void onNewBlock(
       final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
-    if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
-      return;
-    }
-    if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-      return;
-    }
-    if (recentChainData.containsBlock(block.getRoot())) {
-      return;
-    }
     if (shouldIgnoreItemAtSlot(block.getSlot())) {
       return;
     }
@@ -360,8 +351,9 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   }
 
   @Override
-  public synchronized void removeAllForBlock(final Bytes32 blockRoot) {
-    final BlockBlobSidecarsTracker removedTracker = blockBlobSidecarsTrackers.remove(blockRoot);
+  public synchronized void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {
+    final BlockBlobSidecarsTracker removedTracker =
+        blockBlobSidecarsTrackers.remove(slotAndBlockRoot.getBlockRoot());
 
     if (removedTracker != null) {
       orderedBlobSidecarsTrackers.remove(removedTracker.getSlotAndBlockRoot());
@@ -403,7 +395,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       toRemove.add(slotAndBlockRoot);
     }
 
-    toRemove.stream().map(SlotAndBlockRoot::getBlockRoot).forEach(this::removeAllForBlock);
+    toRemove.forEach(this::removeAllForBlock);
   }
 
   @Override
@@ -600,7 +592,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       if (toRemove == null) {
         break;
       }
-      removeAllForBlock(toRemove.getBlockRoot());
+      removeAllForBlock(toRemove);
     }
   }
 

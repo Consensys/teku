@@ -179,7 +179,7 @@ class EpochCachePrimerTest {
   private BeaconState getStateForEpoch(final UInt64 epoch) {
     final Bytes32 headBlock = recentChainData.getBestBlockRoot().orElseThrow();
     final SafeFuture<Optional<BeaconState>> stateFuture =
-        recentChainData.retrieveStateAtSlot(
+        recentChainData.retrieveBlockState(
             new SlotAndBlockRoot(realSpec.computeStartSlotAtEpoch(epoch), headBlock));
     assertThatSafeFuture(stateFuture).isCompletedWithNonEmptyOptional();
     return stateFuture.getNow(null).orElseThrow();

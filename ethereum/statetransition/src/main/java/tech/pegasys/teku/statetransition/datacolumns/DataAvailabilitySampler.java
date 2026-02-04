@@ -14,15 +14,19 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.statetransition.blobs.BlockEventsListener;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
-public interface DataAvailabilitySampler {
+public interface DataAvailabilitySampler extends BlockEventsListener {
 
   enum SamplingEligibilityStatus {
     NOT_REQUIRED_OLD_EPOCH,
@@ -49,6 +53,16 @@ public interface DataAvailabilitySampler {
         @Override
         public void onNewValidatedDataColumnSidecar(
             final DataColumnSlotAndIdentifier columnId, RemoteOrigin origin) {}
+
+        @Override
+        public void onNewBlock(
+            final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {}
+
+        @Override
+        public void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {}
+
+        @Override
+        public void enableBlockImportOnCompletion(final SignedBeaconBlock block) {}
       };
 
   /**

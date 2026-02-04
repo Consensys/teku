@@ -41,13 +41,15 @@ import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabaseFactory;
 public class VersionedDatabaseFactory implements DatabaseFactory {
   private static final Logger LOG = LogManager.getLogger();
 
-  @VisibleForTesting static final String DB_PATH = "db";
-  @VisibleForTesting static final String ARCHIVE_PATH = "archive";
-  @VisibleForTesting static final String DB_VERSION_PATH = "db.version";
+  public static final String DB_PATH = "db";
+  public static final String ARCHIVE_PATH = "archive";
+  public static final String DB_VERSION_FILENAME = "db.version";
 
-  @VisibleForTesting static final String STORAGE_MODE_PATH = "data-storage-mode.txt";
-  @VisibleForTesting static final String METADATA_FILENAME = "metadata.yml";
-  @VisibleForTesting static final String NETWORK_FILENAME = "network.yml";
+  public static final String STORAGE_MODE_FILENAME = "data-storage-mode.txt";
+  public static final String METADATA_FILENAME = "metadata.yml";
+  public static final String NETWORK_FILENAME = "network.yml";
+
+  public static final String SLASHING_PROTECTION_PATH = "slashprotection";
   private final MetricsSystem metricsSystem;
   private final File dataDirectory;
   private final int maxKnownNodeCacheSize;
@@ -83,8 +85,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
     this.v5ArchiveDirectory = this.dataDirectory.toPath().resolve(ARCHIVE_PATH).toFile();
-    this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();
-    this.dbStorageModeFile = this.dataDirectory.toPath().resolve(STORAGE_MODE_PATH).toFile();
+    this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_FILENAME).toFile();
+    this.dbStorageModeFile = this.dataDirectory.toPath().resolve(STORAGE_MODE_FILENAME).toFile();
 
     dbSettingFileSyncDataAccessor = SyncDataAccessor.create(dataDirectory.toPath());
     this.stateStorageMode = config.getDataStorageMode();

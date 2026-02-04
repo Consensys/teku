@@ -20,7 +20,9 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
@@ -31,6 +33,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
@@ -44,7 +47,7 @@ public class DataColumnReqRespBatchingImplTest {
       SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions())
           .getDataColumnsByRootIdentifierSchema();
   final DataColumnReqRespBatchingImpl dataColumnReqResp =
-      new DataColumnReqRespBatchingImpl(byRootRpc, byRootSchema);
+      new DataColumnReqRespBatchingImpl(byRootRpc, byRootSchema, spec);
 
   @Test
   @SuppressWarnings("JavaCase")
@@ -106,5 +109,41 @@ public class DataColumnReqRespBatchingImplTest {
     verify(byRootRpc)
         .requestDataColumnSidecarsByRoot(
             UInt256.valueOf(2), List.of(byRootSchema.create(blockRoot2, List.of(ZERO))));
+  }
+
+  @Test
+  public void partitionRequests() {
+    final List<UInt64> indices128 = Stream.iterate(ZERO, UInt64::increment).limit(128).toList();
+
+    final List<DataColumnsByRootIdentifier> byRootIdentifiers = new ArrayList<>();
+    byRootIdentifiers.add(
+        new DataColumnsByRootIdentifier(
+            dataStructureUtil.randomBytes32(), indices128, byRootSchema));
+    final List<List<DataColumnsByRootIdentifier>> batchesSingle =
+        dataColumnReqResp.partitionRequests(byRootIdentifiers, 1000);
+    assertThat(batchesSingle.getFirst().getFirst()).isEqualTo(byRootIdentifiers.getFirst());
+
+    for (int i = 0; i < 9; i++) {
+      byRootIdentifiers.add(
+          new DataColumnsByRootIdentifier(
+              dataStructureUtil.randomBytes32(), indices128, byRootSchema));
+    }
+
+    final List<List<DataColumnsByRootIdentifier>> batchesMinor =
+        dataColumnReqResp.partitionRequests(byRootIdentifiers, 55);
+    assertThat(batchesMinor).hasSize(10);
+    for (int i = 0; i < batchesMinor.size(); i++) {
+      assertThat(batchesMinor.get(i).getFirst()).isEqualTo(byRootIdentifiers.get(i));
+    }
+
+    final List<List<DataColumnsByRootIdentifier>> batchesMayor =
+        dataColumnReqResp.partitionRequests(byRootIdentifiers, 640);
+    assertThat(batchesMayor).hasSize(2);
+    for (int i = 0; i < 5; i++) {
+      assertThat(batchesMayor.getFirst().get(i)).isEqualTo(byRootIdentifiers.get(i));
+    }
+    for (int i = 0; i < 5; i++) {
+      assertThat(batchesMayor.get(1).get(i)).isEqualTo(byRootIdentifiers.get(5 + i));
+    }
   }
 }

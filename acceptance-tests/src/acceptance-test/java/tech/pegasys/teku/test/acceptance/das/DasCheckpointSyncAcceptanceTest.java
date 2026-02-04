@@ -216,7 +216,6 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
     return TekuNodeConfigBuilder.createBeaconNode()
         .withNetwork(Resources.getResource("fulu-minimal.yaml"))
         .withStubExecutionEngine(3)
-        .withReworkedCustodySync()
         .withLogLevel("DEBUG");
   }
 }

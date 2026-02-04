@@ -200,6 +200,10 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     return Optional.ofNullable(checkpointStates.get(checkpoint));
   }
 
+  private BeaconState getExecutionPayloadState(final Bytes32 blockRoot) {
+    return executionPayloadStates.get(blockRoot);
+  }
+
   @Override
   public UInt64 getHighestVotedValidatorIndex() {
     return votes.keySet().stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
@@ -209,6 +213,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   @Override
   public Optional<BeaconState> getBlockStateIfAvailable(final Bytes32 blockRoot) {
     return Optional.ofNullable(getBlockState(blockRoot));
+  }
+
+  @Override
+  public Optional<BeaconState> getExecutionPayloadStateIfAvailable(final Bytes32 blockRoot) {
+    return Optional.ofNullable(getExecutionPayloadState(blockRoot));
   }
 
   @Override
@@ -238,14 +247,14 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(final Checkpoint checkpoint) {
-    return SafeFuture.completedFuture(getCheckpointState(checkpoint));
+  public SafeFuture<Optional<BeaconState>> retrieveBlockState(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
-  public SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(
-      final SlotAndBlockRoot slotAndBlockRoot) {
-    throw new UnsupportedOperationException("Not implemented");
+  public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(final Checkpoint checkpoint) {
+    return SafeFuture.completedFuture(getCheckpointState(checkpoint));
   }
 
   @Override
