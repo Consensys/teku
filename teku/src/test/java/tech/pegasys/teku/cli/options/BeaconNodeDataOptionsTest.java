@@ -226,4 +226,29 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments("--Xdebug-data-dumping-enabled=true");
     assertThat(tekuConfig.dataConfig().isDebugDataDumpingEnabled()).isEqualTo(true);
   }
+
+  @Test
+  void forceClearDb_shouldDefaultToFalse() {
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments();
+    assertThat(tekuConfig.storageConfiguration().isForceClearDb()).isEqualTo(false);
+  }
+
+  @Test
+  void forceClearDb_shouldAcceptTrue() {
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments("--force-clear-db=true");
+    assertThat(tekuConfig.storageConfiguration().isForceClearDb()).isEqualTo(true);
+  }
+
+  @Test
+  void forceClearDb_shouldAcceptFalse() {
+    final TekuConfiguration tekuConfig =
+        getTekuConfigurationFromArguments("--force-clear-db=false");
+    assertThat(tekuConfig.storageConfiguration().isForceClearDb()).isEqualTo(false);
+  }
+
+  @Test
+  void forceClearDb_shouldUseFallbackValue() {
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments("--force-clear-db");
+    assertThat(tekuConfig.storageConfiguration().isForceClearDb()).isEqualTo(true);
+  }
 }
