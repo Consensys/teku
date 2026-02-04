@@ -86,7 +86,6 @@ public class DataColumnSidecarGossipValidatorGloasTest
         .thenReturn(true);
     // Gloas doesn't use state validation, so no need to mock state-related helpers
     // Mock block retrieval - for the default setup, return a block with matching KZG commitments
-    // Note: Individual tests may override this mock for specific scenarios
     final BeaconBlock defaultBlock =
         dataStructureUtil.randomBeaconBlock(
             slot,
@@ -105,7 +104,6 @@ public class DataColumnSidecarGossipValidatorGloasTest
 
   @Test
   void shouldRejectWhenDataColumnSidecarStructureIsInvalid() {
-    // Mock Spec to control structure validation behavior
     final Spec mockSpec = mock(Spec.class);
     final SpecVersion mockSpecVersion = mock(SpecVersion.class);
     final SpecVersion mockGenesisSpec = mock(SpecVersion.class);
@@ -118,7 +116,7 @@ public class DataColumnSidecarGossipValidatorGloasTest
     when(mockSpec.getDataColumnSidecarUtil(any(UInt64.class)))
         .thenReturn(mockDataColumnSidecarUtil);
 
-    // Make structure validation fail
+    // structure validation fail
     when(mockDataColumnSidecarUtil.verifyDataColumnSidecarStructure(any(DataColumnSidecar.class)))
         .thenReturn(false);
 
@@ -138,7 +136,7 @@ public class DataColumnSidecarGossipValidatorGloasTest
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
-    // Second validation with same sidecar - should ignore (duplicate tracking key)
+    // Second validation with same sidecar - should ignore
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
@@ -146,32 +144,17 @@ public class DataColumnSidecarGossipValidatorGloasTest
 
   @Test
   void shouldNotValidateHeaderSignatureForGloas() {
-    // In Gloas, there's no header signature validation
-    // This test verifies that signature validation is never called
+    // no header signature validation in Gloas
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
-
-    // Verify that signature validation was never invoked
     verify(gossipValidationHelper, never())
         .isSignatureValidWithRespectToProposerIndex(any(), any(), any(), any());
   }
 
   @Test
-  void shouldNotValidateInclusionProofForGloas() {
-    // In Gloas, there's no inclusion proof validation (always passes)
-    // The inclusion proof methods should never be called
-    SafeFutureAssert.assertThatSafeFuture(
-            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
-        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
-
-    // Gloas helper's verifyInclusionProof always returns true, so no actual verification happens
-    // This is verified by the implementation
-  }
-
-  @Test
   void shouldNotValidateStateForGloas() {
-    // In Gloas, there's no state validation (validateWithState returns empty)
+    // no state validation in Gloas
     // State-related helpers should never be called
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
@@ -273,7 +256,6 @@ public class DataColumnSidecarGossipValidatorGloasTest
 
   @Test
   void shouldRejectWhenBeaconBlockRootNotKnown() {
-    // Mock retrieveBlockByRoot to return empty (block not found/known)
     when(gossipValidationHelper.retrieveBlockByRoot(beaconBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
@@ -284,7 +266,6 @@ public class DataColumnSidecarGossipValidatorGloasTest
 
   @Test
   void shouldRejectWhenSlotDoesNotMatchBlock() {
-    // Mock getSlotForBlockRoot to return a different slot (lightweight check rejects early)
     final UInt64 differentSlot = UInt64.valueOf(3);
     when(gossipValidationHelper.getSlotForBlockRoot(beaconBlockRoot))
         .thenReturn(Optional.of(differentSlot));
@@ -299,7 +280,6 @@ public class DataColumnSidecarGossipValidatorGloasTest
 
   @Test
   void shouldAcceptWhenSlotMatchesBlock() {
-    // Mock getSlotForBlockRoot to return the same slot as the sidecar
     when(gossipValidationHelper.getSlotForBlockRoot(beaconBlockRoot)).thenReturn(Optional.of(slot));
 
     SafeFutureAssert.assertThatSafeFuture(
@@ -309,9 +289,7 @@ public class DataColumnSidecarGossipValidatorGloasTest
 
   @Test
   void shouldBeSavedForFutureWhenBlockUnavailable() {
-    // Mock getSlotForBlockRoot to return the correct slot
     when(gossipValidationHelper.getSlotForBlockRoot(beaconBlockRoot)).thenReturn(Optional.of(slot));
-    // Mock retrieveBlockByRoot to return empty (block not found)
     when(gossipValidationHelper.retrieveBlockByRoot(beaconBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
@@ -322,7 +300,7 @@ public class DataColumnSidecarGossipValidatorGloasTest
 
   @Test
   void shouldRejectWhenKzgCommitmentsDoNotMatch() {
-    // Create a block with bid that has different KZG commitments than the sidecar
+    // block with bid that has different KZG commitments than the sidecar
     final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock();
 
     when(gossipValidationHelper.retrieveBlockByRoot(beaconBlockRoot))

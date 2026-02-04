@@ -133,7 +133,6 @@ public class DataColumnSidecarGossipValidatorFuluTest
 
   @Test
   void shouldRejectWhenDataColumnSidecarStructureIsInvalid() {
-    // Mock Spec to control structure validation behavior
     final Spec mockSpec = mock(Spec.class);
     final SpecVersion mockSpecVersion = mock(SpecVersion.class);
     final SpecVersion mockGenesisSpec = mock(SpecVersion.class);
@@ -149,7 +148,6 @@ public class DataColumnSidecarGossipValidatorFuluTest
     when(mockDataColumnSidecarUtil.verifyDataColumnSidecarStructure(any(DataColumnSidecar.class)))
         .thenReturn(false);
 
-    // Create a validator with the mocked spec
     final DataColumnSidecarGossipValidator validatorWithMockedSpec =
         DataColumnSidecarGossipValidator.create(
             mockSpec, invalidBlocks, gossipValidationHelper, metricsSystemStub, stubTimeProvider);
@@ -228,7 +226,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
-    // Second validation with same sidecar - should ignore (duplicate tracking key)
+    // Second validation with same sidecar - should ignore
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
