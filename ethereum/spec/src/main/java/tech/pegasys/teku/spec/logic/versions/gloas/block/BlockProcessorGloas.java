@@ -172,6 +172,15 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       }
     }
 
+    // Verify commitments are under limit
+    if (bid.getBlobKzgCommitments().size()
+        > miscHelpersGloas
+            .getBlobParameters(beaconStateAccessors.getCurrentEpoch(state))
+            .maxBlobsPerBlock()) {
+      throw new BlockProcessingException(
+          "Number of kzg commitments in the bid exceeds max blobs per block");
+    }
+
     // Verify that the bid is for the current slot
     if (!bid.getSlot().equals(beaconBlock.getSlot())) {
       throw new BlockProcessingException("Bid is not for the current slot");

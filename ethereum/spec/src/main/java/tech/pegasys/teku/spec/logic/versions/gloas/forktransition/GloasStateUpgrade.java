@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.Be
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
@@ -161,8 +162,13 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                   if (validatorPubkeys.contains(deposit.getPublicKey())) {
                     return true;
                   }
-                  if (predicates.isBuilderWithdrawalCredential(
-                      deposit.getWithdrawalCredentials())) {
+                  final Set<BLSPublicKey> builderPubkeys =
+                      state.getBuilders().stream()
+                          .map(Builder::getPublicKey)
+                          .collect(Collectors.toSet());
+                  if (builderPubkeys.contains(deposit.getPublicKey())
+                      || predicates.isBuilderWithdrawalCredential(
+                          deposit.getWithdrawalCredentials())) {
                     beaconStateMutators.applyDepositForBuilder(
                         state,
                         deposit.getPublicKey(),
