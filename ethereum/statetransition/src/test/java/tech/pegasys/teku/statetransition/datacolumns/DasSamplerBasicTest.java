@@ -29,6 +29,7 @@ import static org.mockito.Mockito.when;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -484,6 +485,32 @@ public class DasSamplerBasicTest {
     assertThat(incompleteTrackerForImportedBlock.completionFuture()).isCompletedExceptionally();
     assertThat(partiallyCompletedTrackerBeforeFinalized.completionFuture()).isCompleted();
     assertThat(fullyCompletedTrackerBeforeFinalized.completionFuture()).isCompleted();
+  }
+
+  @Test
+  void onNewBlock_shouldNotCreateTrackerOrScheduleFetchWhenBlockHasNoBlobs() {
+    final SignedBeaconBlock blockWithoutBlobs =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 0);
+
+    when(rpcFetchDelayProvider.calculate(any())).thenReturn(Duration.ofSeconds(1));
+
+    sampler.onNewBlock(blockWithoutBlobs, Optional.of(RemoteOrigin.GOSSIP));
+
+    assertThat(sampler.getRecentlySampledColumnsByRoot())
+        .doesNotContainKey(blockWithoutBlobs.getRoot());
+    assertThat(asyncRunner.countDelayedActions()).isZero();
+    verify(retriever, never()).retrieve(any());
+  }
+
+  @Test
+  void onNewBlock_shouldCreateTrackerWhenBlockHasBlobs() {
+    final SignedBeaconBlock blockWithBlobs =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ONE, 1);
+
+    sampler.onNewBlock(blockWithBlobs, Optional.of(RemoteOrigin.GOSSIP));
+
+    assertThat(sampler.getRecentlySampledColumnsByRoot()).containsKey(blockWithBlobs.getRoot());
+    assertSamplerTracker(blockWithBlobs.getRoot(), blockWithBlobs.getSlot(), SAMPLING_INDICES);
   }
 
   private void assertSamplerTracker(
