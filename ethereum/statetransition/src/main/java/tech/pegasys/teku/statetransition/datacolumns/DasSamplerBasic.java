@@ -27,6 +27,7 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -218,7 +219,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   }
 
   private boolean hasBlobs(final BeaconBlock block) {
-    return !block.getBody().getOptionalBlobKzgCommitments().orElseThrow().isEmpty();
+    return !block.getBody().getOptionalBlobKzgCommitments().map(SszList::isEmpty).orElse(false);
   }
 
   private boolean isInCustodyPeriod(final BeaconBlock block) {
