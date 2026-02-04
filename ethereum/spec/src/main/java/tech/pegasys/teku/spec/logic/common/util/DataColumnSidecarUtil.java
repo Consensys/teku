@@ -90,9 +90,6 @@ public interface DataColumnSidecarUtil {
 
   boolean verifyDataColumnSidecarKzgProofs(DataColumnSidecar dataColumnSidecar);
 
-  Optional<SignatureVerificationData> getSignatureVerificationData(
-      Spec spec, BeaconState state, DataColumnSidecar dataColumnSidecar);
-
   void cacheValidatedInfo(
       DataColumnSidecar dataColumnSidecar,
       Set<Bytes32> validSignedBlockHeaders,

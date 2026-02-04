@@ -186,13 +186,6 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
   }
 
   @Override
-  public Optional<SignatureVerificationData> getSignatureVerificationData(
-      final Spec spec, final BeaconState state, final DataColumnSidecar dataColumnSidecar) {
-    // Gloas doesn't have header signature requirement
-    return Optional.empty();
-  }
-
-  @Override
   public void cacheValidatedInfo(
       final DataColumnSidecar dataColumnSidecar,
       final Set<Bytes32> validSignedBlockHeaders,

@@ -293,34 +293,6 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   }
 
   /**
-   * Get signature verification data if applicable.
-   *
-   * @param spec the Spec instance for domain and signing root computation
-   * @param state the beacon state for proposer lookup
-   * @param dataColumnSidecar the data column dataColumnSidecar
-   * @return Optional containing signature verification data if applicable
-   */
-  @Override
-  public Optional<SignatureVerificationData> getSignatureVerificationData(
-      final Spec spec, final BeaconState state, final DataColumnSidecar dataColumnSidecar) {
-    final SignedBeaconBlockHeader signedBlockHeader =
-        DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader();
-    final BeaconBlockHeader header = signedBlockHeader.getMessage();
-
-    final Bytes32 domain =
-        spec.getDomain(
-            Domain.BEACON_PROPOSER,
-            spec.getCurrentEpoch(state),
-            state.getFork(),
-            state.getGenesisValidatorsRoot());
-    final Bytes signingRoot = spec.computeSigningRoot(header, domain);
-
-    return Optional.of(
-        new SignatureVerificationData(
-            signingRoot, header.getProposerIndex(), signedBlockHeader.getSignature(), state));
-  }
-
-  /**
    * Cache validated header/proof info for optimization if applicable.
    *
    * @param dataColumnSidecar the validated data column dataColumnSidecar
@@ -445,16 +417,12 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
                * [REJECT] The proposer signature of sidecar.signed_block_header,
                * is valid with respect to the block_header.proposer_index pubkey.
                */
-              final Optional<DataColumnSidecarUtil.SignatureVerificationData> maybeSignatureData =
+              final SignatureVerificationData signatureData =
                   getSignatureVerificationData(spec, postState, dataColumnSidecar);
-              if (maybeSignatureData.isPresent()) {
-                final DataColumnSidecarUtil.SignatureVerificationData signatureData =
-                    maybeSignatureData.get();
-                if (!isSignatureValidWithRespectToProposerIndex.apply(signatureData)) {
-                  return Optional.of(
-                      DataColumnSidecarValidationError.Critical.format(
-                          "DataColumnSidecar block header signature is invalid"));
-                }
+              if (!isSignatureValidWithRespectToProposerIndex.apply(signatureData)) {
+                return Optional.of(
+                    DataColumnSidecarValidationError.Critical.format(
+                        "DataColumnSidecar block header signature is invalid"));
               }
 
               // Cache validated info for optimization (tracking key added by caller after all
@@ -464,5 +432,23 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
 
               return Optional.empty();
             });
+  }
+
+  private SignatureVerificationData getSignatureVerificationData(
+      final Spec spec, final BeaconState state, final DataColumnSidecar dataColumnSidecar) {
+    final SignedBeaconBlockHeader signedBlockHeader =
+        DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader();
+    final BeaconBlockHeader header = signedBlockHeader.getMessage();
+
+    final Bytes32 domain =
+        spec.getDomain(
+            Domain.BEACON_PROPOSER,
+            spec.getCurrentEpoch(state),
+            state.getFork(),
+            state.getGenesisValidatorsRoot());
+    final Bytes signingRoot = spec.computeSigningRoot(header, domain);
+
+    return new SignatureVerificationData(
+        signingRoot, header.getProposerIndex(), signedBlockHeader.getSignature(), state);
   }
 }
