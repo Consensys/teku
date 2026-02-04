@@ -54,10 +54,7 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
   private final SpecConfigGloas config;
   private final Spec spec;
   private final LabelledMetric<Counter> requestCounter;
-
-  @SuppressWarnings("unused")
   private final RecentChainData recentChainData;
-
   private final Counter totalExecutionPayloadEnvelopesRequestedCounter;
 
   public ExecutionPayloadEnvelopesByRangeMessageHandler(
