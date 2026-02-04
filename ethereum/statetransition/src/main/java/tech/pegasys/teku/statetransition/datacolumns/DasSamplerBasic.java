@@ -219,7 +219,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   }
 
   private boolean hasBlobs(final BeaconBlock block) {
-    return !block.getBody().getOptionalBlobKzgCommitments().map(SszList::isEmpty).orElse(false);
+    return !block.getBody().getOptionalBlobKzgCommitments().map(SszList::isEmpty).orElse(true);
   }
 
   private boolean isInCustodyPeriod(final BeaconBlock block) {
