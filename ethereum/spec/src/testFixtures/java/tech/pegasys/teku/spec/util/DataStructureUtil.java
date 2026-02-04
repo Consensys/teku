@@ -2815,8 +2815,10 @@ public final class DataStructureUtil {
 
     public DataColumnSidecar build() {
       final SignedBeaconBlockHeader signedBlockHeader =
-          signedBeaconBlockHeader.orElseGet(DataStructureUtil.this::randomSignedBeaconBlockHeader);
-
+          signedBeaconBlockHeader.orElseGet(
+              () ->
+                  slot.map(DataStructureUtil.this::randomSignedBeaconBlockHeader)
+                      .orElseGet(DataStructureUtil.this::randomSignedBeaconBlockHeader));
       final int numberOfProofs =
           kzgProofs
               .map(List::size)
