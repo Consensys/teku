@@ -2814,28 +2814,17 @@ public final class DataStructureUtil {
     }
 
     public DataColumnSidecar build() {
-      final UInt64 effectiveSlot =
-          slot.or(() -> signedBeaconBlockHeader.map(h -> h.getMessage().getSlot()))
-              .orElseGet(DataStructureUtil.this::randomSlot);
-
-      final SchemaDefinitions schemaDefinitions = spec.atSlot(effectiveSlot).getSchemaDefinitions();
-      final DataColumnSidecarSchema<?> dataColumnSidecarSchema =
-          schemaDefinitions
-              .toVersionGloas()
-              .map(
-                  __ -> getGloasSchemaDefinitionsAtSlot(effectiveSlot).getDataColumnSidecarSchema())
-              .orElseGet(
-                  () -> getFuluSchemaDefinitions(effectiveSlot).getDataColumnSidecarSchema());
-
       final SignedBeaconBlockHeader signedBlockHeader =
-          signedBeaconBlockHeader.orElseGet(
-              () -> DataStructureUtil.this.randomSignedBeaconBlockHeader(effectiveSlot));
+          signedBeaconBlockHeader.orElseGet(DataStructureUtil.this::randomSignedBeaconBlockHeader);
 
       final int numberOfProofs =
           kzgProofs
               .map(List::size)
               .or(() -> kzgCommitments.map(List::size))
               .orElseGet(DataStructureUtil.this::randomNumberOfBlobsPerBlock);
+      final DataColumnSidecarSchema<?> dataColumnSidecarSchema =
+          getFuluSchemaDefinitions(signedBlockHeader.getMessage().getSlot())
+              .getDataColumnSidecarSchema();
       final SszList<SszKZGCommitment> sszKzgCommitments =
           dataColumnSidecarSchema
               .getKzgCommitmentsSchema()
@@ -2869,10 +2858,14 @@ public final class DataStructureUtil {
               builder
                   .index(index.orElseGet(DataStructureUtil.this::randomDataColumnSidecarIndex))
                   .column(
-                      dataColumn.orElseGet(() -> randomDataColumn(effectiveSlot, numberOfProofs)))
+                      dataColumn.orElseGet(
+                          () ->
+                              randomDataColumn(
+                                  slot.orElseGet(() -> signedBlockHeader.getMessage().getSlot()),
+                                  numberOfProofs)))
                   .kzgCommitments(sszKzgCommitments)
                   .kzgProofs(sszKzgProofs)
-                  .slot(slot.orElse(effectiveSlot))
+                  .slot(slot.orElseGet(() -> signedBlockHeader.getMessage().getSlot()))
                   .beaconBlockRoot(
                       beaconBlockRoot.orElseGet(() -> signedBlockHeader.getMessage().getRoot()))
                   .signedBlockHeader(signedBlockHeader)
