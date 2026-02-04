@@ -71,7 +71,7 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
         DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader().getMessage();
     if (isSlotFromFuture.test(header.getSlot())) {
       return Optional.of(
-          DataColumnSidecarValidationError.Timing.format(
+          DataColumnSidecarValidationError.BadTiming.format(
               "DataColumnSidecar block header slot %s is from the future. It will be saved for future processing",
               header.getSlot()));
     }
@@ -94,7 +94,7 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
         DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader().getMessage();
     if (isSlotFinalized.test(header.getSlot())) {
       return Optional.of(
-          DataColumnSidecarValidationError.Transient.format(
+          DataColumnSidecarValidationError.DataUnavailable.format(
               "DataColumnSidecar is from slot %s greater than the latest finalized slot. Ignoring",
               header.getSlot()));
     }
@@ -175,7 +175,7 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     final Optional<UInt64> maybeParentBlockSlot = getBlockSlot.apply(blockHeader.getParentRoot());
     if (maybeParentBlockSlot.isEmpty()) {
       return Optional.of(
-          DataColumnSidecarValidationError.Timing.format(
+          DataColumnSidecarValidationError.BadTiming.format(
               "DataColumnSidecar block header parent block with root %s does not exist. It will be saved for future processing",
               blockHeader.getParentRoot()));
     }
@@ -407,7 +407,7 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     if (maybeParentBlockSlot.isEmpty()) {
       return SafeFuture.completedFuture(
           Optional.of(
-              DataColumnSidecarValidationError.Timing.format(
+              DataColumnSidecarValidationError.BadTiming.format(
                   "DataColumnSidecar parent block with root %s is unavailable. Saving for future processing",
                   parentBlockRoot)));
     }
@@ -419,7 +419,7 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
             maybePostState -> {
               if (maybePostState.isEmpty()) {
                 return Optional.of(
-                    DataColumnSidecarValidationError.Transient.format(
+                    DataColumnSidecarValidationError.DataUnavailable.format(
                         "DataColumnSidecar block header state at slot %s wasn't available.",
                         dataColumnSidecar.getSlot()));
               }

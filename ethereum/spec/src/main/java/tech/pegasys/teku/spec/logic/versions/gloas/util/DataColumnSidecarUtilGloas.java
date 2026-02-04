@@ -105,7 +105,7 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
     final Optional<UInt64> blockSlot = getSlotForBlockRoot.apply(beaconBlockRoot);
     if (blockSlot.isEmpty()) {
       return Optional.of(
-          DataColumnSidecarValidationError.Timing.format(
+          DataColumnSidecarValidationError.BadTiming.format(
               "DataColumnSidecar's beacon_block_root %s does not correspond to a known block. It will be saved for future processing",
               beaconBlockRoot));
     }
@@ -223,7 +223,7 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
             maybeBeaconBlock -> {
               if (maybeBeaconBlock.isEmpty()) {
                 return Optional.of(
-                    DataColumnSidecarValidationError.Timing.format(
+                    DataColumnSidecarValidationError.BadTiming.format(
                         "DataColumnSidecar's beacon_block_root %s does not correspond to a known block",
                         beaconBlockRoot));
               }

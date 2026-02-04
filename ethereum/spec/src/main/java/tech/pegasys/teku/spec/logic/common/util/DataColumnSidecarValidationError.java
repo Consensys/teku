@@ -21,8 +21,8 @@ import java.util.function.Supplier;
  *
  * <ul>
  *   <li>{@link Critical} - Malformed or cryptographically invalid data (REJECT)
- *   <li>{@link Transient} - Temporarily unavailable dependencies (IGNORE)
- *   <li>{@link Timing} - Timing-related issues requiring deferred processing (SAVE_FOR_FUTURE)
+ *   <li>{@link DataUnavailable} - Temporarily unavailable data (IGNORE)
+ *   <li>{@link BadTiming} - Timing-related issues requiring deferred processing (SAVE_FOR_FUTURE)
  * </ul>
  *
  * <p>The gossip validation layer is responsible for mapping these domain errors to network actions.
@@ -33,8 +33,8 @@ import java.util.function.Supplier;
  */
 public sealed interface DataColumnSidecarValidationError
     permits DataColumnSidecarValidationError.Critical,
-        DataColumnSidecarValidationError.Transient,
-        DataColumnSidecarValidationError.Timing {
+        DataColumnSidecarValidationError.DataUnavailable,
+        DataColumnSidecarValidationError.BadTiming {
 
   Supplier<String> detailsSupplier();
 
@@ -52,20 +52,21 @@ public sealed interface DataColumnSidecarValidationError
   }
 
   // Temporarily unavailable data
-  record Transient(Supplier<String> detailsSupplier) implements DataColumnSidecarValidationError {
+  record DataUnavailable(Supplier<String> detailsSupplier)
+      implements DataColumnSidecarValidationError {
 
     @FormatMethod
-    public static Transient format(final String format, final Object... args) {
-      return new Transient(() -> String.format(format, args));
+    public static DataUnavailable format(final String format, final Object... args) {
+      return new DataUnavailable(() -> String.format(format, args));
     }
   }
 
-  // Timing-related issues requiring deferred processing
-  record Timing(Supplier<String> detailsSupplier) implements DataColumnSidecarValidationError {
+  // BadTiming-related issues requiring deferred processing
+  record BadTiming(Supplier<String> detailsSupplier) implements DataColumnSidecarValidationError {
 
     @FormatMethod
-    public static Timing format(final String format, final Object... args) {
-      return new Timing(() -> String.format(format, args));
+    public static BadTiming format(final String format, final Object... args) {
+      return new BadTiming(() -> String.format(format, args));
     }
   }
 }

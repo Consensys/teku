@@ -373,9 +373,11 @@ public class DataColumnSidecarGossipValidator {
   private InternalValidationResult toInternalValidationResult(
       final DataColumnSidecarValidationError dataColumnSidecarValidationError) {
     return switch (dataColumnSidecarValidationError) {
-      case DataColumnSidecarValidationError.Critical c -> reject(c.description());
-      case DataColumnSidecarValidationError.Transient t -> ignore(t.description());
-      case DataColumnSidecarValidationError.Timing tm -> saveForFuture(tm.description());
+      case DataColumnSidecarValidationError.Critical critical -> reject(critical.description());
+      case DataColumnSidecarValidationError.DataUnavailable dataUnavailable ->
+          ignore(dataUnavailable.description());
+      case DataColumnSidecarValidationError.BadTiming badTiming ->
+          saveForFuture(badTiming.description());
     };
   }
 
