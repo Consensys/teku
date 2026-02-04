@@ -275,7 +275,9 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   @Override
   public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
     LOG.debug("Sampler received block {} - origin: {}", block.getSlotAndBlockRoot(), remoteOrigin);
-    getOrCreateTracker(block.getSlot(), block.getRoot());
+    if (hasBlobs(block.getMessage())) {
+      getOrCreateTracker(block.getSlot(), block.getRoot());
+    }
   }
 
   @Override
