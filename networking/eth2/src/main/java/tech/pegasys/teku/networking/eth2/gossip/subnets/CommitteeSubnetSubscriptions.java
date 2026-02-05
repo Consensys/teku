@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
+import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import java.util.Optional;
@@ -78,6 +79,11 @@ abstract class CommitteeSubnetSubscriptions {
     }
     subscribed = false;
     subnetIdToSubscription.values().forEach(RequestedSubscription::unsubscribe);
+  }
+
+  @VisibleForTesting
+  public Eth2TopicHandler<?> getTopicHandler(final int subnetId) {
+    return subnetIdToSubscription.get(subnetId).topicHandler;
   }
 
   private class RequestedSubscription {
