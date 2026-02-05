@@ -191,7 +191,7 @@ class CommitteeSubnetSubscriptionsTest {
         });
   }
 
-  private static class TestCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptions {
+  private class TestCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptions {
 
     protected TestCommitteeSubnetSubscriptions(
         final GossipNetwork gossipNetwork, final GossipEncoding gossipEncoding) {
