@@ -2939,7 +2939,7 @@ public final class DataStructureUtil {
   public DataColumnSidecar randomDataColumnSidecarWithInclusionProof(
       final SignedBeaconBlock signedBeaconBlock, final UInt64 index) {
     final MiscHelpersFulu miscHelpersFulu =
-        MiscHelpersFulu.required(spec.getGenesisSpec().miscHelpers());
+        MiscHelpersFulu.required(spec.atSlot(signedBeaconBlock.getSlot()).miscHelpers());
     final List<KZGCommitment> kzgCommitments =
         signedBeaconBlock
             .getMessage()
