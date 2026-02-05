@@ -23,6 +23,7 @@ import tech.pegasys.teku.api.AbstractSelectorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -126,6 +127,10 @@ public class DataColumnSidecarSelectorFactory
 
   @Override
   public DataColumnSidecarSelector slotSelector(final UInt64 slot) {
+    if (spec.atSlot(slot).getMilestone().isLessThan(SpecMilestone.FULU)) {
+      return indices -> SafeFuture.completedFuture(Optional.empty());
+    }
+
     return indices ->
         getDataColumnSidecars(slot, indices)
             .thenApply(
@@ -148,6 +153,9 @@ public class DataColumnSidecarSelectorFactory
     }
     final SignedBeaconBlock block = maybeBlock.get();
     final UInt64 slot = block.getSlot();
+    if (spec.atSlot(slot).getMilestone().isLessThan(SpecMilestone.FULU)) {
+      return SafeFuture.completedFuture(Optional.of(Collections.emptyList()));
+    }
 
     return client.getDataColumnSidecars(slot, indices).thenApply(Optional::of);
   }
