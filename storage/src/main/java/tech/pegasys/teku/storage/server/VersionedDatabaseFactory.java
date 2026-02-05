@@ -25,8 +25,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
@@ -100,6 +104,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     createDirectories(dbVersion);
     saveDatabaseVersion(dbVersion);
     saveStorageMode(stateStorageMode);
+    initDatabaseVersionMetrics(metricsSystem, dbVersion, stateStorageMode);
 
     Database database;
     switch (dbVersion) {
@@ -393,5 +398,19 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           "Failed to write database storage mode to file " + dbStorageModeFile.getAbsolutePath(),
           e);
     }
+  }
+
+  private void initDatabaseVersionMetrics(
+      final MetricsSystem metricsSystem,
+      final DatabaseVersion dbVersion,
+      final StateStorageMode storageMode) {
+    final String version = dbVersion.getValue() + "_" + storageMode.name();
+    final LabelledMetric<Counter> versionCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.BEACON,
+            VersionProvider.CLIENT_IDENTITY + "_db_version_total",
+            "Teku DB version and storage mode",
+            "version");
+    versionCounter.labels(version).inc();
   }
 }
