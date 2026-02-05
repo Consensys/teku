@@ -104,7 +104,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     createDirectories(dbVersion);
     saveDatabaseVersion(dbVersion);
     saveStorageMode(stateStorageMode);
-    initDatabaseVersionMetrics(metricsSystem, dbVersion, stateStorageMode);
 
     Database database;
     switch (dbVersion) {
@@ -168,6 +167,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       }
       default -> throw new UnsupportedOperationException("Unhandled database version " + dbVersion);
     }
+    initDatabaseVersionMetrics(metricsSystem, dbVersion, stateStorageMode);
+
     return database;
   }
 
