@@ -87,10 +87,11 @@ public class BeaconStateMutatorsGloas extends BeaconStateMutatorsElectra {
       final UInt64 amount,
       final UInt64 slot) {
     final UInt64 index = beaconStateAccessorsGloas.getIndexForNewBuilder(state);
+    final int version = withdrawalCredentials.get(0);
     final Builder builder =
         new Builder(
             pubkey,
-            withdrawalCredentials.get(0),
+            version,
             getExecutionAddressUnchecked(withdrawalCredentials),
             amount,
             miscHelpers.computeEpochAtSlot(slot),

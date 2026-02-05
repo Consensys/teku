@@ -406,18 +406,18 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       throws BlockProcessingException {
     final SchemaDefinitionsCapella schemaDefinitionsCapella =
         SchemaDefinitionsCapella.required(testDefinition.getSpec().getGenesisSchemaDefinitions());
-    final Optional<ExecutionPayloadSummary> executionPayload =
-        schemaDefinitionsCapella
-            .toVersionGloas()
-            // no execution payload in withdrawals tests for >= Gloas
-            .<Optional<ExecutionPayloadSummary>>map(__ -> Optional.empty())
-            .orElseGet(
-                () ->
-                    Optional.of(
-                        loadSsz(
-                            testDefinition,
-                            dataFileName,
-                            schemaDefinitionsCapella.getExecutionPayloadSchema())));
+    final Optional<ExecutionPayloadSummary> executionPayload;
+    if (schemaDefinitionsCapella.toVersionGloas().isPresent()) {
+      // no execution payload in withdrawals tests for >= Gloas
+      executionPayload = Optional.empty();
+    } else {
+      executionPayload =
+          Optional.of(
+              loadSsz(
+                  testDefinition,
+                  dataFileName,
+                  schemaDefinitionsCapella.getExecutionPayloadSchema()));
+    }
     processor.processWithdrawals(state, executionPayload);
   }
 

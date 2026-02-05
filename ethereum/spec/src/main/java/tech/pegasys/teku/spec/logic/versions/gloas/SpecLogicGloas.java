@@ -225,7 +225,12 @@ public class SpecLogicGloas extends AbstractSpecLogic {
     // State upgrade
     final GloasStateUpgrade stateUpgrade =
         new GloasStateUpgrade(
-            config, schemaDefinitions, beaconStateAccessors, predicates, beaconStateMutators);
+            config,
+            schemaDefinitions,
+            beaconStateAccessors,
+            predicates,
+            beaconStateMutators,
+            miscHelpers);
 
     return new SpecLogicGloas(
         predicates,

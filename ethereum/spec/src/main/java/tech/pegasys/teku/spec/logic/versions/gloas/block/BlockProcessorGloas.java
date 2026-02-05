@@ -113,11 +113,8 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       final BeaconBlock beaconBlock,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
-    safelyProcess(
-        () -> {
-          processWithdrawals(genericState, Optional.empty());
-          processExecutionPayloadBid(genericState, beaconBlock);
-        });
+    processWithdrawals(genericState, Optional.empty());
+    safelyProcess(() -> processExecutionPayloadBid(genericState, beaconBlock));
   }
 
   // process_withdrawals with only state as a parameter
@@ -125,7 +122,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
   public void processWithdrawals(
       final MutableBeaconState state, final Optional<ExecutionPayloadSummary> payloadSummary)
       throws BlockProcessingException {
-    withdrawalsHelpers.processWithdrawals(state);
+    safelyProcess(() -> withdrawalsHelpers.processWithdrawals(state));
   }
 
   // process_execution_payload_bid

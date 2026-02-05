@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPending
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateMutatorsGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
@@ -49,18 +50,21 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
   private final BeaconStateAccessorsGloas beaconStateAccessors;
   private final PredicatesGloas predicates;
   private final BeaconStateMutatorsGloas beaconStateMutators;
+  private final MiscHelpersGloas miscHelpers;
 
   public GloasStateUpgrade(
       final SpecConfigGloas specConfig,
       final SchemaDefinitionsGloas schemaDefinitions,
       final BeaconStateAccessorsGloas beaconStateAccessors,
       final PredicatesGloas predicates,
-      final BeaconStateMutatorsGloas beaconStateMutators) {
+      final BeaconStateMutatorsGloas beaconStateMutators,
+      final MiscHelpersGloas miscHelpers) {
     this.specConfig = specConfig;
     this.schemaDefinitions = schemaDefinitions;
     this.beaconStateAccessors = beaconStateAccessors;
     this.predicates = predicates;
     this.beaconStateMutators = beaconStateMutators;
+    this.miscHelpers = miscHelpers;
   }
 
   @Override
@@ -178,7 +182,15 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                         deposit.getSlot());
                     return false;
                   }
-                  return true;
+                  if (miscHelpers.isValidDepositSignature(
+                      deposit.getPublicKey(),
+                      deposit.getWithdrawalCredentials(),
+                      deposit.getAmount(),
+                      deposit.getSignature())) {
+                    validatorPubkeys.add(deposit.getPublicKey());
+                    return true;
+                  }
+                  return false;
                 })
             .collect(schemaDefinitions.getPendingDepositsSchema().collector());
     state.setPendingDeposits(pendingDeposits);

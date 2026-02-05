@@ -109,13 +109,15 @@ public class WithdrawalsHelpersGloas extends WithdrawalsHelpersElectra {
 
     int processedBuildersSweepCount = 0;
 
-    final int withdrawalsLimit = specConfig.getMaxWithdrawalsPerPayload();
+    final int withdrawalsLimit = specConfig.getMaxWithdrawalsPerPayload() - 1;
+
+    Preconditions.checkArgument(withdrawals.size() <= withdrawalsLimit);
 
     final int buildersLimit =
         Math.min(buildersCount, specConfigGloas.getMaxBuildersPerWithdrawalsSweep());
 
     for (int i = 0; i < buildersLimit; i++) {
-      if (withdrawals.size() == withdrawalsLimit) {
+      if (withdrawals.size() >= withdrawalsLimit) {
         break;
       }
       final Builder builder = builders.get(builderIndex.intValue());
