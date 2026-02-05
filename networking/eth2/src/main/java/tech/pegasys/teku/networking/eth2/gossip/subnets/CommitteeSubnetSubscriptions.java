@@ -82,7 +82,7 @@ abstract class CommitteeSubnetSubscriptions {
   }
 
   @VisibleForTesting
-  public Eth2TopicHandler<?> getTopicHandler(final int subnetId) {
+  public Eth2TopicHandler<?> getSubscribedTopicHandler(final int subnetId) {
     return subnetIdToSubscription.get(subnetId).topicHandler;
   }
 

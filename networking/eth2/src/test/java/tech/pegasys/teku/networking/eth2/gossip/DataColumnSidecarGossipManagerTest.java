@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -123,6 +125,8 @@ public class DataColumnSidecarGossipManagerTest {
 
     dataColumnSidecarGossipManager =
         new DataColumnSidecarGossipManager(subnetSubscriptions, dasGossipLogger);
+    IntStream.range(0, spec.getNumberOfDataColumnSubnets().orElseThrow())
+        .forEach(dataColumnSidecarGossipManager::subscribeToSubnetId);
   }
 
   @TestTemplate
@@ -186,7 +190,7 @@ public class DataColumnSidecarGossipManagerTest {
     // topic handler for data column sidecars with subnet_id 1
     subnetSubscriptions.subscribeToSubnetId(1);
     final Eth2TopicHandler<DataColumnSidecar> topicHandler =
-        (Eth2TopicHandler<DataColumnSidecar>) subnetSubscriptions.getTopicHandler(1);
+        (Eth2TopicHandler<DataColumnSidecar>) subnetSubscriptions.getSubscribedTopicHandler(1);
 
     // processing blob sidecar with subnet_id 1 should be accepted
     final SignedBeaconBlockHeader signedBeaconBlockHeader =
@@ -206,7 +210,7 @@ public class DataColumnSidecarGossipManagerTest {
     // topic handler for data column sidecars with subnet_id 1
     subnetSubscriptions.subscribeToSubnetId(1);
     final Eth2TopicHandler<DataColumnSidecar> topicHandler =
-        (Eth2TopicHandler<DataColumnSidecar>) subnetSubscriptions.getTopicHandler(1);
+        (Eth2TopicHandler<DataColumnSidecar>) subnetSubscriptions.getSubscribedTopicHandler(1);
 
     // processing blob sidecar with subnet_id 2 should be rejected
     final SignedBeaconBlockHeader signedBeaconBlockHeader =
@@ -224,6 +228,8 @@ public class DataColumnSidecarGossipManagerTest {
 
   @TestTemplate
   public void testMultipleSubnetSubscriptions() {
+    reset(dasGossipLogger);
+    dataColumnSidecarGossipManager.unsubscribe();
     dataColumnSidecarGossipManager.subscribeToSubnetId(1);
     dataColumnSidecarGossipManager.subscribeToSubnetId(2);
     dataColumnSidecarGossipManager.subscribeToSubnetId(3);
@@ -244,7 +250,8 @@ public class DataColumnSidecarGossipManagerTest {
   }
 
   @TestTemplate
-  public void testPublishNotLinkedToSubscribe() {
+  public void testPublishNotLinkedToSubscription() {
+    dataColumnSidecarGossipManager.unsubscribe();
     final DataColumnSidecar dataColumnSidecar = dataStructureUtil.randomDataColumnSidecar();
     dataColumnSidecarGossipManager.publish(dataColumnSidecar);
 
