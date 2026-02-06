@@ -13,13 +13,11 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -28,7 +26,6 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -46,9 +43,6 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
-
-import java.util.Optional;
-import java.util.function.Supplier;
 
 public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra {
 
@@ -163,20 +157,19 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
 
   private Supplier<Boolean> isSuperNode() {
     return () -> {
-
       if (p2pConfig.isSubscribedToAllCustodySubnetsEnabled()) {
         return true;
       }
 
       final int numberOfColumns =
-              SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
-                      .getNumberOfColumns();
+          SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
+              .getNumberOfColumns();
 
       return recentChainData
-              .getStore()
-              .getCustodyGroupCount()
-              .map(count -> count.intValue() == numberOfColumns)
-              .orElse(false);
+          .getStore()
+          .getCustodyGroupCount()
+          .map(count -> count.intValue() == numberOfColumns)
+          .orElse(false);
     };
   }
 }
