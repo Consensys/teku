@@ -30,9 +30,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.storage.api.SidecarArchivePrunableChannel;
 import tech.pegasys.teku.storage.server.Database;
 
-public class DataColumnSidecarPruner extends Service {
+public class DataColumnSidecarPruner extends Service implements SidecarArchivePrunableChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -49,6 +50,7 @@ public class DataColumnSidecarPruner extends Service {
 
   private final AtomicLong dataColumnSize = new AtomicLong(0);
   private final AtomicLong earliestDataColumnSidecarSlot = new AtomicLong(-1);
+  private final AtomicLong lastDataColumnSidecarArchivePrunableSlot = new AtomicLong(-1);
   private Optional<UInt64> genesisTime = Optional.empty();
 
   private Optional<Cancellable> scheduledPruner = Optional.empty();
@@ -131,6 +133,21 @@ public class DataColumnSidecarPruner extends Service {
       earliestDataColumnSidecarSlot.set(
           database.getEarliestDataColumnSidecarSlot().map(UInt64::longValue).orElse(-1L));
     }
+
+    if (lastDataColumnSidecarArchivePrunableSlot.get() > 0) {
+      final Optional<UInt64> lastDataColumnSidecarsProofsSlot =
+          database.getLastDataColumnSidecarsProofsSlot();
+      database.archiveSidecarsProofs(
+          lastDataColumnSidecarsProofsSlot.orElse(UInt64.ZERO),
+          UInt64.valueOf(lastDataColumnSidecarArchivePrunableSlot.get()),
+          pruneLimit);
+    }
+  }
+
+  @Override
+  public SafeFuture<Void> onSidecarArchivePrunableSlot(final UInt64 slot) {
+    lastDataColumnSidecarArchivePrunableSlot.set(slot.longValue());
+    return SafeFuture.COMPLETE;
   }
 
   /**
