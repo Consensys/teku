@@ -21,9 +21,11 @@ import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
 import static org.assertj.core.api.InstanceOfAssertFactories.MAP;
 import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
 import static org.mockito.Mockito.mock;
+import static tech.pegasys.teku.kzg.KZG.CELLS_PER_EXT_BLOB;
 import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -39,6 +41,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -49,6 +52,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
@@ -62,17 +66,19 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@TestSpecContext(milestone = {CAPELLA, DENEB, ELECTRA})
+@TestSpecContext(milestone = {CAPELLA, DENEB, ELECTRA, FULU})
 public class Web3JExecutionEngineClientTest {
 
   private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);
@@ -401,6 +407,47 @@ public class Web3JExecutionEngineClientTest {
 
     final Map<String, Object> requestData = takeRequest();
     verifyJsonRpcMethodCall(requestData, "engine_getBlobsV1");
+    assertThat(requestData.get("params"))
+        .asInstanceOf(LIST)
+        .containsExactly(blobVersionedHashes.stream().map(VersionedHash::toHexString).toList());
+  }
+
+  @TestTemplate
+  public void getBlobsV2_shouldBuildRequestAndResponseSuccessfully() throws Exception {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(FULU);
+    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
+    assertThat(blobsBundle.getBlobs()).isNotEmpty();
+
+    final List<BlobAndProofV2> blobsAndProofsV2 =
+        IntStream.range(0, blobsBundle.getBlobs().size())
+            .mapToObj(
+                blobIndex ->
+                    new BlobAndProofV2(
+                        blobsBundle.getBlobs().get(blobIndex).getBytes(),
+                        blobsBundle.getProofs().stream()
+                            .map(KZGProof::getBytesCompressed)
+                            .skip((long) blobIndex * CELLS_PER_EXT_BLOB)
+                            .limit(CELLS_PER_EXT_BLOB)
+                            .toList()))
+            .toList();
+    final String blobsAndProofsV2Json = objectMapper.writeValueAsString(blobsAndProofsV2);
+
+    final String bodyResponse =
+        "{\"jsonrpc\": \"2.0\", \"id\": 0, \"result\":" + blobsAndProofsV2Json + "}";
+
+    mockSuccessfulResponse(bodyResponse);
+
+    final List<VersionedHash> blobVersionedHashes = dataStructureUtil.randomVersionedHashes(2);
+
+    final SafeFuture<Response<List<BlobAndProofV2>>> futureResponse =
+        eeClient.getBlobsV2(blobVersionedHashes);
+
+    assertThat(futureResponse)
+        .succeedsWithin(1, TimeUnit.SECONDS)
+        .matches(response -> response.payload().equals(blobsAndProofsV2));
+
+    final Map<String, Object> requestData = takeRequest();
+    verifyJsonRpcMethodCall(requestData, "engine_getBlobsV2");
     assertThat(requestData.get("params"))
         .asInstanceOf(LIST)
         .containsExactly(blobVersionedHashes.stream().map(VersionedHash::toHexString).toList());

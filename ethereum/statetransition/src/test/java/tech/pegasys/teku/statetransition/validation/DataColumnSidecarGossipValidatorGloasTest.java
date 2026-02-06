@@ -32,13 +32,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
-import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.GloasTrackingKey;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -84,13 +81,12 @@ public class DataColumnSidecarGossipValidatorGloasTest
         .thenReturn(Optional.of(slot));
     when(gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(any(), any()))
         .thenReturn(true);
-    // Gloas doesn't use state validation, so no need to mock state-related helpers
-    // Mock block retrieval - for the default setup, return a block with matching KZG commitments
+    // for the default setup, return a block with matching KZG commitments
     final BeaconBlock defaultBlock =
         dataStructureUtil.randomBeaconBlock(
             slot,
             dataStructureUtil.randomBeaconBlockBodyWithCommitments(
-                dataColumnSidecar.getKzgCommitments()));
+                dataColumnSidecar.getColumn().size()));
     when(gossipValidationHelper.retrieveBlockByRoot(any(Bytes32.class)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(defaultBlock)));
   }
@@ -103,30 +99,20 @@ public class DataColumnSidecarGossipValidatorGloasTest
   }
 
   @Test
-  void shouldRejectWhenDataColumnSidecarStructureIsInvalid() {
-    final Spec mockSpec = mock(Spec.class);
-    final SpecVersion mockSpecVersion = mock(SpecVersion.class);
-    final SpecVersion mockGenesisSpec = mock(SpecVersion.class);
-    final DataColumnSidecarUtil mockDataColumnSidecarUtil = mock(DataColumnSidecarUtil.class);
+  void shouldRejectWhenDataColumnSidecarKzgCommitmentDoNotMatchBid() {
+    // block with fewer commitments than the sidecar's column size
+    final int insufficientCommitmentCount = dataColumnSidecar.getColumn().size() - 1;
+    final BeaconBlock blockWithInsufficientCommitments =
+        dataStructureUtil.randomBeaconBlock(
+            slot,
+            dataStructureUtil.randomBeaconBlockBodyWithCommitments(insufficientCommitmentCount));
 
-    when(mockSpec.atSlot(any(UInt64.class))).thenReturn(mockSpecVersion);
-    when(mockSpec.getGenesisSpec()).thenReturn(mockGenesisSpec);
-    when(mockGenesisSpec.getSlotsPerEpoch()).thenReturn(32);
-    when(mockSpec.getNumberOfDataColumns()).thenReturn(Optional.of(128));
-    when(mockSpec.getDataColumnSidecarUtil(any(UInt64.class)))
-        .thenReturn(mockDataColumnSidecarUtil);
+    when(gossipValidationHelper.retrieveBlockByRoot(beaconBlockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockWithInsufficientCommitments)));
 
-    // structure validation fail
-    when(mockDataColumnSidecarUtil.verifyDataColumnSidecarStructure(any(DataColumnSidecar.class)))
-        .thenReturn(false);
-
-    // Create a validator with the mocked spec
-    final DataColumnSidecarGossipValidator validatorWithMockedSpec =
-        DataColumnSidecarGossipValidator.create(
-            mockSpec, invalidBlocks, gossipValidationHelper, metricsSystemStub, stubTimeProvider);
-
-    SafeFutureAssert.assertThatSafeFuture(validatorWithMockedSpec.validate(dataColumnSidecar))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
+    SafeFutureAssert.assertThatSafeFuture(
+            dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
+        .isCompletedWithValue(reject("Invalid DataColumnSidecar"));
   }
 
   @Test
@@ -203,7 +189,7 @@ public class DataColumnSidecarGossipValidatorGloasTest
         dataStructureUtil.randomBeaconBlock(
             slot,
             dataStructureUtil.randomBeaconBlockBodyWithCommitments(
-                sidecarDifferentIndex.getKzgCommitments()));
+                sidecarDifferentIndex.getColumn().size()));
     when(gossipValidationHelper.retrieveBlockByRoot(beaconBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(secondBeaconblock)));
 
@@ -239,7 +225,7 @@ public class DataColumnSidecarGossipValidatorGloasTest
         dataStructureUtil.randomBeaconBlock(
             slot,
             dataStructureUtil.randomBeaconBlockBodyWithCommitments(
-                sidecarDifferentBlock.getKzgCommitments()));
+                sidecarDifferentBlock.getColumn().size()));
     when(gossipValidationHelper.retrieveBlockByRoot(differentBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(thirdBeaconblock)));
 
@@ -299,25 +285,19 @@ public class DataColumnSidecarGossipValidatorGloasTest
   }
 
   @Test
-  void shouldRejectWhenKzgCommitmentsDoNotMatch() {
-    // block with bid that has different KZG commitments than the sidecar
-    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock();
+  void shouldRejectWhenKzgProofsDoNotMatch() {
+    // block with bid that has a different number of commitments than the sidecar's column size
+    final BeaconBlock beaconBlock =
+        dataStructureUtil.randomBeaconBlock(
+            slot,
+            dataStructureUtil.randomBeaconBlockBodyWithCommitments(
+                dataColumnSidecar.getColumn().size() + 1));
 
     when(gossipValidationHelper.retrieveBlockByRoot(beaconBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(beaconBlock)));
 
-    final Bytes32 sidecarCommitmentsRoot = dataColumnSidecar.getKzgCommitments().hashTreeRoot();
-    final Bytes32 blockCommitmentsRoot =
-        BeaconBlockBodyGloas.required(beaconBlock.getBody())
-            .getSignedExecutionPayloadBid()
-            .getMessage()
-            .getBlobKzgCommitmentsRoot();
-
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
-        .isCompletedWithValue(
-            reject(
-                "DataColumnSidecar's KZG commitments root %s does not match the bid's blob_kzg_commitments_root %s",
-                sidecarCommitmentsRoot, blockCommitmentsRoot));
+        .isCompletedWithValue(reject("Invalid DataColumnSidecar"));
   }
 }

@@ -198,7 +198,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   public void processWithdrawals(
       final MutableBeaconState state, final Optional<ExecutionPayloadSummary> payloadSummary)
       throws BlockProcessingException {
-    withdrawalsHelpers.processWithdrawals(state, payloadSummary.orElseThrow());
+    safelyProcess(() -> withdrawalsHelpers.processWithdrawals(state, payloadSummary.orElseThrow()));
   }
 
   @VisibleForTesting

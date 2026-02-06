@@ -344,8 +344,8 @@ public class DataColumnSidecarGossipValidator {
             gossipValidationHelper::isSignatureValidWithRespectToProposerIndex);
 
     /*
-     * [REJECT] The hash of the sidecar's kzg_commitments matches the blob_kzg_commitments_root in the corresponding builder's
-     * bid for sidecar.beacon_block_root.
+     * [REJECT] The sidecar is valid as verified by verify_data_column_sidecar(sidecar, bid.blob_kzg_commitments).
+     * [REJECT] The sidecar's column data is valid as verified by verify_data_column_sidecar_kzg_proofs(sidecar, bid.blob_kzg_commitments).
      */
     final SafeFuture<Optional<DataColumnSidecarValidationError>> maybeBlockValidationErrorFuture =
         dataColumnSidecarUtil.validateWithBlock(

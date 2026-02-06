@@ -98,7 +98,6 @@ import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
@@ -2819,17 +2818,16 @@ public final class DataStructureUtil {
               () ->
                   slot.map(DataStructureUtil.this::randomSignedBeaconBlockHeader)
                       .orElseGet(DataStructureUtil.this::randomSignedBeaconBlockHeader));
+      SchemaDefinitionsFulu schemaDefinitions =
+          getFuluSchemaDefinitions(signedBlockHeader.getMessage().getSlot());
       final int numberOfProofs =
           kzgProofs
               .map(List::size)
               .or(() -> kzgCommitments.map(List::size))
               .orElseGet(DataStructureUtil.this::randomNumberOfBlobsPerBlock);
-      final DataColumnSidecarSchema<?> dataColumnSidecarSchema =
-          getFuluSchemaDefinitions(signedBlockHeader.getMessage().getSlot())
-              .getDataColumnSidecarSchema();
       final SszList<SszKZGCommitment> sszKzgCommitments =
-          dataColumnSidecarSchema
-              .getKzgCommitmentsSchema()
+          schemaDefinitions
+              .getBlobKzgCommitmentsSchema()
               .createFromElements(
                   kzgCommitments
                       .orElseGet(
@@ -2842,7 +2840,8 @@ public final class DataStructureUtil {
                       .toList());
 
       final SszList<SszKZGProof> sszKzgProofs =
-          dataColumnSidecarSchema
+          schemaDefinitions
+              .getDataColumnSidecarSchema()
               .getKzgProofsSchema()
               .createFromElements(
                   kzgProofs
@@ -2855,49 +2854,40 @@ public final class DataStructureUtil {
                       .map(SszKZGProof::new)
                       .toList());
 
-      return dataColumnSidecarSchema.create(
-          builder ->
-              builder
-                  .index(index.orElseGet(DataStructureUtil.this::randomDataColumnSidecarIndex))
-                  .column(
-                      dataColumn.orElseGet(
-                          () ->
-                              randomDataColumn(
-                                  slot.orElseGet(() -> signedBlockHeader.getMessage().getSlot()),
-                                  numberOfProofs)))
-                  .kzgCommitments(sszKzgCommitments)
-                  .kzgProofs(sszKzgProofs)
-                  .slot(slot.orElseGet(() -> signedBlockHeader.getMessage().getSlot()))
-                  .beaconBlockRoot(
-                      beaconBlockRoot.orElseGet(() -> signedBlockHeader.getMessage().getRoot()))
-                  .signedBlockHeader(signedBlockHeader)
-                  .kzgCommitmentsInclusionProof(
-                      kzgCommitmentsInclusionProof.orElseGet(
-                          () ->
-                              IntStream.range(0, getKzgCommitmentsInclusionProofDepth())
-                                  .mapToObj(__ -> randomBytes32())
-                                  .toList())));
+      return schemaDefinitions
+          .getDataColumnSidecarSchema()
+          .create(
+              builder ->
+                  builder
+                      .index(index.orElseGet(DataStructureUtil.this::randomDataColumnSidecarIndex))
+                      .column(
+                          dataColumn.orElseGet(
+                              () ->
+                                  randomDataColumn(
+                                      signedBlockHeader.getMessage().getSlot(), numberOfProofs)))
+                      .kzgCommitments(sszKzgCommitments)
+                      .kzgProofs(sszKzgProofs)
+                      .signedBlockHeader(signedBlockHeader)
+                      .kzgCommitmentsInclusionProof(
+                          kzgCommitmentsInclusionProof.orElseGet(
+                              () ->
+                                  IntStream.range(0, getKzgCommitmentsInclusionProofDepth())
+                                      .mapToObj(__ -> randomBytes32())
+                                      .toList()))
+                      .beaconBlockRoot(
+                          beaconBlockRoot.orElseGet(() -> signedBlockHeader.getMessage().getRoot()))
+                      .slot(slot.orElseGet(() -> signedBlockHeader.getMessage().getSlot())));
     }
   }
 
   public DataColumn randomDataColumn(final UInt64 slot, final int blobs) {
-    final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
-    final DataColumnSchema dataColumnSchema =
-        schemaDefinitions
-            .toVersionGloas()
-            .map(__ -> getGloasSchemaDefinitionsAtSlot(slot).getDataColumnSchema())
-            .orElseGet(() -> getFuluSchemaDefinitions(slot).getDataColumnSchema());
-    final List<Cell> list = IntStream.range(0, blobs).mapToObj(__ -> randomCell(slot)).toList();
+    final DataColumnSchema dataColumnSchema = getFuluSchemaDefinitions(slot).getDataColumnSchema();
+    List<Cell> list = IntStream.range(0, blobs).mapToObj(__ -> randomCell(slot)).toList();
     return dataColumnSchema.create(list);
   }
 
   public Cell randomCell(final UInt64 slot) {
-    final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
-    final CellSchema cellSchema =
-        schemaDefinitions
-            .toVersionGloas()
-            .map(__ -> getGloasSchemaDefinitionsAtSlot(slot).getCellSchema())
-            .orElseGet(() -> getFuluSchemaDefinitions(slot).getCellSchema());
+    final CellSchema cellSchema = getFuluSchemaDefinitions(slot).getCellSchema();
     return cellSchema.create(randomBytes(cellSchema.getLength()));
   }
 
@@ -2950,7 +2940,7 @@ public final class DataStructureUtil {
   public DataColumnSidecar randomDataColumnSidecarWithInclusionProof(
       final SignedBeaconBlock signedBeaconBlock, final UInt64 index) {
     final MiscHelpersFulu miscHelpersFulu =
-        MiscHelpersFulu.required(spec.getGenesisSpec().miscHelpers());
+        MiscHelpersFulu.required(spec.atSlot(signedBeaconBlock.getSlot()).miscHelpers());
     final List<KZGCommitment> kzgCommitments =
         signedBeaconBlock
             .getMessage()
@@ -3212,7 +3202,7 @@ public final class DataStructureUtil {
             slot,
             randomUInt64(),
             randomUInt64(),
-            randomBytes32());
+            randomBlobKzgCommitments());
   }
 
   public ExecutionPayloadBid randomExecutionPayloadBid(
@@ -3240,7 +3230,7 @@ public final class DataStructureUtil {
             slot,
             value,
             executionPayment,
-            randomBytes32());
+            randomBlobKzgCommitments());
   }
 
   public SignedExecutionPayloadBid randomSignedExecutionPayloadBid() {
@@ -3279,7 +3269,7 @@ public final class DataStructureUtil {
                     randomSlot(),
                     randomUInt64(),
                     randomUInt64(),
-                    blobKzgCommitments.hashTreeRoot()),
+                    blobKzgCommitments),
             randomSignature());
   }
 
@@ -3288,11 +3278,6 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope(final UInt64 slot) {
-    return randomExecutionPayloadEnvelope(slot, randomBlobKzgCommitments());
-  }
-
-  public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope(
-      final UInt64 slot, final SszList<SszKZGCommitment> kzgCommitments) {
     return getGloasSchemaDefinitions()
         .getExecutionPayloadEnvelopeSchema()
         .create(
@@ -3301,7 +3286,6 @@ public final class DataStructureUtil {
             randomBuilderIndex(),
             randomBytes32(),
             slot,
-            kzgCommitments,
             randomBytes32());
   }
 
@@ -3360,10 +3344,6 @@ public final class DataStructureUtil {
   private SchemaDefinitionsGloas getGloasSchemaDefinitions() {
     return SchemaDefinitionsGloas.required(
         spec.forMilestone(SpecMilestone.GLOAS).getSchemaDefinitions());
-  }
-
-  private SchemaDefinitionsGloas getGloasSchemaDefinitionsAtSlot(final UInt64 slot) {
-    return SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
   }
 
   int getEpochsPerEth1VotingPeriod() {
