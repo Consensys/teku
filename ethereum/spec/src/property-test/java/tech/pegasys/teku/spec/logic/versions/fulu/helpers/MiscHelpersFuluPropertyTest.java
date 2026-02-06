@@ -22,26 +22,17 @@ import net.jqwik.api.From;
 import net.jqwik.api.Property;
 import net.jqwik.api.lifecycle.AddLifecycleHook;
 import net.jqwik.api.lifecycle.BeforeProperty;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.KzgResolver;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.SpecSupplier;
-import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobAndCellProofsSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.datacolumn.versions.fulu.DataColumnSidecarFuluSupplier;
-import tech.pegasys.teku.spec.propertytest.suppliers.type.Bytes32Supplier;
-import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGCommitmentSupplier;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 /**
@@ -55,12 +46,6 @@ public class MiscHelpersFuluPropertyTest {
       Objects.requireNonNull(new SpecSupplier(SpecMilestone.FULU, SpecMilestone.FULU).get())
           .sample();
   private final MiscHelpersFulu miscHelpers = (MiscHelpersFulu) spec.getGenesisSpec().miscHelpers();
-
-  private final DataColumnSidecarSchemaFulu sidecarSchemaFulu =
-      DataColumnSidecarSchemaFulu.required(
-          SchemaDefinitionsFulu.required(
-                  spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions())
-              .getDataColumnSidecarSchema());
 
   @BeforeProperty
   void beforeProperty(final KZG kzg) {
