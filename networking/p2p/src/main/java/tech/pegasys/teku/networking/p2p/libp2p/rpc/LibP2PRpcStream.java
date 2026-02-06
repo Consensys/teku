@@ -14,7 +14,7 @@
 package tech.pegasys.teku.networking.p2p.libp2p.rpc;
 
 import com.google.common.base.MoreObjects;
-import io.libp2p.core.P2PChannel;
+import io.libp2p.core.Stream;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -27,15 +27,15 @@ import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 
 public class LibP2PRpcStream implements RpcStream {
 
-  private final P2PChannel p2pChannel;
+  private final Stream p2pStream;
   private final ChannelHandlerContext ctx;
   private final AtomicBoolean writeStreamClosed = new AtomicBoolean(false);
   private final NodeId nodeId;
 
   public LibP2PRpcStream(
-      final NodeId nodeId, final P2PChannel p2pChannel, final ChannelHandlerContext ctx) {
+      final NodeId nodeId, final Stream p2pStream, final ChannelHandlerContext ctx) {
     this.nodeId = nodeId;
-    this.p2pChannel = p2pChannel;
+    this.p2pStream = p2pStream;
     this.ctx = ctx;
   }
 
@@ -53,13 +53,13 @@ public class LibP2PRpcStream implements RpcStream {
   @Override
   public SafeFuture<Void> closeAbruptly() {
     writeStreamClosed.set(true);
-    return SafeFuture.of(p2pChannel.close()).thenApply((res) -> null);
+    return SafeFuture.of(p2pStream.close()).thenApply((res) -> null);
   }
 
   @Override
   public SafeFuture<Void> closeWriteStream() {
     writeStreamClosed.set(true);
-    return toSafeFuture(ctx.channel().disconnect());
+    return SafeFuture.of(p2pStream.closeWrite()).thenApply((res) -> null);
   }
 
   private SafeFuture<Void> toSafeFuture(final ChannelFuture channelFuture) {
