@@ -15,10 +15,13 @@ package tech.pegasys.teku.spec.logic.versions.gloas.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -49,6 +52,24 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
         "Expected a ForkChoiceUtilGloas but was %s",
         forkChoiceUtil.getClass());
     return (ForkChoiceUtilGloas) forkChoiceUtil;
+  }
+
+  @Override
+  public SafeFuture<Optional<BeaconState>> retrieveBlockState(
+      final ReadOnlyStore store, final SignedBeaconBlock block) {
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(block.getSlot(), block.getParentRoot());
+    // From Gloas, there are 3 states available in a given slot
+    // pre-state: State at the slot before block applied
+    // block-state: State at slot after consensus block applied
+    // execution-state: State at slot after consensus and execution has been applied
+    // The state to build on for the next slot is the best available of this list
+    // (execution-state > block-state > pre-state)
+    if (isParentNodeFull(store, block.getMessage().getBlock())) {
+      return store.retrieveExecutionPayloadState(slotAndBlockRoot);
+    } else {
+      return store.retrieveBlockState(slotAndBlockRoot);
+    }
   }
 
   @Override

@@ -149,4 +149,7 @@ public interface ReadOnlyStore extends TimeProvider {
 
   // implements is_ffg_competitive from Consensus Spec
   Optional<Boolean> isFfgCompetitive(Bytes32 headRoot, Bytes32 parentRoot);
+
+  SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(
+      SlotAndBlockRoot slotAndBlockRoot);
 }

@@ -42,7 +42,6 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -73,7 +72,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
-import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
@@ -214,30 +212,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final BlockBroadcastValidator blockBroadcastValidator,
       final ExecutionLayerChannel executionLayer) {
     recentChainData.setBlockTimelinessIfEmpty(block);
-    final SafeFuture<Optional<BeaconState>> maybeFutureState;
-    if (spec.atSlot(block.getSlot()).getMilestone().isLessThan(SpecMilestone.GLOAS)) {
-      maybeFutureState =
-          recentChainData.retrieveBlockState(
-              new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()));
-    } else {
-      final ForkChoiceUtilGloas forkChoiceUtilGloas =
-          ForkChoiceUtilGloas.required(spec.atSlot(block.getSlot()).getForkChoiceUtil());
-      // From Gloas, there are 3 states available in a given slot
-      // pre-state: State at the slot before block applied
-      // block-state: State at slot after consensus block applied
-      // execution-state: State at slot after consensus and execution has been applied
-      // The state to build on for the next slot is the best available of this list
-      // (execution-state > block-state > pre-state)
-      if (forkChoiceUtilGloas.isParentNodeFull(
-          recentChainData.getStore(), block.getMessage().getBlock())) {
-        maybeFutureState = recentChainData.retrieveExecutionPayloadState(block.getParentRoot());
-      } else {
-        maybeFutureState =
-            recentChainData.retrieveBlockState(
-                new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()));
-      }
-    }
-    return maybeFutureState
+    final ForkChoiceUtil forkChoiceUtil = spec.atSlot(block.getSlot()).getForkChoiceUtil();
+
+    return forkChoiceUtil
+        .retrieveBlockState(recentChainData.getStore(), block)
         .thenPeek(__ -> blockImportPerformance.ifPresent(BlockImportPerformance::preStateRetrieved))
         .thenCompose(
             blockSlotState ->

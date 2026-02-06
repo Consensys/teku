@@ -35,6 +35,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -715,6 +716,14 @@ class Store extends CacheableStore {
         .thenApply(
             maybeStateAndBlockSummary ->
                 maybeStateAndBlockSummary.map(StateAndBlockSummary::getState));
+  }
+
+  @Override
+  public SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    // TODO-gloas
+    return SafeFuture.failedFuture(
+        new NotImplementedException("TODO-Gloas - fetch execution payload state"));
   }
 
   @Override
