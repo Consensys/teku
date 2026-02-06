@@ -790,11 +790,12 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/gloas/DataColumnSidecarGloas.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/gloas/DataColumnSidecarSchemaGloas.java
   spec: |
-    <spec container="DataColumnSidecar" fork="gloas" hash="8028928b">
+    <spec container="DataColumnSidecar" fork="gloas" hash="332c7cfc">
     class DataColumnSidecar(Container):
         index: ColumnIndex
         column: List[Cell, MAX_BLOB_COMMITMENTS_PER_BLOCK]
-        kzg_commitments: List[KZGCommitment, MAX_BLOB_COMMITMENTS_PER_BLOCK]
+        # [Modified in Gloas:EIP7732]
+        # Removed `kzg_commitments`
         kzg_proofs: List[KZGProof, MAX_BLOB_COMMITMENTS_PER_BLOCK]
         # [Modified in Gloas:EIP7732]
         # Removed `signed_block_header`
@@ -970,7 +971,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ExecutionPayloadBid.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ExecutionPayloadBidSchema.java
   spec: |
-    <spec container="ExecutionPayloadBid" fork="gloas" hash="aa71ba16">
+    <spec container="ExecutionPayloadBid" fork="gloas" hash="1a7b9dea">
     class ExecutionPayloadBid(Container):
         parent_block_hash: Hash32
         parent_block_root: Root
@@ -982,7 +983,7 @@
         slot: Slot
         value: Gwei
         execution_payment: Gwei
-        blob_kzg_commitments_root: Root
+        blob_kzg_commitments: List[KZGCommitment, MAX_BLOB_COMMITMENTS_PER_BLOCK]
     </spec>
 
 - name: ExecutionPayloadEnvelope#gloas
@@ -990,14 +991,13 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ExecutionPayloadEnvelope.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ExecutionPayloadEnvelopeSchema.java
   spec: |
-    <spec container="ExecutionPayloadEnvelope" fork="gloas" hash="cd522f7f">
+    <spec container="ExecutionPayloadEnvelope" fork="gloas" hash="ec5c0233">
     class ExecutionPayloadEnvelope(Container):
         payload: ExecutionPayload
         execution_requests: ExecutionRequests
         builder_index: BuilderIndex
         beacon_block_root: Root
         slot: Slot
-        blob_kzg_commitments: List[KZGCommitment, MAX_BLOB_COMMITMENTS_PER_BLOCK]
         state_root: Root
     </spec>
 
