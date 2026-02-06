@@ -185,7 +185,7 @@ public class ExecutionPayloadBidGossipValidatorTest {
                 originalBidMessage.getSlot(),
                 higherValue,
                 originalBidMessage.getExecutionPayment(),
-                originalBidMessage.getBlobKzgCommitmentsRoot());
+                originalBidMessage.getBlobKzgCommitments());
 
     final SignedExecutionPayloadBid higherValueInvalidBid =
         dataStructureUtil.randomSignedExecutionPayloadBid(higherValueBidMessage);

@@ -93,9 +93,7 @@ class ExecutionPayloadFactoryGloasTest {
     setupCachingOfThePayloadResult(slot, getPayloadResponse);
 
     final ExecutionPayloadEnvelope executionPayload =
-        dataStructureUtil.randomExecutionPayloadEnvelope(
-            slot,
-            schemaDefinitions.getBlobKzgCommitmentsSchema().createFromBlobsBundle(blobsBundle));
+        dataStructureUtil.randomExecutionPayloadEnvelope(slot);
 
     final SignedExecutionPayloadEnvelope signedExecutionPayload =
         schemaDefinitions
@@ -147,7 +145,6 @@ class ExecutionPayloadFactoryGloasTest {
     assertThat(executionPayload.getBuilderIndex()).isEqualTo(builderIndex);
     assertThat(executionPayload.getBeaconBlockRoot()).isEqualTo(blockAndState.getRoot());
     assertThat(executionPayload.getSlot()).isEqualTo(slot);
-    assertThat(executionPayload.getBlobKzgCommitments()).isEqualTo(kzgCommitments);
     assertThat(executionPayload.getStateRoot()).isNotEqualTo(Bytes32.ZERO);
   }
 

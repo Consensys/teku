@@ -15,4 +15,5 @@ dependencies {
 
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':ethereum:execution-types'))
- }
+  testImplementation 'org.hyperledger.besu.internal:besu-metrics-core'
+}
