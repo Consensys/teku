@@ -75,7 +75,8 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorE
           depositRequest.getPubkey(),
           depositRequest.getWithdrawalCredentials(),
           depositRequest.getAmount(),
-          depositRequest.getSignature());
+          depositRequest.getSignature(),
+          state.getSlot());
       return;
     }
     // Add validator deposits to the queue

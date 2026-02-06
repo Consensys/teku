@@ -87,7 +87,7 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     return AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR;
   }
 
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 add a real data availability check
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/10311 add a real data availability check
   // (not required for devnet-0)
   @Override
   public AvailabilityChecker<?> createAvailabilityChecker(

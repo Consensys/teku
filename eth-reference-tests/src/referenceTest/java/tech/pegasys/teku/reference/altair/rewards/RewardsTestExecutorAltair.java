@@ -39,9 +39,14 @@ public class RewardsTestExecutorAltair implements TestExecutor {
 
   public static final ImmutableMap<String, TestExecutor> REWARDS_TEST_TYPES =
       ImmutableMap.of(
-          "rewards/basic", new RewardsTestExecutorAltair(),
-          "rewards/leak", new RewardsTestExecutorAltair(),
-          "rewards/random", new RewardsTestExecutorAltair());
+          "rewards/basic",
+          new RewardsTestExecutorAltair(),
+          "rewards/leak",
+          new RewardsTestExecutorAltair(),
+          "rewards/random",
+          new RewardsTestExecutorAltair(),
+          "rewards/inactivity_scores",
+          new RewardsTestExecutorAltair());
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
