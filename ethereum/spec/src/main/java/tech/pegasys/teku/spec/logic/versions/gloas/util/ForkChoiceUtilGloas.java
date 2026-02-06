@@ -115,6 +115,10 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
                 () ->
                     new IllegalStateException("Parent block not found: " + block.getParentRoot()));
 
+    // TODO-gloas #10341
+    // if the parent is pre-gloas, we'd use the block state,
+    // there would be no payload state
+
     final BeaconBlockBodyGloas blockBody = BeaconBlockBodyGloas.required(block.getBody());
     final BeaconBlockBodyGloas parentBody =
         BeaconBlockBodyGloas.required(parent.getMessage().getBody());

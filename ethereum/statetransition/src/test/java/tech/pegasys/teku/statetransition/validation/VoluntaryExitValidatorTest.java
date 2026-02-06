@@ -100,7 +100,7 @@ public class VoluntaryExitValidatorTest {
     assertValidationResult(exit, ACCEPT);
   }
 
-  // TODO-gloas: voluntary-exit test will work for gloas once we can fetch the execution-state here
+  // TODO-gloas: #10340
   @ParameterizedTest
   @EnumSource(value = SpecMilestone.class, names = "GLOAS", mode = EnumSource.Mode.EXCLUDE)
   public void shouldAcceptOwnSignedVoluntaryExitNoMocks(final SpecMilestone specMilestone)
