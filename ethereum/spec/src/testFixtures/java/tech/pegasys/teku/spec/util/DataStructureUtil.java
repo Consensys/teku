@@ -2885,9 +2885,17 @@ public final class DataStructureUtil {
     return dataColumnSchema.create(list);
   }
 
+  public DataColumn randomDataColumn() {
+    return randomDataColumn(randomSlot(), randomNumberOfBlobsPerBlock());
+  }
+
   public Cell randomCell(final UInt64 slot) {
     final CellSchema cellSchema = getFuluSchemaDefinitions(slot).getCellSchema();
     return cellSchema.create(randomBytes(cellSchema.getLength()));
+  }
+
+  public Cell randomCell() {
+    return randomCell(randomSlot());
   }
 
   public KZGCell randomKZGCell() {
