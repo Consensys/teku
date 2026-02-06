@@ -172,8 +172,8 @@ public class StatusMessageFactory implements SlotEventsChannel {
     }
 
     if (dataColumnEarliestAvailableSlot.get().isGreaterThan(minCustodyPeriodSlot.get())) {
-      // datacolumn backfill is not yet complete, let's return the most recent slot for with we have
-      // blocks and data columns
+      // datacolumn backfill is not yet complete, let's return the most recent slot for which we
+      // have blocks and data columns
       return Optional.ofNullable(
           blockEarliestAvailableSlot.get().max(dataColumnEarliestAvailableSlot.get()));
     }
