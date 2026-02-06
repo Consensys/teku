@@ -153,7 +153,10 @@ class StatusMessageFactoryTest {
       final Optional<UInt64> minCustodyPeriodSlot,
       final Optional<UInt64> expectedEarliestAvailableSlot) {
 
-    final UInt64 currentSlot = UInt64.valueOf(1000);
+    when(combinedChainDataClient.getCurrentEpoch()).thenReturn(UInt64.valueOf(100));
+    when(recentChainData.getFinalizedEpoch()).thenReturn(UInt64.valueOf(100));
+    final UInt64 currentSlot = UInt64.valueOf(800);
+
     final MinCustodyPeriodSlotCalculator mockCalculator =
         mock(MinCustodyPeriodSlotCalculator.class);
     when(mockCalculator.getMinCustodyPeriodSlot(currentSlot)).thenReturn(minCustodyPeriodSlot);
@@ -171,17 +174,30 @@ class StatusMessageFactoryTest {
         .thenReturn(SafeFuture.completedFuture(blockEarliestAvailableSlot));
     when(combinedChainDataClient.getEarliestAvailableDataColumnSlotWithFallback())
         .thenReturn(SafeFuture.completedFuture(dataColumnEarliestAvailableSlot));
-    factoryWithMockedCalculator.onSlot(UInt64.ZERO);
+    factoryWithMockedCalculator.onSlot(currentSlot);
 
     if (expectedEarliestAvailableSlot.isPresent()) {
       checkStatusMessagedHasExpectedEarliestAvailableSlot(
           rpcRequestBodySelector, expectedEarliestAvailableSlot.get());
     } else {
       // When earliest_available_slot can't be determined, we use zero
-      checkStatusMessagedHasExpectedEarliestAvailableSlot(rpcRequestBodySelector, UInt64.ZERO);
+      checkStatusMessagedHasExpectedEarliestAvailableSlot(rpcRequestBodySelector, currentSlot);
     }
   }
 
+  /**
+   * this method must produce a stream of the following arguments
+   *
+   * <pre>
+   * Arguments:
+   *
+   *    1:   blockEarliestAvailableSlot
+   *    2:   dataColumnEarliestAvailableSlot
+   *    3:   minCustodyPeriodSlot
+   *    4:   expectedEarliestAvailableSlot
+   *
+   *  </pre>
+   */
   private static Stream<Arguments> earliestAvailableSlotScenariosParams() {
     return Stream.of(
         // Case 1: Backfill Incomplete (dataColumn > minCustody) - returns max(block, dataColumn)
