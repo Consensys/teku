@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
+import tech.pegasys.teku.spec.logic.common.util.FuluTrackingKey;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class DataColumnSidecarGossipValidatorFuluTest
@@ -373,5 +374,94 @@ public class DataColumnSidecarGossipValidatorFuluTest
     verify(gossipValidationHelper).getParentStateInBlockEpoch(any());
 
     assertValidationMetrics(Map.of(ValidationResultCode.ACCEPT, 2, ValidationResultCode.IGNORE, 1));
+  }
+
+  @Test
+  void shouldRejectWhenInclusionProofIsInvalid() {
+    final Spec mockSpec = mock(Spec.class);
+    final SpecVersion mockSpecVersion = mock(SpecVersion.class);
+    final SpecVersion mockGenesisSpec = mock(SpecVersion.class);
+    final DataColumnSidecarUtil mockDataColumnSidecarUtil = mock(DataColumnSidecarUtil.class);
+
+    when(mockSpec.atSlot(any(UInt64.class))).thenReturn(mockSpecVersion);
+    when(mockSpec.getGenesisSpec()).thenReturn(mockGenesisSpec);
+    when(mockGenesisSpec.getSlotsPerEpoch()).thenReturn(32);
+    when(mockSpec.getNumberOfDataColumns()).thenReturn(Optional.of(128));
+    when(mockSpec.getDataColumnSidecarUtil(any(UInt64.class)))
+        .thenReturn(mockDataColumnSidecarUtil);
+
+    when(mockDataColumnSidecarUtil.verifyDataColumnSidecarStructure(any(DataColumnSidecar.class)))
+        .thenReturn(true);
+    // Inclusion proof verification fails
+    when(mockDataColumnSidecarUtil.verifyInclusionProof(any(DataColumnSidecar.class), any()))
+        .thenReturn(false);
+    when(mockDataColumnSidecarUtil.performSlotTimingValidation(any(), any()))
+        .thenReturn(Optional.empty());
+    when(mockDataColumnSidecarUtil.performSlotFinalizationValidation(any(), any()))
+        .thenReturn(Optional.empty());
+    when(mockDataColumnSidecarUtil.isBlockParentSeen(any(), any())).thenReturn(true);
+    when(mockDataColumnSidecarUtil.isBlockSeen(any(), any())).thenReturn(true);
+    when(mockDataColumnSidecarUtil.validateBlockSlot(any(), any())).thenReturn(Optional.empty());
+    when(mockDataColumnSidecarUtil.validateParentBlock(any(), any(), any(), any()))
+        .thenReturn(Optional.empty());
+    when(mockDataColumnSidecarUtil.validateWithState(
+            any(), any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(mockDataColumnSidecarUtil.validateWithBlock(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(mockDataColumnSidecarUtil.extractTrackingKey(any()))
+        .thenReturn(new FuluTrackingKey(slot, UInt64.ZERO, index));
+
+    final DataColumnSidecarGossipValidator validatorWithMockedSpec =
+        DataColumnSidecarGossipValidator.create(
+            mockSpec, invalidBlocks, gossipValidationHelper, metricsSystemStub, stubTimeProvider);
+
+    SafeFutureAssert.assertThatSafeFuture(validatorWithMockedSpec.validate(dataColumnSidecar))
+        .isCompletedWithValue(reject("DataColumnSidecar inclusion proof validation failed"));
+  }
+
+  @Test
+  void shouldRejectWhenKzgProofsAreInvalid() {
+    final Spec mockSpec = mock(Spec.class);
+    final SpecVersion mockSpecVersion = mock(SpecVersion.class);
+    final SpecVersion mockGenesisSpec = mock(SpecVersion.class);
+    final DataColumnSidecarUtil mockDataColumnSidecarUtil = mock(DataColumnSidecarUtil.class);
+
+    when(mockSpec.atSlot(any(UInt64.class))).thenReturn(mockSpecVersion);
+    when(mockSpec.getGenesisSpec()).thenReturn(mockGenesisSpec);
+    when(mockGenesisSpec.getSlotsPerEpoch()).thenReturn(32);
+    when(mockSpec.getNumberOfDataColumns()).thenReturn(Optional.of(128));
+    when(mockSpec.getDataColumnSidecarUtil(any(UInt64.class)))
+        .thenReturn(mockDataColumnSidecarUtil);
+    when(mockDataColumnSidecarUtil.verifyDataColumnSidecarStructure(any(DataColumnSidecar.class)))
+        .thenReturn(true);
+    when(mockDataColumnSidecarUtil.verifyInclusionProof(any(DataColumnSidecar.class), any()))
+        .thenReturn(true);
+    // KZG proof validation fails
+    when(mockDataColumnSidecarUtil.verifyDataColumnSidecarKzgProofs(any(DataColumnSidecar.class)))
+        .thenReturn(false);
+    when(mockDataColumnSidecarUtil.performSlotTimingValidation(any(), any()))
+        .thenReturn(Optional.empty());
+    when(mockDataColumnSidecarUtil.performSlotFinalizationValidation(any(), any()))
+        .thenReturn(Optional.empty());
+    when(mockDataColumnSidecarUtil.isBlockParentSeen(any(), any())).thenReturn(true);
+    when(mockDataColumnSidecarUtil.isBlockSeen(any(), any())).thenReturn(true);
+    when(mockDataColumnSidecarUtil.validateBlockSlot(any(), any())).thenReturn(Optional.empty());
+    when(mockDataColumnSidecarUtil.validateParentBlock(any(), any(), any(), any()))
+        .thenReturn(Optional.empty());
+    when(mockDataColumnSidecarUtil.validateWithState(
+            any(), any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(mockDataColumnSidecarUtil.validateWithBlock(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(mockDataColumnSidecarUtil.extractTrackingKey(any()))
+        .thenReturn(new FuluTrackingKey(slot, UInt64.ZERO, index));
+
+    final DataColumnSidecarGossipValidator validatorWithMockedSpec =
+        DataColumnSidecarGossipValidator.create(
+            mockSpec, invalidBlocks, gossipValidationHelper, metricsSystemStub, stubTimeProvider);
+
+    SafeFutureAssert.assertThatSafeFuture(validatorWithMockedSpec.validate(dataColumnSidecar))
+        .isCompletedWithValue(reject("DataColumnSidecar does not pass kzg validation"));
   }
 }
