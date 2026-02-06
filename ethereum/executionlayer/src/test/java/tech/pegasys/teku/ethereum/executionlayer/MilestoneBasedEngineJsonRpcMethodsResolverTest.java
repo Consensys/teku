@@ -201,6 +201,20 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
         arguments(ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV3.class));
   }
 
+  @Test
+  void fuluMilestoneMethodIsNotSupportedInElectra() {
+    final Spec electraSpec = TestSpecFactory.createMinimalElectra();
+
+    final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
+        new MilestoneBasedEngineJsonRpcMethodsResolver(electraSpec, executionEngineClient);
+
+    assertThatThrownBy(
+            () ->
+                engineMethodsResolver.getMethod(
+                    ENGINE_GET_PAYLOAD, () -> SpecMilestone.FULU, Object.class))
+        .hasMessage("Can't find method with name engine_getPayload for milestone FULU");
+  }
+
   @ParameterizedTest
   @MethodSource("fuluMethods")
   void shouldProvideExpectedMethodsForFulu(
