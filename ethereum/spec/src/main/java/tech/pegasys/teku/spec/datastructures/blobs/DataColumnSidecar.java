@@ -31,6 +31,8 @@ public interface DataColumnSidecar extends SszContainer {
 
   DataColumn getColumn();
 
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/10311 need to verify this is not called
+  // for Gloas or make it an Optional
   SszList<SszKZGCommitment> getKzgCommitments();
 
   SszList<SszKZGProof> getKzgProofs();

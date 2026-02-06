@@ -135,8 +135,7 @@ public class ExecutionPayloadDuty implements ExecutionPayloadBidEventsChannel {
   private String getExecutionSummary(final ExecutionPayloadEnvelope executionPayload) {
     final ExecutionPayload payload = executionPayload.getPayload();
     return String.format(
-        "Blobs: %d, %s (%s%%) gas, EL block: %s (%s)",
-        executionPayload.getBlobKzgCommitments().size(),
+        "%s (%s%%) gas, EL block: %s (%s)",
         payload.getGasUsed(),
         payload.computeGasPercentage(LOG),
         payload.getBlockHash().toUnprefixedHexString(),
