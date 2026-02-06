@@ -20,7 +20,6 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -205,7 +204,6 @@ public class ChainBuilder {
               return slot.isGreaterThanOrEqualTo(startSlot)
                   && slot.isLessThan(startSlot.plus(count));
             })
-        .sorted(Comparator.comparing(e -> e.executionPayload().getMessage().getSlot()))
         .map(SignedExecutionPayloadAndState::executionPayload)
         .toList();
   }
