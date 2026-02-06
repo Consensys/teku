@@ -20,10 +20,10 @@ name: ci
 # ubuntu-24.04-arm = 4cpu, 16GB
 # macos-13 = 4cpu, 14GB
 # macos-15 = 3cpu(M1), 7GB
-# gha-runner-scale-set-ubuntu-22.04-amd64-med   = 4 , 16G 
-# gha-runner-scale-set-ubuntu-22.04-amd64-large = 8 , 32G 
-# gha-runner-scale-set-ubuntu-22.04-amd64-xl = 16 , 64G 
-# gha-runner-scale-set-ubuntu-22.04-amd64-xxl = 32 , 128G 
+# gha-runner-scale-set-ubuntu-24-amd64-med   = 4 , 16G 
+# gha-runner-scale-set-ubuntu-24-amd64-large = 8 , 32G 
+# gha-runner-scale-set-ubuntu-24-amd64-xl = 16 , 64G 
+# gha-runner-scale-set-ubuntu-24-amd64-xxl = 32 , 128G 
 
 on:
   push:
@@ -261,7 +261,7 @@ jobs:
       gradle_task: test
       src_pattern: "*/src/test/java/*"
       src_root: "src/test/java"
-      runner: "gha-runner-scale-set-ubuntu-22.04-amd64-large"
+      runner: "gha-runner-scale-set-ubuntu-24-amd64-large"
 
   unitTestsResult:
     runs-on: ubuntu-24.04
@@ -290,7 +290,7 @@ jobs:
 
   integrationTests:
     needs: assemble
-    runs-on: gha-runner-scale-set-ubuntu-22.04-amd64-xxl
+    runs-on: gha-runner-scale-set-ubuntu-24-amd64-xxl
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -323,7 +323,7 @@ jobs:
       gradle_task: propertyTest
       src_pattern: "*/src/property-test/java/*"
       src_root: "src/property-test/java"
-      runner: "gha-runner-scale-set-ubuntu-22.04-amd64-xl"
+      runner: "gha-runner-scale-set-ubuntu-24-amd64-xl"
 
   propertyTestsResult:
     runs-on: ubuntu-24.04
@@ -441,7 +441,7 @@ jobs:
 
   referenceTests:
     needs: referenceTestsPrep
-    runs-on: "gha-runner-scale-set-ubuntu-22.04-amd64-xxl"
+    runs-on: "gha-runner-scale-set-ubuntu-24-amd64-xxl"
     strategy:
       fail-fast: false
       matrix:

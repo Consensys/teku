@@ -26,7 +26,7 @@ on:
       runner:
         type: string
         required: false
-        default: gha-runner-scale-set-ubuntu-22.04-amd64-xxl
+        default: gha-runner-scale-set-ubuntu-24-amd64-xxl
 
 permissions:
   actions: read     # download the assemble output as an artifacts
