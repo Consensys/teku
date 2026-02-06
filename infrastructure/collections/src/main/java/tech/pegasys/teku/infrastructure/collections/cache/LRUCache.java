@@ -18,8 +18,9 @@ import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 
 /**
- * Cache made around LRU-map with fixed size, removing eldest entries (by added) when the space is
- * over
+ * Simple LRU cache implementation using synchronized access. This is lightweight and suitable for
+ * caches that are frequently copied (e.g., TransitionCaches). For unbounded caches with high
+ * concurrency, use StripedCache instead.
  *
  * @param <K> Keys type
  * @param <V> Values type
@@ -41,25 +42,15 @@ public class LRUCache<K, V> implements Cache<K, V> {
     return new LRUCache<>(cacheData.copy());
   }
 
-  /**
-   * Queries value from the cache. If it's not found there, fallback function is used to calculate
-   * value. After calculation result is put in cache and returned.
-   *
-   * @param key Key to query
-   * @param fallback Fallback function for calculation of the result in case of missed cache entry
-   * @return expected value result for provided key
-   */
   @Override
   public synchronized V get(final K key, final Function<K, V> fallback) {
     V result = cacheData.get(key);
-
     if (result == null) {
       result = fallback.apply(key);
       if (result != null) {
         cacheData.put(key, result);
       }
     }
-
     return result;
   }
 

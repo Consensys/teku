@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2026
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.infrastructure.collections.cache;
 
-/** Concrete test class for LRUCache that inherits all contract tests. */
-public class LRUCacheTest extends CacheContractTest {
+/** Concrete test class for CaffeineCache that inherits all contract tests. */
+public class CaffeineCacheTest extends CacheContractTest {
 
   @Override
   protected <K, V> Cache<K, V> createCache(final int capacity) {
-    return LRUCache.create(capacity);
+    return CaffeineCache.create(capacity);
   }
 }

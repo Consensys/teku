@@ -17,6 +17,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -30,7 +31,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 public class DataColumnSidecarSignatureValidator {
   private final Spec spec;
   private final CombinedChainDataClient chainDataClient;
-  private final LRUCache<Bytes32, SafeFuture<Boolean>>
+  private final Cache<Bytes32, SafeFuture<Boolean>>
       cachedSignatureValidationResultsBySignedHeaderRoot;
 
   public DataColumnSidecarSignatureValidator(
