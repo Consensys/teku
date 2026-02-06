@@ -115,6 +115,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProces
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil.ExecutionPayloadProposalData;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
@@ -1086,6 +1087,15 @@ public class Spec {
             () ->
                 new IllegalStateException(
                     "Attempting to use execution requests processor when spec does not have execution requests processor"));
+  }
+
+  // Data Column Sidecar Util
+
+  public DataColumnSidecarUtil getDataColumnSidecarUtil(final UInt64 slot) {
+    return atSlot(slot)
+        .getDataColumnSidecarUtil()
+        .orElseThrow(
+            () -> new IllegalStateException("DataColumnSidecarUtil not available at slot " + slot));
   }
 
   // Execution Payload Processor Utils
