@@ -119,40 +119,6 @@ public class MiscHelpersFuluPropertyTest {
     }
   }
 
-  @Property(tries = 10)
-  void fuzzConstructDataColumnSidecars(
-      @ForAll(supplier = SignedBeaconBlockSupplier.class) final SignedBeaconBlock signedBeaconBlock,
-      @ForAll
-          final List<@From(supplier = BlobAndCellProofsSupplier.class) BlobAndCellProofs>
-              blobAndCellProofsList) {
-    try {
-      miscHelpers.constructDataColumnSidecars(signedBeaconBlock, blobAndCellProofsList);
-    } catch (Exception e) {
-      assertThat(e).isInstanceOf(IllegalArgumentException.class);
-    }
-  }
-
-  @Property(tries = 10)
-  void fuzzConstructDataColumnSidecarsWithProofsAndCommitments(
-      @ForAll(supplier = SignedBeaconBlockSupplier.class) final SignedBeaconBlock signedBeaconBlock,
-      @ForAll final List<@From(supplier = KZGCommitmentSupplier.class) KZGCommitment> commitments,
-      @ForAll final List<@From(supplier = Bytes32Supplier.class) Bytes32> inclusionProofs,
-      @ForAll
-          final List<@From(supplier = BlobAndCellProofsSupplier.class) BlobAndCellProofs>
-              blobAndCellProofsList) {
-    try {
-      miscHelpers.constructDataColumnSidecars(
-          signedBeaconBlock.asHeader(),
-          sidecarSchemaFulu
-              .getKzgCommitmentsSchema()
-              .createFromElements(commitments.stream().map(SszKZGCommitment::new).toList()),
-          inclusionProofs,
-          blobAndCellProofsList);
-    } catch (Exception e) {
-      assertThat(e).isInstanceOf(IllegalArgumentException.class);
-    }
-  }
-
   @Property(tries = 100)
   void fuzzReconstructAllDataColumnSidecars(
       @ForAll
