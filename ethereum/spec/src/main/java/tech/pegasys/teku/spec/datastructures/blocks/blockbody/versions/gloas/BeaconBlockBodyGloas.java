@@ -68,17 +68,17 @@ public interface BeaconBlockBodyGloas extends BeaconBlockBodyElectra {
 
   @Override
   default ExecutionPayloadDeneb getExecutionPayload() {
-    throw new UnsupportedOperationException("ExecutionPayload was removed in Gloas");
+    throw new UnsupportedOperationException("execution_payload field was removed in Gloas");
   }
 
   @Override
   default SszList<SszKZGCommitment> getBlobKzgCommitments() {
-    throw new UnsupportedOperationException("BlobKzgCommitments was removed in Gloas");
+    throw new UnsupportedOperationException("blob_kzg_commitments field was removed in Gloas");
   }
 
   @Override
   default ExecutionRequests getExecutionRequests() {
-    throw new UnsupportedOperationException("ExecutionRequests was removed in Gloas");
+    throw new UnsupportedOperationException("execution_requests field was removed in Gloas");
   }
 
   @Override

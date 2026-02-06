@@ -157,7 +157,6 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
             builder
                 .beaconBlockRoot(executionPayload.getBeaconBlockRoot())
                 .slot(executionPayload.getSlot()),
-        executionPayload.getBlobKzgCommitments(),
         extendedMatrix);
   }
 

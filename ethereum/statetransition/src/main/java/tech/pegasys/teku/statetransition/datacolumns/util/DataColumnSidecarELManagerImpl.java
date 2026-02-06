@@ -319,7 +319,8 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
       return;
     }
     final SpecMilestone milestone = spec.atSlot(block.getSlot()).getMilestone();
-    // TODO-GLOAS: this could still be useful, but ignoring it for the moment since the recovery
+    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10311 this could still be useful, but
+    // ignoring it for the moment since the recovery
     // task relies on blob kzg commitments
     if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)
         || milestone.isLessThan(SpecMilestone.FULU)) {

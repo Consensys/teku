@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.capella.withdrawals;
 
+import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
@@ -102,6 +103,9 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
     final SszList<Validator> validators = state.getValidators();
     final int validatorCount = validators.size();
     final int withdrawalsLimit = specConfig.getMaxWithdrawalsPerPayload();
+    Preconditions.checkArgument(
+        withdrawals.size() < withdrawalsLimit,
+        "There must be at least one space reserved for validator sweep withdrawals");
 
     UInt64 withdrawalIndex = getNextWithdrawalIndex(state, withdrawals);
     UInt64 validatorIndex = BeaconStateCapella.required(state).getNextWithdrawalValidatorIndex();
@@ -112,7 +116,7 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
         Math.min(validatorCount, specConfig.getMaxValidatorsPerWithdrawalSweep());
 
     for (int i = 0; i < validatorsLimit; i++) {
-      if (withdrawals.size() == withdrawalsLimit) {
+      if (withdrawals.size() >= withdrawalsLimit) {
         break;
       }
       final Validator validator = validators.get(validatorIndex.intValue());
