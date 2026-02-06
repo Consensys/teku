@@ -28,7 +28,6 @@ import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import javax.annotation.CheckReturnValue;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -382,9 +381,8 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(
       final SlotAndBlockRoot slotAndBlockRoot) {
-    // TODO-gloas
-    return SafeFuture.failedFuture(
-        new NotImplementedException("TODO-Gloas - fetch execution payload state"));
+    return SafeFuture.completedFuture(
+        getExecutionPayloadStateIfAvailable(slotAndBlockRoot.getBlockRoot()));
   }
 
   @Override

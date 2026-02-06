@@ -130,6 +130,9 @@ public interface ReadOnlyStore extends TimeProvider {
 
   SafeFuture<Optional<BeaconState>> retrieveBlockState(SlotAndBlockRoot slotAndBlockRoot);
 
+  SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(
+      SlotAndBlockRoot slotAndBlockRoot);
+
   SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint);
 
   SafeFuture<Optional<UInt64>> retrieveEarliestBlobSidecarSlot();
@@ -149,7 +152,4 @@ public interface ReadOnlyStore extends TimeProvider {
 
   // implements is_ffg_competitive from Consensus Spec
   Optional<Boolean> isFfgCompetitive(Bytes32 headRoot, Bytes32 parentRoot);
-
-  SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(
-      SlotAndBlockRoot slotAndBlockRoot);
 }
