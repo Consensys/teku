@@ -127,10 +127,6 @@ public class DataColumnSidecarSelectorFactory
 
   @Override
   public DataColumnSidecarSelector slotSelector(final UInt64 slot) {
-    if (spec.atSlot(slot).getMilestone().isLessThan(SpecMilestone.FULU)) {
-      return indices -> SafeFuture.completedFuture(Optional.empty());
-    }
-
     return indices ->
         getDataColumnSidecars(slot, indices)
             .thenApply(
@@ -143,17 +139,20 @@ public class DataColumnSidecarSelectorFactory
     if (maybeBlock.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
+
     final Optional<BeaconBlockBodyDeneb> maybeDenebBlock =
         maybeBlock.get().getMessage().getBody().toVersionDeneb();
     if (maybeDenebBlock.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
-    if (maybeDenebBlock.get().getBlobKzgCommitments().isEmpty()) {
-      return SafeFuture.completedFuture(Optional.of(Collections.emptyList()));
-    }
-    final SignedBeaconBlock block = maybeBlock.get();
-    final UInt64 slot = block.getSlot();
+
+    final UInt64 slot = maybeBlock.get().getSlot();
     if (spec.atSlot(slot).getMilestone().isLessThan(SpecMilestone.FULU)) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+
+    // Valid FULU block but without blobs => emptyList()
+    if (maybeDenebBlock.get().getBlobKzgCommitments().isEmpty()) {
       return SafeFuture.completedFuture(Optional.of(Collections.emptyList()));
     }
 
@@ -162,6 +161,9 @@ public class DataColumnSidecarSelectorFactory
 
   private SafeFuture<Optional<List<DataColumnSidecar>>> getDataColumnSidecars(
       final UInt64 slot, final List<UInt64> indices) {
+    if (spec.atSlot(slot).getMilestone().isLessThan(SpecMilestone.FULU)) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
     return client.getDataColumnSidecars(slot, indices).thenApply(Optional::of);
   }
 

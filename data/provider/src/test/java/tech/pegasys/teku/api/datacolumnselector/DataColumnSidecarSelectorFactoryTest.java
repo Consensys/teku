@@ -230,7 +230,7 @@ public class DataColumnSidecarSelectorFactoryTest {
   }
 
   @TestTemplate
-  public void shouldLookForDataColumnSidecarsOnlyAfterFulu(
+  public void shouldLookForDataColumnSidecarsBySlotOnlyAfterFulu(
       final TestSpecInvocationContextProvider.SpecContext ctx)
       throws ExecutionException, InterruptedException {
     final DataColumnSidecarSelectorFactory dataColumnSidecarSelectorFactory =
@@ -245,6 +245,28 @@ public class DataColumnSidecarSelectorFactoryTest {
         .slotSelector(block.getSlot())
         .getDataColumnSidecars(indices)
         .get();
+    if (ctx.getSpec().isMilestoneSupported(SpecMilestone.FULU)) {
+      verify(client).getDataColumnSidecars(any(UInt64.class), anyList());
+    } else {
+      verify(client, never()).getDataColumnSidecars(any(UInt64.class), anyList());
+    }
+  }
+
+  @TestTemplate
+  public void shouldLookForDataColumnSidecarsByHeadOnlyAfterFulu(
+      final TestSpecInvocationContextProvider.SpecContext ctx)
+      throws ExecutionException, InterruptedException {
+    final DataColumnSidecarSelectorFactory dataColumnSidecarSelectorFactory =
+        new DataColumnSidecarSelectorFactory(ctx.getSpec(), client);
+
+    final SignedBlockAndState blockAndState = data.randomSignedBlockAndState(100);
+
+    when(client.getChainHead()).thenReturn(Optional.of(ChainHead.create(blockAndState)));
+    when(client.getDataColumnSidecars(blockAndState.getSlot(), indices))
+        .thenReturn(SafeFuture.completedFuture(dataColumnSidecars));
+
+    dataColumnSidecarSelectorFactory.headSelector().getDataColumnSidecars(indices).get();
+
     if (ctx.getSpec().isMilestoneSupported(SpecMilestone.FULU)) {
       verify(client).getDataColumnSidecars(any(UInt64.class), anyList());
     } else {
@@ -295,8 +317,6 @@ public class DataColumnSidecarSelectorFactoryTest {
     when(client.getDataColumnSidecars(block.getSlot(), indices))
         .thenReturn(SafeFuture.completedFuture(dataColumnSidecars));
     when(client.isChainHeadOptimistic()).thenReturn(false);
-    when(client.getDataColumnSidecars(block.getSlot(), indices))
-        .thenReturn(SafeFuture.completedFuture(dataColumnSidecars));
 
     final Optional<DataColumnSidecarsAndMetaData> result =
         dataColumnSidecarSelectorFactory
