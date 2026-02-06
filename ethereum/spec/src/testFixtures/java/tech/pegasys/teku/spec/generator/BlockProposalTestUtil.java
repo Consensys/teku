@@ -513,7 +513,7 @@ public class BlockProposalTestUtil {
                 newSlot,
                 UInt64.ZERO,
                 UInt64.ZERO,
-                executionPayloadProposalData.kzgCommitments().hashTreeRoot());
+                executionPayloadProposalData.kzgCommitments());
     return schemaDefinitions
         .getSignedExecutionPayloadBidSchema()
         .create(bid, BLSSignature.infinity());
