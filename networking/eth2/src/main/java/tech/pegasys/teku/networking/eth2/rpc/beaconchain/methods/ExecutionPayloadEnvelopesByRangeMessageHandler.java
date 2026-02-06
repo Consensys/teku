@@ -15,12 +15,17 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 
+import com.google.common.annotations.VisibleForTesting;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
@@ -49,10 +54,7 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
   private final SpecConfigGloas config;
   private final Spec spec;
   private final LabelledMetric<Counter> requestCounter;
-
-  @SuppressWarnings("unused")
   private final RecentChainData recentChainData;
-
   private final Counter totalExecutionPayloadEnvelopesRequestedCounter;
 
   public ExecutionPayloadEnvelopesByRangeMessageHandler(
@@ -115,10 +117,72 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
       requestCounter.labels("rate_limited").inc();
       return;
     }
-
     requestCounter.labels("ok").inc();
     totalExecutionPayloadEnvelopesRequestedCounter.inc(message.getCount().longValue());
+    final SafeFuture<List<SignedExecutionPayloadEnvelope>> future =
+        recentChainData.retrieveSignedExecutionPayloadEnvelopeByRange(
+            message.getStartSlot(), message.getCount());
 
-    throw new UnsupportedOperationException("Not yet implemented");
+    future
+        .thenCompose(
+            payloads -> {
+              final RequestState requestState = new RequestState(callback, payloads);
+              if (payloads.isEmpty() || requestState.isComplete()) {
+                return SafeFuture.completedFuture(requestState);
+              }
+              return sendExecutionPayloadEnvelopes(requestState);
+            })
+        .finish(
+            requestState -> {
+              if (requestState.getSentCount() != message.getCount().longValue()) {
+                peer.adjustExecutionPayloadEnvelopesRequest(
+                    maybeRequestKey.get(), requestState.getSentCount());
+              }
+              callback.completeSuccessfully();
+            },
+            err -> handleError(err, callback, "execution payload envelopes by range"));
+  }
+
+  private SafeFuture<RequestState> sendExecutionPayloadEnvelopes(final RequestState requestState) {
+    return requestState
+        .sendNextPayload()
+        .thenCompose(
+            __ -> {
+              if (requestState.isComplete()) {
+                return SafeFuture.completedFuture(requestState);
+              } else {
+                return sendExecutionPayloadEnvelopes(requestState);
+              }
+            });
+  }
+
+  @VisibleForTesting
+  static class RequestState {
+    private final ResponseCallback<SignedExecutionPayloadEnvelope> callback;
+    private final Iterator<SignedExecutionPayloadEnvelope> payloadIterator;
+    private final AtomicInteger sentExecutionPayloadEnvelopes = new AtomicInteger(0);
+
+    RequestState(
+        final ResponseCallback<SignedExecutionPayloadEnvelope> callback,
+        final List<SignedExecutionPayloadEnvelope> payloads) {
+      this.callback = callback;
+      this.payloadIterator = payloads.iterator();
+    }
+
+    SafeFuture<Void> sendNextPayload() {
+      if (!payloadIterator.hasNext()) {
+        return SafeFuture.COMPLETE;
+      }
+      final SignedExecutionPayloadEnvelope payload = payloadIterator.next();
+      return callback.respond(payload).thenRun(sentExecutionPayloadEnvelopes::incrementAndGet);
+    }
+
+    boolean isComplete() {
+      return !payloadIterator.hasNext();
+    }
+
+    int getSentCount() {
+      return sentExecutionPayloadEnvelopes.get();
+    }
   }
 }

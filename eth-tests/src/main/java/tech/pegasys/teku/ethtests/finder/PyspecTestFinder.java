@@ -19,10 +19,8 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 @SuppressWarnings("MustBeClosedChecker")
@@ -30,28 +28,26 @@ public class PyspecTestFinder implements TestFinder {
 
   public static final String PYSPEC_TEST_DIRECTORY_NAME = "pyspec_tests";
 
-  private final Map<ForkAndConfig, List<String>> onlyTestsToRunByForkAndConfig = new HashMap<>();
-  private final Map<ForkAndConfig, List<String>> testsToIgnoreByForkAndConfig = new HashMap<>();
+  private final List<String> onlyTestsToRun = new ArrayList<>();
+  private final List<String> testsToIgnore = new ArrayList<>();
 
   /** Used when we want to run ALL pyspec tests. */
   public PyspecTestFinder() {}
 
   /**
-   * Used when we want to limit the spec test for specific tests. This is particularly useful when
-   * we are implementing a new fork and can't support all tests yet.
+   * Allows restricting execution to a specific subset of spec tests. This is especially useful when
+   * introducing a new fork and full test coverage is not yet supported.
    *
-   * @param onlyTestsToRunByForkAndConfig Only tests by {@link ForkAndConfig} (using the format
-   *     `{test-type} - {test-name}`) are going to run. The match is a partial match (if the test
-   *     starts with the filter value). If empty, all tests would be run.
-   * @param testsToIgnoreByForkAndConfig Tests by {@link ForkAndConfig} (using the format
-   *     `{test-type} - {test-name}`) that will not be run if there is a match. The match is a
-   *     partial match (if test starts with the filter value). If empty, all tests would be run.
+   * @param onlyTestsToRun Tests that should be executed. Only tests whose identifiers match these
+   *     filters—fully or partially—in the format `{fork} - {config} - {test-type} - {test-name}`
+   *     will run. If this list is empty, all tests are eligible to run.
+   * @param testsToIgnore Tests that should be skipped. Any test whose identifier matches these
+   *     filters—fully or partially—in the same format will not run. If this list is empty, no tests
+   *     are excluded.
    */
-  public PyspecTestFinder(
-      final Map<ForkAndConfig, List<String>> onlyTestsToRunByForkAndConfig,
-      final Map<ForkAndConfig, List<String>> testsToIgnoreByForkAndConfig) {
-    this.onlyTestsToRunByForkAndConfig.putAll(onlyTestsToRunByForkAndConfig);
-    this.testsToIgnoreByForkAndConfig.putAll(testsToIgnoreByForkAndConfig);
+  public PyspecTestFinder(final List<String> onlyTestsToRun, final List<String> testsToIgnore) {
+    this.onlyTestsToRun.addAll(onlyTestsToRun);
+    this.testsToIgnore.addAll(testsToIgnore);
   }
 
   @Override
@@ -71,11 +67,6 @@ public class PyspecTestFinder implements TestFinder {
       throws IOException {
     final String testType = testRoot.relativize(testCategoryDir).toString();
     final Path pyspecDir = testCategoryDir.resolve(PYSPEC_TEST_DIRECTORY_NAME);
-    final ForkAndConfig forkAndConfig = new ForkAndConfig(fork, config);
-    final List<String> onlyTestsToRun =
-        onlyTestsToRunByForkAndConfig.getOrDefault(forkAndConfig, Collections.emptyList());
-    final List<String> testsToIgnore =
-        testsToIgnoreByForkAndConfig.getOrDefault(forkAndConfig, Collections.emptyList());
     return Files.list(pyspecDir)
         .filter(testDir -> !testDir.getFileName().toString().equals(".DS_Store"))
         .map(
@@ -89,19 +80,10 @@ public class PyspecTestFinder implements TestFinder {
                 onlyTestsToRun.isEmpty()
                     || onlyTestsToRun.stream()
                         .anyMatch(
-                            test ->
-                                (testDefinition.getTestType()
-                                        + " - "
-                                        + testDefinition.getTestName())
-                                    .startsWith(test)))
+                            testFilter -> testDefinition.getDisplayName().contains(testFilter)))
         .filter(
             testDefinition ->
                 testsToIgnore.stream()
-                    .noneMatch(
-                        test ->
-                            (testDefinition.getTestType() + " - " + testDefinition.getTestName())
-                                .startsWith(test)));
+                    .noneMatch(testFilter -> testDefinition.getDisplayName().contains(testFilter)));
   }
-
-  public record ForkAndConfig(String fork, String config) {}
 }
