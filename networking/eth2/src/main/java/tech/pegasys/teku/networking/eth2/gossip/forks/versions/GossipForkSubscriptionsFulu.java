@@ -13,10 +13,13 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -43,6 +46,9 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
+
+import java.util.Optional;
+import java.util.function.Supplier;
 
 public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra {
 
@@ -155,17 +161,22 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
     dataColumnSidecarGossipManager.unsubscribeFromSubnetId(subnetId);
   }
 
-  private boolean isSuperNode() {
-    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+  private Supplier<Boolean> isSuperNode() {
+    return () -> {
+
       if (p2pConfig.isSubscribedToAllCustodySubnetsEnabled()) {
         return true;
       }
-      final SpecVersion specVersionFulu = spec.forMilestone(SpecMilestone.FULU);
-      final int totalCustodyGroups = p2pConfig.getTotalCustodyGroupCount(specVersionFulu);
+
       final int numberOfColumns =
-          SpecConfigFulu.required(specVersionFulu.getConfig()).getNumberOfColumns();
-      return totalCustodyGroups == numberOfColumns;
-    }
-    return false;
+              SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
+                      .getNumberOfColumns();
+
+      return recentChainData
+              .getStore()
+              .getCustodyGroupCount()
+              .map(count -> count.intValue() == numberOfColumns)
+              .orElse(false);
+    };
   }
 }
