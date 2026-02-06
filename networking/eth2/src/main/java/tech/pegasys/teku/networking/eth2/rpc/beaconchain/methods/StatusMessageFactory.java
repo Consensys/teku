@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.statetransition.datacolumns.MinCustodyPeriodSlotCalculator;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -48,14 +49,25 @@ public class StatusMessageFactory implements SlotEventsChannel {
       new AtomicReference<>(Optional.empty());
   private final boolean supportsEarliestAvailableSlot;
 
+  private final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator;
+
   public StatusMessageFactory(
       final Spec spec,
       final CombinedChainDataClient recentChainData,
       final MetricsSystem metricsSystem) {
+    this(spec, recentChainData, MinCustodyPeriodSlotCalculator.createFromSpec(spec), metricsSystem);
+  }
+
+  @VisibleForTesting
+  StatusMessageFactory(
+      final Spec spec,
+      final CombinedChainDataClient recentChainData,
+      final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator,
+      final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.combinedChainDataClient = recentChainData;
-
-    supportsEarliestAvailableSlot = spec.isMilestoneSupported(SpecMilestone.FULU);
+    this.minCustodyPeriodSlotCalculator = minCustodyPeriodSlotCalculator;
+    this.supportsEarliestAvailableSlot = spec.isMilestoneSupported(SpecMilestone.FULU);
 
     metricsSystem.createGauge(
         TekuMetricCategory.BEACON,
@@ -128,21 +140,18 @@ public class StatusMessageFactory implements SlotEventsChannel {
         combinedChainDataClient.getEarliestAvailableBlockSlot();
     final SafeFuture<Optional<UInt64>> earliestDataColumnSidecarSlotFuture =
         combinedChainDataClient.getEarliestAvailableDataColumnSlotWithFallback();
-
-    final BiFunction<Optional<UInt64>, Optional<UInt64>, Optional<UInt64>>
-        combineEarliestSlotFunction =
-            (blockEarliestAvailableSlot, dataColumnEarliestAvailableSlot) -> {
-              if (blockEarliestAvailableSlot.isPresent()
-                  && dataColumnEarliestAvailableSlot.isPresent()) {
-                return Optional.ofNullable(
-                    blockEarliestAvailableSlot.get().max(dataColumnEarliestAvailableSlot.get()));
-              } else {
-                return Optional.empty();
-              }
-            };
+    final Optional<UInt64> minCustodyPeriodSlot =
+        minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(
+            combinedChainDataClient.getCurrentSlot());
 
     earliestAvailableBlockSlotFuture
-        .thenCombine(earliestDataColumnSidecarSlotFuture, combineEarliestSlotFunction)
+        .thenCombine(
+            earliestDataColumnSidecarSlotFuture,
+            (blockEarliestAvailableSlot, dataColumnEarliestAvailableSlot) ->
+                computeEarliestAvailableSlot(
+                    blockEarliestAvailableSlot,
+                    dataColumnEarliestAvailableSlot,
+                    minCustodyPeriodSlot))
         .thenAccept(
             maybeSlot -> {
               maybeSlot.ifPresent(
@@ -150,5 +159,27 @@ public class StatusMessageFactory implements SlotEventsChannel {
               maybeEarliestAvailableSlot.set(maybeSlot);
             })
         .finishWarn(LOG);
+  }
+
+  private Optional<UInt64> computeEarliestAvailableSlot(
+      final Optional<UInt64> blockEarliestAvailableSlot,
+      final Optional<UInt64> dataColumnEarliestAvailableSlot,
+      final Optional<UInt64> minCustodyPeriodSlot) {
+    if (blockEarliestAvailableSlot.isEmpty()
+        || dataColumnEarliestAvailableSlot.isEmpty()
+        || minCustodyPeriodSlot.isEmpty()) {
+      return Optional.empty();
+    }
+
+    if (dataColumnEarliestAvailableSlot.get().isGreaterThan(minCustodyPeriodSlot.get())) {
+      // datacolumn backfill is not yet complete, let's return the most recent slot for with we have
+      // blocks and data columns
+      return Optional.ofNullable(
+          blockEarliestAvailableSlot.get().max(dataColumnEarliestAvailableSlot.get()));
+    }
+
+    // datacolumn complete for the entire custody period, we can just consider the earliest
+    // available block slot
+    return blockEarliestAvailableSlot;
   }
 }

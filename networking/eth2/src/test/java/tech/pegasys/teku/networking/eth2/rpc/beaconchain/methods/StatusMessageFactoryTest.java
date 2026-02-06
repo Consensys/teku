@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.Status
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.versions.fulu.StatusMessageFulu;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.versions.phase0.StatusMessagePhase0;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.datacolumns.MinCustodyPeriodSlotCalculator;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -57,6 +58,7 @@ class StatusMessageFactoryTest {
   public void setUp() {
     when(combinedChainDataClient.getRecentChainData()).thenReturn(recentChainData);
     when(combinedChainDataClient.getCurrentEpoch()).thenReturn(UInt64.ZERO);
+    when(combinedChainDataClient.getCurrentSlot()).thenReturn(UInt64.ZERO);
     when(recentChainData.getCurrentForkDigest())
         .thenReturn(Optional.of(dataStructureUtil.randomBytes4()));
     when(recentChainData.getFinalizedCheckpoint())
@@ -147,17 +149,29 @@ class StatusMessageFactoryTest {
   @MethodSource("earliestAvailableSlotScenariosParams")
   public void earliestAvailableSlotScenarios(
       final Optional<UInt64> blockEarliestAvailableSlot,
-      final Optional<UInt64> dataColumnLatestAvailableSlot,
+      final Optional<UInt64> dataColumnEarliestAvailableSlot,
+      final Optional<UInt64> minCustodyPeriodSlot,
       final Optional<UInt64> expectedEarliestAvailableSlot) {
 
+    final UInt64 currentSlot = UInt64.valueOf(1000);
+    final MinCustodyPeriodSlotCalculator mockCalculator =
+        mock(MinCustodyPeriodSlotCalculator.class);
+    when(mockCalculator.getMinCustodyPeriodSlot(currentSlot)).thenReturn(minCustodyPeriodSlot);
+    when(combinedChainDataClient.getCurrentSlot()).thenReturn(currentSlot);
+
+    // Use a new StubMetricsSystem for each parameterized test to avoid gauge registration conflicts
+    final StubMetricsSystem testMetricsSystem = new StubMetricsSystem();
+    final StatusMessageFactory factoryWithMockedCalculator =
+        new StatusMessageFactory(spec, combinedChainDataClient, mockCalculator, testMetricsSystem);
+
     final RpcRequestBodySelector<StatusMessage> rpcRequestBodySelector =
-        statusMessageFactory.createStatusMessage().orElseThrow();
+        factoryWithMockedCalculator.createStatusMessage().orElseThrow();
 
     when(combinedChainDataClient.getEarliestAvailableBlockSlot())
         .thenReturn(SafeFuture.completedFuture(blockEarliestAvailableSlot));
     when(combinedChainDataClient.getEarliestAvailableDataColumnSlotWithFallback())
-        .thenReturn(SafeFuture.completedFuture(dataColumnLatestAvailableSlot));
-    statusMessageFactory.onSlot(UInt64.ZERO);
+        .thenReturn(SafeFuture.completedFuture(dataColumnEarliestAvailableSlot));
+    factoryWithMockedCalculator.onSlot(UInt64.ZERO);
 
     if (expectedEarliestAvailableSlot.isPresent()) {
       checkStatusMessagedHasExpectedEarliestAvailableSlot(
@@ -170,30 +184,70 @@ class StatusMessageFactoryTest {
 
   private static Stream<Arguments> earliestAvailableSlotScenariosParams() {
     return Stream.of(
+        // Case 1: Backfill Incomplete (dataColumn > minCustody) - returns max(block, dataColumn)
         Arguments.of(
-            Optional.of(UInt64.valueOf(1)),
-            Optional.of(UInt64.valueOf(1)),
-            Optional.of(UInt64.valueOf(1))),
+            Optional.of(UInt64.valueOf(50)),
+            Optional.of(UInt64.valueOf(100)),
+            Optional.of(UInt64.valueOf(60)),
+            Optional.of(UInt64.valueOf(100))), // max(50,100)=100, dataColumn limits
         Arguments.of(
-            Optional.of(UInt64.valueOf(1)),
-            Optional.of(UInt64.valueOf(2)),
-            Optional.of(UInt64.valueOf(2))),
+            Optional.of(UInt64.valueOf(100)),
+            Optional.of(UInt64.valueOf(80)),
+            Optional.of(UInt64.valueOf(60)),
+            Optional.of(UInt64.valueOf(100))), // max(100,80)=100, block limits
         Arguments.of(
-            Optional.of(UInt64.valueOf(2)),
-            Optional.of(UInt64.valueOf(1)),
-            Optional.of(UInt64.valueOf(2))),
-        Arguments.of(Optional.empty(), Optional.of(UInt64.valueOf(1)), Optional.empty()),
-        Arguments.of(Optional.of(UInt64.valueOf(1)), Optional.empty(), Optional.empty()),
-        Arguments.of(Optional.empty(), Optional.empty(), Optional.empty()));
+            Optional.of(UInt64.valueOf(100)),
+            Optional.of(UInt64.valueOf(100)),
+            Optional.of(UInt64.valueOf(60)),
+            Optional.of(UInt64.valueOf(100))), // both equal
+
+        // Case 2: Backfill Complete (dataColumn <= minCustody) - returns blockEarliestAvailableSlot
+        Arguments.of(
+            Optional.of(UInt64.valueOf(100)),
+            Optional.of(UInt64.valueOf(50)),
+            Optional.of(UInt64.valueOf(60)),
+            Optional.of(UInt64.valueOf(100))), // block is returned (key difference!)
+        Arguments.of(
+            Optional.of(UInt64.valueOf(50)),
+            Optional.of(UInt64.valueOf(50)),
+            Optional.of(UInt64.valueOf(60)),
+            Optional.of(UInt64.valueOf(50))), // block is returned
+        Arguments.of(
+            Optional.of(UInt64.valueOf(50)),
+            Optional.of(UInt64.valueOf(60)),
+            Optional.of(UInt64.valueOf(60)),
+            Optional.of(
+                UInt64.valueOf(50))), // block is returned (boundary: dataColumn == minCustody)
+
+        // Edge Cases: Empty inputs
+        Arguments.of(
+            Optional.empty(),
+            Optional.of(UInt64.valueOf(50)),
+            Optional.of(UInt64.valueOf(60)),
+            Optional.empty()), // block missing
+        Arguments.of(
+            Optional.of(UInt64.valueOf(50)),
+            Optional.empty(),
+            Optional.of(UInt64.valueOf(60)),
+            Optional.empty()), // dataColumn missing
+        Arguments.of(
+            Optional.of(UInt64.valueOf(50)),
+            Optional.of(UInt64.valueOf(50)),
+            Optional.empty(),
+            Optional.empty())); // minCustody missing
   }
 
   @Test
   public void onSlotShouldNotUpdateEarliestAvailableSlotIfFuluIsNotSupported() {
     final Spec preFuluSpec = TestSpecFactory.createMinimalElectra();
-    statusMessageFactory =
-        new StatusMessageFactory(preFuluSpec, combinedChainDataClient, new StubMetricsSystem());
+    // Use a mock calculator since MinCustodyPeriodSlotCalculator.createFromSpec requires Fulu
+    final MinCustodyPeriodSlotCalculator mockCalculator =
+        mock(MinCustodyPeriodSlotCalculator.class);
+    final StatusMessageFactory preFuluFactory =
+        new StatusMessageFactory(
+            preFuluSpec, combinedChainDataClient, mockCalculator, new StubMetricsSystem());
 
-    statusMessageFactory.onSlot(UInt64.ZERO);
+    preFuluFactory.onSlot(UInt64.ZERO);
 
     verify(combinedChainDataClient, never()).getEarliestAvailableBlockSlot();
     verify(combinedChainDataClient, never()).getEarliestAvailableDataColumnSlotWithFallback();
