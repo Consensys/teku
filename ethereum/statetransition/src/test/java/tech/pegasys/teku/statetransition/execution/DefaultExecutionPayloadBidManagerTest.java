@@ -18,13 +18,13 @@ import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
 
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
@@ -33,8 +33,10 @@ import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.validation.ExecutionPayloadBidGossipValidator;
 
 public class DefaultExecutionPayloadBidManagerTest {
 
@@ -44,8 +46,11 @@ public class DefaultExecutionPayloadBidManagerTest {
   private final BlockProductionPerformance blockProductionPerformance =
       mock(BlockProductionPerformance.class);
 
+  private final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator =
+      mock(ExecutionPayloadBidGossipValidator.class);
+
   private final DefaultExecutionPayloadBidManager executionPayloadBidManager =
-      new DefaultExecutionPayloadBidManager(spec);
+      new DefaultExecutionPayloadBidManager(spec, executionPayloadBidGossipValidator);
 
   @Test
   public void createsLocalBidForBlock() {
@@ -79,11 +84,8 @@ public class DefaultExecutionPayloadBidManagerTest {
 
     final ExecutionPayloadBid bid = signedBid.getMessage();
 
-    final Bytes32 expectedBlobKzgCommitmentsRoot =
-        schemaDefinitions
-            .getBlobKzgCommitmentsSchema()
-            .createFromBlobsBundle(blobsBundle)
-            .hashTreeRoot();
+    final SszList<SszKZGCommitment> expectedBlobKzgCommitments =
+        schemaDefinitions.getBlobKzgCommitmentsSchema().createFromBlobsBundle(blobsBundle);
     final ExecutionPayloadBid expectedBid =
         schemaDefinitions
             .getExecutionPayloadBidSchema()
@@ -92,7 +94,7 @@ public class DefaultExecutionPayloadBidManagerTest {
                 state.getSlot(),
                 state,
                 executionPayload,
-                expectedBlobKzgCommitmentsRoot);
+                expectedBlobKzgCommitments);
 
     assertThat(bid).isEqualTo(expectedBid);
   }

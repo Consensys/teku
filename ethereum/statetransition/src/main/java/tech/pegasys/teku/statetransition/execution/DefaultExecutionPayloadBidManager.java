@@ -20,10 +20,10 @@ import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_B
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
@@ -31,7 +31,9 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
+import tech.pegasys.teku.statetransition.validation.ExecutionPayloadBidGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidManager {
@@ -39,15 +41,28 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
+  private final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator;
 
-  public DefaultExecutionPayloadBidManager(final Spec spec) {
+  public DefaultExecutionPayloadBidManager(
+      final Spec spec,
+      final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator) {
     this.spec = spec;
+    this.executionPayloadBidGossipValidator = executionPayloadBidGossipValidator;
   }
 
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9960 (not required for devnet-0)
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<InternalValidationResult> validateAndAddBid(
       final SignedExecutionPayloadBid signedBid, final RemoteBidOrigin remoteBidOrigin) {
+    final SafeFuture<InternalValidationResult> validationResult =
+        executionPayloadBidGossipValidator.validate(signedBid);
+    validationResult.thenAccept(
+        result -> {
+          switch (result.code()) {
+            // TODO-GLOAS handle bids
+            case ACCEPT, REJECT, SAVE_FOR_FUTURE, IGNORE -> {}
+          }
+        });
     return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }
 
@@ -83,17 +98,16 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
     final SchemaDefinitionsGloas schemaDefinitions =
         SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
     final ExecutionPayload executionPayload = getPayloadResponse.getExecutionPayload();
-    final Bytes32 blobKzgCommitmentsRoot =
+    final SszList<SszKZGCommitment> blobKzgCommitments =
         schemaDefinitions
             .getBlobKzgCommitmentsSchema()
-            .createFromBlobsBundle(getPayloadResponse.getBlobsBundle().orElseThrow())
-            .hashTreeRoot();
+            .createFromBlobsBundle(getPayloadResponse.getBlobsBundle().orElseThrow());
     // For self-builds, use `BUILDER_INDEX_SELF_BUILD`
     final ExecutionPayloadBid bid =
         schemaDefinitions
             .getExecutionPayloadBidSchema()
             .createLocalSelfBuiltBid(
-                BUILDER_INDEX_SELF_BUILD, slot, state, executionPayload, blobKzgCommitmentsRoot);
+                BUILDER_INDEX_SELF_BUILD, slot, state, executionPayload, blobKzgCommitments);
     // Using G2_POINT_AT_INFINITY as signature for self-builds
     return schemaDefinitions
         .getSignedExecutionPayloadBidSchema()

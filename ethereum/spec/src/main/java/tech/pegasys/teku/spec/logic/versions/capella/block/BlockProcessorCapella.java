@@ -35,10 +35,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.MutableBeaconStateCapella;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -61,7 +63,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public class BlockProcessorCapella extends BlockProcessorBellatrix {
-
   private static final Bytes ETH1_WITHDRAWAL_KEY_PREFIX =
       Bytes.concatenate(ETH1_ADDRESS_WITHDRAWAL_PREFIX, Bytes.repeat((byte) 0x00, 11));
   protected final WithdrawalsHelpers withdrawalsHelpers;
@@ -115,8 +116,9 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       final SignedBeaconBlock block,
       final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
-    return verifyBlsToExecutionChangesPreProcessing(
-        preState,
+    final SszList<Deposit> deposits = block.getMessage().getBody().getDeposits();
+    BeaconState validationState = preState;
+    final SszList<SignedBlsToExecutionChange> signedBlsToExecutionChanges =
         block
             .getMessage()
             .getBody()
@@ -124,9 +126,24 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
             .orElseThrow(
                 () ->
                     new BlockProcessingException(
-                        "BlsToExecutionChanges was not found during block processing.")),
-        signatureVerifier,
-        false);
+                        "BlsToExecutionChanges was not found during block processing."));
+
+    BlockValidationResult blockValidationResult =
+        verifyBlsToExecutionChangesPreProcessing(
+            validationState, signedBlsToExecutionChanges, signatureVerifier);
+
+    if (!blockValidationResult.isValid() && !deposits.isEmpty()) {
+      // It's possible that a bls change referred to a validator which is in the
+      // pending deposits list, so apply deposits and attempt validation again.
+      final MutableBeaconStateCapella mutableBeaconStateCapella =
+          BeaconStateCapella.required(preState).createWritableCopy();
+      processDeposits(mutableBeaconStateCapella, block.getMessage().getBody().getDeposits());
+      validationState = mutableBeaconStateCapella.commitChanges();
+      blockValidationResult =
+          verifyBlsToExecutionChangesPreProcessing(
+              validationState, signedBlsToExecutionChanges, signatureVerifier);
+    }
+    return blockValidationResult;
   }
 
   @Override
@@ -141,7 +158,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
 
     safelyProcess(
         () ->
-            processBlsToExecutionChangesNoValidation(
+            processBlsToExecutionChanges(
                 MutableBeaconStateCapella.required(state),
                 body.getOptionalBlsToExecutionChanges()
                     .orElseThrow(
@@ -150,6 +167,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
                                 "BlsToExecutionChanges was not found during block processing."))));
   }
 
+  // process_bls_to_execution_change
   @Override
   public void processBlsToExecutionChanges(
       final MutableBeaconState state,
@@ -157,20 +175,12 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       throws BlockProcessingException {
     final BlockValidationResult result =
         verifyBlsToExecutionChangesPreProcessing(
-            state, blsToExecutionChanges, BLSSignatureVerifier.SIMPLE, true);
+            state, blsToExecutionChanges, BLSSignatureVerifier.SIMPLE);
     if (!result.isValid()) {
       throw new BlockProcessingException(result.getFailureReason());
     }
-    processBlsToExecutionChangesNoValidation(
-        MutableBeaconStateCapella.required(state), blsToExecutionChanges);
-  }
 
-  // process_bls_to_execution_change
-  public void processBlsToExecutionChangesNoValidation(
-      final MutableBeaconStateCapella state,
-      final SszList<SignedBlsToExecutionChange> signedBlsToExecutionChanges) {
-
-    for (SignedBlsToExecutionChange signedBlsToExecutionChange : signedBlsToExecutionChanges) {
+    for (SignedBlsToExecutionChange signedBlsToExecutionChange : blsToExecutionChanges) {
       BlsToExecutionChange addressChange = signedBlsToExecutionChange.getMessage();
       final int validatorIndex = addressChange.getValidatorIndex().intValue();
       Validator validator = state.getValidators().get(validatorIndex);
@@ -188,7 +198,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   public void processWithdrawals(
       final MutableBeaconState state, final Optional<ExecutionPayloadSummary> payloadSummary)
       throws BlockProcessingException {
-    withdrawalsHelpers.processWithdrawals(state, payloadSummary.orElseThrow());
+    safelyProcess(() -> withdrawalsHelpers.processWithdrawals(state, payloadSummary.orElseThrow()));
   }
 
   @VisibleForTesting
@@ -201,8 +211,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   BlockValidationResult verifyBlsToExecutionChangesPreProcessing(
       final BeaconState genericState,
       final SszList<SignedBlsToExecutionChange> signedBlsToExecutionChanges,
-      final BLSSignatureVerifier signatureVerifier,
-      final boolean executeValidationRules) {
+      final BLSSignatureVerifier signatureVerifier) {
 
     final Set<UInt64> validatorsSeenInBlock = new HashSet<>();
     for (SignedBlsToExecutionChange signedBlsToExecutionChange : signedBlsToExecutionChanges) {
@@ -213,13 +222,11 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
             "Duplicated BlsToExecutionChange for validator " + addressChange.getValidatorIndex());
       }
 
-      if (executeValidationRules) {
-        final Optional<OperationInvalidReason> operationInvalidReason =
-            operationValidator.validateBlsToExecutionChange(
-                genericState.getFork(), genericState, addressChange);
-        if (operationInvalidReason.isPresent()) {
-          return BlockValidationResult.failed(operationInvalidReason.get().describe());
-        }
+      final Optional<OperationInvalidReason> operationInvalidReason =
+          operationValidator.validateBlsToExecutionChange(
+              genericState.getFork(), genericState, addressChange);
+      if (operationInvalidReason.isPresent()) {
+        return BlockValidationResult.failed(operationInvalidReason.get().describe());
       }
 
       boolean signatureValid =

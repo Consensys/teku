@@ -52,11 +52,14 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
                         + miscHelpers.getClass().getSimpleName()));
   }
 
+  private final PredicatesGloas predicates;
+
   public MiscHelpersGloas(
       final SpecConfigGloas specConfig,
       final PredicatesGloas predicates,
       final SchemaDefinitionsGloas schemaDefinitions) {
     super(specConfig, predicates, schemaDefinitions);
+    this.predicates = predicates;
   }
 
   public UInt64 convertBuilderIndexToValidatorIndex(final UInt64 builderIndex) {
@@ -154,8 +157,11 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
             builder
                 .beaconBlockRoot(executionPayload.getBeaconBlockRoot())
                 .slot(executionPayload.getSlot()),
-        executionPayload.getBlobKzgCommitments(),
         extendedMatrix);
+  }
+
+  public boolean isActiveBuilder(final BeaconState state, final UInt64 builderIndex) {
+    return predicates.isActiveBuilder(state, builderIndex);
   }
 
   @Override

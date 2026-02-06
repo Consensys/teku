@@ -18,6 +18,7 @@ import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_COLUMN_CUSTODY
 import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS;
 import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_DOWNLOAD_TIMEOUT_MS;
 import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_RECOVERY_TIMEOUT_MS;
+import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_REWORKED_COLUMN_CUSTODY_BACKFILLER;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND;
@@ -338,7 +339,7 @@ public class P2POptions {
       arity = "0..1",
       hidden = true,
       fallbackValue = "true")
-  private boolean reworkedSidecarCustodySyncEnabled = false;
+  private boolean reworkedSidecarCustodySyncEnabled = DEFAULT_REWORKED_COLUMN_CUSTODY_BACKFILLER;
 
   @Option(
       names = {"--Xp2p-reworked-sidecar-custody-sync-batch-size"},

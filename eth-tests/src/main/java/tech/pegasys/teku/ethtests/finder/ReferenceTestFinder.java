@@ -62,28 +62,27 @@ public class ReferenceTestFinder {
                 return Stream.empty();
               }
 
-              // TODO-GLOAS: Short circuit to limit what tests we run for Gloas while it is under
-              // development. This is temporary and should be removed once we are up-to-date with
-              // Gloas specs (see https://github.com/Consensys/teku-internal/issues/221)
-              if (fork.equals(TestFork.GLOAS)) {
-                return Stream.of(
-                        new BlsTestFinder(),
-                        new KzgTestFinder(),
-                        new SszTestFinder("ssz_generic"),
-                        new SszTestFinder("ssz_static"),
-                        new ShufflingTestFinder(),
-                        new PyspecTestFinder(List.of(), List.of("fork_choice/")),
-                        new MerkleProofTestFinder())
-                    .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
-              }
-
               return Stream.of(
                       new BlsTestFinder(),
                       new KzgTestFinder(),
                       new SszTestFinder("ssz_generic"),
                       new SszTestFinder("ssz_static"),
                       new ShufflingTestFinder(),
-                      new PyspecTestFinder(),
+                      new PyspecTestFinder(
+                          List.of(),
+                          List.of(
+                              // TODO: https://github.com/Consensys/teku/issues/10320 ignoring tests
+                              // which fail because of the proposer boost changes added in
+                              // https://github.com/ethereum/consensus-specs/pull/4807
+                              "minimal - fork_choice/get_head - voting_source_beyond_two_epoch",
+                              "minimal - fork_choice/on_block - justified_update_always_if_better",
+                              "minimal - fork_choice/on_block - justified_update_not_realized_finality",
+                              // TODO-GLOAS: Limit what tests we run for Gloas while it is
+                              // under development. This is temporary and should be removed once we
+                              // are up-to-date with Gloas specs (see
+                              // https://github.com/Consensys/teku-internal/issues/221)
+                              "gloas - minimal - fork_choice/",
+                              "gloas - mainnet - fork_choice/")),
                       new MerkleProofTestFinder())
                   .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
             });

@@ -327,8 +327,9 @@ public class DasCustodyBackfiller extends Service
         "DasCustodyBackfiller: earliestAvailableCustodySlot {}", earliestAvailableCustodySlot);
 
     if (earliestAvailableCustodySlot.get().isLessThanOrEqualTo(minCustodyPeriodSlot)) {
-      // backfill is completed
-      return SafeFuture.completedFuture(false);
+      // All required custody is available, backfill is not needed, move
+      // earliestAvailableCustodySlot forward and return
+      return earliestAvailableCustodySlotWriter.apply(minCustodyPeriodSlot).thenApply(__ -> false);
     }
 
     var latestSlotInBatch = earliestAvailableCustodySlot.get().minusMinZero(1);

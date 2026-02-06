@@ -29,6 +29,10 @@ public class Constants {
   public static final int RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE = 32;
   // Target holding two slots worth of aggregators (16 aggregators, 64 committees and 2 slots)
   public static final int VALID_AGGREGATE_SET_SIZE = 16 * 64 * 2;
+  // Tracking 10 slots worth of bids
+  public static final int MAX_SLOTS_TO_TRACK_BUILDERS_BIDS = 10;
+  // Maximum number of (slot, parentBlockHash) combinations to cache the highest bid values for
+  public static final int HIGHEST_BID_SET_SIZE = 10;
   // Target 2 different attestation data (aggregators normally agree) for two slots
   public static final int VALID_ATTESTATION_DATA_SET_SIZE = 2 * 64 * 2;
   public static final int VALID_VALIDATOR_SET_SIZE = 10000;
