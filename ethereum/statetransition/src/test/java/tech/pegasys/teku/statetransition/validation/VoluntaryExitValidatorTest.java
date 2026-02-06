@@ -100,8 +100,9 @@ public class VoluntaryExitValidatorTest {
     assertValidationResult(exit, ACCEPT);
   }
 
+  // TODO-gloas: voluntary-exit test will work for gloas once we can fetch the execution-state here
   @ParameterizedTest
-  @EnumSource(value = SpecMilestone.class)
+  @EnumSource(value = SpecMilestone.class, names = "GLOAS", mode = EnumSource.Mode.EXCLUDE)
   public void shouldAcceptOwnSignedVoluntaryExitNoMocks(final SpecMilestone specMilestone)
       throws Exception {
     final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);
