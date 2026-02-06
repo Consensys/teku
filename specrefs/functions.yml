@@ -7857,7 +7857,7 @@
 - name: process_bls_to_execution_change#capella
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/capella/block/BlockProcessorCapella.java
-      search: public void processBlsToExecutionChangesNoValidation(
+      search: public void processBlsToExecutionChanges(
   spec: |
     <spec fn="process_bls_to_execution_change" fork="capella" hash="1fade4f1">
     def process_bls_to_execution_change(

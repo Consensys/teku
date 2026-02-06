@@ -518,6 +518,30 @@ class DasCustodyBackfillerTest {
     assertThat(earliestAvailableColumnSlotStore.get()).isPresent().hasValue(minCustodySlot);
   }
 
+  @Test
+  void shouldUpdateCursorToMinCustodySlotWhenCursorIsBehind() {
+    // As time passes, minCustodyPeriodSlot moves forward. If the cursor is behind it,
+    // the backfiller updates the cursor to minCustodyPeriodSlot to keep it aligned
+    // with the current custody window boundary.
+    final UInt64 minCustodySlot = UInt64.valueOf(100);
+    final UInt64 cursorBehindMinCustody = UInt64.valueOf(50);
+
+    earliestAvailableColumnSlotStore.set(Optional.of(cursorBehindMinCustody));
+
+    when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any()))
+        .thenReturn(Optional.of(minCustodySlot));
+
+    safeJoin(backfiller.start());
+    asyncRunner.executeQueuedActions();
+
+    // Backfill is already complete, no DB lookups needed
+    verify(combinedChainDataClient, never()).getDataColumnIdentifiers(any(), any(), any());
+    verify(combinedChainDataClient, never()).getFinalizedBlockAtSlotExact(any());
+
+    // Cursor should be updated to minCustodySlot
+    assertThat(earliestAvailableColumnSlotStore.get()).isPresent().hasValue(minCustodySlot);
+  }
+
   // --- Helper Methods ---
 
   private DataColumnSlotAndIdentifier columnIdArgThatMatch(final UInt64 slot, final Bytes32 root) {
