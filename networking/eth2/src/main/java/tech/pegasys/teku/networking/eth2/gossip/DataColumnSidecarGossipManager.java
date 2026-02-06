@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetSubscriptions;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
@@ -21,12 +22,15 @@ import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 public class DataColumnSidecarGossipManager implements GossipManager {
   private final DataColumnSidecarSubnetSubscriptions subnetSubscriptions;
   private final DasGossipLogger dasGossipLogger;
+  private final Supplier<Boolean> subscribedToAllCustodySubnetsEnabled;
 
   public DataColumnSidecarGossipManager(
       final DataColumnSidecarSubnetSubscriptions dataColumnSidecarSubnetSubscriptions,
-      final DasGossipLogger dasGossipLogger) {
+      final DasGossipLogger dasGossipLogger,
+      final Supplier<Boolean> subscribeAllCustodySubnetsEnabled) {
     subnetSubscriptions = dataColumnSidecarSubnetSubscriptions;
     this.dasGossipLogger = dasGossipLogger;
+    this.subscribedToAllCustodySubnetsEnabled = subscribeAllCustodySubnetsEnabled;
   }
 
   public void publish(final DataColumnSidecar dataColumnSidecar) {
@@ -55,5 +59,10 @@ public class DataColumnSidecarGossipManager implements GossipManager {
   @Override
   public void unsubscribe() {
     subnetSubscriptions.unsubscribe();
+  }
+
+  @Override
+  public boolean isEnabledDuringOptimisticSync() {
+    return subscribedToAllCustodySubnetsEnabled.get();
   }
 }

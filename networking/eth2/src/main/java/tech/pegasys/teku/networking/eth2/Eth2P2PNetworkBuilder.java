@@ -381,7 +381,7 @@ public class Eth2P2PNetworkBuilder {
               gossipedSignedBlsToExecutionChangeProcessor,
               debugDataDumper,
               executionProofOperationProcessor,
-              config.isExecutionProofTopicEnabled());
+              config);
       case FULU ->
           new GossipForkSubscriptionsFulu(
               forkAndSpecMilestone.getFork(),
@@ -405,7 +405,7 @@ public class Eth2P2PNetworkBuilder {
               debugDataDumper,
               dasGossipLogger,
               executionProofOperationProcessor,
-              config.isExecutionProofTopicEnabled());
+              config);
       case GLOAS ->
           new GossipForkSubscriptionsGloas(
               forkAndSpecMilestone.getFork(),
@@ -432,7 +432,7 @@ public class Eth2P2PNetworkBuilder {
               debugDataDumper,
               dasGossipLogger,
               executionProofOperationProcessor,
-              config.isExecutionProofTopicEnabled());
+              config);
     };
   }
 
@@ -466,7 +466,7 @@ public class Eth2P2PNetworkBuilder {
               debugDataDumper,
               dasGossipLogger,
               bpo,
-              config.isExecutionProofTopicEnabled());
+              config);
       case GLOAS ->
           new GossipForkSubscriptionsGloasBpo(
               forkAndSpecMilestone.getFork(),
@@ -494,7 +494,7 @@ public class Eth2P2PNetworkBuilder {
               debugDataDumper,
               dasGossipLogger,
               bpo,
-              config.isExecutionProofTopicEnabled());
+              config);
       default ->
           throw new IllegalStateException(
               "BPO is not supported for: " + forkAndSpecMilestone.getSpecMilestone());
