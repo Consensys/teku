@@ -23,7 +23,7 @@ import tech.pegasys.teku.spec.config.SpecConfigFulu;
 public interface MinCustodyPeriodSlotCalculator {
 
   static MinCustodyPeriodSlotCalculator createFromSpec(final Spec spec) {
-    if (!spec.getForkSchedule().getSupportedMilestones().contains(SpecMilestone.FULU)) {
+    if (!spec.getForkSchedule().getHighestSupportedMilestone().isLessThan(SpecMilestone.FULU)) {
       return __ -> Optional.empty();
     }
     final UInt64 fuluActivationEpoch =
