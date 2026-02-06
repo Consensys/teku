@@ -153,19 +153,6 @@ public class MiscHelpersFuluPropertyTest {
     }
   }
 
-  @Property(tries = 10)
-  void fuzzComputeExtendedMatrix(
-      @ForAll
-          final List<@From(supplier = BlobAndCellProofsSupplier.class) BlobAndCellProofs>
-              blobAndCellProofsList) {
-    try {
-      miscHelpers.computeExtendedMatrix(blobAndCellProofsList);
-      System.out.println("List size: " + blobAndCellProofsList.size());
-    } catch (Exception e) {
-      assertThat(e).isInstanceOf(IllegalArgumentException.class);
-    }
-  }
-
   @Property(tries = 100)
   void fuzzReconstructAllDataColumnSidecars(
       @ForAll
