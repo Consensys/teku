@@ -11,16 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.propertytest.suppliers.datacolumn.versions.fulu;
+package tech.pegasys.teku.spec.propertytest.suppliers.type;
 
+import tech.pegasys.teku.kzg.KZGCell;
+import tech.pegasys.teku.kzg.KZGCellID;
+import tech.pegasys.teku.kzg.KZGCellWithColumnId;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class DataColumnSidecarSupplier extends DataStructureUtilSupplier<DataColumnSidecar> {
-
-  public DataColumnSidecarSupplier() {
-    super(DataStructureUtil::randomDataColumnSidecar, SpecMilestone.FULU);
+public class KZGCellWithColumnIdSupplier extends DataStructureUtilSupplier<KZGCellWithColumnId> {
+  public KZGCellWithColumnIdSupplier() {
+    super(
+        dataStructureUtil -> {
+          final KZGCell kzgCell = dataStructureUtil.randomKZGCell();
+          return new KZGCellWithColumnId(
+              kzgCell, KZGCellID.fromCellColumnIndex(dataStructureUtil.randomUInt8()));
+        },
+        SpecMilestone.DENEB);
   }
 }
