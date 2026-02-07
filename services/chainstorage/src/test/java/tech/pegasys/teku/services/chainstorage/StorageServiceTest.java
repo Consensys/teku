@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Optional;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,7 +46,7 @@ class StorageServiceTest {
 
   private final ServiceConfig serviceConfig = mock(ServiceConfig.class);
   private final StorageConfiguration storageConfiguration = mock(StorageConfiguration.class);
-  private final MetricsSystem metricsSystem = mock(MetricsSystem.class);
+  private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   private final DataDirLayout dataDirLayout = mock(DataDirLayout.class);
   private final Eth1Address eth1DepositContract = mock(Eth1Address.class);
   private final Spec spec = mock(Spec.class);
