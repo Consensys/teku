@@ -187,7 +187,7 @@ class ForkChoiceUtilGloasTest {
                 bid.getSlot(),
                 bid.getValue(),
                 bid.getExecutionPayment(),
-                bid.getBlobKzgCommitmentsRoot());
+                bid.getBlobKzgCommitments());
 
     // Create a new signed bid with the new bid
     final SignedExecutionPayloadBid newSignedBid =
@@ -252,7 +252,7 @@ class ForkChoiceUtilGloasTest {
                 bid.getSlot(),
                 bid.getValue(),
                 bid.getExecutionPayment(),
-                bid.getBlobKzgCommitmentsRoot());
+                bid.getBlobKzgCommitments());
 
     // Create a new signed bid with the new bid
     final SignedExecutionPayloadBid newSignedBid =

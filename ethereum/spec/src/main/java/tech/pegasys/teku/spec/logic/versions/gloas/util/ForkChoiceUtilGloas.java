@@ -14,10 +14,13 @@
 package tech.pegasys.teku.spec.logic.versions.gloas.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.datastructures.forkchoice.PayloadStatusGloas.PAYLOAD_STATUS_EMPTY;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -36,6 +39,7 @@ import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochProcessorGloas;
 
 public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
+  private final UInt64 earliestGloasSlot;
 
   public ForkChoiceUtilGloas(
       final SpecConfigGloas specConfig,
@@ -44,6 +48,11 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
       final AttestationUtilGloas attestationUtil,
       final MiscHelpersGloas miscHelpers) {
     super(specConfig, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
+    final UInt64 gloasEpoch = specConfig.getGloasForkEpoch();
+    this.earliestGloasSlot =
+        gloasEpoch.equals(FAR_FUTURE_EPOCH)
+            ? FAR_FUTURE_EPOCH
+            : miscHelpers.computeStartSlotAtEpoch(specConfig.getGloasForkEpoch());
   }
 
   public static ForkChoiceUtilGloas required(final ForkChoiceUtil forkChoiceUtil) {
@@ -118,6 +127,9 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     // TODO-gloas #10341
     // if the parent is pre-gloas, we'd use the block state,
     // there would be no payload state
+    if (parent.getSlot().isLessThan(earliestGloasSlot)) {
+      return PAYLOAD_STATUS_EMPTY;
+    }
 
     final BeaconBlockBodyGloas blockBody = BeaconBlockBodyGloas.required(block.getBody());
     final BeaconBlockBodyGloas parentBody =
@@ -130,7 +142,7 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
 
     return parentBlockHash.equals(messageBlockHash)
         ? PayloadStatusGloas.PAYLOAD_STATUS_FULL
-        : PayloadStatusGloas.PAYLOAD_STATUS_EMPTY;
+        : PAYLOAD_STATUS_EMPTY;
   }
 
   /**
