@@ -4436,7 +4436,6 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/gloas/util/ForkChoiceUtilGloas.java
       search: public PayloadStatusGloas getParentPayloadStatus(
-
   spec: |
     <spec fn="get_parent_payload_status" fork="gloas" hash="4ab82d16">
     def get_parent_payload_status(store: Store, block: BeaconBlock) -> PayloadStatus:
