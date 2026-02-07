@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -408,6 +410,13 @@ public class ForkChoiceUtil {
   private UInt64 getFinalizedCheckpointStartSlot(final ReadOnlyStore store) {
     final UInt64 finalizedEpoch = store.getFinalizedCheckpoint().getEpoch();
     return miscHelpers.computeStartSlotAtEpoch(finalizedEpoch);
+  }
+
+  public SafeFuture<Optional<BeaconState>> retrieveBlockState(
+      final ReadOnlyStore store, final SignedBeaconBlock block) {
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(block.getSlot(), block.getParentRoot());
+    return store.retrieveBlockState(slotAndBlockRoot);
   }
 
   public BlockImportResult checkOnBlockConditions(

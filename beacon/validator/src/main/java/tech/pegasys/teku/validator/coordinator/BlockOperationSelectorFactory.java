@@ -458,7 +458,7 @@ public class BlockOperationSelectorFactory {
       final BlockProductionPerformance blockProductionPerformance) {
     checkState(
         executionPayloadContext.isPresent(),
-        "ExecutionPayloadContext is not provided for production of post-merge block at slot %s",
+        "ExecutionPayloadContext is not provided for production of block at slot %s",
         blockSlotState.getSlot());
     final ExecutionPayloadResult executionPayloadResult =
         executionLayerBlockProductionManager.initiateBlockProduction(

@@ -379,6 +379,13 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
+  public SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return SafeFuture.completedFuture(
+        getExecutionPayloadStateIfAvailable(slotAndBlockRoot.getBlockRoot()));
+  }
+
+  @Override
   public Optional<BeaconState> getExecutionPayloadStateIfAvailable(final Bytes32 blockRoot) {
     return Optional.ofNullable(executionPayloadData.get(blockRoot))
         .map(SignedExecutionPayloadAndState::state)
