@@ -78,6 +78,16 @@ class MinCustodyPeriodSlotCalculatorTest {
   }
 
   @Test
+  void shouldReturnEmptyWhenFuluNotInForkSchedule() {
+    final Spec nonFuluSpec = TestSpecFactory.createMinimalDeneb();
+    final MinCustodyPeriodSlotCalculator calculator =
+        MinCustodyPeriodSlotCalculator.createFromSpec(nonFuluSpec);
+
+    assertThat(calculator.getMinCustodyPeriodSlot(UInt64.ZERO)).isEmpty();
+    assertThat(calculator.getMinCustodyPeriodSlot(UInt64.valueOf(1000))).isEmpty();
+  }
+
+  @Test
   void shouldHandlePreFuluSlot() {
     final UInt64 currentEpoch = fuluActivationEpoch.minus(10);
     final UInt64 currentSlot = currentEpoch.times(slotsPerEpoch);
