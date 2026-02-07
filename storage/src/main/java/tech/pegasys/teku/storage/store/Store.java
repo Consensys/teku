@@ -718,6 +718,13 @@ class Store extends CacheableStore {
   }
 
   @Override
+  public SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return SafeFuture.completedFuture(
+        getExecutionPayloadStateIfAvailable(slotAndBlockRoot.getBlockRoot()));
+  }
+
+  @Override
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return checkpointStates.perform(

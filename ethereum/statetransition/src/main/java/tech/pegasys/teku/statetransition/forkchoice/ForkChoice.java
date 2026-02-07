@@ -212,8 +212,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final BlockBroadcastValidator blockBroadcastValidator,
       final ExecutionLayerChannel executionLayer) {
     recentChainData.setBlockTimelinessIfEmpty(block);
-    return recentChainData
-        .retrieveBlockState(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
+    final ForkChoiceUtil forkChoiceUtil = spec.atSlot(block.getSlot()).getForkChoiceUtil();
+
+    return forkChoiceUtil
+        .retrieveBlockState(recentChainData.getStore(), block)
         .thenPeek(__ -> blockImportPerformance.ifPresent(BlockImportPerformance::preStateRetrieved))
         .thenCompose(
             blockSlotState ->
