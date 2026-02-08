@@ -557,7 +557,8 @@ public class Eth2NetworkOptions {
     asyncBeaconChainMaxQueue.ifPresent(builder::asyncBeaconChainMaxQueue);
   }
 
-  private void implicitEpochDefault(final UInt64 forkEpoch, final Consumer<UInt64> forkDefaultConsumer) {
+  private void implicitEpochDefault(
+      final UInt64 forkEpoch, final Consumer<UInt64> forkDefaultConsumer) {
     if (forkEpoch == null) {
       forkDefaultConsumer.accept(ZERO);
     }
