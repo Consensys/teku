@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+
+import com.google.common.annotations.VisibleForTesting;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -26,6 +29,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -40,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -50,6 +55,7 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
   private DataColumnSidecarGossipManager dataColumnSidecarGossipManager;
   public DasGossipLogger dasGossipLogger;
   private final P2PConfig p2pConfig;
+  private final AtomicInteger currentCustodyGroupCount = new AtomicInteger(-1);
 
   public GossipForkSubscriptionsFulu(
       final Fork fork,
@@ -101,6 +107,8 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
     this.dataColumnSidecarOperationProcessor = dataColumnSidecarOperationProcessor;
     this.dasGossipLogger = dasGossipLogger;
     this.p2pConfig = p2pConfig;
+    final SpecVersion specVersionFulu = spec.forMilestone(SpecMilestone.FULU);
+    currentCustodyGroupCount.getAndSet(p2pConfig.getTotalCustodyGroupCount(specVersionFulu));
   }
 
   @Override
@@ -124,7 +132,7 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
 
     this.dataColumnSidecarGossipManager =
         new DataColumnSidecarGossipManager(
-            dataColumnSidecarSubnetSubscriptions, dasGossipLogger, isSuperNode());
+            dataColumnSidecarSubnetSubscriptions, dasGossipLogger, this::isSuperNode);
 
     addGossipManager(dataColumnSidecarGossipManager);
   }
@@ -155,21 +163,32 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
     dataColumnSidecarGossipManager.unsubscribeFromSubnetId(subnetId);
   }
 
-  private Supplier<Boolean> isSuperNode() {
-    return () -> {
-      if (p2pConfig.isSubscribedToAllCustodySubnetsEnabled()) {
-        return true;
+  /**
+   * Returns a CustodyGroupCountChannel subscriber that feeds
+   * custody group count into this instance.
+   */
+  public CustodyGroupCountChannel getCustodyGroupCountSubscriber() {
+    return new CustodyGroupCountChannel() {
+      @Override
+      public void onGroupCountUpdate(final int custodyGroupCount, final int samplingGroupCount) {
+        currentCustodyGroupCount.getAndSet(custodyGroupCount);
       }
 
-      final int numberOfColumns =
-          SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
-              .getNumberOfColumns();
-
-      return recentChainData
-          .getStore()
-          .getCustodyGroupCount()
-          .map(count -> count.intValue() == numberOfColumns)
-          .orElse(false);
+      @Override
+      public void onCustodyGroupCountSynced(final int groupCount) {}
     };
+  }
+
+  @VisibleForTesting
+  boolean isSuperNode() {
+    if (p2pConfig.isSubscribedToAllCustodySubnetsEnabled()) {
+      return true;
+    }
+
+    final int numberOfColumns =
+        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
+            .getNumberOfColumns();
+
+    return currentCustodyGroupCount.get() == numberOfColumns;
   }
 }

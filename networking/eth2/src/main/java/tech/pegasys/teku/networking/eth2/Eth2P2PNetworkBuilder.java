@@ -382,30 +382,35 @@ public class Eth2P2PNetworkBuilder {
               debugDataDumper,
               executionProofOperationProcessor,
               config);
-      case FULU ->
-          new GossipForkSubscriptionsFulu(
-              forkAndSpecMilestone.getFork(),
-              spec,
-              asyncRunner,
-              metricsSystem,
-              network,
-              combinedChainDataClient.getRecentChainData(),
-              gossipEncoding,
-              gossipedBlockProcessor,
-              gossipedBlobSidecarProcessor,
-              gossipedAttestationConsumer,
-              gossipedAggregateProcessor,
-              gossipedAttesterSlashingConsumer,
-              gossipedProposerSlashingConsumer,
-              gossipedVoluntaryExitConsumer,
-              gossipedSignedContributionAndProofProcessor,
-              gossipedSyncCommitteeMessageProcessor,
-              gossipedSignedBlsToExecutionChangeProcessor,
-              dataColumnSidecarOperationProcessor,
-              debugDataDumper,
-              dasGossipLogger,
-              executionProofOperationProcessor,
-              config);
+      case FULU -> {
+        final GossipForkSubscriptionsFulu fuluSubscriptions = new GossipForkSubscriptionsFulu(
+                forkAndSpecMilestone.getFork(),
+                spec,
+                asyncRunner,
+                metricsSystem,
+                network,
+                combinedChainDataClient.getRecentChainData(),
+                gossipEncoding,
+                gossipedBlockProcessor,
+                gossipedBlobSidecarProcessor,
+                gossipedAttestationConsumer,
+                gossipedAggregateProcessor,
+                gossipedAttesterSlashingConsumer,
+                gossipedProposerSlashingConsumer,
+                gossipedVoluntaryExitConsumer,
+                gossipedSignedContributionAndProofProcessor,
+                gossipedSyncCommitteeMessageProcessor,
+                gossipedSignedBlsToExecutionChangeProcessor,
+                dataColumnSidecarOperationProcessor,
+                debugDataDumper,
+                dasGossipLogger,
+                executionProofOperationProcessor,
+                config);
+        eventChannels.subscribe(
+                CustodyGroupCountChannel.class,
+                fuluSubscriptions.getCustodyGroupCountSubscriber());
+        yield fuluSubscriptions;
+      }
       case GLOAS ->
           new GossipForkSubscriptionsGloas(
               forkAndSpecMilestone.getFork(),
