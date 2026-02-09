@@ -1897,10 +1897,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   beaconConfig.p2pConfig().isReworkedSidecarSyncEnabled()));
     }
 
-    // TODO: Implementation + subscription
-    final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor =
-        DataColumnSidecarArchiveReconstructor.NOOP;
-
     final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor;
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
       dataColumnSidecarArchiveReconstructor =
