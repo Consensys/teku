@@ -19,13 +19,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -51,9 +51,10 @@ public class DataColumnSidecarArchiveReconstructorImpl
 
   private final CombinedChainDataClient chainDataClient;
   private final AsyncRunner reconstructionAsyncRunner;
+  private final AtomicInteger nextTaskId = new AtomicInteger(0);
   // FIXME: I stink!
   private final Map<
-          Bytes32, Map<SlotAndBlockRoot, SafeFuture<Map<UInt64, Optional<DataColumnSidecar>>>>>
+          Integer, Map<SlotAndBlockRoot, SafeFuture<Map<UInt64, Optional<DataColumnSidecar>>>>>
       recoveryTasks;
   private final SpecConfigFulu specConfigFulu;
   private final int halfColumns;
@@ -95,13 +96,18 @@ public class DataColumnSidecarArchiveReconstructorImpl
   // TODO: refactor, make concurrent safe
   @Override
   public SafeFuture<Optional<DataColumnSidecar>> reconstructDataColumnSidecar(
-      final SignedBeaconBlock block, final UInt64 index, final Bytes32 requestHash) {
+      final SignedBeaconBlock block, final UInt64 index, final int requestId) {
     final Map<SlotAndBlockRoot, SafeFuture<Map<UInt64, Optional<DataColumnSidecar>>>>
         slotAndBlockRootSafeFutureMap =
-            recoveryTasks.computeIfAbsent(requestHash, __ -> new HashMap<>());
+            recoveryTasks.computeIfAbsent(requestId, __ -> new HashMap<>());
     return slotAndBlockRootSafeFutureMap
         .computeIfAbsent(block.getSlotAndBlockRoot(), __ -> createTask(block))
         .thenApply(aMap -> aMap.get(index));
+  }
+
+  @Override
+  public int onRequest() {
+    return getNextTaskId();
   }
 
   private SafeFuture<Map<UInt64, Optional<DataColumnSidecar>>> createTask(
@@ -200,11 +206,11 @@ public class DataColumnSidecarArchiveReconstructorImpl
   }
 
   @Override
-  public void onRequestCompleted(final Bytes32 requestHash) {
+  public void onRequestCompleted(final int requestId) {
     final Map<SlotAndBlockRoot, SafeFuture<Map<UInt64, Optional<DataColumnSidecar>>>> removed =
-        recoveryTasks.remove(requestHash);
+        recoveryTasks.remove(requestId);
     if (removed != null) {
-      LOG.debug("Request completed: {}, removing tasks ()", requestHash);
+      LOG.debug("Request completed: {}, removing tasks ()", requestId);
     }
   }
 
@@ -225,5 +231,13 @@ public class DataColumnSidecarArchiveReconstructorImpl
             finalizedEpoch.min(
                 currentEpoch.minusMinZero(dataColumnSidecarExtensionRetentionEpochs)));
     sidecarArchivePrunableChannel.onSidecarArchivePrunableSlot(lastPrunableSlot).finishDebug(LOG);
+  }
+
+  private int getNextTaskId() {
+    final int nextTaskId = this.nextTaskId.getAndIncrement();
+    if (this.nextTaskId.get() > (Integer.MAX_VALUE - 1000)) {
+      this.nextTaskId.set(0);
+    }
+    return nextTaskId;
   }
 }
