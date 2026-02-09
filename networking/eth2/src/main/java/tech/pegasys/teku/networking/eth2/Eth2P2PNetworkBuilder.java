@@ -383,7 +383,8 @@ public class Eth2P2PNetworkBuilder {
               executionProofOperationProcessor,
               config);
       case FULU -> {
-        final GossipForkSubscriptionsFulu fuluSubscriptions = new GossipForkSubscriptionsFulu(
+        final GossipForkSubscriptionsFulu fuluSubscriptions =
+            new GossipForkSubscriptionsFulu(
                 forkAndSpecMilestone.getFork(),
                 spec,
                 asyncRunner,
@@ -407,8 +408,7 @@ public class Eth2P2PNetworkBuilder {
                 executionProofOperationProcessor,
                 config);
         eventChannels.subscribe(
-                CustodyGroupCountChannel.class,
-                fuluSubscriptions.getCustodyGroupCountSubscriber());
+            CustodyGroupCountChannel.class, fuluSubscriptions.getCustodyGroupCountSubscriber());
         yield fuluSubscriptions;
       }
       case GLOAS ->

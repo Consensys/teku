@@ -13,10 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
-
 import com.google.common.annotations.VisibleForTesting;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -164,8 +162,8 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
   }
 
   /**
-   * Returns a CustodyGroupCountChannel subscriber that feeds
-   * custody group count into this instance.
+   * Returns a CustodyGroupCountChannel subscriber that feeds custody group count into this
+   * instance.
    */
   public CustodyGroupCountChannel getCustodyGroupCountSubscriber() {
     return new CustodyGroupCountChannel() {

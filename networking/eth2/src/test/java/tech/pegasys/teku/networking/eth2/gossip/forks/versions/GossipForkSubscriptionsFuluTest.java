@@ -1,5 +1,21 @@
+/*
+ * Copyright Consensys Software Inc., 2026
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.lang.reflect.Method;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,113 +28,112 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 
-import java.lang.reflect.Method;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 class GossipForkSubscriptionsFuluTest {
 
-    private static final int NUMBER_OF_CUSTODY_GROUPS = 128;
+  private static final int NUMBER_OF_CUSTODY_GROUPS = 128;
 
-    private final Spec spec = TestSpecFactory.createMainnetFulu();
-    private final EventChannels eventChannels =
-            EventChannels.createSyncChannels(
-                    new ChannelExceptionHandler() {
-                        @Override
-                        public void handleException(final Throwable error, final Object subscriber, final Method invokedMethod, final Object[] args) {
+  private final Spec spec = TestSpecFactory.createMainnetFulu();
+  private final EventChannels eventChannels =
+      EventChannels.createSyncChannels(
+          new ChannelExceptionHandler() {
+            @Override
+            public void handleException(
+                final Throwable error,
+                final Object subscriber,
+                final Method invokedMethod,
+                final Object[] args) {}
+          },
+          new NoOpMetricsSystem());
 
-                        }
-                    }, new NoOpMetricsSystem());
+  private GossipForkSubscriptionsFulu gossipForkSubscriptionsFulu;
+  private CustodyGroupCountChannel custodyGroupCountChannel;
 
-    private GossipForkSubscriptionsFulu gossipForkSubscriptionsFulu;
-    private CustodyGroupCountChannel custodyGroupCountChannel;
+  @BeforeEach
+  void setUp() {
+    assertThat(
+            SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
+                .getNumberOfCustodyGroups())
+        .isEqualTo(NUMBER_OF_CUSTODY_GROUPS);
 
-    @BeforeEach
-    void setUp() {
-        assertThat(
-                SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
-                        .getNumberOfCustodyGroups())
-                .isEqualTo(NUMBER_OF_CUSTODY_GROUPS);
+    gossipForkSubscriptionsFulu = createGossipForkSubscriptionsFulu();
 
-        gossipForkSubscriptionsFulu =
-                createGossipForkSubscriptionsFulu();
+    eventChannels.subscribe(
+        CustodyGroupCountChannel.class,
+        gossipForkSubscriptionsFulu.getCustodyGroupCountSubscriber());
+    custodyGroupCountChannel = eventChannels.getPublisher(CustodyGroupCountChannel.class);
+  }
 
-        eventChannels.subscribe(CustodyGroupCountChannel.class, gossipForkSubscriptionsFulu.getCustodyGroupCountSubscriber());
-        custodyGroupCountChannel =
-                eventChannels.getPublisher(CustodyGroupCountChannel.class);
-    }
+  @Test
+  void isSuperNode_shouldReturnFalse_whenNoUpdateReceived() {
+    assertThat(gossipForkSubscriptionsFulu.isSuperNode()).isFalse();
+  }
 
-    @Test
-    void isSuperNode_shouldReturnFalse_whenNoUpdateReceived() {
-        assertThat(gossipForkSubscriptionsFulu.isSuperNode()).isFalse();
-    }
+  @Test
+  void isSuperNode_shouldReturnFalse_whenCustodyGroupCountBelowThreshold() {
+    custodyGroupCountChannel.onGroupCountUpdate(64, 0);
 
-    @Test
-    void isSuperNode_shouldReturnFalse_whenCustodyGroupCountBelowThreshold() {
-        custodyGroupCountChannel.onGroupCountUpdate(64, 0);
+    assertThat(gossipForkSubscriptionsFulu.isSuperNode()).isFalse();
+  }
 
-        assertThat(gossipForkSubscriptionsFulu.isSuperNode()).isFalse();
-    }
+  @Test
+  void isSuperNode_shouldReturnFalse_whenCustodyGroupCountOneBelow() {
+    custodyGroupCountChannel.onGroupCountUpdate(NUMBER_OF_CUSTODY_GROUPS - 1, 0);
 
-    @Test
-    void isSuperNode_shouldReturnFalse_whenCustodyGroupCountOneBelow() {
-        custodyGroupCountChannel.onGroupCountUpdate(NUMBER_OF_CUSTODY_GROUPS - 1, 0);
+    assertThat(gossipForkSubscriptionsFulu.isSuperNode()).isFalse();
+  }
 
-        assertThat(gossipForkSubscriptionsFulu.isSuperNode()).isFalse();
-    }
+  @Test
+  void isSuperNode_shouldReturnTrue_whenCustodyGroupCountEqualsTotal() {
+    custodyGroupCountChannel.onGroupCountUpdate(NUMBER_OF_CUSTODY_GROUPS, 0);
 
-    @Test
-    void isSuperNode_shouldReturnTrue_whenCustodyGroupCountEqualsTotal() {
-        custodyGroupCountChannel.onGroupCountUpdate(NUMBER_OF_CUSTODY_GROUPS, 0);
+    assertThat(gossipForkSubscriptionsFulu.isSuperNode()).isTrue();
+  }
 
-        assertThat(gossipForkSubscriptionsFulu.isSuperNode()).isTrue();
-    }
+  @Test
+  void isSuperNode_shouldReflectLatestUpdate() {
+    custodyGroupCountChannel.onGroupCountUpdate(32, 0);
+    assertThat(gossipForkSubscriptionsFulu.isSuperNode()).isFalse();
 
-    @Test
-    void isSuperNode_shouldReflectLatestUpdate() {
-        custodyGroupCountChannel.onGroupCountUpdate(32, 0);
-        assertThat(gossipForkSubscriptionsFulu.isSuperNode()).isFalse();
+    custodyGroupCountChannel.onGroupCountUpdate(NUMBER_OF_CUSTODY_GROUPS, 0);
+    assertThat(gossipForkSubscriptionsFulu.isSuperNode()).isTrue();
 
-        custodyGroupCountChannel.onGroupCountUpdate(NUMBER_OF_CUSTODY_GROUPS, 0);
-        assertThat(gossipForkSubscriptionsFulu.isSuperNode()).isTrue();
+    custodyGroupCountChannel.onGroupCountUpdate(64, 0);
+    assertThat(gossipForkSubscriptionsFulu.isSuperNode()).isFalse();
+  }
 
-        custodyGroupCountChannel.onGroupCountUpdate(64, 0);
-        assertThat(gossipForkSubscriptionsFulu.isSuperNode()).isFalse();
-    }
+  @Test
+  void isSuperNode_shouldOnlyUseCustodyGroupCount_notSamplingGroupCount() {
+    custodyGroupCountChannel.onGroupCountUpdate(1, NUMBER_OF_CUSTODY_GROUPS);
 
-    @Test
-    void isSuperNode_shouldOnlyUseCustodyGroupCount_notSamplingGroupCount() {
-        custodyGroupCountChannel.onGroupCountUpdate(1, NUMBER_OF_CUSTODY_GROUPS);
+    assertThat(gossipForkSubscriptionsFulu.isSuperNode()).isFalse();
+  }
 
-        assertThat(gossipForkSubscriptionsFulu.isSuperNode()).isFalse();
-    }
-
-    private GossipForkSubscriptionsFulu createGossipForkSubscriptionsFulu() {
-        // Build using the real constructor or builder with
-        // mocked/stubbed dependencies as needed
-        return new GossipForkSubscriptionsFulu(
-                spec.getForkSchedule().getFork(SpecMilestone.FULU),
-                spec,
-                null, // asyncRunner
-                null, // metricsSystem
-                null, // discoveryNetwork
-                null, // recentChainData
-                null, // gossipEncoding
-                null, // blockProcessor
-                null, // blobSidecarProcessor
-                null, // attestationProcessor
-                null, // aggregateProcessor
-                null, // attesterSlashingProcessor
-                null, // proposerSlashingProcessor
-                null, // voluntaryExitProcessor
-                null, // signedContributionAndProofOperationProcessor
-                null, // syncCommitteeMessageOperationProcessor
-                null, // signedBlsToExecutionChangeOperationProcessor
-                null, // debugDataDumper
-                null, // executionProofOperationProcessor
-                null, // dasGossipLogger
-                null,
-                P2PConfig.builder().specProvider(spec).build() // p2pConfig
+  private GossipForkSubscriptionsFulu createGossipForkSubscriptionsFulu() {
+    // Build using the real constructor or builder with
+    // mocked/stubbed dependencies as needed
+    return new GossipForkSubscriptionsFulu(
+        spec.getForkSchedule().getFork(SpecMilestone.FULU),
+        spec,
+        null, // asyncRunner
+        null, // metricsSystem
+        null, // discoveryNetwork
+        null, // recentChainData
+        null, // gossipEncoding
+        null, // blockProcessor
+        null, // blobSidecarProcessor
+        null, // attestationProcessor
+        null, // aggregateProcessor
+        null, // attesterSlashingProcessor
+        null, // proposerSlashingProcessor
+        null, // voluntaryExitProcessor
+        null, // signedContributionAndProofOperationProcessor
+        null, // syncCommitteeMessageOperationProcessor
+        null, // signedBlsToExecutionChangeOperationProcessor
+        null, // debugDataDumper
+        null, // executionProofOperationProcessor
+        null, // dasGossipLogger
+        null,
+        P2PConfig.builder().specProvider(spec).build() // p2pConfig
         );
-    }
+  }
 }
