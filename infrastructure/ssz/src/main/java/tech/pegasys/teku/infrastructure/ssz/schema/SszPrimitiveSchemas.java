@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -165,6 +165,11 @@ public final class SszPrimitiveSchemas {
         @Override
         public DeserializableTypeDefinition<SszByte> getJsonTypeDefinition() {
           return SszPrimitiveTypeDefinitions.SSZ_UINT8_TYPE_DEFINITION;
+        }
+
+        @Override
+        public SszByte boxed(final Byte rawValue) {
+          return SszByte.asUInt8(rawValue);
         }
 
         @Override

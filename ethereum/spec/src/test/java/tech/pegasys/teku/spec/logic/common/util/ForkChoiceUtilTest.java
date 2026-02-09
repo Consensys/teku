@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -278,7 +279,8 @@ class ForkChoiceUtilTest {
 
   @ParameterizedTest
   @EnumSource(SpecMilestone.class)
-  void createAvailabilityChecker_shouldCreateExpectedChecker(final SpecMilestone milestone) {
+  void createAvailabilityChecker_shouldCreateExpectedCheckerForBlock(
+      final SpecMilestone milestone) {
     final Spec spec = TestSpecFactory.createMinimal(milestone);
     final ForkChoiceUtil util = spec.getGenesisSpec().getForkChoiceUtil();
     @SuppressWarnings("unchecked")
@@ -304,7 +306,35 @@ class ForkChoiceUtilTest {
           verify(blobSidecarAvailabilityCheckerFactory).createAvailabilityChecker(block);
       case FULU ->
           verify(dataColumnSidecarAvailabilityCheckerFactory).createAvailabilityChecker(block);
-      case GLOAS -> assertThat(availabilityChecker).isSameAs(AvailabilityChecker.NOOP); // TODO
+      case GLOAS ->
+          assertThat(availabilityChecker).isSameAs(AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR);
+      default -> throw new IllegalStateException("Unexpected milestone " + milestone);
+    }
+  }
+
+  @ParameterizedTest
+  @EnumSource(SpecMilestone.class)
+  void createAvailabilityChecker_shouldCreateExpectedCheckerForExecutionPayload(
+      final SpecMilestone milestone) {
+    final Spec spec = TestSpecFactory.createMinimal(milestone);
+    final ForkChoiceUtil util = spec.getGenesisSpec().getForkChoiceUtil();
+
+    final SignedExecutionPayloadEnvelope executionPayload =
+        mock(SignedExecutionPayloadEnvelope.class);
+
+    spec.reinitializeForTesting(
+        AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
+        AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
+        KZG.DISABLED);
+
+    final AvailabilityChecker<?> availabilityChecker =
+        util.createAvailabilityChecker(executionPayload);
+
+    switch (milestone) {
+      case PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA, FULU ->
+          assertThat(availabilityChecker).isSameAs(AvailabilityChecker.NOOP);
+      case GLOAS ->
+          assertThat(availabilityChecker).isSameAs(AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR);
       default -> throw new IllegalStateException("Unexpected milestone " + milestone);
     }
   }

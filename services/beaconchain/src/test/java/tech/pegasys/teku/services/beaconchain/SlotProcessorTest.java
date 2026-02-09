@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -407,7 +408,8 @@ public class SlotProcessorTest {
     final Optional<MinimalBeaconBlockSummary> headBlock =
         storageSystem.recentChainData().getHeadBlock();
     when(recentChainData.getHeadBlock()).thenReturn(headBlock);
-    when(recentChainData.retrieveStateAtSlot(any())).thenReturn(new SafeFuture<>());
+    when(recentChainData.retrieveBlockState(any(SlotAndBlockRoot.class)))
+        .thenReturn(new SafeFuture<>());
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
     final Spec spec = TestSpecFactory.create(SpecMilestone.PHASE0, eth2Network);
@@ -446,7 +448,7 @@ public class SlotProcessorTest {
         nextEpochSlotMinusOne.plus(oneThirdMillis(millisPerSlot)), Optional.empty());
 
     // Shouldn't have precomputed epoch transition yet.
-    verify(recentChainData, never()).retrieveStateAtSlot(any());
+    verify(recentChainData, never()).retrieveBlockState(any(SlotAndBlockRoot.class));
 
     // But just before the last slot of the epoch ends, we should precompute the next epoch
     slotProcessor.onTick(
@@ -458,7 +460,7 @@ public class SlotProcessorTest {
         nextEpochSlotMinusOne.plus(oneThirdMillis(millisPerSlot) * 2 + 1000), Optional.empty());
     slotProcessor.onTick(
         nextEpochSlotMinusOne.plus(oneThirdMillis(millisPerSlot) * 2 + 2000), Optional.empty());
-    verify(recentChainData, atMostOnce()).retrieveStateAtSlot(any());
+    verify(recentChainData, atMostOnce()).retrieveBlockState(any(SlotAndBlockRoot.class));
   }
 
   @ParameterizedTest

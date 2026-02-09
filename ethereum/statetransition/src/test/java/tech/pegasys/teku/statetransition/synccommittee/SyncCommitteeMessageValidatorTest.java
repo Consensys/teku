@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -24,6 +24,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.List;
 import java.util.Optional;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -43,6 +44,7 @@ import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -56,6 +58,8 @@ class SyncCommitteeMessageValidatorTest {
   private StorageSystem storageSystem;
   private ChainBuilder chainBuilder;
   private RecentChainData recentChainData;
+  private MetricsSystem metricsSystem;
+  private GossipValidationHelper gossipValidationHelper;
 
   private SyncCommitteeMessageValidator validator;
 
@@ -71,6 +75,8 @@ class SyncCommitteeMessageValidatorTest {
         InMemoryStorageSystemBuilder.create().specProvider(spec).numberOfValidators(17).build();
     chainBuilder = storageSystem.chainBuilder();
     recentChainData = storageSystem.recentChainData();
+    metricsSystem = storageSystem.getMetricsSystem();
+    gossipValidationHelper = new GossipValidationHelper(spec, recentChainData, metricsSystem);
 
     validator =
         new SyncCommitteeMessageValidator(
@@ -78,7 +84,7 @@ class SyncCommitteeMessageValidatorTest {
             recentChainData,
             new SyncCommitteeStateUtils(spec, recentChainData),
             AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE),
-            timeProvider);
+            gossipValidationHelper);
 
     return storageSystem.chainUpdater().initializeGenesis();
   }
@@ -151,7 +157,7 @@ class SyncCommitteeMessageValidatorTest {
             recentChainData,
             new SyncCommitteeStateUtils(phase0Spec, recentChainData),
             AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE),
-            timeProvider);
+            gossipValidationHelper);
     final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
     assertThat(validator.validate(ValidatableSyncCommitteeMessage.fromValidator(message)))

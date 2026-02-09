@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,7 +14,6 @@
 package tech.pegasys.teku.services;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -25,18 +24,20 @@ public abstract class ServiceController extends Service implements ServiceContro
 
   @Override
   protected SafeFuture<?> doStart() {
-    final Iterator<Service> iterator = services.iterator();
-    SafeFuture<?> startupFuture = iterator.next().start();
-    while (iterator.hasNext()) {
-      final Service nextService = iterator.next();
-      startupFuture = startupFuture.thenCompose(__ -> nextService.start());
+    SafeFuture<?> startupFuture = SafeFuture.COMPLETE;
+    for (final Service service : services) {
+      startupFuture = startupFuture.thenCompose(__ -> service.start());
     }
     return startupFuture;
   }
 
   @Override
   protected SafeFuture<?> doStop() {
-    return SafeFuture.allOf(services.stream().map(Service::stop).toArray(SafeFuture[]::new));
+    SafeFuture<?> stopFuture = SafeFuture.COMPLETE;
+    for (final Service service : services.reversed()) {
+      stopFuture = stopFuture.thenCompose(__ -> service.stop());
+    }
+    return stopFuture;
   }
 
   @Override

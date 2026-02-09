@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -185,30 +185,37 @@ public class DataColumnSidecarsByRootMessageHandler
             maybeBlock -> {
               if (maybeBlock.isPresent()) {
                 final SignedBeaconBlock block = maybeBlock.get();
-                final boolean isSuperNodePruned =
-                    dataColumnSidecarArchiveReconstructor.isSidecarPruned(
-                        block.getSlot(), identifier.columnIndex());
-                if (isSuperNodePruned) {
-                  return dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(
-                      block, identifier.columnIndex(), messageHash);
-                }
-                final Optional<ChainHead> chainHead = combinedChainDataClient.getChainHead();
-                if (chainHead.isEmpty()) {
-                  return SafeFuture.completedFuture(Optional.empty());
-                }
-                final boolean isCanonical =
-                    combinedChainDataClient.isCanonicalBlock(
-                        block.getSlot(), identifier.blockRoot(), chainHead.get().getRoot());
-                if (isCanonical) {
-                  return SafeFuture.completedFuture(Optional.empty());
-                }
-                return combinedChainDataClient.getNonCanonicalSidecar(
-                    new DataColumnSlotAndIdentifier(
-                        block.getSlot(), identifier.blockRoot(), identifier.columnIndex()));
+                return getDataColumnSidecar(block, identifier, messageHash);
               } else {
                 return SafeFuture.completedFuture(Optional.empty());
               }
             });
+  }
+
+  private SafeFuture<Optional<DataColumnSidecar>> getDataColumnSidecar(
+      final SignedBeaconBlock block,
+      final DataColumnIdentifier identifier,
+      final Bytes32 messageHash) {
+    final boolean isSuperNodePruned =
+        dataColumnSidecarArchiveReconstructor.isSidecarPruned(
+            block.getSlot(), identifier.columnIndex());
+    if (isSuperNodePruned) {
+      return dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(
+          block, identifier.columnIndex(), messageHash);
+    }
+    final Optional<ChainHead> chainHead = combinedChainDataClient.getChainHead();
+    if (chainHead.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    final boolean isCanonical =
+        combinedChainDataClient.isCanonicalBlock(
+            block.getSlot(), identifier.blockRoot(), chainHead.get().getRoot());
+    if (isCanonical) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    return combinedChainDataClient.getNonCanonicalSidecar(
+        new DataColumnSlotAndIdentifier(
+            block.getSlot(), identifier.blockRoot(), identifier.columnIndex()));
   }
 
   /**

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -70,6 +70,33 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  void shouldPrepareBlockProductionIsEnabledByDefaultOnMainnet() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    assertThat(config.eth2NetworkConfiguration().isPrepareBlockProductionEnabled()).isTrue();
+  }
+
+  @Test
+  void shouldPrepareBlockProductionIsEnabledByDefaultOnHoodi() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments("--network", "hoodi");
+    assertThat(config.eth2NetworkConfiguration().isPrepareBlockProductionEnabled()).isTrue();
+  }
+
+  @Test
+  void shouldDisablePrepareBlockProduction() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xprepare-block-production-enabled", "false");
+    assertThat(config.eth2NetworkConfiguration().isPrepareBlockProductionEnabled()).isFalse();
+  }
+
+  @Test
+  void shouldDisablePrepareBlockProductionForGnosis() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments(
+            "--network", "gnosis", "--Xprepare-block-production-enabled", "true");
+    assertThat(config.eth2NetworkConfiguration().isPrepareBlockProductionEnabled()).isFalse();
+  }
+
+  @Test
   void shouldUseBellatrixForkEpochIfSpecified() {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments(
@@ -108,22 +135,6 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments("--Xfork-choice-late-block-reorg-enabled", value);
     assertThat(config.eth2NetworkConfiguration().isForkChoiceLateBlockReorgEnabled())
         .isEqualTo(Boolean.valueOf(value));
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {"true", "false"})
-  void shouldSetAggregatingAttestationPoolV2Enabled(final String value) {
-    final TekuConfiguration config =
-        getTekuConfigurationFromArguments("--Xaggregating-attestation-pool-v2-enabled", value);
-    assertThat(config.eth2NetworkConfiguration().isAggregatingAttestationPoolV2Enabled())
-        .isEqualTo(Boolean.valueOf(value));
-  }
-
-  @Test
-  void shouldAggregatingAttestationPoolV2EnabledEnabledByDefault() {
-    final TekuConfiguration config = getTekuConfigurationFromArguments();
-    assertThat(config.eth2NetworkConfiguration().isAggregatingAttestationPoolV2Enabled())
-        .isEqualTo(true);
   }
 
   @Test
@@ -299,5 +310,18 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         .isInstanceOf(AssertionError.class)
         .hasMessageContaining(
             "Invalid value for option '--Xdata-column-sidecar-recovery-max-delay'");
+  }
+
+  @Test
+  void shouldUseDefaultMinBidIncrementPercentage() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    assertThat(config.beaconChain().getMinBidIncrementPercentage()).isEqualTo(1);
+  }
+
+  @Test
+  void shouldUseCustomMinBidIncrementPercentage() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xmin-bid-increment-percentage", "5");
+    assertThat(config.beaconChain().getMinBidIncrementPercentage()).isEqualTo(5);
   }
 }

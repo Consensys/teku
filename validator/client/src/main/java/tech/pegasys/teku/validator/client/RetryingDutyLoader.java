@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -50,6 +50,11 @@ public class RetryingDutyLoader<S extends ScheduledDuties> implements DutyLoader
     final SafeFuture<Optional<S>> duties = new SafeFuture<>();
     requestDuties(epoch, duties).propagateTo(duties);
     return duties;
+  }
+
+  @Override
+  public String getDutyType() {
+    return delegate.getDutyType();
   }
 
   private SafeFuture<Optional<S>> requestDuties(

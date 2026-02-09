@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -212,8 +212,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final BlockBroadcastValidator blockBroadcastValidator,
       final ExecutionLayerChannel executionLayer) {
     recentChainData.setBlockTimelinessIfEmpty(block);
-    return recentChainData
-        .retrieveStateAtSlot(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
+    final ForkChoiceUtil forkChoiceUtil = spec.atSlot(block.getSlot()).getForkChoiceUtil();
+
+    return forkChoiceUtil
+        .retrieveBlockState(recentChainData.getStore(), block)
         .thenPeek(__ -> blockImportPerformance.ifPresent(BlockImportPerformance::preStateRetrieved))
         .thenCompose(
             blockSlotState ->
@@ -230,7 +232,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final SignedExecutionPayloadEnvelope signedEnvelope,
       final ExecutionLayerChannel executionLayer) {
     return recentChainData
-        .retrieveStateAtSlot(signedEnvelope.getSlotAndBlockRoot())
+        .retrieveBlockState(signedEnvelope.getSlotAndBlockRoot())
         .thenCompose(blockState -> onExecutionPayload(signedEnvelope, blockState, executionLayer));
   }
 
@@ -535,9 +537,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     final ForkChoiceUtil forkChoiceUtil = spec.atSlot(signedEnvelope.getSlot()).getForkChoiceUtil();
 
-    // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 add a real data availability check
-    // (not required for devnet-0)
-    final AvailabilityChecker<?> availabilityChecker = AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR;
+    final AvailabilityChecker<?> availabilityChecker =
+        forkChoiceUtil.createAvailabilityChecker(signedEnvelope);
 
     availabilityChecker.initiateDataAvailabilityCheck();
 
@@ -566,7 +567,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                         "Data availability check for slot: {}, builder: {}, block_root: {} result: {}",
                         signedEnvelope.getSlot(),
                         signedEnvelope.getMessage().getBuilderIndex(),
-                        signedEnvelope.getMessage().getBeaconBlockRoot(),
+                        signedEnvelope.getBeaconBlockRoot(),
                         result.toLogString()));
 
     return payloadExecutor
@@ -700,8 +701,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return result;
   }
 
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 it requires more validations and more
-  // interactions with the store (e.g. onExecutionPayloadResult)
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 it requires potentially more
+  // validations and more interactions with the store (e.g. onExecutionPayloadResult)
   private ExecutionPayloadImportResult importExecutionPayloadAndState(
       final SignedExecutionPayloadEnvelope signedEnvelope,
       final ForkChoiceUtil forkChoiceUtil,
@@ -921,7 +922,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     P2P_LOG.onInvalidExecutionPayload(
         signedEnvelope.getSlot(),
         signedEnvelope.getMessage().getBuilderIndex(),
-        signedEnvelope.getMessage().getBeaconBlockRoot(),
+        signedEnvelope.getBeaconBlockRoot(),
         signedEnvelope.sszSerialize(),
         result.getFailureReason().name(),
         result.getFailureCause());

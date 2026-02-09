@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -49,8 +49,8 @@ class AggregatingPayloadAttestationPoolTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  private final PayloadAttestationMessageValidator validator =
-      mock(PayloadAttestationMessageValidator.class);
+  private final PayloadAttestationMessageGossipValidator validator =
+      mock(PayloadAttestationMessageGossipValidator.class);
 
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 

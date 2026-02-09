@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -136,7 +136,9 @@ public class RepeatingTaskScheduler {
     public void execute(final UInt64 actualTime) {
       checkArgument(
           actualTime.isGreaterThanOrEqualTo(nextDue),
-          "Executing task before it is due. Scheduled " + nextDue + " currently " + actualTime);
+          "Executing task before it is due. Scheduled %s currently %s",
+          nextDue,
+          actualTime);
       try {
         action.execute(nextDue, actualTime);
       } finally {

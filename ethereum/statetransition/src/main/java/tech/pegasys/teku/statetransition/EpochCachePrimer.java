@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -58,7 +58,7 @@ public class EpochCachePrimer {
   private void primeCacheForBlockAtSlot(
       final MinimalBeaconBlockSummary headBlock, final UInt64 firstSlotOfEpoch) {
     recentChainData
-        .retrieveStateAtSlot(new SlotAndBlockRoot(firstSlotOfEpoch, headBlock.getRoot()))
+        .retrieveBlockState(new SlotAndBlockRoot(firstSlotOfEpoch, headBlock.getRoot()))
         .finish(
             maybeState -> maybeState.ifPresent(this::primeEpochStateCaches),
             error -> LOG.warn("Failed to precompute epoch transition", error));

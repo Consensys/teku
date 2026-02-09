@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
+// TODO-GLOAS: https://github.com/Consensys/teku/issues/10053
 public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -84,7 +85,6 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
           millisPerSlot,
           this::onContributionCreationDue);
     }
-    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10018
     if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
       taskScheduler.scheduleRepeatingEventInMillis(
           nextSlotStartTimeMillis.plus(spec.getPayloadAttestationDueMillis(nextSlot)),

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -17,13 +17,17 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVAL
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSortedMap;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
@@ -244,7 +248,8 @@ public class DataColumnSidecarsByRangeMessageHandler
       this.finalizedSlot = finalizedSlot;
       this.canonicalHotRoots = canonicalHotRoots;
       this.messageHash = messageHash;
-      final UInt64 highestIndex = columns.stream().max(Comparator.naturalOrder()).orElseThrow();
+      final UInt64 highestIndex =
+          columns.stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
       this.maybeSuperNodePruned =
           dataColumnSidecarArchiveReconstructor.isSidecarPruned(startSlot, highestIndex)
               || dataColumnSidecarArchiveReconstructor.isSidecarPruned(endSlot, highestIndex);
@@ -262,14 +267,41 @@ public class DataColumnSidecarsByRangeMessageHandler
                 keys -> {
                   dataColumnSidecarKeysIterator =
                       Optional.of(
-                          keys.stream()
-                              .filter(key -> columns.contains(key.columnIndex()))
+                          filterIdentifiers(keys).stream()
+                              .limit(maxRequestDataColumnSidecars.longValue())
                               .iterator());
                   return getNextDataColumnSidecar(dataColumnSidecarKeysIterator.get());
                 });
       } else {
         return getNextDataColumnSidecar(dataColumnSidecarKeysIterator.get());
       }
+    }
+
+    private List<DataColumnSlotAndIdentifier> filterIdentifiers(
+        final List<DataColumnSlotAndIdentifier> dbIdentifiers) {
+      final NavigableMap<UInt64, List<DataColumnSlotAndIdentifier>> slotMap =
+          dbIdentifiers.stream()
+              .collect(
+                  Collectors.groupingBy(
+                      DataColumnSlotAndIdentifier::slot, TreeMap::new, Collectors.toList()));
+      final List<DataColumnSlotAndIdentifier> matchingKeys = new ArrayList<>();
+      for (final UInt64 slot : slotMap.navigableKeySet()) {
+        if (maybeSuperNodePruned && !slotMap.get(slot).isEmpty()) {
+          // Adding all requested, we expect we either have it
+          // or can reconstruct from proof archives
+          final DataColumnSlotAndIdentifier first = slotMap.get(slot).getFirst();
+          columns.forEach(
+              column ->
+                  matchingKeys.add(
+                      new DataColumnSlotAndIdentifier(first.slot(), first.blockRoot(), column)));
+        } else {
+          slotMap.get(slot).stream()
+              .filter(key -> columns.contains(key.columnIndex()))
+              .forEach(matchingKeys::add);
+        }
+      }
+
+      return matchingKeys;
     }
 
     boolean isComplete() {
@@ -285,29 +317,44 @@ public class DataColumnSidecarsByRangeMessageHandler
         if (finalizedSlot.isGreaterThanOrEqualTo(columnSlotAndIdentifier.slot())
             // not finalized, let's check if it is on canonical chain
             || isCanonicalHotDataColumnSidecar(columnSlotAndIdentifier)) {
-          if (maybeSuperNodePruned
-              && dataColumnSidecarArchiveReconstructor.isSidecarPruned(
-                  columnSlotAndIdentifier.slot(), columnSlotAndIdentifier.columnIndex())) {
-            return combinedChainDataClient
-                .getBlockAtSlotExact(columnSlotAndIdentifier.slot())
-                .thenCompose(
-                    maybeBlock -> {
-                      if (maybeBlock.isEmpty()) {
-                        return SafeFuture.completedFuture(Optional.empty());
-                      } else {
-                        return dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(
-                            maybeBlock.get(), columnSlotAndIdentifier.columnIndex(), messageHash);
-                      }
-                    });
-          }
 
-          return combinedChainDataClient.getSidecar(columnSlotAndIdentifier);
+          return combinedChainDataClient
+              .getSidecar(columnSlotAndIdentifier)
+              .thenCompose(
+                  maybeSidecar -> {
+                    if (maybeSidecar.isPresent()) {
+                      return SafeFuture.completedFuture(maybeSidecar);
+                    } else {
+                      return tryArchiveSidecarReconstruction(columnSlotAndIdentifier);
+                    }
+                  });
         }
         // non-canonical, try next one
         return getNextDataColumnSidecar(dataColumnSidecarIdentifiers);
       }
 
       return SafeFuture.completedFuture(Optional.empty());
+    }
+
+    private SafeFuture<Optional<DataColumnSidecar>> tryArchiveSidecarReconstruction(
+        final DataColumnSlotAndIdentifier columnSlotAndIdentifier) {
+      if (!maybeSuperNodePruned
+          || !dataColumnSidecarArchiveReconstructor.isSidecarPruned(
+              columnSlotAndIdentifier.slot(), columnSlotAndIdentifier.columnIndex())) {
+        return SafeFuture.completedFuture(Optional.empty());
+      }
+
+      return combinedChainDataClient
+          .getBlockAtSlotExact(columnSlotAndIdentifier.slot())
+          .thenCompose(
+              maybeBlock -> {
+                if (maybeBlock.isEmpty()) {
+                  return SafeFuture.completedFuture(Optional.empty());
+                }
+
+                return dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(
+                    maybeBlock.get(), columnSlotAndIdentifier.columnIndex(), messageHash);
+              });
     }
 
     private boolean isCanonicalHotDataColumnSidecar(

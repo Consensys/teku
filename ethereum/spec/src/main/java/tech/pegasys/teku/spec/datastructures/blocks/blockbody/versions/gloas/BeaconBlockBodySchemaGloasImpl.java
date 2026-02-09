@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -207,7 +207,7 @@ public class BeaconBlockBodySchemaGloasImpl
 
   @Override
   public ExecutionPayloadSchema<?> getExecutionPayloadSchema() {
-    throw new UnsupportedOperationException("ExecutionPayload was removed in Gloas");
+    throw new UnsupportedOperationException("execution_payload field was removed in Gloas");
   }
 
   @SuppressWarnings("unchecked")
@@ -219,17 +219,17 @@ public class BeaconBlockBodySchemaGloasImpl
 
   @Override
   public SszListSchema<SszKZGCommitment, ?> getBlobKzgCommitmentsSchema() {
-    throw new UnsupportedOperationException("BlobKzgCommitments were removed in Gloas");
+    throw new UnsupportedOperationException("blob_kzg_commitments field was removed in Gloas");
   }
 
   @Override
   public long getBlobKzgCommitmentsGeneralizedIndex() {
-    throw new UnsupportedOperationException("BlobKzgCommitments were removed in Gloas");
+    throw new UnsupportedOperationException("blob_kzg_commitments field was removed in Gloas");
   }
 
   @Override
   public ExecutionRequestsSchema getExecutionRequestsSchema() {
-    throw new UnsupportedOperationException("ExecutionRequests were removed in Gloas");
+    throw new UnsupportedOperationException("execution_requests field was removed in Gloas");
   }
 
   @SuppressWarnings("unchecked")

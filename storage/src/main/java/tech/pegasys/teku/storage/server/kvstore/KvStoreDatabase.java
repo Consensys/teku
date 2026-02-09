@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -1157,6 +1157,19 @@ public class KvStoreDatabase implements Database {
   @Override
   public Optional<UInt64> getEarliestDataColumnSidecarSlot() {
     return dao.getEarliestDataSidecarColumnSlot();
+  }
+
+  @Override
+  public Optional<UInt64> getEarliestAvailableDataColumnSlot() {
+    return dao.getEarliestAvailableDataColumnSlot();
+  }
+
+  @Override
+  public void setEarliestAvailableDataColumnSlot(final UInt64 slot) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.setEarliestAvailableDataColumnSlot(slot);
+      updater.commit();
+    }
   }
 
   @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -85,6 +85,21 @@ class BitvectorImplTest {
     assertThatThrownBy(() -> BitvectorImpl.fromBytes(Bytes.of(1, 2, 3), 1))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Incorrect data size");
+  }
+
+  @Test
+  public void deserializationNonZeroPadding() {
+    assertThatThrownBy(() -> BitvectorImpl.fromBytes(Bytes.of(5), 2))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Invalid padding bits for Bitvector");
+  }
+
+  @Test
+  public void deserializationNoPadding() {
+    BitvectorImpl bitvector = BitvectorImpl.fromBytes(Bytes.of(5, 9), 16);
+    Bytes ssz = bitvector.serialize();
+    BitvectorImpl bitvector1 = BitvectorImpl.fromBytes(ssz, 16);
+    Assertions.assertEquals(bitvector, bitvector1);
   }
 
   @Test

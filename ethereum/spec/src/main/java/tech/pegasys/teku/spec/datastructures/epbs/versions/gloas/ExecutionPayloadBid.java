@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container11;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -23,6 +24,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.epbs.SlotAndBuilderIndex;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public class ExecutionPayloadBid
     extends Container11<
@@ -37,7 +39,7 @@ public class ExecutionPayloadBid
         SszUInt64,
         SszUInt64,
         SszUInt64,
-        SszBytes32> {
+        SszList<SszKZGCommitment>> {
 
   protected ExecutionPayloadBid(
       final ExecutionPayloadBidSchema schema,
@@ -51,7 +53,7 @@ public class ExecutionPayloadBid
       final UInt64 slot,
       final UInt64 value,
       final UInt64 executionPayment,
-      final Bytes32 blobKzgCommitmentsRoot) {
+      final SszList<SszKZGCommitment> blobKzgCommitments) {
     super(
         schema,
         SszBytes32.of(parentBlockHash),
@@ -64,7 +66,7 @@ public class ExecutionPayloadBid
         SszUInt64.of(slot),
         SszUInt64.of(value),
         SszUInt64.of(executionPayment),
-        SszBytes32.of(blobKzgCommitmentsRoot));
+        blobKzgCommitments);
   }
 
   protected ExecutionPayloadBid(
@@ -112,8 +114,8 @@ public class ExecutionPayloadBid
     return getField9().get();
   }
 
-  public Bytes32 getBlobKzgCommitmentsRoot() {
-    return getField10().get();
+  public SszList<SszKZGCommitment> getBlobKzgCommitments() {
+    return getField10();
   }
 
   public SlotAndBuilderIndex getSlotAndBuilderIndex() {

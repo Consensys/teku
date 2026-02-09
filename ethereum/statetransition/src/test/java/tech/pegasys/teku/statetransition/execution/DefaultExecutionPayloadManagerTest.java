@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,12 +15,11 @@ package tech.pegasys.teku.statetransition.execution;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.spec.Spec;
@@ -28,7 +27,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult.FailureReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadGossipValidator;
@@ -57,65 +55,74 @@ class DefaultExecutionPayloadManagerTest {
       ExecutionPayloadImportResult.successful(signedExecutionPayload);
 
   @Test
-  public void shouldImport() {
-    when(forkChoice.onExecutionPayload(signedExecutionPayload, executionLayer))
-        .thenReturn(SafeFuture.completedFuture(successfulImportResult));
-
-    final SafeFuture<ExecutionPayloadImportResult> resultFuture =
-        executionPayloadManager.importExecutionPayload(signedExecutionPayload);
-
-    asyncRunner.executeDueActions();
-
-    assertThat(resultFuture).isCompletedWithValue(successfulImportResult);
-
-    // verify the `beacon_block_root` is cached
-    assertThat(
-            executionPayloadManager.isExecutionPayloadRecentlySeen(
-                signedExecutionPayload.getMessage().getBeaconBlockRoot()))
-        .isTrue();
-  }
-
-  @Test
-  public void shouldHandleInternalErrors() {
-    final IllegalStateException exception = new IllegalStateException("oopsy");
-
-    when(forkChoice.onExecutionPayload(signedExecutionPayload, executionLayer))
-        .thenThrow(exception);
-
-    final SafeFuture<ExecutionPayloadImportResult> resultFuture =
-        executionPayloadManager.importExecutionPayload(signedExecutionPayload);
-
-    asyncRunner.executeDueActions();
-
-    final ExecutionPayloadImportResult result = safeJoin(resultFuture);
-
-    assertThat(result.isSuccessful()).isFalse();
-    assertThat(result.getFailureReason()).isEqualTo(FailureReason.INTERNAL_ERROR);
-    assertThat(result.getFailureCause())
-        .hasValueSatisfying(cause -> assertThat(cause).hasCause(exception));
-  }
-
-  @Test
-  public void onAcceptedGossipExecutionPayload_shouldImport() {
+  public void shouldValidateAndImport() {
     when(executionPayloadGossipValidator.validate(signedExecutionPayload))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     when(forkChoice.onExecutionPayload(signedExecutionPayload, executionLayer))
         .thenReturn(SafeFuture.completedFuture(successfulImportResult));
 
     final SafeFuture<InternalValidationResult> resultFuture =
-        executionPayloadManager.validateAndImportExecutionPayload(
-            signedExecutionPayload, Optional.empty());
+        executionPayloadManager.validateAndImportExecutionPayload(signedExecutionPayload);
 
-    asyncRunner.executeDueActions();
+    try (final LogCaptor logCaptor = LogCaptor.forClass(DefaultExecutionPayloadManager.class)) {
+      asyncRunner.executeDueActions();
+      logCaptor.assertDebugLog("Successfully imported execution payload");
+    }
 
     assertThat(resultFuture).isCompletedWithValue(InternalValidationResult.ACCEPT);
-
-    verify(forkChoice).onExecutionPayload(signedExecutionPayload, executionLayer);
 
     // verify the `beacon_block_root` is cached
     assertThat(
             executionPayloadManager.isExecutionPayloadRecentlySeen(
-                signedExecutionPayload.getMessage().getBeaconBlockRoot()))
+                signedExecutionPayload.getBeaconBlockRoot()))
+        .isTrue();
+  }
+
+  @Test
+  public void shouldNotImportIfValidationFails() {
+    final InternalValidationResult rejectedResult = InternalValidationResult.reject("oopsy");
+    when(executionPayloadGossipValidator.validate(signedExecutionPayload))
+        .thenReturn(SafeFuture.completedFuture(rejectedResult));
+
+    final SafeFuture<InternalValidationResult> resultFuture =
+        executionPayloadManager.validateAndImportExecutionPayload(signedExecutionPayload);
+
+    asyncRunner.executeDueActions();
+
+    verifyNoInteractions(forkChoice);
+    assertThat(resultFuture).isCompletedWithValue(rejectedResult);
+
+    // `beacon_block_root` should not be cached when gossip validation fails
+    assertThat(
+            executionPayloadManager.isExecutionPayloadRecentlySeen(
+                signedExecutionPayload.getBeaconBlockRoot()))
+        .isFalse();
+  }
+
+  @Test
+  public void shouldHandleInternalErrorsWhileImporting() {
+    when(executionPayloadGossipValidator.validate(signedExecutionPayload))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+
+    final IllegalStateException exception = new IllegalStateException("oopsy");
+
+    when(forkChoice.onExecutionPayload(signedExecutionPayload, executionLayer))
+        .thenThrow(exception);
+
+    final SafeFuture<InternalValidationResult> resultFuture =
+        executionPayloadManager.validateAndImportExecutionPayload(signedExecutionPayload);
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(DefaultExecutionPayloadManager.class)) {
+      asyncRunner.executeDueActions();
+      logCaptor.assertErrorLog("Internal error while importing execution payload");
+    }
+
+    assertThat(resultFuture).isCompletedWithValue(InternalValidationResult.ACCEPT);
+
+    // verify the `beacon_block_root` is cached
+    assertThat(
+            executionPayloadManager.isExecutionPayloadRecentlySeen(
+                signedExecutionPayload.getBeaconBlockRoot()))
         .isTrue();
   }
 }

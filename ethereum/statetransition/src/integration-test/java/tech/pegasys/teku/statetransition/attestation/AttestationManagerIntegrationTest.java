@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -74,12 +74,14 @@ class AttestationManagerIntegrationTest {
       new AggregateGenerator(spec, storageSystem.chainBuilder().getValidatorKeys());
 
   private final AggregatingAttestationPool attestationPool =
-      new AggregatingAttestationPoolV1(
+      new AggregatingAttestationPoolV2(
           spec,
           recentChainData,
           new NoOpMetricsSystem(),
+          DEFAULT_MAXIMUM_ATTESTATION_COUNT,
           AggregatingAttestationPoolProfiler.NOOP,
-          DEFAULT_MAXIMUM_ATTESTATION_COUNT);
+          Integer.MAX_VALUE,
+          Integer.MAX_VALUE);
   private final MergeTransitionBlockValidator transitionBlockValidator =
       new MergeTransitionBlockValidator(spec, recentChainData);
   private final ForkChoice forkChoice =

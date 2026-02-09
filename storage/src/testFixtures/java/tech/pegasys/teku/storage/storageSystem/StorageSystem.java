@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -120,7 +120,11 @@ public class StorageSystem implements AutoCloseable {
     // Create combined client
     final CombinedChainDataClient combinedChainDataClient =
         new CombinedChainDataClient(
-            recentChainData, chainStorageServer, spec, LateBlockReorgPreparationHandler.NOOP);
+            recentChainData,
+            chainStorageServer,
+            spec,
+            LateBlockReorgPreparationHandler.NOOP,
+            false);
 
     final BlobSidecarManager blobSidecarManager = BlobSidecarManager.NOOP;
 

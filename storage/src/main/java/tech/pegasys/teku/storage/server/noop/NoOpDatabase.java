@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -395,6 +395,14 @@ public class NoOpDatabase implements Database {
   public Optional<UInt64> getEarliestDataColumnSidecarSlot() {
     return Optional.empty();
   }
+
+  @Override
+  public Optional<UInt64> getEarliestAvailableDataColumnSlot() {
+    return Optional.empty();
+  }
+
+  @Override
+  public void setEarliestAvailableDataColumnSlot(final UInt64 slot) {}
 
   @Override
   public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {

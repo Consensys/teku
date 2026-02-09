@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -66,6 +66,10 @@ public class InMemoryStorageSystemBuilder {
 
   public static StorageSystem buildDefault(final StateStorageMode storageMode, final Spec spec) {
     return create().storageMode(storageMode).specProvider(spec).build();
+  }
+
+  public static StorageSystem buildDefault(final int numberOfValidators, final Spec spec) {
+    return create().numberOfValidators(numberOfValidators).specProvider(spec).build();
   }
 
   public static StorageSystem buildDefault(final Spec spec) {

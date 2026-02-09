@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -130,6 +130,25 @@ public class BeaconRestApiOptions {
       hidden = true)
   private Integer validatorThreads;
 
+  @Option(
+      names = {"--rest-api-getblobs-sidecars-download-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Enables Get Blobs API ability to reconstruct blobs via on-demand p2p columns downloading",
+      arity = "0..1",
+      fallbackValue = "true")
+  private Boolean getBlobsSidecarsDownloadEnabled =
+      BeaconRestApiConfig.DEFAULT_GETBLOBS_SIDECARS_DOWNLOAD_ENABLED;
+
+  @Option(
+      names = {"--rest-api-getblobs-sidecars-download-timeout"},
+      paramLabel = "<INTEGER>",
+      description = "Sidecars download timeout in seconds",
+      arity = "1")
+  private long getBlobsSidecarsDownloadTimeoutSeconds =
+      BeaconRestApiConfig.DEFAULT_GETBLOBS_SIDECARS_DOWNLOAD_TIMEOUT.toSeconds();
+
   public void configure(final TekuConfiguration.Builder builder) {
     // Set defaults
     if (restApiEnabled == null && restApiPort == null) {
@@ -153,6 +172,8 @@ public class BeaconRestApiOptions {
                 .restApiCorsAllowedOrigins(restApiCorsAllowedOrigins)
                 .maxUrlLength(maxUrlLength)
                 .beaconLivenessTrackingEnabled(beaconLivenessTrackingEnabled)
+                .getBlobsSidecarsDownloadEnabled(getBlobsSidecarsDownloadEnabled)
+                .getBlobsSidecarsDownloadTimeoutSeconds(getBlobsSidecarsDownloadTimeoutSeconds)
                 .maxPendingEvents(maxPendingEvents)
                 .validatorThreads(Optional.ofNullable(validatorThreads)));
   }

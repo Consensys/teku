@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -136,6 +136,10 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return delegate.getVariableEarliestBlobSidecarSlot();
   }
 
+  public KvStoreVariable<UInt64> getVariableEarliestAvailableDataColumnSlot() {
+    return delegate.getVariableEarliestAvailableDataColumnSlot();
+  }
+
   public KvStoreVariable<UInt64> getVariableEarliestBlockSlot() {
     return delegate.getVariableEarliestBlockSlot();
   }
@@ -153,6 +157,8 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
         "EARLIEST_BLOCK_SLOT_AVAILABLE",
         getVariableEarliestBlockSlot(),
         "FIRST_CUSTODY_INCOMPLETE_SLOT",
-        getVariableFirstCustodyIncompleteSlot());
+        getVariableFirstCustodyIncompleteSlot(),
+        "EARLIEST_AVAILABLE_DATA_COLUMN_SLOT",
+        getVariableEarliestAvailableDataColumnSlot());
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -243,9 +243,11 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
         }
 
         @Override
-        public SafeFuture<Void> publishSignedExecutionPayload(
+        public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
             final SignedExecutionPayloadEnvelope signedExecutionPayload) {
-          return SafeFuture.COMPLETE;
+          return SafeFuture.completedFuture(
+              PublishSignedExecutionPayloadResult.success(
+                  signedExecutionPayload.getBeaconBlockRoot()));
         }
       };
 

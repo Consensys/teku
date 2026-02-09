@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -84,6 +84,8 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
                         dutyEpoch)));
   }
 
+  abstract int getLookAheadEpochs(UInt64 epoch);
+
   protected abstract Bytes32 getExpectedDependentRoot(
       Bytes32 headBlockRoot,
       Bytes32 previousDutyDependentRoot,
@@ -97,8 +99,6 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
     invalidateEpochs(dutiesByEpoch);
   }
 
-  abstract int getLookAheadEpochs(UInt64 epoch);
-
   @Override
   public void onValidatorsAdded() {
     invalidateEpochs(dutiesByEpoch);
@@ -106,13 +106,14 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
 
   private void calculateDuties(final UInt64 epochNumber) {
     dutiesByEpoch.computeIfAbsent(epochNumber, this::createEpochDuties);
-    int lookaheadEpochs = getLookAheadEpochs(epochNumber);
-    for (int i = 1; i <= lookaheadEpochs; i++) {
+    final int lookAheadEpochs = getLookAheadEpochs(epochNumber);
+    for (int i = 1; i <= lookAheadEpochs; i++) {
       dutiesByEpoch.computeIfAbsent(epochNumber.plus(i), this::createEpochDuties);
     }
   }
 
   private PendingDuties createEpochDuties(final UInt64 epochNumber) {
+    LOG.trace("Creating epoch duties for epoch {}", epochNumber);
     return PendingDuties.calculateDuties(metricsSystem, epochDutiesScheduler, epochNumber);
   }
 

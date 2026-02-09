@@ -36,7 +36,7 @@ jobs:
       - name: Prepare
         uses: ./.github/actions/prepare
       - name: Download assemble-output
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
@@ -118,6 +118,11 @@ jobs:
           cosign sign --yes $IMAGE
       - name: Generate provenance file
         run: |
+          BUILD_STARTED_ON="${{ github.event.head_commit.timestamp }}"
+          # Fallback to current time if head_commit.timestamp is not available (e.g., in workflow_call events)
+          if [ -z "$BUILD_STARTED_ON" ]; then
+            BUILD_STARTED_ON=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          fi
           BUILD_FINISHED_ON=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           cat > provenance.json <<'EOF'
           {
@@ -134,7 +139,7 @@ jobs:
               }
             },
             "metadata": {
-              "buildStartedOn": "${{ github.event.head_commit.timestamp }}",
+              "buildStartedOn": "__BUILD_STARTED_ON__",
               "buildFinishedOn": "__BUILD_FINISHED_ON__"
             },
             "source": {
@@ -143,6 +148,7 @@ jobs:
             }
           }
           EOF
+          sed -i "s/__BUILD_STARTED_ON__/$BUILD_STARTED_ON/" provenance.json
           sed -i "s/__BUILD_FINISHED_ON__/$BUILD_FINISHED_ON/" provenance.json
       - name: Attest cosign provenance 
         run: |

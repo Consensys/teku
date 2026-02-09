@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -187,7 +187,7 @@ class DebugDataFileDumperTest {
         String.format(
             "%s_%s_%s.ssz",
             executionPayload.getSlot(),
-            executionPayload.getMessage().getBeaconBlockRoot().toUnprefixedHexString(),
+            executionPayload.getBeaconBlockRoot().toUnprefixedHexString(),
             executionPayload.getMessage().getBuilderIndex());
     final Path expectedFile = tempDir.resolve("invalid_execution_payloads").resolve(fileName);
     checkBytesSavedToFile(expectedFile, executionPayload.sszSerialize());

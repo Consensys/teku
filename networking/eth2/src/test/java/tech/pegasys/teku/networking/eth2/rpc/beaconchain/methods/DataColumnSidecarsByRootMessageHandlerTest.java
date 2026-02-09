@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -101,6 +101,8 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
       mock(CustodyGroupCountManager.class);
   private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier =
       () -> custodyGroupCountManager;
+  private final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor =
+      mock(DataColumnSidecarArchiveReconstructor.class);
   private String protocolId;
   private DataStructureUtil dataStructureUtil;
   private DataColumnSidecarsByRootMessageHandler handler;
@@ -131,7 +133,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
             combinedChainDataClient,
             custodySupplier,
             custodyGroupCountManagerSupplier,
-            DataColumnSidecarArchiveReconstructor.NOOP,
+            dataColumnSidecarArchiveReconstructor,
             DasReqRespLogger.NOOP);
 
     when(peer.getId()).thenReturn(nodeId);
@@ -350,7 +352,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
   }
 
   @TestTemplate
-  public void shouldSendToPeerRequestedBlobSidecars() {
+  public void shouldSendToPeerRequestedDataColumnSidecars() {
     final DataColumnsByRootIdentifier[] dataColumnsByRootIdentifiers =
         generateDataColumnsByRootIdentifiers(4, 1);
     final List<DataColumnSidecar> generatedSidecars =
@@ -397,6 +399,43 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
 
     assertThat(respondedDataColumnSidecarBlockRoots)
         .containsExactlyElementsOf(expectedDataColumnIdentifiersBlockRoots);
+  }
+
+  @TestTemplate
+  public void shouldTryToReconstructArchiveDataColumnSidecars() {
+    final DataColumnsByRootIdentifier[] dataColumnsByRootIdentifiers =
+        generateDataColumnsByRootIdentifiers(4, 1);
+
+    when(custody.getCustodyDataColumnSidecarByRoot(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(dataColumnSidecarArchiveReconstructor.isSidecarPruned(any(), any())).thenReturn(true);
+    when(dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(any(), any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    handler.onIncomingMessage(
+        protocolId, peer, messageSchema.of(dataColumnsByRootIdentifiers), callback);
+
+    // Requesting 4 data column sidecars
+    verify(peer).approveDataColumnSidecarsRequest(any(), eq(Long.valueOf(4)));
+    // Sending 0 data column sidecars, archive reconstructed empty
+    verify(peer).adjustDataColumnSidecarsRequest(any(), eq(Long.valueOf(0)));
+
+    verify(combinedChainDataClient, never()).getNonCanonicalSidecar(any());
+    verify(combinedChainDataClient, never()).getFinalizedBlockSlot();
+    verify(combinedChainDataClient, never()).getFinalizedBlock();
+    verify(callback).completeSuccessfully();
+
+    final List<Bytes32> respondedDataColumnSidecarBlockRoots =
+        datacolumnSidecarCaptor.getAllValues().stream()
+            .map(DataColumnSidecar::getBeaconBlockRoot)
+            .toList();
+    final List<Bytes32> expectedDataColumnIdentifiersBlockRoots = List.of();
+
+    assertThat(respondedDataColumnSidecarBlockRoots)
+        .containsExactlyElementsOf(expectedDataColumnIdentifiersBlockRoots);
+
+    verify(dataColumnSidecarArchiveReconstructor, times(4))
+        .reconstructDataColumnSidecar(any(), any(), any());
+    verify(callback).alwaysRun(any());
   }
 
   @TestTemplate

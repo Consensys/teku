@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -47,7 +47,7 @@ public abstract class AbstractExecutionPayloadProcessor implements ExecutionPayl
               "State transition error while importing execution payload (builder index: %s, slot: %s, block root: %s)",
               signedEnvelope.getMessage().getBuilderIndex(),
               signedEnvelope.getMessage().getSlot(),
-              signedEnvelope.getMessage().getBeaconBlockRoot()),
+              signedEnvelope.getBeaconBlockRoot()),
           ex);
       throw new StateTransitionException(ex);
     }

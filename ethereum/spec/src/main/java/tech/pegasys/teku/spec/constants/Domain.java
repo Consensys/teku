@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -35,6 +35,6 @@ public class Domain {
   public static final Bytes4 BLS_TO_EXECUTION_CHANGE = Bytes4.fromHexString("0x0A000000");
 
   // Gloas
-  public static final Bytes4 BEACON_BUILDER = Bytes4.fromHexString("0x1B000000");
+  public static final Bytes4 BEACON_BUILDER = Bytes4.fromHexString("0x0B000000");
   public static final Bytes4 PTC_ATTESTER = Bytes4.fromHexString("0x0C000000");
 }

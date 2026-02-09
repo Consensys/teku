@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -33,7 +33,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -168,15 +167,17 @@ public class DataColumnSidecarCustodyImpl
 
     LOG.debug(
         "Custody group count increased from {} to {}", oldCustodyGroupCount, newCustodyGroupCount);
-    final UInt64 minCustodyPeriodSlot =
-        minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(slot);
-    db.setFirstCustodyIncompleteSlot(minCustodyPeriodSlot)
-        .finish(
-            error ->
-                LOG.error(
-                    "Unexpected error while updating first custody incomplete slot with a new value: {}.",
-                    minCustodyPeriodSlot,
-                    error));
+    minCustodyPeriodSlotCalculator
+        .getMinCustodyPeriodSlot(slot)
+        .ifPresent(
+            minCustodyPeriodSlot ->
+                db.setFirstCustodyIncompleteSlot(minCustodyPeriodSlot)
+                    .finish(
+                        error ->
+                            LOG.error(
+                                "Unexpected error while updating first custody incomplete slot with a new value: {}.",
+                                minCustodyPeriodSlot,
+                                error)));
   }
 
   @Override
@@ -207,7 +208,7 @@ public class DataColumnSidecarCustodyImpl
 
   @VisibleForTesting
   SafeFuture<Void> advanceFirstIncompleteSlot(final UInt64 finalizedEpoch) {
-    final UInt64 firstNonFinalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch.increment());
+    final UInt64 firstNonFinalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch).increment();
     return retrievePotentiallyIncompleteSlotCustodies(firstNonFinalizedSlot)
         .takeUntil(SlotCustody::isIncomplete, true)
         .findLast()
@@ -233,13 +234,16 @@ public class DataColumnSidecarCustodyImpl
     return AsyncStream.create(db.getFirstCustodyIncompleteSlot())
         .flatMap(
             maybeFirstIncompleteSlot -> {
-              final UInt64 firstIncompleteSlot =
-                  maybeFirstIncompleteSlot.orElseGet(
+              final Optional<UInt64> firstIncompleteSlot =
+                  maybeFirstIncompleteSlot.or(
                       () ->
                           minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(
                               currentSlot.get()));
+              if (firstIncompleteSlot.isEmpty()) {
+                return AsyncStream.empty();
+              }
               final Stream<UInt64> slotStream =
-                  UInt64.rangeClosed(firstIncompleteSlot, toSlotIncluded);
+                  UInt64.rangeClosed(firstIncompleteSlot.get(), toSlotIncluded);
               return AsyncStream.createUnsafe(slotStream.iterator())
                   .mapAsync(this::retrieveSlotCustody);
             });
@@ -247,13 +251,13 @@ public class DataColumnSidecarCustodyImpl
 
   @VisibleForTesting
   SafeFuture<SlotCustody> retrieveSlotCustody(final UInt64 slot) {
-    if (!spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-      return SafeFuture.completedFuture(
-          new SlotCustody(
-              slot, Optional.empty(), Collections.emptyList(), Collections.emptyList()));
-    }
     if (slot.isLessThan(
-        minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot.get()))) {
+        minCustodyPeriodSlotCalculator
+            .getMinCustodyPeriodSlot(currentSlot.get())
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Cannot retrieve slot custody outside custody period (" + slot + ")")))) {
       LOG.trace(
           "Skipping custody for slot {}, because currentSlot {} is beyond minCustodyPeriod",
           slot,

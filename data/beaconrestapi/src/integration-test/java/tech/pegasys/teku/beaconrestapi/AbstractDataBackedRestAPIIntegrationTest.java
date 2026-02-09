@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -148,6 +148,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
   protected final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
   protected final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
+
   protected final BlockProductionAndPublishingPerformanceFactory
       blockProductionAndPublishingFactory =
           mock(BlockProductionAndPublishingPerformanceFactory.class);

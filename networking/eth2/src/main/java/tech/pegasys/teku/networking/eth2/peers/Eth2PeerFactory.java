@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -86,7 +86,7 @@ public class Eth2PeerFactory {
             "data_column_sidecars"),
         RateTracker.create(
             peerBlocksRateLimit, TIME_OUT, timeProvider, "execution_payload_envelopes"),
-        RateTracker.create(peerRequestLimit, TIME_OUT, timeProvider, "requestTracker"),
+        RateTracker.create(peerRequestLimit, TIME_OUT, timeProvider, "request_tracker"),
         metricsSystem,
         timeProvider);
   }

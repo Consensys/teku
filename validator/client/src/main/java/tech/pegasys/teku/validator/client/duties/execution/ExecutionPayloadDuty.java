@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -112,22 +112,30 @@ public class ExecutionPayloadDuty implements ExecutionPayloadBidEventsChannel {
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
     return validatorApiChannel
         .publishSignedExecutionPayload(signedExecutionPayload)
-        .thenRun(
-            () -> {
+        .thenAccept(
+            result -> {
               final ExecutionPayloadEnvelope executionPayload = signedExecutionPayload.getMessage();
-              validatorLogger.logExecutionPayloadDuty(
-                  executionPayload.getSlot(),
-                  executionPayload.getBuilderIndex(),
-                  executionPayload.getBeaconBlockRoot(),
-                  getExecutionSummary(executionPayload));
+              if (result.isPublished()) {
+                validatorLogger.logExecutionPayloadDuty(
+                    executionPayload.getSlot(),
+                    executionPayload.getBuilderIndex(),
+                    executionPayload.getBeaconBlockRoot(),
+                    getExecutionSummary(executionPayload));
+              } else {
+                final Throwable error =
+                    new IllegalArgumentException(
+                        "Execution payload was rejected by the beacon node: "
+                            + result.getRejectionReason().orElse("<reason unknown>"));
+                validatorLogger.executionPayloadDutyFailed(
+                    executionPayload.getSlot(), executionPayload.getBuilderIndex(), error);
+              }
             });
   }
 
   private String getExecutionSummary(final ExecutionPayloadEnvelope executionPayload) {
     final ExecutionPayload payload = executionPayload.getPayload();
     return String.format(
-        "Blobs: %d, %s (%s%%) gas, EL block: %s (%s)",
-        executionPayload.getBlobKzgCommitments().size(),
+        "%s (%s%%) gas, EL block: %s (%s)",
         payload.getGasUsed(),
         payload.computeGasPercentage(LOG),
         payload.getBlockHash().toUnprefixedHexString(),

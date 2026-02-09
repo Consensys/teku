@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -79,6 +79,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.epbs.ExecutionPayloadAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -587,6 +588,13 @@ public class Spec {
     return atSlot(proof.getAggregate().getData().getSlot())
         .miscHelpers()
         .computeSigningRoot(proof, domain);
+  }
+
+  public Bytes computeSigningRoot(
+      final ExecutionPayloadEnvelope executionPayloadEnvelope, final Bytes32 domain) {
+    return atSlot(executionPayloadEnvelope.getSlot())
+        .miscHelpers()
+        .computeSigningRoot(executionPayloadEnvelope, domain);
   }
 
   public Bytes computeSigningRoot(final UInt64 slot, final Bytes32 domain) {
@@ -1128,6 +1136,16 @@ public class Spec {
   public IntList getPtc(final BeaconState state, final UInt64 slot) {
     return BeaconStateAccessorsGloas.required(atSlot(slot).beaconStateAccessors())
         .getPtc(state, slot);
+  }
+
+  // Builder Utils
+  public Optional<BLSPublicKey> getBuilderPubKey(
+      final BeaconState state, final UInt64 builderIndex) {
+    return atState(state).beaconStateAccessors().getBuilderPubKey(state, builderIndex);
+  }
+
+  public Optional<Integer> getBuilderIndex(final BeaconState state, final BLSPublicKey publicKey) {
+    return atState(state).beaconStateAccessors().getBuilderIndex(state, publicKey);
   }
 
   // Attestation helpers

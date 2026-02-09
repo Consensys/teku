@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -29,7 +29,8 @@ public class PrometheusMetricsPublisherSource implements MetricsPublisherSource 
   private long headSlot;
   private int validatorsTotal;
   private int validatorsActive;
-  private int peerCount;
+  private int inboundPeerCount;
+  private int outboundPeerCount;
   private boolean isBeaconNodePresent;
   private boolean isEth2Synced;
   private boolean isEth1Connected;
@@ -85,7 +86,7 @@ public class PrometheusMetricsPublisherSource implements MetricsPublisherSource 
 
   @Override
   public int getPeerCount() {
-    return peerCount;
+    return inboundPeerCount + outboundPeerCount;
   }
 
   @Override
@@ -116,7 +117,13 @@ public class PrometheusMetricsPublisherSource implements MetricsPublisherSource 
     switch (observation.metricName()) {
       case "head_slot" -> headSlot = getLongValue(observation.value());
       case "eth1_request_queue_size" -> isEth1Connected = true;
-      case "peer_count" -> peerCount = getIntValue(observation.value());
+      case "peer_count" -> {
+        if (observation.labels().contains("inbound")) {
+          inboundPeerCount = getIntValue(observation.value());
+        } else if (observation.labels().contains("outbound")) {
+          outboundPeerCount = getIntValue(observation.value());
+        }
+      }
       case "node_syncing_active" -> isEth2Synced = getIntValue(observation.value()) == 0;
     }
   }

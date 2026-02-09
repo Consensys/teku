@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,6 +15,8 @@ package tech.pegasys.teku.statetransition.datacolumns.retriever.recovering;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
@@ -190,38 +192,45 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
     // make sure requests are within their timeout
     requests.values().forEach(request -> request.checkTimeout(currentTime));
 
+    final List<DataColumnSlotAndIdentifier> cancelledRequests = new ArrayList<>();
     // update state of any requests that are active
-    requests.values().stream()
-        .filter(PendingRecoveryRequest::isFailedDownloading)
-        .forEach(
-            request -> {
-              if (custodyGroupCountManager.getCustodyGroupCount() == 128) {
-                final RebuildColumnsTask rebuildColumnsTask =
-                    rebuildTasks.computeIfAbsent(
-                        request.getBlockRoot(),
-                        __ -> {
-                          LOG.debug(
-                              "Rebuilding columns for slot {} root {}",
-                              request.getSlot(),
-                              request.getBlockRoot());
-                          return new RebuildColumnsTask(
-                              request.getSlotAndBlockRoot(),
-                              currentTime,
-                              recoveryTimeout.minus(downloadTimeout),
-                              numberOfColumnsRequiredToReconstruct,
-                              sidecarDB,
-                              miscHelpersFulu);
-                        });
-                rebuildColumnsTask.addTask(request);
-              } else {
-                LOG.debug(
-                    "Custody group count {} is not viable to reconstruct for slot {} root {}",
-                    custodyGroupCountManager.getCustodyGroupCount(),
-                    request.getSlot(),
-                    request.getBlockRoot());
-                request.cancel();
-              }
-            });
+    requests.forEach(
+        (columnId, request) -> {
+          if (!request.isFailedDownloading()) {
+            return;
+          }
+          if (custodyGroupCountManager.getCustodyGroupCount()
+              >= numberOfColumnsRequiredToReconstruct) {
+            final RebuildColumnsTask rebuildColumnsTask =
+                rebuildTasks.computeIfAbsent(
+                    request.getBlockRoot(),
+                    __ -> {
+                      LOG.debug(
+                          "Rebuilding columns for slot {} root {}",
+                          request.getSlot(),
+                          request.getBlockRoot());
+                      return new RebuildColumnsTask(
+                          request.getSlotAndBlockRoot(),
+                          currentTime,
+                          recoveryTimeout.minus(downloadTimeout),
+                          numberOfColumnsRequiredToReconstruct,
+                          sidecarDB,
+                          miscHelpersFulu);
+                    });
+            rebuildColumnsTask.addTask(request);
+          } else {
+            LOG.debug("Cancelled request for {}", columnId);
+            request.cancel();
+            // this will be cleaned to allow it to be added by another task, since its currently not
+            // recoverable.
+            cancelledRequests.add(columnId);
+          }
+        });
+    if (!cancelledRequests.isEmpty()) {
+      LOG.debug("Removing {} pending requests", cancelledRequests.size());
+      cancelledRequests.forEach(requests::remove);
+    }
+
     rebuildTasks.entrySet().removeIf(entry -> entry.getValue().isDone(currentTime));
 
     rebuildTasks.forEach((key, value) -> value.checkQueryResult());

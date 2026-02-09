@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -54,6 +55,7 @@ class StoreTransactionUpdatesFactory {
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final AnchorPoint latestFinalized;
   private final Map<Bytes32, UInt64> prunedHotBlockRoots = new ConcurrentHashMap<>();
+  private final Map<Bytes32, SignedExecutionPayloadAndState> hotExecutionPayloadAndStates;
 
   public StoreTransactionUpdatesFactory(
       final Spec spec,
@@ -76,6 +78,7 @@ class StoreTransactionUpdatesFactory {
     maybeEarliestBlobSidecarSlot = tx.maybeEarliestBlobSidecarTransactionSlot;
     maybeLatestCanonicalBlockRoot = tx.maybeLatestCanonicalBlockRoot;
     maybeCustodyGroupCount = tx.maybeCustodyGroupCount;
+    hotExecutionPayloadAndStates = new ConcurrentHashMap<>(tx.executionPayloadData);
   }
 
   public static StoreTransactionUpdates create(
@@ -132,8 +135,14 @@ class StoreTransactionUpdatesFactory {
 
     // Prune collections
     calculatePrunedHotBlockRoots();
-    prunedHotBlockRoots.forEach(hotBlocks::remove);
-    prunedHotBlockRoots.forEach(hotBlockAndStates::remove);
+    prunedHotBlockRoots
+        .keySet()
+        .forEach(
+            blockRoot -> {
+              hotBlocks.remove(blockRoot);
+              hotBlockAndStates.remove(blockRoot);
+              hotExecutionPayloadAndStates.remove(blockRoot);
+            });
 
     final Optional<FinalizedChainData> finalizedChainData =
         Optional.of(
@@ -264,6 +273,7 @@ class StoreTransactionUpdatesFactory {
         maybeLatestCanonicalBlockRoot,
         maybeCustodyGroupCount,
         spec.isMilestoneSupported(SpecMilestone.DENEB),
-        spec.isMilestoneSupported(SpecMilestone.FULU));
+        spec.isMilestoneSupported(SpecMilestone.FULU),
+        hotExecutionPayloadAndStates);
   }
 }

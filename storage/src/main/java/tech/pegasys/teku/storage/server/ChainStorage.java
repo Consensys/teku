@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -440,7 +440,10 @@ public class ChainStorage
     return SafeFuture.of(
         () -> {
           try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
-              database.streamDataColumnIdentifiers(startSlot, endSlot).limit(limit.longValue())) {
+              database
+                  .streamDataColumnIdentifiers(startSlot, endSlot)
+                  .limit(
+                      limit.isGreaterThan(Long.MAX_VALUE) ? Long.MAX_VALUE : limit.longValue())) {
             return dataColumnIdentifiersStream.toList();
           }
         });
@@ -462,12 +465,17 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Void> onNewSidecar(final DataColumnSidecar sidecar) {
-    return SafeFuture.fromRunnable(() -> database.addSidecar(sidecar));
+  public SafeFuture<Void> onEarliestAvailableDataColumnSlot(final UInt64 slot) {
+    return SafeFuture.fromRunnable(() -> database.setEarliestAvailableDataColumnSlot(slot));
   }
 
   @Override
-  public SafeFuture<Void> onNewNonCanonicalSidecar(final DataColumnSidecar sidecar) {
-    return SafeFuture.fromRunnable(() -> database.addNonCanonicalSidecar(sidecar));
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot() {
+    return SafeFuture.of(database::getEarliestAvailableDataColumnSlot);
+  }
+
+  @Override
+  public SafeFuture<Void> onNewSidecar(final DataColumnSidecar sidecar) {
+    return SafeFuture.fromRunnable(() -> database.addSidecar(sidecar));
   }
 }

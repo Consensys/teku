@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,7 +16,7 @@ package tech.pegasys.teku.storage.server;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.fail;
-import static tech.pegasys.teku.storage.server.VersionedDatabaseFactory.STORAGE_MODE_PATH;
+import static tech.pegasys.teku.storage.server.VersionedDatabaseFactory.STORAGE_MODE_FILENAME;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -56,7 +56,7 @@ class DatabaseStorageModeFileHelperTest {
 
   private Path createDatabaseStorageModeFile(final Path path, final String value) {
     try {
-      return Files.writeString(path.resolve(STORAGE_MODE_PATH), value);
+      return Files.writeString(path.resolve(STORAGE_MODE_FILENAME), value);
     } catch (IOException e) {
       fail(e);
       return null;
