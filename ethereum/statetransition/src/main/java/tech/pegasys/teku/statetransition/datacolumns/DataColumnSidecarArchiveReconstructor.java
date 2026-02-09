@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -27,8 +26,13 @@ public interface DataColumnSidecarArchiveReconstructor extends FinalizedCheckpoi
   DataColumnSidecarArchiveReconstructor NOOP =
       new DataColumnSidecarArchiveReconstructor() {
         @Override
+        public int onRequest() {
+          return 0;
+        }
+
+        @Override
         public SafeFuture<Optional<DataColumnSidecar>> reconstructDataColumnSidecar(
-            final SignedBeaconBlock block, final UInt64 index, final Bytes32 requestHash) {
+            final SignedBeaconBlock block, final UInt64 index, final int requestId) {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
@@ -38,17 +42,24 @@ public interface DataColumnSidecarArchiveReconstructor extends FinalizedCheckpoi
         }
 
         @Override
-        public void onRequestCompleted(final Bytes32 requestHash) {}
+        public void onRequestCompleted(final int requestId) {}
 
         @Override
         public void onNewFinalizedCheckpoint(
             final Checkpoint checkpoint, final boolean fromOptimisticBlock) {}
       };
 
+  /**
+   * Should be called on request start
+   *
+   * @return assigned request id
+   */
+  int onRequest();
+
   SafeFuture<Optional<DataColumnSidecar>> reconstructDataColumnSidecar(
-      SignedBeaconBlock block, UInt64 index, Bytes32 requestHash);
+      SignedBeaconBlock block, UInt64 index, int requestId);
 
   boolean isSidecarPruned(UInt64 slot, UInt64 index);
 
-  void onRequestCompleted(Bytes32 requestHash);
+  void onRequestCompleted(int requestId);
 }

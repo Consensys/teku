@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -139,9 +138,9 @@ public class DataColumnSidecarsByRootMessageHandler
 
     final Set<UInt64> myCustodyColumns =
         new HashSet<>(custodyGroupCountManagerSupplier.get().getCustodyColumnIndices());
-    final Bytes32 messageHash = message.hashTreeRoot();
+    final int messageId = dataColumnSidecarArchiveReconstructor.onRequest();
     responseCallback.alwaysRun(
-        () -> dataColumnSidecarArchiveReconstructor.onRequestCompleted(messageHash));
+        () -> dataColumnSidecarArchiveReconstructor.onRequestCompleted(messageId));
     final Stream<SafeFuture<Boolean>> responseStream =
         message.stream()
             .flatMap(
@@ -153,7 +152,7 @@ public class DataColumnSidecarsByRootMessageHandler
                                 new DataColumnIdentifier(byRootIdentifier.getBlockRoot(), column)))
             .map(
                 dataColumnIdentifier ->
-                    retrieveDataColumnSidecar(dataColumnIdentifier, messageHash)
+                    retrieveDataColumnSidecar(dataColumnIdentifier, messageId)
                         .thenCompose(
                             maybeSidecar ->
                                 validateAndMaybeRespond(
@@ -178,14 +177,14 @@ public class DataColumnSidecarsByRootMessageHandler
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> getArchiveOrNonCanonicalDataColumnSidecar(
-      final DataColumnIdentifier identifier, final Bytes32 messageHash) {
+      final DataColumnIdentifier identifier, final int messageId) {
     return combinedChainDataClient
         .getBlockByBlockRoot(identifier.blockRoot())
         .thenCompose(
             maybeBlock -> {
               if (maybeBlock.isPresent()) {
                 final SignedBeaconBlock block = maybeBlock.get();
-                return getDataColumnSidecar(block, identifier, messageHash);
+                return getDataColumnSidecar(block, identifier, messageId);
               } else {
                 return SafeFuture.completedFuture(Optional.empty());
               }
@@ -193,15 +192,13 @@ public class DataColumnSidecarsByRootMessageHandler
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> getDataColumnSidecar(
-      final SignedBeaconBlock block,
-      final DataColumnIdentifier identifier,
-      final Bytes32 messageHash) {
+      final SignedBeaconBlock block, final DataColumnIdentifier identifier, final int messageId) {
     final boolean isSuperNodePruned =
         dataColumnSidecarArchiveReconstructor.isSidecarPruned(
             block.getSlot(), identifier.columnIndex());
     if (isSuperNodePruned) {
       return dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(
-          block, identifier.columnIndex(), messageHash);
+          block, identifier.columnIndex(), messageId);
     }
     final Optional<ChainHead> chainHead = combinedChainDataClient.getChainHead();
     if (chainHead.isEmpty()) {
@@ -252,7 +249,7 @@ public class DataColumnSidecarsByRootMessageHandler
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> retrieveDataColumnSidecar(
-      final DataColumnIdentifier identifier, final Bytes32 messageHash) {
+      final DataColumnIdentifier identifier, final int messageId) {
     return dataColumnSidecarCustodySupplier
         .get()
         .getCustodyDataColumnSidecarByRoot(identifier)
@@ -263,7 +260,7 @@ public class DataColumnSidecarsByRootMessageHandler
               }
               // Fallback to compacted archive or non-canonical sidecar if the canonical one is not
               // found
-              return getArchiveOrNonCanonicalDataColumnSidecar(identifier, messageHash);
+              return getArchiveOrNonCanonicalDataColumnSidecar(identifier, messageId);
             });
   }
 }

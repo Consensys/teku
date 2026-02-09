@@ -155,8 +155,8 @@ public class DataColumnSidecarsByRangeMessageHandler
       canonicalHotRoots = ImmutableSortedMap.of();
     }
 
-    final Bytes32 messageHash = message.hashTreeRoot();
-    callback.alwaysRun(() -> dataColumnSidecarArchiveReconstructor.onRequestCompleted(messageHash));
+    final int messageId = dataColumnSidecarArchiveReconstructor.onRequest();
+    callback.alwaysRun(() -> dataColumnSidecarArchiveReconstructor.onRequestCompleted(messageId));
     final RequestState initialState =
         new RequestState(
             callbackWithLogging,
@@ -166,7 +166,7 @@ public class DataColumnSidecarsByRangeMessageHandler
             columns,
             canonicalHotRoots,
             finalizedSlot,
-            messageHash);
+            messageId);
 
     final SafeFuture<RequestState> response;
     if (requestedCount == 0 || initialState.isComplete()) {
@@ -223,7 +223,7 @@ public class DataColumnSidecarsByRangeMessageHandler
     private final List<UInt64> columns;
     private final UInt64 finalizedSlot;
     private final Map<UInt64, Bytes32> canonicalHotRoots;
-    private final Bytes32 messageHash;
+    private final int messageId;
     private final boolean maybeSuperNodePruned;
 
     // since our storage stores hot and finalized data columns sidecar on the same "table", this
@@ -239,7 +239,7 @@ public class DataColumnSidecarsByRangeMessageHandler
         final List<UInt64> columns,
         final Map<UInt64, Bytes32> canonicalHotRoots,
         final UInt64 finalizedSlot,
-        final Bytes32 messageHash) {
+        final int messageId) {
       this.callback = callback;
       this.maxRequestDataColumnSidecars = UInt64.valueOf(maxRequestDataColumnSidecars);
       this.startSlot = startSlot;
@@ -247,7 +247,7 @@ public class DataColumnSidecarsByRangeMessageHandler
       this.columns = columns;
       this.finalizedSlot = finalizedSlot;
       this.canonicalHotRoots = canonicalHotRoots;
-      this.messageHash = messageHash;
+      this.messageId = messageId;
       final UInt64 highestIndex =
           columns.stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
       this.maybeSuperNodePruned =
@@ -353,7 +353,7 @@ public class DataColumnSidecarsByRangeMessageHandler
                 }
 
                 return dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(
-                    maybeBlock.get(), columnSlotAndIdentifier.columnIndex(), messageHash);
+                    maybeBlock.get(), columnSlotAndIdentifier.columnIndex(), messageId);
               });
     }
 
