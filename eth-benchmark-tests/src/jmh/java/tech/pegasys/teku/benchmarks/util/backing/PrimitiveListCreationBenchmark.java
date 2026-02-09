@@ -51,8 +51,7 @@ public class PrimitiveListCreationBenchmark {
   @Setup
   public void setup() {
     schema = SszUInt64ListSchema.create(2048);
-    elements =
-        IntStream.range(0, listSize).mapToObj(i -> UInt64.valueOf(100_000L + i)).toList();
+    elements = IntStream.range(0, listSize).mapToObj(i -> UInt64.valueOf(100_000L + i)).toList();
   }
 
   @Benchmark
