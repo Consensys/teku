@@ -38,37 +38,40 @@ import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
+import java.util.function.Supplier;
+
 public class GossipForkSubscriptionsFuluBpo extends GossipForkSubscriptionsFulu {
 
   private final BlobParameters bpo;
 
   public GossipForkSubscriptionsFuluBpo(
-      final Fork fork,
-      final Spec spec,
-      final AsyncRunner asyncRunner,
-      final MetricsSystem metricsSystem,
-      final DiscoveryNetwork<?> discoveryNetwork,
-      final RecentChainData recentChainData,
-      final GossipEncoding gossipEncoding,
-      final OperationProcessor<SignedBeaconBlock> blockProcessor,
-      final OperationProcessor<BlobSidecar> blobSidecarProcessor,
-      final OperationProcessor<ValidatableAttestation> attestationProcessor,
-      final OperationProcessor<ValidatableAttestation> aggregateProcessor,
-      final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
-      final OperationProcessor<ProposerSlashing> proposerSlashingProcessor,
-      final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor,
-      final OperationProcessor<SignedContributionAndProof>
+          final Fork fork,
+          final Spec spec,
+          final AsyncRunner asyncRunner,
+          final MetricsSystem metricsSystem,
+          final DiscoveryNetwork<?> discoveryNetwork,
+          final RecentChainData recentChainData,
+          final GossipEncoding gossipEncoding,
+          final OperationProcessor<SignedBeaconBlock> blockProcessor,
+          final OperationProcessor<BlobSidecar> blobSidecarProcessor,
+          final OperationProcessor<ValidatableAttestation> attestationProcessor,
+          final OperationProcessor<ValidatableAttestation> aggregateProcessor,
+          final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
+          final OperationProcessor<ProposerSlashing> proposerSlashingProcessor,
+          final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor,
+          final OperationProcessor<SignedContributionAndProof>
           signedContributionAndProofOperationProcessor,
-      final OperationProcessor<ValidatableSyncCommitteeMessage>
+          final OperationProcessor<ValidatableSyncCommitteeMessage>
           syncCommitteeMessageOperationProcessor,
-      final OperationProcessor<SignedBlsToExecutionChange>
+          final OperationProcessor<SignedBlsToExecutionChange>
           signedBlsToExecutionChangeOperationProcessor,
-      final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor,
-      final OperationProcessor<ExecutionProof> executionProofOperationProcessor,
-      final DebugDataDumper debugDataDumper,
-      final DasGossipLogger dasGossipLogger,
-      final BlobParameters bpo,
-      final P2PConfig p2PConfig) {
+          final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor,
+          final OperationProcessor<ExecutionProof> executionProofOperationProcessor,
+          final DebugDataDumper debugDataDumper,
+          final DasGossipLogger dasGossipLogger,
+          final BlobParameters bpo,
+          final boolean isExecutionProofTopicEnabled,
+          final Supplier<Boolean> isSuperNodeSupplier){
     super(
         fork,
         spec,
@@ -91,7 +94,8 @@ public class GossipForkSubscriptionsFuluBpo extends GossipForkSubscriptionsFulu 
         debugDataDumper,
         dasGossipLogger,
         executionProofOperationProcessor,
-        p2PConfig);
+        isExecutionProofTopicEnabled,
+        isSuperNodeSupplier);
     this.bpo = bpo;
   }
 

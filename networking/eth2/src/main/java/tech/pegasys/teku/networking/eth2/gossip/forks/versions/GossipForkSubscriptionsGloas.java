@@ -45,6 +45,8 @@ import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
+import java.util.function.Supplier;
+
 public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
 
   private final OperationProcessor<SignedExecutionPayloadEnvelope> executionPayloadProcessor;
@@ -84,7 +86,8 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
       final DebugDataDumper debugDataDumper,
       final DasGossipLogger dasGossipLogger,
       final OperationProcessor<ExecutionProof> executionProcessorOperationProcessor,
-      final P2PConfig p2pConfig) {
+      final boolean isExecutionProofTopicEnabled,
+      final Supplier<Boolean> isSuperNodeSupplier) {
     super(
         fork,
         spec,
@@ -107,7 +110,8 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
         debugDataDumper,
         dasGossipLogger,
         executionProcessorOperationProcessor,
-        p2pConfig);
+        isExecutionProofTopicEnabled,
+        isSuperNodeSupplier);
     this.executionPayloadProcessor = executionPayloadOperationProcessor;
     this.payloadAttestationMessageProcessor = payloadAttestationMessageOperationProcessor;
     this.executionPayloadBidProcessor = executionPayloadBidOperationProcessor;

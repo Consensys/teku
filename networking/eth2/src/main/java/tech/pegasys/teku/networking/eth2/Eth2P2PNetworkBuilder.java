@@ -158,6 +158,7 @@ public class Eth2P2PNetworkBuilder {
   protected DebugDataDumper debugDataDumper;
   private DasGossipLogger dasGossipLogger;
   private DasReqRespLogger dasReqRespLogger;
+  private Supplier<Boolean> isSuperNodeSupplier;
 
   protected Eth2P2PNetworkBuilder() {}
 
@@ -381,7 +382,7 @@ public class Eth2P2PNetworkBuilder {
               gossipedSignedBlsToExecutionChangeProcessor,
               debugDataDumper,
               executionProofOperationProcessor,
-              config);
+              config.isExecutionProofTopicEnabled());
       case FULU ->
           new GossipForkSubscriptionsFulu(
               forkAndSpecMilestone.getFork(),
@@ -405,7 +406,8 @@ public class Eth2P2PNetworkBuilder {
               debugDataDumper,
               dasGossipLogger,
               executionProofOperationProcessor,
-              config);
+              config.isExecutionProofTopicEnabled(),
+              isSuperNodeSupplier);
       case GLOAS ->
           new GossipForkSubscriptionsGloas(
               forkAndSpecMilestone.getFork(),
@@ -432,7 +434,8 @@ public class Eth2P2PNetworkBuilder {
               debugDataDumper,
               dasGossipLogger,
               executionProofOperationProcessor,
-              config);
+              config.isExecutionProofTopicEnabled(),
+                  isSuperNodeSupplier);
     };
   }
 
@@ -466,7 +469,8 @@ public class Eth2P2PNetworkBuilder {
               debugDataDumper,
               dasGossipLogger,
               bpo,
-              config);
+              config.isExecutionProofTopicEnabled(),
+              isSuperNodeSupplier);
       case GLOAS ->
           new GossipForkSubscriptionsGloasBpo(
               forkAndSpecMilestone.getFork(),
@@ -494,7 +498,8 @@ public class Eth2P2PNetworkBuilder {
               debugDataDumper,
               dasGossipLogger,
               bpo,
-              config);
+              config.isExecutionProofTopicEnabled(),
+              isSuperNodeSupplier);
       default ->
           throw new IllegalStateException(
               "BPO is not supported for: " + forkAndSpecMilestone.getSpecMilestone());
@@ -877,6 +882,11 @@ public class Eth2P2PNetworkBuilder {
 
   public Eth2P2PNetworkBuilder reqRespDasLogger(final DasReqRespLogger dasReqRespLogger) {
     this.dasReqRespLogger = dasReqRespLogger;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder isSuperNodeSupplier(final Supplier<Boolean> isSuperNodeSupplier) {
+    this.isSuperNodeSupplier = isSuperNodeSupplier;
     return this;
   }
 }

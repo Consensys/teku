@@ -72,7 +72,7 @@ public class GossipForkSubscriptionsElectra extends GossipForkSubscriptionsDeneb
           signedBlsToExecutionChangeOperationProcessor,
       final DebugDataDumper debugDataDumper,
       final OperationProcessor<ExecutionProof> executionProofOperationProcessor,
-      final P2PConfig p2PConfig) {
+      final boolean isExecutionProofTopicEnabled) {
     super(
         fork,
         spec,
@@ -93,7 +93,7 @@ public class GossipForkSubscriptionsElectra extends GossipForkSubscriptionsDeneb
         signedBlsToExecutionChangeOperationProcessor,
         debugDataDumper);
     this.executionProofOperationProcessor = executionProofOperationProcessor;
-    this.isExecutionProofTopicEnabled = p2PConfig.isExecutionProofTopicEnabled();
+    this.isExecutionProofTopicEnabled = isExecutionProofTopicEnabled;
   }
 
   @Override

@@ -101,6 +101,7 @@ public class GossipForkSubscriptionsGloasTest {
         DebugDataDumper.NOOP,
         DasGossipLogger.NOOP,
         noopOperationProcessor,
-        P2PConfig.builder().build());
+       false,
+            () -> false);
   }
 }

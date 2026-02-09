@@ -18,15 +18,12 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
-import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -49,7 +46,7 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
   private final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor;
   private DataColumnSidecarGossipManager dataColumnSidecarGossipManager;
   public DasGossipLogger dasGossipLogger;
-  private final P2PConfig p2pConfig;
+  private final Supplier<Boolean> isSuperNodeSupplier;
 
   public GossipForkSubscriptionsFulu(
       final Fork fork,
@@ -76,7 +73,8 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
       final DebugDataDumper debugDataDumper,
       final DasGossipLogger dasGossipLogger,
       final OperationProcessor<ExecutionProof> executionProofOperationProcessor,
-      final P2PConfig p2pConfig) {
+      final boolean isExecutionProofTopicEnabled,
+      final Supplier<Boolean> isSuperNodeSupplier) {
     super(
         fork,
         spec,
@@ -97,10 +95,10 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
         signedBlsToExecutionChangeOperationProcessor,
         debugDataDumper,
         executionProofOperationProcessor,
-        p2pConfig);
+        isExecutionProofTopicEnabled);
     this.dataColumnSidecarOperationProcessor = dataColumnSidecarOperationProcessor;
     this.dasGossipLogger = dasGossipLogger;
-    this.p2pConfig = p2pConfig;
+    this.isSuperNodeSupplier = isSuperNodeSupplier;
   }
 
   @Override
@@ -124,7 +122,7 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
 
     this.dataColumnSidecarGossipManager =
         new DataColumnSidecarGossipManager(
-            dataColumnSidecarSubnetSubscriptions, dasGossipLogger, isSuperNode());
+            dataColumnSidecarSubnetSubscriptions, dasGossipLogger, isSuperNodeSupplier);
 
     addGossipManager(dataColumnSidecarGossipManager);
   }
@@ -153,23 +151,5 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
   @Override
   public void unsubscribeFromDataColumnSidecarSubnet(final int subnetId) {
     dataColumnSidecarGossipManager.unsubscribeFromSubnetId(subnetId);
-  }
-
-  private Supplier<Boolean> isSuperNode() {
-    return () -> {
-      if (p2pConfig.isSubscribedToAllCustodySubnetsEnabled()) {
-        return true;
-      }
-
-      final int numberOfColumns =
-          SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
-              .getNumberOfColumns();
-
-      return recentChainData
-          .getStore()
-          .getCustodyGroupCount()
-          .map(count -> count.intValue() == numberOfColumns)
-          .orElse(false);
-    };
   }
 }

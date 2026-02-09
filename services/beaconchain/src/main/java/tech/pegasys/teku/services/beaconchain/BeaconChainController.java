@@ -682,8 +682,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initExecutionPayloadBidManager();
     initExecutionPayloadManager();
     initSyncCommitteePools();
-    initP2PNetwork();
     initCustodyGroupCountManager();
+    initP2PNetwork();
     initDasCustody();
     initDataColumnSidecarELManager();
     initDasSyncPreSampler();
@@ -1924,6 +1924,16 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.P2P))
             .gossipDasLogger(dasGossipLogger)
             .reqRespDasLogger(dasReqRespLogger)
+            .isSuperNodeSupplier(
+                () -> {
+                  if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
+                    return false;
+                  }
+
+                  return MiscHelpersFulu.required(
+                          spec.forMilestone(SpecMilestone.FULU).miscHelpers())
+                      .isSuperNode(custodyGroupCountManager.getCustodyGroupCount());
+                })
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
             .metricsSystem(metricsSystem)
