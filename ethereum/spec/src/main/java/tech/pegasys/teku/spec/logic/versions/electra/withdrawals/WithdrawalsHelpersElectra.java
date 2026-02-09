@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.electra.withdrawals;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
+import com.google.common.base.Preconditions;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -63,10 +64,12 @@ public class WithdrawalsHelpersElectra extends WithdrawalsHelpersCapella {
             withdrawals.size() + specConfigElectra.getMaxPendingPartialsPerWithdrawalsSweep(),
             specConfig.getMaxWithdrawalsPerPayload() - 1);
 
+    Preconditions.checkArgument(withdrawals.size() <= withdrawalsLimit);
+
     for (final PendingPartialWithdrawal withdrawal :
         BeaconStateElectra.required(state).getPendingPartialWithdrawals()) {
       if (withdrawal.getWithdrawableEpoch().isGreaterThan(epoch)
-          || withdrawals.size() == withdrawalsLimit) {
+          || withdrawals.size() >= withdrawalsLimit) {
         break;
       }
       final UInt64 validatorIndex = withdrawal.getValidatorIndex();

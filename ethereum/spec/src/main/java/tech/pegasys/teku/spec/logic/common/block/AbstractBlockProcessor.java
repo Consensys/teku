@@ -165,7 +165,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       }
 
       // Process_block
-      BeaconState postState =
+      final BeaconState postState =
           processUnsignedBlock(
               blockSlotState,
               signedBlock.getMessage(),
@@ -173,7 +173,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
               signatureVerifier,
               payloadExecutor);
 
-      BlockValidationResult blockValidationResult =
+      final BlockValidationResult blockValidationResult =
           validateBlockPostProcessing(
               blockSlotState, signedBlock, postState, indexedAttestationCache, signatureVerifier);
 
@@ -229,8 +229,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final SignedBeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier) {
-    BeaconBlock blockMessage = block.getMessage();
-    BeaconBlockBody blockBody = blockMessage.getBody();
+    final BeaconBlock blockMessage = block.getMessage();
+    final BeaconBlockBody blockBody = blockMessage.getBody();
 
     return BlockValidationResult.allOf(
         () -> verifyBlockSignature(preState, block, signatureVerifier),
