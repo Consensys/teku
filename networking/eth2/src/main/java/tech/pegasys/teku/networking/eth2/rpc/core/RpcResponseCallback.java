@@ -95,7 +95,6 @@ class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback
     }
   }
 
-  // TODO: test me
   @Override
   public void alwaysRun(final Runnable runnable) {
     finishedRunnables.add(runnable);
