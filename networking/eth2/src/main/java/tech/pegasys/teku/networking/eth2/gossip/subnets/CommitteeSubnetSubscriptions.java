@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
+import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import java.util.Optional;
@@ -78,6 +79,11 @@ abstract class CommitteeSubnetSubscriptions {
     }
     subscribed = false;
     subnetIdToSubscription.values().forEach(RequestedSubscription::unsubscribe);
+  }
+
+  @VisibleForTesting
+  public Eth2TopicHandler<?> getSubscribedTopicHandler(final int subnetId) {
+    return subnetIdToSubscription.get(subnetId).topicHandler;
   }
 
   private class RequestedSubscription {

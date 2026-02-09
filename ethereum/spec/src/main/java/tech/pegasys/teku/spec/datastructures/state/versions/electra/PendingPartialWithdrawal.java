@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -50,18 +50,6 @@ public class PendingPartialWithdrawal
       return new PendingPartialWithdrawal(this, validatorIndex, amount, withdrawableEpoch);
     }
 
-    public SszUInt64 getValidatorIndexSchema() {
-      return (SszUInt64) getFieldSchema0();
-    }
-
-    public SszUInt64 getAmountSchema() {
-      return (SszUInt64) getFieldSchema1();
-    }
-
-    public SszUInt64 getWithdrawableEpochSchema() {
-      return (SszUInt64) getFieldSchema2();
-    }
-
     @Override
     public PendingPartialWithdrawal createFromBackingNode(final TreeNode node) {
       return new PendingPartialWithdrawal(this, node);
@@ -74,8 +62,8 @@ public class PendingPartialWithdrawal
     super(type, backingNode);
   }
 
-  public int getValidatorIndex() {
-    return ((SszUInt64) get(0)).get().intValue();
+  public UInt64 getValidatorIndex() {
+    return ((SszUInt64) get(0)).get();
   }
 
   public UInt64 getAmount() {

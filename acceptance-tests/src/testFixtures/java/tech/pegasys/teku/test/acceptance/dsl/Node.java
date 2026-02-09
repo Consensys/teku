@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,6 +16,7 @@ package tech.pegasys.teku.test.acceptance.dsl;
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withAnyLabels;
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withNameEqualsTo;
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withValueEqualTo;
@@ -32,6 +33,9 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -161,6 +165,29 @@ public abstract class Node {
   public void waitForLogMessageEndingWith(final String filter) {
     waitFor(
         () -> assertThat(getFilteredOutputEndingWith(filter)).isNotEmpty(), 2, TimeUnit.MINUTES);
+  }
+
+  public void waitForAllInAnyOrder(final Runnable... runnables) throws InterruptedException {
+    try (final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+      final List<Runnable> runnableList = List.of(runnables);
+      LOG.debug("Waiting for {} runnables {}", runnableList.size(), runnableList);
+      final CountDownLatch latch = new CountDownLatch(runnableList.size());
+      for (int i = 0; i < runnableList.size(); ++i) {
+        final int currentIndex = i;
+        executor.execute(
+            () -> {
+              final Runnable runnable = runnableList.get(currentIndex);
+              runnable.run();
+              latch.countDown();
+              LOG.debug("Runnable #{} completed: {}", currentIndex, runnable);
+            });
+      }
+      assertTrue(
+          latch.await(2, TimeUnit.MINUTES),
+          () ->
+              String.format(
+                  "%d/%d runnables did not complete", latch.getCount(), runnableList.size()));
+    }
   }
 
   protected void waitForMetricWithValue(final String metricName, final double value) {

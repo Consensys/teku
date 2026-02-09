@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -122,11 +122,11 @@ public class AttestationUtilPhase0 extends AttestationUtil {
 
   private UInt64 minimumBroadcastTimeMillis(
       final UInt64 attestationSlot, final UInt64 genesisTime) {
-    final UInt64 lastAllowedTime =
-        genesisTime.plus(attestationSlot.times(specConfig.getSecondsPerSlot()));
-    final UInt64 lastAllowedTimeMillis = secondsToMillis(lastAllowedTime);
-    return lastAllowedTimeMillis.isGreaterThanOrEqualTo(specConfig.getMaximumGossipClockDisparity())
-        ? lastAllowedTimeMillis.minus(specConfig.getMaximumGossipClockDisparity())
+    final UInt64 genesisTimeMillis = secondsToMillis(genesisTime);
+    final UInt64 attestationSlotTimeMillis =
+        miscHelpers.computeTimeMillisAtSlot(genesisTimeMillis, attestationSlot);
+    return attestationSlotTimeMillis.isGreaterThan(specConfig.getMaximumGossipClockDisparity())
+        ? attestationSlotTimeMillis.minus(specConfig.getMaximumGossipClockDisparity())
         : ZERO;
   }
 }

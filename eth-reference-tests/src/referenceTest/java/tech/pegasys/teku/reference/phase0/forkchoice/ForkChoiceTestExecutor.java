@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -170,7 +170,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             // using a const for the custody group count here, the test doesn't care
             // and fetching from the config would break when not in fulu
             DasCustodyStand.createCustodyGroupCountManager(4, 8),
-            recentChainData);
+            recentChainData,
+            false);
     final StubDataColumnSidecarManager dataColumnSidecarManager =
         new StubDataColumnSidecarManager(spec, recentChainData, dasSampler);
     // forkChoiceLateBlockReorgEnabled is true here always because this is the reference test
@@ -444,7 +445,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     // a sync where the attestation weighting is almost certainly useless.
     final BeaconState preState =
         safeJoin(
-                recentChainData.retrieveStateAtSlot(
+                recentChainData.retrieveBlockState(
                     new SlotAndBlockRoot(block.getSlot(), block.getParentRoot())))
             .orElseThrow();
     final VoteUpdater voteUpdater = recentChainData.startVoteUpdate();

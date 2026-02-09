@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -2359,6 +2359,18 @@ public class DatabaseTest {
     final UInt64 incompleteSlot = UInt64.valueOf(123);
     database.setFirstCustodyIncompleteSlot(UInt64.valueOf(123));
     assertThat(database.getFirstCustodyIncompleteSlot()).contains(incompleteSlot);
+  }
+
+  @TestTemplate
+  public void setEarliestAvailableDataColumnSlot_isOperative(final DatabaseContext context)
+      throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+    assertThat(database.getEarliestAvailableDataColumnSlot().isEmpty()).isTrue();
+
+    final UInt64 earliestSlot = UInt64.valueOf(123);
+    database.setEarliestAvailableDataColumnSlot(UInt64.valueOf(123));
+    assertThat(database.getEarliestAvailableDataColumnSlot()).contains(earliestSlot);
   }
 
   @TestTemplate

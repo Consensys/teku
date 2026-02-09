@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -34,7 +34,7 @@ import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
 
 public class AttestationDutyScheduler extends AbstractDutyScheduler {
   private static final Logger LOG = LogManager.getLogger();
-  static final int LOOKAHEAD_EPOCHS = 1;
+  private static final int LOOKAHEAD_EPOCHS = 1;
 
   private final AtomicInteger nextAttestationSlot = new AtomicInteger();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -163,10 +163,7 @@ public class ChainBuilder {
     executionPayloads.putAll(existingExecutionPayloads);
     existingExecutionPayloads
         .values()
-        .forEach(
-            e ->
-                executionPayloadsByHash.put(
-                    e.executionPayload().getMessage().getBeaconBlockRoot(), e));
+        .forEach(e -> executionPayloadsByHash.put(e.executionPayload().getBeaconBlockRoot(), e));
   }
 
   public static ChainBuilder create(final Spec spec) {
@@ -195,6 +192,20 @@ public class ChainBuilder {
   public Optional<SignedExecutionPayloadEnvelope> getExecutionPayload(final Bytes32 blockRoot) {
     return Optional.ofNullable(executionPayloadsByHash.get(blockRoot))
         .map(SignedExecutionPayloadAndState::executionPayload);
+  }
+
+  public List<SignedExecutionPayloadEnvelope> getExecutionPayloads(
+      final UInt64 startSlot, final UInt64 count) {
+    return executionPayloads.values().stream()
+        .filter(
+            signedExecutionPayloadAndState -> {
+              final UInt64 slot =
+                  signedExecutionPayloadAndState.executionPayload().getMessage().getSlot();
+              return slot.isGreaterThanOrEqualTo(startSlot)
+                  && slot.isLessThan(startSlot.plus(count));
+            })
+        .map(SignedExecutionPayloadAndState::executionPayload)
+        .toList();
   }
 
   public List<BlobSidecar> getBlobSidecars(final Bytes32 blockRoot) {
@@ -304,6 +315,11 @@ public class ChainBuilder {
   }
 
   public Stream<SignedExecutionPayloadAndState> streamExecutionPayloadsAndStates(
+      final UInt64 fromSlot) {
+    return streamExecutionPayloadsAndStates(fromSlot, getLatestSlot());
+  }
+
+  public Stream<SignedExecutionPayloadAndState> streamExecutionPayloadsAndStates(
       final long fromSlot, final long toSlot) {
     return streamExecutionPayloadsAndStates(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot));
   }
@@ -363,12 +379,13 @@ public class ChainBuilder {
     return resultToState(getBlockAndStateAtSlot(slot));
   }
 
-  public SignedExecutionPayloadAndState getExecutionPayloadAndStateAtSlot(final UInt64 slot) {
-    return executionPayloads.get(slot);
+  public Optional<SignedExecutionPayloadAndState> getExecutionPayloadAndStateAtSlot(
+      final UInt64 slot) {
+    return Optional.ofNullable(executionPayloads.get(slot));
   }
 
-  public BeaconState getExecutionPayloadStateAtSlot(final UInt64 slot) {
-    return resultToState(getExecutionPayloadAndStateAtSlot(slot));
+  public Optional<BeaconState> getExecutionPayloadStateAtSlot(final UInt64 slot) {
+    return getExecutionPayloadAndStateAtSlot(slot).map(SignedExecutionPayloadAndState::state);
   }
 
   public SignedBlockAndState getLatestBlockAndStateAtSlot(final long slot) {
@@ -673,14 +690,14 @@ public class ChainBuilder {
     executionPayloads.put(
         executionPayload.executionPayload().getMessage().getSlot(), executionPayload);
     executionPayloadsByHash.put(
-        executionPayload.executionPayload().getMessage().getBeaconBlockRoot(), executionPayload);
+        executionPayload.executionPayload().getBeaconBlockRoot(), executionPayload);
   }
 
   private SignedBlockAndState appendNewBlockToChain(final UInt64 slot, final BlockOptions options) {
     final SignedBlockAndState latestBlockAndState = getLatestBlockAndState();
     final BeaconState preState =
         // build on top of the execution payload state if an execution payload has been processed
-        Optional.ofNullable(getExecutionPayloadStateAtSlot(latestBlockAndState.getSlot()))
+        getExecutionPayloadStateAtSlot(latestBlockAndState.getSlot())
             .orElse(latestBlockAndState.getState());
     final Bytes32 parentRoot = latestBlockAndState.getBlock().getMessage().hashTreeRoot();
 
@@ -749,7 +766,6 @@ public class ChainBuilder {
                 executionPayloadProposalTestUtil.createExecutionPayload(
                     signer,
                     slot,
-                    UInt64.valueOf(proposerIndex),
                     nextBlockAndState.toUnsigned(),
                     executionPayloadProposalData.get(),
                     options.isSkipStateTransitionEnabled()));
@@ -1015,10 +1031,6 @@ public class ChainBuilder {
 
   private SignedBeaconBlock resultToBlock(final SignedBlockAndState result) {
     return Optional.ofNullable(result).map(SignedBlockAndState::getBlock).orElse(null);
-  }
-
-  private BeaconState resultToState(final SignedExecutionPayloadAndState result) {
-    return Optional.ofNullable(result).map(SignedExecutionPayloadAndState::state).orElse(null);
   }
 
   public SignedContributionAndProofTestBuilder createValidSignedContributionAndProofBuilder() {

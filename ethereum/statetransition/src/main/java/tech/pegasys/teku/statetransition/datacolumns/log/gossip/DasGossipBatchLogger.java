@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -24,7 +24,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -90,9 +89,7 @@ public class DasGossipBatchLogger implements DasGossipLogger {
         events.stream().collect(Collectors.groupingBy(e -> e.validationResult().code()));
     eventsByValidateCode.forEach(
         (validationCode, codeEvents) -> {
-          Level level = validationCode == ValidationResultCode.REJECT ? Level.INFO : Level.DEBUG;
-          LOG.log(
-              level,
+          LOG.debug(
               "Received {} data columns (validation result: {}) by gossip {} for block {}: {}",
               codeEvents.size(),
               validationCode,
@@ -200,20 +197,20 @@ public class DasGossipBatchLogger implements DasGossipLogger {
         + " ago";
   }
 
-  private boolean needToLogEvent(final boolean isSevereEvent) {
-    return LOG.isDebugEnabled() || (isSevereEvent && LOG.isInfoEnabled());
+  private boolean needToLogEvent() {
+    return LOG.isDebugEnabled();
   }
 
   @Override
   public synchronized void onReceive(
       final DataColumnSidecar sidecar, final InternalValidationResult validationResult) {
-    if (needToLogEvent(validationResult.isReject())) {
-      LOG.debug(
-          "DataColumnSidecar rejected: {}, commitments: {}, proofs: {}, reason: {}",
-          sidecar.toLogString(),
-          sidecar.getKzgCommitments(),
-          sidecar.getKzgProofs(),
-          validationResult.getDescription().orElse("<no reason>"));
+    LOG.trace(
+        "DataColumnSidecar received: {}, commitments: {}, proofs: {}, reason: {}",
+        sidecar::toLogString,
+        sidecar::getKzgCommitments,
+        sidecar::getKzgProofs,
+        () -> validationResult.getDescription().orElse("<no reason>"));
+    if (needToLogEvent()) {
       events.add(
           new ReceiveEvent(timeProvider.getTimeInMillis().longValue(), sidecar, validationResult));
     }
@@ -222,21 +219,21 @@ public class DasGossipBatchLogger implements DasGossipLogger {
   @Override
   public synchronized void onPublish(
       final DataColumnSidecar sidecar, final Optional<Throwable> result) {
-    if (needToLogEvent(result.isPresent())) {
+    if (needToLogEvent()) {
       events.add(new PublishEvent(timeProvider.getTimeInMillis().longValue(), sidecar, result));
     }
   }
 
   @Override
   public void onDataColumnSubnetSubscribe(final int subnetId) {
-    if (needToLogEvent(false)) {
+    if (needToLogEvent()) {
       events.add(new SubscribeEvent(timeProvider.getTimeInMillis().longValue(), subnetId));
     }
   }
 
   @Override
   public void onDataColumnSubnetUnsubscribe(final int subnetId) {
-    if (needToLogEvent(false)) {
+    if (needToLogEvent()) {
       events.add(new UnsubscribeEvent(timeProvider.getTimeInMillis().longValue(), subnetId));
     }
   }

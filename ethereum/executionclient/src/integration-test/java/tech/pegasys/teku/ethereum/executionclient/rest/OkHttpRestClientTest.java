@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -120,7 +120,8 @@ class OkHttpRestClientTest {
   void getsResponseAsyncIgnoringResponseBody() throws InterruptedException {
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
-    final SafeFuture<Response<Void>> responseFuture = underTest.getAsync(TEST_PATH, TEST_TIMEOUT);
+    final SafeFuture<Response<Void>> responseFuture =
+        underTest.getAsync(TEST_PATH, TEST_HEADERS, TEST_TIMEOUT);
 
     assertThat(responseFuture)
         .succeedsWithin(Duration.ofSeconds(1))
@@ -142,7 +143,7 @@ class OkHttpRestClientTest {
         new MockResponse().setResponseCode(200).setHeadersDelay(1, TimeUnit.SECONDS));
 
     final SafeFuture<Response<Void>> responseFuture =
-        underTest.getAsync(TEST_PATH, Duration.ofMillis(100));
+        underTest.getAsync(TEST_PATH, TEST_HEADERS, Duration.ofMillis(100));
 
     assertThat(responseFuture)
         .failsWithin(Duration.ofSeconds(1))

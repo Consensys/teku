@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,7 +18,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +35,7 @@ class DataColumnSamplingTrackerTest {
   private static final RemoteOrigin MOCK_ORIGIN = mock(RemoteOrigin.class);
   private static final List<UInt64> SAMPLING_REQUIREMENT =
       List.of(UInt64.valueOf(5), UInt64.valueOf(10), UInt64.valueOf(15));
+  private static final int HALF_COLUMN_COUNT = 64;
 
   private final CustodyGroupCountManager custodyGroupCountManager =
       mock(CustodyGroupCountManager.class);
@@ -43,7 +46,9 @@ class DataColumnSamplingTrackerTest {
   void setUp() {
     when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(SAMPLING_REQUIREMENT);
 
-    tracker = DataColumnSamplingTracker.create(SLOT, BLOCK_ROOT, custodyGroupCountManager);
+    tracker =
+        DataColumnSamplingTracker.create(
+            SLOT, BLOCK_ROOT, custodyGroupCountManager, Optional.of(HALF_COLUMN_COUNT));
   }
 
   @Test
@@ -53,7 +58,8 @@ class DataColumnSamplingTrackerTest {
     assertThat(tracker.samplingRequirement()).isEqualTo(SAMPLING_REQUIREMENT);
     assertThat(tracker.missingColumns()).containsExactlyInAnyOrderElementsOf(SAMPLING_REQUIREMENT);
     assertThat(tracker.completionFuture()).isNotDone();
-    assertThat(tracker.rpcFetchScheduled().get()).isFalse();
+    assertThat(tracker.fullySampled()).isFalse();
+    assertThat(tracker.rpcFetchInProgress().get()).isFalse();
   }
 
   @Test
@@ -72,7 +78,7 @@ class DataColumnSamplingTrackerTest {
   }
 
   @Test
-  void add_shouldCompleteFutureWhenLastColumnIsAdded()
+  void add_shouldCompleteFetchFutureWhenLastColumnIsAdded()
       throws ExecutionException, InterruptedException {
     for (int i = 0; i < SAMPLING_REQUIREMENT.size() - 1; i++) {
       final UInt64 index = SAMPLING_REQUIREMENT.get(i);
@@ -90,6 +96,65 @@ class DataColumnSamplingTrackerTest {
     assertThat(tracker.missingColumns()).isEmpty();
     assertThat(tracker.completionFuture()).isCompleted();
     assertThat(tracker.completionFuture().get()).isEqualTo(SAMPLING_REQUIREMENT);
+    assertThat(tracker.fullySampled()).isTrue();
+  }
+
+  @Test
+  void add_shouldCompleteEarly_whenHalfColumnsSamplingCompletionIsSet() {
+    final List<UInt64> samplingRequirement =
+        Stream.iterate(UInt64.ZERO, UInt64::increment).limit(128).toList();
+    when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(samplingRequirement);
+    tracker =
+        DataColumnSamplingTracker.create(
+            SLOT, BLOCK_ROOT, custodyGroupCountManager, Optional.of(HALF_COLUMN_COUNT));
+
+    for (int i = 0; i < HALF_COLUMN_COUNT - 1; i++) {
+      tracker.add(
+          new DataColumnSlotAndIdentifier(SLOT, BLOCK_ROOT, UInt64.valueOf(i)), MOCK_ORIGIN);
+    }
+    assertThat(tracker.missingColumns()).hasSize(HALF_COLUMN_COUNT + 1);
+    assertThat(tracker.completionFuture()).isNotDone();
+    assertThat(tracker.fullySampled()).isFalse();
+
+    tracker.add(
+        new DataColumnSlotAndIdentifier(SLOT, BLOCK_ROOT, UInt64.valueOf(HALF_COLUMN_COUNT - 1)),
+        MOCK_ORIGIN);
+    assertThat(tracker.missingColumns()).hasSize(HALF_COLUMN_COUNT);
+    assertThat(tracker.completionFuture()).isDone();
+    assertThat(tracker.fullySampled()).isFalse();
+
+    for (int i = HALF_COLUMN_COUNT; i < HALF_COLUMN_COUNT * 2; i++) {
+      tracker.add(
+          new DataColumnSlotAndIdentifier(SLOT, BLOCK_ROOT, UInt64.valueOf(i)), MOCK_ORIGIN);
+    }
+    assertThat(tracker.missingColumns()).isEmpty();
+    assertThat(tracker.completionFuture()).isDone();
+  }
+
+  @Test
+  void add_shouldNotCompleteEarly_whenHalfColumnsSamplingCompletionDisabled() {
+    final List<UInt64> samplingRequirement =
+        Stream.iterate(UInt64.ZERO, UInt64::increment).limit(128).toList();
+    when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(samplingRequirement);
+    tracker =
+        DataColumnSamplingTracker.create(
+            SLOT, BLOCK_ROOT, custodyGroupCountManager, Optional.empty());
+
+    for (int i = 0; i < HALF_COLUMN_COUNT * 2 - 1; i++) {
+      tracker.add(
+          new DataColumnSlotAndIdentifier(SLOT, BLOCK_ROOT, UInt64.valueOf(i)), MOCK_ORIGIN);
+    }
+    assertThat(tracker.missingColumns()).hasSize(1);
+    assertThat(tracker.completionFuture()).isNotDone();
+    assertThat(tracker.fullySampled()).isFalse();
+
+    tracker.add(
+        new DataColumnSlotAndIdentifier(
+            SLOT, BLOCK_ROOT, UInt64.valueOf(HALF_COLUMN_COUNT * 2 - 1)),
+        MOCK_ORIGIN);
+    assertThat(tracker.missingColumns()).isEmpty();
+    assertThat(tracker.completionFuture()).isDone();
+    assertThat(tracker.fullySampled()).isTrue();
   }
 
   @Test

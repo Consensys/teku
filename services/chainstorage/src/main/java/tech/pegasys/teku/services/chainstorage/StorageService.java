@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -103,13 +103,21 @@ public class StorageService extends Service implements StorageServiceFacade {
                       serviceConfig.getDataDirLayout().getBeaconDataDirectory(),
                       config,
                       maybeNetwork);
+              if (config.isForceClearDb()) {
+                LOG.warn(
+                    "Force clear database flag is set. Deleting all beacon chain database files. "
+                        + "Validator slashing protection data will be preserved.");
+                final BeaconDatabaseReset databaseReset = new BeaconDatabaseReset();
+                databaseReset.clearBeaconDatabase(serviceConfig);
+              }
               try {
                 database = dbFactory.createDatabase();
               } catch (EphemeryException e) {
-                final EphemeryDatabaseReset ephemeryDatabaseReset = new EphemeryDatabaseReset();
+                final BeaconDatabaseReset beaconDatabaseReset = new BeaconDatabaseReset();
                 LOG.warn(
                     "Ephemery network deposit contract id has updated, resetting the stored database and slashing protection data.");
-                database = ephemeryDatabaseReset.resetDatabaseAndCreate(serviceConfig, dbFactory);
+                database =
+                    beaconDatabaseReset.resetStorageForEphemeryAndCreate(serviceConfig, dbFactory);
               }
 
               final SettableLabelledGauge pruningTimingsLabelledGauge =

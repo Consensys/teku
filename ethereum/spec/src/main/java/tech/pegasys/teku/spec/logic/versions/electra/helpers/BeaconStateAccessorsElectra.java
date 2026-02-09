@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -71,7 +71,7 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
   public UInt64 getPendingBalanceToWithdraw(
       final BeaconStateElectra state, final int validatorIndex) {
     return state.getPendingPartialWithdrawals().stream()
-        .filter(withdrawal -> withdrawal.getValidatorIndex() == validatorIndex)
+        .filter(withdrawal -> withdrawal.getValidatorIndex().intValue() == validatorIndex)
         .map(PendingPartialWithdrawal::getAmount)
         .reduce(UInt64.ZERO, UInt64::plus);
   }

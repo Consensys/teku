@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -93,7 +94,7 @@ class ProposersDataManagerTest {
     when(chainHead.getSlot()).thenReturn(UInt64.ONE);
     when(chainHead.getState()).thenReturn(SafeFuture.completedFuture(mock(BeaconState.class)));
 
-    when(recentChainData.retrieveStateAtSlot(any()))
+    when(recentChainData.retrieveBlockState(any(SlotAndBlockRoot.class)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(mock(BeaconState.class))));
     when(recentChainData.getChainHead()).thenReturn(Optional.of(chainHead));
   }
@@ -127,7 +128,7 @@ class ProposersDataManagerTest {
     manager.updatePreparedProposers(proposers, UInt64.ONE);
 
     assertThat(manager.isBlockProposerConnected(UInt64.ONE)).isCompletedWithValue(false);
-    verify(recentChainData, never()).retrieveStateAtSlot(any());
+    verify(recentChainData, never()).retrieveBlockState(any(SlotAndBlockRoot.class));
   }
 
   @TestTemplate
@@ -136,7 +137,7 @@ class ProposersDataManagerTest {
     manager.updatePreparedProposers(proposers, UInt64.ONE);
 
     assertThat(manager.isBlockProposerConnected(UInt64.ONE)).isCompletedWithValue(true);
-    verify(recentChainData, never()).retrieveStateAtSlot(any());
+    verify(recentChainData, never()).retrieveBlockState(any(SlotAndBlockRoot.class));
   }
 
   @TestTemplate
@@ -145,7 +146,7 @@ class ProposersDataManagerTest {
     manager.updatePreparedProposers(proposers, UInt64.ONE);
 
     assertThat(manager.isBlockProposerConnected(UInt64.valueOf(10))).isCompletedWithValue(false);
-    verify(recentChainData).retrieveStateAtSlot(any());
+    verify(recentChainData).retrieveBlockState(any(SlotAndBlockRoot.class));
   }
 
   @TestTemplate
@@ -154,6 +155,6 @@ class ProposersDataManagerTest {
     manager.updatePreparedProposers(proposers, UInt64.ONE);
 
     assertThat(manager.isBlockProposerConnected(UInt64.valueOf(10))).isCompletedWithValue(true);
-    verify(recentChainData).retrieveStateAtSlot(any());
+    verify(recentChainData).retrieveBlockState(any(SlotAndBlockRoot.class));
   }
 }

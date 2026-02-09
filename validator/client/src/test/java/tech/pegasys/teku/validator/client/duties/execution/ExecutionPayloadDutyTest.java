@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
+import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.Validator;
 
@@ -78,7 +79,11 @@ class ExecutionPayloadDutyTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(signedExecutionPayload.getMessage())));
     when(signer.signExecutionPayloadEnvelope(signedExecutionPayload.getMessage(), fork))
         .thenReturn(SafeFuture.completedFuture(signedExecutionPayload.getSignature()));
-    when(validatorApiChannel.publishSignedExecutionPayload(any())).thenReturn(SafeFuture.COMPLETE);
+    when(validatorApiChannel.publishSignedExecutionPayload(any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                PublishSignedExecutionPayloadResult.success(
+                    signedExecutionPayload.getBeaconBlockRoot())));
 
     duty.onSelfBuiltBidIncludedInBlock(validator, fork, bid);
 
@@ -97,7 +102,7 @@ class ExecutionPayloadDutyTest {
         .logExecutionPayloadDuty(
             eq(signedExecutionPayload.getMessage().getSlot()),
             eq(signedExecutionPayload.getMessage().getBuilderIndex()),
-            eq(signedExecutionPayload.getMessage().getBeaconBlockRoot()),
+            eq(signedExecutionPayload.getBeaconBlockRoot()),
             any());
   }
 

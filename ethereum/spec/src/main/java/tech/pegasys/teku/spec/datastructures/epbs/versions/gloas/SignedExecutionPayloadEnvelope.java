@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
@@ -51,6 +52,10 @@ public class SignedExecutionPayloadEnvelope
 
   public UInt64 getSlot() {
     return getMessage().getSlot();
+  }
+
+  public Bytes32 getBeaconBlockRoot() {
+    return getMessage().getBeaconBlockRoot();
   }
 
   public SlotAndBlockRoot getSlotAndBlockRoot() {

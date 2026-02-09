@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -99,6 +99,14 @@ public interface ReadOnlyStore extends TimeProvider {
   Optional<BeaconState> getBlockStateIfAvailable(Bytes32 blockRoot);
 
   /**
+   * Returns an execution payload state only if it is immediately available (not pruned).
+   *
+   * @param blockRoot The block root corresponding to the execution payload state to retrieve
+   * @return The execution payload state if available.
+   */
+  Optional<BeaconState> getExecutionPayloadStateIfAvailable(Bytes32 blockRoot);
+
+  /**
    * Returns a block only if it is immediately available (not pruned).
    *
    * @param blockRoot The block root of the block to retrieve
@@ -120,9 +128,12 @@ public interface ReadOnlyStore extends TimeProvider {
 
   SafeFuture<Optional<BeaconState>> retrieveBlockState(Bytes32 blockRoot);
 
-  SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint);
+  SafeFuture<Optional<BeaconState>> retrieveBlockState(SlotAndBlockRoot slotAndBlockRoot);
 
-  SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(SlotAndBlockRoot checkpoint);
+  SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(
+      SlotAndBlockRoot slotAndBlockRoot);
+
+  SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint);
 
   SafeFuture<Optional<UInt64>> retrieveEarliestBlobSidecarSlot();
 

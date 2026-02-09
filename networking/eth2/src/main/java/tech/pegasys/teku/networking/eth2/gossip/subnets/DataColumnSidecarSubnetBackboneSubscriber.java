@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -74,7 +74,7 @@ public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChan
         .ifPresent(
             miscHelpersFulu -> {
               LOG.debug(
-                  "Sampling group count for epoch {}:  {}",
+                  "Sampling group count for epoch {}: {}",
                   epoch,
                   custodyGroupCountManager.getSamplingGroupCount());
               final List<UInt64> subnets =

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -115,7 +115,6 @@ abstract class AggregatingAttestationPoolTest {
                   spec.getGenesisSpec().getConfig().getMaxCommitteesPerSlot()));
     }
 
-    when(forkChecker.areAttestationsFromCorrectFork(any())).thenReturn(true);
     when(forkChecker.areAttestationsFromCorrectForkV2(any())).thenReturn(true);
 
     when(mockSpec.getPreviousEpochAttestationCapacity(any())).thenReturn(Integer.MAX_VALUE);
@@ -587,17 +586,10 @@ abstract class AggregatingAttestationPoolTest {
     addAttestationFromValidators(attestationData1, 1, 2, 3);
     Attestation attestation2 = addAttestationFromValidators(attestationData2, 4, 5);
 
-    if (aggregatingPool instanceof AggregatingAttestationPoolV2) {
-      when(forkChecker.areAttestationsFromCorrectForkV2(any())).thenReturn(false);
-      when(forkChecker.areAttestationsFromCorrectForkV2(
-              ArgumentMatchers.argThat(arg -> arg.getAttestationData().equals(attestationData2))))
-          .thenReturn(true);
-    } else {
-      when(forkChecker.areAttestationsFromCorrectFork(any())).thenReturn(false);
-      when(forkChecker.areAttestationsFromCorrectFork(
-              ArgumentMatchers.argThat(arg -> arg.getAttestationData().equals(attestationData2))))
-          .thenReturn(true);
-    }
+    when(forkChecker.areAttestationsFromCorrectForkV2(any())).thenReturn(false);
+    when(forkChecker.areAttestationsFromCorrectForkV2(
+            ArgumentMatchers.argThat(arg -> arg.getAttestationData().equals(attestationData2))))
+        .thenReturn(true);
 
     final BeaconState state = dataStructureUtil.randomBeaconState(ONE);
     assertThat(aggregatingPool.getAttestationsForBlock(state, forkChecker))

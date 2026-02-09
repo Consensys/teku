@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -55,8 +56,8 @@ import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAcces
 
 @SuppressWarnings({"FutureReturnValueIgnored"})
 public class DataColumnSidecarCustodyImplTest {
-
-  final Spec spec = TestSpecFactory.createMinimalFulu();
+  static final int FULU_ACTIVATION_SLOT = 8;
+  final Spec spec = TestSpecFactory.createMinimalWithFuluForkEpoch(UInt64.ONE);
   final DataColumnSidecarDB db = new DataColumnSidecarDBStub();
   final DataColumnSidecarDbAccessor dbAccessor =
       DataColumnSidecarDbAccessor.builder(db).spec(spec).build();
@@ -75,11 +76,13 @@ public class DataColumnSidecarCustodyImplTest {
 
   public static Stream<Arguments> minCustodyScenarios() {
     return Stream.of(
-        Arguments.of(0, 0),
-        Arguments.of(32768, 0),
-        Arguments.of(32765, 0),
-        Arguments.of(32776, 8),
-        Arguments.of(32784, 16));
+        Arguments.of(0, Optional.empty()), // pre fulu
+        Arguments.of(32768 + FULU_ACTIVATION_SLOT, Optional.of(ZERO.plus(FULU_ACTIVATION_SLOT))),
+        Arguments.of(32765 + FULU_ACTIVATION_SLOT, Optional.of(ZERO.plus(FULU_ACTIVATION_SLOT))),
+        Arguments.of(
+            32776 + FULU_ACTIVATION_SLOT, Optional.of(UInt64.valueOf(8 + FULU_ACTIVATION_SLOT))),
+        Arguments.of(
+            32784 + FULU_ACTIVATION_SLOT, Optional.of(UInt64.valueOf(16 + FULU_ACTIVATION_SLOT))));
   }
 
   @BeforeEach
@@ -142,30 +145,44 @@ public class DataColumnSidecarCustodyImplTest {
     custody.onSlot(UInt64.valueOf(1));
     assertThat(custody.getTotalCustodyGroupCount()).isEqualTo(groupCount);
     verifyNoInteractions(custodyGroupCountManager);
+    assertThat(dbAccessor.getFirstCustodyIncompleteSlot()).isCompletedWithValue(Optional.empty());
   }
 
   @Test
   public void onSlot_checksOnEpochBoundarySlot() {
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(groupCount + 3);
-    custody.onSlot(UInt64.valueOf(8));
+    custody.onSlot(UInt64.valueOf(FULU_ACTIVATION_SLOT));
     assertThat(custody.getTotalCustodyGroupCount()).isEqualTo(groupCount + 3);
     verify(custodyGroupCountManager).getCustodyGroupCount();
+    assertThat(dbAccessor.getFirstCustodyIncompleteSlot())
+        .isCompletedWithValue(Optional.of(UInt64.valueOf(8)));
   }
 
   @Test
   public void onNewFinalizedCheckpoint_noFinalizedColumnsAvailable() {
+    custody.onSlot(UInt64.valueOf(FULU_ACTIVATION_SLOT));
+    final SafeFuture<Void> future = custody.advanceFirstIncompleteSlot(UInt64.valueOf(2));
+    assertThat(future).isCompleted();
+    // if epoch 2 is final, then slots 0-16 are 'final' and slot 17 is the first non final
+    assertThat(dbAccessor.getFirstCustodyIncompleteSlot())
+        .isCompletedWithValue(Optional.of(UInt64.valueOf(17)));
+  }
+
+  @Test
+  public void onNewFinalizedCheckpoint_doesNothingPreFulu() {
+    custody.onSlot(UInt64.valueOf(FULU_ACTIVATION_SLOT - 1));
     final SafeFuture<Void> future = custody.advanceFirstIncompleteSlot(UInt64.valueOf(2));
     assertThat(future).isCompleted();
     // if epoch 2 is final, then slots 0-23 are 'final' and slot 24 is the first non final
-    assertThat(dbAccessor.getFirstCustodyIncompleteSlot())
-        .isCompletedWithValue(Optional.of(UInt64.valueOf(24)));
+    assertThat(dbAccessor.getFirstCustodyIncompleteSlot()).isCompletedWithValue(Optional.empty());
   }
 
   @ParameterizedTest
   @MethodSource("minCustodyScenarios")
-  public void computesCustodyPeriodCorrectly(final int currentSlot, final int expectedCustodySlot) {
+  public void computesCustodyPeriodCorrectly(
+      final int currentSlot, final Optional<UInt64> expectedCustodySlot) {
     assertThat(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(UInt64.valueOf(currentSlot)))
-        .isEqualTo(UInt64.valueOf(expectedCustodySlot));
+        .isEqualTo(expectedCustodySlot);
   }
 
   @Test
@@ -204,35 +221,47 @@ public class DataColumnSidecarCustodyImplTest {
   }
 
   @Test
+  public void retrieveSlotCustody_shouldThrowPreFulu() {
+    assertThatThrownBy(() -> custody.retrieveSlotCustody(ONE))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Cannot retrieve slot custody outside custody period (1)");
+  }
+
+  @Test
   public void retrieveSlotCustody_insufficientCustody()
       throws ExecutionException, InterruptedException, TimeoutException {
     final CanonicalBlockResolver resolver = mock(CanonicalBlockResolver.class);
     final DataColumnSidecarDbAccessor sidecarDb = mock(DataColumnSidecarDbAccessor.class);
-    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
+
+    final UInt64 fuluSlot = UInt64.valueOf(FULU_ACTIVATION_SLOT);
+    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(fuluSlot);
     final DataColumnIdentifier dataColumnIdentifier =
         new DataColumnIdentifier(beaconBlock.getRoot(), UInt64.ZERO);
-    when(resolver.getBlockAtSlot(ONE))
+    when(resolver.getBlockAtSlot(fuluSlot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(beaconBlock)));
-    when(sidecarDb.getColumnIdentifiers(ONE))
+    when(sidecarDb.getColumnIdentifiers(fuluSlot))
         .thenReturn(
             SafeFuture.completedFuture(
-                List.of(new DataColumnSlotAndIdentifier(ONE, dataColumnIdentifier))));
+                List.of(new DataColumnSlotAndIdentifier(fuluSlot, dataColumnIdentifier))));
     when(custodyGroupCountManager.getCustodyColumnIndices()).thenReturn(List.of(ZERO, ONE));
     custody =
         new DataColumnSidecarCustodyImpl(
             spec, resolver, sidecarDb, minCustodyPeriodSlotCalculator, custodyGroupCountManager);
 
-    SafeFuture<DataColumnSidecarCustodyImpl.SlotCustody> future = custody.retrieveSlotCustody(ONE);
-    verify(sidecarDb).getColumnIdentifiers(ONE);
+    custody.onSlot(UInt64.valueOf(32)); // transition to fulu
+
+    SafeFuture<DataColumnSidecarCustodyImpl.SlotCustody> future =
+        custody.retrieveSlotCustody(fuluSlot);
+    verify(sidecarDb).getColumnIdentifiers(fuluSlot);
     verifyNoMoreInteractions(sidecarDb);
     final DataColumnSidecarCustodyImpl.SlotCustody slotCustody =
         future.get(100, TimeUnit.MILLISECONDS);
 
-    assertThat(slotCustody.slot()).isEqualTo(ONE);
+    assertThat(slotCustody.slot()).isEqualTo(fuluSlot);
     assertThat(slotCustody.requiredColumnIndices()).isEqualTo(List.of(ZERO, ONE));
     assertThat(slotCustody.getIncompleteColumns())
         .containsExactly(
-            new DataColumnSlotAndIdentifier(ONE, beaconBlock.getRoot(), UInt64.valueOf(1)));
+            new DataColumnSlotAndIdentifier(fuluSlot, beaconBlock.getRoot(), UInt64.valueOf(1)));
   }
 
   @Test

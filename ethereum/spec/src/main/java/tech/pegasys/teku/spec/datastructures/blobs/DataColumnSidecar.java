@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -31,6 +31,8 @@ public interface DataColumnSidecar extends SszContainer {
 
   DataColumn getColumn();
 
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/10311 need to verify this is not called
+  // for Gloas or make it an Optional
   SszList<SszKZGCommitment> getKzgCommitments();
 
   SszList<SszKZGProof> getKzgProofs();

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -17,7 +17,7 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.storage.server.StateStorageMode.MINIMAL;
 import static tech.pegasys.teku.storage.server.StateStorageMode.NOT_SET;
 import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
-import static tech.pegasys.teku.storage.server.VersionedDatabaseFactory.STORAGE_MODE_PATH;
+import static tech.pegasys.teku.storage.server.VersionedDatabaseFactory.STORAGE_MODE_FILENAME;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -73,6 +73,7 @@ public class StorageConfiguration {
   private final int statePruningLimit;
 
   private final int stateRebuildTimeoutSeconds;
+  private final boolean forceClearDb;
 
   private StorageConfiguration(
       final Eth1Address eth1DepositContract,
@@ -92,7 +93,8 @@ public class StorageConfiguration {
       final long retainedSlots,
       final Duration statePruningInterval,
       final int statePruningLimit,
-      final Spec spec) {
+      final Spec spec,
+      final boolean forceClearDb) {
     this.eth1DepositContract = eth1DepositContract;
     this.dataStorageMode = dataStorageMode;
     this.dataStorageFrequency = dataStorageFrequency;
@@ -111,6 +113,7 @@ public class StorageConfiguration {
     this.statePruningInterval = statePruningInterval;
     this.statePruningLimit = statePruningLimit;
     this.spec = spec;
+    this.forceClearDb = forceClearDb;
   }
 
   public static Builder builder() {
@@ -189,6 +192,10 @@ public class StorageConfiguration {
     return spec;
   }
 
+  public boolean isForceClearDb() {
+    return forceClearDb;
+  }
+
   public static final class Builder {
     private static final Logger LOG = LogManager.getLogger();
     private Eth1Address eth1DepositContract;
@@ -210,6 +217,7 @@ public class StorageConfiguration {
     private Duration statePruningInterval = DEFAULT_STATE_PRUNING_INTERVAL;
     private long retainedSlots = DEFAULT_STORAGE_RETAINED_SLOTS;
     private int statePruningLimit = DEFAULT_STATE_PRUNING_LIMIT;
+    private boolean forceClearDb = false;
 
     private Builder() {}
 
@@ -363,6 +371,11 @@ public class StorageConfiguration {
       return this;
     }
 
+    public Builder forceClearDb(final boolean forceClearDb) {
+      this.forceClearDb = forceClearDb;
+      return this;
+    }
+
     public StorageConfiguration build() {
       determineDataStorageMode();
       validateStatePruningConfiguration();
@@ -384,7 +397,8 @@ public class StorageConfiguration {
           retainedSlots,
           statePruningInterval,
           statePruningLimit,
-          spec);
+          spec,
+          forceClearDb);
     }
 
     private void determineDataStorageMode() {
@@ -396,7 +410,7 @@ public class StorageConfiguration {
         try {
           storageModeFromStoredFile =
               DatabaseStorageModeFileHelper.readStateStorageMode(
-                  beaconDataDirectory.resolve(STORAGE_MODE_PATH));
+                  beaconDataDirectory.resolve(STORAGE_MODE_FILENAME));
         } catch (final DatabaseStorageException e) {
           if (dataStorageMode == NOT_SET) {
             throw e;

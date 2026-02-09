@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -77,7 +77,8 @@ public class TekuConfiguration {
       final NatConfiguration natConfiguration,
       final ValidatorRestApiConfig validatorRestApiConfig,
       final BeaconChainControllerFactory beaconChainControllerFactory,
-      final ZkChainConfiguration zkChainConfiguration) {
+      final ZkChainConfiguration zkChainConfiguration,
+      final int minBidIncrementPercentage) {
     this.eth2NetworkConfiguration = eth2NetworkConfiguration;
     this.storageConfiguration = storageConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
@@ -99,7 +100,8 @@ public class TekuConfiguration {
             spec,
             beaconChainControllerFactory,
             metricsConfig,
-            zkChainConfiguration);
+            zkChainConfiguration,
+            minBidIncrementPercentage);
     this.validatorClientConfig =
         new ValidatorClientConfiguration(
             validatorConfig, interopConfig, validatorRestApiConfig, spec);
@@ -204,6 +206,7 @@ public class TekuConfiguration {
 
     private BeaconChainControllerFactory beaconChainControllerFactory =
         BeaconChainControllerFactory.DEFAULT;
+    private int minBidIncrementPercentage = 1;
 
     private Builder() {}
 
@@ -330,7 +333,8 @@ public class TekuConfiguration {
           natConfigBuilder.build(),
           validatorRestApiConfigBuilder.build(),
           beaconChainControllerFactory,
-          zkChainConfiguration);
+          zkChainConfiguration,
+          minBidIncrementPercentage);
     }
 
     public Builder eth2NetworkConfig(final Consumer<Eth2NetworkConfiguration.Builder> consumer) {
@@ -435,6 +439,11 @@ public class TekuConfiguration {
     public Builder beaconChainControllerFactory(
         final BeaconChainControllerFactory beaconChainControllerFactory) {
       this.beaconChainControllerFactory = beaconChainControllerFactory;
+      return this;
+    }
+
+    public Builder minBidIncrementPercentage(final int minBidIncrementPercentage) {
+      this.minBidIncrementPercentage = minBidIncrementPercentage;
       return this;
     }
   }

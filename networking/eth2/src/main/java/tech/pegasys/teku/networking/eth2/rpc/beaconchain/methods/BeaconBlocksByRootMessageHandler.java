@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -112,20 +112,18 @@ public class BeaconBlocksByRootMessageHandler
               __ ->
                   retrieveBlock(blockRoot.get())
                       .thenCompose(
-                          block -> {
-                            final Optional<RpcException> validationResult =
-                                block.flatMap(b -> validateResponse(protocolId, b));
-                            if (validationResult.isPresent()) {
-                              return SafeFuture.failedFuture(validationResult.get());
-                            }
-                            return block
-                                .map(
-                                    signedBeaconBlock ->
-                                        callback
-                                            .respond(signedBeaconBlock)
-                                            .thenRun(sentBlocks::incrementAndGet))
-                                .orElse(SafeFuture.COMPLETE);
-                          }));
+                          maybeBlock ->
+                              maybeBlock
+                                  .flatMap(response -> validateResponse(protocolId, response))
+                                  .<SafeFuture<Void>>map(SafeFuture::failedFuture)
+                                  .or(
+                                      () ->
+                                          maybeBlock.map(
+                                              block ->
+                                                  callback
+                                                      .respond(block)
+                                                      .thenRun(sentBlocks::incrementAndGet)))
+                                  .orElse(SafeFuture.COMPLETE)));
     }
     future.finish(
         () -> {

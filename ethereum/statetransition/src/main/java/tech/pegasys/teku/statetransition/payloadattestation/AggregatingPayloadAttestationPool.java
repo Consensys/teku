@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -62,14 +62,14 @@ public class AggregatingPayloadAttestationPool
       new ConcurrentSkipListMap<>();
 
   private final Spec spec;
-  private final PayloadAttestationMessageValidator validator;
+  private final PayloadAttestationMessageGossipValidator validator;
   private final SettableGauge sizeGauge;
 
   private final AtomicInteger size = new AtomicInteger(0);
 
   public AggregatingPayloadAttestationPool(
       final Spec spec,
-      final PayloadAttestationMessageValidator validator,
+      final PayloadAttestationMessageGossipValidator validator,
       final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.validator = validator;

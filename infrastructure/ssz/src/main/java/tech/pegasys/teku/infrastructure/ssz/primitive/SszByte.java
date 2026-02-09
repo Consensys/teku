@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.infrastructure.ssz.primitive;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszPrimitiveSchema;
@@ -25,7 +27,12 @@ public class SszByte extends AbstractSszPrimitive<Byte> {
     return new SszByte((byte) value);
   }
 
+  public static SszByte asUInt8(final byte value) {
+    return new SszByte(value, SszPrimitiveSchemas.UINT8_SCHEMA);
+  }
+
   public static SszByte asUInt8(final int value) {
+    checkArgument(value >= 0 && value <= 255, "value must be in uint8 range (0–255)");
     return new SszByte((byte) value, SszPrimitiveSchemas.UINT8_SCHEMA);
   }
 

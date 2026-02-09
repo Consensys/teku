@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -47,6 +47,7 @@ import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELManager;
 import tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELManagerImpl;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
+import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class PoolFactory {
@@ -157,6 +158,7 @@ public class PoolFactory {
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
       final BiConsumer<List<DataColumnSidecar>, RemoteOrigin> dataColumnSidecarPublisher,
+      final DataColumnSidecarGossipValidator dataColumnSidecarGossipValidator,
       final CustodyGroupCountManager custodyGroupCountManager,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider) {
@@ -173,7 +175,8 @@ public class PoolFactory {
         metricsSystem,
         timeProvider,
         EL_BLOBS_FETCHING_DELAY,
-        EL_BLOBS_FETCHING_MAX_RETRIES);
+        EL_BLOBS_FETCHING_MAX_RETRIES,
+        dataColumnSidecarGossipValidator);
   }
 
   public BlockBlobSidecarsTrackersPoolImpl createPoolForBlockBlobSidecarsTrackers(

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -40,6 +40,17 @@ public class BeaconStateAccessorsFulu extends BeaconStateAccessorsElectra {
     super(SpecConfigFulu.required(config), predicatesElectra, miscHelpers);
   }
 
+  /**
+   * get_beacon_proposer_index
+   *
+   * <p>Return the beacon proposer index at the current slot.
+   */
+  @Override
+  public int getBeaconProposerIndex(final BeaconState state) {
+    return getProposerLookaheadValue(
+        state, state.getSlot().mod(config.getSlotsPerEpoch()).intValue());
+  }
+
   @Override
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 requestedSlot) {
     validateStateCanCalculateProposerIndexAtSlot(state, requestedSlot);
@@ -48,8 +59,7 @@ public class BeaconStateAccessorsFulu extends BeaconStateAccessorsElectra {
     final int epochOffset = stateEpoch.equals(requestedEpoch) ? 0 : config.getSlotsPerEpoch();
     final int lookaheadIndex =
         requestedSlot.mod(config.getSlotsPerEpoch()).intValue() + epochOffset;
-    final int proposerIndex =
-        BeaconStateFulu.required(state).getProposerLookahead().get(lookaheadIndex).get().intValue();
+    final int proposerIndex = getProposerLookaheadValue(state, lookaheadIndex);
     LOG.debug(
         "get proposer index for slot {} from state at slot {}, will be lookahead index {} - proposer will be {}",
         requestedSlot,
@@ -77,6 +87,14 @@ public class BeaconStateAccessorsFulu extends BeaconStateAccessorsElectra {
     final IntList indices = getActiveValidatorIndices(state, epoch);
     final Bytes32 seed = getSeed(state, epoch, Domain.BEACON_PROPOSER);
     return miscHelpers.computeProposerIndices(state, epoch, seed, indices);
+  }
+
+  private int getProposerLookaheadValue(final BeaconState state, final int lookaheadIndex) {
+    return BeaconStateFulu.required(state)
+        .getProposerLookahead()
+        .get(lookaheadIndex)
+        .get()
+        .intValue();
   }
 
   public static BeaconStateAccessorsFulu required(final BeaconStateAccessors beaconStateAccessors) {

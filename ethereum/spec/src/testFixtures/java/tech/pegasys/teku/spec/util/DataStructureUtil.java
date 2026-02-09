@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -98,7 +98,6 @@ import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
@@ -136,8 +135,6 @@ import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBun
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestation;
@@ -219,6 +216,9 @@ import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSu
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
@@ -303,6 +303,10 @@ public final class DataStructureUtil {
 
   private boolean randomBoolean() {
     return new Random(nextSeed()).nextBoolean();
+  }
+
+  public int randomUInt8() {
+    return randomPositiveInt(256);
   }
 
   public UInt64 randomUInt64() {
@@ -408,11 +412,6 @@ public final class DataStructureUtil {
       final long numItems,
       final Supplier<UInt64> valueGenerator) {
     return Stream.generate(valueGenerator).limit(numItems).collect(schema.collectorUnboxed());
-  }
-
-  public SszUInt64Vector randomSszUInt64Vector(
-      final SszUInt64VectorSchema<?> schema, final long numItems) {
-    return randomSszUInt64Vector(schema, numItems, this::randomUInt64);
   }
 
   public SszUInt64Vector randomSszUInt64Vector(
@@ -553,9 +552,12 @@ public final class DataStructureUtil {
     return UInt64.valueOf(randomInt(3_000_000));
   }
 
-  /** builders need to be staked in ePBS, so can use {@link #randomValidatorIndex()} */
+  /**
+   * builders are non-validating staked actors in ePBS, using the same bound as {@link
+   * #randomValidatorIndex()} because it also applies to builders
+   */
   public UInt64 randomBuilderIndex() {
-    return randomValidatorIndex();
+    return UInt64.valueOf(randomInt(3_000_000));
   }
 
   public SlotAndBlockRoot randomSlotAndBlockRoot() {
@@ -1527,7 +1529,16 @@ public final class DataStructureUtil {
   }
 
   public BeaconBlockBody randomBeaconBlockBodyWithEmptyCommitments() {
-    return randomBeaconBlockBody(builder -> builder.blobKzgCommitments(emptyBlobKzgCommitments()));
+    return randomBeaconBlockBody(
+        builder -> {
+          if (builder.supportsKzgCommitments()) {
+            builder.blobKzgCommitments(emptyBlobKzgCommitments());
+          }
+          if (builder.supportsSignedExecutionPayloadBid()) {
+            builder.signedExecutionPayloadBid(
+                randomSignedExecutionPayloadBidWithCommitments(emptyBlobKzgCommitments()));
+          }
+        });
   }
 
   public BeaconBlockBody randomBeaconBlockBodyWithCommitments(final int count) {
@@ -1540,6 +1551,10 @@ public final class DataStructureUtil {
         builder -> {
           if (builder.supportsKzgCommitments()) {
             builder.blobKzgCommitments(commitments);
+          }
+          if (builder.supportsSignedExecutionPayloadBid()) {
+            builder.signedExecutionPayloadBid(
+                randomSignedExecutionPayloadBidWithCommitments(commitments));
           }
         });
   }
@@ -1880,6 +1895,14 @@ public final class DataStructureUtil {
     return validatorBuilder().build();
   }
 
+  public BuilderBuilder builderBuilder() {
+    return new BuilderBuilder(spec, this);
+  }
+
+  public Builder randomBuilder() {
+    return builderBuilder().build();
+  }
+
   public Fork randomFork() {
     return new Fork(randomBytes4(), randomBytes4(), randomUInt64());
   }
@@ -2069,6 +2092,18 @@ public final class DataStructureUtil {
           ? extends AbstractBeaconStateBuilder<?, ?, ?>>
       stateBuilder(
           final SpecMilestone milestone, final int validatorCount, final int numItemsInSszLists) {
+    return stateBuilder(milestone, validatorCount, 10, numItemsInSszLists);
+  }
+
+  public AbstractBeaconStateBuilder<
+          ? extends BeaconState,
+          ? extends MutableBeaconState,
+          ? extends AbstractBeaconStateBuilder<?, ?, ?>>
+      stateBuilder(
+          final SpecMilestone milestone,
+          final int validatorCount,
+          final int builderCount,
+          final int numItemsInSszLists) {
     return switch (milestone) {
       case PHASE0 -> stateBuilderPhase0(validatorCount, numItemsInSszLists);
       case ALTAIR -> stateBuilderAltair(validatorCount, numItemsInSszLists);
@@ -2077,7 +2112,7 @@ public final class DataStructureUtil {
       case DENEB -> stateBuilderDeneb(validatorCount, numItemsInSszLists);
       case ELECTRA -> stateBuilderElectra(validatorCount, numItemsInSszLists);
       case FULU -> stateBuilderFulu(validatorCount, numItemsInSszLists);
-      case GLOAS -> stateBuilderGloas(validatorCount, numItemsInSszLists);
+      case GLOAS -> stateBuilderGloas(validatorCount, builderCount, numItemsInSszLists);
     };
   }
 
@@ -2134,9 +2169,11 @@ public final class DataStructureUtil {
   }
 
   public BeaconStateBuilderGloas stateBuilderGloas(
-      final int defaultValidatorCount, final int defaultItemsInSSZLists) {
+      final int defaultValidatorCount,
+      final int defaultBuilderCount,
+      final int defaultItemsInSSZLists) {
     return BeaconStateBuilderGloas.create(
-        this, spec, defaultValidatorCount, defaultItemsInSSZLists);
+        this, spec, defaultValidatorCount, defaultBuilderCount, defaultItemsInSSZLists);
   }
 
   public BeaconState randomBeaconState(final UInt64 slot) {
@@ -2781,17 +2818,16 @@ public final class DataStructureUtil {
               () ->
                   slot.map(DataStructureUtil.this::randomSignedBeaconBlockHeader)
                       .orElseGet(DataStructureUtil.this::randomSignedBeaconBlockHeader));
-      final DataColumnSidecarSchema<?> dataColumnSidecarSchema =
-          getFuluSchemaDefinitions(signedBlockHeader.getMessage().getSlot())
-              .getDataColumnSidecarSchema();
+      SchemaDefinitionsFulu schemaDefinitions =
+          getFuluSchemaDefinitions(signedBlockHeader.getMessage().getSlot());
       final int numberOfProofs =
           kzgProofs
               .map(List::size)
               .or(() -> kzgCommitments.map(List::size))
               .orElseGet(DataStructureUtil.this::randomNumberOfBlobsPerBlock);
       final SszList<SszKZGCommitment> sszKzgCommitments =
-          dataColumnSidecarSchema
-              .getKzgCommitmentsSchema()
+          schemaDefinitions
+              .getBlobKzgCommitmentsSchema()
               .createFromElements(
                   kzgCommitments
                       .orElseGet(
@@ -2804,7 +2840,8 @@ public final class DataStructureUtil {
                       .toList());
 
       final SszList<SszKZGProof> sszKzgProofs =
-          dataColumnSidecarSchema
+          schemaDefinitions
+              .getDataColumnSidecarSchema()
               .getKzgProofsSchema()
               .createFromElements(
                   kzgProofs
@@ -2817,27 +2854,29 @@ public final class DataStructureUtil {
                       .map(SszKZGProof::new)
                       .toList());
 
-      return dataColumnSidecarSchema.create(
-          builder ->
-              builder
-                  .index(index.orElseGet(DataStructureUtil.this::randomDataColumnSidecarIndex))
-                  .column(
-                      dataColumn.orElseGet(
-                          () ->
-                              randomDataColumn(
-                                  signedBlockHeader.getMessage().getSlot(), numberOfProofs)))
-                  .kzgCommitments(sszKzgCommitments)
-                  .kzgProofs(sszKzgProofs)
-                  .signedBlockHeader(signedBlockHeader)
-                  .kzgCommitmentsInclusionProof(
-                      kzgCommitmentsInclusionProof.orElseGet(
-                          () ->
-                              IntStream.range(0, getKzgCommitmentsInclusionProofDepth())
-                                  .mapToObj(__ -> randomBytes32())
-                                  .toList()))
-                  .beaconBlockRoot(
-                      beaconBlockRoot.orElseGet(() -> signedBlockHeader.getMessage().getRoot()))
-                  .slot(slot.orElseGet(() -> signedBlockHeader.getMessage().getSlot())));
+      return schemaDefinitions
+          .getDataColumnSidecarSchema()
+          .create(
+              builder ->
+                  builder
+                      .index(index.orElseGet(DataStructureUtil.this::randomDataColumnSidecarIndex))
+                      .column(
+                          dataColumn.orElseGet(
+                              () ->
+                                  randomDataColumn(
+                                      signedBlockHeader.getMessage().getSlot(), numberOfProofs)))
+                      .kzgCommitments(sszKzgCommitments)
+                      .kzgProofs(sszKzgProofs)
+                      .signedBlockHeader(signedBlockHeader)
+                      .kzgCommitmentsInclusionProof(
+                          kzgCommitmentsInclusionProof.orElseGet(
+                              () ->
+                                  IntStream.range(0, getKzgCommitmentsInclusionProofDepth())
+                                      .mapToObj(__ -> randomBytes32())
+                                      .toList()))
+                      .beaconBlockRoot(
+                          beaconBlockRoot.orElseGet(() -> signedBlockHeader.getMessage().getRoot()))
+                      .slot(slot.orElseGet(() -> signedBlockHeader.getMessage().getSlot())));
     }
   }
 
@@ -2901,7 +2940,7 @@ public final class DataStructureUtil {
   public DataColumnSidecar randomDataColumnSidecarWithInclusionProof(
       final SignedBeaconBlock signedBeaconBlock, final UInt64 index) {
     final MiscHelpersFulu miscHelpersFulu =
-        MiscHelpersFulu.required(spec.getGenesisSpec().miscHelpers());
+        MiscHelpersFulu.required(spec.atSlot(signedBeaconBlock.getSlot()).miscHelpers());
     final List<KZGCommitment> kzgCommitments =
         signedBeaconBlock
             .getMessage()
@@ -2921,6 +2960,27 @@ public final class DataStructureUtil {
         .kzgCommitmentsInclusionProof(inclusionProof)
         .index(index)
         .build();
+  }
+
+  public List<DataColumnSidecar> randomDataColumnSidecars() {
+    return randomDataColumnSidecars(randomSlot());
+  }
+
+  public List<DataColumnSidecar> randomDataColumnSidecars(final UInt64 slot) {
+    final SignedBeaconBlockHeader header = randomSignedBeaconBlockHeader(slot);
+    final int columns =
+        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
+            .getNumberOfColumns();
+    return IntStream.range(0, columns)
+        .mapToObj(index -> randomDataColumnSidecar(header, UInt64.valueOf(index)))
+        .toList();
+  }
+
+  public List<DataColumnSidecar> randomDataColumnSidecars(final UInt64 slot, final int columns) {
+    final SignedBeaconBlockHeader header = randomSignedBeaconBlockHeader(slot);
+    return IntStream.range(0, columns)
+        .mapToObj(index -> randomDataColumnSidecar(header, UInt64.valueOf(index)))
+        .toList();
   }
 
   public List<Bytes32> randomKzgCommitmentInclusionProof() {
@@ -3094,7 +3154,7 @@ public final class DataStructureUtil {
   public BuilderPendingWithdrawal randomBuilderPendingWithdrawal() {
     return getGloasSchemaDefinitions()
         .getBuilderPendingWithdrawalSchema()
-        .create(randomEth1Address(), randomUInt64(), randomUInt64(), randomEpoch());
+        .create(randomEth1Address(), randomUInt64(), randomUInt64());
   }
 
   public BuilderPendingPayment randomBuilderPendingPayment() {
@@ -3119,17 +3179,22 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayloadBid randomExecutionPayloadBid() {
-    return randomExecutionPayloadBid(randomSlot(), randomBuilderIndex());
+    return randomExecutionPayloadBid(randomUInt64());
+  }
+
+  public ExecutionPayloadBid randomExecutionPayloadBid(final UInt64 executionPayment) {
+    return randomExecutionPayloadBid(
+        randomBytes32(), randomSlot(), randomBuilderIndex(), randomUInt64(), executionPayment);
   }
 
   public ExecutionPayloadBid randomExecutionPayloadBid(
-      final UInt64 slot, final UInt64 builderIndex) {
+      final UInt64 slot, final UInt64 builderIndex, final Bytes32 blockHash) {
     return getGloasSchemaDefinitions()
         .getExecutionPayloadBidSchema()
         .create(
             randomBytes32(),
             randomBytes32(),
-            randomBytes32(),
+            blockHash,
             randomBytes32(),
             randomEth1Address(),
             randomUInt64(),
@@ -3137,13 +3202,75 @@ public final class DataStructureUtil {
             slot,
             randomUInt64(),
             randomUInt64(),
-            randomBytes32());
+            randomBlobKzgCommitments());
+  }
+
+  public ExecutionPayloadBid randomExecutionPayloadBid(
+      final UInt64 slot, final UInt64 builderIndex) {
+    return randomExecutionPayloadBid(
+        randomBytes32(), slot, builderIndex, randomUInt64(), randomUInt64());
+  }
+
+  public ExecutionPayloadBid randomExecutionPayloadBid(
+      final Bytes32 parentBlockHash,
+      final UInt64 slot,
+      final UInt64 builderIndex,
+      final UInt64 value,
+      final UInt64 executionPayment) {
+    return getGloasSchemaDefinitions()
+        .getExecutionPayloadBidSchema()
+        .create(
+            parentBlockHash,
+            randomBytes32(),
+            randomBytes32(),
+            randomBytes32(),
+            randomEth1Address(),
+            randomUInt64(),
+            builderIndex,
+            slot,
+            value,
+            executionPayment,
+            randomBlobKzgCommitments());
   }
 
   public SignedExecutionPayloadBid randomSignedExecutionPayloadBid() {
+    return randomSignedExecutionPayloadBid(randomExecutionPayloadBid());
+  }
+
+  public SignedExecutionPayloadBid randomSignedExecutionPayloadBid(final UInt64 executionPayment) {
     return getGloasSchemaDefinitions()
         .getSignedExecutionPayloadBidSchema()
-        .create(randomExecutionPayloadBid(), randomSignature());
+        .create(randomExecutionPayloadBid(executionPayment), randomSignature());
+  }
+
+  public SignedExecutionPayloadBid randomSignedExecutionPayloadBid(
+      final ExecutionPayloadBid executionPayloadBid) {
+    return getGloasSchemaDefinitions()
+        .getSignedExecutionPayloadBidSchema()
+        .create(executionPayloadBid, randomSignature());
+  }
+
+  public SignedExecutionPayloadBid randomSignedExecutionPayloadBidWithCommitments(
+      final SszList<SszKZGCommitment> blobKzgCommitments) {
+    final SchemaDefinitionsGloas schemaDefinitions = getGloasSchemaDefinitions();
+    return schemaDefinitions
+        .getSignedExecutionPayloadBidSchema()
+        .create(
+            schemaDefinitions
+                .getExecutionPayloadBidSchema()
+                .create(
+                    randomBytes32(),
+                    randomBytes32(),
+                    randomBytes32(),
+                    randomBytes32(),
+                    randomEth1Address(),
+                    randomUInt64(),
+                    randomBuilderIndex(),
+                    randomSlot(),
+                    randomUInt64(),
+                    randomUInt64(),
+                    blobKzgCommitments),
+            randomSignature());
   }
 
   public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope() {
@@ -3151,11 +3278,6 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope(final UInt64 slot) {
-    return randomExecutionPayloadEnvelope(slot, randomBlobKzgCommitments());
-  }
-
-  public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope(
-      final UInt64 slot, final SszList<SszKZGCommitment> kzgCommitments) {
     return getGloasSchemaDefinitions()
         .getExecutionPayloadEnvelopeSchema()
         .create(
@@ -3164,7 +3286,6 @@ public final class DataStructureUtil {
             randomBuilderIndex(),
             randomBytes32(),
             slot,
-            kzgCommitments,
             randomBytes32());
   }
 

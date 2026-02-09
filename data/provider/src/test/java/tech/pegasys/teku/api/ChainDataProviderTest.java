@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -51,6 +51,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.blockselector.BlockSelector;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
+import tech.pegasys.teku.api.fulu.ColumnCustodyAtSlot;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.BlockRewardData;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
@@ -76,6 +77,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.DataColumnSidecarsAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -543,6 +545,43 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     assertThat(provider.calculateAttestationRewardsAtEpoch(queriedEpoch, List.of())).isCompleted();
 
     verify(stateSelectorFactory).slotSelector(expectedSlot);
+  }
+
+  @Test
+  void getColumnCustodyAtSlot_withProofsPresent() {
+    final Spec fulu = TestSpecFactory.createMinimalFulu();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(fulu);
+    final ChainDataProvider chainDataProvider = setupBySpec(fulu, dataStructureUtil, 16);
+    final BlockAndMetaData blockAndMetaData =
+        new BlockAndMetaData(
+            dataStructureUtil.randomSignedBeaconBlockWithCommitments(9),
+            SpecMilestone.FULU,
+            false,
+            false,
+            false);
+    final DataColumnSidecarsAndMetaData dataColumnSidecarsAndMetaData =
+        new DataColumnSidecarsAndMetaData(
+            dataStructureUtil.randomDataColumnSidecars(ONE, 4),
+            SpecMilestone.FULU,
+            false,
+            false,
+            false);
+    final SafeFuture<Optional<BlockAndMetaData>> futureMaybeBlockAndMetadata =
+        SafeFuture.completedFuture(Optional.of(blockAndMetaData));
+    final SafeFuture<Optional<DataColumnSidecarsAndMetaData>> futureMaybeDataColumnSidecars =
+        SafeFuture.completedFuture(Optional.of(dataColumnSidecarsAndMetaData));
+
+    final SafeFuture<Optional<ColumnCustodyAtSlot>> future =
+        chainDataProvider.getColumnCustodyFromBlock(
+            futureMaybeBlockAndMetadata, futureMaybeDataColumnSidecars);
+    final Optional<ColumnCustodyAtSlot> maybeCustody = future.getImmediately();
+    assertThat(maybeCustody).isPresent();
+    assertThat(maybeCustody)
+        .contains(
+            new ColumnCustodyAtSlot(
+                Optional.of(blockAndMetaData.getData().getRoot()),
+                List.of(ZERO, ONE, UInt64.valueOf(2), UInt64.valueOf(3)),
+                Optional.of(9)));
   }
 
   @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -49,6 +49,8 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -123,6 +125,7 @@ import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
+import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
@@ -130,7 +133,7 @@ import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
 
 class ValidatorApiHandlerTest {
-
+  private static final Logger LOG = LogManager.getLogger();
   private static final UInt64 EPOCH = UInt64.valueOf(13);
   private static final UInt64 PREVIOUS_EPOCH = EPOCH.minus(ONE);
 
@@ -396,8 +399,11 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getProposerDuties_shouldReturnDutiesForCurrentEpoch() {
-    final BeaconState state = createStateWithActiveValidators(epochStartSlot);
-    when(chainDataClient.getStateAtSlotExact(epochStartSlot))
+    final UInt64 previousEpochStartSlot =
+        epochStartSlot.minus(spec.getGenesisSpecConfig().getSlotsPerEpoch());
+    final BeaconState state = createStateWithActiveValidators(previousEpochStartSlot);
+
+    when(chainDataClient.getStateAtSlotExact(previousEpochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
 
@@ -409,9 +415,31 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  void getProposerDuties_shouldReturnDutiesInOrder() {
+  public void getProposerDuties_shouldAllowOneEpochTolerance() {
+    final UInt64 epoch = EPOCH.minus(1);
     final BeaconState state = createStateWithActiveValidators(epochStartSlot);
-    when(chainDataClient.getStateAtSlotExact(epochStartSlot))
+    final UInt64 querySlot = spec.computeStartSlotAtEpoch(epoch);
+    LOG.debug(
+        "Epoch Start slot {}, Test Epoch {}, expect query slot {}",
+        epochStartSlot,
+        epoch,
+        querySlot);
+    when(chainDataClient.getStateAtSlotExact(querySlot))
+        .thenReturn(completedFuture(Optional.of(state)));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(epoch);
+
+    final SafeFuture<Optional<ProposerDuties>> result =
+        validatorApiHandler.getProposerDuties(EPOCH);
+    final Optional<ProposerDuties> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.orElseThrow().getDuties().size()).isEqualTo(spec.slotsPerEpoch(EPOCH));
+  }
+
+  @Test
+  void getProposerDuties_shouldReturnDutiesInOrder() {
+    final UInt64 previousEpochStartSlot =
+        epochStartSlot.minus(spec.getGenesisSpecConfig().getSlotsPerEpoch());
+    final BeaconState state = createStateWithActiveValidators(previousEpochStartSlot);
+    when(chainDataClient.getStateAtSlotExact(previousEpochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
 
@@ -1341,12 +1369,29 @@ class ValidatorApiHandlerTest {
   public void publishSignedExecutionPayload_shouldPublish() {
     final SignedExecutionPayloadEnvelope signedExecutionPayload =
         dataStructureUtil.randomSignedExecutionPayloadEnvelope(5);
+    final PublishSignedExecutionPayloadResult publishResult =
+        PublishSignedExecutionPayloadResult.success(signedExecutionPayload.getBeaconBlockRoot());
     when(executionPayloadPublisher.publishSignedExecutionPayload(eq(signedExecutionPayload)))
-        .thenReturn(SafeFuture.COMPLETE);
-    final SafeFuture<Void> result =
-        validatorApiHandler.publishSignedExecutionPayload(signedExecutionPayload);
+        .thenReturn(SafeFuture.completedFuture(publishResult));
 
-    assertThat(result).isCompleted();
+    assertThat(validatorApiHandler.publishSignedExecutionPayload(signedExecutionPayload))
+        .isCompletedWithValue(publishResult);
+
+    verify(executionPayloadPublisher).publishSignedExecutionPayload(signedExecutionPayload);
+  }
+
+  @Test
+  public void publishSignedExecutionPayload_shouldHandleExceptions() {
+    final SignedExecutionPayloadEnvelope signedExecutionPayload =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(5);
+    final PublishSignedExecutionPayloadResult failedResult =
+        PublishSignedExecutionPayloadResult.rejected(
+            signedExecutionPayload.getBeaconBlockRoot(), "oopsy");
+    when(executionPayloadPublisher.publishSignedExecutionPayload(eq(signedExecutionPayload)))
+        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
+
+    assertThat(validatorApiHandler.publishSignedExecutionPayload(signedExecutionPayload))
+        .isCompletedWithValue(failedResult);
 
     verify(executionPayloadPublisher).publishSignedExecutionPayload(signedExecutionPayload);
   }

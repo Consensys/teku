@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -95,7 +95,9 @@ public class Eth2IncomingRequestHandler<
   }
 
   @Override
-  public void closed(final NodeId nodeId, final RpcStream rpcStream) {}
+  public void closed(final NodeId nodeId, final RpcStream rpcStream) {
+    requestDecoder.close();
+  }
 
   private void handleRequest(
       final Optional<Eth2Peer> peer,

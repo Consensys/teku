@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -28,6 +28,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.net.MediaType;
 import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
@@ -76,7 +77,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void shouldGetUnblindedBeaconBlockAsJson() {
+  public void shouldGetUnblindedBeaconBlockAsJson() throws JsonProcessingException {
     assumeThat(specMilestone.isLessThan(DENEB) || specMilestone.isGreaterThanOrEqualTo(GLOAS))
         .isTrue();
     final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -22,11 +24,14 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipValidationHelper {
@@ -51,6 +56,12 @@ public class GossipValidationHelper {
     return slot.isLessThanOrEqualTo(finalizedSlot);
   }
 
+  public boolean isBeforeFinalizedSlot(final UInt64 slot) {
+    final UInt64 finalizedSlot =
+        recentChainData.getStore().getFinalizedCheckpoint().getEpochStartSlot(spec);
+    return slot.isLessThan(finalizedSlot);
+  }
+
   public boolean isSlotFromFuture(final UInt64 slot) {
     final ReadOnlyStore store = recentChainData.getStore();
     final UInt64 maxTime = store.getTimeInMillis().plus(maxOffsetTimeInMillis);
@@ -59,13 +70,32 @@ public class GossipValidationHelper {
     return slot.isGreaterThan(maxCurrSlot);
   }
 
+  public boolean isSlotCurrent(final UInt64 slot) {
+    final UInt64 slotStartTimeMillis =
+        spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
+    final UInt64 slotEndTimeMillis = slotStartTimeMillis.plus(spec.getSlotDurationMillis(slot));
+    final UInt64 currentTimeMillis = getCurrentTimeMillis();
+    return currentTimeMillis.isGreaterThanOrEqualTo(
+            slotStartTimeMillis.minusMinZero(maxOffsetTimeInMillis))
+        && currentTimeMillis.isLessThanOrEqualTo(slotEndTimeMillis.plus(maxOffsetTimeInMillis));
+  }
+
+  public boolean isSignatureValidWithRespectToBuilderIndex(
+      final Bytes signingRoot,
+      final UInt64 builderIndex,
+      final BLSSignature signature,
+      final BeaconState state) {
+    return spec.getBuilderPubKey(state, builderIndex)
+        .map(publicKey -> BLS.verify(publicKey, signingRoot, signature))
+        .orElse(false);
+  }
+
   public boolean isSignatureValidWithRespectToProposerIndex(
       final Bytes signingRoot,
       final UInt64 proposerIndex,
       final BLSSignature signature,
-      final BeaconState postState) {
-
-    return spec.getValidatorPubKey(postState, proposerIndex)
+      final BeaconState state) {
+    return spec.getValidatorPubKey(state, proposerIndex)
         .map(publicKey -> BLS.verify(publicKey, signingRoot, signature))
         .orElse(false);
   }
@@ -79,9 +109,14 @@ public class GossipValidationHelper {
     final UInt64 firstSlotInBlockEpoch =
         spec.computeStartSlotAtEpoch(spec.computeEpochAtSlot(slot));
     return parentBlockSlot.isLessThan(firstSlotInBlockEpoch)
-        ? recentChainData.retrieveStateAtSlot(
+        ? recentChainData.retrieveBlockState(
             new SlotAndBlockRoot(firstSlotInBlockEpoch, parentBlockRoot))
         : recentChainData.retrieveBlockState(parentBlockRoot);
+  }
+
+  public SafeFuture<Optional<BeaconState>> getStateAtSlotAndBlockRoot(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return recentChainData.retrieveBlockState(slotAndBlockRoot);
   }
 
   public boolean currentFinalizedCheckpointIsAncestorOfBlock(
@@ -126,5 +161,42 @@ public class GossipValidationHelper {
 
   public ReadOnlyForkChoiceStrategy getForkChoiceStrategy() {
     return recentChainData.getForkChoiceStrategy().orElseThrow();
+  }
+
+  public SafeFuture<Optional<BeaconBlock>> retrieveBlockByRoot(final Bytes32 root) {
+    return recentChainData.retrieveBlockByRoot(root);
+  }
+
+  public boolean isActiveBuilder(
+      final UInt64 builderIndex, final BeaconState state, final UInt64 slot) {
+    return MiscHelpersGloas.required(spec.atSlot(slot).miscHelpers())
+        .isActiveBuilder(state, builderIndex);
+  }
+
+  public boolean isValidatorInPayloadTimelinessCommittee(
+      final UInt64 validatorIndex, final BeaconState state, final UInt64 slot) {
+    return spec.getPtc(state, slot).contains(validatorIndex.intValue());
+  }
+
+  public boolean isSlotCurrentOrNext(final UInt64 slot) {
+    return recentChainData
+        .getCurrentSlot()
+        .map(currentSlot -> slot.equals(currentSlot) || slot.equals(currentSlot.plus(ONE)))
+        .orElse(false);
+  }
+
+  public boolean builderHasEnoughBalanceForBid(
+      final UInt64 bidValue,
+      final UInt64 builderIndex,
+      final BeaconState state,
+      final UInt64 slot) {
+    return BeaconStateAccessorsGloas.required(spec.atSlot(slot).beaconStateAccessors())
+        .canBuilderCoverBid(state, builderIndex, bidValue);
+  }
+
+  public boolean isBlockHashKnown(final Bytes32 blockHash, final Bytes32 blockRoot) {
+    final Optional<Bytes32> maybeBlockHash =
+        recentChainData.getExecutionBlockHashForBlockRoot(blockRoot);
+    return maybeBlockHash.isPresent() && blockHash.equals(maybeBlockHash.get());
   }
 }

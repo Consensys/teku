@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,14 +13,14 @@
 
 package tech.pegasys.teku.validator.coordinator.publisher;
 
-import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InOrder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
@@ -29,10 +29,11 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactory;
 
 class ExecutionPayloadPublisherGloasTest {
@@ -64,30 +65,37 @@ class ExecutionPayloadPublisherGloasTest {
 
   @BeforeEach
   public void setUp() {
+    when(executionPayloadManager.validateAndImportExecutionPayload(signedExecutionPayload))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     when(executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload))
         .thenReturn(SafeFuture.completedFuture(dataColumnSidecars));
     when(executionPayloadGossipChannel.publishExecutionPayload(signedExecutionPayload))
         .thenReturn(SafeFuture.COMPLETE);
-    when(executionPayloadManager.importExecutionPayload(signedExecutionPayload))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                ExecutionPayloadImportResult.successful(signedExecutionPayload)));
   }
 
   @Test
-  public void publishSignedExecutionPayload_shouldPublishImmediatelyAndImport() {
+  public void publishSignedExecutionPayload_shouldValidateAndPublish() {
     SafeFutureAssert.assertThatSafeFuture(
             executionPayloadPublisher.publishSignedExecutionPayload(signedExecutionPayload))
-        .isCompleted();
+        .isCompletedWithValue(
+            PublishSignedExecutionPayloadResult.success(
+                signedExecutionPayload.getBeaconBlockRoot()));
 
-    final InOrder inOrder =
-        inOrder(
-            executionPayloadGossipChannel, dataColumnSidecarGossipChannel, executionPayloadManager);
-
-    inOrder.verify(executionPayloadGossipChannel).publishExecutionPayload(signedExecutionPayload);
-    inOrder
-        .verify(dataColumnSidecarGossipChannel)
+    verify(executionPayloadGossipChannel).publishExecutionPayload(signedExecutionPayload);
+    verify(dataColumnSidecarGossipChannel)
         .publishDataColumnSidecars(dataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL);
-    inOrder.verify(executionPayloadManager).importExecutionPayload(signedExecutionPayload);
+  }
+
+  @Test
+  public void publishSignedExecutionPayload_shouldReturnRejectedResultIfGossipValidationFails() {
+    when(executionPayloadManager.validateAndImportExecutionPayload(signedExecutionPayload))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("oopsy")));
+    SafeFutureAssert.assertThatSafeFuture(
+            executionPayloadPublisher.publishSignedExecutionPayload(signedExecutionPayload))
+        .isCompletedWithValue(
+            PublishSignedExecutionPayloadResult.rejected(
+                signedExecutionPayload.getBeaconBlockRoot(), "Failed gossip validation: oopsy"));
+
+    verifyNoInteractions(executionPayloadGossipChannel, dataColumnSidecarGossipChannel);
   }
 }

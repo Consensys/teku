@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -33,11 +33,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 
 public class GetProposerDutiesIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
-  // epoch | 0                   | 1
-  // slot  | 1  2  3  4  5  6  7 | 8
-  // query |                     | ^
-  // dep   |                   D |
-  // EXPECT epoch 1 duties with dependent root slot 7
   private static final Logger LOG = LogManager.getLogger();
 
   @Test
@@ -52,24 +47,61 @@ public class GetProposerDutiesIntegrationTest extends AbstractDataBackedRestAPII
     assertThat(dependentRoot(responseBody)).isEqualTo(chain.getLast().getParentRoot());
   }
 
-  // epoch | 0                   | 1
-  // slot  | 1  2  3  4  5  6  7
-  // query |                   ^
-  // dep   |
-  // EXPECT - fail, as pre-epoch 1, can't compute.
+  // epoch | 0                   |<1>
+  // slot  | 1  2  3  4  5  6  7 |
+  // query |                   ^ |
+  // dep   |                   D |
+  // EXPECT - should be able to query for the next epoch, may not be stable if it's too early.
   @Test
-  void shouldFailTooFarInFuturePreFulu() throws IOException {
+  void shouldReturnNextEpochDutiesFutureEpochPreFulu() throws IOException {
     startRestApiAtGenesisWithValidatorApiHandler(SpecMilestone.ALTAIR);
-    createBlocksAtSlots(1, 2, 3, 4, 5, 6, 7);
+    final List<SignedBlockAndState> chain = createBlocksAtSlots(1, 2, 3, 4, 5, 6, 7);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     final Response response = getProposerDuties("1");
     final String responseBody = response.body().string();
-    assertThat(response.code()).isEqualTo(400);
-    assertThat(responseBody).contains("slot in the current epoch");
+    logChainData(chain);
+    assertThat(response.code()).isEqualTo(200);
+    assertThat(dependentRoot(responseBody)).isEqualTo(chain.getLast().getRoot());
   }
 
-  // epoch | 0                   | 1                      | 2
+  // epoch  GENESIS | 0                   |<1>
+  // slot         0 | 1  2  3  4  5  6  7 |
+  // query          |                   ^ |
+  // dep          D |                     |
+  // EXPECT epoch 1 duties with dependent root slot 0 (GENESIS)
+  @Test
+  void shouldReturnNextEpochDutiesFutureEpochPostFulu() throws IOException {
+    startRestApiAtGenesisWithValidatorApiHandler(SpecMilestone.FULU);
+    final List<SignedBlockAndState> chain = createBlocksAtSlots(1, 2, 3, 4, 5, 6, 7);
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    logChainData(chain);
+    final Response response = getProposerDuties("1");
+    final String responseBody = response.body().string();
+    assertThat(response.code()).isEqualTo(200);
+    assertThat(dependentRoot(responseBody)).isEqualTo(chain.getFirst().getParentRoot());
+  }
+
+  // epoch  GENESIS | 0                   |<1>
+  // slot         0 | 1  2  3  4  5  6  7 | 8
+  // query          |                     | ^
+  // dep          D |                     |
+  // EXPECT epoch 1 duties with dependent root slot 0 (GENESIS)
+  @Test
+  void shouldReturnCorrectDependentRootPostFulu() throws IOException {
+    startRestApiAtGenesisWithValidatorApiHandler(SpecMilestone.FULU);
+    final List<SignedBlockAndState> chain = createBlocksAtSlots(1, 2, 3, 4, 5, 6, 7, 8);
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    logChainData(chain);
+    final Response response = getProposerDuties("1");
+    final String responseBody = response.body().string();
+    assertThat(response.code()).isEqualTo(200);
+    assertThat(dependentRoot(responseBody)).isEqualTo(chain.getFirst().getParentRoot());
+  }
+
+  // epoch | 0                   | 1                      | <2>
   // slot  | 1  2  3  4  5  6  7 | 8  9 10 11 12 13 14 15 | 16
   // query |                     |                        |  ^
   // dep   |                     |                      D |
@@ -89,23 +121,11 @@ public class GetProposerDutiesIntegrationTest extends AbstractDataBackedRestAPII
     assertThat(dependentRoot(responseBody)).isEqualTo(chain.getLast().getParentRoot());
   }
 
-  // epoch | 0                   | 1                      | 2
-  // slot  | 1  2  3  4  5  6  7 | 8  9 10 11 12 13 14 15 | 16
-  // query |                     |                        |  ^
-  // dep   |                     |                      D |
-  // EXPECT - expect epoch 2 duties with dependent root slot 15
-  @Test
-  void shouldReturnCorrectDependentRootPostFulu() throws IOException {
-    startRestApiAtGenesisWithValidatorApiHandler(SpecMilestone.FULU);
-    final List<SignedBlockAndState> chain = createBlocksAtSlots(1, 2, 3, 4, 5, 6, 7, 8);
-    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    final Response response = getProposerDuties("1");
-    final String responseBody = response.body().string();
-    assertThat(response.code()).isEqualTo(200);
-    assertThat(dependentRoot(responseBody)).isEqualTo(chain.getLast().getParentRoot());
-  }
-
+  // epoch  GENESIS | 0                   |<1>                     |  2
+  // slot         0 | 1  2  3  4  5  6  7 | 8  9 10 11 12 13 14 15 | 16
+  // query          |                     |                        |  ^
+  // dep          D |                     |                        |
+  // EXPECT - expect epoch 1 duties with dependent root slot 0 (GENESIS)
   @Test
   void shouldReturnCorrectDependentRootPostFuluExtraSlots() throws IOException {
     startRestApiAtGenesisWithValidatorApiHandler(SpecMilestone.FULU);
@@ -117,17 +137,16 @@ public class GetProposerDutiesIntegrationTest extends AbstractDataBackedRestAPII
     final Response response = getProposerDuties("1");
     final String responseBody = response.body().string();
     assertThat(response.code()).isEqualTo(200);
-    assertThat(dependentRoot(responseBody)).isEqualTo(chain.get(6).getRoot());
+    assertThat(dependentRoot(responseBody)).isEqualTo(chain.getFirst().getParentRoot());
   }
 
-  // epoch | 0                   | 1                      | 2
+  // epoch | 0                   | 1                      | <2>
   // slot  | 1  2  3  4  5  6  7 | 8  9 10 11 12 13 14 15 |
   // query |                     |                      ^ |
   // dep   |                   D |                        |
-  // EXPECT - expect epoch 2 duties with dependent root slot 7
-  // differs from pre-fulu which would fail this query
+  // EXPECT - expect epoch 2 duties with dependent root slot 15
   @Test
-  void shouldReturnCorrectDependentRootPostFuluExtraSlots2() throws IOException {
+  void shouldReturnCorrectDependentRootPostFuluExtraSlotsFutureEpoch() throws IOException {
     startRestApiAtGenesisWithValidatorApiHandler(SpecMilestone.FULU);
     final List<SignedBlockAndState> chain =
         createBlocksAtSlots(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
@@ -141,10 +160,10 @@ public class GetProposerDutiesIntegrationTest extends AbstractDataBackedRestAPII
     assertThat(dependentRoot(responseBody)).isEqualTo(chain.get(6).getRoot());
   }
 
-  // epoch | 0                   | 1                      | 2
+  // epoch | 0                   | 1                      | <2>
   // slot  | 1  2  3  4  5  6  7 | 8  9 10 11 12 13 14 15 | 16
   // query |                     |                        |  ^
-  // dep   |                     |                      D |
+  // dep   |                   D |                        |
   // EXPECT - expect epoch 2 duties with dependent root slot 15
   @Test
   void shouldReturnCorrectDependentRootSecondEpoch() throws IOException {
@@ -157,7 +176,7 @@ public class GetProposerDutiesIntegrationTest extends AbstractDataBackedRestAPII
     final Response response = getProposerDuties("2");
     final String responseBody = response.body().string();
     assertThat(response.code()).isEqualTo(200);
-    assertThat(dependentRoot(responseBody)).isEqualTo(chain.getLast().getParentRoot());
+    assertThat(dependentRoot(responseBody)).isEqualTo(chain.get(6).getRoot());
   }
 
   final Bytes32 dependentRoot(final String responseBody) {
@@ -174,12 +193,14 @@ public class GetProposerDutiesIntegrationTest extends AbstractDataBackedRestAPII
   }
 
   private void logChainData(final List<SignedBlockAndState> chain) {
+    LOG.info(
+        "Genesis root: {}",
+        recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot());
     chain.forEach(
         signedBlockAndState ->
             LOG.info(
-                "SLOT: {}, root: {}, ROOT: {}",
+                "slot: {}, root: {}",
                 signedBlockAndState.getSlot(),
-                signedBlockAndState.getRoot(),
-                signedBlockAndState.getBlock().getRoot()));
+                signedBlockAndState.getRoot()));
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -410,6 +412,13 @@ public class ForkChoiceUtil {
     return miscHelpers.computeStartSlotAtEpoch(finalizedEpoch);
   }
 
+  public SafeFuture<Optional<BeaconState>> retrieveBlockState(
+      final ReadOnlyStore store, final SignedBeaconBlock block) {
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(block.getSlot(), block.getParentRoot());
+    return store.retrieveBlockState(slotAndBlockRoot);
+  }
+
   public BlockImportResult checkOnBlockConditions(
       final SignedBeaconBlock block, final BeaconState blockSlotState, final ReadOnlyStore store) {
     final UInt64 blockSlot = block.getSlot();
@@ -546,6 +555,11 @@ public class ForkChoiceUtil {
   }
 
   public AvailabilityChecker<?> createAvailabilityChecker(final SignedBeaconBlock block) {
+    return AvailabilityChecker.NOOP;
+  }
+
+  public AvailabilityChecker<?> createAvailabilityChecker(
+      final SignedExecutionPayloadEnvelope executionPayload) {
     return AvailabilityChecker.NOOP;
   }
 }

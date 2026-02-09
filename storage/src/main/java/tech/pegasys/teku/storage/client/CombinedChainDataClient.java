@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
@@ -70,16 +71,19 @@ public class CombinedChainDataClient {
   private final Spec spec;
 
   private final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler;
+  private final boolean isEarliestAvailableDataColumnSlotSupported;
 
   public CombinedChainDataClient(
       final RecentChainData recentChainData,
       final StorageQueryChannel historicalChainData,
       final Spec spec,
-      final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler) {
+      final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler,
+      final boolean isEarliestAvailableDataColumnSlotSupported) {
     this.recentChainData = recentChainData;
     this.historicalChainData = historicalChainData;
     this.spec = spec;
     this.lateBlockReorgPreparationHandler = lateBlockReorgPreparationHandler;
+    this.isEarliestAvailableDataColumnSlotSupported = isEarliestAvailableDataColumnSlotSupported;
   }
 
   /**
@@ -247,7 +251,7 @@ public class CombinedChainDataClient {
     final Optional<Bytes32> recentBlockRoot = recentChainData.getBlockRootInEffectBySlot(slot);
     if (recentBlockRoot.isPresent()) {
       return getStore()
-          .retrieveStateAtSlot(new SlotAndBlockRoot(slot, recentBlockRoot.get()))
+          .retrieveBlockState(new SlotAndBlockRoot(slot, recentBlockRoot.get()))
           .thenCompose(
               maybeState ->
                   maybeState.isPresent()
@@ -305,7 +309,7 @@ public class CombinedChainDataClient {
         recentChainData.getBlockRootInEffectBySlot(slot, chainHead);
     if (recentBlockRoot.isPresent()) {
       return getStore()
-          .retrieveStateAtSlot(new SlotAndBlockRoot(slot, recentBlockRoot.get()))
+          .retrieveBlockState(new SlotAndBlockRoot(slot, recentBlockRoot.get()))
           .thenCompose(
               maybeState ->
                   maybeState.isPresent()
@@ -542,8 +546,28 @@ public class CombinedChainDataClient {
             });
   }
 
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> getExecutionPayloadByBlockRoot(
+      final Bytes32 blockRoot) {
+    return recentChainData
+        .retrieveSignedExecutionPayloadEnvelopeByBlockRoot(blockRoot)
+        .thenCompose(
+            maybeExecutionPayload -> {
+              if (maybeExecutionPayload.isPresent()) {
+                return SafeFuture.completedFuture(maybeExecutionPayload);
+              }
+              // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 query for an execution
+              // payload from the historical chain data
+              return SafeFuture.failedFuture(
+                  new UnsupportedOperationException("Not yet implemented"));
+            });
+  }
+
   public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobSidecarSlot() {
     return historicalChainData.getEarliestAvailableBlobSidecarSlot();
+  }
+
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot() {
+    return historicalChainData.getEarliestAvailableDataColumnSlot();
   }
 
   /**
@@ -816,7 +840,11 @@ public class CombinedChainDataClient {
     return historicalChainData.getDataColumnIdentifiers(startSlot, endSlot, limit);
   }
 
-  public SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot() {
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlotWithFallback() {
+    if (isEarliestAvailableDataColumnSlotSupported) {
+      return historicalChainData.getEarliestAvailableDataColumnSlot();
+    }
+
     return historicalChainData.getEarliestDataColumnSidecarSlot();
   }
 
@@ -835,7 +863,7 @@ public class CombinedChainDataClient {
       return STATE_NOT_AVAILABLE;
     }
     return store
-        .retrieveStateAtSlot(slotAndBlockRoot)
+        .retrieveBlockState(slotAndBlockRoot)
         .thenCompose(
             maybeState -> {
               if (maybeState.isPresent()) {

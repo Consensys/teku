@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -21,6 +21,7 @@ import static tech.pegasys.teku.infrastructure.async.ExceptionHandlers.exception
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.List;
 import java.util.NavigableSet;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -208,7 +209,7 @@ public class BatchSync implements Sync {
       return;
     }
 
-    syncPreImportBlockChannel.onNewPreImportBlocks(batch.getBlocks());
+    syncPreImportBlockChannel.onNewPreImportBlocks(List.copyOf(batch.getBlocks()));
 
     activeBatches
         .previousNonEmptyBatch(batch)

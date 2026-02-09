@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -373,9 +373,9 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return constructDataColumnSidecarsInternal(
         builder ->
             builder
+                .kzgCommitments(sszKZGCommitments)
                 .signedBlockHeader(signedBeaconBlockHeader)
                 .kzgCommitmentsInclusionProof(kzgCommitmentsInclusionProof),
-        sszKZGCommitments,
         extendedMatrix);
   }
 
@@ -384,8 +384,12 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
    *
    * <p>This helper demonstrates the relationship between blobs and ``ExtendedMatrix``.
    *
-   * <p>>The data structure for storing cells is implementation-dependent.
+   * <p>The data structure for storing cells is implementation-dependent.
+   *
+   * <p>This method uses heavy calculation, use it only when needed
    */
+  @VisibleForTesting
+  @Deprecated
   public List<List<MatrixEntry>> computeExtendedMatrixAndProofs(final List<Blob> blobs) {
     return IntStream.range(0, blobs.size())
         .parallel()
@@ -401,8 +405,8 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
                         .create(
                             kzgCellAndProofs.get(cellIndex).cell(),
                             kzgCellAndProofs.get(cellIndex).proof(),
-                            blobIndex,
-                            cellIndex));
+                            cellIndex,
+                            blobIndex));
               }
               return row;
             })
@@ -426,8 +430,8 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
                         .create(
                             kzgCells.get(cellIndex),
                             blobAndCellProofs.cellProofs().get(cellIndex),
-                            blobIndex,
-                            cellIndex));
+                            cellIndex,
+                            blobIndex));
               }
               return row;
             })
@@ -460,16 +464,15 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return constructDataColumnSidecarsInternal(
         builder ->
             builder
+                .kzgCommitments(sszKZGCommitments)
                 .signedBlockHeader(signedBeaconBlockHeader)
                 .kzgCommitmentsInclusionProof(kzgCommitmentsInclusionProof),
-        sszKZGCommitments,
         extendedMatrix);
   }
 
   // get_data_column_sidecars
   protected List<DataColumnSidecar> constructDataColumnSidecarsInternal(
       final Consumer<DataColumnSidecarBuilder> dataColumnSidecarBuilderModifier,
-      final SszList<SszKZGCommitment> sszKZGCommitments,
       final List<List<MatrixEntry>> extendedMatrix) {
     if (extendedMatrix.isEmpty()) {
       return Collections.emptyList();
@@ -502,7 +505,6 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
                     builder
                         .index(UInt64.valueOf(cellID))
                         .column(dataColumn)
-                        .kzgCommitments(sszKZGCommitments)
                         .kzgProofs(columnProofs);
                     dataColumnSidecarBuilderModifier.accept(builder);
                   });
@@ -547,12 +549,12 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return constructDataColumnSidecarsInternal(
         builder ->
             builder
+                .kzgCommitments(anyExistingSidecar.getKzgCommitments())
                 .signedBlockHeader(signedBeaconBlockHeader)
                 .kzgCommitmentsInclusionProof(
                     DataColumnSidecarFulu.required(anyExistingSidecar)
                         .getKzgCommitmentsInclusionProof()
                         .asListUnboxed()),
-        anyExistingSidecar.getKzgCommitments(),
         extendedMatrix);
   }
 

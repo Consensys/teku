@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -433,6 +433,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public Optional<UInt64> getEarliestAvailableDataColumnSlot() {
+    return db.get(schema.getVariableEarliestAvailableDataColumnSlot());
+  }
+
+  @Override
   public Map<String, Long> getColumnCounts(final Optional<String> maybeColumnFilter) {
     final Map<String, Long> columnCounts = new LinkedHashMap<>();
     schema
@@ -475,7 +480,10 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
         .put(
             "OPTIMISTIC_TRANSITION_BLOCK_SLOT",
             getOptimisticTransitionBlockSlot().map(Objects::toString))
-        .put("CUSTODY_GROUP_COUNT", getCustodyGroupCount().map(Objects::toString));
+        .put("CUSTODY_GROUP_COUNT", getCustodyGroupCount().map(Objects::toString))
+        .put(
+            "EARLIEST_AVAILABLE_DATA_COLUMN_SLOT",
+            getEarliestAvailableDataColumnSlot().map(Objects::toString));
 
     // get a list of the known keys, so that we can add missing variables
     final Map<String, Optional<String>> knownVariables = knownVariablesBuilder.build();
@@ -811,6 +819,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     @Override
     public void setEarliestBlobSidecarSlot(final UInt64 slot) {
       transaction.put(schema.getVariableEarliestBlobSidecarSlot(), slot);
+    }
+
+    @Override
+    public void setEarliestAvailableDataColumnSlot(final UInt64 slot) {
+      transaction.put(schema.getVariableEarliestAvailableDataColumnSlot(), slot);
     }
 
     @Override

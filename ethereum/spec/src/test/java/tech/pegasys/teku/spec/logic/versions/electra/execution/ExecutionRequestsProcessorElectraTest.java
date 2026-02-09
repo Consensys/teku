@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -412,7 +412,8 @@ class ExecutionRequestsProcessorElectraTest extends ProcessorTestHelper {
             .getPendingPartialWithdrawals()
             .get(postState.getPendingPartialWithdrawals().size() - 1);
 
-    assertThat(mostRecentPendingPartialWithdrawal.getValidatorIndex()).isEqualTo(validatorIndex);
+    assertThat(mostRecentPendingPartialWithdrawal.getValidatorIndex().intValue())
+        .isEqualTo(validatorIndex);
     assertThat(mostRecentPendingPartialWithdrawal.getAmount())
         .isEqualTo(UInt64.valueOf(123_456_789));
     assertThat(mostRecentPendingPartialWithdrawal.getWithdrawableEpoch())

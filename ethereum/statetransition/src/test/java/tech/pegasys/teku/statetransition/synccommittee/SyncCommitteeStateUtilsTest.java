@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -126,7 +126,7 @@ class SyncCommitteeStateUtilsTest {
 
     final BeaconStateAltair generatedState =
         dataStructureUtil.stateBuilderAltair().slot(generatedStateSlot).build();
-    when(recentChainData.retrieveStateAtSlot(
+    when(recentChainData.retrieveBlockState(
             new SlotAndBlockRoot(generatedStateSlot, chainHead.getRoot())))
         .thenReturn(SafeFuture.completedFuture(Optional.of(generatedState)));
 
@@ -147,7 +147,7 @@ class SyncCommitteeStateUtilsTest {
     when(recentChainData.getSlotForBlockRoot(blockRoot)).thenReturn(Optional.of(blockSlot));
 
     assertThatSafeFuture(stateUtils.getStateForSyncCommittee(slot)).isCompletedWithEmptyOptional();
-    verify(recentChainData, never()).retrieveStateAtSlot(any());
+    verify(recentChainData, never()).retrieveBlockState(any(SlotAndBlockRoot.class));
   }
 
   private void assertRetrievedStateIsSuitable(final UInt64 slot, final BeaconState state) {

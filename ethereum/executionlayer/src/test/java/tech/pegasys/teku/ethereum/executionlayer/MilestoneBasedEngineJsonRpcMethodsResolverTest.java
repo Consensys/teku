@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -199,6 +199,20 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
         arguments(ENGINE_NEW_PAYLOAD, EngineNewPayloadV4.class),
         arguments(ENGINE_GET_PAYLOAD, EngineGetPayloadV4.class),
         arguments(ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV3.class));
+  }
+
+  @Test
+  void fuluMilestoneMethodIsNotSupportedInElectra() {
+    final Spec electraSpec = TestSpecFactory.createMinimalElectra();
+
+    final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
+        new MilestoneBasedEngineJsonRpcMethodsResolver(electraSpec, executionEngineClient);
+
+    assertThatThrownBy(
+            () ->
+                engineMethodsResolver.getMethod(
+                    ENGINE_GET_PAYLOAD, () -> SpecMilestone.FULU, Object.class))
+        .hasMessage("Can't find method with name engine_getPayload for milestone FULU");
   }
 
   @ParameterizedTest

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 public class PtcDutyScheduler extends AbstractDutyScheduler {
 
   private static final Logger LOG = LogManager.getLogger();
+  private static final int LOOKAHEAD_EPOCHS = 1;
 
   public PtcDutyScheduler(
       final MetricsSystem metricsSystem, final DutyLoader<?> dutyLoader, final Spec spec) {
@@ -92,6 +93,6 @@ public class PtcDutyScheduler extends AbstractDutyScheduler {
 
   @Override
   int getLookAheadEpochs(final UInt64 epoch) {
-    return 1;
+    return LOOKAHEAD_EPOCHS;
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -1040,7 +1040,7 @@ class ForkChoiceNotifierTest {
     final Bytes32 bestBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final BeaconState state =
         recentChainData
-            .retrieveStateAtSlot(new SlotAndBlockRoot(blockSlot, bestBlockRoot))
+            .retrieveBlockState(new SlotAndBlockRoot(blockSlot, bestBlockRoot))
             .join()
             .orElseThrow();
     return withProposerForSlot(getCurrentForkChoiceState(), state, blockSlot);

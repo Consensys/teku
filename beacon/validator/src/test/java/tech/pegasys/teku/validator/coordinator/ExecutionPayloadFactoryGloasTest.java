@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -93,9 +93,7 @@ class ExecutionPayloadFactoryGloasTest {
     setupCachingOfThePayloadResult(slot, getPayloadResponse);
 
     final ExecutionPayloadEnvelope executionPayload =
-        dataStructureUtil.randomExecutionPayloadEnvelope(
-            slot,
-            schemaDefinitions.getBlobKzgCommitmentsSchema().createFromBlobsBundle(blobsBundle));
+        dataStructureUtil.randomExecutionPayloadEnvelope(slot);
 
     final SignedExecutionPayloadEnvelope signedExecutionPayload =
         schemaDefinitions
@@ -147,7 +145,6 @@ class ExecutionPayloadFactoryGloasTest {
     assertThat(executionPayload.getBuilderIndex()).isEqualTo(builderIndex);
     assertThat(executionPayload.getBeaconBlockRoot()).isEqualTo(blockAndState.getRoot());
     assertThat(executionPayload.getSlot()).isEqualTo(slot);
-    assertThat(executionPayload.getBlobKzgCommitments()).isEqualTo(kzgCommitments);
     assertThat(executionPayload.getStateRoot()).isNotEqualTo(Bytes32.ZERO);
   }
 

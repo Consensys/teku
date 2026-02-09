@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.datastructures.blobs.versions.gloas;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container6;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container5;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -28,14 +28,8 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
 public class DataColumnSidecarGloas
-    extends Container6<
-        DataColumnSidecarGloas,
-        SszUInt64,
-        DataColumn,
-        SszList<SszKZGCommitment>,
-        SszList<SszKZGProof>,
-        SszUInt64,
-        SszBytes32>
+    extends Container5<
+        DataColumnSidecarGloas, SszUInt64, DataColumn, SszList<SszKZGProof>, SszUInt64, SszBytes32>
     implements DataColumnSidecar {
 
   DataColumnSidecarGloas(final DataColumnSidecarSchemaGloas schema, final TreeNode backingNode) {
@@ -46,7 +40,6 @@ public class DataColumnSidecarGloas
       final DataColumnSidecarSchemaGloas schema,
       final UInt64 index,
       final DataColumn column,
-      final SszList<SszKZGCommitment> kzgCommitments,
       final SszList<SszKZGProof> kzgProofs,
       final UInt64 slot,
       final Bytes32 beaconBlockRoot) {
@@ -54,7 +47,6 @@ public class DataColumnSidecarGloas
         schema,
         SszUInt64.of(index),
         column,
-        kzgCommitments,
         kzgProofs,
         SszUInt64.of(slot),
         SszBytes32.of(beaconBlockRoot));
@@ -72,22 +64,22 @@ public class DataColumnSidecarGloas
 
   @Override
   public SszList<SszKZGCommitment> getKzgCommitments() {
-    return getField2();
+    throw new UnsupportedOperationException("kzg_commitments field was removed in Gloas");
   }
 
   @Override
   public SszList<SszKZGProof> getKzgProofs() {
-    return getField3();
+    return getField2();
   }
 
   @Override
   public UInt64 getSlot() {
-    return getField4().get();
+    return getField3().get();
   }
 
   @Override
   public Bytes32 getBeaconBlockRoot() {
-    return getField5().get();
+    return getField4().get();
   }
 
   @Override
