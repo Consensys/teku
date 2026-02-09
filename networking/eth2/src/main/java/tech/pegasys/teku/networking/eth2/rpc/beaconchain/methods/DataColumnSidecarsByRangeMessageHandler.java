@@ -338,26 +338,23 @@ public class DataColumnSidecarsByRangeMessageHandler
 
     private SafeFuture<Optional<DataColumnSidecar>> tryArchiveSidecarReconstruction(
         final DataColumnSlotAndIdentifier columnSlotAndIdentifier) {
-      if (maybeSuperNodePruned
-          && dataColumnSidecarArchiveReconstructor.isSidecarPruned(
+      if (!maybeSuperNodePruned
+          || !dataColumnSidecarArchiveReconstructor.isSidecarPruned(
               columnSlotAndIdentifier.slot(), columnSlotAndIdentifier.columnIndex())) {
-        return combinedChainDataClient
-            .getBlockAtSlotExact(columnSlotAndIdentifier.slot())
-            .thenCompose(
-                maybeBlock -> {
-                  final SafeFuture<Optional<DataColumnSidecar>> result;
-                  if (maybeBlock.isEmpty()) {
-                    result = SafeFuture.completedFuture(Optional.empty());
-                  } else {
-                    result =
-                        dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(
-                            maybeBlock.get(), columnSlotAndIdentifier.columnIndex(), messageHash);
-                  }
-                  return result;
-                });
-      } else {
         return SafeFuture.completedFuture(Optional.empty());
       }
+
+      return combinedChainDataClient
+          .getBlockAtSlotExact(columnSlotAndIdentifier.slot())
+          .thenCompose(
+              maybeBlock -> {
+                if (maybeBlock.isEmpty()) {
+                  return SafeFuture.completedFuture(Optional.empty());
+                }
+
+                return dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(
+                    maybeBlock.get(), columnSlotAndIdentifier.columnIndex(), messageHash);
+              });
     }
 
     private boolean isCanonicalHotDataColumnSidecar(
