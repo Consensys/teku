@@ -101,10 +101,12 @@ class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback
   }
 
   private void runFinishedRunnables() {
-    try {
-      finishedRunnables.forEach(Runnable::run);
-    } catch (final Throwable t) {
-      LOG.debug("Failed to run finishedRunnables", t);
+    for (final Runnable runnable : finishedRunnables) {
+      try {
+        runnable.run();
+      } catch (final Throwable t) {
+        LOG.debug("Failed to run runnable {}", runnable, t);
+      }
     }
   }
 }
