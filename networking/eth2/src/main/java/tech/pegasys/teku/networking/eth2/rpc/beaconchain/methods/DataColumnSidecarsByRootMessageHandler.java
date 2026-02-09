@@ -126,9 +126,9 @@ public class DataColumnSidecarsByRootMessageHandler
     final Set<UInt64> myCustodyColumns =
         custodyGroupCountManagerSupplier.get().getCustodyColumnIndices();
 
-    final Bytes32 messageHash = message.hashTreeRoot();
+    final int messageId = dataColumnSidecarArchiveReconstructor.onRequest();
     responseCallback.alwaysRun(
-        () -> dataColumnSidecarArchiveReconstructor.onRequestCompleted(messageHash));
+        () -> dataColumnSidecarArchiveReconstructor.onRequestCompleted(messageId));
 
     SafeFuture.collectAll(
             message.stream()
@@ -147,7 +147,7 @@ public class DataColumnSidecarsByRootMessageHandler
                                       maybeSlot,
                                       byRootIdentifier.getColumns(),
                                       myCustodyColumns,
-                                      messageHash,
+                                      messageId,
                                       responseCallbackWithLogging));
                     }))
         .thenAccept(
@@ -163,14 +163,14 @@ public class DataColumnSidecarsByRootMessageHandler
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> getArchiveOrNonCanonicalDataColumnSidecar(
-      final DataColumnSlotAndIdentifier identifier, final Bytes32 messageHash) {
+      final DataColumnSlotAndIdentifier identifier, final int messageId) {
     return combinedChainDataClient
         .getBlockByBlockRoot(identifier.blockRoot())
         .thenCompose(
             maybeBlock -> {
               if (maybeBlock.isPresent()) {
                 final SignedBeaconBlock block = maybeBlock.get();
-                return getDataColumnSidecar(block, identifier, messageHash);
+                return getDataColumnSidecar(block, identifier, messageId);
               } else {
                 return SafeFuture.completedFuture(Optional.empty());
               }
@@ -180,13 +180,13 @@ public class DataColumnSidecarsByRootMessageHandler
   private SafeFuture<Optional<DataColumnSidecar>> getDataColumnSidecar(
       final SignedBeaconBlock block,
       final DataColumnSlotAndIdentifier identifier,
-      final Bytes32 messageHash) {
+      final int messageId) {
     final boolean isSuperNodePruned =
         dataColumnSidecarArchiveReconstructor.isSidecarPruned(
             block.getSlot(), identifier.columnIndex());
     if (isSuperNodePruned) {
       return dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(
-          block, identifier.columnIndex(), messageHash);
+          block, identifier.columnIndex(), messageId);
     }
     final Optional<ChainHead> chainHead = combinedChainDataClient.getChainHead();
     if (chainHead.isEmpty()) {
@@ -241,7 +241,7 @@ public class DataColumnSidecarsByRootMessageHandler
       final Optional<UInt64> maybeSlot,
       final List<UInt64> columns,
       final Set<UInt64> myCustodyColumns,
-      final Bytes32 messageHash,
+      final int messageId,
       final ResponseCallback<DataColumnSidecar> callback) {
     if (maybeSlot.isEmpty()) {
       return SafeFuture.completedFuture(0L);
@@ -263,9 +263,9 @@ public class DataColumnSidecarsByRootMessageHandler
 
   private SafeFuture<Long> retrieveAndRespondForColumn(
       final DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier,
-      final Bytes32 messageHash,
+      final int messageId,
       final ResponseCallback<DataColumnSidecar> callback) {
-    return retrieveDataColumnSidecar(dataColumnSlotAndIdentifier, messageHash)
+    return retrieveDataColumnSidecar(dataColumnSlotAndIdentifier, messageId)
         .thenCompose(
             maybeSidecar ->
                 maybeSidecar
@@ -275,7 +275,7 @@ public class DataColumnSidecarsByRootMessageHandler
 
   private SafeFuture<Optional<DataColumnSidecar>> retrieveDataColumnSidecar(
       final DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier,
-      final Bytes32 messageHash) {
+      final int messageId) {
     return combinedChainDataClient
         .getSidecar(dataColumnSlotAndIdentifier)
         .thenCompose(
@@ -286,7 +286,7 @@ public class DataColumnSidecarsByRootMessageHandler
               // Fallback to compacted archive or non-canonical sidecar if the canonical one is not
               // found
               return getArchiveOrNonCanonicalDataColumnSidecar(
-                  dataColumnSlotAndIdentifier, messageHash);
+                  dataColumnSlotAndIdentifier, messageId);
             });
   }
 }
