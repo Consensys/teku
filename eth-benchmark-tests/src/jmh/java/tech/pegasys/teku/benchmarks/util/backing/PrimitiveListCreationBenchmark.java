@@ -28,12 +28,15 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 @State(Scope.Thread)
-@BenchmarkMode({Mode.Throughput, Mode.SingleShotTime})
+@BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @Warmup(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
@@ -45,18 +48,32 @@ public class PrimitiveListCreationBenchmark {
   @Param({"1", "4", "16", "64"})
   int listSize;
 
-  private SszUInt64ListSchema<?> schema;
-  private List<UInt64> elements;
+  private SszUInt64ListSchema<?> uint64Schema;
+  private List<UInt64> uint64Elements;
+
+  private SszByteListSchema<?> byteSchema;
+  private List<SszByte> byteElements;
 
   @Setup
   public void setup() {
-    schema = SszUInt64ListSchema.create(2048);
-    elements = IntStream.range(0, listSize).mapToObj(i -> UInt64.valueOf(100_000L + i)).toList();
+    uint64Schema = SszUInt64ListSchema.create(2048);
+    uint64Elements =
+        IntStream.range(0, listSize).mapToObj(i -> UInt64.valueOf(100_000L + i)).toList();
+
+    byteSchema = SszByteListSchema.create(2048);
+    byteElements =
+        IntStream.range(0, listSize).mapToObj(i -> SszByte.of((byte) (i & 0xFF))).toList();
   }
 
   @Benchmark
   public void createUInt64ListViaOf(final Blackhole bh) {
-    SszUInt64List list = schema.of(elements);
+    SszUInt64List list = uint64Schema.of(uint64Elements);
+    bh.consume(list);
+  }
+
+  @Benchmark
+  public void createByteListViaOf(final Blackhole bh) {
+    SszByteList list = byteSchema.createFromElements(byteElements);
     bh.consume(list);
   }
 }
