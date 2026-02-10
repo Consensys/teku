@@ -133,7 +133,7 @@ public class Eth2P2PNetworkFactory {
   private static final Logger LOG = LogManager.getLogger();
   protected static final NoOpMetricsSystem METRICS_SYSTEM = new NoOpMetricsSystem();
   private static final MockDiscoveryNodeIdGenerator DISCOVERY_NODE_ID_GENERATOR =
-          new MockDiscoveryNodeIdGenerator();
+      new MockDiscoveryNodeIdGenerator();
   private static final int MIN_PORT = 6000;
   private static final int MAX_PORT = 9000;
 
@@ -145,7 +145,7 @@ public class Eth2P2PNetworkFactory {
 
   public void stopAll() throws InterruptedException, ExecutionException, TimeoutException {
     Waiter.waitFor(
-            SafeFuture.allOf(networks.stream().map(P2PNetwork::stop).toArray(SafeFuture[]::new)));
+        SafeFuture.allOf(networks.stream().map(P2PNetwork::stop).toArray(SafeFuture[]::new)));
   }
 
   public class Eth2P2PNetworkBuilder {
@@ -172,9 +172,9 @@ public class Eth2P2PNetworkFactory {
     protected OperationProcessor<SignedExecutionPayloadBid> executionPayloadBidProcessor;
     protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
     protected VerifiedBlockAttestationsSubscriptionProvider
-            verifiedBlockAttestationsSubscriptionProvider;
+        verifiedBlockAttestationsSubscriptionProvider;
     protected Function<RpcMethod<?, ?, ?>, Stream<RpcMethod<?, ?, ?>>> rpcMethodsModifier =
-            Stream::of;
+        Stream::of;
     protected List<PeerHandler> peerHandlers = new ArrayList<>();
     protected RpcEncoding rpcEncoding;
     protected GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
@@ -209,8 +209,8 @@ public class Eth2P2PNetworkFactory {
               throw new RuntimeException("Failed to find a free port after multiple attempts", e);
             }
             LOG.info(
-                    "Port conflict detected, retrying with a new port. Original message: {}",
-                    e.getMessage());
+                "Port conflict detected, retrying with a new port. Original message: {}",
+                e.getMessage());
             attempt++;
             Waiter.waitFor(network.stop());
           } else {
@@ -226,21 +226,21 @@ public class Eth2P2PNetworkFactory {
         final TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
         final SubnetSubscriptionService attestationSubnetService = new SubnetSubscriptionService();
         final SubnetSubscriptionService syncCommitteeSubnetService =
-                new SubnetSubscriptionService();
+            new SubnetSubscriptionService();
         final SubnetSubscriptionService dataColumnSidecarSubnetService =
-                new SubnetSubscriptionService();
+            new SubnetSubscriptionService();
         final SubnetSubscriptionService executionProofSubnetService =
-                new SubnetSubscriptionService();
+            new SubnetSubscriptionService();
         final CombinedChainDataClient combinedChainDataClient =
-                new CombinedChainDataClient(
-                        recentChainData,
-                        historicalChainData,
-                        spec,
-                        LateBlockReorgPreparationHandler.NOOP,
-                        config.isReworkedSidecarSyncEnabled());
+            new CombinedChainDataClient(
+                recentChainData,
+                historicalChainData,
+                spec,
+                LateBlockReorgPreparationHandler.NOOP,
+                config.isReworkedSidecarSyncEnabled());
         final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider =
-                new DataColumnSidecarSubnetTopicProvider(
-                        combinedChainDataClient.getRecentChainData(), gossipEncoding);
+            new DataColumnSidecarSubnetTopicProvider(
+                combinedChainDataClient.getRecentChainData(), gossipEncoding);
 
         final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
         if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
@@ -249,161 +249,162 @@ public class Eth2P2PNetworkFactory {
 
         if (rpcEncoding == null) {
           rpcEncoding =
-                  RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
+              RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
         }
         final UInt256 discoveryNodeId = DISCOVERY_NODE_ID_GENERATOR.next();
         final Eth2PeerManager eth2PeerManager =
-                Eth2PeerManager.create(
-                        asyncRunner,
-                        combinedChainDataClient,
-                        () -> DataColumnSidecarByRootCustody.NOOP,
-                        () -> CustodyGroupCountManager.NOOP,
-                        metadataMessagesFactory,
-                        METRICS_SYSTEM,
-                        attestationSubnetService,
-                        syncCommitteeSubnetService,
-                        rpcEncoding,
-                        new StatusMessageFactory(spec, combinedChainDataClient, METRICS_SYSTEM),
-                        requiredCheckpoint,
-                        eth2RpcPingInterval,
-                        eth2RpcOutstandingPingThreshold,
-                        eth2StatusUpdateInterval,
-                        timeProvider,
-                        P2PConfig.DEFAULT_PEER_BLOCKS_RATE_LIMIT,
-                        P2PConfig.DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT,
-                        P2PConfig.DEFAULT_PEER_REQUEST_LIMIT,
-                        spec,
-                        __ -> Optional.of(discoveryNodeId),
-                        DasReqRespLogger.NOOP);
+            Eth2PeerManager.create(
+                asyncRunner,
+                combinedChainDataClient,
+                () -> DataColumnSidecarByRootCustody.NOOP,
+                () -> CustodyGroupCountManager.NOOP,
+                metadataMessagesFactory,
+                METRICS_SYSTEM,
+                attestationSubnetService,
+                syncCommitteeSubnetService,
+                rpcEncoding,
+                new StatusMessageFactory(spec, combinedChainDataClient, METRICS_SYSTEM),
+                requiredCheckpoint,
+                eth2RpcPingInterval,
+                eth2RpcOutstandingPingThreshold,
+                eth2StatusUpdateInterval,
+                timeProvider,
+                P2PConfig.DEFAULT_PEER_BLOCKS_RATE_LIMIT,
+                P2PConfig.DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT,
+                P2PConfig.DEFAULT_PEER_REQUEST_LIMIT,
+                spec,
+                __ -> Optional.of(discoveryNodeId),
+                DasReqRespLogger.NOOP);
 
         List<RpcMethod<?, ?, ?>> rpcMethods =
-                eth2PeerManager.getBeaconChainMethods().all().stream()
-                        .flatMap(rpcMethodsModifier)
-                        .toList();
+            eth2PeerManager.getBeaconChainMethods().all().stream()
+                .flatMap(rpcMethodsModifier)
+                .toList();
 
         this.peerHandler(eth2PeerManager);
 
         final NoOpMetricsSystem metricsSystem = new NoOpMetricsSystem();
         final PeerPools peerPools = new PeerPools();
         final ReputationManager reputationManager =
-                new DefaultReputationManager(
-                        metricsSystem, timeProvider, Constants.REPUTATION_MANAGER_CAPACITY, peerPools);
+            new DefaultReputationManager(
+                metricsSystem, timeProvider, Constants.REPUTATION_MANAGER_CAPACITY, peerPools);
         final AttestationSubnetTopicProvider attestationSubnetTopicProvider =
-                new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
+            new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
         final SyncCommitteeSubnetTopicProvider syncCommitteeTopicProvider =
-                new SyncCommitteeSubnetTopicProvider(recentChainData, gossipEncoding);
+            new SyncCommitteeSubnetTopicProvider(recentChainData, gossipEncoding);
         final GossipTopicFilter gossipTopicsFilter =
-                new Eth2GossipTopicFilter(recentChainData, gossipEncoding, spec, config);
+            new Eth2GossipTopicFilter(recentChainData, gossipEncoding, spec, config);
         final KeyValueStore<String, Bytes> keyValueStore = new MemKeyValueStore<>();
         final DiscoveryConfig discoConfig = config.getDiscoveryConfig();
         final TargetPeerRange targetPeerRange =
-                new TargetPeerRange(
-                        discoConfig.getMinPeers(),
-                        discoConfig.getMaxPeers(),
-                        discoConfig.getMinRandomlySelectedPeers());
+            new TargetPeerRange(
+                discoConfig.getMinPeers(),
+                discoConfig.getMaxPeers(),
+                discoConfig.getMinRandomlySelectedPeers());
         final Supplier<SpecVersion> currentSpecVersionSupplier =
-                () -> combinedChainDataClient.getRecentChainData().getCurrentSpec();
+            () -> combinedChainDataClient.getRecentChainData().getCurrentSpec();
         final SchemaDefinitionsSupplier currentSchemaDefinitions =
-                () ->
-                        combinedChainDataClient
-                                .getRecentChainData()
-                                .getCurrentSpec()
-                                .getSchemaDefinitions();
+            () ->
+                combinedChainDataClient
+                    .getRecentChainData()
+                    .getCurrentSpec()
+                    .getSchemaDefinitions();
         final Supplier<Optional<UInt64>> currentSlotSupplier =
-                () -> combinedChainDataClient.getRecentChainData().getCurrentSlot();
+            () -> combinedChainDataClient.getRecentChainData().getCurrentSlot();
         final SettableLabelledGauge subnetPeerCountGauge =
-                SettableLabelledGauge.create(
-                        metricsSystem,
-                        TekuMetricCategory.NETWORK,
-                        "subnet_peer_count",
-                        "Number of currently connected peers subscribed to each subnet",
-                        "subnet");
+            SettableLabelledGauge.create(
+                metricsSystem,
+                TekuMetricCategory.NETWORK,
+                "subnet_peer_count",
+                "Number of currently connected peers subscribed to each subnet",
+                "subnet");
         final DiscoveryNetwork<?> network =
-                DiscoveryNetworkBuilder.create()
-                        .metricsSystem(metricsSystem)
-                        .asyncRunner(asyncRunner)
-                        .kvStore(keyValueStore)
-                        .p2pNetwork(
-                                LibP2PNetworkBuilder.create()
-                                        .asyncRunner(DelayedExecutorAsyncRunner.create())
-                                        .config(config.getNetworkConfig())
-                                        .networkingSpecConfig(config.getNetworkingSpecConfig())
-                                        .privateKeyProvider(PrivateKeyGenerator::generate)
-                                        .reputationManager(reputationManager)
-                                        .metricsSystem(METRICS_SYSTEM)
-                                        .rpcMethods(new ArrayList<>(rpcMethods))
-                                        .peerHandlers(peerHandlers)
-                                        .preparedGossipMessageFactory(
-                                                gossipEncoding.createPreparedGossipMessageFactory(
-                                                        recentChainData::getMilestoneByForkDigest))
-                                        .gossipTopicFilter(gossipTopicsFilter)
-                                        .timeProvider(timeProvider)
-                                        .build())
-                        .peerPools(peerPools)
-                        .peerSelectionStrategy(
-                                new Eth2PeerSelectionStrategy(
-                                        targetPeerRange,
-                                        gossipNetwork ->
-                                                PeerSubnetSubscriptions.create(
-                                                        currentSpecVersionSupplier.get(),
-                                                        NodeIdToDataColumnSidecarSubnetsCalculator.create(
-                                                                spec, currentSlotSupplier),
-                                                        gossipNetwork,
-                                                        attestationSubnetTopicProvider,
-                                                        syncCommitteeTopicProvider,
-                                                        syncCommitteeSubnetService,
-                                                        dataColumnSidecarSubnetTopicProvider,
-                                                        dataColumnSidecarSubnetService,
-                                                        config.getTargetSubnetSubscriberCount(),
-                                                        subnetPeerCountGauge),
-                                        reputationManager,
-                                        Collections::shuffle))
-                        .discoveryConfig(config.getDiscoveryConfig())
-                        .p2pConfig(config.getNetworkConfig())
-                        .spec(config.getSpec())
+            DiscoveryNetworkBuilder.create()
+                .metricsSystem(metricsSystem)
+                .asyncRunner(asyncRunner)
+                .kvStore(keyValueStore)
+                .p2pNetwork(
+                    LibP2PNetworkBuilder.create()
+                        .asyncRunner(DelayedExecutorAsyncRunner.create())
+                        .config(config.getNetworkConfig())
+                        .networkingSpecConfig(config.getNetworkingSpecConfig())
+                        .privateKeyProvider(PrivateKeyGenerator::generate)
+                        .reputationManager(reputationManager)
+                        .metricsSystem(METRICS_SYSTEM)
+                        .rpcMethods(new ArrayList<>(rpcMethods))
+                        .peerHandlers(peerHandlers)
+                        .preparedGossipMessageFactory(
+                            gossipEncoding.createPreparedGossipMessageFactory(
+                                recentChainData::getMilestoneByForkDigest))
+                        .gossipTopicFilter(gossipTopicsFilter)
                         .timeProvider(timeProvider)
-                        .currentSchemaDefinitionsSupplier(currentSchemaDefinitions)
-                        .build();
+                        .build())
+                .peerPools(peerPools)
+                .peerSelectionStrategy(
+                    new Eth2PeerSelectionStrategy(
+                        targetPeerRange,
+                        gossipNetwork ->
+                            PeerSubnetSubscriptions.create(
+                                currentSpecVersionSupplier.get(),
+                                NodeIdToDataColumnSidecarSubnetsCalculator.create(
+                                    spec, currentSlotSupplier),
+                                gossipNetwork,
+                                attestationSubnetTopicProvider,
+                                syncCommitteeTopicProvider,
+                                syncCommitteeSubnetService,
+                                dataColumnSidecarSubnetTopicProvider,
+                                dataColumnSidecarSubnetService,
+                                config.getTargetSubnetSubscriberCount(),
+                                subnetPeerCountGauge),
+                        reputationManager,
+                        Collections::shuffle))
+                .discoveryConfig(config.getDiscoveryConfig())
+                .p2pConfig(config.getNetworkConfig())
+                .spec(config.getSpec())
+                .timeProvider(timeProvider)
+                .currentSchemaDefinitionsSupplier(currentSchemaDefinitions)
+                .build();
 
         final GossipForkManager.Builder gossipForkManagerBuilder =
-                GossipForkManager.builder().spec(spec).recentChainData(recentChainData);
+            GossipForkManager.builder().spec(spec).recentChainData(recentChainData);
 
         spec.getEnabledMilestones().stream()
-                .map(
-                        forkAndSpecMilestone ->
-                                createSubscriptions(
-                                        forkAndSpecMilestone, metricsSystem, network, gossipEncoding, config))
-                .forEach(gossipForkManagerBuilder::fork);
+            .map(
+                forkAndSpecMilestone ->
+                    createSubscriptions(
+                        forkAndSpecMilestone, metricsSystem, network, gossipEncoding, config))
+            .forEach(gossipForkManagerBuilder::fork);
 
         final GossipForkManager gossipForkManager = gossipForkManagerBuilder.build();
 
         return new ActiveEth2P2PNetwork(
-                spec,
-                asyncRunner,
-                network,
-                eth2PeerManager,
-                gossipForkManager,
-                eventChannels,
-                recentChainData,
-                attestationSubnetService,
-                syncCommitteeSubnetService,
-                dataColumnSidecarSubnetService,
-                executionProofSubnetService,
-                gossipEncoding,
-                GossipConfigurator.NOOP,
-                processedAttestationSubscriptionProvider,
-                config.isAllTopicsFilterEnabled());
+            spec,
+            asyncRunner,
+            network,
+            eth2PeerManager,
+            gossipForkManager,
+            eventChannels,
+            recentChainData,
+            attestationSubnetService,
+            syncCommitteeSubnetService,
+            dataColumnSidecarSubnetService,
+            executionProofSubnetService,
+            gossipEncoding,
+            GossipConfigurator.NOOP,
+            processedAttestationSubscriptionProvider,
+            config.isAllTopicsFilterEnabled());
       }
     }
 
     private GossipForkSubscriptions createSubscriptions(
-            final ForkAndSpecMilestone forkAndSpecMilestone,
-            final NoOpMetricsSystem metricsSystem,
-            final DiscoveryNetwork<?> network,
-            final GossipEncoding gossipEncoding,
-            final P2PConfig p2PConfig) {
+        final ForkAndSpecMilestone forkAndSpecMilestone,
+        final NoOpMetricsSystem metricsSystem,
+        final DiscoveryNetwork<?> network,
+        final GossipEncoding gossipEncoding,
+        final P2PConfig p2PConfig) {
       return switch (forkAndSpecMilestone.getSpecMilestone()) {
-        case PHASE0 -> new GossipForkSubscriptionsPhase0(
+        case PHASE0 ->
+            new GossipForkSubscriptionsPhase0(
                 forkAndSpecMilestone.getFork(),
                 spec,
                 asyncRunner,
@@ -418,24 +419,8 @@ public class Eth2P2PNetworkFactory {
                 proposerSlashingProcessor,
                 voluntaryExitProcessor,
                 debugDataDumper);
-        case ALTAIR -> new GossipForkSubscriptionsAltair(
-                forkAndSpecMilestone.getFork(),
-                spec,
-                asyncRunner,
-                metricsSystem,
-                network,
-                recentChainData,
-                gossipEncoding,
-                gossipedBlockProcessor,
-                gossipedAttestationProcessor,
-                gossipedAggregateProcessor,
-                attesterSlashingProcessor,
-                proposerSlashingProcessor,
-                voluntaryExitProcessor,
-                signedContributionAndProofProcessor,
-                syncCommitteeMessageProcessor,
-                debugDataDumper);
-        case BELLATRIX -> new GossipForkSubscriptionsBellatrix(
+        case ALTAIR ->
+            new GossipForkSubscriptionsAltair(
                 forkAndSpecMilestone.getFork(),
                 spec,
                 asyncRunner,
@@ -452,7 +437,26 @@ public class Eth2P2PNetworkFactory {
                 signedContributionAndProofProcessor,
                 syncCommitteeMessageProcessor,
                 debugDataDumper);
-        case CAPELLA -> new GossipForkSubscriptionsCapella(
+        case BELLATRIX ->
+            new GossipForkSubscriptionsBellatrix(
+                forkAndSpecMilestone.getFork(),
+                spec,
+                asyncRunner,
+                metricsSystem,
+                network,
+                recentChainData,
+                gossipEncoding,
+                gossipedBlockProcessor,
+                gossipedAttestationProcessor,
+                gossipedAggregateProcessor,
+                attesterSlashingProcessor,
+                proposerSlashingProcessor,
+                voluntaryExitProcessor,
+                signedContributionAndProofProcessor,
+                syncCommitteeMessageProcessor,
+                debugDataDumper);
+        case CAPELLA ->
+            new GossipForkSubscriptionsCapella(
                 forkAndSpecMilestone.getFork(),
                 spec,
                 asyncRunner,
@@ -470,7 +474,8 @@ public class Eth2P2PNetworkFactory {
                 syncCommitteeMessageProcessor,
                 signedBlsToExecutionChangeProcessor,
                 debugDataDumper);
-        case DENEB -> new GossipForkSubscriptionsDeneb(
+        case DENEB ->
+            new GossipForkSubscriptionsDeneb(
                 forkAndSpecMilestone.getFork(),
                 spec,
                 asyncRunner,
@@ -489,7 +494,8 @@ public class Eth2P2PNetworkFactory {
                 syncCommitteeMessageProcessor,
                 signedBlsToExecutionChangeProcessor,
                 debugDataDumper);
-        case ELECTRA -> new GossipForkSubscriptionsElectra(
+        case ELECTRA ->
+            new GossipForkSubscriptionsElectra(
                 forkAndSpecMilestone.getFork(),
                 spec,
                 asyncRunner,
@@ -510,7 +516,8 @@ public class Eth2P2PNetworkFactory {
                 debugDataDumper,
                 executionProofOperationProcessor,
                 p2PConfig.isExecutionProofTopicEnabled());
-        case FULU -> new GossipForkSubscriptionsFulu(
+        case FULU ->
+            new GossipForkSubscriptionsFulu(
                 forkAndSpecMilestone.getFork(),
                 spec,
                 asyncRunner,
@@ -534,7 +541,8 @@ public class Eth2P2PNetworkFactory {
                 executionProofOperationProcessor,
                 p2PConfig.isExecutionProofTopicEnabled(),
                 isSuperNodeSupplier);
-        case GLOAS -> new GossipForkSubscriptionsGloas(
+        case GLOAS ->
+            new GossipForkSubscriptionsGloas(
                 forkAndSpecMilestone.getFork(),
                 spec,
                 asyncRunner,
@@ -566,51 +574,51 @@ public class Eth2P2PNetworkFactory {
 
     private P2PConfig generateConfig() {
       final List<String> peerAddresses =
-              peers.stream().flatMap(peer -> peer.getNodeAddresses().stream()).collect(toList());
+          peers.stream().flatMap(peer -> peer.getNodeAddresses().stream()).collect(toList());
 
       final Random random = new Random();
       final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
 
       return P2PConfig.builder()
-              .specProvider(spec)
-              .targetSubnetSubscriberCount(2)
-              .network(b -> b.listenPort(port).wireLogs(w -> w.logWireMuxFrames(true)))
-              .discovery(
-                      d ->
-                              d.isDiscoveryEnabled(false)
-                                      .staticPeers(peerAddresses)
-                                      .minPeers(20)
-                                      .maxPeers(30)
-                                      .minRandomlySelectedPeers(0))
-              .build();
+          .specProvider(spec)
+          .targetSubnetSubscriberCount(2)
+          .network(b -> b.listenPort(port).wireLogs(w -> w.logWireMuxFrames(true)))
+          .discovery(
+              d ->
+                  d.isDiscoveryEnabled(false)
+                      .staticPeers(peerAddresses)
+                      .minPeers(20)
+                      .maxPeers(30)
+                      .minRandomlySelectedPeers(0))
+          .build();
     }
 
     @SuppressWarnings("deprecation")
     private void setDefaults() {
       if (eventChannels == null) {
         eventChannels =
-                EventChannels.createSyncChannels(
-                        (error, subscriber, invokedMethod, args) -> {
-                          throw new RuntimeException(error);
-                        },
-                        new NoOpMetricsSystem());
+            EventChannels.createSyncChannels(
+                (error, subscriber, invokedMethod, args) -> {
+                  throw new RuntimeException(error);
+                },
+                new NoOpMetricsSystem());
       }
       if (asyncRunner == null) {
         asyncRunner = DelayedExecutorAsyncRunner.create();
       }
       if (eth2RpcPingInterval == null) {
         eth2RpcPingInterval =
-                tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder.DEFAULT_ETH2_RPC_PING_INTERVAL;
+            tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder.DEFAULT_ETH2_RPC_PING_INTERVAL;
       }
       if (eth2StatusUpdateInterval == null) {
         eth2StatusUpdateInterval =
-                tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder
-                        .DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
+            tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder
+                .DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
       }
       if (eth2RpcOutstandingPingThreshold == null) {
         eth2RpcOutstandingPingThreshold =
-                tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder
-                        .DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD;
+            tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder
+                .DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD;
       }
       if (recentChainData == null) {
         recentChainData = MemoryOnlyRecentChainData.create();
@@ -622,7 +630,7 @@ public class Eth2P2PNetworkFactory {
       }
       if (verifiedBlockAttestationsSubscriptionProvider == null) {
         Subscribers<VerifiedBlockOperationsListener<Attestation>> subscribers =
-                Subscribers.create(false);
+            Subscribers.create(false);
         verifiedBlockAttestationsSubscriptionProvider = subscribers::subscribe;
       }
       if (gossipedBlockProcessor == null) {
@@ -691,7 +699,7 @@ public class Eth2P2PNetworkFactory {
     }
 
     public Eth2P2PNetworkBuilder setRequiredCheckpoint(
-            final Optional<Checkpoint> requiredCheckpoint) {
+        final Optional<Checkpoint> requiredCheckpoint) {
       this.requiredCheckpoint = requiredCheckpoint;
       return this;
     }
@@ -714,139 +722,139 @@ public class Eth2P2PNetworkFactory {
     }
 
     public Eth2P2PNetworkBuilder historicalChainData(
-            final StorageQueryChannel historicalChainData) {
+        final StorageQueryChannel historicalChainData) {
       checkNotNull(historicalChainData);
       this.historicalChainData = historicalChainData;
       return this;
     }
 
     public Eth2P2PNetworkBuilder gossipedBlockProcessor(
-            final OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor) {
+        final OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor) {
       checkNotNull(gossipedBlockProcessor);
       this.gossipedBlockProcessor = gossipedBlockProcessor;
       return this;
     }
 
     public Eth2P2PNetworkBuilder gossipedBlobSidecarProcessor(
-            final OperationProcessor<BlobSidecar> gossipedBlobSidecarProcessor) {
+        final OperationProcessor<BlobSidecar> gossipedBlobSidecarProcessor) {
       checkNotNull(gossipedBlobSidecarProcessor);
       this.gossipedBlobSidecarProcessor = gossipedBlobSidecarProcessor;
       return this;
     }
 
     public Eth2P2PNetworkBuilder gossipedAggregateProcessor(
-            final OperationProcessor<ValidatableAttestation> gossipedAggregateProcessor) {
+        final OperationProcessor<ValidatableAttestation> gossipedAggregateProcessor) {
       checkNotNull(gossipedAggregateProcessor);
       this.gossipedAggregateProcessor = gossipedAggregateProcessor;
       return this;
     }
 
     public Eth2P2PNetworkBuilder gossipedAttestationProcessor(
-            final OperationProcessor<ValidatableAttestation> gossipedAttestationProcessor) {
+        final OperationProcessor<ValidatableAttestation> gossipedAttestationProcessor) {
       checkNotNull(gossipedAttestationProcessor);
       this.gossipedAttestationProcessor = gossipedAttestationProcessor;
       return this;
     }
 
     public Eth2P2PNetworkBuilder gossipedAttesterSlashingProcessor(
-            final OperationProcessor<AttesterSlashing> gossipedAttesterSlashingProcessor) {
+        final OperationProcessor<AttesterSlashing> gossipedAttesterSlashingProcessor) {
       checkNotNull(gossipedAttesterSlashingProcessor);
       this.attesterSlashingProcessor = gossipedAttesterSlashingProcessor;
       return this;
     }
 
     public Eth2P2PNetworkBuilder gossipedProposerSlashingProcessor(
-            final OperationProcessor<ProposerSlashing> gossipedProposerSlashingProcessor) {
+        final OperationProcessor<ProposerSlashing> gossipedProposerSlashingProcessor) {
       checkNotNull(gossipedProposerSlashingProcessor);
       this.proposerSlashingProcessor = gossipedProposerSlashingProcessor;
       return this;
     }
 
     public Eth2P2PNetworkBuilder gossipedVoluntaryExitProcessor(
-            final OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitProcessor) {
+        final OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitProcessor) {
       checkNotNull(gossipedVoluntaryExitProcessor);
       this.voluntaryExitProcessor = gossipedVoluntaryExitProcessor;
       return this;
     }
 
     public Eth2P2PNetworkBuilder gossipedSignedContributionAndProofProcessor(
-            final OperationProcessor<SignedContributionAndProof>
-                    gossipedSignedContributionAndProofProcessor) {
+        final OperationProcessor<SignedContributionAndProof>
+            gossipedSignedContributionAndProofProcessor) {
       checkNotNull(gossipedSignedContributionAndProofProcessor);
       this.signedContributionAndProofProcessor = gossipedSignedContributionAndProofProcessor;
       return this;
     }
 
     public Eth2P2PNetworkBuilder gossipedSyncCommitteeMessageProcessor(
-            final OperationProcessor<ValidatableSyncCommitteeMessage> gossipedSyncCommitteeProcessor) {
+        final OperationProcessor<ValidatableSyncCommitteeMessage> gossipedSyncCommitteeProcessor) {
       checkNotNull(gossipedSyncCommitteeProcessor);
       this.syncCommitteeMessageProcessor = gossipedSyncCommitteeProcessor;
       return this;
     }
 
     public Eth2P2PNetworkBuilder gossipedSignedBlsToExecutionChangeProcessor(
-            final OperationProcessor<SignedBlsToExecutionChange>
-                    gossipedSignedBlsToExecutionChangeProcessor) {
+        final OperationProcessor<SignedBlsToExecutionChange>
+            gossipedSignedBlsToExecutionChangeProcessor) {
       checkNotNull(gossipedSignedBlsToExecutionChangeProcessor);
       this.signedBlsToExecutionChangeProcessor = gossipedSignedBlsToExecutionChangeProcessor;
       return this;
     }
 
     public Eth2P2PNetworkBuilder gossipedDataColumnSidecarOperationProcessor(
-            final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor) {
+        final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor) {
       checkNotNull(dataColumnSidecarOperationProcessor);
       this.dataColumnSidecarOperationProcessor = dataColumnSidecarOperationProcessor;
       return this;
     }
 
     public Eth2P2PNetworkBuilder gossipedExecutionProofOperationProcessor(
-            final OperationProcessor<ExecutionProof> executionProofOperationProcessor) {
+        final OperationProcessor<ExecutionProof> executionProofOperationProcessor) {
       checkNotNull(executionProofOperationProcessor);
       this.executionProofOperationProcessor = executionProofOperationProcessor;
       return this;
     }
 
     public Eth2P2PNetworkBuilder gossipedExecutionPayloadProcessor(
-            final OperationProcessor<SignedExecutionPayloadEnvelope>
-                    gossipedExecutionPayloadProcessor) {
+        final OperationProcessor<SignedExecutionPayloadEnvelope>
+            gossipedExecutionPayloadProcessor) {
       checkNotNull(gossipedExecutionPayloadProcessor);
       this.executionPayloadProcessor = gossipedExecutionPayloadProcessor;
       return this;
     }
 
     public Eth2P2PNetworkBuilder gossipedPayloadAttestationMessageProcessor(
-            final OperationProcessor<PayloadAttestationMessage>
-                    gossipedPayloadAttestationMessageProcessor) {
+        final OperationProcessor<PayloadAttestationMessage>
+            gossipedPayloadAttestationMessageProcessor) {
       checkNotNull(gossipedPayloadAttestationMessageProcessor);
       this.payloadAttestationMessageProcessor = gossipedPayloadAttestationMessageProcessor;
       return this;
     }
 
     public Eth2P2PNetworkBuilder gossipedExecutionPayloadBidProcessor(
-            final OperationProcessor<SignedExecutionPayloadBid> gossipedExecutionPayloadBidProcessor) {
+        final OperationProcessor<SignedExecutionPayloadBid> gossipedExecutionPayloadBidProcessor) {
       checkNotNull(gossipedExecutionPayloadBidProcessor);
       this.executionPayloadBidProcessor = gossipedExecutionPayloadBidProcessor;
       return this;
     }
 
     public Eth2P2PNetworkBuilder processedAttestationSubscriptionProvider(
-            final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider) {
+        final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider) {
       checkNotNull(processedAttestationSubscriptionProvider);
       this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
       return this;
     }
 
     public Eth2P2PNetworkBuilder verifiedBlockAttestationsSubscriptionProvider(
-            final VerifiedBlockAttestationsSubscriptionProvider
-                    verifiedBlockAttestationsSubscriptionProvider) {
+        final VerifiedBlockAttestationsSubscriptionProvider
+            verifiedBlockAttestationsSubscriptionProvider) {
       checkNotNull(verifiedBlockAttestationsSubscriptionProvider);
       this.verifiedBlockAttestationsSubscriptionProvider =
-              verifiedBlockAttestationsSubscriptionProvider;
+          verifiedBlockAttestationsSubscriptionProvider;
       return this;
     }
 
     public Eth2P2PNetworkBuilder rpcMethodsModifier(
-            final Function<RpcMethod<?, ?, ?>, Stream<RpcMethod<?, ?, ?>>> rpcMethodsModifier) {
+        final Function<RpcMethod<?, ?, ?>, Stream<RpcMethod<?, ?, ?>>> rpcMethodsModifier) {
       checkNotNull(rpcMethodsModifier);
       this.rpcMethodsModifier = rpcMethodsModifier;
       return this;
@@ -871,7 +879,7 @@ public class Eth2P2PNetworkFactory {
     }
 
     public Eth2P2PNetworkBuilder eth2RpcOutstandingPingThreshold(
-            final int eth2RpcOutstandingPingThreshold) {
+        final int eth2RpcOutstandingPingThreshold) {
       checkArgument(eth2RpcOutstandingPingThreshold > 0);
       this.eth2RpcOutstandingPingThreshold = eth2RpcOutstandingPingThreshold;
       return this;

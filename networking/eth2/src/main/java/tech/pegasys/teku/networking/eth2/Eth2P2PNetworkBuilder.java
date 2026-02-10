@@ -435,7 +435,7 @@ public class Eth2P2PNetworkBuilder {
               dasGossipLogger,
               executionProofOperationProcessor,
               config.isExecutionProofTopicEnabled(),
-                  isSuperNodeSupplier);
+              isSuperNodeSupplier);
     };
   }
 
