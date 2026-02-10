@@ -68,8 +68,12 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
       final ReadOnlyStore store, final SignedBeaconBlock block) {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(block.getSlot(), block.getParentRoot());
-    // the `on_block` is modified to consider the pre-state of the given consensus beacon block
-    // depending not only on the parent block root, but also on the parent blockhash.
+    // From Gloas, there are 3 states available in a given slot
+    // pre-state: State at the slot before block applied
+    // block-state: State at slot after consensus block applied
+    // execution-state: State at slot after consensus and execution has been applied
+    // The state to build on for the next slot is the best available of this list
+    // (execution-state > block-state > pre-state)
     if (isParentNodeFull(store, block.getMessage().getBlock())) {
       return store.retrieveExecutionPayloadState(slotAndBlockRoot);
     } else {
