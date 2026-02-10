@@ -69,7 +69,8 @@ public class BlockProposalUtilPhase0 implements BlockProposalUtil {
   }
 
   @Override
-  public UInt64 getStateSlotForProposerDuties(final Spec spec, final UInt64 dutiesEpoch) {
+  public UInt64 getStateSlotForProposerDuties(
+      final Spec spec, final UInt64 dutiesEpoch, final boolean isElectraCompatible) {
     return spec.computeStartSlotAtEpoch(dutiesEpoch);
   }
 

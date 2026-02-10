@@ -198,8 +198,9 @@ public class ValidatorDataProvider {
     return SafeFuture.of(() -> validatorApiChannel.getAttestationDuties(epoch, indices));
   }
 
-  public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
-    return SafeFuture.of(() -> validatorApiChannel.getProposerDuties(epoch));
+  public SafeFuture<Optional<ProposerDuties>> getProposerDuties(
+      final UInt64 epoch, final boolean isElectraCompatible) {
+    return SafeFuture.of(() -> validatorApiChannel.getProposerDuties(epoch, isElectraCompatible));
   }
 
   public SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(

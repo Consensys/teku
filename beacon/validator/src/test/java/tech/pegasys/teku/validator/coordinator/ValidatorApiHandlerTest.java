@@ -368,7 +368,7 @@ class ValidatorApiHandlerTest {
   public void getProposerDuties_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
     final SafeFuture<Optional<ProposerDuties>> duties =
-        validatorApiHandler.getProposerDuties(EPOCH);
+        validatorApiHandler.getProposerDuties(EPOCH, false);
     assertThat(duties).isCompletedExceptionally();
     assertThatThrownBy(duties::get).hasRootCauseInstanceOf(NodeSyncingException.class);
   }
@@ -378,7 +378,7 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(3));
 
     final SafeFuture<Optional<ProposerDuties>> result =
-        validatorApiHandler.getProposerDuties(EPOCH);
+        validatorApiHandler.getProposerDuties(EPOCH, false);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(IllegalArgumentException.class);
   }
@@ -391,7 +391,7 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
 
     final SafeFuture<Optional<ProposerDuties>> result =
-        validatorApiHandler.getProposerDuties(EPOCH.increment());
+        validatorApiHandler.getProposerDuties(EPOCH.increment(), false);
     final ProposerDuties duties = assertCompletedSuccessfully(result).orElseThrow();
     assertThat(duties.getDuties().size()).isEqualTo(spec.slotsPerEpoch(EPOCH.increment()));
     assertThat(duties.getDependentRoot()).isEqualTo(spec.getCurrentDutyDependentRoot(state));
@@ -408,7 +408,7 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
 
     final SafeFuture<Optional<ProposerDuties>> result =
-        validatorApiHandler.getProposerDuties(EPOCH);
+        validatorApiHandler.getProposerDuties(EPOCH, false);
     final ProposerDuties duties = assertCompletedSuccessfully(result).orElseThrow();
     assertThat(duties.getDuties().size()).isEqualTo(spec.slotsPerEpoch(EPOCH));
     assertThat(duties.getDependentRoot()).isEqualTo(spec.getCurrentDutyDependentRoot(state));
@@ -429,7 +429,7 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getCurrentEpoch()).thenReturn(epoch);
 
     final SafeFuture<Optional<ProposerDuties>> result =
-        validatorApiHandler.getProposerDuties(EPOCH);
+        validatorApiHandler.getProposerDuties(EPOCH, false);
     final Optional<ProposerDuties> duties = assertCompletedSuccessfully(result);
     assertThat(duties.orElseThrow().getDuties().size()).isEqualTo(spec.slotsPerEpoch(EPOCH));
   }
@@ -444,7 +444,7 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
 
     final SafeFuture<Optional<ProposerDuties>> result =
-        validatorApiHandler.getProposerDuties(EPOCH);
+        validatorApiHandler.getProposerDuties(EPOCH, false);
     final Optional<ProposerDuties> duties = assertCompletedSuccessfully(result);
     assertThat(duties.orElseThrow().getDuties())
         .isSortedAccordingTo(Comparator.comparing(ProposerDuty::getSlot));

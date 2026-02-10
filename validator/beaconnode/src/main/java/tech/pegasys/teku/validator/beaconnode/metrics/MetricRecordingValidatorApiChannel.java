@@ -130,9 +130,10 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
+  public SafeFuture<Optional<ProposerDuties>> getProposerDuties(
+      final UInt64 epoch, final boolean isElectraCompatible) {
     return countOptionalDataRequest(
-        delegate.getProposerDuties(epoch),
+        delegate.getProposerDuties(epoch, isElectraCompatible),
         BeaconNodeRequestLabels.GET_PROPOSER_DUTIES_REQUESTS_METHOD);
   }
 

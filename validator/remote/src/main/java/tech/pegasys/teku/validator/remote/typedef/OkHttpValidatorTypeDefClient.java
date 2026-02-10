@@ -106,7 +106,8 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     return getSyncingStatusRequest.submit();
   }
 
-  public Optional<ProposerDuties> getProposerDuties(final UInt64 epoch) {
+  public Optional<ProposerDuties> getProposerDuties(
+      final UInt64 epoch, final boolean isElectraCompatible) {
     final GetProposerDutiesRequest getProposerDutiesRequest =
         new GetProposerDutiesRequest(getBaseEndpoint(), getOkHttpClient());
     return getProposerDutiesRequest.submit(epoch);

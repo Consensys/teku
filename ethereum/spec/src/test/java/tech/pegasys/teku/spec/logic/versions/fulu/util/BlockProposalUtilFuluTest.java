@@ -43,7 +43,7 @@ class BlockProposalUtilFuluTest {
         localSpec
             .getGenesisSpec()
             .getBlockProposalUtil()
-            .getStateSlotForProposerDuties(localSpec, UInt64.valueOf(requestedEpoch));
+            .getStateSlotForProposerDuties(localSpec, UInt64.valueOf(requestedEpoch), false);
 
     assertThat(querySlot.intValue()).isEqualTo(expectedSlot);
   }

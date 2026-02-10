@@ -312,7 +312,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   }
 
   @Override
-  public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
+  public SafeFuture<Optional<ProposerDuties>> getProposerDuties(
+      final UInt64 epoch, final boolean isElectraCompatible) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
@@ -328,7 +329,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     }
 
     final UInt64 stateSlot =
-        spec.atEpoch(epoch).getBlockProposalUtil().getStateSlotForProposerDuties(spec, epoch);
+        spec.atEpoch(epoch)
+            .getBlockProposalUtil()
+            .getStateSlotForProposerDuties(spec, epoch, isElectraCompatible);
     LOG.debug(
         "Retrieving proposer duties for epoch {}, current epoch {}, state query slot {}",
         epoch,

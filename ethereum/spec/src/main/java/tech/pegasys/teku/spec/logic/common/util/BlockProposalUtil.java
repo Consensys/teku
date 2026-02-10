@@ -41,5 +41,5 @@ public interface BlockProposalUtil {
       Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder,
       BlockProductionPerformance blockProductionPerformance);
 
-  UInt64 getStateSlotForProposerDuties(Spec spec, UInt64 dutiesEpoch);
+  UInt64 getStateSlotForProposerDuties(Spec spec, UInt64 dutiesEpoch, boolean isElectraCompatible);
 }

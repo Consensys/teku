@@ -43,14 +43,16 @@ public class BlockProposalUtilFulu extends BlockProposalUtilPhase0 {
   }
 
   @Override
-  public UInt64 getStateSlotForProposerDuties(final Spec spec, final UInt64 dutiesEpoch) {
-    if (forkEpoch.isPresent()
+  public UInt64 getStateSlotForProposerDuties(
+      final Spec spec, final UInt64 dutiesEpoch, final boolean isElectraCompatible) {
+    if (!isElectraCompatible
+        && forkEpoch.isPresent()
         && dutiesEpoch.minusMinZero(1).isGreaterThanOrEqualTo(forkEpoch.get())) {
       // on fulu boundary we have no context,
       // but after fulu boundary our dependent root is previous epoch
       return spec.computeStartSlotAtEpoch(dutiesEpoch.minusMinZero(1));
     }
-    return super.getStateSlotForProposerDuties(spec, dutiesEpoch);
+    return super.getStateSlotForProposerDuties(spec, dutiesEpoch, isElectraCompatible);
   }
 
   @Override

@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -395,20 +396,20 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   public void getProposerDuties_WithEmptyPublicKeys_ReturnsEmpty() {
-    SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(ONE);
+    SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(ONE, false);
 
     assertThat(unwrapToOptional(future)).isEmpty();
   }
 
   @Test
   public void getProposerDuties_WhenNoneFound_ReturnsEmpty() {
-    when(typeDefClient.getProposerDuties(any()))
+    when(typeDefClient.getProposerDuties(any(), anyBoolean()))
         .thenReturn(
             Optional.of(
                 new ProposerDuties(
                     Bytes32.fromHexString("0x1234"), Collections.emptyList(), false)));
 
-    SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(ONE);
+    SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(ONE, false);
 
     assertThat(unwrapToValue(future).getDuties()).isEmpty();
   }
@@ -424,9 +425,9 @@ class RemoteValidatorApiHandlerTest {
     final ProposerDuties response =
         new ProposerDuties(Bytes32.fromHexString("0x1234"), List.of(schemaValidatorDuties), false);
 
-    when(typeDefClient.getProposerDuties(ONE)).thenReturn(Optional.of(response));
+    when(typeDefClient.getProposerDuties(ONE, false)).thenReturn(Optional.of(response));
 
-    SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(ONE);
+    SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(ONE, false);
 
     ProposerDuties validatorDuties = unwrapToValue(future);
 

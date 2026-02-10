@@ -51,7 +51,7 @@ public class BlockProductionDutyLoader
     if (validatorIndices.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
-    return validatorApiChannel.getProposerDuties(epoch);
+    return validatorApiChannel.getProposerDuties(epoch, false);
   }
 
   @Override

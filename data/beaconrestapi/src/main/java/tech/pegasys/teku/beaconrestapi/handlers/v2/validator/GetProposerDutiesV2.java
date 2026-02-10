@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
+package tech.pegasys.teku.beaconrestapi.handlers.v2.validator;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.EPOCH_PARAMETER;
 import static tech.pegasys.teku.ethereum.json.types.validator.ProposerDutiesBuilder.PROPOSER_DUTIES_TYPE;
@@ -34,21 +34,21 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class GetProposerDuties extends RestApiEndpoint {
-  public static final String ROUTE = "/eth/v1/validator/duties/proposer/{epoch}";
+public class GetProposerDutiesV2 extends RestApiEndpoint {
+  public static final String ROUTE = "/eth/v2/validator/duties/proposer/{epoch}";
 
   private final ValidatorDataProvider validatorDataProvider;
   private final SyncDataProvider syncDataProvider;
 
-  public GetProposerDuties(final DataProvider dataProvider) {
+  public GetProposerDutiesV2(final DataProvider dataProvider) {
     this(dataProvider.getSyncDataProvider(), dataProvider.getValidatorDataProvider());
   }
 
-  GetProposerDuties(
+  GetProposerDutiesV2(
       final SyncDataProvider syncDataProvider, final ValidatorDataProvider validatorDataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getProposerDuties")
+            .operationId("getProposerDutiesV2")
             .summary("Get block proposers duties")
             .description(
                 "Request beacon node to provide all validators that are scheduled to propose a block in the given epoch.\n\n"
@@ -61,7 +61,6 @@ public class GetProposerDuties extends RestApiEndpoint {
                     + "The dependent_root value is `get_block_root_at_slot(state, compute_start_slot_at_epoch(epoch) - 1)` "
                     + "or the genesis block root in the case of underflow.")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
-            .deprecated(true)
             .pathParam(EPOCH_PARAMETER)
             .response(SC_OK, "Request successful", PROPOSER_DUTIES_TYPE)
             .withChainDataResponses()
@@ -79,7 +78,7 @@ public class GetProposerDuties extends RestApiEndpoint {
 
     final UInt64 epoch = request.getPathParameter(EPOCH_PARAMETER);
     SafeFuture<Optional<ProposerDuties>> future =
-        validatorDataProvider.getProposerDuties(epoch, true);
+        validatorDataProvider.getProposerDuties(epoch, false);
 
     request.respondAsync(
         future.thenApply(
