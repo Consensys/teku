@@ -66,7 +66,8 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
   @Override
   public SafeFuture<Optional<BeaconState>> retrievePreStateRequiredOnBlock(
       final ReadOnlyStore store, final SignedBeaconBlock block) {
-    final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(block.getSlot(), block.getParentRoot());
     // the `on_block` is modified to consider the pre-state of the given consensus beacon block
     // depending not only on the parent block root, but also on the parent blockhash.
     if (isParentNodeFull(store, block.getMessage().getBlock())) {

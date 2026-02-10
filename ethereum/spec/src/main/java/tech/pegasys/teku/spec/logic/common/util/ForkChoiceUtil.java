@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -401,7 +402,9 @@ public class ForkChoiceUtil {
 
   public SafeFuture<Optional<BeaconState>> retrievePreStateRequiredOnBlock(
       final ReadOnlyStore store, final SignedBeaconBlock block) {
-    return store.retrieveBlockState(block.getSlotAndBlockRoot());
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(block.getSlot(), block.getParentRoot());
+    return store.retrieveBlockState(slotAndBlockRoot);
   }
 
   public void applyExecutionPayloadToStore(
