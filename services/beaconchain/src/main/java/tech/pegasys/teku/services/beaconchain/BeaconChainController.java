@@ -1929,7 +1929,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
                     return false;
                   }
-
+                  if(beaconConfig.p2pConfig().isSubscribedToAllCustodySubnetsEnabled()){
+                    return true;
+                  }
                   return MiscHelpersFulu.required(
                           spec.forMilestone(SpecMilestone.FULU).miscHelpers())
                       .isSuperNode(custodyGroupCountManager.getCustodyGroupCount());
