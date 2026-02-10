@@ -124,7 +124,7 @@ public class DataColumnSidecarGossipManagerTest {
             forkDigest);
 
     dataColumnSidecarGossipManager =
-        new DataColumnSidecarGossipManager(subnetSubscriptions, dasGossipLogger);
+        new DataColumnSidecarGossipManager(subnetSubscriptions, dasGossipLogger, () -> false);
     IntStream.range(0, spec.getNumberOfDataColumnSubnets().orElseThrow())
         .forEach(dataColumnSidecarGossipManager::subscribeToSubnetId);
   }
