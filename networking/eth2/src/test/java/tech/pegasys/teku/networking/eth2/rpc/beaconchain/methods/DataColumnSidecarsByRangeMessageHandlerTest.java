@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -465,7 +466,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     when(combinedChainDataClient.getBlockAtSlotExact(any()))
         .thenReturn(
             SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomSignedBeaconBlock())));
-    when(dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(any(), any(), any()))
+    when(dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(any(), any(), anyInt()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
@@ -490,7 +491,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     verify(listener).alwaysRun(any());
     // same slot-roots as we have in DB, but other indices
     verify(dataColumnSidecarArchiveReconstructor, times(expectedSent.size()))
-        .reconstructDataColumnSidecar(any(), any(), any());
+        .reconstructDataColumnSidecar(any(), any(), anyInt());
 
     AssertionsForInterfaceTypes.assertThat(actualSent).containsExactlyElementsOf(expectedSent);
   }

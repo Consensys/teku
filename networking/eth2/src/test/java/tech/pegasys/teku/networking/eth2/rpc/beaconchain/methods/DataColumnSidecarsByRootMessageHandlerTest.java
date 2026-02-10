@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -409,7 +410,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     when(custody.getCustodyDataColumnSidecarByRoot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     when(dataColumnSidecarArchiveReconstructor.isSidecarPruned(any(), any())).thenReturn(true);
-    when(dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(any(), any(), any()))
+    when(dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(any(), any(), anyInt()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     handler.onIncomingMessage(
         protocolId, peer, messageSchema.of(dataColumnsByRootIdentifiers), callback);
@@ -434,7 +435,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
         .containsExactlyElementsOf(expectedDataColumnIdentifiersBlockRoots);
 
     verify(dataColumnSidecarArchiveReconstructor, times(4))
-        .reconstructDataColumnSidecar(any(), any(), any());
+        .reconstructDataColumnSidecar(any(), any(), anyInt());
     verify(callback).alwaysRun(any());
   }
 
