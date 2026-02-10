@@ -30,7 +30,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -848,10 +847,24 @@ public class CombinedChainDataClient {
     return historicalChainData.getEarliestDataColumnSidecarSlot();
   }
 
-  public SafeFuture<List<List<KZGProof>>> getDataColumnSidecarProofs(final UInt64 slot) {
-    return historicalChainData
-        .getDataColumnSidecarsProofs(slot)
-        .thenApply(maybeProofs -> maybeProofs.orElseGet(List::of));
+  public Optional<BeaconState> regenerateBeaconState(
+      final BeaconState preState, final UInt64 slot) {
+    if (preState.getSlot().equals(slot)) {
+      return Optional.of(preState);
+    } else if (slot.compareTo(getCurrentSlot()) > 0) {
+      LOG.debug("Attempted to wind forward to a future state: {}", slot.toString());
+      return Optional.empty();
+    }
+    try {
+      LOG.debug(
+          "Processing slots to regenerate state from slot {}, target slot {}",
+          preState::getSlot,
+          () -> slot);
+      return Optional.of(spec.processSlots(preState, slot));
+    } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
+      LOG.debug("State Transition error", e);
+      return Optional.empty();
+    }
   }
 
   private SafeFuture<Optional<BeaconState>> getStateFromSlotAndBlock(
@@ -885,26 +898,6 @@ public class CombinedChainDataClient {
             maybeState ->
                 maybeState.flatMap(
                     preState -> regenerateBeaconState(preState, slotAndBlockRoot.getSlot())));
-  }
-
-  private Optional<BeaconState> regenerateBeaconState(
-      final BeaconState preState, final UInt64 slot) {
-    if (preState.getSlot().equals(slot)) {
-      return Optional.of(preState);
-    } else if (slot.compareTo(getCurrentSlot()) > 0) {
-      LOG.debug("Attempted to wind forward to a future state: {}", slot.toString());
-      return Optional.empty();
-    }
-    try {
-      LOG.debug(
-          "Processing slots to regenerate state from slot {}, target slot {}",
-          preState::getSlot,
-          () -> slot);
-      return Optional.of(spec.processSlots(preState, slot));
-    } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
-      LOG.debug("State Transition error", e);
-      return Optional.empty();
-    }
   }
 
   private SafeFuture<Optional<SignedBlockAndState>> getStateForBlock(

@@ -100,8 +100,8 @@ public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
   @Override
   protected SafeFuture<Optional<BeaconState>> getStateForBlockProduction(
       final UInt64 slot, final BlockProductionPerformance productionPerformance) {
-    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10352 this is naive state selection
-    // (good enough for devnet-0) and needs to be revisited
+    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10352 this is very simple and naïve
+    // state selection (possibly good enough for devnet-0) that needs to be revisited
     final Optional<BeaconState> executionPayloadState =
         combinedChainDataClient
             .getRecentChainData()
@@ -111,7 +111,8 @@ public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
                     combinedChainDataClient
                         .getStore()
                         // no state will be present for slots before the Gloas fork
-                        .getExecutionPayloadStateIfAvailable(blockRoot));
+                        .getExecutionPayloadStateIfAvailable(blockRoot))
+            .flatMap(state -> combinedChainDataClient.regenerateBeaconState(state, slot));
     if (executionPayloadState.isPresent()) {
       return SafeFuture.completedFuture(executionPayloadState);
     }
