@@ -14,9 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.gloas.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
-import static tech.pegasys.teku.spec.logic.common.helpers.Predicates.getExecutionAddressUnchecked;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -229,20 +227,6 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
       }
     }
     return UInt64.valueOf(builders.size());
-  }
-
-  public Builder getBuilderFromDeposit(
-      final BeaconState state,
-      final BLSPublicKey pubkey,
-      final Bytes32 withdrawalCredentials,
-      final UInt64 amount) {
-    return new Builder(
-        pubkey,
-        withdrawalCredentials.get(0),
-        getExecutionAddressUnchecked(withdrawalCredentials),
-        amount,
-        getCurrentEpoch(state),
-        FAR_FUTURE_EPOCH);
   }
 
   @Override

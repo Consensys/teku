@@ -58,7 +58,7 @@ public class P2PConfig {
   public static final int DEFAULT_DOWNLOAD_TIMEOUT_MS = 240_000;
 
   public static final int DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS = 30;
-  public static final int DEFAULT_COLUMN_CUSTODY_BACKFILLER_BATCH_SIZE = 10;
+  public static final int DEFAULT_COLUMN_CUSTODY_BACKFILLER_BATCH_SIZE = 3;
   public static final boolean DEFAULT_REWORKED_COLUMN_CUSTODY_BACKFILLER = true;
 
   // RocksDB is configured with 6 background jobs and threads (DEFAULT_MAX_BACKGROUND_JOBS and

@@ -75,7 +75,8 @@ public interface OperationProcessor {
       MutableBeaconState state, SignedBlsToExecutionChange blsToExecutionChange)
       throws BlockProcessingException;
 
-  void processWithdrawals(MutableBeaconState state, ExecutionPayloadSummary payloadSummary)
+  void processWithdrawals(
+      MutableBeaconState state, Optional<ExecutionPayloadSummary> payloadSummary)
       throws BlockProcessingException;
 
   void processDepositRequest(MutableBeaconState state, List<DepositRequest> depositRequest);
