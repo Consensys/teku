@@ -128,8 +128,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
         .isCompletedWithValue(
             ignore(
-                "DataColumnSidecar is from slot %s greater than the latest finalized slot. Ignoring",
-                slot));
+                "DataColumnSidecar slot %s is too old (slot already finalized). Ignoring", slot));
   }
 
   @Test

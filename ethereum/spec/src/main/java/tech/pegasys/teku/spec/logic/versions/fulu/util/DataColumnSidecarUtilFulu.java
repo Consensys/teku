@@ -95,7 +95,7 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     if (isSlotFinalized.test(header.getSlot())) {
       return Optional.of(
           DataColumnSidecarValidationError.DataUnavailable.format(
-              "DataColumnSidecar is from slot %s greater than the latest finalized slot. Ignoring",
+              "DataColumnSidecar slot %s is too old (slot already finalized). Ignoring",
               header.getSlot()));
     }
     return Optional.empty();
