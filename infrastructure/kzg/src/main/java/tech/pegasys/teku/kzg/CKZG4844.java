@@ -212,18 +212,21 @@ final class CKZG4844 implements KZG {
 
   @Override
   public List<KZGCellAndProof> recoverCellsAndProofs(final List<KZGCellWithColumnId> cells) {
-    final long[] cellIds = cells.stream().mapToLong(c -> c.columnId().id().longValue()).toArray();
-    final byte[] cellBytes =
-        CKZG4844Utils.flattenBytes(
-            cells.stream().map(c -> c.cell().bytes()).toList(), cells.size() * BYTES_PER_CELL);
-    final CellsAndProofs cellsAndProofs;
+    final List<KZGCell> fullCells;
+    final List<KZGProof> fullProofs;
     try {
-      cellsAndProofs = CKZG4844JNI.recoverCellsAndKzgProofs(cellIds, cellBytes);
+      final long[] cellIds = cells.stream().mapToLong(c -> c.columnId().id().longValue()).toArray();
+      final byte[] cellBytes =
+          CKZG4844Utils.flattenBytes(
+              cells.stream().map(c -> c.cell().bytes()).toList(), cells.size() * BYTES_PER_CELL);
+      final CellsAndProofs cellsAndProofs =
+          CKZG4844JNI.recoverCellsAndKzgProofs(cellIds, cellBytes);
+      fullCells = KZGCell.splitBytes(Bytes.wrap(cellsAndProofs.getCells()));
+      fullProofs = KZGProof.splitBytes(Bytes.wrap(cellsAndProofs.getProofs()));
     } catch (final Exception ex) {
       throw new KZGException("Failed to recover all KZG cells and proofs from cells", ex);
     }
-    final List<KZGCell> fullCells = KZGCell.splitBytes(Bytes.wrap(cellsAndProofs.getCells()));
-    final List<KZGProof> fullProofs = KZGProof.splitBytes(Bytes.wrap(cellsAndProofs.getProofs()));
+
     if (fullCells.size() != fullProofs.size()) {
       throw new KZGException("Cells and proofs size differ");
     }
