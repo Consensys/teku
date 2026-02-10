@@ -51,15 +51,7 @@ public class GetProposerDutiesV2 extends RestApiEndpoint {
             .operationId("getProposerDutiesV2")
             .summary("Get block proposers duties")
             .description(
-                "Request beacon node to provide all validators that are scheduled to propose a block in the given epoch.\n\n"
-                    + "Duties should only need to be checked once per epoch, "
-                    + "however a chain reorganization could occur that results in a change of duties. "
-                    + "For full safety, you should monitor head events and confirm the dependent root "
-                    + "in this response matches:\n"
-                    + "- event.current_duty_dependent_root when `compute_epoch_at_slot(event.slot) == epoch`\n"
-                    + "- event.block otherwise\n\n"
-                    + "The dependent_root value is `get_block_root_at_slot(state, compute_start_slot_at_epoch(epoch) - 1)` "
-                    + "or the genesis block root in the case of underflow.")
+                "Post fulu get proposer duties, which will return the correct dependent root respecting the proposer lookahead.")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .pathParam(EPOCH_PARAMETER)
             .response(SC_OK, "Request successful", PROPOSER_DUTIES_TYPE)
