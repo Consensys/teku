@@ -140,14 +140,14 @@ jobs:
           name: distribution-tar
           path: |
             build/distributions/*.tar.gz
-          retention-days: 3
+          retention-days: 7
       - name: Upload distribution zip
         uses: actions/upload-artifact@v6
         with:
           name: distribution-zip
           path: |
             build/distributions/*.zip
-          retention-days: 3          
+          retention-days: 7          
       - name: Upload workspace build
         uses: actions/upload-artifact@v6
         with:
