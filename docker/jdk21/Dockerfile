@@ -14,7 +14,7 @@ ENV JAVA_HOME=/opt/java/openjdk
 ENV PATH "${JAVA_HOME}/bin:${PATH}"
 COPY --from=jre-build /javaruntime $JAVA_HOME
 
-RUN apt-get -y update && apt-get -y upgrade && apt-get -y install curl libc-bin libc6 adduser libjemalloc-dev && \
+RUN apt-get -y update && apt-get -y upgrade && apt-get -y install curl libc-bin libc6 adduser && \
     # Clean apt cache
     apt-get clean && \
     rm -rf /var/cache/apt/archives/* && \
@@ -39,8 +39,6 @@ ENV TEKU_REST_API_INTERFACE="0.0.0.0"
 ENV TEKU_VALIDATOR_API_INTERFACE="0.0.0.0"
 ENV TEKU_METRICS_INTERFACE="0.0.0.0"
 ENV PATH "/opt/teku/bin:${PATH}"
-
-ENV MALLOC_CONF "background_thread:true,dirty_decay_ms:1000,muzzy_decay_ms:1000"
 
 # List Exposed Ports
 # Metrics, Rest API, LibP2P, Discv5
