@@ -1,4 +1,4 @@
-version: v1.7.0-alpha.1
+version: v1.7.0-alpha.2
 style: full
 
 specrefs:
@@ -95,7 +95,6 @@ specrefs:
       - g1_lincomb#deneb
       - hash_to_bls_field#deneb
       - is_power_of_two#deneb
-      - multi_exp#deneb
       - reverse_bits#deneb
       - validate_kzg_g1#deneb
       - verify_blob_kzg_proof#deneb
@@ -289,14 +288,12 @@ specrefs:
       - get_forkchoice_store#gloas
       - get_head#gloas
       - get_node_children#gloas
-      - get_parent_payload_status#gloas
       - get_payload_attestation_message_signature#gloas
       - get_payload_status_tiebreaker#gloas
       - get_ptc_assignment#gloas
       - get_sync_message_due_ms#gloas
       - get_weight#gloas
       - is_merge_transition_complete#gloas
-      - is_parent_node_full#gloas
       - is_payload_timely#gloas
       - is_supporting_vote#gloas
       - notify_ptc_messages#gloas
@@ -324,3 +321,5 @@ specrefs:
       - record_block_timeliness#gloas
       - should_apply_proposer_boost#gloas
       - update_proposer_boost_root#gloas
+      - is_data_available#gloas
+      - verify_data_column_sidecar_kzg_proofs#gloas

@@ -17,6 +17,7 @@ dependencies {
   implementation project(':infrastructure:serviceutils')
   implementation project(':infrastructure:ssz')
   implementation project(':infrastructure:time')
+  implementation project(':infrastructure:version')
   implementation project(':storage:api')
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'
