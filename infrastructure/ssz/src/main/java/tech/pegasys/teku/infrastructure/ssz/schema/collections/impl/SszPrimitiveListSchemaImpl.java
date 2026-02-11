@@ -54,19 +54,19 @@ public class SszPrimitiveListSchemaImpl<
       return createDefaultTree();
     }
 
+    final SszPrimitiveSchema<ElementT, SszElementT> elementSchema = getPrimitiveElementSchema();
+    final int bitsPerElement = elementSchema.getBitsSize();
+    if (bitsPerElement < 8) {
+      // Sub-byte types (e.g. bits) — fall back to generic path which already validates size
+      return super.createTreeFromElements(elements);
+    }
+
     checkArgument(
         size <= getMaxLength(),
         "Too many elements for this collection type (element type: %s, max length %s, size %s)",
         elements.getFirst().getClass().getName(),
         getMaxLength(),
         size);
-
-    final SszPrimitiveSchema<ElementT, SszElementT> elementSchema = getPrimitiveElementSchema();
-    final int bitsPerElement = elementSchema.getBitsSize();
-    if (bitsPerElement < 8) {
-      // Sub-byte types (e.g. bits) — fall back to generic path
-      return super.createTreeFromElements(elements);
-    }
 
     final int bytesPerElement = bitsPerElement / 8;
     final int elementsPerChunk = getElementsPerChunk();
