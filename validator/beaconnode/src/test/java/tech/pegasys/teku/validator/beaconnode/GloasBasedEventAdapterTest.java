@@ -32,7 +32,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
-class Eip7732BasedEventAdapterTest {
+class GloasBasedEventAdapterTest {
 
   private final Spec spec = TestSpecFactory.createMinimalWithEip7732ForkEpoch(UInt64.ONE);
 
@@ -47,8 +47,8 @@ class Eip7732BasedEventAdapterTest {
   private final RepeatingTaskScheduler repeatingTaskScheduler =
       new RepeatingTaskScheduler(asyncRunner, timeProvider);
 
-  private final Eip7732TimeBasedEventAdapter eventAdapter =
-      new Eip7732TimeBasedEventAdapter(
+  private final GloasTimeBasedEventAdapter eventAdapter =
+      new GloasTimeBasedEventAdapter(
           genesisDataProvider, repeatingTaskScheduler, timeProvider, validatorTimingChannel, spec);
 
   @Test
@@ -180,7 +180,7 @@ class Eip7732BasedEventAdapterTest {
   }
 
   @Test
-  void shouldNotSchedulePayloadAttestationEventsPreEip7732() {
+  void shouldNotSchedulePayloadAttestationEventsPreGloas() {
     final ForkAwareTimeBasedEventAdapter eventAdapter =
         new ForkAwareTimeBasedEventAdapter(
             genesisDataProvider,
@@ -202,7 +202,7 @@ class Eip7732BasedEventAdapterTest {
     asyncRunner.executeDueActionsRepeatedly();
     verifyNoMoreInteractions(validatorTimingChannel);
 
-    // Payload attestation should not fire before EIP7732
+    // Payload attestation should not fire before Gloas
     timeProvider.advanceTimeBySeconds(timeUntilNextSlot);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, never()).onPayloadAttestationDue(UInt64.valueOf(nextSlot));

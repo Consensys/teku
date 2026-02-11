@@ -32,7 +32,7 @@ public class ForkAwareTimeBasedEventAdapter implements BeaconChainEventAdapter {
       final Spec spec) {
     if (spec.isMilestoneSupported(SpecMilestone.EIP7732)) {
       delegate =
-          new Eip7732TimeBasedEventAdapter(
+          new GloasTimeBasedEventAdapter(
               genesisDataProvider, taskScheduler, timeProvider, validatorTimingChannel, spec);
     } else {
       delegate =

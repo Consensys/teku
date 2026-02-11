@@ -26,12 +26,12 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
-public class Eip7732TimeBasedEventAdapter extends TimeBasedEventAdapter {
+public class GloasTimeBasedEventAdapter extends TimeBasedEventAdapter {
   private static final Logger LOG = LogManager.getLogger();
 
   private UInt64 genesisTime;
 
-  public Eip7732TimeBasedEventAdapter(
+  public GloasTimeBasedEventAdapter(
       final GenesisDataProvider genesisDataProvider,
       final RepeatingTaskScheduler taskScheduler,
       final TimeProvider timeProvider,
@@ -58,27 +58,27 @@ public class Eip7732TimeBasedEventAdapter extends TimeBasedEventAdapter {
 
     final UInt64 millisPerSlot = secondsToMillis(secondsPerSlot);
 
-    final UInt64 eip7732AttestationDueSlotTimeOffset =
+    final UInt64 gloasAttestationDueSlotTimeOffset =
         millisPerSlot.dividedBy(INTERVALS_PER_SLOT_EIP7732);
-    final UInt64 eip7732AggregationDueSlotTimeOffset =
+    final UInt64 gloasAggregationDueSlotTimeOffset =
         millisPerSlot.times(2).dividedBy(INTERVALS_PER_SLOT_EIP7732);
     final UInt64 timelinessAttestationDueSlotTimeOffset =
         millisPerSlot.times(3).dividedBy(INTERVALS_PER_SLOT_EIP7732);
 
-    // we are in EIP7732 already, don't need to start and expire old duties, schedule 7732 only
-    if (isEip7732Started(currentSlot)) {
-      startDutiesInEip7732(
+    // we are in Gloas already, don't need to start and expire old duties, schedule 7732 only
+    if (isGloasStarted(currentSlot)) {
+      startDutiesInGloas(
           millisPerSlot,
           nextSlotStartTimeMillis,
-          eip7732AttestationDueSlotTimeOffset,
-          eip7732AggregationDueSlotTimeOffset,
+          gloasAttestationDueSlotTimeOffset,
+          gloasAggregationDueSlotTimeOffset,
           timelinessAttestationDueSlotTimeOffset);
       return;
     }
 
     // otherwise we should start and schedule expiration for phase0 duties first
-    // and start EIP7732 duties only when EIP7732 is started
-    final UInt64 eip7732StartTimeMillis =
+    // and start Gloas duties only when Gloas is started
+    final UInt64 gloasStartTimeMillis =
         secondsToMillis(
             spec.getSlotStartTime(
                 spec.computeStartSlotAtEpoch(
@@ -93,19 +93,17 @@ public class Eip7732TimeBasedEventAdapter extends TimeBasedEventAdapter {
         nextSlotStartTimeMillis.plus(attestationDueSlotTimeOffset),
         millisPerSlot,
         this::onAttestationCreationDue,
-        eip7732StartTimeMillis,
+        gloasStartTimeMillis,
         (__, ___) ->
             scheduleDuty(
-                millisPerSlot,
-                eip7732AttestationDueSlotTimeOffset,
-                this::onAttestationCreationDue));
+                millisPerSlot, gloasAttestationDueSlotTimeOffset, this::onAttestationCreationDue));
     taskScheduler.scheduleRepeatingEventInMillis(
         nextSlotStartTimeMillis.plus(aggregationDueSlotTimeOffset),
         millisPerSlot,
         this::onAggregationDue,
-        eip7732StartTimeMillis,
+        gloasStartTimeMillis,
         (__, ___) -> {
-          scheduleDuty(millisPerSlot, eip7732AggregationDueSlotTimeOffset, this::onAggregationDue);
+          scheduleDuty(millisPerSlot, gloasAggregationDueSlotTimeOffset, this::onAggregationDue);
           scheduleDuty(
               millisPerSlot,
               timelinessAttestationDueSlotTimeOffset,
@@ -113,13 +111,13 @@ public class Eip7732TimeBasedEventAdapter extends TimeBasedEventAdapter {
         });
   }
 
-  private boolean isEip7732Started(final UInt64 currentSlot) {
+  private boolean isGloasStarted(final UInt64 currentSlot) {
     final SpecMilestone currentMilestone = spec.atSlot(currentSlot).getMilestone();
 
     return currentMilestone.isGreaterThanOrEqualTo(SpecMilestone.EIP7732);
   }
 
-  private void startDutiesInEip7732(
+  private void startDutiesInGloas(
       final UInt64 millisPerSlot,
       final UInt64 nextSlotStartTimeMillis,
       final UInt64 attestationDueSlotTimeOffset,
@@ -151,7 +149,6 @@ public class Eip7732TimeBasedEventAdapter extends TimeBasedEventAdapter {
           slot);
       return;
     }
-    LOG.info("EVENT *** onPayloadTimelinessAttestationDue");
     validatorTimingChannel.onPayloadAttestationDue(slot);
   }
 
