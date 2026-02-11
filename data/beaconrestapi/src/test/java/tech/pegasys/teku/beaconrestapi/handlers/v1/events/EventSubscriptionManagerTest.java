@@ -286,7 +286,7 @@ public class EventSubscriptionManagerTest {
 
     triggerDataColumnSidecarEvent();
 
-    checkEvent("data_column_sidecar", DataColumnSidecarEvent.create(sampleDataColumnSidecar));
+    checkEvent("data_column_sidecar", new DataColumnSidecarEvent(sampleDataColumnSidecar));
   }
 
   @Test

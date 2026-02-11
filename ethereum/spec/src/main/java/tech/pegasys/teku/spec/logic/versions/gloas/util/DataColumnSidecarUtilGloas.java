@@ -202,6 +202,32 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
     // Nothing to cache for Gloas (no header, no inclusion proof)
   }
 
+  @Override
+  public SafeFuture<Optional<SszList<SszKZGCommitment>>> getKzgCommitments(
+      final DataColumnSidecar dataColumnSidecar,
+      final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
+    return retrieveBlockByRoot
+        .apply(dataColumnSidecar.getBeaconBlockRoot())
+        .thenCompose(
+            maybeBeaconBlock -> {
+              if (maybeBeaconBlock.isEmpty()) {
+                return SafeFuture.completedFuture(Optional.empty());
+              }
+              return getKzgCommitments(maybeBeaconBlock.get());
+            });
+  }
+
+  @Override
+  public SafeFuture<Optional<SszList<SszKZGCommitment>>> getKzgCommitments(
+      final BeaconBlock block) {
+    return SafeFuture.completedFuture(
+        Optional.of(
+            BeaconBlockBodyGloas.required(block.getBody())
+                .getSignedExecutionPayloadBid()
+                .getMessage()
+                .getBlobKzgCommitments()));
+  }
+
   /**
    * Perform async kzg commitments root validation for Gloas.
    *

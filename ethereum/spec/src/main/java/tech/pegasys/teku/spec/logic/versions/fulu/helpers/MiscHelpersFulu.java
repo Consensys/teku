@@ -236,32 +236,34 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
 
   public boolean verifyDataColumnSidecar(final DataColumnSidecar dataColumnSidecar) {
     final int numberOfColumns = specConfigFulu.getNumberOfColumns();
-    final UInt64 epoch = computeEpochAtSlot(dataColumnSidecar.getSlot());
+    final DataColumnSidecarFulu dataColumnSidecarFulu =
+        DataColumnSidecarFulu.required(dataColumnSidecar);
+    final UInt64 epoch = computeEpochAtSlot(dataColumnSidecarFulu.getSlot());
 
-    if (!dataColumnSidecar.getIndex().isLessThan(numberOfColumns)) {
+    if (!dataColumnSidecarFulu.getIndex().isLessThan(numberOfColumns)) {
       LOG.trace(
           "DataColumnSidecar has invalid index {}. Should be less than {}",
-          dataColumnSidecar.getIndex(),
+          dataColumnSidecarFulu.getIndex(),
           numberOfColumns);
       return false;
     }
-    if (dataColumnSidecar.getKzgCommitments().isEmpty()) {
+    if (dataColumnSidecarFulu.getKzgCommitments().isEmpty()) {
       LOG.trace("DataColumnSidecar has no kzg commitments");
       return false;
     }
 
-    if (dataColumnSidecar.getKzgCommitments().size()
-        > getBlobParameters(epoch).maxBlobsPerBlock()) {
+    final int kzgCommitmentsSize = dataColumnSidecarFulu.getKzgCommitments().size();
+    if (kzgCommitmentsSize > getBlobParameters(epoch).maxBlobsPerBlock()) {
       LOG.trace(
           "DataColumnSidecar has too many commitments when compared to the BPO for epoch {}",
           epoch);
       return false;
     }
-    if (dataColumnSidecar.getColumn().size() != dataColumnSidecar.getKzgCommitments().size()) {
+    if (dataColumnSidecar.getColumn().size() != kzgCommitmentsSize) {
       LOG.trace(
           "DataColumnSidecar has unequal data column ({}) and kzg commitments ({}) sizes",
           dataColumnSidecar.getColumn().size(),
-          dataColumnSidecar.getKzgCommitments().size());
+          kzgCommitmentsSize);
       return false;
     }
     if (dataColumnSidecar.getColumn().size() != dataColumnSidecar.getKzgProofs().size()) {
@@ -286,7 +288,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
             .collect(Collectors.toList());
     return getKzg()
         .verifyCellProofBatch(
-            dataColumnSidecar.getKzgCommitments().stream()
+            DataColumnSidecarFulu.required(dataColumnSidecar).getKzgCommitments().stream()
                 .map(SszKZGCommitment::getKZGCommitment)
                 .toList(),
             cellWithIds,
@@ -311,7 +313,8 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return getKzg()
         .verifyCellProofBatch(
             dataColumnSidecars.stream()
-                .flatMap(sidecar -> sidecar.getKzgCommitments().stream())
+                .flatMap(
+                    sidecar -> DataColumnSidecarFulu.required(sidecar).getKzgCommitments().stream())
                 .map(SszKZGCommitment::getKZGCommitment)
                 .toList(),
             cellWithIds,
@@ -322,15 +325,17 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   }
 
   public boolean verifyDataColumnSidecarInclusionProof(final DataColumnSidecar dataColumnSidecar) {
-    if (dataColumnSidecar.getKzgCommitments().isEmpty()) {
+    final DataColumnSidecarFulu dataColumnSidecarFulu =
+        DataColumnSidecarFulu.required(dataColumnSidecar);
+    if (dataColumnSidecarFulu.getKzgCommitments().isEmpty()) {
       return false;
     }
     return predicates.isValidMerkleBranch(
-        dataColumnSidecar.getKzgCommitments().hashTreeRoot(),
-        DataColumnSidecarFulu.required(dataColumnSidecar).getKzgCommitmentsInclusionProof(),
+        dataColumnSidecarFulu.getKzgCommitments().hashTreeRoot(),
+        dataColumnSidecarFulu.getKzgCommitmentsInclusionProof(),
         specConfigFulu.getKzgCommitmentsInclusionProofDepth().intValue(),
         getBlockBodyKzgCommitmentsGeneralizedIndex(),
-        DataColumnSidecarFulu.required(dataColumnSidecar).getBlockBodyRoot());
+        dataColumnSidecarFulu.getBlockBodyRoot());
   }
 
   public int getBlockBodyKzgCommitmentsGeneralizedIndex() {
@@ -542,15 +547,13 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
             .toList();
     final List<List<MatrixEntry>> blobColumnEntries = transpose(columnBlobEntries);
     final List<List<MatrixEntry>> extendedMatrix = recoverMatrix(blobColumnEntries);
-    final DataColumnSidecar anyExistingSidecar =
-        existingSidecars.stream().findFirst().orElseThrow();
-    final SignedBeaconBlockHeader signedBeaconBlockHeader =
-        DataColumnSidecarFulu.required(anyExistingSidecar).getSignedBlockHeader();
+    final DataColumnSidecarFulu anyExistingSidecar =
+        DataColumnSidecarFulu.required(existingSidecars.stream().findFirst().orElseThrow());
     return constructDataColumnSidecarsInternal(
         builder ->
             builder
                 .kzgCommitments(anyExistingSidecar.getKzgCommitments())
-                .signedBlockHeader(signedBeaconBlockHeader)
+                .signedBlockHeader(anyExistingSidecar.getSignedBlockHeader())
                 .kzgCommitmentsInclusionProof(
                     DataColumnSidecarFulu.required(anyExistingSidecar)
                         .getKzgCommitmentsInclusionProof()

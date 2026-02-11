@@ -72,6 +72,7 @@ import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValid
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DataColumnSidecarELManagerImplTest {
+  // TODO-GLOAS add Gloas test
   private final Spec spec = TestSpecFactory.createMinimalFulu();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final UInt64 historicalTolerance = UInt64.valueOf(5);
@@ -622,7 +623,9 @@ public class DataColumnSidecarELManagerImplTest {
                 0,
                 dataColumnSidecarELRecoveryManager
                     .getRecoveryTask(slotAndBlockRoot)
-                    .sszKZGCommitments()
+                    .maybeSszKZGCommitmentsFuture()
+                    .getImmediately()
+                    .get()
                     .size())
             .mapToObj(
                 index -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), UInt64.valueOf(index)))
@@ -633,7 +636,11 @@ public class DataColumnSidecarELManagerImplTest {
         specVersion.miscHelpers().toVersionDeneb().orElseThrow();
 
     final SszList<SszKZGCommitment> sszKZGCommitments =
-        dataColumnSidecarELRecoveryManager.getRecoveryTask(slotAndBlockRoot).sszKZGCommitments();
+        dataColumnSidecarELRecoveryManager
+            .getRecoveryTask(slotAndBlockRoot)
+            .maybeSszKZGCommitmentsFuture()
+            .getImmediately()
+            .get();
     return missingBlobsIdentifiers.stream()
         .map(
             blobIdentifier ->

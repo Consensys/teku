@@ -22,6 +22,7 @@ import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
@@ -30,7 +31,9 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidec
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarTrackingKey;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
@@ -259,14 +262,15 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   public boolean verifyInclusionProof(
       final DataColumnSidecar dataColumnSidecar,
       final Set<InclusionProofInfo> validInclusionProofInfoSet) {
-    final DataColumnSidecarFulu fuluSidecar = DataColumnSidecarFulu.required(dataColumnSidecar);
+    final DataColumnSidecarFulu dataColumnSidecarFulu =
+        DataColumnSidecarFulu.required(dataColumnSidecar);
 
     // Check cache first for optimization
     final InclusionProofInfo proofInfo =
         new InclusionProofInfo(
-            dataColumnSidecar.getKzgCommitments().hashTreeRoot(),
-            fuluSidecar.getKzgCommitmentsInclusionProof().hashTreeRoot(),
-            fuluSidecar.getBlockBodyRoot());
+            dataColumnSidecarFulu.getKzgCommitments().hashTreeRoot(),
+            dataColumnSidecarFulu.getKzgCommitmentsInclusionProof().hashTreeRoot(),
+            dataColumnSidecarFulu.getBlockBodyRoot());
 
     if (validInclusionProofInfoSet.contains(proofInfo)) {
       return true;
@@ -313,9 +317,24 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     // Cache inclusion proof info for future validations
     validInclusionProofInfoSet.add(
         new InclusionProofInfo(
-            dataColumnSidecar.getKzgCommitments().hashTreeRoot(),
+            dataColumnSidecarFulu.getKzgCommitments().hashTreeRoot(),
             dataColumnSidecarFulu.getKzgCommitmentsInclusionProof().hashTreeRoot(),
             dataColumnSidecarFulu.getBlockBodyRoot()));
+  }
+
+  @Override
+  public SafeFuture<Optional<SszList<SszKZGCommitment>>> getKzgCommitments(
+      final DataColumnSidecar dataColumnSidecar,
+      final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
+    return SafeFuture.completedFuture(
+        DataColumnSidecarFulu.required(dataColumnSidecar).getMaybeKzgCommitments());
+  }
+
+  @Override
+  public SafeFuture<Optional<SszList<SszKZGCommitment>>> getKzgCommitments(
+      final BeaconBlock block) {
+    return SafeFuture.completedFuture(
+        BeaconBlockBodyDeneb.required(block.getBody()).getOptionalBlobKzgCommitments());
   }
 
   @Override

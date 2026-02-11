@@ -23,12 +23,14 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 
 /**
@@ -94,6 +96,12 @@ public interface DataColumnSidecarUtil {
       DataColumnSidecar dataColumnSidecar,
       Set<Bytes32> validSignedBlockHeaders,
       Set<InclusionProofInfo> validInclusionProofInfoSet);
+
+  SafeFuture<Optional<SszList<SszKZGCommitment>>> getKzgCommitments(
+      DataColumnSidecar dataColumnSidecar,
+      Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot);
+
+  SafeFuture<Optional<SszList<SszKZGCommitment>>> getKzgCommitments(BeaconBlock block);
 
   record InclusionProofInfo(
       Bytes32 commitmentsRoot, Bytes32 inclusionProofRoot, Bytes32 bodyRoot) {}
