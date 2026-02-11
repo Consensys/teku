@@ -23,7 +23,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 public class Phase0TimeBasedEventAdapter extends TimeBasedEventAdapter {
-  private UInt64 genesisTime;
 
   public Phase0TimeBasedEventAdapter(
       final GenesisDataProvider genesisDataProvider,
@@ -36,7 +35,7 @@ public class Phase0TimeBasedEventAdapter extends TimeBasedEventAdapter {
 
   @Override
   void start(final UInt64 genesisTime) {
-    this.genesisTime = genesisTime;
+    setGenesisTime(genesisTime);
     final UInt64 currentSlot = getCurrentSlot();
 
     final UInt64 nextSlotStartTime = spec.getSlotStartTime(currentSlot.plus(1), genesisTime);
@@ -66,10 +65,5 @@ public class Phase0TimeBasedEventAdapter extends TimeBasedEventAdapter {
         millisPerSlot,
         aggregationDueSlotTimeOffset,
         this::onAggregationDue);
-  }
-
-  @Override
-  UInt64 getGenesisTime() {
-    return genesisTime;
   }
 }

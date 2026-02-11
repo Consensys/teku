@@ -31,6 +31,7 @@ public abstract class TimeBasedEventAdapter implements BeaconChainEventAdapter {
 
   private final GenesisDataProvider genesisDataProvider;
   private final TimeProvider timeProvider;
+  private UInt64 genesisTime;
   final ValidatorTimingChannel validatorTimingChannel;
   final Spec spec;
   final RepeatingTaskScheduler taskScheduler;
@@ -50,7 +51,9 @@ public abstract class TimeBasedEventAdapter implements BeaconChainEventAdapter {
 
   abstract void start(final UInt64 genesisTime);
 
-  abstract UInt64 getGenesisTime();
+  void setGenesisTime(final UInt64 genesisTime) {
+    this.genesisTime = genesisTime;
+  }
 
   void scheduleDuty(final UInt64 period, final UInt64 offset, final RepeatingTask dutyTask) {
     scheduleDuty(getNextSlotStartMillis(), period, offset, dutyTask);
@@ -67,12 +70,12 @@ public abstract class TimeBasedEventAdapter implements BeaconChainEventAdapter {
 
   private UInt64 getNextSlotStartMillis() {
     final UInt64 currentSlot = getCurrentSlot();
-    final UInt64 nextSlotStartTime = spec.getSlotStartTime(currentSlot.plus(1), getGenesisTime());
+    final UInt64 nextSlotStartTime = spec.getSlotStartTime(currentSlot.plus(1), genesisTime);
     return secondsToMillis(nextSlotStartTime);
   }
 
   UInt64 getCurrentSlot() {
-    return spec.getCurrentSlot(timeProvider.getTimeInSeconds(), getGenesisTime());
+    return spec.getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime);
   }
 
   UInt64 getSecondsPerSlot(final UInt64 slot) {
@@ -80,13 +83,12 @@ public abstract class TimeBasedEventAdapter implements BeaconChainEventAdapter {
   }
 
   void onStartSlot(final UInt64 scheduledTime, final UInt64 actualTime) {
-    final UInt64 slot = spec.getCurrentSlot(scheduledTime, getGenesisTime());
+    final UInt64 slot = spec.getCurrentSlot(scheduledTime, genesisTime);
     if (isTooLate(scheduledTime, actualTime)) {
       LOG.warn(
           "Skipping block creation for slot {} due to unexpected delay in slot processing", slot);
       return;
     }
-    LOG.info("EVENT *** onStartSlot");
     validatorTimingChannel.onSlot(slot);
     validatorTimingChannel.onBlockProductionDue(slot);
   }
@@ -98,7 +100,6 @@ public abstract class TimeBasedEventAdapter implements BeaconChainEventAdapter {
       LOG.warn("Skipping attestation for slot {} due to unexpected delay in slot processing", slot);
       return;
     }
-    LOG.info("EVENT *** onAttestationCreationDue");
     validatorTimingChannel.onAttestationCreationDue(slot);
   }
 
@@ -108,12 +109,11 @@ public abstract class TimeBasedEventAdapter implements BeaconChainEventAdapter {
       LOG.warn("Skipping aggregation for slot {} due to unexpected delay in slot processing", slot);
       return;
     }
-    LOG.info("EVENT *** onAggregationDue");
     validatorTimingChannel.onAttestationAggregationDue(slot);
   }
 
   UInt64 getCurrentSlotForMillis(final UInt64 millis) {
-    return spec.getCurrentSlot(millisToSeconds(millis), getGenesisTime());
+    return spec.getCurrentSlot(millisToSeconds(millis), genesisTime);
   }
 
   private boolean isTooLate(final UInt64 scheduledTime, final UInt64 actualTime) {

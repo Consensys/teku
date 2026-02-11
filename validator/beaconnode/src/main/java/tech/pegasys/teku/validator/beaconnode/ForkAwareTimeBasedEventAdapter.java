@@ -22,7 +22,7 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 public class ForkAwareTimeBasedEventAdapter implements BeaconChainEventAdapter {
 
-  final TimeBasedEventAdapter delegate;
+  private final TimeBasedEventAdapter delegate;
 
   public ForkAwareTimeBasedEventAdapter(
       final GenesisDataProvider genesisDataProvider,

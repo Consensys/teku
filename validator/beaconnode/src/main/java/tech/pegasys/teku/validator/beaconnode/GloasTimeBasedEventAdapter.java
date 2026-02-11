@@ -29,8 +29,6 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 public class GloasTimeBasedEventAdapter extends TimeBasedEventAdapter {
   private static final Logger LOG = LogManager.getLogger();
 
-  private UInt64 genesisTime;
-
   public GloasTimeBasedEventAdapter(
       final GenesisDataProvider genesisDataProvider,
       final RepeatingTaskScheduler taskScheduler,
@@ -42,7 +40,7 @@ public class GloasTimeBasedEventAdapter extends TimeBasedEventAdapter {
 
   @Override
   void start(final UInt64 genesisTime) {
-    this.genesisTime = genesisTime;
+    setGenesisTime(genesisTime);
     final UInt64 currentSlot = getCurrentSlot();
 
     final UInt64 nextSlotStartTime = spec.getSlotStartTime(currentSlot.plus(1), genesisTime);
@@ -150,10 +148,5 @@ public class GloasTimeBasedEventAdapter extends TimeBasedEventAdapter {
       return;
     }
     validatorTimingChannel.onPayloadAttestationDue(slot);
-  }
-
-  @Override
-  UInt64 getGenesisTime() {
-    return genesisTime;
   }
 }
