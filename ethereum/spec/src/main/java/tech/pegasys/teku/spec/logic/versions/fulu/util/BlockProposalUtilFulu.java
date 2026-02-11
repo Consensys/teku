@@ -45,6 +45,10 @@ public class BlockProposalUtilFulu extends BlockProposalUtilPhase0 {
   @Override
   public UInt64 getStateSlotForProposerDuties(
       final Spec spec, final UInt64 dutiesEpoch, final boolean isElectraCompatible) {
+    LOG.debug(
+        "getProposerDuties called for epoch {}, isElectraCompatible {}",
+        dutiesEpoch,
+        isElectraCompatible);
     if (!isElectraCompatible
         && forkEpoch.isPresent()
         && dutiesEpoch.minusMinZero(1).isGreaterThanOrEqualTo(forkEpoch.get())) {
