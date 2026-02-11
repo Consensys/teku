@@ -162,12 +162,14 @@ public class BlobSidecarReconstructionProvider {
                 signedBeaconBlock
                     .getMessage()
                     .getBody()
-                    .getOptionalBlobKzgCommitments()
-                    .map(SszList::size)
+                    .getOptionalSignedExecutionPayloadBid()
                     .orElseThrow(
                         () ->
                             new IllegalStateException(
-                                "Unable to get the kzg commitments to reconstruct the blob Sidecars from the Data Colum Sidecars")));
+                                "Unable to get the kzg commitments from the corresponding bid to reconstruct the blob Sidecars from the Data Colum Sidecars"))
+                    .getMessage()
+                    .getBlobKzgCommitments()
+                    .size());
   }
 
   private BlobSidecar constructBlobSidecar(
