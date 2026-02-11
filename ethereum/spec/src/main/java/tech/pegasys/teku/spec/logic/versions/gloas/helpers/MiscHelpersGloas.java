@@ -23,11 +23,17 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGCell;
+import tech.pegasys.teku.kzg.KZGCellWithColumnId;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -36,11 +42,14 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class MiscHelpersGloas extends MiscHelpersFulu {
+  private static final Logger LOG = LogManager.getLogger();
 
   public static MiscHelpersGloas required(final MiscHelpers miscHelpers) {
     return miscHelpers
@@ -53,6 +62,7 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
   }
 
   private final PredicatesGloas predicates;
+  private final SpecConfigGloas specConfigGloas;
 
   public MiscHelpersGloas(
       final SpecConfigGloas specConfig,
@@ -60,6 +70,7 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
       final SchemaDefinitionsGloas schemaDefinitions) {
     super(specConfig, predicates, schemaDefinitions);
     this.predicates = predicates;
+    this.specConfigGloas = specConfig;
   }
 
   public UInt64 convertBuilderIndexToValidatorIndex(final UInt64 builderIndex) {
@@ -162,6 +173,74 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
 
   public boolean isActiveBuilder(final BeaconState state, final UInt64 builderIndex) {
     return predicates.isActiveBuilder(state, builderIndex);
+  }
+
+  /**
+   * verify_data_column_sidecar
+   *
+   * @param dataColumnSidecar the data column sidecar to verify
+   * @param kzgCommitments the KZG commitments from the execution payload bid
+   * @return true if the sidecar structure is valid
+   */
+  public boolean verifyDataColumnSidecar(
+      final DataColumnSidecar dataColumnSidecar, final SszList<SszKZGCommitment> kzgCommitments) {
+    final int numberOfColumns = specConfigGloas.getNumberOfColumns();
+
+    // The sidecar index must be within the valid range
+    if (!dataColumnSidecar.getIndex().isLessThan(numberOfColumns)) {
+      LOG.trace(
+          "DataColumnSidecar has invalid index {}. Should be less than {}",
+          dataColumnSidecar.getIndex(),
+          numberOfColumns);
+      return false;
+    }
+
+    // A sidecar for zero blobs is invalid
+    if (dataColumnSidecar.getColumn().isEmpty()) {
+      LOG.trace("DataColumnSidecar has empty column");
+      return false;
+    }
+
+    // The column length must be equal to the number of commitments/proofs
+    if (dataColumnSidecar.getColumn().size() != kzgCommitments.size()
+        || dataColumnSidecar.getColumn().size() != dataColumnSidecar.getKzgProofs().size()) {
+      LOG.trace(
+          "DataColumnSidecar has unequal data column ({}), kzg commitments ({}), and kzg proofs ({}) sizes",
+          dataColumnSidecar.getColumn().size(),
+          kzgCommitments.size(),
+          dataColumnSidecar.getKzgProofs().size());
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * verify_data_column_sidecar_kzg_proofs
+   *
+   * @param dataColumnSidecar the data column sidecar to verify
+   * @param kzgCommitments the KZG commitments from the execution payload bid
+   * @return true if the KZG proofs are valid
+   */
+  public boolean verifyDataColumnSidecarKzgProofs(
+      final DataColumnSidecar dataColumnSidecar, final SszList<SszKZGCommitment> kzgCommitments) {
+
+    // The column index also represents the cell index
+    final List<KZGCellWithColumnId> cellWithIds =
+        IntStream.range(0, dataColumnSidecar.getColumn().size())
+            .mapToObj(
+                rowIndex ->
+                    KZGCellWithColumnId.fromCellAndColumn(
+                        new KZGCell(dataColumnSidecar.getColumn().get(rowIndex).getBytes()),
+                        dataColumnSidecar.getIndex().intValue()))
+            .collect(Collectors.toList());
+
+    // Batch verify that the cells match the corresponding commitments and proofs
+    return getKzg()
+        .verifyCellProofBatch(
+            kzgCommitments.stream().map(SszKZGCommitment::getKZGCommitment).toList(),
+            cellWithIds,
+            dataColumnSidecar.getKzgProofs().stream().map(SszKZGProof::getKZGProof).toList());
   }
 
   @Override
