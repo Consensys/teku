@@ -32,8 +32,8 @@ import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
 import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
+import tech.pegasys.teku.validator.beaconnode.ForkAwareTimeBasedEventAdapter;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
-import tech.pegasys.teku.validator.beaconnode.TimeBasedEventAdapter;
 import tech.pegasys.teku.validator.beaconnode.metrics.MetricRecordingValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.BeaconNodeReadinessChannel;
 import tech.pegasys.teku.validator.remote.BeaconNodeReadinessManager;
@@ -152,7 +152,7 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
             dutiesProviderFailoverValidatorApiChannel,
             sentryNodesHttpClient,
             ValidatorLogger.VALIDATOR_LOGGER,
-            new TimeBasedEventAdapter(
+            new ForkAwareTimeBasedEventAdapter(
                 new GenesisDataProvider(asyncRunner, dutiesProviderValidatorApi),
                 new RepeatingTaskScheduler(asyncRunner, serviceConfig.getTimeProvider()),
                 serviceConfig.getTimeProvider(),

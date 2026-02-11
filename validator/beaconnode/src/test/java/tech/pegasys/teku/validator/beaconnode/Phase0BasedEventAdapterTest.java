@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
-class TimeBasedEventAdapterTest {
+class Phase0BasedEventAdapterTest {
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final Spec gnosisSpec = TestSpecFactory.create(SpecMilestone.PHASE0, Eth2Network.GNOSIS);
@@ -50,12 +50,12 @@ class TimeBasedEventAdapterTest {
   private final RepeatingTaskScheduler repeatingTaskScheduler =
       new RepeatingTaskScheduler(asyncRunner, timeProvider);
 
-  private final TimeBasedEventAdapter eventAdapter =
-      new TimeBasedEventAdapter(
+  private final Phase0TimeBasedEventAdapter eventAdapter =
+      new Phase0TimeBasedEventAdapter(
           genesisDataProvider, repeatingTaskScheduler, timeProvider, validatorTimingChannel, spec);
 
-  private final TimeBasedEventAdapter eventAdapterGnosis =
-      new TimeBasedEventAdapter(
+  private final Phase0TimeBasedEventAdapter eventAdapterGnosis =
+      new Phase0TimeBasedEventAdapter(
           genesisDataProvider,
           repeatingTaskScheduler,
           timeProvider,
