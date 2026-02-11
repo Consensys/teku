@@ -10,6 +10,8 @@
 
 ### Additions and Improvements
 
+- Use jemalloc in our docker images to improve memory allocation
+
 ### Bug Fixes
 
 
