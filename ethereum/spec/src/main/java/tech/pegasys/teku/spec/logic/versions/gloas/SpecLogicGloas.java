@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
@@ -50,6 +51,7 @@ import tech.pegasys.teku.spec.logic.versions.gloas.operations.validation.Attesta
 import tech.pegasys.teku.spec.logic.versions.gloas.operations.validation.VoluntaryExitValidatorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.AttestationUtilGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.util.DataColumnSidecarUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ValidatorsUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelpersGloas;
@@ -62,6 +64,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
   private final Optional<ExecutionRequestsProcessor> executionRequestsProcessor;
   private final Optional<ExecutionPayloadProcessor> executionPayloadProcessor;
   private final Optional<ExecutionPayloadProposalUtil> executionPayloadProposalUtil;
+  private final Optional<DataColumnSidecarUtil> dataColumnSidecarUtil;
 
   private SpecLogicGloas(
       final PredicatesGloas predicates,
@@ -85,7 +88,8 @@ public class SpecLogicGloas extends AbstractSpecLogic {
       final SyncCommitteeUtil syncCommitteeUtil,
       final LightClientUtil lightClientUtil,
       final ExecutionPayloadProposalUtil executionPayloadProposalUtil,
-      final GloasStateUpgrade stateUpgrade) {
+      final GloasStateUpgrade stateUpgrade,
+      final DataColumnSidecarUtil dataColumnSidecarUtil) {
     super(
         predicates,
         miscHelpers,
@@ -109,6 +113,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
     this.withdrawalsHelpers = Optional.of(withdrawalsHelpers);
     this.executionPayloadProcessor = Optional.of(executionPayloadProcessor);
     this.executionPayloadProposalUtil = Optional.of(executionPayloadProposalUtil);
+    this.dataColumnSidecarUtil = Optional.of(dataColumnSidecarUtil);
   }
 
   public static SpecLogicGloas create(
@@ -232,6 +237,9 @@ public class SpecLogicGloas extends AbstractSpecLogic {
             beaconStateMutators,
             miscHelpers);
 
+    // Data column sidecar util
+    final DataColumnSidecarUtil dataColumnSidecarUtil = new DataColumnSidecarUtilGloas(miscHelpers);
+
     return new SpecLogicGloas(
         predicates,
         miscHelpers,
@@ -254,7 +262,8 @@ public class SpecLogicGloas extends AbstractSpecLogic {
         syncCommitteeUtil,
         lightClientUtil,
         executionPayloadProposalUtil,
-        stateUpgrade);
+        stateUpgrade,
+        dataColumnSidecarUtil);
   }
 
   @Override
@@ -290,5 +299,10 @@ public class SpecLogicGloas extends AbstractSpecLogic {
   @Override
   public Optional<ExecutionPayloadProposalUtil> getExecutionPayloadProposalUtil() {
     return executionPayloadProposalUtil;
+  }
+
+  @Override
+  public Optional<DataColumnSidecarUtil> getDataColumnSidecarUtil() {
+    return dataColumnSidecarUtil;
   }
 }
