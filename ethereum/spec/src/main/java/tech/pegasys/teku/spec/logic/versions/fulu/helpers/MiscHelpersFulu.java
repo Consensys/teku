@@ -555,9 +555,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
                 .kzgCommitments(anyExistingSidecar.getKzgCommitments())
                 .signedBlockHeader(anyExistingSidecar.getSignedBlockHeader())
                 .kzgCommitmentsInclusionProof(
-                    DataColumnSidecarFulu.required(anyExistingSidecar)
-                        .getKzgCommitmentsInclusionProof()
-                        .asListUnboxed()),
+                    anyExistingSidecar.getKzgCommitmentsInclusionProof().asListUnboxed()),
         extendedMatrix);
   }
 
