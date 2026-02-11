@@ -324,4 +324,126 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments("--Xmin-bid-increment-percentage", "5");
     assertThat(config.beaconChain().getMinBidIncrementPercentage()).isEqualTo(5);
   }
+
+  // Tests for fork epoch implicit defaulting
+
+  @Test
+  void shouldDefaultAltairToZeroWhenBellatrixSetToZero() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments(
+            "--Xnetwork-bellatrix-fork-epoch", "0", "--ee-endpoint", "someEndpoint");
+    final Eth2NetworkConfiguration networkConfig = config.eth2NetworkConfiguration();
+    final Spec spec = networkConfig.getSpec();
+
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.ALTAIR)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.BELLATRIX)).hasValue(UInt64.ZERO);
+    assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.ZERO))
+        .isEqualTo(SpecMilestone.BELLATRIX);
+  }
+
+  @Test
+  void shouldDefaultPreviousForksWhenCapellaSetToZero() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments(
+            "--Xnetwork-capella-fork-epoch", "0", "--ee-endpoint", "someEndpoint");
+    final Eth2NetworkConfiguration networkConfig = config.eth2NetworkConfiguration();
+    final Spec spec = networkConfig.getSpec();
+
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.ALTAIR)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.BELLATRIX)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.CAPELLA)).hasValue(UInt64.ZERO);
+    assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.ZERO))
+        .isEqualTo(SpecMilestone.CAPELLA);
+  }
+
+  @Test
+  void shouldDefaultPreviousForksWhenDenebSetToZero() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments(
+            "--Xnetwork-deneb-fork-epoch", "0", "--ee-endpoint", "someEndpoint");
+    final Eth2NetworkConfiguration networkConfig = config.eth2NetworkConfiguration();
+    final Spec spec = networkConfig.getSpec();
+
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.ALTAIR)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.BELLATRIX)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.CAPELLA)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.DENEB)).hasValue(UInt64.ZERO);
+    assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.ZERO))
+        .isEqualTo(SpecMilestone.DENEB);
+  }
+
+  @Test
+  void shouldDefaultPreviousForksWhenElectraSetToZero() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments(
+            "--Xnetwork-electra-fork-epoch", "0", "--ee-endpoint", "someEndpoint");
+    final Eth2NetworkConfiguration networkConfig = config.eth2NetworkConfiguration();
+    final Spec spec = networkConfig.getSpec();
+
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.ALTAIR)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.BELLATRIX)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.CAPELLA)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.DENEB)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.ELECTRA)).hasValue(UInt64.ZERO);
+    assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.ZERO))
+        .isEqualTo(SpecMilestone.ELECTRA);
+  }
+
+  @Test
+  void shouldDefaultPreviousForksWhenFuluSetToZero() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments(
+            "--Xnetwork-fulu-fork-epoch", "0", "--ee-endpoint", "someEndpoint");
+    final Eth2NetworkConfiguration networkConfig = config.eth2NetworkConfiguration();
+    final Spec spec = networkConfig.getSpec();
+
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.ALTAIR)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.BELLATRIX)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.CAPELLA)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.DENEB)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.ELECTRA)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.FULU)).hasValue(UInt64.ZERO);
+    assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.ZERO))
+        .isEqualTo(SpecMilestone.FULU);
+  }
+
+  @Test
+  void shouldDefaultPreviousForksWhenGloasSetToZero() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments(
+            "--Xnetwork-gloas-fork-epoch", "0", "--ee-endpoint", "someEndpoint");
+    final Eth2NetworkConfiguration networkConfig = config.eth2NetworkConfiguration();
+    final Spec spec = networkConfig.getSpec();
+
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.ALTAIR)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.BELLATRIX)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.CAPELLA)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.DENEB)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.ELECTRA)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.FULU)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.GLOAS)).hasValue(UInt64.ZERO);
+    assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.ZERO))
+        .isEqualTo(SpecMilestone.GLOAS);
+  }
+
+  @Test
+  void shouldHandleExplicitZeroForkEpochs() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments(
+            "--Xnetwork-bellatrix-fork-epoch",
+            "0",
+            "--Xnetwork-deneb-fork-epoch",
+            "0",
+            "--ee-endpoint",
+            "someEndpoint");
+    final Eth2NetworkConfiguration networkConfig = config.eth2NetworkConfiguration();
+    final Spec spec = networkConfig.getSpec();
+
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.ALTAIR)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.BELLATRIX)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.CAPELLA)).hasValue(UInt64.ZERO);
+    assertThat(networkConfig.getForkEpoch(SpecMilestone.DENEB)).hasValue(UInt64.ZERO);
+    assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.ZERO))
+        .isEqualTo(SpecMilestone.DENEB);
+  }
 }
