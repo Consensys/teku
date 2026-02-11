@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.ssz.impl.SszListImpl;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
-import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszBitlistSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
@@ -85,8 +85,12 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
     value = getBitlist(this);
   }
 
-  public SszBitlistImpl(final SszListSchema<SszBit, ?> schema, final BitlistImpl value) {
-    super(schema, () -> toSszBitList(schema, value).getBackingNode());
+  public SszBitlistImpl(final SszBitlistSchema<?> schema, final BitlistImpl value) {
+    super(
+        schema,
+        () ->
+            ((SszBitlistSchemaImpl) schema)
+                .createTreeFromBitData(value.getCurrentSize(), value.toByteArray()));
     this.value = value;
   }
 
@@ -159,11 +163,6 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
   @Override
   protected int sizeImpl() {
     return value.getCurrentSize();
-  }
-
-  private static SszList<SszBit> toSszBitList(
-      final SszListSchema<SszBit, ?> schema, final BitlistImpl bitlist) {
-    return schema.sszDeserialize(SszReader.fromBytes(bitlist.serialize()));
   }
 
   private static BitlistImpl getBitlist(final SszList<SszBit> bitlistView) {
