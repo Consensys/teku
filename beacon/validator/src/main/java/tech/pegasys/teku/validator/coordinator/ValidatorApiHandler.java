@@ -327,6 +327,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                   "Proposer duties were requested %s epochs ahead, only 1 epoch in future is supported.",
                   epoch.minus(currentEpoch).toString())));
     }
+    LOG.debug(
+        "getProposerDuties called for epoch {}, currentEpoch {}, isElectraCompatible {}",
+        epoch,
+        currentEpoch,
+        isElectraCompatible);
 
     final UInt64 stateSlot =
         spec.atEpoch(epoch)
