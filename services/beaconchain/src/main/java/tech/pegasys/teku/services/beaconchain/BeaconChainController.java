@@ -682,8 +682,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initExecutionPayloadBidManager();
     initExecutionPayloadManager();
     initSyncCommitteePools();
-    initCustodyGroupCountManager();
     initP2PNetwork();
+    initCustodyGroupCountManager();
     initDasCustody();
     initDataColumnSidecarELManager();
     initDasSyncPreSampler();
