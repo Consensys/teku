@@ -13,5 +13,6 @@
 - Use jemalloc in our docker images to improve memory allocation
 
 ### Bug Fixes
+- Changed get proposers api to be compatible with electra dependent roots.
 
 
