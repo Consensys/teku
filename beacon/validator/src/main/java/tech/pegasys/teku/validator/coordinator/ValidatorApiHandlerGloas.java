@@ -14,8 +14,6 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import java.util.Optional;
-
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
@@ -104,30 +102,31 @@ public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
       final UInt64 slot, final BlockProductionPerformance productionPerformance) {
     // TODO-GLOAS: https://github.com/Consensys/teku/issues/10352 this is very simple and naïve
     // state selection (possibly good enough for devnet-0) that needs to be revisited
-    final Optional<BeaconState> executionPayloadState =
-        combinedChainDataClient
-            .getRecentChainData()
-            .getBlockRootInEffectBySlot(slot)
-            .flatMap(blockRoot -> getExecutionPayloadStateForBlockProduction(slot, blockRoot));
-    if (executionPayloadState.isPresent()) {
-      return SafeFuture.completedFuture(executionPayloadState);
-    }
-    return combinedChainDataClient.getStateForBlockProduction(
-        slot,
-        forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled(),
-        productionPerformance::lateBlockReorgPreparationCompleted);
+    return getExecutionPayloadStateForBlockProduction(slot)
+        .map(
+            executionPayloadState -> SafeFuture.completedFuture(Optional.of(executionPayloadState)))
+        .orElseGet(
+            () ->
+                combinedChainDataClient.getStateForBlockProduction(
+                    slot,
+                    forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled(),
+                    productionPerformance::lateBlockReorgPreparationCompleted));
   }
 
-  private Optional<BeaconState> getExecutionPayloadStateForBlockProduction(
-      final UInt64 slot, final Bytes32 blockRoot) {
+  private Optional<BeaconState> getExecutionPayloadStateForBlockProduction(final UInt64 slot) {
     if (!combinedChainDataClient.isStoreAvailable()) {
       return Optional.empty();
     }
     return combinedChainDataClient
-        .getStore()
-        // no state will be present for slots before the Gloas fork (or if empty
-        // after the Gloas fork)
-        .getExecutionPayloadStateIfAvailable(blockRoot)
-        .flatMap(state -> combinedChainDataClient.regenerateBeaconState(state, slot));
+        .getRecentChainData()
+        .getBlockRootInEffectBySlot(slot)
+        .flatMap(
+            blockRoot ->
+                combinedChainDataClient
+                    .getStore()
+                    // no state will be present for slots before the Gloas fork (or if empty
+                    // after the Gloas fork)
+                    .getExecutionPayloadStateIfAvailable(blockRoot)
+                    .flatMap(state -> combinedChainDataClient.regenerateBeaconState(state, slot)));
   }
 }
