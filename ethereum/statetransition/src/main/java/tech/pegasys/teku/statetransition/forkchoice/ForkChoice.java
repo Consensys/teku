@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -837,13 +836,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return maybeEarliestAvailabilityWindowSlotBeforeBlock.map(
         earliestAvailabilityWindowSlotBeforeBlock ->
             earliestAvailabilityWindowSlotBeforeBlock.max(earliestAffectedSlot));
-  }
-
-  private UInt64 getMillisIntoSlot(final StoreTransaction transaction, final int millisPerSlot) {
-    return transaction
-        .getTimeInMillis()
-        .minus(secondsToMillis(transaction.getGenesisTime()))
-        .mod(millisPerSlot);
   }
 
   private void onExecutionPayloadResult(
