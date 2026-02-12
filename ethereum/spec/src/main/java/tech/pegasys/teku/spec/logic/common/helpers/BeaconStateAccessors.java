@@ -231,7 +231,7 @@ public abstract class BeaconStateAccessors {
       final BeaconState state, final UInt64 requestedSlot) {
     checkArgument(
         canCalculateProposerIndexAtSlot(state, requestedSlot),
-        "get_beacon_proposer_index is only used for requesting a slot in the current epoch. Requested slot %s, state slot %s",
+        "get_beacon_proposer_index is only used for requesting a slot in the current epoch (or next epoch in FULU). Requested slot %s, state slot %s",
         requestedSlot,
         state.getSlot());
   }
