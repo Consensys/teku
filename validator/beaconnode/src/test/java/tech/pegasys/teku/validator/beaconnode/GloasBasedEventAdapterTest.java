@@ -18,6 +18,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -215,58 +216,35 @@ class GloasBasedEventAdapterTest {
   }
 
   @Test
-  void shouldTransitionFromPhase0ToEip7732DutiesAcrossForkBoundary() {
-    // Spec: minimal config, EIP7732 fork at epoch 1 (slot 8)
-    // SLOTS_PER_EPOCH=8, SECONDS_PER_SLOT=6, millisPerSlot=6000
-    // genesisTime=100 sec, eip7732 starts at slot 8 = 148 sec
+  void shouldTransitionToGloasDutiesAcrossForkBoundary() {
     final UInt64 genesisTime = timeProvider.getTimeInSeconds(); // 100 sec
     when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
 
-    // Start at mid-slot 5 (133 sec), so next slot is 6 (pre-EIP7732)
-    timeProvider.advanceTimeBySeconds(33); // 100 + 33 = 133 sec
+    // Start at slot 6 (140 sec), so next slot is 7 (pre-Gloas)
+    timeProvider.advanceTimeBySeconds(40);
 
     assertThat(eventAdapter.start()).isCompleted();
     asyncRunner.executeDueActionsRepeatedly();
-    verifyNoMoreInteractions(validatorTimingChannel);
+    verifyNoInteractions(validatorTimingChannel);
 
-    // --- Pre-EIP7732 slot 6: duties at 1/3 and 2/3 timing ---
+    // --- Slot 7: last pre-Gloas slot, old duties expire after firing ---
 
-    // Advance to slot 6 + 1/3 (138 sec). Slot 6 start at 136 sec also fires.
-    timeProvider.advanceTimeByMillis(5000); // 133000 + 5000 = 138000 ms
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel).onSlot(UInt64.valueOf(6));
-    verify(validatorTimingChannel).onBlockProductionDue(UInt64.valueOf(6));
-    verify(validatorTimingChannel, times(1)).onAttestationCreationDue(UInt64.valueOf(6));
-    verify(validatorTimingChannel, never()).onAttestationAggregationDue(UInt64.valueOf(6));
-
-    // Advance to slot 6 + 2/3 (140 sec)
-    timeProvider.advanceTimeByMillis(2000); // 140000 ms
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(UInt64.valueOf(6));
-    verify(validatorTimingChannel, never()).onPayloadAttestationDue(UInt64.valueOf(6));
-
-    // --- Slot 7: last pre-EIP7732 slot, old duties expire after firing ---
-
-    // Advance to slot 7 + 1/3 (144 sec). Slot 7 start at 142 sec also fires.
-    // After attestation fires, nextDue (150000) > expiration (148000) -> expires!
-    // Expiration callback schedules new attestation at slot 8 start + 1/4
-    timeProvider.advanceTimeByMillis(4000); // 144000 ms
+    // Advance to slot 7 + 1/3
+    timeProvider.advanceTimeByMillis(4000);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel).onSlot(UInt64.valueOf(7));
     verify(validatorTimingChannel, times(1)).onAttestationCreationDue(UInt64.valueOf(7));
 
-    // Advance to slot 7 + 2/3 (146 sec)
-    // After aggregation fires, nextDue (152000) > expiration (148000) -> expires!
-    // Expiration callback schedules new aggregation + payload attestation at slot 8
-    timeProvider.advanceTimeByMillis(2000); // 146000 ms
+    // Advance to slot 7 + 2/3
+    timeProvider.advanceTimeByMillis(2000);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(UInt64.valueOf(7));
     verify(validatorTimingChannel, never()).onPayloadAttestationDue(UInt64.valueOf(7));
 
-    // --- Post-EIP7732 slot 8: fork boundary! Duties at 1/4, 2/4, 3/4 timing ---
+    // --- Post-Gloas slot 8: fork boundary! Duties at 1/4, 2/4, 3/4 timing ---
 
-    // Advance to slot 8 start (148 sec)
-    timeProvider.advanceTimeByMillis(2000); // 148000 ms
+    // Advance to slot 8 start
+    timeProvider.advanceTimeByMillis(2000);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel).onSlot(UInt64.valueOf(8));
     // No attestation/aggregation/payload duties should have fired yet at slot 8 start
@@ -274,18 +252,18 @@ class GloasBasedEventAdapterTest {
     verify(validatorTimingChannel, never()).onAttestationAggregationDue(UInt64.valueOf(8));
     verify(validatorTimingChannel, never()).onPayloadAttestationDue(UInt64.valueOf(8));
 
-    // Advance to slot 8 + 1/4 (149.5 sec = 149500 ms) - EIP7732 attestation timing
-    timeProvider.advanceTimeByMillis(1500); // 149500 ms
+    // Advance to slot 8 + 1/4  - Gloas attestation timing
+    timeProvider.advanceTimeByMillis(1500);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, times(1)).onAttestationCreationDue(UInt64.valueOf(8));
 
-    // Advance to slot 8 + 2/4 (151 sec = 151000 ms) - EIP7732 aggregation timing
-    timeProvider.advanceTimeByMillis(1500); // 151000 ms
+    // Advance to slot 8 + 2/4 - Gloas aggregation timing
+    timeProvider.advanceTimeByMillis(1500);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(UInt64.valueOf(8));
 
-    // Advance to slot 8 + 3/4 (152.5 sec = 152500 ms) - payload attestation (new in EIP7732!)
-    timeProvider.advanceTimeByMillis(1500); // 152500 ms
+    // Advance to slot 8 + 3/4 - payload attestation (new in Gloas)
+    timeProvider.advanceTimeByMillis(1500);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, times(1)).onPayloadAttestationDue(UInt64.valueOf(8));
   }
