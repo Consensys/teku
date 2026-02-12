@@ -2336,7 +2336,11 @@
     </spec>
 
 - name: get_aggregate_due_ms#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
+      search: public int getAggregateDueMillis(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigGloasImpl.java
+      search: private final int aggregateDueBps;
   spec: |
     <spec fn="get_aggregate_due_ms" fork="gloas" hash="33a26a53">
     def get_aggregate_due_ms(epoch: Epoch) -> uint64:
@@ -2465,7 +2469,11 @@
     </spec>
 
 - name: get_attestation_due_ms#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
+      search: public int getAttestationDueMillis(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigGloasImpl.java
+      search: private final int attestationDueBps;
   spec: |
     <spec fn="get_attestation_due_ms" fork="gloas" hash="b99d28c7">
     def get_attestation_due_ms(epoch: Epoch) -> uint64:
@@ -3203,7 +3211,11 @@
     </spec>
 
 - name: get_contribution_due_ms#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
+      search: public int getContributionDueMillis(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigGloasImpl.java
+      search: private final int contributionDueBps;
   spec: |
     <spec fn="get_contribution_due_ms" fork="gloas" hash="69183c6c">
     def get_contribution_due_ms(epoch: Epoch) -> uint64:
@@ -4449,8 +4461,8 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
       search: public int getPayloadAttestationDueMillis(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
-      search: public int getPayloadAttestationDueMillis(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigGloasImpl.java
+      search: private final int payloadAttestationDueBps;
   spec: |
     <spec fn="get_payload_attestation_due_ms" fork="gloas" hash="16f3b9cb">
     def get_payload_attestation_due_ms(epoch: Epoch) -> uint64:
@@ -4906,7 +4918,11 @@
     </spec>
 
 - name: get_sync_message_due_ms#gloas
-  sources: []
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
+      search: public int getSyncMessageDueMillis(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigGloasImpl.java
+      search: private final int syncMessageDueBps;
   spec: |
     <spec fn="get_sync_message_due_ms" fork="gloas" hash="6af451b5">
     def get_sync_message_due_ms(epoch: Epoch) -> uint64:
