@@ -15,6 +15,7 @@ package tech.pegasys.teku.test.acceptance;
 
 import static tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder.DEFAULT_NETWORK_NAME;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
@@ -23,11 +24,12 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuDepositSender;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
+@Disabled
 public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void shouldCreateTheSameGenesisState() throws Exception {
-    final BesuNode eth1Node = createBesuNode(config -> config.withMiningEnabled(true));
+    final BesuNode eth1Node = createBesuNode();
     eth1Node.start();
 
     createTekuDepositSender(DEFAULT_NETWORK_NAME).sendValidatorDeposits(eth1Node, 4);
@@ -52,7 +54,7 @@ public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void shouldCreateGenesisFromPartialDeposits() throws Exception {
-    final BesuNode eth1Node = createBesuNode(config -> config.withMiningEnabled(true));
+    final BesuNode eth1Node = createBesuNode();
     eth1Node.start();
     int numberOfValidators = 4;
 

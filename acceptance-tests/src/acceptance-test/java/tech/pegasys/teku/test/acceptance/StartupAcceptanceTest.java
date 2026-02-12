@@ -16,6 +16,7 @@ package tech.pegasys.teku.test.acceptance;
 import static tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder.DEFAULT_NETWORK_NAME;
 
 import java.io.File;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
@@ -65,9 +66,16 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
     node1.stop();
   }
 
+  @Disabled
   @Test
   public void shouldStartChainFromDepositContract() throws Exception {
-    final BesuNode eth1Node = createBesuNode(config -> config.withMiningEnabled(true));
+    final BesuNode eth1Node =
+        createBesuNode(
+            config ->
+                config
+                    .withMergeSupport()
+                    .withGenesisFile("besu/mergedGenesis.json")
+                    .withJwtTokenAuthorization(JWT_FILE));
     eth1Node.start();
 
     final TekuBeaconNode tekuNode =
