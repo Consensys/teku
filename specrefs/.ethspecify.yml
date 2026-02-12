@@ -309,7 +309,6 @@ specrefs:
       - update_latest_messages#gloas
       - validate_merge_block#gloas
       - validate_on_attestation#gloas
-      - verify_data_column_sidecar#gloas
       - get_attestation_score#gloas
       - get_proposer_preferences_signature#gloas
       - get_upcoming_proposal_slots#gloas
@@ -322,4 +321,3 @@ specrefs:
       - should_apply_proposer_boost#gloas
       - update_proposer_boost_root#gloas
       - is_data_available#gloas
-      - verify_data_column_sidecar_kzg_proofs#gloas
