@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
@@ -630,6 +631,25 @@ public class Spec {
 
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 slot) {
     return atState(state).beaconStateAccessors().getBeaconProposerIndex(state, slot);
+  }
+
+  public int getFutureProposerIndex(final BeaconState state, final UInt64 slot)
+      throws SlotProcessingException, EpochProcessingException {
+    checkArgument(state.getSlot().isLessThan(slot));
+
+    final BeaconState actualState;
+
+    if (canCalculateProposerIndexAtSlot(state, slot)) {
+      actualState = state;
+    } else {
+      actualState = processSlots(state, slot);
+    }
+
+    return getBeaconProposerIndex(actualState, slot);
+  }
+
+  public boolean canCalculateProposerIndexAtSlot(final BeaconState state, final UInt64 slot) {
+    return atState(state).beaconStateAccessors().canCalculateProposerIndexAtSlot(state, slot);
   }
 
   public UInt64 getCommitteeCountPerSlot(final BeaconState state, final UInt64 epoch) {
