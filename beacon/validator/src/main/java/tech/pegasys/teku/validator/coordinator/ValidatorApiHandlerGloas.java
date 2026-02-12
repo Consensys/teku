@@ -14,6 +14,8 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import java.util.Optional;
+
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
@@ -106,13 +108,7 @@ public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
         combinedChainDataClient
             .getRecentChainData()
             .getBlockRootInEffectBySlot(slot)
-            .flatMap(
-                blockRoot ->
-                    combinedChainDataClient
-                        .getStore()
-                        // no state will be present for slots before the Gloas fork
-                        .getExecutionPayloadStateIfAvailable(blockRoot))
-            .flatMap(state -> combinedChainDataClient.regenerateBeaconState(state, slot));
+            .flatMap(blockRoot -> getExecutionPayloadStateForBlockProduction(slot, blockRoot));
     if (executionPayloadState.isPresent()) {
       return SafeFuture.completedFuture(executionPayloadState);
     }
@@ -120,5 +116,18 @@ public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
         slot,
         forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled(),
         productionPerformance::lateBlockReorgPreparationCompleted);
+  }
+
+  private Optional<BeaconState> getExecutionPayloadStateForBlockProduction(
+      final UInt64 slot, final Bytes32 blockRoot) {
+    if (!combinedChainDataClient.isStoreAvailable()) {
+      return Optional.empty();
+    }
+    return combinedChainDataClient
+        .getStore()
+        // no state will be present for slots before the Gloas fork (or if empty
+        // after the Gloas fork)
+        .getExecutionPayloadStateIfAvailable(blockRoot)
+        .flatMap(state -> combinedChainDataClient.regenerateBeaconState(state, slot));
   }
 }

@@ -829,11 +829,6 @@ public class CombinedChainDataClient {
     return historicalChainData.getDataColumnIdentifiers(slot);
   }
 
-  public SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalDataColumnIdentifiers(
-      final UInt64 slot) {
-    return historicalChainData.getNonCanonicalDataColumnIdentifiers(slot);
-  }
-
   public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(
       final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
     return historicalChainData.getDataColumnIdentifiers(startSlot, endSlot, limit);
