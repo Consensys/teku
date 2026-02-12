@@ -241,15 +241,8 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
   }
 
   @Test
-  void columnsDataAvailabilityHalfCheckEnabled_disabledByDefault() {
+  void columnsDataAvailabilityHalfCheckEnabled_enabledByDefault() {
     TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
-    assertThat(tekuConfiguration.p2p().isColumnsDataAvailabilityHalfCheckEnabled()).isFalse();
-  }
-
-  @Test
-  void columnsDataAvailabilityHalfCheckEnabled_toggles() {
-    TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--Xcolumns-data-availability-half-check-enabled");
     assertThat(tekuConfiguration.p2p().isColumnsDataAvailabilityHalfCheckEnabled()).isTrue();
   }
 }
