@@ -327,7 +327,9 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
       return;
     }
     final SpecMilestone milestone = spec.atSlot(block.getSlot()).getMilestone();
-    if (milestone.isLessThan(SpecMilestone.FULU)) {
+    // TODO-GLOAS enable recovery for Gloas
+    if (milestone.isLessThan(SpecMilestone.FULU)
+        || milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
       LOG.debug(
           "Received block {} for {} fork. Ignoring.",
           block::getSlotAndBlockRoot,
