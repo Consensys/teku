@@ -65,25 +65,4 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
     node1.waitForNewFinalization();
     node1.stop();
   }
-
-  @Disabled
-  @Test
-  public void shouldStartChainFromDepositContract() throws Exception {
-    final BesuNode eth1Node =
-        createBesuNode(
-            config ->
-                config
-                    .withMergeSupport()
-                    .withGenesisFile("besu/mergedGenesis.json")
-                    .withJwtTokenAuthorization(JWT_FILE));
-    eth1Node.start();
-
-    final TekuBeaconNode tekuNode =
-        createTekuBeaconNode(
-            TekuNodeConfigBuilder.createBeaconNode().withDepositsFrom(eth1Node).build());
-    tekuNode.start();
-
-    createTekuDepositSender(DEFAULT_NETWORK_NAME).sendValidatorDeposits(eth1Node, 4);
-    tekuNode.waitForGenesis();
-  }
 }
