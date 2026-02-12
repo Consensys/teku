@@ -1111,6 +1111,9 @@ distributions {
         into "licenses"
         exclude "**/dependencies-without-allowed-license.json"
         exclude "**/project-licenses-for-check-license-task.json"
+        // fixes 'file name is too long ( > 100 bytes)' Gradle issues
+        exclude "**/netty-tcnative-boringssl-static-*.jar/META-INF/*.txt"
+        exclude "**/netty-codec-native-quic-*.jar/META-INF/*.txt"
       }
       from("libs") { into "native" }
       from("build/teku.autocomplete.sh")

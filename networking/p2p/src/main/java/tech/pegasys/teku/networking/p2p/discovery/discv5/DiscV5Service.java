@@ -130,7 +130,10 @@ public class DiscV5Service extends Service implements DiscoveryService {
         nodeRecordBuilder.address(
             advertisedIps.get(0),
             discoConfig.getAdvertisedUdpPort(),
-            p2pConfig.getAdvertisedPort());
+            p2pConfig.getAdvertisedPort(),
+            p2pConfig.isQuicEnabled()
+                ? Optional.of(p2pConfig.getAdvertisedQuicPort())
+                : Optional.empty());
       } else {
         // IPv4 and IPv6 (dual-stack)
         advertisedIps.forEach(
@@ -146,7 +149,18 @@ public class DiscV5Service extends Service implements DiscoveryService {
                     case IP_V4 -> p2pConfig.getAdvertisedPort();
                     case IP_V6 -> p2pConfig.getAdvertisedPortIpv6();
                   };
-              nodeRecordBuilder.address(advertisedIp, advertisedUdpPort, advertisedTcpPort);
+              Optional<Integer> advertisedQuicPort = Optional.empty();
+              if (p2pConfig.isQuicEnabled()) {
+                advertisedQuicPort =
+                    Optional.of(
+                        switch (ipVersion) {
+                          case IP_V4 -> p2pConfig.getAdvertisedQuicPort();
+                          case IP_V6 -> p2pConfig.getAdvertisedQuicPortIpv6();
+                        });
+              }
+
+              nodeRecordBuilder.address(
+                  advertisedIp, advertisedUdpPort, advertisedTcpPort, advertisedQuicPort);
             });
       }
     }
@@ -177,8 +191,12 @@ public class DiscV5Service extends Service implements DiscoveryService {
     } else {
       return (oldRecord, newAddress) -> {
         final int newTcpPort;
+        Optional<Integer> newQuicPort = Optional.empty();
         if (p2pConfig.getNetworkInterfaces().size() == 1) {
           newTcpPort = p2pConfig.getAdvertisedPort();
+          if (p2pConfig.isQuicEnabled()) {
+            newQuicPort = Optional.of(p2pConfig.getAdvertisedQuicPort());
+          }
         } else {
           // IPv4 and IPv6 (dual-stack)
           newTcpPort =
@@ -186,9 +204,18 @@ public class DiscV5Service extends Service implements DiscoveryService {
                 case IP_V4 -> p2pConfig.getAdvertisedPort();
                 case IP_V6 -> p2pConfig.getAdvertisedPortIpv6();
               };
+          if (p2pConfig.isQuicEnabled()) {
+            newQuicPort =
+                Optional.of(
+                    switch (IPVersionResolver.resolve(newAddress)) {
+                      case IP_V4 -> p2pConfig.getAdvertisedQuicPort();
+                      case IP_V6 -> p2pConfig.getAdvertisedQuicPortIpv6();
+                    });
+          }
         }
         return Optional.of(
-            oldRecord.withNewAddress(newAddress, Optional.of(newTcpPort), localNodePrivateKey));
+            oldRecord.withNewAddress(
+                newAddress, Optional.of(newTcpPort), newQuicPort, localNodePrivateKey));
       };
     }
   }
