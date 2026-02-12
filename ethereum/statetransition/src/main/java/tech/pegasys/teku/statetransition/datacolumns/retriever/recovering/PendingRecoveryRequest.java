@@ -40,6 +40,7 @@ class PendingRecoveryRequest {
   private final UInt64 taskTimeoutMillis;
   private final SafeFuture<DataColumnSidecar> downloadFuture;
   private final LabelledMetric<Counter> sidecarRecoveryMetric;
+  private final Runnable alwaysAfter;
 
   PendingRecoveryRequest(
       final DataColumnSlotAndIdentifier columnId,
@@ -54,7 +55,10 @@ class PendingRecoveryRequest {
     this.columnnId = columnId;
     this.downloadFuture = downloadFuture;
     this.sidecarRecoveryMetric = sidecarRecoveryMetric;
+    this.alwaysAfter = alwaysAfter;
+  }
 
+  public void start() {
     downloadFuture
         .thenRun(this::downloadCompleted)
         .exceptionally(this::failedDownload)
