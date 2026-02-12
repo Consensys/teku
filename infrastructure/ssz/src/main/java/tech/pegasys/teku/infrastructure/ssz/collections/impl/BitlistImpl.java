@@ -67,6 +67,10 @@ class BitlistImpl {
     return (BitSet) data.clone();
   }
 
+  byte[] toByteArray() {
+    return data.toByteArray();
+  }
+
   public BitSet getAsBitSet(final int start, final int end) {
     return data.get(start, end);
   }
