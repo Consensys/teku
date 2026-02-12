@@ -260,7 +260,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     final UInt64 epoch = dataStructureUtil.randomEpoch();
-    typeDefClient.getProposerDuties(epoch);
+    typeDefClient.getProposerDuties(epoch, true);
 
     final RecordedRequest request = mockWebServer.takeRequest();
     assertThat(request.getMethod()).isEqualTo("GET");
