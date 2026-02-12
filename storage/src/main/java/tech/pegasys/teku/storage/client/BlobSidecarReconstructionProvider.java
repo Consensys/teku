@@ -166,7 +166,7 @@ public class BlobSidecarReconstructionProvider {
                     .orElseThrow(
                         () ->
                             new IllegalStateException(
-                                "Unable to get the kzg commitments from the corresponding bid to reconstruct the blob Sidecars from the Data Colum Sidecars"))
+                                "Unable to get the kzg commitments from the corresponding bid to reconstruct the blob sidecars from the data column sidecars"))
                     .getMessage()
                     .getBlobKzgCommitments()
                     .size());
