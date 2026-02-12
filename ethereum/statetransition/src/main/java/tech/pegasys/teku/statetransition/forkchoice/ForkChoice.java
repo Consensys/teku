@@ -778,7 +778,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
               final UInt64 currentSlot = spec.getCurrentSlot(transaction);
               try {
                 return block.getProposerIndex().intValue()
-                    == spec.getFutureProposerIndex(headState, currentSlot);
+                    == spec.getProposerIndexAtSlot(headState, currentSlot);
               } catch (final SlotProcessingException | EpochProcessingException ex) {
                 throw new RuntimeException(
                     String.format(
@@ -886,7 +886,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   private void updateForkChoiceForImportedBlock(
       final SignedBeaconBlock block,
-      final boolean shouldApplyProposerBoost,
+      final boolean shouldUpdateProposerBoostRoot,
       final BlockImportResult result,
       final ForkChoiceStrategy forkChoiceStrategy) {
 
@@ -900,7 +900,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       }
     }
 
-    if (!result.isBlockOnCanonicalChain() && shouldApplyProposerBoost) {
+    if (!result.isBlockOnCanonicalChain() && shouldUpdateProposerBoostRoot) {
       // This is likely a reorging block that requires a full processHead to update the head.
       // Running processHead here will ensure:
       //

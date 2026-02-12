@@ -633,9 +633,22 @@ public class Spec {
     return atState(state).beaconStateAccessors().getBeaconProposerIndex(state, slot);
   }
 
-  public int getFutureProposerIndex(final BeaconState state, final UInt64 slot)
+  /**
+   * Returns the proposer index for the given slot, advancing the state via slot processing if
+   * necessary. On FULU+, the ProposerLookahead allows resolving the proposer without slot
+   * processing for slots in the current or next epoch. On earlier forks, slot processing is avoided
+   * only when the slot is in the same epoch as the state.
+   *
+   * @param state a beacon state at or before the requested slot
+   * @param slot the slot to get the proposer index for (must be >= state.slot)
+   */
+  public int getProposerIndexAtSlot(final BeaconState state, final UInt64 slot)
       throws SlotProcessingException, EpochProcessingException {
-    checkArgument(state.getSlot().isLessThan(slot));
+    checkArgument(
+        state.getSlot().isLessThanOrEqualTo(slot),
+        "State slot %s must not be ahead of requested slot %s",
+        state.getSlot(),
+        slot);
 
     final BeaconState actualState;
 
