@@ -228,11 +228,7 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
   public SafeFuture<Optional<SszList<SszKZGCommitment>>> getKzgCommitments(
       final BeaconBlock block) {
     return SafeFuture.completedFuture(
-        Optional.of(
-            BeaconBlockBodyGloas.required(block.getBody())
-                .getSignedExecutionPayloadBid()
-                .getMessage()
-                .getBlobKzgCommitments()));
+        Optional.of(BeaconBlockBodyGloas.required(block.getBody()).getBlobKzgCommitments()));
   }
 
   @Override
