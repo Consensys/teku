@@ -26,12 +26,13 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.crypto.SECP256K1.SecretKey;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.apache.tuweni.units.bigints.UInt64;
 import org.ethereum.beacon.discovery.AddressAccessPolicy;
 import org.ethereum.beacon.discovery.DiscoverySystem;
 import org.ethereum.beacon.discovery.DiscoverySystemBuilder;
+import org.ethereum.beacon.discovery.crypto.DefaultSigner;
+import org.ethereum.beacon.discovery.crypto.Signer;
 import org.ethereum.beacon.discovery.schema.EnrField;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordBuilder;
@@ -65,7 +66,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
   }
 
   private final AsyncRunner asyncRunner;
-  private final SecretKey localNodePrivateKey;
+  private final Signer localNodeSigner;
   private final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier;
   private final NodeRecordConverter nodeRecordConverter;
 
@@ -86,7 +87,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
       final DiscoverySystemBuilder discoverySystemBuilder,
       final NodeRecordConverter nodeRecordConverter) {
     this.asyncRunner = asyncRunner;
-    this.localNodePrivateKey = SecretKeyParser.fromLibP2pPrivKey(privateKey);
+    this.localNodeSigner = new DefaultSigner(SecretKeyParser.fromLibP2pPrivKey(privateKey));
     this.currentSchemaDefinitionsSupplier = currentSchemaDefinitionsSupplier;
     this.nodeRecordConverter = nodeRecordConverter;
     final List<String> networkInterfaces = p2pConfig.getNetworkInterfaces();
@@ -120,7 +121,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
     this.bootnodes =
         discoConfig.getBootnodes().stream().map(NodeRecordFactory.DEFAULT::fromEnr).toList();
     final NodeRecordBuilder nodeRecordBuilder =
-        new NodeRecordBuilder().secretKey(localNodePrivateKey).seq(seqNo);
+        new NodeRecordBuilder().signer(localNodeSigner).seq(seqNo);
     if (p2pConfig.hasUserExplicitlySetAdvertisedIps()) {
       final List<String> advertisedIps = p2pConfig.getAdvertisedIps();
       Preconditions.checkState(
@@ -153,7 +154,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
     final NodeRecord localNodeRecord = nodeRecordBuilder.build();
     this.discoverySystem =
         discoverySystemBuilder
-            .secretKey(localNodePrivateKey)
+            .signer(localNodeSigner)
             .bootnodes(bootnodes)
             .localNodeRecord(localNodeRecord)
             .newAddressHandler(maybeUpdateNodeRecordHandler)
@@ -188,7 +189,8 @@ public class DiscV5Service extends Service implements DiscoveryService {
               };
         }
         return Optional.of(
-            oldRecord.withNewAddress(newAddress, Optional.of(newTcpPort), localNodePrivateKey));
+            oldRecord.withNewAddress(
+                newAddress, Optional.of(newTcpPort), Optional.empty(), localNodeSigner));
       };
     }
   }

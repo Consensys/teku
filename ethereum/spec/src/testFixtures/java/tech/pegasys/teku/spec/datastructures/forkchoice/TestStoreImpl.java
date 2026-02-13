@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -250,15 +249,13 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(
       final SlotAndBlockRoot slotAndBlockRoot) {
-    // TODO-gloas
-    return SafeFuture.failedFuture(
-        new NotImplementedException("TODO-Gloas - fetch execution payload state"));
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not implemented"));
   }
 
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(
       final SlotAndBlockRoot slotAndBlockRoot) {
-    throw new UnsupportedOperationException("Not implemented");
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not implemented"));
   }
 
   @Override

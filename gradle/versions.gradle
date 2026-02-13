@@ -1,11 +1,11 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.20.1'
-    dependencySet(group: 'com.fasterxml.jackson.dataformat', version: '2.20.1') {
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.21.0'
+    dependencySet(group: 'com.fasterxml.jackson.dataformat', version: '2.21.0') {
       entry 'jackson-dataformat-yaml'
       entry 'jackson-dataformat-toml'
     }
-    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.20.1'
+    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.21.0'
 
     dependencySet(group: 'com.google.errorprone', version: '2.45.0') {
       entry 'error_prone_annotation'
@@ -20,9 +20,9 @@ dependencyManagement {
 
     dependency 'org.yaml:snakeyaml:2.5'
 
-    dependency 'org.jsoup:jsoup:1.21.2'
+    dependency 'org.jsoup:jsoup:1.22.1'
 
-    dependency 'com.launchdarkly:okhttp-eventsource:4.1.1'
+    dependency 'com.launchdarkly:okhttp-eventsource:4.2.0'
 
     dependencySet(group: 'com.squareup.okhttp3', version: '4.12.0') {
       entry 'okhttp'
@@ -55,7 +55,7 @@ dependencyManagement {
     }
 
     // On update don't forget to change version in tech.pegasys.teku.infrastructure.restapi.SwaggerUIBuilder
-    dependency 'org.webjars:swagger-ui:5.27.1'
+    dependency 'org.webjars:swagger-ui:5.31.0'
 
     dependency 'org.thymeleaf:thymeleaf:3.1.3.RELEASE'
     dependency 'io.github.classgraph:classgraph:4.8.184'
@@ -64,7 +64,7 @@ dependencyManagement {
       entry 'oshi-core-java11'
     }
 
-    dependencySet(group: 'io.netty', version: '4.2.9.Final') {
+    dependencySet(group: 'io.netty', version: '4.2.10.Final') {
       entry 'netty-handler'
       entry 'netty-codec-http'
     }
@@ -94,7 +94,7 @@ dependencyManagement {
 
     dependency 'org.apiguardian:apiguardian-api:1.1.2'
 
-    dependency 'org.assertj:assertj-core:3.27.4'
+    dependency 'org.assertj:assertj-core:3.27.7'
 
     dependency 'org.awaitility:awaitility:4.3.0'
 
@@ -113,7 +113,7 @@ dependencyManagement {
 
     dependency 'net.java.dev.jna:jna:5.18.1'
 
-    dependencySet(group: 'org.mockito', version: '5.19.0') {
+    dependencySet(group: 'org.mockito', version: '5.21.0') {
       entry 'mockito-core'
       entry 'mockito-junit-jupiter'
     }
@@ -139,25 +139,25 @@ dependencyManagement {
 
     dependency 'io.prometheus:prometheus-metrics-bom:1.3.10'
 
-    dependencySet(group: 'org.hyperledger.besu.internal', version: '25.11.0') {
+    dependencySet(group: 'org.hyperledger.besu.internal', version: '26.1.0') {
       entry 'besu-metrics-core'
       entry 'besu-ethereum-core'
       entry 'besu-config'
     }
-    dependencySet(group: 'org.hyperledger.besu', version: '25.11.0') {
+    dependencySet(group: 'org.hyperledger.besu', version: '26.1.0') {
       entry 'besu-datatypes'
       entry 'besu-evm'
       entry 'besu-plugin-api'
     }
 
-    dependencySet(group: 'org.testcontainers', version: '1.21.3') {
+    dependencySet(group: 'org.testcontainers', version: '1.21.4') {
       entry "testcontainers"
       entry "junit-jupiter"
     }
 
-    dependency 'tech.pegasys.discovery:discovery:25.4.0'
+    dependency 'tech.pegasys.discovery:discovery:26.1.0'
 
-    dependencySet(group: 'org.jupnp', version: '3.0.3') {
+    dependencySet(group: 'org.jupnp', version: '3.0.4') {
       entry "org.jupnp"
       entry "org.jupnp.support"
     }

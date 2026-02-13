@@ -720,8 +720,15 @@ class Store extends CacheableStore {
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(
       final SlotAndBlockRoot slotAndBlockRoot) {
-    return SafeFuture.completedFuture(
-        getExecutionPayloadStateIfAvailable(slotAndBlockRoot.getBlockRoot()));
+    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 implement caching similar to
+    // retrieveBlockState/retrieveCheckpointState
+    return new StateAtSlotTask(
+            spec,
+            slotAndBlockRoot,
+            __ ->
+                SafeFuture.completedFuture(
+                    getExecutionPayloadStateIfAvailable(slotAndBlockRoot.getBlockRoot())))
+        .performTask();
   }
 
   @Override
