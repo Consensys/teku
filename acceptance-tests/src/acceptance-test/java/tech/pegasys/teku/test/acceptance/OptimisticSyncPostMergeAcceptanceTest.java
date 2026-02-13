@@ -40,7 +40,6 @@ public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
         createBesuNode(
             config ->
                 config
-                    .withMiningEnabled(true)
                     .withMergeSupport()
                     .withP2pEnabled(true)
                     .withGenesisFile("besu/preMergeGenesis.json")

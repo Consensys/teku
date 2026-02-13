@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -86,6 +87,10 @@ public class GossipValidationHelper {
       final UInt64 builderIndex,
       final BLSSignature signature,
       final BeaconState state) {
+    if (builderIndex.equals(BUILDER_INDEX_SELF_BUILD)) {
+      return isSignatureValidWithRespectToProposerIndex(
+          signingRoot, state.getLatestBlockHeader().getProposerIndex(), signature, state);
+    }
     return spec.getBuilderPubKey(state, builderIndex)
         .map(publicKey -> BLS.verify(publicKey, signingRoot, signature))
         .orElse(false);

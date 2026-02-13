@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema11;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -127,5 +128,10 @@ public class ExecutionPayloadBidSchema
         ZERO,
         ZERO,
         blobKzgCommitments);
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<SszKZGCommitment, ?> getBlobKzgCommitmentsSchema() {
+    return (SszListSchema<SszKZGCommitment, ?>) getChildSchema(getFieldIndex(BLOB_KZG_COMMITMENTS));
   }
 }
