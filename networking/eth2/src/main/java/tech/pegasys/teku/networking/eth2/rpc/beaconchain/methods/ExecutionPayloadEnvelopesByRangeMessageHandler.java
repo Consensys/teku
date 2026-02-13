@@ -136,21 +136,23 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
     final RequestState initialState =
         new RequestState(callback, startSlot, count, headSlot, hotRoots);
 
+    final SafeFuture<RequestState> response;
+
     if (initialState.isComplete()) {
-      callback.completeSuccessfully();
-      return;
+      response = SafeFuture.completedFuture(initialState);
+    } else {
+      response = sendNextExecutionPayloadEnvelope(initialState);
     }
 
-    sendNextExecutionPayloadEnvelope(initialState)
-        .finish(
-            requestState -> {
-              if (requestState.sentExecutionPayloadEnvelopes.get() != count.longValue()) {
-                peer.adjustExecutionPayloadEnvelopesRequest(
-                    maybeRequestKey.get(), requestState.sentExecutionPayloadEnvelopes.get());
-              }
-              callback.completeSuccessfully();
-            },
-            err -> handleError(err, callback, "execution payload envelopes by range"));
+    response.finish(
+        requestState -> {
+          if (requestState.sentExecutionPayloadEnvelopes.get() != count.longValue()) {
+            peer.adjustExecutionPayloadEnvelopesRequest(
+                maybeRequestKey.get(), requestState.sentExecutionPayloadEnvelopes.get());
+          }
+          callback.completeSuccessfully();
+        },
+        err -> handleError(err, callback, "execution payload envelopes by range"));
   }
 
   private SafeFuture<RequestState> sendNextExecutionPayloadEnvelope(
@@ -228,7 +230,7 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
     }
 
     private boolean hasReachedHeadSlot() {
-      return currentSlot.compareTo(headSlot) >= 0;
+      return currentSlot.isGreaterThanOrEqualTo(headSlot);
     }
 
     boolean isComplete() {
