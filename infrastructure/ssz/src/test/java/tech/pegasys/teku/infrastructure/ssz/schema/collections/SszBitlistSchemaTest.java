@@ -19,17 +19,24 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.collections.PrimitiveCollectionAssert.assertThatIntCollection;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszBitlistSchemaImpl;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszBitlistSchemaTest extends SszListSchemaTestBase {
 
@@ -115,6 +122,54 @@ public class SszBitlistSchemaTest extends SszListSchemaTestBase {
     SszBitlistSchema<SszBitlist> schema = SszBitlistSchema.create(10);
     SszBitlist bitlist = schema.createFromElements(List.of(SszBit.of(false), SszBit.of(true)));
     assertThat(bitlist).isInstanceOf(SszBitlist.class);
+  }
+
+  static Stream<Arguments> createTreeFromBitDataCases() {
+    return Stream.of(
+        Arguments.of(0, new int[] {}),
+        Arguments.of(1, new int[] {}),
+        Arguments.of(1, new int[] {0}),
+        Arguments.of(7, new int[] {0, 3, 6}),
+        Arguments.of(8, new int[] {0, 7}),
+        Arguments.of(9, new int[] {0, 8}),
+        Arguments.of(16, new int[] {}),
+        Arguments.of(255, new int[] {0, 127, 254}),
+        Arguments.of(256, new int[] {0, 128, 255}),
+        Arguments.of(257, new int[] {0, 256}),
+        Arguments.of(500, IntStream.range(0, 500).filter(i -> i % 3 == 0).toArray()));
+  }
+
+  @ParameterizedTest
+  @MethodSource("createTreeFromBitDataCases")
+  void createTreeFromBitData_shouldMatchSszDeserializedTree(final int size, final int[] setBits) {
+    final SszBitlistSchemaImpl schema = (SszBitlistSchemaImpl) SszBitlistSchema.create(512);
+
+    // Build tree via the new direct method
+    final BitSet bitSet = new BitSet(size);
+    for (int bit : setBits) {
+      bitSet.set(bit);
+    }
+    final TreeNode directTree = schema.createTreeFromBitData(size, bitSet.toByteArray());
+
+    // Build tree via SSZ serialize/deserialize (the old path)
+    final SszBitlist bitlist = schema.ofBits(size, setBits);
+    final Bytes ssz = bitlist.sszSerialize();
+    final TreeNode deserializedTree;
+    try (SszReader reader = SszReader.fromBytes(ssz)) {
+      deserializedTree = schema.sszDeserializeTree(reader);
+    }
+
+    assertThat(directTree.hashTreeRoot()).isEqualTo(deserializedTree.hashTreeRoot());
+  }
+
+  @Test
+  void createTreeFromBitData_emptyBitlist() {
+    final SszBitlistSchemaImpl schema = (SszBitlistSchemaImpl) SszBitlistSchema.create(100);
+    final TreeNode tree = schema.createTreeFromBitData(0, new byte[] {});
+
+    final SszBitlist bitlist = schema.createFromBackingNode(tree);
+    assertThat(bitlist.size()).isZero();
+    assertThat(bitlist.sszSerialize()).isEqualTo(Bytes.of(1));
   }
 
   @Test
