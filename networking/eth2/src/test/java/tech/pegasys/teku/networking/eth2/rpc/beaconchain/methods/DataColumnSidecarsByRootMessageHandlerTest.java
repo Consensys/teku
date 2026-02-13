@@ -435,7 +435,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
 
     verify(dataColumnSidecarArchiveReconstructor, times(4))
         .reconstructDataColumnSidecar(any(), any(), anyInt());
-    verify(callback).alwaysRun(any());
+    verify(dataColumnSidecarArchiveReconstructor).onRequestCompleted(anyInt());
   }
 
   @TestTemplate

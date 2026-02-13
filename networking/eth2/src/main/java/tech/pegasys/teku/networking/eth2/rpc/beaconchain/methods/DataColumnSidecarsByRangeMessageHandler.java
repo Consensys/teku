@@ -167,10 +167,13 @@ public class DataColumnSidecarsByRangeMessageHandler
         spec.atSlot(endSlot).miscHelpers().getMaxRequestDataColumnSidecars();
 
     final int messageId = dataColumnSidecarArchiveReconstructor.onRequest();
-    callback.alwaysRun(() -> dataColumnSidecarArchiveReconstructor.onRequestCompleted(messageId));
+    final CompletionAwareResponseCallback<DataColumnSidecar> completionCallback =
+        new CompletionAwareResponseCallback<>(callbackWithLogging);
+    completionCallback.onCompletion(
+        () -> dataColumnSidecarArchiveReconstructor.onRequestCompleted(messageId));
     final RequestState initialState =
         new RequestState(
-            callbackWithLogging,
+            completionCallback,
             maxRequestDataColumnSidecars,
             startSlot,
             endSlot,
@@ -192,9 +195,9 @@ public class DataColumnSidecarsByRangeMessageHandler
           if (sentDataColumnSidecars != requestedCount) {
             peer.adjustDataColumnSidecarsRequest(maybeRequestKey.get(), sentDataColumnSidecars);
           }
-          callbackWithLogging.completeSuccessfully();
+          completionCallback.completeSuccessfully();
         },
-        error -> handleError(error, callbackWithLogging, "data column sidecars by range"));
+        error -> handleError(error, completionCallback, "data column sidecars by range"));
   }
 
   private int calculateRequestedCount(final DataColumnSidecarsByRangeRequestMessage message) {

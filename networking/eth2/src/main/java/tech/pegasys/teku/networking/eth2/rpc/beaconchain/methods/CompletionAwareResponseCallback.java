@@ -13,42 +13,64 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
-import tech.pegasys.teku.statetransition.datacolumns.log.rpc.ReqRespResponseLogger;
 
-public record LoggingResponseCallback<T>(
-    ResponseCallback<T> callback, ReqRespResponseLogger<T> logger) implements ResponseCallback<T> {
+public class CompletionAwareResponseCallback<T> implements ResponseCallback<T> {
+  private static final Logger LOG = LogManager.getLogger();
+
+  private final ResponseCallback<T> delegate;
+  private final List<Runnable> completionActions = new ArrayList<>();
+
+  public CompletionAwareResponseCallback(final ResponseCallback<T> delegate) {
+    this.delegate = delegate;
+  }
+
+  public void onCompletion(final Runnable action) {
+    completionActions.add(action);
+  }
 
   @Override
   public SafeFuture<Void> respond(final T data) {
-    logger.onNextItem(data);
-    return callback.respond(data);
+    return delegate.respond(data);
   }
 
   @Override
   public void respondAndCompleteSuccessfully(final T data) {
-    logger.onNextItem(data);
-    logger.onComplete();
-    callback.respondAndCompleteSuccessfully(data);
+    delegate.respondAndCompleteSuccessfully(data);
+    runCompletionActions();
   }
 
   @Override
   public void completeSuccessfully() {
-    logger.onComplete();
-    callback.completeSuccessfully();
+    delegate.completeSuccessfully();
+    runCompletionActions();
   }
 
   @Override
   public void completeWithErrorResponse(final RpcException error) {
-    logger.onError(error);
-    callback.completeWithErrorResponse(error);
+    delegate.completeWithErrorResponse(error);
+    runCompletionActions();
   }
 
   @Override
   public void completeWithUnexpectedError(final Throwable error) {
-    logger.onError(error);
-    callback.completeWithUnexpectedError(error);
+    delegate.completeWithUnexpectedError(error);
+    runCompletionActions();
+  }
+
+  private void runCompletionActions() {
+    for (final Runnable action : completionActions) {
+      try {
+        action.run();
+      } catch (final Throwable t) {
+        LOG.debug("Failed to run completion action {}", action, t);
+      }
+    }
   }
 }

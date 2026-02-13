@@ -127,7 +127,9 @@ public class DataColumnSidecarsByRootMessageHandler
         custodyGroupCountManagerSupplier.get().getCustodyColumnIndices();
 
     final int messageId = dataColumnSidecarArchiveReconstructor.onRequest();
-    responseCallback.alwaysRun(
+    final CompletionAwareResponseCallback<DataColumnSidecar> completionCallback =
+        new CompletionAwareResponseCallback<>(responseCallbackWithLogging);
+    completionCallback.onCompletion(
         () -> dataColumnSidecarArchiveReconstructor.onRequestCompleted(messageId));
 
     SafeFuture.collectAll(
@@ -148,7 +150,7 @@ public class DataColumnSidecarsByRootMessageHandler
                                       byRootIdentifier.getColumns(),
                                       myCustodyColumns,
                                       messageId,
-                                      responseCallbackWithLogging));
+                                      completionCallback));
                     }))
         .thenAccept(
             counts -> {
@@ -156,10 +158,9 @@ public class DataColumnSidecarsByRootMessageHandler
               if (sent != requestedDataColumnSidecarsCount) {
                 peer.adjustDataColumnSidecarsRequest(maybeRequestKey.get(), sent);
               }
-              responseCallbackWithLogging.completeSuccessfully();
+              completionCallback.completeSuccessfully();
             })
-        .finish(
-            err -> handleError(err, responseCallbackWithLogging, "data column sidecars by root"));
+        .finish(err -> handleError(err, completionCallback, "data column sidecars by root"));
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> getArchiveOrNonCanonicalDataColumnSidecar(
@@ -257,7 +258,7 @@ public class DataColumnSidecarsByRootMessageHandler
                             .map(
                                 identifier ->
                                     retrieveAndRespondForColumn(
-                                        identifier, messageHash, callback)))
+                                        identifier, messageId, callback)))
                     .thenApply(counts -> counts.stream().mapToLong(Long::longValue).sum()));
   }
 
