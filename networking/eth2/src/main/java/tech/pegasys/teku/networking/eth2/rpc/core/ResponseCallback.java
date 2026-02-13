@@ -25,6 +25,4 @@ public interface ResponseCallback<T> {
   void completeWithErrorResponse(RpcException error);
 
   void completeWithUnexpectedError(Throwable error);
-
-  void alwaysRun(Runnable runnable);
 }

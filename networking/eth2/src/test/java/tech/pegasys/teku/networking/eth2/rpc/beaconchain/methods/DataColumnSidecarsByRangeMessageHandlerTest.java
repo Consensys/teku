@@ -488,7 +488,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     final List<DataColumnSidecar> actualSent = argumentCaptor.getAllValues();
 
     verify(listener).completeSuccessfully();
-    verify(listener).alwaysRun(any());
+    verify(dataColumnSidecarArchiveReconstructor).onRequestCompleted(anyInt());
     // same slot-roots as we have in DB, but other indices
     verify(dataColumnSidecarArchiveReconstructor, times(expectedSent.size()))
         .reconstructDataColumnSidecar(any(), any(), anyInt());

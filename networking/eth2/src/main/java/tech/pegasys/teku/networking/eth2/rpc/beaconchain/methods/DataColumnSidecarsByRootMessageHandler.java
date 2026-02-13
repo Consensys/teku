@@ -139,7 +139,9 @@ public class DataColumnSidecarsByRootMessageHandler
     final Set<UInt64> myCustodyColumns =
         new HashSet<>(custodyGroupCountManagerSupplier.get().getCustodyColumnIndices());
     final int messageId = dataColumnSidecarArchiveReconstructor.onRequest();
-    responseCallback.alwaysRun(
+    final CompletionAwareResponseCallback<DataColumnSidecar> completionCallback =
+        new CompletionAwareResponseCallback<>(responseCallbackWithLogging);
+    completionCallback.onCompletion(
         () -> dataColumnSidecarArchiveReconstructor.onRequestCompleted(messageId));
     final Stream<SafeFuture<Boolean>> responseStream =
         message.stream()
@@ -156,9 +158,7 @@ public class DataColumnSidecarsByRootMessageHandler
                         .thenCompose(
                             maybeSidecar ->
                                 validateAndMaybeRespond(
-                                    dataColumnIdentifier,
-                                    maybeSidecar,
-                                    responseCallbackWithLogging)));
+                                    dataColumnIdentifier, maybeSidecar, completionCallback)));
 
     final SafeFuture<List<Boolean>> listOfResponses = SafeFuture.collectAll(responseStream);
 
@@ -170,10 +170,9 @@ public class DataColumnSidecarsByRootMessageHandler
                 peer.adjustDataColumnSidecarsRequest(
                     maybeRequestKey.get(), sentDataColumnSidecarsCount);
               }
-              responseCallbackWithLogging.completeSuccessfully();
+              completionCallback.completeSuccessfully();
             })
-        .finish(
-            err -> handleError(err, responseCallbackWithLogging, "data column sidecars by root"));
+        .finish(err -> handleError(err, completionCallback, "data column sidecars by root"));
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> getArchiveOrNonCanonicalDataColumnSidecar(
