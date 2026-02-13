@@ -138,7 +138,10 @@ public class BlobReconstructionProvider {
               // we try extension reconstruction first, which is the fastest one
               final SafeFuture<Optional<List<Blob>>> maybeReconstructedBlobs =
                   extensionBlobReconstructor.reconstructBlobs(
-                      slotAndBlockRoot, firstHalfOfSidecars, blobIndices);
+                      slotAndBlockRoot,
+                      firstHalfOfSidecars,
+                      blobIndices,
+                      combinedChainDataClient::retrieveBlockByRoot);
 
               return maybeReconstructedBlobs.thenCompose(
                   maybeBlobs -> {
@@ -179,7 +182,10 @@ public class BlobReconstructionProvider {
                   .toList();
           final SafeFuture<Optional<List<Blob>>> maybeCryptoReconstructedBlobs =
               cryptoBlobReconstructor.reconstructBlobs(
-                  slotAndBlockRoot, existingSidecars, blobIndices);
+                  slotAndBlockRoot,
+                  existingSidecars,
+                  blobIndices,
+                  combinedChainDataClient::retrieveBlockByRoot);
 
           return maybeCryptoReconstructedBlobs.thenCompose(
               maybeBlobs -> {
@@ -204,7 +210,10 @@ public class BlobReconstructionProvider {
     LOG.trace("Trying to reconstruct blobs with network reconstructor for {}", slotAndBlockRoot);
     final SafeFuture<Optional<List<Blob>>> maybeNetworkReconstructedBlobs =
         networkBlobReconstructor.reconstructBlobs(
-            slotAndBlockRoot, firstHalfOfSidecarsWithGaps, blobIndices);
+            slotAndBlockRoot,
+            firstHalfOfSidecarsWithGaps,
+            blobIndices,
+            combinedChainDataClient::retrieveBlockByRoot);
 
     return maybeNetworkReconstructedBlobs.thenCompose(
         maybeBlobs -> {

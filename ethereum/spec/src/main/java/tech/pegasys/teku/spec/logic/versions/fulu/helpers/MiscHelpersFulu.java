@@ -568,7 +568,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
    *
    * <p>The data structure for storing cells is implementation-dependent.
    */
-  private List<List<MatrixEntry>> recoverMatrix(final List<List<MatrixEntry>> partialMatrix) {
+  public List<List<MatrixEntry>> recoverMatrix(final List<List<MatrixEntry>> partialMatrix) {
     return IntStream.range(0, partialMatrix.size())
         .parallel()
         .mapToObj(
@@ -603,7 +603,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return Math.max(custodyRequirement, specConfigFulu.getSamplesPerSlot());
   }
 
-  private static <T> List<List<T>> transpose(final List<List<T>> matrix) {
+  public static <T> List<List<T>> transpose(final List<List<T>> matrix) {
     final int rowCount = matrix.size();
     final int colCount = matrix.getFirst().size();
     final List<List<T>> ret =

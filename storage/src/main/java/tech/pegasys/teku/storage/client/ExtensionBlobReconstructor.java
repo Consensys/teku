@@ -15,15 +15,18 @@ package tech.pegasys.teku.storage.client;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
 public class ExtensionBlobReconstructor extends BlobReconstructor {
@@ -38,7 +41,8 @@ public class ExtensionBlobReconstructor extends BlobReconstructor {
   public SafeFuture<Optional<List<Blob>>> reconstructBlobs(
       final SlotAndBlockRoot slotAndBlockRoot,
       final List<DataColumnSidecar> existingSidecars,
-      final List<UInt64> blobIndices) {
+      final List<UInt64> blobIndices,
+      final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
     LOG.trace(
         "Reconstructing blobs from {} sidecars for {}", existingSidecars.size(), slotAndBlockRoot);
     final int halfColumns = spec.getNumberOfDataColumns().orElseThrow() / 2;
@@ -52,9 +56,8 @@ public class ExtensionBlobReconstructor extends BlobReconstructor {
       }
     }
 
-    return SafeFuture.completedFuture(
-        Optional.of(
-            reconstructBlobsFromFirstHalfDataColumns(
-                existingSidecars, blobIndices, blobSchemaSupplier.get())));
+    return reconstructBlobsFromFirstHalfDataColumns(
+            existingSidecars, blobIndices, blobSchemaSupplier.get(), retrieveBlockByRoot)
+        .thenApply(Optional::of);
   }
 }

@@ -135,6 +135,9 @@ public interface DataColumnSidecarUtil {
    */
   boolean canDataColumnSidecarTriggerRecovery();
 
+  List<DataColumnSidecar> reconstructAllDataColumnSidecars(
+      List<DataColumnSidecar> dataColumnSidecars);
+
   record InclusionProofInfo(
       Bytes32 commitmentsRoot, Bytes32 inclusionProofRoot, Bytes32 bodyRoot) {}
 

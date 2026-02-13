@@ -13,54 +13,62 @@
 
 package tech.pegasys.teku.storage.client;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 
 public class CryptoBlobReconstructor extends BlobReconstructor {
   private static final Logger LOG = LogManager.getLogger();
-  private final Supplier<MiscHelpersFulu> miscHelpersFuluSupplier;
 
   public CryptoBlobReconstructor(final Spec spec, final Supplier<BlobSchema> blobSchemaSupplier) {
     super(spec, blobSchemaSupplier);
-    this.miscHelpersFuluSupplier =
-        () -> MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
   }
 
   @Override
   public SafeFuture<Optional<List<Blob>>> reconstructBlobs(
       final SlotAndBlockRoot slotAndBlockRoot,
       final List<DataColumnSidecar> existingSidecars,
-      final List<UInt64> blobIndices) {
+      final List<UInt64> blobIndices,
+      final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
     LOG.trace(
         "Reconstructing blobs from {} sidecars for {}", existingSidecars.size(), slotAndBlockRoot);
     if (existingSidecars.size() < (spec.getNumberOfDataColumns().orElseThrow() / 2)) {
       return SafeFuture.completedFuture(Optional.empty());
     }
 
-    return SafeFuture.completedFuture(
-        Optional.of(reconstructBlobsFromDataColumns(existingSidecars, blobIndices)));
+    return reconstructBlobsFromDataColumns(existingSidecars, blobIndices, retrieveBlockByRoot)
+        .thenApply(Optional::of);
   }
 
-  private List<Blob> reconstructBlobsFromDataColumns(
-      final List<DataColumnSidecar> dataColumnSidecars, final List<UInt64> blobIndices) {
+  private SafeFuture<List<Blob>> reconstructBlobsFromDataColumns(
+      final List<DataColumnSidecar> dataColumnSidecars,
+      final List<UInt64> blobIndices,
+      final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
+    if (dataColumnSidecars.isEmpty()) {
+      return SafeFuture.completedFuture(Collections.emptyList());
+    }
+    final DataColumnSidecarUtil dataColumnSidecarUtil =
+        spec.getDataColumnSidecarUtil(dataColumnSidecars.getFirst().getSlot());
     final List<DataColumnSidecar> dataColumnSidecarsAll =
-        miscHelpersFuluSupplier.get().reconstructAllDataColumnSidecars(dataColumnSidecars);
+        dataColumnSidecarUtil.reconstructAllDataColumnSidecars(dataColumnSidecars);
     final List<DataColumnSidecar> firstHalfOfDataColumnSidecars =
         dataColumnSidecarsAll.subList(0, spec.getNumberOfDataColumns().orElseThrow() / 2);
 
     return reconstructBlobsFromFirstHalfDataColumns(
-        firstHalfOfDataColumnSidecars, blobIndices, blobSchemaSupplier.get());
+        firstHalfOfDataColumnSidecars, blobIndices, blobSchemaSupplier.get(), retrieveBlockByRoot);
   }
 }

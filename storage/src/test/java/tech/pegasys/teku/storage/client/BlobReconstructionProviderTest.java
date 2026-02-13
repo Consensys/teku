@@ -62,7 +62,7 @@ public class BlobReconstructionProviderTest extends BlobReconstructionAbstractTe
     final BlobsAndMatrix blobsAndMatrix = loadBlobsAndMatrixFixture();
     initializedClientMock(blobsAndMatrix);
 
-    when(extensionBlobReconstructor.reconstructBlobs(any(), any(), any()))
+    when(extensionBlobReconstructor.reconstructBlobs(any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blobsAndMatrix.blobs())));
 
     final SafeFuture<List<Blob>> result =
@@ -71,7 +71,7 @@ public class BlobReconstructionProviderTest extends BlobReconstructionAbstractTe
     assertThat(result).isCompletedWithValueMatching(list -> list.equals(blobsAndMatrix.blobs()));
 
     verify(client, times(numberOfColumns / 2)).getSidecar(any(DataColumnSlotAndIdentifier.class));
-    verify(extensionBlobReconstructor).reconstructBlobs(any(), any(), any());
+    verify(extensionBlobReconstructor).reconstructBlobs(any(), any(), any(), any());
     verifyNoInteractions(cryptoBlobReconstructor);
     verifyNoInteractions(networkBlobReconstructor);
   }
@@ -83,9 +83,9 @@ public class BlobReconstructionProviderTest extends BlobReconstructionAbstractTe
     final BlobsAndMatrix blobsAndMatrix = loadBlobsAndMatrixFixture();
     initializedClientMock(blobsAndMatrix);
 
-    when(extensionBlobReconstructor.reconstructBlobs(any(), any(), any()))
+    when(extensionBlobReconstructor.reconstructBlobs(any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    when(cryptoBlobReconstructor.reconstructBlobs(any(), any(), any()))
+    when(cryptoBlobReconstructor.reconstructBlobs(any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blobsAndMatrix.blobs())));
 
     final SafeFuture<List<Blob>> result =
@@ -94,8 +94,8 @@ public class BlobReconstructionProviderTest extends BlobReconstructionAbstractTe
     assertThat(result).isCompletedWithValueMatching(list -> list.equals(blobsAndMatrix.blobs()));
 
     verify(client, times(numberOfColumns)).getSidecar(any(DataColumnSlotAndIdentifier.class));
-    verify(extensionBlobReconstructor).reconstructBlobs(any(), any(), any());
-    verify(cryptoBlobReconstructor).reconstructBlobs(any(), any(), any());
+    verify(extensionBlobReconstructor).reconstructBlobs(any(), any(), any(), any());
+    verify(cryptoBlobReconstructor).reconstructBlobs(any(), any(), any(), any());
     verifyNoInteractions(networkBlobReconstructor);
   }
 
@@ -106,11 +106,11 @@ public class BlobReconstructionProviderTest extends BlobReconstructionAbstractTe
     final BlobsAndMatrix blobsAndMatrix = loadBlobsAndMatrixFixture();
     initializedClientMock(blobsAndMatrix);
 
-    when(extensionBlobReconstructor.reconstructBlobs(any(), any(), any()))
+    when(extensionBlobReconstructor.reconstructBlobs(any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    when(cryptoBlobReconstructor.reconstructBlobs(any(), any(), any()))
+    when(cryptoBlobReconstructor.reconstructBlobs(any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    when(networkBlobReconstructor.reconstructBlobs(any(), any(), any()))
+    when(networkBlobReconstructor.reconstructBlobs(any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blobsAndMatrix.blobs())));
 
     final SafeFuture<List<Blob>> result =
@@ -119,9 +119,9 @@ public class BlobReconstructionProviderTest extends BlobReconstructionAbstractTe
     assertThat(result).isCompletedWithValueMatching(list -> list.equals(blobsAndMatrix.blobs()));
 
     verify(client, times(numberOfColumns)).getSidecar(any(DataColumnSlotAndIdentifier.class));
-    verify(extensionBlobReconstructor).reconstructBlobs(any(), any(), any());
-    verify(cryptoBlobReconstructor).reconstructBlobs(any(), any(), any());
-    verify(networkBlobReconstructor).reconstructBlobs(any(), any(), any());
+    verify(extensionBlobReconstructor).reconstructBlobs(any(), any(), any(), any());
+    verify(cryptoBlobReconstructor).reconstructBlobs(any(), any(), any(), any());
+    verify(networkBlobReconstructor).reconstructBlobs(any(), any(), any(), any());
   }
 
   @Test
@@ -131,11 +131,11 @@ public class BlobReconstructionProviderTest extends BlobReconstructionAbstractTe
     final BlobsAndMatrix blobsAndMatrix = loadBlobsAndMatrixFixture();
     initializedClientMock(blobsAndMatrix);
 
-    when(extensionBlobReconstructor.reconstructBlobs(any(), any(), any()))
+    when(extensionBlobReconstructor.reconstructBlobs(any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    when(cryptoBlobReconstructor.reconstructBlobs(any(), any(), any()))
+    when(cryptoBlobReconstructor.reconstructBlobs(any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    when(networkBlobReconstructor.reconstructBlobs(any(), any(), any()))
+    when(networkBlobReconstructor.reconstructBlobs(any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     final SafeFuture<List<Blob>> result =
@@ -146,9 +146,9 @@ public class BlobReconstructionProviderTest extends BlobReconstructionAbstractTe
 
     // Verify all three were tried in order
     verify(client, times(numberOfColumns)).getSidecar(any(DataColumnSlotAndIdentifier.class));
-    verify(extensionBlobReconstructor).reconstructBlobs(any(), any(), any());
-    verify(cryptoBlobReconstructor).reconstructBlobs(any(), any(), any());
-    verify(networkBlobReconstructor).reconstructBlobs(any(), any(), any());
+    verify(extensionBlobReconstructor).reconstructBlobs(any(), any(), any(), any());
+    verify(cryptoBlobReconstructor).reconstructBlobs(any(), any(), any(), any());
+    verify(networkBlobReconstructor).reconstructBlobs(any(), any(), any(), any());
   }
 
   private void initializedClientMock(final BlobsAndMatrix blobsAndMatrix) {

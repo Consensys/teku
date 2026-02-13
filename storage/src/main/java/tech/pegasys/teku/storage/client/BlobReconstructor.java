@@ -13,19 +13,23 @@
 
 package tech.pegasys.teku.storage.client;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 
 public abstract class BlobReconstructor {
   final Spec spec;
@@ -39,22 +43,36 @@ public abstract class BlobReconstructor {
   abstract SafeFuture<Optional<List<Blob>>> reconstructBlobs(
       final SlotAndBlockRoot slotAndBlockRoot,
       final List<DataColumnSidecar> existingSidecars,
-      final List<UInt64> blobIndices);
+      final List<UInt64> blobIndices,
+      final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot);
 
-  List<Blob> reconstructBlobsFromFirstHalfDataColumns(
+  SafeFuture<List<Blob>> reconstructBlobsFromFirstHalfDataColumns(
       final List<DataColumnSidecar> dataColumnSidecars,
       final List<UInt64> blobIndices,
-      final BlobSchema blobSchema) {
-
-    // TODO-GLOAS retrieve the kzg commitments from the bid in Gloas
-    return IntStream.range(
-            0,
-            DataColumnSidecarFulu.required(dataColumnSidecars.getFirst())
-                .getKzgCommitments()
-                .size())
-        .filter(index -> blobIndices.isEmpty() || blobIndices.contains(UInt64.valueOf(index)))
-        .mapToObj(blobIndex -> constructBlob(dataColumnSidecars, blobIndex, blobSchema))
-        .toList();
+      final BlobSchema blobSchema,
+      final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
+    if (dataColumnSidecars.isEmpty()) {
+      return SafeFuture.completedFuture(Collections.emptyList());
+    }
+    final DataColumnSidecarUtil dataColumnSidecarUtil =
+        spec.getDataColumnSidecarUtil(dataColumnSidecars.getFirst().getSlot());
+    return dataColumnSidecarUtil
+        .getKzgCommitments(dataColumnSidecars.getFirst(), retrieveBlockByRoot)
+        .thenApply(
+            maybeKzgCommitments ->
+                maybeKzgCommitments
+                    .map(
+                        sszKZGCommitments ->
+                            IntStream.range(0, sszKZGCommitments.size())
+                                .filter(
+                                    index ->
+                                        blobIndices.isEmpty()
+                                            || blobIndices.contains(UInt64.valueOf(index)))
+                                .mapToObj(
+                                    blobIndex ->
+                                        constructBlob(dataColumnSidecars, blobIndex, blobSchema))
+                                .toList())
+                    .orElse(Collections.emptyList()));
   }
 
   Blob constructBlob(

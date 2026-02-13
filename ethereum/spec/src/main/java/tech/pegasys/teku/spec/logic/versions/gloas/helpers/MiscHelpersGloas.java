@@ -20,7 +20,9 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBy
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -65,6 +67,7 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
 
   private final PredicatesGloas predicates;
   private final SpecConfigGloas specConfigGloas;
+  private final SchemaDefinitionsGloas schemaDefinitionsGloas;
 
   public MiscHelpersGloas(
       final SpecConfigGloas specConfig,
@@ -73,6 +76,7 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
     super(specConfig, predicates, schemaDefinitionsGloas);
     this.predicates = predicates;
     this.specConfigGloas = specConfig;
+    this.schemaDefinitionsGloas = schemaDefinitionsGloas;
   }
 
   public UInt64 convertBuilderIndexToValidatorIndex(final UInt64 builderIndex) {
@@ -189,6 +193,47 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
             builder
                 .slot(slotAndBlockRoot.getSlot())
                 .beaconBlockRoot(slotAndBlockRoot.getBlockRoot()),
+        extendedMatrix);
+  }
+
+  @Override
+  public List<DataColumnSidecar> reconstructAllDataColumnSidecars(
+      final Collection<DataColumnSidecar> existingSidecars) {
+    if (existingSidecars.size() < (specConfigGloas.getNumberOfColumns() / 2)) {
+      final Optional<DataColumnSidecar> maybeSidecar = existingSidecars.stream().findAny();
+      throw new IllegalArgumentException(
+          String.format(
+              "Number of sidecars must be greater than or equal to the half of column count, slot: %s; columns: found %s, needed at least %d",
+              maybeSidecar.isPresent() ? maybeSidecar.get().getSlot().toString() : "unknown",
+              existingSidecars.size(),
+              specConfigGloas.getNumberOfColumns() / 2));
+    }
+    final List<List<MatrixEntry>> columnBlobEntries =
+        existingSidecars.stream()
+            .sorted(Comparator.comparing(DataColumnSidecar::getIndex))
+            .map(
+                sidecar ->
+                    IntStream.range(0, sidecar.getColumn().size())
+                        .mapToObj(
+                            rowIndex ->
+                                schemaDefinitionsGloas
+                                    .getMatrixEntrySchema()
+                                    .create(
+                                        sidecar.getColumn().get(rowIndex),
+                                        sidecar.getKzgProofs().get(rowIndex).getKZGProof(),
+                                        sidecar.getIndex(),
+                                        UInt64.valueOf(rowIndex)))
+                        .toList())
+            .toList();
+    final List<List<MatrixEntry>> blobColumnEntries = transpose(columnBlobEntries);
+    final List<List<MatrixEntry>> extendedMatrix = recoverMatrix(blobColumnEntries);
+    final DataColumnSidecar anyExistingSidecar =
+        existingSidecars.stream().findFirst().orElseThrow();
+    return constructDataColumnSidecarsInternal(
+        builder ->
+            builder
+                .slot(anyExistingSidecar.getSlot())
+                .beaconBlockRoot(anyExistingSidecar.getBeaconBlockRoot()),
         extendedMatrix);
   }
 

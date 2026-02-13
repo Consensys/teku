@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
 
-public class NetworkBlobReconstructorTest extends BlobReconstructionAbstractTest {
+public class NetworkBlobReconstructorFuluTest extends BlobReconstructionAbstractTest {
   final SchemaDefinitionsElectra schemaDefinitionsElectra =
       SchemaDefinitionsElectra.required(
           spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions());
@@ -58,7 +58,7 @@ public class NetworkBlobReconstructorTest extends BlobReconstructionAbstractTest
             block.getMessage(), block.asHeader(), blobsAndMatrix.extendedMatrix());
     assertThat(
             networkBlobReconstructor.reconstructBlobs(
-                block.getSlotAndBlockRoot(), dataColumnSidecars, List.of()))
+                block.getSlotAndBlockRoot(), dataColumnSidecars, List.of(), blockRetrieval))
         .isCompletedWithValueMatching(Optional::isEmpty);
     verify(dataColumnSidecarNetworkRetriever).isEnabled();
     verifyNoMoreInteractions(dataColumnSidecarNetworkRetriever);
@@ -84,7 +84,10 @@ public class NetworkBlobReconstructorTest extends BlobReconstructionAbstractTest
         .thenReturn(SafeFuture.completedFuture(List.of(missingSidecar)));
     assertThat(
             networkBlobReconstructor.reconstructBlobs(
-                missingSidecar.getSlotAndBlockRoot(), halfSidecarsWithGap, List.of()))
+                missingSidecar.getSlotAndBlockRoot(),
+                halfSidecarsWithGap,
+                List.of(),
+                blockRetrieval))
         .isCompletedWithValueMatching(
             result -> result.orElseThrow().equals(blobsAndMatrix.blobs()));
   }
@@ -111,7 +114,7 @@ public class NetworkBlobReconstructorTest extends BlobReconstructionAbstractTest
 
     assertThat(
             networkBlobReconstructor.reconstructBlobs(
-                block.getSlotAndBlockRoot(), sidecarsWithGaps, List.of()))
+                block.getSlotAndBlockRoot(), sidecarsWithGaps, List.of(), blockRetrieval))
         .isCompletedWithValueMatching(Optional::isEmpty);
   }
 }

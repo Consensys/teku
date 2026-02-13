@@ -18,6 +18,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -25,13 +27,13 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
-public class BlobReconstructorTest extends BlobReconstructionAbstractTest {
-  // TODO-GLOAS add a test for Gloas
+public class BlobReconstructorFuluTest extends BlobReconstructionAbstractTest {
   final MiscHelpersFulu miscHelpersFulu =
       MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
   final SchemaDefinitionsElectra schemaDefinitionsElectra =
@@ -45,7 +47,8 @@ public class BlobReconstructorTest extends BlobReconstructionAbstractTest {
         SafeFuture<Optional<List<Blob>>> reconstructBlobs(
             final SlotAndBlockRoot slotAndBlockRoot,
             final List<DataColumnSidecar> existingSidecars,
-            final List<UInt64> blobIndices) {
+            final List<UInt64> blobIndices,
+            final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
           return SafeFuture.completedFuture(Optional.empty());
         }
       };
@@ -79,22 +82,21 @@ public class BlobReconstructorTest extends BlobReconstructionAbstractTest {
     final int numberOfColumns = spec.getNumberOfDataColumns().orElseThrow();
     final List<DataColumnSidecar> halfSidecars = dataColumnSidecars.subList(0, numberOfColumns / 2);
     assertThat(blobsAndMatrix.blobs()).hasSize(2);
-
     assertThat(
             blobReconstructor.reconstructBlobsFromFirstHalfDataColumns(
-                halfSidecars, List.of(), blobSchema))
-        .isEqualTo(blobsAndMatrix.blobs());
+                halfSidecars, List.of(), blobSchema, blockRetrieval))
+        .isCompletedWithValue(blobsAndMatrix.blobs());
     assertThat(
             blobReconstructor.reconstructBlobsFromFirstHalfDataColumns(
-                halfSidecars, List.of(UInt64.ZERO, UInt64.valueOf(1)), blobSchema))
-        .isEqualTo(blobsAndMatrix.blobs());
+                halfSidecars, List.of(UInt64.ZERO, UInt64.valueOf(1)), blobSchema, blockRetrieval))
+        .isCompletedWithValue(blobsAndMatrix.blobs());
     assertThat(
             blobReconstructor.reconstructBlobsFromFirstHalfDataColumns(
-                halfSidecars, List.of(UInt64.ZERO), blobSchema))
-        .isEqualTo(blobsAndMatrix.blobs().subList(0, 1));
+                halfSidecars, List.of(UInt64.ZERO), blobSchema, blockRetrieval))
+        .isCompletedWithValue(blobsAndMatrix.blobs().subList(0, 1));
     assertThat(
             blobReconstructor.reconstructBlobsFromFirstHalfDataColumns(
-                halfSidecars, List.of(UInt64.ZERO, UInt64.valueOf(2)), blobSchema))
-        .isEqualTo(blobsAndMatrix.blobs().subList(0, 1));
+                halfSidecars, List.of(UInt64.ZERO, UInt64.valueOf(2)), blobSchema, blockRetrieval))
+        .isCompletedWithValue(blobsAndMatrix.blobs().subList(0, 1));
   }
 }

@@ -357,4 +357,10 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
     // the execution payload bid with commitments.
     return false;
   }
+
+  @Override
+  public List<DataColumnSidecar> reconstructAllDataColumnSidecars(
+      final List<DataColumnSidecar> dataColumnSidecars) {
+    return miscHelpersGloas.reconstructAllDataColumnSidecars(dataColumnSidecars);
+  }
 }

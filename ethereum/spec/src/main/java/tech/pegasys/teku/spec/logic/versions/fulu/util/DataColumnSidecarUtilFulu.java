@@ -514,4 +514,10 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     // signed headers, and inclusion proofs, allowing them to trigger recovery.
     return true;
   }
+
+  @Override
+  public List<DataColumnSidecar> reconstructAllDataColumnSidecars(
+      final List<DataColumnSidecar> dataColumnSidecars) {
+    return miscHelpersFulu.reconstructAllDataColumnSidecars(dataColumnSidecars);
+  }
 }
