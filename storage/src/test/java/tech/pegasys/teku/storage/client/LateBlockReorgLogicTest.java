@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -519,6 +520,127 @@ class LateBlockReorgLogicTest {
     return args.stream();
   }
 
+  @Test
+  void equivocationDetection_singleBlockNoEquivocation() {
+    final SignedBeaconBlock block = createBlock(UInt64.ONE, UInt64.valueOf(42));
+    reorgLogicInstrumented.setBlockTimelinessFromArrivalTime(block, computeTime(slot, 500));
+    assertThat(reorgLogicInstrumented.isProposerEquivocation(block.getRoot())).isFalse();
+  }
+
+  @Test
+  void equivocationDetection_twoBlocksSameSlotSameProposerDifferentRoots() {
+    final UInt64 proposer = UInt64.valueOf(42);
+    final SignedBeaconBlock block1 = createBlock(UInt64.ONE, proposer);
+    final SignedBeaconBlock block2 = createBlock(UInt64.ONE, proposer);
+    // Ensure they have different roots
+    assertThat(block1.getRoot()).isNotEqualTo(block2.getRoot());
+
+    reorgLogicInstrumented.setBlockTimelinessFromArrivalTime(block1, computeTime(slot, 500));
+    reorgLogicInstrumented.setBlockTimelinessFromArrivalTime(block2, computeTime(slot, 600));
+
+    assertThat(reorgLogicInstrumented.isProposerEquivocation(block1.getRoot())).isTrue();
+    assertThat(reorgLogicInstrumented.isProposerEquivocation(block2.getRoot())).isTrue();
+  }
+
+  @Test
+  void equivocationDetection_twoBlocksSameSlotDifferentProposers() {
+    final SignedBeaconBlock block1 = createBlock(UInt64.ONE, UInt64.valueOf(42));
+    final SignedBeaconBlock block2 = createBlock(UInt64.ONE, UInt64.valueOf(43));
+
+    reorgLogicInstrumented.setBlockTimelinessFromArrivalTime(block1, computeTime(slot, 500));
+    reorgLogicInstrumented.setBlockTimelinessFromArrivalTime(block2, computeTime(slot, 600));
+
+    assertThat(reorgLogicInstrumented.isProposerEquivocation(block1.getRoot())).isFalse();
+    assertThat(reorgLogicInstrumented.isProposerEquivocation(block2.getRoot())).isFalse();
+  }
+
+  @Test
+  void equivocationDetection_twoBlocksSameProposerDifferentSlots() {
+    final UInt64 proposer = UInt64.valueOf(42);
+    final SignedBeaconBlock block1 = createBlock(UInt64.ONE, proposer);
+    final SignedBeaconBlock block2 = createBlock(UInt64.valueOf(2), proposer);
+
+    reorgLogicInstrumented.setBlockTimelinessFromArrivalTime(block1, computeTime(slot, 500));
+    reorgLogicInstrumented.setBlockTimelinessFromArrivalTime(block2, computeTime(slot, 600));
+
+    assertThat(reorgLogicInstrumented.isProposerEquivocation(block1.getRoot())).isFalse();
+    assertThat(reorgLogicInstrumented.isProposerEquivocation(block2.getRoot())).isFalse();
+  }
+
+  @Test
+  void equivocationDetection_sameBlockRecordedTwice() {
+    final SignedBeaconBlock block = createBlock(UInt64.ONE, UInt64.valueOf(42));
+
+    reorgLogicInstrumented.setBlockTimelinessFromArrivalTime(block, computeTime(slot, 500));
+    reorgLogicInstrumented.setBlockTimelinessFromArrivalTime(block, computeTime(slot, 600));
+
+    assertThat(reorgLogicInstrumented.isProposerEquivocation(block.getRoot())).isFalse();
+  }
+
+  @Test
+  void getProposerHead_equivocationPathReorgsWhenHeadWeakAndTimingOk() {
+    // Head is NOT late (standard path gate closed), but equivocation detected
+    withTimelyBlock(blockRoot);
+    withHeadBlock();
+    withProposerBoostRoot(null);
+    reorgLogicInstrumented.addEquivocatingRoot(blockRoot);
+    when(store.isHeadWeak(blockRoot)).thenReturn(true);
+
+    // slot = head.slot + 1 = 2
+    assertThat(reorgLogicInstrumented.getProposerHead(blockRoot, UInt64.valueOf(2)))
+        .isEqualTo(signedBlockAndState.getBlock().getParentRoot());
+  }
+
+  @Test
+  void getProposerHead_equivocationPathReturnHeadWhenHeadStrong() {
+    withTimelyBlock(blockRoot);
+    withHeadBlock();
+    withProposerBoostRoot(null);
+    reorgLogicInstrumented.addEquivocatingRoot(blockRoot);
+    when(store.isHeadWeak(blockRoot)).thenReturn(false);
+
+    assertThat(reorgLogicInstrumented.getProposerHead(blockRoot, UInt64.valueOf(2)))
+        .isEqualTo(blockRoot);
+  }
+
+  @Test
+  void getProposerHead_equivocationPathReturnHeadWhenTimingWrong() {
+    withTimelyBlock(blockRoot);
+    withHeadBlock();
+    withProposerBoostRoot(null);
+    reorgLogicInstrumented.addEquivocatingRoot(blockRoot);
+    when(store.isHeadWeak(blockRoot)).thenReturn(true);
+
+    // slot = 3 != head.slot + 1 = 2, so timing condition fails
+    assertThat(reorgLogicInstrumented.getProposerHead(blockRoot, UInt64.valueOf(3)))
+        .isEqualTo(blockRoot);
+  }
+
+  @Test
+  void getProposerHead_noEquivocationAndHeadWeakReturnHead() {
+    withTimelyBlock(blockRoot);
+    withHeadBlock();
+    withProposerBoostRoot(null);
+    when(store.isHeadWeak(blockRoot)).thenReturn(true);
+
+    // No equivocation added, head is timely (standard path fails), equivocation path has no match
+    assertThat(reorgLogicInstrumented.getProposerHead(blockRoot, UInt64.valueOf(2)))
+        .isEqualTo(blockRoot);
+  }
+
+  private SignedBeaconBlock createBlock(final UInt64 blockSlot, final UInt64 proposerIndex) {
+    final var body = dataStructureUtil.randomBeaconBlockBody(blockSlot);
+    final BeaconBlock beaconBlock =
+        new BeaconBlock(
+            spec.atSlot(blockSlot).getSchemaDefinitions().getBeaconBlockSchema(),
+            blockSlot,
+            proposerIndex,
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomBytes32(),
+            body);
+    return dataStructureUtil.signedBlock(beaconBlock);
+  }
+
   static class LateBlockReorgLogicInstrumented extends LateBlockReorgLogic {
     public LateBlockReorgLogicInstrumented(
         final Spec spec,
@@ -534,6 +656,10 @@ class LateBlockReorgLogicTest {
 
     public void setBlockTimeliness(final Bytes32 root, final boolean isTimely) {
       blockTimeliness.put(root, isTimely);
+    }
+
+    public void addEquivocatingRoot(final Bytes32 root) {
+      equivocatingBlockRoots.add(root);
     }
   }
 }

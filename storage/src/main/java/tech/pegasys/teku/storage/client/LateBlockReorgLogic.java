@@ -16,6 +16,8 @@ package tech.pegasys.teku.storage.client;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,6 +40,15 @@ public class LateBlockReorgLogic {
   private final Spec spec;
   private final RecentChainData recentChainData;
 
+  private record SlotAndProposer(UInt64 slot, UInt64 proposerIndex) {}
+
+  // (slot, proposerIndex) -> first block root seen. Lazily evicted: older slots removed
+  // when a newer slot arrives, keeping this to ~1 entry.
+  private final Map<SlotAndProposer, Bytes32> firstProposerBlockRoot = new ConcurrentHashMap<>();
+
+  // Block roots known to be part of proposer equivocations.
+  protected final Set<Bytes32> equivocatingBlockRoots = ConcurrentHashMap.newKeySet();
+
   public LateBlockReorgLogic(final Spec spec, final RecentChainData recentChainData) {
     this(spec, recentChainData, recentChainData::getStore);
   }
@@ -58,13 +69,31 @@ public class LateBlockReorgLogic {
 
   public void setBlockTimelinessFromArrivalTime(
       final SignedBeaconBlock block, final UInt64 arrivalTimeMillis) {
-    if (blockTimeliness.get(block.getRoot()) != null) {
+    final Bytes32 root = block.getRoot();
+
+    // Track proposer equivocations: two different blocks from the same proposer in the same slot
+    final SlotAndProposer key = new SlotAndProposer(block.getSlot(), block.getProposerIndex());
+    final Bytes32 existingRoot = firstProposerBlockRoot.putIfAbsent(key, root);
+    if (existingRoot != null && !existingRoot.equals(root)) {
+      LOG.debug(
+          "Proposer equivocation detected: slot {}, proposer {}, roots {} and {}",
+          key.slot(),
+          key.proposerIndex(),
+          existingRoot,
+          root);
+      equivocatingBlockRoots.add(existingRoot);
+      equivocatingBlockRoots.add(root);
+    } else if (existingRoot == null) {
+      // New (slot, proposer) entry — evict stale entries from older slots
+      firstProposerBlockRoot.keySet().removeIf(k -> k.slot().isLessThan(key.slot()));
+    }
+
+    if (blockTimeliness.get(root) != null) {
       return;
     }
     final UInt64 computedSlot =
         spec.getCurrentSlot(
             timeProviderSupplier.get().getTimeInSeconds(), recentChainData.getGenesisTime());
-    final Bytes32 root = block.getRoot();
     if (computedSlot.isGreaterThan(block.getMessage().getSlot())) {
       LOG.debug(
           "Block {}:{} is before computed slot {}, timeliness set to false.",
@@ -130,55 +159,58 @@ public class LateBlockReorgLogic {
     return !isBlockTimely(root).orElse(true);
   }
 
+  // implements is_proposer_equivocation from Consensus Spec
+  boolean isProposerEquivocation(final Bytes32 root) {
+    return equivocatingBlockRoots.contains(root);
+  }
+
   // implements get_proposer_head from Consensus Spec
   public Bytes32 getProposerHead(final Bytes32 headRoot, final UInt64 slot) {
     LOG.debug("start getProposerHead");
     final boolean isProposerBoostActive = isProposerBoostActive(headRoot);
-    final boolean isShufflingStableAndForkChoiceOk = isForkChoiceStableAndFinalizationOk(slot);
-    final boolean isProposingOnTime = isProposingOnTime(slot);
-    final boolean isHeadLate = isBlockLate(headRoot);
     final Optional<SignedBeaconBlock> maybeHead = getStore().getBlockIfAvailable(headRoot);
-    // cheap checks of that list:
-    // (isHeadLate, isShufflingStable, isFinalizationOk, isProposingOnTime);
-    // and  isProposerBoostActive (assert condition);
-    // finally need head block to make further checks
-    if (!isHeadLate
-        || !isShufflingStableAndForkChoiceOk
-        || !isProposingOnTime
-        || isProposerBoostActive
-        || maybeHead.isEmpty()) {
+
+    // Hard prerequisites for both standard and equivocation paths
+    if (isProposerBoostActive || maybeHead.isEmpty()) {
       LOG.debug(
-          "getProposerHead - return headRoot - isHeadLate {}, isForkChoiceStableAndFinalizationOk {}, isProposingOnTime {}, isProposerBoostActive {}, head.isEmpty {}",
-          () -> isHeadLate,
-          () -> isShufflingStableAndForkChoiceOk,
-          () -> isProposingOnTime,
-          () -> isProposerBoostActive,
-          headRoot::isEmpty);
+          "getProposerHead - return headRoot - isProposerBoostActive {}, head.isEmpty {}",
+          isProposerBoostActive,
+          maybeHead.isEmpty());
       return headRoot;
     }
 
     final SignedBeaconBlock head = maybeHead.get();
-    final boolean isFfgCompetitive = isFfgCompetetive(headRoot, head.getParentRoot());
-    final boolean isSingleSlotReorg = isSingleSlotReorg(head, slot);
-
-    // from the initial list, check
-    // isFfgCompetitive, isSingleSlotReorg
-    if (!isFfgCompetitive || !isSingleSlotReorg) {
-      LOG.debug(
-          "getProposerHead - return headRoot - isFfgCompetitive {}, isSingleSlotReorg {}",
-          isFfgCompetitive,
-          isSingleSlotReorg);
-      return headRoot;
-    }
     final boolean isHeadWeak = getStore().isHeadWeak(headRoot);
-    final boolean isParentStrong = getStore().isParentStrong(head.getParentRoot());
-    // finally, the parent must be strong, and the current head must be weak.
-    if (isHeadWeak && isParentStrong) {
-      LOG.debug("getProposerHead - return parentRoot - isHeadWeak true && isParentStrong true");
+
+    // Standard reorg path: head_late AND shuffling_stable AND ffg_competitive AND
+    // finalization_ok AND proposing_on_time AND single_slot_reorg AND head_weak AND parent_strong
+    final boolean isHeadLate = isBlockLate(headRoot);
+    final boolean isShufflingStableAndForkChoiceOk = isForkChoiceStableAndFinalizationOk(slot);
+    final boolean isProposingOnTime = isProposingOnTime(slot);
+
+    if (isHeadLate
+        && isHeadWeak
+        && isShufflingStableAndForkChoiceOk
+        && isProposingOnTime
+        && isFfgCompetetive(headRoot, head.getParentRoot())
+        && isSingleSlotReorg(head, slot)
+        && getStore().isParentStrong(head.getParentRoot())) {
+      LOG.debug("getProposerHead - return parentRoot via standard path");
       return head.getParentRoot();
     }
 
-    LOG.debug("getProposerHead - return headRoot");
+    // Equivocation reorg path: head_weak AND current_time_ok AND proposer_equivocation
+    if (isHeadWeak && head.getSlot().increment().equals(slot) && isProposerEquivocation(headRoot)) {
+      LOG.debug("getProposerHead - return parentRoot via equivocation path");
+      return head.getParentRoot();
+    }
+
+    LOG.debug(
+        "getProposerHead - return headRoot - isHeadLate {}, isShufflingStableAndForkChoiceOk {}, isProposingOnTime {}, isHeadWeak {}",
+        isHeadLate,
+        isShufflingStableAndForkChoiceOk,
+        isProposingOnTime,
+        isHeadWeak);
     return headRoot;
   }
 
