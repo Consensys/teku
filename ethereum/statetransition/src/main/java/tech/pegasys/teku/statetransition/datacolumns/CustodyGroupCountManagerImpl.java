@@ -256,6 +256,6 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     }
     custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, getSamplingGroupCount());
     custodyGroupCountGauge.set(newCustodyGroupCount);
-    isMaxCustodyGroups = newCustodyGroupCount == specConfigFulu.getNumberOfCustodyGroups();
+    isMaxCustodyGroups = miscHelpersFulu.isSuperNode(newCustodyGroupCount);
   }
 }
