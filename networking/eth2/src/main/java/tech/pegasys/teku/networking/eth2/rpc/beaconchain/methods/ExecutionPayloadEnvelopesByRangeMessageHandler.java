@@ -20,6 +20,7 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVAL
 import com.google.common.annotations.VisibleForTesting;
 import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandle
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
+import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRangeRequestMessage;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -97,35 +99,47 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
       final ExecutionPayloadEnvelopesByRangeRequestMessage message,
       final ResponseCallback<SignedExecutionPayloadEnvelope> callback) {
     final UInt64 startSlot = message.getStartSlot();
+    final UInt64 count = message.getCount();
     LOG.trace(
         "Peer {} requested {} execution payload envelopes starting at slot {}",
         peer.getId(),
-        message.getCount(),
+        count,
         startSlot);
 
     final Optional<RequestKey> maybeRequestKey =
-        peer.approveExecutionPayloadEnvelopesRequest(callback, message.getCount().longValue());
+        peer.approveExecutionPayloadEnvelopesRequest(callback, count.longValue());
 
     if (!peer.approveRequest() || maybeRequestKey.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
     requestCounter.labels("ok").inc();
-    totalExecutionPayloadEnvelopesRequestedCounter.inc(message.getCount().longValue());
+    totalExecutionPayloadEnvelopesRequestedCounter.inc(count.longValue());
 
-    final NavigableMap<UInt64, Bytes32> hotRoots =
-        combinedChainDataClient.getAncestorRoots(startSlot, UInt64.ONE, message.getCount());
+    final NavigableMap<UInt64, Bytes32> hotRoots;
 
-    final UInt64 headSlot = hotRoots.lastKey();
+    if (combinedChainDataClient.isFinalized(message.getMaxSlot())) {
+      // All execution payloads are finalized so skip scanning the protoarray
+      hotRoots = new TreeMap<>();
+    } else {
+      hotRoots = combinedChainDataClient.getAncestorRoots(startSlot, UInt64.ONE, count);
+    }
+
+    final UInt64 headSlot =
+        hotRoots.isEmpty()
+            ? combinedChainDataClient
+                .getChainHead()
+                .map(MinimalBeaconBlockSummary::getSlot)
+                .orElse(ZERO)
+            : hotRoots.lastKey();
 
     final RequestState initialState =
-        new RequestState(callback, startSlot, message.getCount(), headSlot, hotRoots);
+        new RequestState(callback, startSlot, count, headSlot, hotRoots);
 
     sendNextExecutionPayloadEnvelope(initialState)
         .finish(
             requestState -> {
-              if (requestState.sentExecutionPayloadEnvelopes.get()
-                  != message.getCount().longValue()) {
+              if (requestState.sentExecutionPayloadEnvelopes.get() != count.longValue()) {
                 peer.adjustExecutionPayloadEnvelopesRequest(
                     maybeRequestKey.get(), requestState.sentExecutionPayloadEnvelopes.get());
               }
