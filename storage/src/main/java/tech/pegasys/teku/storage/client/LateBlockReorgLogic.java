@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.client;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
@@ -46,8 +45,9 @@ public class LateBlockReorgLogic {
   // when a newer slot arrives, keeping this to ~1 entry.
   private final Map<SlotAndProposer, Bytes32> firstProposerBlockRoot = new ConcurrentHashMap<>();
 
-  // Block roots known to be part of proposer equivocations.
-  protected final Set<Bytes32> equivocatingBlockRoots = ConcurrentHashMap.newKeySet();
+  // Block roots known to be part of proposer equivocations, mapped to their slot.
+  // Lazily evicted alongside firstProposerBlockRoot.
+  protected final Map<Bytes32, UInt64> equivocatingBlockRoots = new ConcurrentHashMap<>();
 
   public LateBlockReorgLogic(final Spec spec, final RecentChainData recentChainData) {
     this(spec, recentChainData, recentChainData::getStore);
@@ -67,26 +67,12 @@ public class LateBlockReorgLogic {
     this.recentChainData = recentChainData;
   }
 
+  // record_block_timeliness
   public void setBlockTimelinessFromArrivalTime(
       final SignedBeaconBlock block, final UInt64 arrivalTimeMillis) {
     final Bytes32 root = block.getRoot();
 
-    // Track proposer equivocations: two different blocks from the same proposer in the same slot
-    final SlotAndProposer key = new SlotAndProposer(block.getSlot(), block.getProposerIndex());
-    final Bytes32 existingRoot = firstProposerBlockRoot.putIfAbsent(key, root);
-    if (existingRoot != null && !existingRoot.equals(root)) {
-      LOG.debug(
-          "Proposer equivocation detected: slot {}, proposer {}, roots {} and {}",
-          key.slot(),
-          key.proposerIndex(),
-          existingRoot,
-          root);
-      equivocatingBlockRoots.add(existingRoot);
-      equivocatingBlockRoots.add(root);
-    } else if (existingRoot == null) {
-      // New (slot, proposer) entry — evict stale entries from older slots
-      firstProposerBlockRoot.keySet().removeIf(k -> k.slot().isLessThan(key.slot()));
-    }
+    trackProposerEquivocation(root, block.getSlot(), block.getProposerIndex());
 
     if (blockTimeliness.get(root) != null) {
       return;
@@ -159,9 +145,29 @@ public class LateBlockReorgLogic {
     return !isBlockTimely(root).orElse(true);
   }
 
+  private void trackProposerEquivocation(
+      final Bytes32 root, final UInt64 slot, final UInt64 proposerIndex) {
+    final SlotAndProposer key = new SlotAndProposer(slot, proposerIndex);
+    final Bytes32 existingRoot = firstProposerBlockRoot.putIfAbsent(key, root);
+    if (existingRoot != null && !existingRoot.equals(root)) {
+      LOG.debug(
+          "Proposer equivocation detected: slot {}, proposer {}, roots {} and {}",
+          slot,
+          proposerIndex,
+          existingRoot,
+          root);
+      equivocatingBlockRoots.put(existingRoot, slot);
+      equivocatingBlockRoots.put(root, slot);
+    } else if (existingRoot == null) {
+      // New (slot, proposer) entry — evict stale entries from older slots
+      firstProposerBlockRoot.keySet().removeIf(k -> k.slot().isLessThan(slot));
+      equivocatingBlockRoots.values().removeIf(s -> s.isLessThan(slot));
+    }
+  }
+
   // implements is_proposer_equivocation from Consensus Spec
   boolean isProposerEquivocation(final Bytes32 root) {
-    return equivocatingBlockRoots.contains(root);
+    return equivocatingBlockRoots.containsKey(root);
   }
 
   // implements get_proposer_head from Consensus Spec

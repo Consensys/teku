@@ -659,7 +659,7 @@ class LateBlockReorgLogicTest {
     }
 
     public void addEquivocatingRoot(final Bytes32 root) {
-      equivocatingBlockRoots.add(root);
+      equivocatingBlockRoots.put(root, UInt64.ZERO);
     }
   }
 }
