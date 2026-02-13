@@ -192,6 +192,8 @@ public class BeaconBlocksByRangeMessageHandler
               final UInt64 headSlot = hotRoots.isEmpty() ? headBlockSlot : hotRoots.lastKey();
               final RequestState initialState =
                   new RequestState(startSlot, step, count, headSlot, hotRoots, callback);
+              // there is an edge case when startSlot == headSlot in which case we don't return
+              // anything
               if (initialState.isComplete()) {
                 return SafeFuture.completedFuture(initialState);
               }

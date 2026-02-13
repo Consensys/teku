@@ -1,0 +1,37 @@
+{
+  "title" : "ExecutionPayloadEnvelope",
+  "type" : "object",
+  "required" : [ "payload", "execution_requests", "builder_index", "beacon_block_root", "slot", "state_root" ],
+  "properties" : {
+    "payload" : {
+      "$ref" : "#/components/schemas/ExecutionPayloadDeneb"
+    },
+    "execution_requests" : {
+      "$ref" : "#/components/schemas/ExecutionRequestsElectra"
+    },
+    "builder_index" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "beacon_block_root" : {
+      "type" : "string",
+      "description" : "Bytes32 hexadecimal",
+      "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+      "format" : "byte"
+    },
+    "slot" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "state_root" : {
+      "type" : "string",
+      "description" : "Bytes32 hexadecimal",
+      "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+      "format" : "byte"
+    }
+  }
+}
