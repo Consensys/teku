@@ -67,13 +67,13 @@ public class PrimitiveListCreationBenchmark {
 
   @Benchmark
   public void createUInt64ListViaOf(final Blackhole bh) {
-    SszUInt64List list = uint64Schema.of(uint64Elements);
+    final SszUInt64List list = uint64Schema.of(uint64Elements);
     bh.consume(list);
   }
 
   @Benchmark
   public void createByteListViaOf(final Blackhole bh) {
-    SszByteList list = byteSchema.createFromElements(byteElements);
+    final SszByteList list = byteSchema.createFromElements(byteElements);
     bh.consume(list);
   }
 }
