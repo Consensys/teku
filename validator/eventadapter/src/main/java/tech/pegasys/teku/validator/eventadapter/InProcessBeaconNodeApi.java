@@ -25,8 +25,8 @@ import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
 import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
+import tech.pegasys.teku.validator.beaconnode.ForkAwareTimeBasedEventAdapter;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
-import tech.pegasys.teku.validator.beaconnode.TimeBasedEventAdapter;
 import tech.pegasys.teku.validator.beaconnode.metrics.MetricRecordingValidatorApiChannel;
 
 public class InProcessBeaconNodeApi implements BeaconNodeApi {
@@ -53,8 +53,8 @@ public class InProcessBeaconNodeApi implements BeaconNodeApi {
             metricsSystem, eventChannels.getPublisher(ValidatorApiChannel.class, asyncRunner));
     final ValidatorTimingChannel validatorTimingChannel =
         eventChannels.getPublisher(ValidatorTimingChannel.class);
-    final TimeBasedEventAdapter timeBasedEventAdapter =
-        new TimeBasedEventAdapter(
+    final ForkAwareTimeBasedEventAdapter timeBasedEventAdapter =
+        new ForkAwareTimeBasedEventAdapter(
             new GenesisDataProvider(asyncRunner, validatorApiChannel),
             new RepeatingTaskScheduler(asyncRunner, services.getTimeProvider()),
             services.getTimeProvider(),
