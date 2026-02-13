@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.store;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.dataproviders.generators.StateAtSlotTask.AsyncStateProvider.fromBlockAndState;
+import static tech.pegasys.teku.dataproviders.generators.StateAtSlotTask.AsyncStateProvider.fromExecutionPayloadAndState;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -381,8 +382,18 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(
       final SlotAndBlockRoot slotAndBlockRoot) {
-    return SafeFuture.completedFuture(
-        getExecutionPayloadStateIfAvailable(slotAndBlockRoot.getBlockRoot()));
+    final SignedExecutionPayloadAndState inMemoryExecutionPayloadAndState =
+        executionPayloadData.get(slotAndBlockRoot.getBlockRoot());
+    if (inMemoryExecutionPayloadAndState != null) {
+      // Not executing the task via the task queue to avoid caching the result before the tx is
+      // committed
+      return new StateAtSlotTask(
+              spec,
+              slotAndBlockRoot,
+              fromExecutionPayloadAndState(inMemoryExecutionPayloadAndState))
+          .performTask();
+    }
+    return store.retrieveExecutionPayloadState(slotAndBlockRoot);
   }
 
   @Override
@@ -432,13 +443,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(
       final SlotAndBlockRoot slotAndBlockRoot) {
-    SignedBlockAndState inMemoryCheckpointBlockState =
-        blockData.get(slotAndBlockRoot.getBlockRoot());
-    if (inMemoryCheckpointBlockState != null) {
+    SignedBlockAndState inMemoryBlockState = blockData.get(slotAndBlockRoot.getBlockRoot());
+    if (inMemoryBlockState != null) {
       // Not executing the task via the task queue to avoid caching the result before the tx is
       // committed
-      return new StateAtSlotTask(
-              spec, slotAndBlockRoot, fromBlockAndState(inMemoryCheckpointBlockState))
+      return new StateAtSlotTask(spec, slotAndBlockRoot, fromBlockAndState(inMemoryBlockState))
           .performTask();
     }
     return store.retrieveBlockState(slotAndBlockRoot);

@@ -400,6 +400,13 @@ public class ForkChoiceUtil {
         signedBlock, postState, blockCheckpoints, blobSidecars, earliestBlobSidecarsSlot);
   }
 
+  public SafeFuture<Optional<BeaconState>> retrievePreStateRequiredOnBlock(
+      final ReadOnlyStore store, final SignedBeaconBlock block) {
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(block.getSlot(), block.getParentRoot());
+    return store.retrieveBlockState(slotAndBlockRoot);
+  }
+
   public void applyExecutionPayloadToStore(
       final MutableStore store,
       final SignedExecutionPayloadEnvelope signedEnvelope,
@@ -410,13 +417,6 @@ public class ForkChoiceUtil {
   private UInt64 getFinalizedCheckpointStartSlot(final ReadOnlyStore store) {
     final UInt64 finalizedEpoch = store.getFinalizedCheckpoint().getEpoch();
     return miscHelpers.computeStartSlotAtEpoch(finalizedEpoch);
-  }
-
-  public SafeFuture<Optional<BeaconState>> retrieveBlockState(
-      final ReadOnlyStore store, final SignedBeaconBlock block) {
-    final SlotAndBlockRoot slotAndBlockRoot =
-        new SlotAndBlockRoot(block.getSlot(), block.getParentRoot());
-    return store.retrieveBlockState(slotAndBlockRoot);
   }
 
   public BlockImportResult checkOnBlockConditions(
