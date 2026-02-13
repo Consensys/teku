@@ -61,6 +61,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -92,6 +93,7 @@ class Store extends CacheableStore {
 
   private final MetricsSystem metricsSystem;
   private Optional<SettableGauge> blockCountGauge = Optional.empty();
+  private Optional<SettableGauge> executionPayloadCountGauge = Optional.empty();
   private Optional<SettableGauge> epochStatesCountGauge = Optional.empty();
   private Optional<SettableGauge> blobSidecarsBlocksCountGauge = Optional.empty();
 
@@ -119,6 +121,7 @@ class Store extends CacheableStore {
   private UInt64 highestVotedValidatorIndex;
   private Optional<UInt64> custodyGroupCount = Optional.empty();
   private final CachingTaskQueue<Bytes32, BeaconState> executionPayloadStates;
+  private final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads;
 
   private UInt64 reorgThreshold = UInt64.ZERO;
   private UInt64 parentThreshold = UInt64.ZERO;
@@ -145,7 +148,8 @@ class Store extends CacheableStore {
       final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> custodyGroupCount,
-      final CachingTaskQueue<Bytes32, BeaconState> executionPayloadStates) {
+      final CachingTaskQueue<Bytes32, BeaconState> executionPayloadStates,
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads) {
     checkArgument(
         time.isGreaterThanOrEqualTo(genesisTime),
         "Time must be greater than or equal to genesisTime");
@@ -198,6 +202,7 @@ class Store extends CacheableStore {
     this.custodyGroupCount = custodyGroupCount;
 
     this.executionPayloadStates = executionPayloadStates;
+    this.executionPayloads = executionPayloads;
   }
 
   private BlockProvider createBlockProviderFromMapWhileLocked(
@@ -256,6 +261,8 @@ class Store extends CacheableStore {
             metricsSystem,
             "memory_execution_payload_states",
             config.getStateCacheSize());
+    final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads =
+        LimitedMap.createSynchronizedNatural(config.getBlockCacheSize());
 
     return new Store(
         metricsSystem,
@@ -279,7 +286,8 @@ class Store extends CacheableStore {
         maybeEpochStates,
         blobSidecars,
         custodyGroupCount,
-        executionPayloadStateTaskQueue);
+        executionPayloadStateTaskQueue,
+        executionPayloads);
   }
 
   static UpdatableStore create(
@@ -422,6 +430,13 @@ class Store extends CacheableStore {
                     "memory_epoch_states_cache_size",
                     "Number of Epoch aligned states held in the in-memory store"));
       }
+      executionPayloadCountGauge =
+          Optional.of(
+              SettableGauge.create(
+                  metricsSystem,
+                  TekuMetricCategory.STORAGE,
+                  "memory_execution_payload_count",
+                  "Number of execution payload envelopes held in the in-memory store"));
       blockStates.startMetrics();
       checkpointStates.startMetrics();
       executionPayloadStates.startMetrics();
@@ -443,6 +458,7 @@ class Store extends CacheableStore {
     checkpointStates.clear();
     blocks.clear();
     executionPayloadStates.clear();
+    executionPayloads.clear();
   }
 
   @Override
@@ -610,6 +626,17 @@ class Store extends CacheableStore {
   }
 
   @Override
+  public Optional<SignedExecutionPayloadEnvelope> getExecutionPayloadIfAvailable(
+      final Bytes32 blockRoot) {
+    readLock.lock();
+    try {
+      return Optional.ofNullable(executionPayloads.get(blockRoot));
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
   public boolean isHeadWeak(final Bytes32 root) {
     final Optional<ProtoNodeData> maybeBlockData = getBlockDataFromForkChoiceStrategy(root);
     return maybeBlockData
@@ -736,6 +763,14 @@ class Store extends CacheableStore {
       final SlotAndBlockRoot slotAndBlockRoot) {
     return checkpointStates.perform(
         new StateAtSlotTask(spec, slotAndBlockRoot, this::retrieveBlockState));
+  }
+
+  @Override
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveSignedExecutionPayload(
+      final Bytes32 blockRoot) {
+    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 we need a logic similar to
+    // blockProvider potentially
+    return SafeFuture.completedFuture(getExecutionPayloadIfAvailable(blockRoot));
   }
 
   @Override
@@ -874,7 +909,14 @@ class Store extends CacheableStore {
   @Override
   void cacheExecutionPayloadAndStates(
       final Map<Bytes32, SignedExecutionPayloadAndState> executionPayloadAndStates) {
-    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 store the execution payload
+    executionPayloadAndStates.values().stream()
+        .sorted(Comparator.comparing(SignedExecutionPayloadAndState::getSlot))
+        .forEach(
+            executionPayloadAndState ->
+                executionPayloads.put(
+                    executionPayloadAndState.getBeaconBlockRoot(),
+                    executionPayloadAndState.executionPayload()));
+    executionPayloadCountGauge.ifPresent(gauge -> gauge.set(executionPayloads.size()));
     executionPayloadStates.cacheAll(
         Maps.transformValues(executionPayloadAndStates, SignedExecutionPayloadAndState::state));
   }
@@ -1132,8 +1174,7 @@ class Store extends CacheableStore {
   }
 
   void removeExecutionPayloadAndState(final Bytes32 blockRoot) {
-    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 remove execution payload when we
-    // implement storing it
+    executionPayloads.remove(blockRoot);
     executionPayloadStates.remove(blockRoot);
   }
 

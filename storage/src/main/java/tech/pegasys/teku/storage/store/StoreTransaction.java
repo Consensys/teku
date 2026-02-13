@@ -454,6 +454,17 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveSignedExecutionPayload(
+      final Bytes32 blockRoot) {
+    if (executionPayloadData.containsKey(blockRoot)) {
+      return SafeFuture.completedFuture(
+          Optional.of(executionPayloadData.get(blockRoot))
+              .map(SignedExecutionPayloadAndState::executionPayload));
+    }
+    return store.retrieveSignedExecutionPayload(blockRoot);
+  }
+
+  @Override
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(final Checkpoint checkpoint) {
     SignedBlockAndState inMemoryCheckpointBlockState = blockData.get(checkpoint.getRoot());
     if (inMemoryCheckpointBlockState != null) {
@@ -525,6 +536,14 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     return Optional.ofNullable(blockData.get(blockRoot))
         .map(SignedBlockAndState::getBlock)
         .or(() -> store.getBlockIfAvailable(blockRoot));
+  }
+
+  @Override
+  public Optional<SignedExecutionPayloadEnvelope> getExecutionPayloadIfAvailable(
+      final Bytes32 blockRoot) {
+    return Optional.ofNullable(executionPayloadData.get(blockRoot))
+        .map(SignedExecutionPayloadAndState::executionPayload)
+        .or(() -> store.getExecutionPayloadIfAvailable(blockRoot));
   }
 
   @Override
