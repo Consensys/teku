@@ -170,13 +170,16 @@ public class PendingRecoveryRequestTest {
       final SafeFuture<DataColumnSidecar> downloadFuture) {
     final DataColumnSlotAndIdentifier id =
         maybeId.orElse(SidecarRetrieverTest.createId(dataStructureUtil.randomBeaconBlock(), 1));
-    return new PendingRecoveryRequest(
-        id,
-        downloadFuture,
-        timeProvider.getTimeInMillis(),
-        RECOVERY_TIMEOUT,
-        DOWNLOAD_TIMEOUT,
-        METRIC,
-        () -> {});
+    final PendingRecoveryRequest pendingRecoveryRequest =
+        new PendingRecoveryRequest(
+            id,
+            downloadFuture,
+            timeProvider.getTimeInMillis(),
+            RECOVERY_TIMEOUT,
+            DOWNLOAD_TIMEOUT,
+            METRIC,
+            () -> {});
+    pendingRecoveryRequest.start();
+    return pendingRecoveryRequest;
   }
 }
