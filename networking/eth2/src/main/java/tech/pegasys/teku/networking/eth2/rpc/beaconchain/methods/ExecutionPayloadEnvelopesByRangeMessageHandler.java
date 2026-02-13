@@ -252,7 +252,6 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
       currentSlot = currentSlot.increment();
     }
 
-    @SuppressWarnings("DuplicateBranches")
     SafeFuture<Optional<SignedExecutionPayloadEnvelope>> loadNextExecutionPayloadEnvelope() {
       final UInt64 slot = this.currentSlot;
       final Bytes32 knownBlockRoot = knownBlockRoots.get(slot);
@@ -272,7 +271,9 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
       } else {
         // TODO-GLOAS: https://github.com/Consensys/teku/issues/9974 implement when we support
         // finalized execution payload lookup
-        return SafeFuture.completedFuture(Optional.empty());
+        return SafeFuture.failedFuture(
+            new UnsupportedOperationException(
+                "Lookup of finalized execution payload envelopes is not implemented yet"));
       }
     }
   }
