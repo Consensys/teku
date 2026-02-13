@@ -306,8 +306,18 @@ jobs:
       - name: Integration Tests
         run: |
           ./gradlew integrationTest
+      - name: Upload JUnit XML + HTML for integration-tests
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: integration-reports-unified
+          path: |
+            **/build/test-results/**/TEST-*.xml
+            **/build/reports/tests/**
+          if-no-files-found: ignore
+          retention-days: 1          
       - name: Test results 
-        uses: ./.github/actions/collate-test-results
+        uses: ./.github/actions/collate-junit-reports
         if: always()        
         with:
           stage_key: 'integration'
