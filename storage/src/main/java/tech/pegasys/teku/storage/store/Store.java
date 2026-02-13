@@ -458,6 +458,7 @@ class Store extends CacheableStore {
     checkpointStates.clear();
     blocks.clear();
     executionPayloadStates.clear();
+    executionPayloads.clear();
   }
 
   @Override

@@ -136,6 +136,11 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
     final RequestState initialState =
         new RequestState(callback, startSlot, count, headSlot, hotRoots);
 
+    if (initialState.isComplete()) {
+      callback.completeSuccessfully();
+      return;
+    }
+
     sendNextExecutionPayloadEnvelope(initialState)
         .finish(
             requestState -> {
