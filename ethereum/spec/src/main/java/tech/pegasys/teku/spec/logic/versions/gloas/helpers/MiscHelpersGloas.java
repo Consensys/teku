@@ -38,6 +38,8 @@ import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntry;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
@@ -67,8 +69,8 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
   public MiscHelpersGloas(
       final SpecConfigGloas specConfig,
       final PredicatesGloas predicates,
-      final SchemaDefinitionsGloas schemaDefinitions) {
-    super(specConfig, predicates, schemaDefinitions);
+      final SchemaDefinitionsGloas schemaDefinitionsGloas) {
+    super(specConfig, predicates, schemaDefinitionsGloas);
     this.predicates = predicates;
     this.specConfigGloas = specConfig;
   }
@@ -168,6 +170,25 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
             builder
                 .beaconBlockRoot(executionPayload.getBeaconBlockRoot())
                 .slot(executionPayload.getSlot()),
+        extendedMatrix);
+  }
+
+  @Override
+  public List<DataColumnSidecar> constructDataColumnSidecars(
+      final Optional<SignedBeaconBlockHeader> maybeSignedBeaconBlockHeader,
+      final SlotAndBlockRoot slotAndBlockRoot,
+      final SszList<SszKZGCommitment> sszKZGCommitments,
+      final Optional<List<Bytes32>> maybeKzgCommitmentsInclusionProof,
+      final List<BlobAndCellProofs> blobAndCellProofsList) {
+    final List<List<MatrixEntry>> extendedMatrix = computeExtendedMatrix(blobAndCellProofsList);
+    if (extendedMatrix.isEmpty()) {
+      return Collections.emptyList();
+    }
+    return constructDataColumnSidecarsInternal(
+        builder ->
+            builder
+                .slot(slotAndBlockRoot.getSlot())
+                .beaconBlockRoot(slotAndBlockRoot.getBlockRoot()),
         extendedMatrix);
   }
 

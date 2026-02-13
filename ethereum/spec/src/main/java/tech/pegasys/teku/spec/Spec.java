@@ -1277,6 +1277,10 @@ public class Spec {
     return getSpecConfigFulu().map(SpecConfigFulu::getDataColumnSidecarSubnetCount);
   }
 
+  public int getNumberOfCustodyGroups(final UInt64 slot) {
+    return SpecConfigFulu.required(atSlot(slot).getConfig()).getNumberOfCustodyGroups();
+  }
+
   public boolean isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
       final ReadOnlyStore store, final UInt64 epoch) {
     if (getSpecConfigFulu().isEmpty()) {

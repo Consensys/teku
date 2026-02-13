@@ -60,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntry;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodyDeneb;
@@ -370,17 +371,18 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   }
 
   public List<DataColumnSidecar> constructDataColumnSidecars(
-      final SignedBeaconBlockHeader signedBeaconBlockHeader,
+      final Optional<SignedBeaconBlockHeader> maybeSignedBeaconBlockHeader,
+      final SlotAndBlockRoot slotAndBlockRoot,
       final SszList<SszKZGCommitment> sszKZGCommitments,
-      final List<Bytes32> kzgCommitmentsInclusionProof,
+      final Optional<List<Bytes32>> maybeKzgCommitmentsInclusionProof,
       final List<BlobAndCellProofs> blobAndCellProofsList) {
     final List<List<MatrixEntry>> extendedMatrix = computeExtendedMatrix(blobAndCellProofsList);
     return constructDataColumnSidecarsInternal(
         builder ->
             builder
                 .kzgCommitments(sszKZGCommitments)
-                .signedBlockHeader(signedBeaconBlockHeader)
-                .kzgCommitmentsInclusionProof(kzgCommitmentsInclusionProof),
+                .signedBlockHeader(maybeSignedBeaconBlockHeader.orElseThrow())
+                .kzgCommitmentsInclusionProof(maybeKzgCommitmentsInclusionProof.orElseThrow()),
         extendedMatrix);
   }
 
