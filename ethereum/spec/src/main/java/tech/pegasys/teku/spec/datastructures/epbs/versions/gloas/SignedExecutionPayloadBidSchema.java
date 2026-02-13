@@ -41,4 +41,8 @@ public class SignedExecutionPayloadBidSchema
   public SignedExecutionPayloadBid createFromBackingNode(final TreeNode node) {
     return new SignedExecutionPayloadBid(this, node);
   }
+
+  public ExecutionPayloadBidSchema getMessageSchema() {
+    return (ExecutionPayloadBidSchema) getChildSchema(0);
+  }
 }
