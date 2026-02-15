@@ -15,4 +15,4 @@
 
 ### Bug Fixes
 
-
+- Changed get proposers api to be compatible with electra dependent roots.

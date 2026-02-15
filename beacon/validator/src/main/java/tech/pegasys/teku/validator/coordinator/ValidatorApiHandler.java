@@ -1034,10 +1034,22 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
           result,
           combinedChainDataClient.isChainHeadOptimistic());
     }
-    final Bytes32 dependentRoot =
-        epoch.isGreaterThanOrEqualTo(spec.getCurrentEpoch(state))
-            ? spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state)
-            : spec.atEpoch(epoch).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
+    final Bytes32 dependentRoot;
+    final UInt64 currentEpoch = spec.getCurrentEpoch(state);
+    if (epoch.isLessThan(currentEpoch)) {
+      dependentRoot = spec.atEpoch(epoch).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
+    } else if (epoch.isGreaterThan(currentEpoch)) {
+      dependentRoot =
+          spec.atEpoch(epoch)
+              .beaconStateAccessors()
+              .getBlockRootAtSlot(state, state.getSlot().decrement());
+    } else {
+      dependentRoot = spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state);
+    }
+    //    final Bytes32 dependentRoot =
+    //        epoch.isGreaterThanOrEqualTo(spec.getCurrentEpoch(state))
+    //            ? spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state)
+    //            : spec.atEpoch(epoch).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
     return new ProposerDuties(
         dependentRoot, result, combinedChainDataClient.isChainHeadOptimistic());
   }

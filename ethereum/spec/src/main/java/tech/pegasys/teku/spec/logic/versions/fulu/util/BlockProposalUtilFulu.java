@@ -20,7 +20,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.versions.phase0.util.BlockProposalUtilPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -40,17 +39,6 @@ public class BlockProposalUtilFulu extends BlockProposalUtilPhase0 {
   @Override
   public int getProposerLookAheadEpochs() {
     return 1;
-  }
-
-  @Override
-  public UInt64 getStateSlotForProposerDuties(final Spec spec, final UInt64 dutiesEpoch) {
-    if (forkEpoch.isPresent()
-        && dutiesEpoch.minusMinZero(1).isGreaterThanOrEqualTo(forkEpoch.get())) {
-      // on fulu boundary we have no context,
-      // but after fulu boundary our dependent root is previous epoch
-      return spec.computeStartSlotAtEpoch(dutiesEpoch.minusMinZero(1));
-    }
-    return super.getStateSlotForProposerDuties(spec, dutiesEpoch);
   }
 
   @Override

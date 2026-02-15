@@ -17,6 +17,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
 import java.util.function.Function;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
@@ -38,7 +40,7 @@ import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class BlockProposalUtilPhase0 implements BlockProposalUtil {
-
+  private static final Logger LOG = LogManager.getLogger();
   private final BlockProcessor blockProcessor;
   private final SchemaDefinitions schemaDefinitions;
 
@@ -70,7 +72,9 @@ public class BlockProposalUtilPhase0 implements BlockProposalUtil {
 
   @Override
   public UInt64 getStateSlotForProposerDuties(final Spec spec, final UInt64 dutiesEpoch) {
-    return spec.computeStartSlotAtEpoch(dutiesEpoch);
+    final UInt64 querySlot = spec.computeStartSlotAtEpoch(dutiesEpoch);
+    LOG.debug("State slot for proposer duties for epoch {}, state slot {}", dutiesEpoch, querySlot);
+    return querySlot;
   }
 
   @Override
