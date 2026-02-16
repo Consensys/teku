@@ -26,14 +26,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.util.SuperNodeSupplier;
 
-/**
- * Integration test that verifies the super node supplier logic correctly combines P2P config flags
- * and custody group count to determine if gossip should be enabled during optimistic sync.
- *
- * <p>This test uses the EXACT same supplier logic as BeaconChainController (lines 1922-1932) to
- * ensure we're testing the actual production code path, not a duplicate implementation.
- */
-public class SuperNodeSupplierIntegrationTest {
+public class SuperNodeSupplierTest {
 
   Spec spec;
   SuperNodeSupplier isSuperNodeSupplier;
