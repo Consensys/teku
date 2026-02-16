@@ -17,11 +17,12 @@ import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
-public class Phase0TimeBasedEventAdapter extends TimeBasedEventAdapter {
+public class AltairTimeBasedEventAdapter extends TimeBasedEventAdapter {
 
-  public Phase0TimeBasedEventAdapter(
+  public AltairTimeBasedEventAdapter(
       final GenesisDataProvider genesisDataProvider,
       final RepeatingTaskScheduler taskScheduler,
       final TimeProvider timeProvider,
@@ -49,6 +50,10 @@ public class Phase0TimeBasedEventAdapter extends TimeBasedEventAdapter {
         UInt64.valueOf(spec.getAttestationDueMillis(currentSlot));
     final UInt64 aggregationDueSlotTimeOffset =
         UInt64.valueOf(spec.getAggregateDueMillis(currentSlot));
+    final UInt64 syncCommitteeDueSlotTimeOffset =
+        UInt64.valueOf(spec.getSyncMessageDueMillis(currentSlot));
+    final UInt64 contributionDueSlotTimeOffset =
+        UInt64.valueOf(spec.getContributionDueMillis(currentSlot));
 
     scheduleDuty(
         nextSlotStartTimeMillis,
@@ -60,5 +65,21 @@ public class Phase0TimeBasedEventAdapter extends TimeBasedEventAdapter {
         millisPerSlot,
         aggregationDueSlotTimeOffset,
         this::onAggregationDue);
+
+    final UInt64 firstAltairSlot =
+        spec.computeStartSlotAtEpoch(
+            spec.getForkSchedule().getFork(SpecMilestone.ALTAIR).getEpoch());
+    final UInt64 altairStartTimeMillis = getSlotStartTimeMillis(firstAltairSlot);
+    final UInt64 altairDutiesStartMillis = altairStartTimeMillis.max(nextSlotStartTimeMillis);
+    scheduleDuty(
+        altairDutiesStartMillis,
+        millisPerSlot,
+        syncCommitteeDueSlotTimeOffset,
+        this::onSyncCommitteeCreationDue);
+    scheduleDuty(
+        altairDutiesStartMillis,
+        millisPerSlot,
+        contributionDueSlotTimeOffset,
+        this::onContributionCreationDue);
   }
 }

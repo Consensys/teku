@@ -235,11 +235,13 @@ class GloasBasedEventAdapterTest {
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel).onSlot(UInt64.valueOf(7));
     verify(validatorTimingChannel, times(1)).onAttestationCreationDue(UInt64.valueOf(7));
+    verify(validatorTimingChannel, times(1)).onSyncCommitteeCreationDue(UInt64.valueOf(7));
 
     // Advance to slot 7 + 2/3
     timeProvider.advanceTimeByMillis(2000);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(UInt64.valueOf(7));
+    verify(validatorTimingChannel, times(1)).onContributionCreationDue(UInt64.valueOf(7));
     verify(validatorTimingChannel, never()).onPayloadAttestationCreationDue(UInt64.valueOf(7));
 
     // --- Post-Gloas slot 8: fork boundary! Duties at 1/4, 2/4, 3/4 timing ---
@@ -253,15 +255,17 @@ class GloasBasedEventAdapterTest {
     verify(validatorTimingChannel, never()).onAttestationAggregationDue(UInt64.valueOf(8));
     verify(validatorTimingChannel, never()).onPayloadAttestationCreationDue(UInt64.valueOf(8));
 
-    // Advance to slot 8 + 1/4  - Gloas attestation timing
+    // Advance to slot 8 + 1/4  - Gloas attestation + sync committee timing
     timeProvider.advanceTimeByMillis(1500);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, times(1)).onAttestationCreationDue(UInt64.valueOf(8));
+    verify(validatorTimingChannel, times(1)).onSyncCommitteeCreationDue(UInt64.valueOf(8));
 
-    // Advance to slot 8 + 2/4 - Gloas aggregation timing
+    // Advance to slot 8 + 2/4 - Gloas aggregation + contribution timing
     timeProvider.advanceTimeByMillis(1500);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(UInt64.valueOf(8));
+    verify(validatorTimingChannel, times(1)).onContributionCreationDue(UInt64.valueOf(8));
 
     // Advance to slot 8 + 3/4 - payload attestation (new in Gloas)
     timeProvider.advanceTimeByMillis(1500);
