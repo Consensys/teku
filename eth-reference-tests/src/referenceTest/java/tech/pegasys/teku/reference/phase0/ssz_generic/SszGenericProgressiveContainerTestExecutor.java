@@ -31,17 +31,13 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszProgressiveContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.reference.TestDataUtils;
-import tech.pegasys.teku.reference.phase0.ssz_generic.containers.BitsStructSchema;
-import tech.pegasys.teku.reference.phase0.ssz_generic.containers.ComplexTestStructSchema;
-import tech.pegasys.teku.reference.phase0.ssz_generic.containers.FixedTestStructSchema;
-import tech.pegasys.teku.reference.phase0.ssz_generic.containers.ProgressiveTestStructSchema;
-import tech.pegasys.teku.reference.phase0.ssz_generic.containers.SingleFieldTestStructSchema;
-import tech.pegasys.teku.reference.phase0.ssz_generic.containers.SmallTestStructSchema;
-import tech.pegasys.teku.reference.phase0.ssz_generic.containers.VarTestStructSchema;
 
-public class SszGenericContainerTestExecutor extends AbstractSszGenericTestExecutor {
+public class SszGenericProgressiveContainerTestExecutor extends AbstractSszGenericTestExecutor {
 
   @Override
   protected void assertValueCorrect(final TestDefinition testDefinition, final SszData result)
@@ -66,18 +62,32 @@ public class SszGenericContainerTestExecutor extends AbstractSszGenericTestExecu
     final String testName = testDefinition.getTestName();
     final String type = testName.substring(testName.indexOf('/') + 1, testName.indexOf('_'));
     return switch (type) {
-      case "SingleFieldTestStruct" -> new SingleFieldTestStructSchema();
-      case "BitsStruct" -> new BitsStructSchema();
-      case "SmallTestStruct" -> new SmallTestStructSchema();
-      case "VarTestStruct" -> new VarTestStructSchema();
-      case "FixedTestStruct" -> new FixedTestStructSchema();
-      case "ComplexTestStruct" -> // Not implemented yet
-          new ComplexTestStructSchema();
-      case "ProgressiveTestStruct" -> new ProgressiveTestStructSchema();
-      case "ProgressiveBitsStruct" ->
+      case "ProgressiveSingleFieldContainerTestStruct" ->
+          // active_fields=[1], A: byte
+          new SszProgressiveContainerSchema<>(
+              "ProgressiveSingleFieldContainerTestStruct",
+              new boolean[] {true},
+              NamedSchema.of("A", SszPrimitiveSchemas.BYTE_SCHEMA));
+      case "ProgressiveSingleListContainerTestStruct" ->
+          // active_fields=[0, 0, 0, 0, 1], C: ProgressiveBitlist
+          // ProgressiveBitlist not implemented yet
           throw new TestAbortedException(
-              "ProgressiveBitsStruct type not supported: " + testDefinition.getTestName());
-      default -> throw new UnsupportedOperationException("Unsupported container type: " + type);
+              "ProgressiveSingleListContainerTestStruct requires ProgressiveBitlist: "
+                  + testDefinition.getTestName());
+      case "ProgressiveVarTestStruct" ->
+          // active_fields=[1, 0, 1, 0, 1], A: byte, B: List[uint16, 123], C: ProgressiveBitlist
+          // ProgressiveBitlist not implemented yet
+          throw new TestAbortedException(
+              "ProgressiveVarTestStruct requires ProgressiveBitlist: "
+                  + testDefinition.getTestName());
+      case "ProgressiveComplexTestStruct" ->
+          // Uses ProgressiveBitlist not implemented yet
+          throw new TestAbortedException(
+              "ProgressiveComplexTestStruct requires ProgressiveBitlist: "
+                  + testDefinition.getTestName());
+      default ->
+          throw new UnsupportedOperationException(
+              "Unsupported progressive container type: " + type);
     };
   }
 

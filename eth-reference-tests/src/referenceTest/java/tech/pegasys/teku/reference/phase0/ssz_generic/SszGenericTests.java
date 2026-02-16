@@ -21,14 +21,16 @@ public class SszGenericTests {
   public static final ImmutableMap<String, TestExecutor> SSZ_GENERIC_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           // SSZ Generic
-          .put("ssz_generic/basic_progressive_list", TestExecutor.IGNORE_TESTS)
+          .put("ssz_generic/basic_progressive_list", new SszGenericProgressiveListTestExecutor())
           .put("ssz_generic/basic_vector", new SszGenericBasicVectorTestExecutor())
           .put("ssz_generic/bitlist", new SszGenericBitlistTestExecutor())
           .put("ssz_generic/bitvector", new SszGenericBitvectorTestExecutor())
           .put("ssz_generic/boolean", new SszGenericBooleanTestExecutor())
           .put("ssz_generic/containers", new SszGenericContainerTestExecutor())
           .put("ssz_generic/progressive_bitlist", TestExecutor.IGNORE_TESTS)
-          .put("ssz_generic/progressive_containers", TestExecutor.IGNORE_TESTS)
+          .put(
+              "ssz_generic/progressive_containers",
+              new SszGenericProgressiveContainerTestExecutor())
           .put("ssz_generic/compatible_unions", TestExecutor.IGNORE_TESTS)
           .put("ssz_generic/uints", new SszGenericUIntTestExecutor())
           .build();
