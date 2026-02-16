@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -48,7 +48,7 @@ class ForkAwareBasedEventAdapterTest {
       new RepeatingTaskScheduler(asyncRunner, timeProvider);
 
   @Test
-  void shouldScheduleEip7732EventWhenEip7732IsScheduled() {
+  void shouldScheduleGloasEventWhenGloasIsScheduled() {
     final ForkAwareTimeBasedEventAdapter eventAdapter =
         new ForkAwareTimeBasedEventAdapter(
             genesisDataProvider,
@@ -84,7 +84,7 @@ class ForkAwareBasedEventAdapterTest {
   }
 
   @Test
-  void shouldNotScheduleEip7732EventWhenEip7732IsNotScheduled() {
+  void shouldNotScheduleGloasEventWhenGloasIsNotScheduled() {
     final ForkAwareTimeBasedEventAdapter eventAdapter =
         new ForkAwareTimeBasedEventAdapter(
             genesisDataProvider,
@@ -106,7 +106,7 @@ class ForkAwareBasedEventAdapterTest {
     asyncRunner.executeDueActionsRepeatedly();
     verifyNoMoreInteractions(validatorTimingChannel);
 
-    // Payload attestation should not be scheduled pre-EIP7732
+    // Payload attestation should not be scheduled pre-GLOAS
     timeProvider.advanceTimeBySeconds(timeUntilNextSlot);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, never())
