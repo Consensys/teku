@@ -14,17 +14,31 @@
 package tech.pegasys.teku.spec.logic.versions.fulu.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class BlockProposalUtilFuluTest {
+  private static final Logger LOG = LogManager.getLogger();
+  private final Spec spec = TestSpecFactory.createMinimalFulu();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
+  private final Bytes32 previousTargetRoot = dataStructureUtil.randomBytes32();
+  private final Bytes32 currentTargetRoot = dataStructureUtil.randomBytes32();
+  private final Bytes32 headBlockRoot = dataStructureUtil.randomBytes32();
+
+  //  private final UInt64 headEpoch = dataStructureUtil.randomEpoch();
+
   public static Stream<Arguments> getStateSlotForProposerDutiesTestCases() {
     // | EPOCH | START SLOT | END SLOT |
     // |   0   |       0    |     7    |
@@ -35,16 +49,110 @@ class BlockProposalUtilFuluTest {
         Arguments.of(0, 0), Arguments.of(1, 0), Arguments.of(2, 8), Arguments.of(3, 16));
   }
 
+  enum ExpectedResult {
+    PREVIOUS,
+    CURRENT,
+    HEAD,
+    FAILURE
+  }
+
   @ParameterizedTest
   @MethodSource("getStateSlotForProposerDutiesTestCases")
   public void getStateSlotForProposerDuties(final int requestedEpoch, final int expectedSlot) {
-    final Spec localSpec = TestSpecFactory.createMinimal(SpecMilestone.FULU);
     final UInt64 querySlot =
-        localSpec
-            .getGenesisSpec()
+        spec.getGenesisSpec()
             .getBlockProposalUtil()
-            .getStateSlotForProposerDuties(localSpec, UInt64.valueOf(requestedEpoch));
+            .getStateSlotForProposerDuties(spec, UInt64.valueOf(requestedEpoch));
 
     assertThat(querySlot.intValue()).isEqualTo(expectedSlot);
+  }
+
+  public static Stream<Arguments> blockProposalDependentRootTestCases() {
+    return Stream.of(
+        Arguments.of(1, 3, ExpectedResult.HEAD),
+        Arguments.of(1, 2, ExpectedResult.CURRENT),
+        Arguments.of(1, 1, ExpectedResult.PREVIOUS),
+        Arguments.of(1, 0, ExpectedResult.FAILURE));
+  }
+
+  @ParameterizedTest
+  @MethodSource("blockProposalDependentRootTestCases")
+  public void getBlockProposalDependentRoot(
+      final int headEpochInt, final int dutiesEpochInt, final ExpectedResult expectedResult) {
+    final UInt64 headEpoch = UInt64.valueOf(headEpochInt);
+    final UInt64 dutiesEpoch = UInt64.valueOf(dutiesEpochInt);
+    LOG.debug(
+        "HEAD: {}, CURRENT: {}, PREVIOUS: {}",
+        headBlockRoot,
+        currentTargetRoot,
+        previousTargetRoot);
+
+    if (expectedResult == ExpectedResult.FAILURE) {
+      assertThatThrownBy(
+              () ->
+                  spec.getGenesisSpec()
+                      .getBlockProposalUtil()
+                      .getBlockProposalDependentRoot(
+                          headBlockRoot,
+                          previousTargetRoot,
+                          currentTargetRoot,
+                          headEpoch,
+                          dutiesEpoch))
+          .hasMessageContaining("Attempting to calculate dependent root");
+    } else {
+      Bytes32 expected = Bytes32.ZERO;
+      switch (expectedResult) {
+        case PREVIOUS -> expected = previousTargetRoot;
+        case CURRENT -> expected = currentTargetRoot;
+        case HEAD -> expected = headBlockRoot;
+        case FAILURE -> expected = Bytes32.ZERO;
+      }
+      LOG.debug("Expected: {}", expected);
+      assertThat(
+              spec.getGenesisSpec()
+                  .getBlockProposalUtil()
+                  .getBlockProposalDependentRoot(
+                      headBlockRoot, previousTargetRoot, currentTargetRoot, headEpoch, dutiesEpoch))
+          .isEqualTo(expected);
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("blockProposalDependentRootTestCases")
+  public void getBlockProposalDependentRoot_fallthrough(
+      final int headEpochInt, final int dutiesEpochInt, final ExpectedResult expectedResult) {
+    final UInt64 headEpoch = UInt64.valueOf(headEpochInt);
+    final UInt64 dutiesEpoch = UInt64.valueOf(dutiesEpochInt);
+    final Spec localSpec = TestSpecFactory.createMinimalWithFuluForkEpoch(UInt64.valueOf(100));
+
+    LOG.debug(
+        "HEAD: {}, CURRENT: {}, PREVIOUS: {}",
+        headBlockRoot,
+        currentTargetRoot,
+        previousTargetRoot);
+
+    final Bytes32 expected = headEpoch.equals(dutiesEpoch) ? currentTargetRoot : headBlockRoot;
+    if (expectedResult == ExpectedResult.FAILURE) {
+      assertThatThrownBy(
+              () ->
+                  localSpec
+                      .getGenesisSpec()
+                      .getBlockProposalUtil()
+                      .getBlockProposalDependentRoot(
+                          headBlockRoot,
+                          previousTargetRoot,
+                          currentTargetRoot,
+                          headEpoch,
+                          dutiesEpoch))
+          .hasMessageContaining("Attempting to calculate dependent root");
+    } else {
+      assertThat(
+              localSpec
+                  .getGenesisSpec()
+                  .getBlockProposalUtil()
+                  .getBlockProposalDependentRoot(
+                      headBlockRoot, previousTargetRoot, currentTargetRoot, headEpoch, dutiesEpoch))
+          .isEqualTo(expected);
+    }
   }
 }
