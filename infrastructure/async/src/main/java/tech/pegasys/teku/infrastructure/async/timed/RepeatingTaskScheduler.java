@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2026
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,9 +14,11 @@
 package tech.pegasys.teku.infrastructure.async.timed;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+import static com.google.common.base.Preconditions.checkState;
 
+import java.text.MessageFormat;
 import java.time.Duration;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -44,40 +46,59 @@ public class RepeatingTaskScheduler {
    * actual time is provided when the task is executed. Tasks should use that information to skip
    * unnecessary work when events are delayed to allow the system to catch up.
    *
-   * @param initialInvocationTime the time in epoch that the task should first be executed.
-   * @param repeatingPeriod the period after the previous execution was due that the next execution
-   *     should occur
-   * @param useMillis use millis instead of seconds
-   * @param task the task to execute. If useMillis is true, then {@link RepeatingTask#execute} will
-   *     use epoch millis instead of epoch seconds.
+   * @param initialInvocationTimeMillis the time in epoch that the task should first be executed.
+   * @param repeatingPeriodMillis the period after the previous execution was due that the next
+   *     execution should occur
+   * @param task the task to execute
    */
-  private void scheduleRepeatingEvent(
-      final UInt64 initialInvocationTime,
-      final UInt64 repeatingPeriod,
-      final boolean useMillis,
-      final RepeatingTask task) {
-    scheduleEvent(new TimedEvent(initialInvocationTime, repeatingPeriod, useMillis, task));
-  }
-
-  public void scheduleRepeatingEvent(
-      final UInt64 initialInvocationTime, final UInt64 repeatingPeriod, final RepeatingTask task) {
-    scheduleRepeatingEvent(initialInvocationTime, repeatingPeriod, false, task);
+  private void scheduleRepeatingEventEventInMillis(
+      final UInt64 initialInvocationTimeMillis,
+      final UInt64 repeatingPeriodMillis,
+      final RepeatingTask task,
+      final Optional<UInt64> expirationMillis,
+      final Optional<ExpirationTask> expirationAction) {
+    scheduleEvent(
+        new TimedEvent(
+            initialInvocationTimeMillis,
+            repeatingPeriodMillis,
+            task,
+            expirationMillis,
+            expirationAction));
   }
 
   public void scheduleRepeatingEventInMillis(
       final UInt64 initialInvocationTime, final UInt64 repeatingPeriod, final RepeatingTask task) {
-    scheduleRepeatingEvent(initialInvocationTime, repeatingPeriod, true, task);
+    scheduleRepeatingEventEventInMillis(
+        initialInvocationTime, repeatingPeriod, task, Optional.empty(), Optional.empty());
+  }
+
+  public void scheduleRepeatingEventInMillis(
+      final UInt64 initialInvocationTime,
+      final UInt64 repeatingPeriod,
+      final RepeatingTask task,
+      final UInt64 expirationTime,
+      final ExpirationTask expirationTask) {
+    scheduleRepeatingEventEventInMillis(
+        initialInvocationTime,
+        repeatingPeriod,
+        task,
+        Optional.of(expirationTime),
+        Optional.of(expirationTask));
   }
 
   private void scheduleEvent(final TimedEvent event) {
     UInt64 nowMs = timeProvider.getTimeInMillis();
-    UInt64 dueMs = getDueMs(event);
+    UInt64 dueMs = event.getNextDueMs();
     // First execute any already due executions
     while (nowMs.isGreaterThanOrEqualTo(dueMs)) {
       executeEvent(event);
+      if (event.isExpired) {
+        expireEvent(event);
+        return;
+      }
       // Update both now and due in case another repeat because due while we were executing
       nowMs = timeProvider.getTimeInMillis();
-      dueMs = getDueMs(event);
+      dueMs = event.getNextDueMs();
     }
     asyncRunner
         .runAfterDelay(
@@ -93,13 +114,9 @@ public class RepeatingTaskScheduler {
             });
   }
 
-  private UInt64 getDueMs(final TimedEvent event) {
-    return event.useMillis ? event.getNextDue() : secondsToMillis(event.getNextDue());
-  }
-
   private void executeEvent(final TimedEvent event) {
     try {
-      UInt64 actualTime = getActualTime(event);
+      final UInt64 actualTime = getActualTime();
       event.execute(actualTime);
     } catch (final Throwable t) {
       Thread.currentThread()
@@ -108,37 +125,59 @@ public class RepeatingTaskScheduler {
     }
   }
 
-  private UInt64 getActualTime(final TimedEvent event) {
-    return event.useMillis ? timeProvider.getTimeInMillis() : timeProvider.getTimeInSeconds();
+  private void expireEvent(final TimedEvent event) {
+    try {
+      final UInt64 actualTime = getActualTime();
+      event.expire(actualTime);
+    } catch (final Throwable t) {
+      Thread.currentThread()
+          .getUncaughtExceptionHandler()
+          .uncaughtException(Thread.currentThread(), t);
+    }
+  }
+
+  private UInt64 getActualTime() {
+    return timeProvider.getTimeInMillis();
   }
 
   private static class TimedEvent {
     private UInt64 nextDue;
+    private boolean isExpired;
     private final UInt64 repeatPeriod;
-    private final boolean useMillis;
     private final RepeatingTask action;
+    private final Optional<UInt64> expiration;
+    private final Optional<ExpirationTask> expirationAction;
 
     private TimedEvent(
         final UInt64 nextDue,
         final UInt64 repeatPeriod,
-        final boolean useMillis,
-        final RepeatingTask action) {
+        final RepeatingTask action,
+        final Optional<UInt64> expiration,
+        final Optional<ExpirationTask> expirationAction) {
+      checkArgument(
+          expiration.isPresent() == expirationAction.isPresent(),
+          "expiration and expirationAction must be both specified");
       this.nextDue = nextDue;
+      this.isExpired = false;
       this.repeatPeriod = repeatPeriod;
-      this.useMillis = useMillis;
       this.action = action;
+      this.expiration = expiration;
+      this.expirationAction = expirationAction;
     }
 
-    public UInt64 getNextDue() {
+    public UInt64 getNextDueMs() {
       return nextDue;
     }
 
     public void execute(final UInt64 actualTime) {
       checkArgument(
           actualTime.isGreaterThanOrEqualTo(nextDue),
-          "Executing task before it is due. Scheduled %s currently %s",
-          nextDue,
-          actualTime);
+          MessageFormat.format(
+              "Executing task before it is due. Scheduled {0} currently {1}", nextDue, actualTime));
+      checkState(
+          !isExpired,
+          MessageFormat.format(
+              "Executing expired task. Expiration {0} currently {1}", expiration, actualTime));
       try {
         action.execute(nextDue, actualTime);
       } finally {
@@ -146,12 +185,25 @@ public class RepeatingTaskScheduler {
       }
     }
 
+    public void expire(final UInt64 actualTime) {
+      checkArgument(
+          isExpired,
+          MessageFormat.format(
+              "Task is not expired. Expiration {0} currently {1}", expiration, actualTime));
+      expirationAction.orElseThrow().execute(expiration.orElseThrow(), actualTime);
+    }
+
     public void moveToNextScheduledTime() {
       nextDue = nextDue.plus(repeatPeriod);
+      expiration.ifPresent(exp -> isExpired = exp.isLessThan(nextDue));
     }
   }
 
   public interface RepeatingTask {
     void execute(UInt64 scheduledTime, UInt64 actualTime);
+  }
+
+  public interface ExpirationTask {
+    void execute(UInt64 expirationTime, UInt64 actualTime);
   }
 }
