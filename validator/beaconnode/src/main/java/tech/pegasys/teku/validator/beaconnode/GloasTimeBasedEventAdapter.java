@@ -43,8 +43,7 @@ public class GloasTimeBasedEventAdapter extends TimeBasedEventAdapter {
     //       if seconds_per_slot ever changes, timers would have to be updated, which isn't
     //       currently implemented.
 
-    final UInt64 nextSlotStartTimeMillis =
-        spec.computeTimeMillisAtSlot(currentSlot.increment(), genesisTime);
+    final UInt64 nextSlotStartTimeMillis = getSlotStartTimeMillis(currentSlot.increment());
     final UInt64 millisPerSlot = getMillisPerSlot(currentSlot);
     taskScheduler.scheduleRepeatingEventInMillis(
         nextSlotStartTimeMillis, millisPerSlot, this::onStartSlot);
@@ -72,7 +71,7 @@ public class GloasTimeBasedEventAdapter extends TimeBasedEventAdapter {
 
     // otherwise we should start and schedule expiration for phase0 duties first
     // and start Gloas duties only when Gloas is started
-    final UInt64 gloasStartTimeMillis = spec.computeTimeMillisAtSlot(firstGloasSlot, genesisTime);
+    final UInt64 gloasStartTimeMillis = getSlotStartTimeMillis(firstGloasSlot);
 
     final UInt64 attestationDueSlotTimeOffset =
         UInt64.valueOf(spec.getAttestationDueMillis(currentSlot));

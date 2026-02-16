@@ -40,7 +40,7 @@ class GloasBasedEventAdapterTest {
   private final ValidatorTimingChannel validatorTimingChannel = mock(ValidatorTimingChannel.class);
 
   final int millisPerSlot = spec.getGenesisSpecConfig().getSlotDurationMillis();
-  final int secondsPerSlot = millisPerSlot * 1000;
+  final int secondsPerSlot = millisPerSlot / 1000;
 
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);

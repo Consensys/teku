@@ -76,7 +76,7 @@ public abstract class TimeBasedEventAdapter implements BeaconChainEventAdapter {
   }
 
   void onStartSlot(final UInt64 scheduledTimeMillis, final UInt64 actualTimeMillis) {
-    final UInt64 slot = spec.getCurrentSlot(scheduledTimeMillis, genesisTimeMillis);
+    final UInt64 slot = getCurrentSlotForMillis(scheduledTimeMillis);
     if (isTooLateInMillis(scheduledTimeMillis, actualTimeMillis)) {
       LOG.warn(
           "Skipping block creation for slot {} due to unexpected delay in slot processing", slot);
@@ -117,6 +117,10 @@ public abstract class TimeBasedEventAdapter implements BeaconChainEventAdapter {
 
   UInt64 getMillisPerSlot(final UInt64 slot) {
     return UInt64.valueOf(spec.atSlot(slot).getConfig().getSlotDurationMillis());
+  }
+
+  UInt64 getSlotStartTimeMillis(final UInt64 slot) {
+    return spec.computeTimeMillisAtSlot(slot, genesisTimeMillis);
   }
 
   @Override
