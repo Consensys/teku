@@ -1034,10 +1034,18 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
           result,
           combinedChainDataClient.isChainHeadOptimistic());
     }
+    final UInt64 currentEpoch = spec.getCurrentEpoch(state);
+    final boolean greaterThanCurrentEpoch = epoch.isGreaterThan(currentEpoch);
     final Bytes32 dependentRoot =
-        epoch.isGreaterThanOrEqualTo(spec.getCurrentEpoch(state))
+        greaterThanCurrentEpoch
             ? spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state)
             : spec.atEpoch(epoch).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
+    LOG.trace(
+        "state epoch {}, duties epoch {}, greaterThanCurrentEpoch {}, dependentRoot {}",
+        currentEpoch,
+        epoch,
+        greaterThanCurrentEpoch,
+        dependentRoot);
     return new ProposerDuties(
         dependentRoot, result, combinedChainDataClient.isChainHeadOptimistic());
   }
