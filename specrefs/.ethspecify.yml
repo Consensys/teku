@@ -273,12 +273,9 @@ specrefs:
       - recover_matrix#fulu
 
       # Not implemented: gloas
-      - get_aggregate_due_ms#gloas
       - get_ancestor#gloas
-      - get_attestation_due_ms#gloas
       - get_attestation_participation_flag_indices#gloas
       - get_checkpoint_block#gloas
-      - get_contribution_due_ms#gloas
       - get_data_column_sidecars#gloas
       - get_data_column_sidecars_from_block#gloas
       - get_data_column_sidecars_from_column_sidecar#gloas
@@ -291,7 +288,6 @@ specrefs:
       - get_payload_attestation_message_signature#gloas
       - get_payload_status_tiebreaker#gloas
       - get_ptc_assignment#gloas
-      - get_sync_message_due_ms#gloas
       - get_weight#gloas
       - is_merge_transition_complete#gloas
       - is_payload_timely#gloas
@@ -309,7 +305,6 @@ specrefs:
       - update_latest_messages#gloas
       - validate_merge_block#gloas
       - validate_on_attestation#gloas
-      - verify_data_column_sidecar#gloas
       - get_attestation_score#gloas
       - get_proposer_preferences_signature#gloas
       - get_upcoming_proposal_slots#gloas
@@ -322,4 +317,3 @@ specrefs:
       - should_apply_proposer_boost#gloas
       - update_proposer_boost_root#gloas
       - is_data_available#gloas
-      - verify_data_column_sidecar_kzg_proofs#gloas
