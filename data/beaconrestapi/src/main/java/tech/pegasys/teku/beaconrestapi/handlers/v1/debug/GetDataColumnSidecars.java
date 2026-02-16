@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.debug;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.DATA_COLUMN_INDICES_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getMultipleSchemaDefinitionFromMilestone;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_CONSENSUS_HEADER_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -26,13 +27,14 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
@@ -45,7 +47,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.metadata.DataColumnSidecarsAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class GetDataColumnSidecars extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/debug/beacon/data_column_sidecars/{block_id}";
@@ -109,11 +110,13 @@ public class GetDataColumnSidecars extends RestApiEndpoint {
   }
 
   private static SerializableTypeDefinition<DataColumnSidecarsAndMetaData> getResponseType(
-      final SchemaDefinitionCache schemaCache) {
-    final DeserializableTypeDefinition<DataColumnSidecar> dataColumnSidecarType =
-        SchemaDefinitionsFulu.required(schemaCache.getSchemaDefinition(SpecMilestone.FULU))
-            .getDataColumnSidecarSchema()
-            .getJsonTypeDefinition();
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    final List<MilestoneDependentTypesUtil.ConditionalSchemaGetter<DataColumnSidecar>>
+        schemaGetters = generateDataColumnSidecarSchemaGetters(schemaDefinitionCache);
+
+    final SerializableTypeDefinition<DataColumnSidecar> dataColumnSidecarType =
+        getMultipleSchemaDefinitionFromMilestone(
+            schemaDefinitionCache, "DataColumnSidecar", schemaGetters);
     return SerializableTypeDefinition.<DataColumnSidecarsAndMetaData>object()
         .name("GetDataColumnSidecarsResponse")
         .withField("version", MILESTONE_TYPE, DataColumnSidecarsAndMetaData::getMilestone)
@@ -132,5 +135,31 @@ public class GetDataColumnSidecars extends RestApiEndpoint {
             (data, out) -> data.forEach(dataColumnSidecar -> dataColumnSidecar.sszSerialize(out));
 
     return new OctetStreamResponseContentTypeDefinition<>(serializer, __ -> Collections.emptyMap());
+  }
+
+  private static List<MilestoneDependentTypesUtil.ConditionalSchemaGetter<DataColumnSidecar>>
+      generateDataColumnSidecarSchemaGetters(final SchemaDefinitionCache schemaDefinitionCache) {
+    final List<MilestoneDependentTypesUtil.ConditionalSchemaGetter<DataColumnSidecar>>
+        schemaGetterList = new ArrayList<>();
+    schemaGetterList.add(
+        new MilestoneDependentTypesUtil.ConditionalSchemaGetter<>(
+            (dataColumnSidecar, milestone) ->
+                schemaDefinitionCache
+                    .milestoneAtSlot(dataColumnSidecar.getSlot())
+                    .equals(milestone),
+            SpecMilestone.FULU,
+            schemaDefinitions ->
+                schemaDefinitions.toVersionFulu().orElseThrow().getDataColumnSidecarSchema()));
+
+    schemaGetterList.add(
+        new MilestoneDependentTypesUtil.ConditionalSchemaGetter<>(
+            (dataColumnSidecar, milestone) ->
+                schemaDefinitionCache
+                    .milestoneAtSlot(dataColumnSidecar.getSlot())
+                    .equals(milestone),
+            SpecMilestone.GLOAS,
+            schemaDefinitions ->
+                schemaDefinitions.toVersionGloas().orElseThrow().getDataColumnSidecarSchema()));
+    return schemaGetterList;
   }
 }
