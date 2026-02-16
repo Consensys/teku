@@ -136,7 +136,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       case V6 -> {
         database = createV6Database();
         LOG.info(
-            "Created V6 Hot and Finalized database ({}) at {}",
+            "Created V6 Hot and Finalized database (using RocksDB) ({}) at {} ",
             dbVersion.getValue(),
             dbDirectory.getAbsolutePath());
       }
