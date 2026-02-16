@@ -55,6 +55,11 @@ public class ExecutionPayloadSelectorFactory
 
   // TODO-GLOAS: http://github.com/Consensys/teku/issues/9997
   @Override
+  public ExecutionPayloadSelector genesisSelector() {
+    throw new UnsupportedOperationException("Not yet implemented");
+  }
+
+  @Override
   public ExecutionPayloadSelector finalizedSelector() {
     throw new UnsupportedOperationException("Not yet implemented");
   }
