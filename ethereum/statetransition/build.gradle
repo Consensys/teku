@@ -39,6 +39,7 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:kzg'))
   testImplementation testFixtures(project(':storage'))
   testImplementation testFixtures(project(':infrastructure:logging'))
+  testImplementation testFixtures(project(':networking:eth2'))
 
   testFixturesApi testFixtures(project(':infrastructure:bls'))
   testFixturesApi testFixtures(project(':storage'))
