@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -212,15 +213,15 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
   @Override
   public SafeFuture<Optional<SszList<SszKZGCommitment>>> getKzgCommitments(
       final DataColumnSidecar dataColumnSidecar,
-      final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
-    return retrieveBlockByRoot
+      final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot) {
+    return retrieveSignedBlockByRoot
         .apply(dataColumnSidecar.getBeaconBlockRoot())
         .thenCompose(
             maybeBeaconBlock -> {
               if (maybeBeaconBlock.isEmpty()) {
                 return SafeFuture.completedFuture(Optional.empty());
               }
-              return getKzgCommitments(maybeBeaconBlock.get());
+              return getKzgCommitments(maybeBeaconBlock.get().getMessage());
             });
   }
 

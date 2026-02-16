@@ -42,7 +42,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntry;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
@@ -53,7 +53,7 @@ public class BlobReconstructionAbstractTest {
   protected final Spec spec = TestSpecFactory.createMinimalFulu();
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   protected static final String VALID_BLOBS_AND_CELLS_FILENAMES = "valid_blobs_and_cells.json";
-  protected Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> blockRetrieval =
+  protected Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> blockRetrieval =
       (blockRoot) -> SafeFuture.completedFuture(Optional.empty());
 
   @Test

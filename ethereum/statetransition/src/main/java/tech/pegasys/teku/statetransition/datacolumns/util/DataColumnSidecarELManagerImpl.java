@@ -259,7 +259,7 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
             new RecoveryTask(
                 dataColumnSidecar.getMaybeSignedBlockHeader(),
                 dataColumnSidecarUtil.getKzgCommitments(
-                    dataColumnSidecar, recentChainData::retrieveBlockByRoot),
+                    dataColumnSidecar, recentChainData::retrieveSignedBlockByRoot),
                 dataColumnSidecarUtil
                     .getMaybeKzgCommitmentsProof(dataColumnSidecar)
                     .map(SszPrimitiveCollection::asListUnboxed),

@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
 public class ExtensionBlobReconstructor extends BlobReconstructor {
@@ -42,7 +42,7 @@ public class ExtensionBlobReconstructor extends BlobReconstructor {
       final SlotAndBlockRoot slotAndBlockRoot,
       final List<DataColumnSidecar> existingSidecars,
       final List<UInt64> blobIndices,
-      final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
+      final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot) {
     LOG.trace(
         "Reconstructing blobs from {} sidecars for {}", existingSidecars.size(), slotAndBlockRoot);
     final int halfColumns = spec.getNumberOfDataColumns().orElseThrow() / 2;
@@ -57,7 +57,7 @@ public class ExtensionBlobReconstructor extends BlobReconstructor {
     }
 
     return reconstructBlobsFromFirstHalfDataColumns(
-            existingSidecars, blobIndices, blobSchemaSupplier.get(), retrieveBlockByRoot)
+            existingSidecars, blobIndices, blobSchemaSupplier.get(), retrieveSignedBlockByRoot)
         .thenApply(Optional::of);
   }
 }

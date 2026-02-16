@@ -52,7 +52,7 @@ public class NetworkBlobReconstructorGloasTest extends BlobReconstructionAbstrac
   private SchemaDefinitionsElectra schemaDefinitionsElectra;
   private BlobSchema blobSchema;
   private SignedBeaconBlock testBlock;
-  private Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> gloasBlockRetrieval;
+  private Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> gloasBlockRetrieval;
   private final DataColumnSidecarNetworkRetriever dataColumnSidecarNetworkRetriever =
       mock(DataColumnSidecarNetworkRetriever.class);
   private NetworkBlobReconstructor networkBlobReconstructor;
@@ -78,8 +78,7 @@ public class NetworkBlobReconstructorGloasTest extends BlobReconstructionAbstrac
     testBlock = gloasDataStructureUtil.signedBlock(beaconBlock);
 
     // In Gloas the block retrieval must return actual block with commitments
-    gloasBlockRetrieval =
-        (blockRoot) -> SafeFuture.completedFuture(Optional.of(testBlock.getMessage()));
+    gloasBlockRetrieval = (blockRoot) -> SafeFuture.completedFuture(Optional.of(testBlock));
   }
 
   @Test

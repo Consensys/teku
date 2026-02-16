@@ -141,7 +141,7 @@ public class BlobReconstructionProvider {
                       slotAndBlockRoot,
                       firstHalfOfSidecars,
                       blobIndices,
-                      combinedChainDataClient::retrieveBlockByRoot);
+                      combinedChainDataClient::getBlockByBlockRoot);
 
               return maybeReconstructedBlobs.thenCompose(
                   maybeBlobs -> {
@@ -185,7 +185,7 @@ public class BlobReconstructionProvider {
                   slotAndBlockRoot,
                   existingSidecars,
                   blobIndices,
-                  combinedChainDataClient::retrieveBlockByRoot);
+                  combinedChainDataClient::getBlockByBlockRoot);
 
           return maybeCryptoReconstructedBlobs.thenCompose(
               maybeBlobs -> {
@@ -213,7 +213,7 @@ public class BlobReconstructionProvider {
             slotAndBlockRoot,
             firstHalfOfSidecarsWithGaps,
             blobIndices,
-            combinedChainDataClient::retrieveBlockByRoot);
+            combinedChainDataClient::getBlockByBlockRoot);
 
     return maybeNetworkReconstructedBlobs.thenCompose(
         maybeBlobs -> {

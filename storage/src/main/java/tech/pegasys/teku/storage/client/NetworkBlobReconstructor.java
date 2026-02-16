@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
@@ -55,7 +55,7 @@ public class NetworkBlobReconstructor extends BlobReconstructor {
       final SlotAndBlockRoot slotAndBlockRoot,
       final List<DataColumnSidecar> existingSidecars,
       final List<UInt64> blobIndices,
-      final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
+      final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot) {
     LOG.trace(
         "Reconstructing blobs from {} sidecars for {}", existingSidecars.size(), slotAndBlockRoot);
     if (!networkRetriever.isEnabled()) {
@@ -98,7 +98,10 @@ public class NetworkBlobReconstructor extends BlobReconstructor {
                       .toList();
               checkState(firstHalfColumns.size() == halfColumns, "Wrong number of columns");
               return reconstructBlobsFromFirstHalfDataColumns(
-                      firstHalfColumns, blobIndices, blobSchemaSupplier.get(), retrieveBlockByRoot)
+                      firstHalfColumns,
+                      blobIndices,
+                      blobSchemaSupplier.get(),
+                      retrieveSignedBlockByRoot)
                   .thenApply(Optional::of);
             });
   }

@@ -46,7 +46,7 @@ public class ExtensionBlobReconstructorGloasTest extends BlobReconstructionAbstr
   private BlobSchema blobSchema;
   private ExtensionBlobReconstructor extensionBlobReconstructor;
   private SignedBeaconBlock testBlock;
-  private Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> gloasBlockRetrieval;
+  private Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> gloasBlockRetrieval;
 
   @BeforeEach
   void setupGloas() {
@@ -69,8 +69,7 @@ public class ExtensionBlobReconstructorGloasTest extends BlobReconstructionAbstr
     testBlock = gloasDataStructureUtil.signedBlock(beaconBlock);
 
     // In Gloas, block retrieval must return actual block with commitments
-    gloasBlockRetrieval =
-        (blockRoot) -> SafeFuture.completedFuture(Optional.of(testBlock.getMessage()));
+    gloasBlockRetrieval = (blockRoot) -> SafeFuture.completedFuture(Optional.of(testBlock));
   }
 
   @Test

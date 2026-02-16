@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -105,7 +106,7 @@ public interface DataColumnSidecarUtil {
 
   SafeFuture<Optional<SszList<SszKZGCommitment>>> getKzgCommitments(
       DataColumnSidecar dataColumnSidecar,
-      Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot);
+      Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot);
 
   SafeFuture<Optional<SszList<SszKZGCommitment>>> getKzgCommitments(BeaconBlock block);
 

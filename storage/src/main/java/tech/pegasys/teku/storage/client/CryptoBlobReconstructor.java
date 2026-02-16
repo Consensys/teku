@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 
@@ -43,21 +43,21 @@ public class CryptoBlobReconstructor extends BlobReconstructor {
       final SlotAndBlockRoot slotAndBlockRoot,
       final List<DataColumnSidecar> existingSidecars,
       final List<UInt64> blobIndices,
-      final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
+      final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot) {
     LOG.trace(
         "Reconstructing blobs from {} sidecars for {}", existingSidecars.size(), slotAndBlockRoot);
     if (existingSidecars.size() < (spec.getNumberOfDataColumns().orElseThrow() / 2)) {
       return SafeFuture.completedFuture(Optional.empty());
     }
 
-    return reconstructBlobsFromDataColumns(existingSidecars, blobIndices, retrieveBlockByRoot)
+    return reconstructBlobsFromDataColumns(existingSidecars, blobIndices, retrieveSignedBlockByRoot)
         .thenApply(Optional::of);
   }
 
   private SafeFuture<List<Blob>> reconstructBlobsFromDataColumns(
       final List<DataColumnSidecar> dataColumnSidecars,
       final List<UInt64> blobIndices,
-      final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
+      final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot) {
     if (dataColumnSidecars.isEmpty()) {
       return SafeFuture.completedFuture(Collections.emptyList());
     }
@@ -69,6 +69,9 @@ public class CryptoBlobReconstructor extends BlobReconstructor {
         dataColumnSidecarsAll.subList(0, spec.getNumberOfDataColumns().orElseThrow() / 2);
 
     return reconstructBlobsFromFirstHalfDataColumns(
-        firstHalfOfDataColumnSidecars, blobIndices, blobSchemaSupplier.get(), retrieveBlockByRoot);
+        firstHalfOfDataColumnSidecars,
+        blobIndices,
+        blobSchemaSupplier.get(),
+        retrieveSignedBlockByRoot);
   }
 }

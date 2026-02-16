@@ -65,7 +65,8 @@ public class BlobReconstructorGloasTest extends BlobReconstructionAbstractTest {
               final SlotAndBlockRoot slotAndBlockRoot,
               final List<DataColumnSidecar> existingSidecars,
               final List<UInt64> blobIndices,
-              final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
+              final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>>
+                  retrieveSignedBlockByRoot) {
             return SafeFuture.completedFuture(Optional.empty());
           }
         };
@@ -141,7 +142,7 @@ public class BlobReconstructorGloasTest extends BlobReconstructionAbstractTest {
     final List<DataColumnSidecar> halfSidecars = dataColumnSidecars.subList(0, numberOfColumns / 2);
 
     // In Gloas, kzg commitments are retrieved from the block's execution payload bid
-    blockRetrieval = (blockRoot) -> SafeFuture.completedFuture(Optional.of(block.getMessage()));
+    blockRetrieval = (blockRoot) -> SafeFuture.completedFuture(Optional.of(block));
 
     // empty blob indices (should return all blobs)
     assertThat(

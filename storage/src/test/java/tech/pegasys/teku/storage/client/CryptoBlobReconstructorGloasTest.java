@@ -45,7 +45,7 @@ public class CryptoBlobReconstructorGloasTest extends BlobReconstructionAbstract
   private BlobSchema blobSchema;
   private CryptoBlobReconstructor cryptoBlobReconstructor;
   private SignedBeaconBlock testBlock;
-  private Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> gloasBlockRetrieval;
+  private Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> gloasBlockRetrieval;
 
   @BeforeEach
   void setupGloas() {
@@ -68,8 +68,7 @@ public class CryptoBlobReconstructorGloasTest extends BlobReconstructionAbstract
     testBlock = gloasDataStructureUtil.signedBlock(beaconBlock);
 
     // block retrieval must return actual block with commitments
-    gloasBlockRetrieval =
-        (blockRoot) -> SafeFuture.completedFuture(Optional.of(testBlock.getMessage()));
+    gloasBlockRetrieval = (blockRoot) -> SafeFuture.completedFuture(Optional.of(testBlock));
   }
 
   @Test

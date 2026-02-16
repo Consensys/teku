@@ -27,7 +27,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
@@ -48,7 +47,8 @@ public class BlobReconstructorFuluTest extends BlobReconstructionAbstractTest {
             final SlotAndBlockRoot slotAndBlockRoot,
             final List<DataColumnSidecar> existingSidecars,
             final List<UInt64> blobIndices,
-            final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
+            final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>>
+                retrieveSignedBlockByRoot) {
           return SafeFuture.completedFuture(Optional.empty());
         }
       };

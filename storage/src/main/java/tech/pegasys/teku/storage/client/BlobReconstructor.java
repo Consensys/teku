@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 
@@ -44,35 +44,35 @@ public abstract class BlobReconstructor {
       final SlotAndBlockRoot slotAndBlockRoot,
       final List<DataColumnSidecar> existingSidecars,
       final List<UInt64> blobIndices,
-      final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot);
+      final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot);
 
   SafeFuture<List<Blob>> reconstructBlobsFromFirstHalfDataColumns(
       final List<DataColumnSidecar> dataColumnSidecars,
       final List<UInt64> blobIndices,
       final BlobSchema blobSchema,
-      final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
+      final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot) {
     if (dataColumnSidecars.isEmpty()) {
       return SafeFuture.completedFuture(Collections.emptyList());
     }
     final DataColumnSidecarUtil dataColumnSidecarUtil =
         spec.getDataColumnSidecarUtil(dataColumnSidecars.getFirst().getSlot());
     return dataColumnSidecarUtil
-        .getKzgCommitments(dataColumnSidecars.getFirst(), retrieveBlockByRoot)
+        .getKzgCommitments(dataColumnSidecars.getFirst(), retrieveSignedBlockByRoot)
         .thenApply(
-            maybeKzgCommitments ->
-                maybeKzgCommitments
-                    .map(
-                        sszKZGCommitments ->
-                            IntStream.range(0, sszKZGCommitments.size())
-                                .filter(
-                                    index ->
-                                        blobIndices.isEmpty()
-                                            || blobIndices.contains(UInt64.valueOf(index)))
-                                .mapToObj(
-                                    blobIndex ->
-                                        constructBlob(dataColumnSidecars, blobIndex, blobSchema))
-                                .toList())
-                    .orElse(Collections.emptyList()));
+            maybeKzgCommitments -> {
+              final int kzgCommitmentsSize =
+                  maybeKzgCommitments
+                      .orElseThrow(
+                          () ->
+                              new IllegalStateException(
+                                  "Unable to retrieve kzg commitments to reconstruct blobs from data column sidecars"))
+                      .size();
+              return IntStream.range(0, kzgCommitmentsSize)
+                  .filter(
+                      index -> blobIndices.isEmpty() || blobIndices.contains(UInt64.valueOf(index)))
+                  .mapToObj(blobIndex -> constructBlob(dataColumnSidecars, blobIndex, blobSchema))
+                  .toList();
+            });
   }
 
   Blob constructBlob(
