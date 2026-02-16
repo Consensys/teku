@@ -22,15 +22,12 @@ import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 public class SuperNodeSupplier implements Supplier<Boolean> {
 
   private final Spec spec;
-  private final boolean isSubscribedToAllCustodySubnetsEnabled;
   private final Supplier<CustodyGroupCountManager> custodyGroupCountManager;
 
   public SuperNodeSupplier(
       final Spec spec,
-      final boolean isSubscribedToAllCustodySubnetsEnabled,
       final Supplier<CustodyGroupCountManager> custodyGroupCountManager) {
     this.spec = spec;
-    this.isSubscribedToAllCustodySubnetsEnabled = isSubscribedToAllCustodySubnetsEnabled;
     this.custodyGroupCountManager = custodyGroupCountManager;
   }
 
@@ -38,9 +35,6 @@ public class SuperNodeSupplier implements Supplier<Boolean> {
   public Boolean get() {
     if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
       return false;
-    }
-    if (isSubscribedToAllCustodySubnetsEnabled) {
-      return true;
     }
     return MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers())
         .isSuperNode(custodyGroupCountManager.get().getCustodyGroupCount());

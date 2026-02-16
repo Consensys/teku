@@ -266,7 +266,6 @@ public class DataColumnSidecarGossipManagerTest {
 
   @TestTemplate
   public void testIsEnabledDuringOptimisticSync_whenSuperNodeSupplierReturnsTrue() {
-    // Create a new manager with a supplier that returns true
     final DataColumnSidecarGossipManager managerWithSuperNode =
         new DataColumnSidecarGossipManager(subnetSubscriptions, dasGossipLogger, () -> true);
 
@@ -277,8 +276,7 @@ public class DataColumnSidecarGossipManagerTest {
   }
 
   @TestTemplate
-  public void testIsEnabledDuringOptimisticSync_whenSuperNodeSupplierReturnsFalse() {
-    // Create a new manager with a supplier that returns false
+  public void testIsDisabledDuringOptimisticSync_whenSuperNodeSupplierReturnsFalse() {
     final DataColumnSidecarGossipManager managerWithoutSuperNode =
         new DataColumnSidecarGossipManager(subnetSubscriptions, dasGossipLogger, () -> false);
 

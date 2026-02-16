@@ -39,38 +39,15 @@ public class SuperNodeSupplierTest {
     this.spec = TestSpecFactory.createMinimalFulu();
   }
 
-  @Test
-  public void shouldReturnTrue_whenExplicitSuperNodeConfigEnabled() {
-    // Configure as explicit super node via P2P config
-    when(p2pConfig.isSubscribedToAllCustodySubnetsEnabled()).thenReturn(true);
-    when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(4);
-
-    isSuperNodeSupplier =
-        new SuperNodeSupplier(
-            spec,
-            p2pConfig.isSubscribedToAllCustodySubnetsEnabled(),
-            () -> custodyGroupCountManager);
-
-    // Create supplier using BeaconChainController logic
-
-    assertThat(isSuperNodeSupplier.get())
-        .as(
-            "Should return true when isSubscribedToAllCustodySubnetsEnabled is true, regardless of custody count")
-        .isTrue();
-  }
 
   @Test
   public void shouldReturnTrue_whenCustodyCountQualifiesAsSuperNode() {
-    // Not explicitly configured as super node
-    when(p2pConfig.isSubscribedToAllCustodySubnetsEnabled()).thenReturn(false);
-
     // But custody count is at maximum (128), which qualifies as super node
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(128);
 
     isSuperNodeSupplier =
         new SuperNodeSupplier(
             spec,
-            p2pConfig.isSubscribedToAllCustodySubnetsEnabled(),
             () -> custodyGroupCountManager);
 
     // Verify the custody count qualifies as super node
@@ -88,16 +65,12 @@ public class SuperNodeSupplierTest {
 
   @Test
   public void shouldReturnFalse_whenCustodyCountDoesNotQualifyAsSuperNode() {
-    // Not explicitly configured as super node
-    when(p2pConfig.isSubscribedToAllCustodySubnetsEnabled()).thenReturn(false);
-
     // Custody count is low (4 = default minimum)
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(4);
 
     isSuperNodeSupplier =
         new SuperNodeSupplier(
             spec,
-            p2pConfig.isSubscribedToAllCustodySubnetsEnabled(),
             () -> custodyGroupCountManager);
 
     // Verify the custody count does NOT qualify as super node
@@ -116,13 +89,10 @@ public class SuperNodeSupplierTest {
   @Test
   public void shouldReturnFalse_beforeFuluMilestone() {
     final Spec specElectra = TestSpecFactory.createMinimalElectra();
-    // Even with explicit super node config
-    when(p2pConfig.isSubscribedToAllCustodySubnetsEnabled()).thenReturn(true);
 
     isSuperNodeSupplier =
         new SuperNodeSupplier(
             specElectra,
-            p2pConfig.isSubscribedToAllCustodySubnetsEnabled(),
             () -> custodyGroupCountManager);
 
     assertThat(isSuperNodeSupplier.get())
@@ -132,8 +102,6 @@ public class SuperNodeSupplierTest {
 
   @Test
   public void shouldDynamicallyUpdate_whenCustodyCountChanges() {
-    // Not explicit super node
-    when(p2pConfig.isSubscribedToAllCustodySubnetsEnabled()).thenReturn(false);
 
     // Initially low custody count
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(4);
@@ -141,7 +109,6 @@ public class SuperNodeSupplierTest {
     isSuperNodeSupplier =
         new SuperNodeSupplier(
             spec,
-            p2pConfig.isSubscribedToAllCustodySubnetsEnabled(),
             () -> custodyGroupCountManager);
 
     assertThat(isSuperNodeSupplier.get())
@@ -155,23 +122,4 @@ public class SuperNodeSupplierTest {
         .isTrue();
   }
 
-  @Test
-  public void shouldPrioritizeExplicitConfig_overCustodyCount() {
-    // Explicitly configured as super node
-    when(p2pConfig.isSubscribedToAllCustodySubnetsEnabled()).thenReturn(true);
-
-    // Even with low custody count
-    when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(4);
-
-    isSuperNodeSupplier =
-        new SuperNodeSupplier(
-            spec,
-            p2pConfig.isSubscribedToAllCustodySubnetsEnabled(),
-            () -> custodyGroupCountManager);
-
-    assertThat(isSuperNodeSupplier.get())
-        .as(
-            "Should return true when explicitly configured as super node, even with low custody count")
-        .isTrue();
-  }
 }
