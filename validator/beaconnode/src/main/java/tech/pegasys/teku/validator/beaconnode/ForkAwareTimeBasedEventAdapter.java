@@ -34,10 +34,13 @@ public class ForkAwareTimeBasedEventAdapter implements BeaconChainEventAdapter {
       delegate =
           new GloasTimeBasedEventAdapter(
               genesisDataProvider, taskScheduler, timeProvider, validatorTimingChannel, spec);
-    } else {
+    } else if (spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
       delegate =
-          new Phase0TimeBasedEventAdapter(
+          new AltairTimeBasedEventAdapter(
               genesisDataProvider, taskScheduler, timeProvider, validatorTimingChannel, spec);
+    } else {
+      throw new IllegalArgumentException(
+          "Running network without scheduled ALTAIR fork is not supported");
     }
   }
 

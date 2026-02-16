@@ -59,12 +59,12 @@ public abstract class TimeBasedEventAdapter implements BeaconChainEventAdapter {
   }
 
   void scheduleDuty(
-      final UInt64 nextSlotStartTimeMillis,
+      final UInt64 firstInvocationSlotStartTimeMillis,
       final UInt64 period,
       final UInt64 offset,
       final RepeatingTask dutyTask) {
     taskScheduler.scheduleRepeatingEventInMillis(
-        nextSlotStartTimeMillis.plus(offset), period, dutyTask);
+        firstInvocationSlotStartTimeMillis.plus(offset), period, dutyTask);
   }
 
   private UInt64 getNextSlotStartMillis() {
@@ -103,6 +103,30 @@ public abstract class TimeBasedEventAdapter implements BeaconChainEventAdapter {
       return;
     }
     validatorTimingChannel.onAttestationAggregationDue(slot);
+  }
+
+  void onSyncCommitteeCreationDue(
+      final UInt64 scheduledTimeInMillis, final UInt64 actualTimeInMillis) {
+    final UInt64 slot = getCurrentSlotForMillis(scheduledTimeInMillis);
+    if (isTooLateInMillis(scheduledTimeInMillis, actualTimeInMillis)) {
+      LOG.warn(
+          "Skipping sync committee message for slot {} due to unexpected delay in slot processing",
+          slot);
+      return;
+    }
+    validatorTimingChannel.onSyncCommitteeCreationDue(slot);
+  }
+
+  void onContributionCreationDue(
+      final UInt64 scheduledTimeInMillis, final UInt64 actualTimeInMillis) {
+    final UInt64 slot = getCurrentSlotForMillis(scheduledTimeInMillis);
+    if (isTooLateInMillis(scheduledTimeInMillis, actualTimeInMillis)) {
+      LOG.warn(
+          "Skipping contribution message for slot {} due to unexpected delay in slot processing",
+          slot);
+      return;
+    }
+    validatorTimingChannel.onContributionCreationDue(slot);
   }
 
   UInt64 getCurrentSlotForMillis(final UInt64 millis) {

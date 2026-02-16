@@ -55,6 +55,11 @@ public class GloasTimeBasedEventAdapter extends TimeBasedEventAdapter {
         UInt64.valueOf(spec.getAttestationDueMillis(firstGloasSlot));
     final UInt64 gloasAggregationDueSlotTimeOffset =
         UInt64.valueOf(spec.getAggregateDueMillis(firstGloasSlot));
+    final UInt64 gloasSyncCommitteeDueSlotTimeOffset =
+        UInt64.valueOf(spec.getSyncMessageDueMillis(firstGloasSlot));
+    final UInt64 gloasContributionDueSlotTimeOffset =
+        UInt64.valueOf(spec.getContributionDueMillis(firstGloasSlot));
+
     final UInt64 timelinessAttestationDueSlotTimeOffset =
         UInt64.valueOf(spec.getPayloadAttestationDueMillis(firstGloasSlot));
 
@@ -65,6 +70,8 @@ public class GloasTimeBasedEventAdapter extends TimeBasedEventAdapter {
           nextSlotStartTimeMillis,
           gloasAttestationDueSlotTimeOffset,
           gloasAggregationDueSlotTimeOffset,
+          gloasSyncCommitteeDueSlotTimeOffset,
+          gloasContributionDueSlotTimeOffset,
           timelinessAttestationDueSlotTimeOffset);
       return;
     }
@@ -78,6 +85,7 @@ public class GloasTimeBasedEventAdapter extends TimeBasedEventAdapter {
     final UInt64 aggregationDueSlotTimeOffset =
         UInt64.valueOf(spec.getAggregateDueMillis(currentSlot));
 
+    // Starting from PHASE0, rescheduled from GLOAS
     taskScheduler.scheduleRepeatingEventInMillis(
         nextSlotStartTimeMillis.plus(attestationDueSlotTimeOffset),
         millisPerSlot,
@@ -93,11 +101,44 @@ public class GloasTimeBasedEventAdapter extends TimeBasedEventAdapter {
         gloasStartTimeMillis,
         (__, ___) -> {
           scheduleDuty(millisPerSlot, gloasAggregationDueSlotTimeOffset, this::onAggregationDue);
+          // Added in GLOAS
           scheduleDuty(
               millisPerSlot,
               timelinessAttestationDueSlotTimeOffset,
               this::onPayloadTimelinessAttestationDue);
         });
+
+    // Starting from ALTAIR, rescheduled from GLOAS
+    final UInt64 firstAltairSlot =
+        spec.computeStartSlotAtEpoch(
+            spec.getForkSchedule().getFork(SpecMilestone.ALTAIR).getEpoch());
+    final UInt64 altairStartTimeMillis = getSlotStartTimeMillis(firstAltairSlot);
+    final UInt64 altairDutiesStartMillis = altairStartTimeMillis.max(nextSlotStartTimeMillis);
+    final UInt64 syncCommitteeDueSlotTimeOffset =
+        UInt64.valueOf(spec.getSyncMessageDueMillis(currentSlot));
+    final UInt64 contributionDueSlotTimeOffset =
+        UInt64.valueOf(spec.getContributionDueMillis(currentSlot));
+
+    taskScheduler.scheduleRepeatingEventInMillis(
+        altairDutiesStartMillis.plus(syncCommitteeDueSlotTimeOffset),
+        millisPerSlot,
+        this::onSyncCommitteeCreationDue,
+        gloasStartTimeMillis,
+        (__, ___) ->
+            scheduleDuty(
+                millisPerSlot,
+                gloasSyncCommitteeDueSlotTimeOffset,
+                this::onSyncCommitteeCreationDue));
+    taskScheduler.scheduleRepeatingEventInMillis(
+        altairDutiesStartMillis.plus(contributionDueSlotTimeOffset),
+        millisPerSlot,
+        this::onContributionCreationDue,
+        gloasStartTimeMillis,
+        (__, ___) ->
+            scheduleDuty(
+                millisPerSlot,
+                gloasContributionDueSlotTimeOffset,
+                this::onContributionCreationDue));
   }
 
   private boolean isGloasStarted(final UInt64 currentSlot) {
@@ -111,6 +152,8 @@ public class GloasTimeBasedEventAdapter extends TimeBasedEventAdapter {
       final UInt64 nextSlotStartTimeMillis,
       final UInt64 attestationDueSlotTimeOffset,
       final UInt64 aggregationDueSlotTimeOffset,
+      final UInt64 syncCommitteeDueSlotTimeOffset,
+      final UInt64 contributionDueSlotTimeOffset,
       final UInt64 timelinessAttestationDueSlotTimeOffset) {
     scheduleDuty(
         nextSlotStartTimeMillis,
@@ -122,6 +165,16 @@ public class GloasTimeBasedEventAdapter extends TimeBasedEventAdapter {
         millisPerSlot,
         aggregationDueSlotTimeOffset,
         this::onAggregationDue);
+    scheduleDuty(
+        nextSlotStartTimeMillis,
+        millisPerSlot,
+        syncCommitteeDueSlotTimeOffset,
+        this::onSyncCommitteeCreationDue);
+    scheduleDuty(
+        nextSlotStartTimeMillis,
+        millisPerSlot,
+        contributionDueSlotTimeOffset,
+        this::onContributionCreationDue);
     scheduleDuty(
         nextSlotStartTimeMillis,
         millisPerSlot,
