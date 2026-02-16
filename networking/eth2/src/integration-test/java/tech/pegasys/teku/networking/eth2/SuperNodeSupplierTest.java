@@ -109,15 +109,14 @@ public class SuperNodeSupplierTest {
   @Test
   public void shouldReturnFalse_beforeFuluMilestone() {
     final Spec specElectra = TestSpecFactory.createMinimalElectra();
+    // Even with explicit super node config
+    when(p2pConfig.isSubscribedToAllCustodySubnetsEnabled()).thenReturn(true);
 
     isSuperNodeSupplier =
         new SuperNodeSupplier(
             specElectra,
             p2pConfig.isSubscribedToAllCustodySubnetsEnabled(),
             custodyGroupCountManager);
-
-    // Even with explicit super node config
-    when(p2pConfig.isSubscribedToAllCustodySubnetsEnabled()).thenReturn(true);
 
     assertThat(isSuperNodeSupplier.get())
         .as("Should return false when Fulu milestone is not supported")
