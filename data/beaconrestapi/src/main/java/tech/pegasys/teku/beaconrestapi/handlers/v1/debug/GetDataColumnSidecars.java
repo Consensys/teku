@@ -47,6 +47,8 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.metadata.DataColumnSidecarsAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class GetDataColumnSidecars extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/debug/beacon/data_column_sidecars/{block_id}";
@@ -149,7 +151,7 @@ public class GetDataColumnSidecars extends RestApiEndpoint {
                     .equals(milestone),
             SpecMilestone.FULU,
             schemaDefinitions ->
-                schemaDefinitions.toVersionFulu().orElseThrow().getDataColumnSidecarSchema()));
+                SchemaDefinitionsFulu.required(schemaDefinitions).getDataColumnSidecarSchema()));
 
     schemaGetterList.add(
         new MilestoneDependentTypesUtil.ConditionalSchemaGetter<>(
@@ -159,7 +161,7 @@ public class GetDataColumnSidecars extends RestApiEndpoint {
                     .equals(milestone),
             SpecMilestone.GLOAS,
             schemaDefinitions ->
-                schemaDefinitions.toVersionGloas().orElseThrow().getDataColumnSidecarSchema()));
+                SchemaDefinitionsGloas.required(schemaDefinitions).getDataColumnSidecarSchema()));
     return schemaGetterList;
   }
 }
