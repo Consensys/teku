@@ -23,12 +23,12 @@ public class SuperNodeSupplier implements Supplier<Boolean> {
 
   private final Spec spec;
   private final boolean isSubscribedToAllCustodySubnetsEnabled;
-  private final CustodyGroupCountManager custodyGroupCountManager;
+  private final Supplier<CustodyGroupCountManager> custodyGroupCountManager;
 
   public SuperNodeSupplier(
       final Spec spec,
       final boolean isSubscribedToAllCustodySubnetsEnabled,
-      final CustodyGroupCountManager custodyGroupCountManager) {
+      final Supplier<CustodyGroupCountManager> custodyGroupCountManager) {
     this.spec = spec;
     this.isSubscribedToAllCustodySubnetsEnabled = isSubscribedToAllCustodySubnetsEnabled;
     this.custodyGroupCountManager = custodyGroupCountManager;
@@ -43,6 +43,6 @@ public class SuperNodeSupplier implements Supplier<Boolean> {
       return true;
     }
     return MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers())
-        .isSuperNode(custodyGroupCountManager.getCustodyGroupCount());
+        .isSuperNode(custodyGroupCountManager.get().getCustodyGroupCount());
   }
 }
