@@ -16,7 +16,13 @@
     "data" : {
       "type" : "array",
       "items" : {
-        "$ref" : "#/components/schemas/DataColumnSidecarFulu"
+        "title" : "DataColumnSidecar",
+        "type" : "object",
+        "oneOf" : [ {
+          "$ref" : "#/components/schemas/DataColumnSidecarFulu"
+        }, {
+          "$ref" : "#/components/schemas/DataColumnSidecarGloas"
+        } ]
       }
     }
   }
