@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.common.base.Supplier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
@@ -41,8 +40,6 @@ public class SuperNodeSupplierIntegrationTest {
   final P2PConfig p2pConfig = mock(P2PConfig.class);
   final CustodyGroupCountManager custodyGroupCountManager = mock(CustodyGroupCountManager.class);
 
-
-
   @BeforeEach
   public void setup() {
     this.spec = TestSpecFactory.createMinimalFulu();
@@ -54,7 +51,9 @@ public class SuperNodeSupplierIntegrationTest {
     when(p2pConfig.isSubscribedToAllCustodySubnetsEnabled()).thenReturn(true);
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(4);
 
-    isSuperNodeSupplier = new SuperNodeSupplier(spec, p2pConfig.isSubscribedToAllCustodySubnetsEnabled(), custodyGroupCountManager);
+    isSuperNodeSupplier =
+        new SuperNodeSupplier(
+            spec, p2pConfig.isSubscribedToAllCustodySubnetsEnabled(), custodyGroupCountManager);
 
     // Create supplier using BeaconChainController logic
 
@@ -72,7 +71,9 @@ public class SuperNodeSupplierIntegrationTest {
     // But custody count is at maximum (128), which qualifies as super node
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(128);
 
-    isSuperNodeSupplier = new SuperNodeSupplier(spec, p2pConfig.isSubscribedToAllCustodySubnetsEnabled(), custodyGroupCountManager);
+    isSuperNodeSupplier =
+        new SuperNodeSupplier(
+            spec, p2pConfig.isSubscribedToAllCustodySubnetsEnabled(), custodyGroupCountManager);
 
     // Verify the custody count qualifies as super node
     final MiscHelpersFulu miscHelpersFulu =
@@ -95,7 +96,9 @@ public class SuperNodeSupplierIntegrationTest {
     // Custody count is low (4 = default minimum)
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(4);
 
-    isSuperNodeSupplier = new SuperNodeSupplier(spec, p2pConfig.isSubscribedToAllCustodySubnetsEnabled(), custodyGroupCountManager);
+    isSuperNodeSupplier =
+        new SuperNodeSupplier(
+            spec, p2pConfig.isSubscribedToAllCustodySubnetsEnabled(), custodyGroupCountManager);
 
     // Verify the custody count does NOT qualify as super node
     final MiscHelpersFulu miscHelpersFulu =
@@ -114,7 +117,11 @@ public class SuperNodeSupplierIntegrationTest {
   public void shouldReturnFalse_beforeFuluMilestone() {
     final Spec specElectra = TestSpecFactory.createMinimalElectra();
 
-    isSuperNodeSupplier = new SuperNodeSupplier(specElectra, p2pConfig.isSubscribedToAllCustodySubnetsEnabled(), custodyGroupCountManager);
+    isSuperNodeSupplier =
+        new SuperNodeSupplier(
+            specElectra,
+            p2pConfig.isSubscribedToAllCustodySubnetsEnabled(),
+            custodyGroupCountManager);
 
     // Even with explicit super node config
     when(p2pConfig.isSubscribedToAllCustodySubnetsEnabled()).thenReturn(true);
@@ -132,7 +139,9 @@ public class SuperNodeSupplierIntegrationTest {
     // Initially low custody count
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(4);
 
-    isSuperNodeSupplier = new SuperNodeSupplier(spec, p2pConfig.isSubscribedToAllCustodySubnetsEnabled(), custodyGroupCountManager);
+    isSuperNodeSupplier =
+        new SuperNodeSupplier(
+            spec, p2pConfig.isSubscribedToAllCustodySubnetsEnabled(), custodyGroupCountManager);
 
     assertThat(isSuperNodeSupplier.get())
         .as("Should return false with low custody count")
@@ -153,13 +162,13 @@ public class SuperNodeSupplierIntegrationTest {
     // Even with low custody count
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(4);
 
-    isSuperNodeSupplier = new SuperNodeSupplier(spec, p2pConfig.isSubscribedToAllCustodySubnetsEnabled(), custodyGroupCountManager);
+    isSuperNodeSupplier =
+        new SuperNodeSupplier(
+            spec, p2pConfig.isSubscribedToAllCustodySubnetsEnabled(), custodyGroupCountManager);
 
     assertThat(isSuperNodeSupplier.get())
         .as(
             "Should return true when explicitly configured as super node, even with low custody count")
         .isTrue();
   }
-
-
 }
