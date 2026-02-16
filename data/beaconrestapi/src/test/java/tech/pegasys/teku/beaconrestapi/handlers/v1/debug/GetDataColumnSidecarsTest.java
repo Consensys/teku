@@ -108,8 +108,7 @@ public class GetDataColumnSidecarsTest
             dataStructureUtil.randomDataColumnSidecar(),
             dataStructureUtil.randomDataColumnSidecar());
     final DataColumnSidecarsAndMetaData dataColumnSidecarsAndMetaData =
-        new DataColumnSidecarsAndMetaData(
-            dataColumnSidecars, SpecMilestone.FULU, true, false, false);
+        new DataColumnSidecarsAndMetaData(dataColumnSidecars, specMilestone, true, false, false);
     final JsonNode responseDataAsJsonNode =
         JsonTestUtil.parseAsJsonNode(
             getResponseStringFromMetadata(handler, SC_OK, dataColumnSidecarsAndMetaData));
