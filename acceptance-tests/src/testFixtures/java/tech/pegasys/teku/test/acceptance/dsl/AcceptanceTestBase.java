@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
+import com.google.common.io.Resources;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -38,6 +40,7 @@ public class AcceptanceTestBase {
     System.setProperty("org.apache.tuweni.crypto.useSodium", "false");
   }
 
+  public static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
   public static final String DEFAULT_EL_GENESIS_HASH =
       "0x14e88057b0b7538a8205cb07726a0de03dd69d9a70e88bcffae15ca3fc6b5215";
 

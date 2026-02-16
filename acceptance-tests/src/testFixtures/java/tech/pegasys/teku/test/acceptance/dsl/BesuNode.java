@@ -292,12 +292,6 @@ public class BesuNode extends Node {
       configMap.put("genesis-file", "/genesis.json");
     }
 
-    public BesuNode.Config withMiningEnabled(final boolean enabled) {
-      configMap.put("miner-enabled", enabled);
-      configMap.put("miner-coinbase", "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73");
-      return this;
-    }
-
     public BesuNode.Config withGenesisFile(final String genesisFilePath) {
       this.genesisFilePath = genesisFilePath;
       return this;

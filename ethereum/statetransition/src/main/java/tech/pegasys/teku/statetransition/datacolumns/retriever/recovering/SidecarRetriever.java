@@ -151,6 +151,7 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
                     downloadTimeout,
                     sidecarRecoveryMetric,
                     () -> requests.remove(columnId)));
+    pendingRecoveryRequest.start();
     return pendingRecoveryRequest.getFuture();
   }
 
