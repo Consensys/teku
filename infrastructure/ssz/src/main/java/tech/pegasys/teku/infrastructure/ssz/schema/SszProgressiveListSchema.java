@@ -296,6 +296,13 @@ public class SszProgressiveListSchema<ElementDataT extends SszData>
       if (firstElementOffset % SszType.SSZ_LENGTH_SIZE != 0) {
         throw new SszDeserializeException("Invalid first element offset");
       }
+      if (firstElementOffset > endOffset) {
+        throw new SszDeserializeException(
+            "First element offset exceeds available data: "
+                + firstElementOffset
+                + " > "
+                + endOffset);
+      }
       int elementsCount = firstElementOffset / SszType.SSZ_LENGTH_SIZE;
       List<Integer> elementOffsets = new ArrayList<>(elementsCount + 1);
       elementOffsets.add(firstElementOffset);

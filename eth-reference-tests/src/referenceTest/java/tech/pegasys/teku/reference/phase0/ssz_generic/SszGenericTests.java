@@ -27,7 +27,7 @@ public class SszGenericTests {
           .put("ssz_generic/bitvector", new SszGenericBitvectorTestExecutor())
           .put("ssz_generic/boolean", new SszGenericBooleanTestExecutor())
           .put("ssz_generic/containers", new SszGenericContainerTestExecutor())
-          .put("ssz_generic/progressive_bitlist", TestExecutor.IGNORE_TESTS)
+          .put("ssz_generic/progressive_bitlist", new SszGenericProgressiveBitlistTestExecutor())
           .put(
               "ssz_generic/progressive_containers",
               new SszGenericProgressiveContainerTestExecutor())

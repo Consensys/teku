@@ -36,6 +36,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszProgressiveContainerImpl;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
@@ -425,8 +426,7 @@ public class SszProgressiveContainerSchema<C extends SszContainer>
 
   @Override
   public DeserializableTypeDefinition<C> getJsonTypeDefinition() {
-    throw new UnsupportedOperationException(
-        "JSON type definition not supported for ProgressiveContainer");
+    return SszPrimitiveTypeDefinitions.sszSerializedType(this, "SSZ hexadecimal");
   }
 
   @Override
