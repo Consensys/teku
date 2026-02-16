@@ -21,11 +21,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.List;
 import okhttp3.Response;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetExecutionPayloadEnvelope;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -33,10 +35,14 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 public class GetExecutionPayloadEnvelopeIntegrationTest
     extends AbstractDataBackedRestAPIIntegrationTest {
 
+  @BeforeEach
+  public void setUp() {
+    startRestAPIAtGenesis(SpecMilestone.GLOAS);
+  }
+
   @Test
   public void shouldGetExecutionPayloadEnvelopeAtTheHeadOfTheChain() throws IOException {
-    startRestAPIAtGenesis(SpecMilestone.GLOAS);
-    final List<SignedBlockAndState> created = createBlocksAtSlots(10);
+    final List<SignedBlockAndState> created = createBlocksAtSlots(1, 2, 3);
 
     final Response response = get("head");
     final JsonNode body = OBJECT_MAPPER.readTree(response.body().string());
@@ -47,21 +53,52 @@ public class GetExecutionPayloadEnvelopeIntegrationTest
     assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo("gloas");
 
     final SignedExecutionPayloadEnvelope executionPayloadEnvelope =
-        getSignedExecutionPayloadEnvelope(SpecMilestone.GLOAS, body.get("data").toString());
+        getSignedExecutionPayloadEnvelope(body);
 
-    assertThat(executionPayloadEnvelope.getBeaconBlockRoot())
-        .isEqualTo(created.getLast().getBlock().getRoot());
     assertThat(executionPayloadEnvelope)
         .isEqualTo(
             chainBuilder.getExecutionPayload(created.getLast().getBlock().getRoot()).orElseThrow());
   }
 
-  private SignedExecutionPayloadEnvelope getSignedExecutionPayloadEnvelope(
-      final SpecMilestone milestone, final String data) throws JsonProcessingException {
-    System.out.println(data);
+  @Test
+  public void shouldGetExecutionPayloadEnvelopeByBlockRoot() throws IOException {
+    final List<SignedBlockAndState> created = createBlocksAtSlots(1, 2, 3);
+
+    final SignedBeaconBlock block = created.get(1).getBlock();
+
+    final Response response = get(block.getRoot().toHexString());
+    final JsonNode body = OBJECT_MAPPER.readTree(response.body().string());
+
+    final SignedExecutionPayloadEnvelope executionPayloadEnvelope =
+        getSignedExecutionPayloadEnvelope(body);
+
+    assertThat(executionPayloadEnvelope)
+        .isEqualTo(chainBuilder.getExecutionPayload(block.getRoot()).orElseThrow());
+  }
+
+  @Test
+  public void shouldGetExecutionPayloadEnvelopeBySlot() throws IOException {
+    final List<SignedBlockAndState> created = createBlocksAtSlots(1, 2, 3);
+
+    final SignedBeaconBlock block = created.get(1).getBlock();
+
+    final Response response = get("2");
+
+    final JsonNode body = OBJECT_MAPPER.readTree(response.body().string());
+
+    final SignedExecutionPayloadEnvelope executionPayloadEnvelope =
+        getSignedExecutionPayloadEnvelope(body);
+
+    assertThat(executionPayloadEnvelope)
+        .isEqualTo(chainBuilder.getExecutionPayload(block.getRoot()).orElseThrow());
+  }
+
+  private SignedExecutionPayloadEnvelope getSignedExecutionPayloadEnvelope(final JsonNode body)
+      throws JsonProcessingException {
     return JsonUtil.parse(
-        data,
-        SchemaDefinitionsGloas.required(spec.forMilestone(milestone).getSchemaDefinitions())
+        body.get("data").toString(),
+        SchemaDefinitionsGloas.required(
+                spec.forMilestone(SpecMilestone.GLOAS).getSchemaDefinitions())
             .getSignedExecutionPayloadEnvelopeSchema()
             .getJsonTypeDefinition());
   }
