@@ -23,14 +23,13 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
+import com.google.common.base.Supplier;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
-
-import com.google.common.base.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -272,7 +271,8 @@ public class DataColumnSidecarGossipManagerTest {
         new DataColumnSidecarGossipManager(subnetSubscriptions, dasGossipLogger, () -> true);
 
     assertThat(managerWithSuperNode.isEnabledDuringOptimisticSync())
-        .as("isEnabledDuringOptimisticSync should return true when isSuperNodeSupplier returns true")
+        .as(
+            "isEnabledDuringOptimisticSync should return true when isSuperNodeSupplier returns true")
         .isTrue();
   }
 
