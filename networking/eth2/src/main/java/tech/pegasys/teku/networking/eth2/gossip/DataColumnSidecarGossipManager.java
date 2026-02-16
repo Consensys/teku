@@ -61,11 +61,11 @@ public class DataColumnSidecarGossipManager implements GossipManager {
     subnetSubscriptions.unsubscribe();
   }
 
-
   /**
-  * @see tech.pegasys.teku.statetransition.datacolumns.util.SuperNodeSupplier for details on super node functionality.
-  * Data column sidecar gossip is enabled during optimistic sync if the node is a super node.
-   **/
+   * @see tech.pegasys.teku.statetransition.datacolumns.util.SuperNodeSupplier for details on super
+   *     node functionality. Data column sidecar gossip is enabled during optimistic sync if the
+   *     node is a super node.
+   */
   @Override
   public boolean isEnabledDuringOptimisticSync() {
     return isSuperNodeSupplier.get();

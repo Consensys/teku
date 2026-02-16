@@ -39,16 +39,12 @@ public class SuperNodeSupplierTest {
     this.spec = TestSpecFactory.createMinimalFulu();
   }
 
-
   @Test
   public void shouldReturnTrue_whenCustodyCountQualifiesAsSuperNode() {
     // But custody count is at maximum (128), which qualifies as super node
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(128);
 
-    isSuperNodeSupplier =
-        new SuperNodeSupplier(
-            spec,
-            () -> custodyGroupCountManager);
+    isSuperNodeSupplier = new SuperNodeSupplier(spec, () -> custodyGroupCountManager);
 
     // Verify the custody count qualifies as super node
     final MiscHelpersFulu miscHelpersFulu =
@@ -68,10 +64,7 @@ public class SuperNodeSupplierTest {
     // Custody count is low (4 = default minimum)
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(4);
 
-    isSuperNodeSupplier =
-        new SuperNodeSupplier(
-            spec,
-            () -> custodyGroupCountManager);
+    isSuperNodeSupplier = new SuperNodeSupplier(spec, () -> custodyGroupCountManager);
 
     // Verify the custody count does NOT qualify as super node
     final MiscHelpersFulu miscHelpersFulu =
@@ -90,10 +83,7 @@ public class SuperNodeSupplierTest {
   public void shouldReturnFalse_beforeFuluMilestone() {
     final Spec specElectra = TestSpecFactory.createMinimalElectra();
 
-    isSuperNodeSupplier =
-        new SuperNodeSupplier(
-            specElectra,
-            () -> custodyGroupCountManager);
+    isSuperNodeSupplier = new SuperNodeSupplier(specElectra, () -> custodyGroupCountManager);
 
     assertThat(isSuperNodeSupplier.get())
         .as("Should return false when Fulu milestone is not supported")
@@ -106,10 +96,7 @@ public class SuperNodeSupplierTest {
     // Initially low custody count
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(4);
 
-    isSuperNodeSupplier =
-        new SuperNodeSupplier(
-            spec,
-            () -> custodyGroupCountManager);
+    isSuperNodeSupplier = new SuperNodeSupplier(spec, () -> custodyGroupCountManager);
 
     assertThat(isSuperNodeSupplier.get())
         .as("Should return false with low custody count")
@@ -121,5 +108,4 @@ public class SuperNodeSupplierTest {
         .as("Should return true after custody count increases to super node level")
         .isTrue();
   }
-
 }

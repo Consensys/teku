@@ -25,8 +25,7 @@ public class SuperNodeSupplier implements Supplier<Boolean> {
   private final Supplier<CustodyGroupCountManager> custodyGroupCountManager;
 
   public SuperNodeSupplier(
-      final Spec spec,
-      final Supplier<CustodyGroupCountManager> custodyGroupCountManager) {
+      final Spec spec, final Supplier<CustodyGroupCountManager> custodyGroupCountManager) {
     this.spec = spec;
     this.custodyGroupCountManager = custodyGroupCountManager;
   }
