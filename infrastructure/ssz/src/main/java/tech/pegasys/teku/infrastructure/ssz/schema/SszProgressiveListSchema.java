@@ -203,19 +203,28 @@ public class SszProgressiveListSchema<ElementDataT extends SszData>
 
   private int sszSerializeFixed(
       final TreeNode dataNode, final SszWriter writer, final int elementsCount) {
-    // For primitives packed in chunks, iterate leaf data
-    int chunksCount = getChunks(elementsCount);
-    int[] bytesCnt = new int[1];
-    for (int c = 0; c < chunksCount; c++) {
-      long gIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(c);
-      TreeNode chunkNode = dataNode.get(gIdx);
-      if (chunkNode instanceof LeafNode leafNode) {
+    if (elementSchema instanceof AbstractSszPrimitiveSchema) {
+      // Primitive packing: multiple values per 32-byte leaf chunk
+      int chunksCount = getChunks(elementsCount);
+      int bytesCnt = 0;
+      for (int c = 0; c < chunksCount; c++) {
+        long gIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(c);
+        LeafNode leafNode = (LeafNode) dataNode.get(gIdx);
         Bytes data = leafNode.getData();
         writer.write(data);
-        bytesCnt[0] += data.size();
+        bytesCnt += data.size();
       }
+      return bytesCnt;
+    } else {
+      // Fixed-size composite elements: one per chunk
+      int bytesCnt = 0;
+      for (int i = 0; i < elementsCount; i++) {
+        long gIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(i);
+        TreeNode childSubtree = dataNode.get(gIdx);
+        bytesCnt += elementSchema.sszSerializeTree(childSubtree, writer);
+      }
+      return bytesCnt;
     }
-    return bytesCnt[0];
   }
 
   private int sszSerializeVariable(
