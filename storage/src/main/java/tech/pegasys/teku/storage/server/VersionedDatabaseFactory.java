@@ -114,29 +114,29 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       case V4 -> {
         database = createV4Database();
         LOG.info(
-            "Created V4 Hot database (using RocksDB) ({}) at {}",
+            "Created RocksDB V4 Hot database ({}) at {}",
             dbVersion.getValue(),
             dbDirectory.getAbsolutePath());
         LOG.info(
-            "Created V4 Finalized database (using RocksDB) ({}) at {}",
+            "Created RocksDB V4 Finalized database ({}) at {}",
             dbVersion.getValue(),
             v5ArchiveDirectory.getAbsolutePath());
       }
       case V5 -> {
         database = createV5Database();
         LOG.info(
-            "Created V5 Hot database (using RocksDB) ({}) at {}",
+            "Created RocksDB V5 Hot database ({}) at {}",
             dbVersion.getValue(),
             dbDirectory.getAbsolutePath());
         LOG.info(
-            "Created V5 Finalized database (using RocksDB) ({}) at {}",
+            "Created RocksDB V5 Finalized database ({}) at {}",
             dbVersion.getValue(),
             v5ArchiveDirectory.getAbsolutePath());
       }
       case V6 -> {
         database = createV6Database();
         LOG.info(
-            "Created V6 Hot and Finalized database (using RocksDB) ({}) at {}",
+            "Created RocksDB V6 Hot and Finalized database ({}) at {}",
             dbVersion.getValue(),
             dbDirectory.getAbsolutePath());
       }
