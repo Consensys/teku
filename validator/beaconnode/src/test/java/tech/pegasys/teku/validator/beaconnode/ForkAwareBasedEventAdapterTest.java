@@ -34,13 +34,13 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 class ForkAwareBasedEventAdapterTest {
 
   private final Spec specElectra = TestSpecFactory.createMinimalElectra();
-  private final Spec specGloas = TestSpecFactory.createMainnetGloas();
+  private final Spec specGloas = TestSpecFactory.createMinimalGloas();
 
   private final GenesisDataProvider genesisDataProvider = mock(GenesisDataProvider.class);
   private final ValidatorTimingChannel validatorTimingChannel = mock(ValidatorTimingChannel.class);
 
   final int millisPerSlot = specElectra.getGenesisSpecConfig().getSlotDurationMillis();
-  final int secondsPerSlot = millisPerSlot * 1000;
+  final int secondsPerSlot = millisPerSlot / 1000;
 
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
@@ -112,7 +112,7 @@ class ForkAwareBasedEventAdapterTest {
     verify(validatorTimingChannel, never())
         .onPayloadAttestationCreationDue(UInt64.valueOf(nextSlot));
 
-    // And it even does fire 3/4 through the slot
+    // And it even does not fire 3/4 through the slot
     timeProvider.advanceTimeByMillis(millisPerSlot * 3L / 4);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, never())

@@ -35,8 +35,7 @@ public class Phase0TimeBasedEventAdapter extends TimeBasedEventAdapter {
     setGenesisTime(genesisTime);
     final UInt64 currentSlot = getCurrentSlot();
 
-    final UInt64 nextSlotStartTimeMillis =
-        spec.computeTimeMillisAtSlot(currentSlot.increment(), genesisTime);
+    final UInt64 nextSlotStartTimeMillis = getSlotStartTimeMillis(currentSlot.increment());
     final UInt64 millisPerSlot = getMillisPerSlot(currentSlot);
 
     // NOTE: seconds_per_slot currently based on current slot, and timings set up based on this
