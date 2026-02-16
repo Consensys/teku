@@ -101,6 +101,7 @@ public class EventSubscriptionManager
     eventChannels.subscribe(FinalizedCheckpointChannel.class, this);
     eventChannels.subscribe(ReceivedBlockEventsChannel.class, this);
     eventChannels.subscribe(ReceivedExecutionPayloadEventsChannel.class, this);
+    eventChannels.subscribe(ReceivedExecutionPayloadBidEventsChannel.class, this);
     syncDataProvider.subscribeToSyncStateChanges(this::onSyncStateChange);
     nodeDataProvider.subscribeToReceivedBlobSidecar(this::onNewBlobSidecar);
     nodeDataProvider.subscribeToAttesterSlashing(this::onNewAttesterSlashing);
