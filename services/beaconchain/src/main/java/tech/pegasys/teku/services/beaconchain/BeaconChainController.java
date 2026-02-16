@@ -192,6 +192,7 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqResp
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.SimpleSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever;
+import tech.pegasys.teku.statetransition.datacolumns.util.SuperNodeSupplier;
 import tech.pegasys.teku.statetransition.execution.DefaultExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.DefaultExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
@@ -1889,6 +1890,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   beaconConfig.p2pConfig().isReworkedSidecarSyncEnabled()));
     }
 
+    final SuperNodeSupplier isSuperNodeSupplier =
+        new SuperNodeSupplier(spec,beaconConfig.p2pConfig().isSubscribedToAllCustodySubnetsEnabled(), custodyGroupCountManager);
+
     this.p2pNetwork =
         createEth2P2PNetworkBuilder()
             .config(beaconConfig.p2pConfig())
@@ -1919,18 +1923,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.P2P))
             .gossipDasLogger(dasGossipLogger)
             .reqRespDasLogger(dasReqRespLogger)
-            .isSuperNodeSupplier(
-                () -> {
-                  if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
-                    return false;
-                  }
-                  if (beaconConfig.p2pConfig().isSubscribedToAllCustodySubnetsEnabled()) {
-                    return true;
-                  }
-                  return MiscHelpersFulu.required(
-                          spec.forMilestone(SpecMilestone.FULU).miscHelpers())
-                      .isSuperNode(custodyGroupCountManager.getCustodyGroupCount());
-                })
+            .isSuperNodeSupplier(isSuperNodeSupplier)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
             .metricsSystem(metricsSystem)

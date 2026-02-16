@@ -54,7 +54,6 @@ public class CustodyGroupCountManagerImplTest {
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private MiscHelpersFulu miscHelpersFulu;
   private Spec spec;
-  private SpecConfigFulu specConfigFulu;
   private CustodyGroupCountManagerImpl custodyGroupCountManager;
 
   @Test
@@ -78,7 +77,6 @@ public class CustodyGroupCountManagerImplTest {
     custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
             spec,
-            spec.getGenesisSpecConfig().toVersionFulu().orElseThrow(),
             spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
             proposersDataManager,
             custodyGroupCountChannel,
@@ -106,7 +104,6 @@ public class CustodyGroupCountManagerImplTest {
     custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
             spec,
-            spec.getGenesisSpecConfig().toVersionFulu().orElseThrow(),
             spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
             proposersDataManager,
             custodyGroupCountChannel,
@@ -133,7 +130,6 @@ public class CustodyGroupCountManagerImplTest {
     custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
             spec,
-            spec.getGenesisSpecConfig().toVersionFulu().orElseThrow(),
             spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
             proposersDataManager,
             custodyGroupCountChannel,
@@ -217,7 +213,6 @@ public class CustodyGroupCountManagerImplTest {
                             .balancePerAdditionalCustodyGroup(UInt64.valueOf(32000000000L))
                             .minEpochsForDataColumnSidecarsRequests(64)));
 
-    specConfigFulu = SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
     miscHelpersFulu =
         spy(MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers()));
 
@@ -226,7 +221,6 @@ public class CustodyGroupCountManagerImplTest {
     custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
             spec,
-            specConfigFulu,
             miscHelpersFulu,
             proposersDataManager,
             custodyGroupCountChannel,

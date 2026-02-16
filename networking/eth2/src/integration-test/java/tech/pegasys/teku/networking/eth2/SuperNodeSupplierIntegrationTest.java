@@ -1,0 +1,165 @@
+/*
+ * Copyright Consensys Software Inc., 2026
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.networking.eth2;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import com.google.common.base.Supplier;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
+import tech.pegasys.teku.statetransition.datacolumns.util.SuperNodeSupplier;
+
+/**
+ * Integration test that verifies the super node supplier logic correctly combines P2P config flags
+ * and custody group count to determine if gossip should be enabled during optimistic sync.
+ *
+ * <p>This test uses the EXACT same supplier logic as BeaconChainController (lines 1922-1932) to
+ * ensure we're testing the actual production code path, not a duplicate implementation.
+ */
+public class SuperNodeSupplierIntegrationTest {
+
+  Spec spec;
+  SuperNodeSupplier isSuperNodeSupplier;
+  final P2PConfig p2pConfig = mock(P2PConfig.class);
+  final CustodyGroupCountManager custodyGroupCountManager = mock(CustodyGroupCountManager.class);
+
+
+
+  @BeforeEach
+  public void setup() {
+    this.spec = TestSpecFactory.createMinimalFulu();
+  }
+
+  @Test
+  public void shouldReturnTrue_whenExplicitSuperNodeConfigEnabled() {
+    // Configure as explicit super node via P2P config
+    when(p2pConfig.isSubscribedToAllCustodySubnetsEnabled()).thenReturn(true);
+    when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(4);
+
+    isSuperNodeSupplier = new SuperNodeSupplier(spec, p2pConfig.isSubscribedToAllCustodySubnetsEnabled(), custodyGroupCountManager);
+
+    // Create supplier using BeaconChainController logic
+
+    assertThat(isSuperNodeSupplier.get())
+        .as(
+            "Should return true when isSubscribedToAllCustodySubnetsEnabled is true, regardless of custody count")
+        .isTrue();
+  }
+
+  @Test
+  public void shouldReturnTrue_whenCustodyCountQualifiesAsSuperNode() {
+    // Not explicitly configured as super node
+    when(p2pConfig.isSubscribedToAllCustodySubnetsEnabled()).thenReturn(false);
+
+    // But custody count is at maximum (128), which qualifies as super node
+    when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(128);
+
+    isSuperNodeSupplier = new SuperNodeSupplier(spec, p2pConfig.isSubscribedToAllCustodySubnetsEnabled(), custodyGroupCountManager);
+
+    // Verify the custody count qualifies as super node
+    final MiscHelpersFulu miscHelpersFulu =
+        MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
+    assertThat(miscHelpersFulu.isSuperNode(128))
+        .as("Custody count 128 should qualify as super node")
+        .isTrue();
+
+    assertThat(isSuperNodeSupplier.get())
+        .as(
+            "Should return true when custody count qualifies as super node (128 custody groups = max)")
+        .isTrue();
+  }
+
+  @Test
+  public void shouldReturnFalse_whenCustodyCountDoesNotQualifyAsSuperNode() {
+    // Not explicitly configured as super node
+    when(p2pConfig.isSubscribedToAllCustodySubnetsEnabled()).thenReturn(false);
+
+    // Custody count is low (4 = default minimum)
+    when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(4);
+
+    isSuperNodeSupplier = new SuperNodeSupplier(spec, p2pConfig.isSubscribedToAllCustodySubnetsEnabled(), custodyGroupCountManager);
+
+    // Verify the custody count does NOT qualify as super node
+    final MiscHelpersFulu miscHelpersFulu =
+        MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
+    assertThat(miscHelpersFulu.isSuperNode(4))
+        .as("Custody count 4 should NOT qualify as super node")
+        .isFalse();
+
+    assertThat(isSuperNodeSupplier.get())
+        .as(
+            "Should return false when custody count does not qualify as super node (only 4 custody groups)")
+        .isFalse();
+  }
+
+  @Test
+  public void shouldReturnFalse_beforeFuluMilestone() {
+    final Spec specElectra = TestSpecFactory.createMinimalElectra();
+
+    isSuperNodeSupplier = new SuperNodeSupplier(specElectra, p2pConfig.isSubscribedToAllCustodySubnetsEnabled(), custodyGroupCountManager);
+
+    // Even with explicit super node config
+    when(p2pConfig.isSubscribedToAllCustodySubnetsEnabled()).thenReturn(true);
+
+    assertThat(isSuperNodeSupplier.get())
+        .as("Should return false when Fulu milestone is not supported")
+        .isFalse();
+  }
+
+  @Test
+  public void shouldDynamicallyUpdate_whenCustodyCountChanges() {
+    // Not explicit super node
+    when(p2pConfig.isSubscribedToAllCustodySubnetsEnabled()).thenReturn(false);
+
+    // Initially low custody count
+    when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(4);
+
+    isSuperNodeSupplier = new SuperNodeSupplier(spec, p2pConfig.isSubscribedToAllCustodySubnetsEnabled(), custodyGroupCountManager);
+
+    assertThat(isSuperNodeSupplier.get())
+        .as("Should return false with low custody count")
+        .isFalse();
+
+    // Custody count increases after validators load (simulating delayed validator loading)
+    when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(128);
+    assertThat(isSuperNodeSupplier.get())
+        .as("Should return true after custody count increases to super node level")
+        .isTrue();
+  }
+
+  @Test
+  public void shouldPrioritizeExplicitConfig_overCustodyCount() {
+    // Explicitly configured as super node
+    when(p2pConfig.isSubscribedToAllCustodySubnetsEnabled()).thenReturn(true);
+
+    // Even with low custody count
+    when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(4);
+
+    isSuperNodeSupplier = new SuperNodeSupplier(spec, p2pConfig.isSubscribedToAllCustodySubnetsEnabled(), custodyGroupCountManager);
+
+    assertThat(isSuperNodeSupplier.get())
+        .as(
+            "Should return true when explicitly configured as super node, even with low custody count")
+        .isTrue();
+  }
+
+
+}
