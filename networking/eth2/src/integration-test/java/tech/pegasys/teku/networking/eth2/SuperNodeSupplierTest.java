@@ -46,7 +46,9 @@ public class SuperNodeSupplierTest {
 
     isSuperNodeSupplier =
         new SuperNodeSupplier(
-            spec, p2pConfig.isSubscribedToAllCustodySubnetsEnabled(), ()-> custodyGroupCountManager);
+            spec,
+            p2pConfig.isSubscribedToAllCustodySubnetsEnabled(),
+            () -> custodyGroupCountManager);
 
     // Create supplier using BeaconChainController logic
 
@@ -66,7 +68,9 @@ public class SuperNodeSupplierTest {
 
     isSuperNodeSupplier =
         new SuperNodeSupplier(
-            spec, p2pConfig.isSubscribedToAllCustodySubnetsEnabled(), ()-> custodyGroupCountManager);
+            spec,
+            p2pConfig.isSubscribedToAllCustodySubnetsEnabled(),
+            () -> custodyGroupCountManager);
 
     // Verify the custody count qualifies as super node
     final MiscHelpersFulu miscHelpersFulu =
@@ -91,7 +95,9 @@ public class SuperNodeSupplierTest {
 
     isSuperNodeSupplier =
         new SuperNodeSupplier(
-            spec, p2pConfig.isSubscribedToAllCustodySubnetsEnabled(), ()-> custodyGroupCountManager);
+            spec,
+            p2pConfig.isSubscribedToAllCustodySubnetsEnabled(),
+            () -> custodyGroupCountManager);
 
     // Verify the custody count does NOT qualify as super node
     final MiscHelpersFulu miscHelpersFulu =
@@ -116,7 +122,7 @@ public class SuperNodeSupplierTest {
         new SuperNodeSupplier(
             specElectra,
             p2pConfig.isSubscribedToAllCustodySubnetsEnabled(),
-                ()-> custodyGroupCountManager);
+            () -> custodyGroupCountManager);
 
     assertThat(isSuperNodeSupplier.get())
         .as("Should return false when Fulu milestone is not supported")
@@ -133,7 +139,9 @@ public class SuperNodeSupplierTest {
 
     isSuperNodeSupplier =
         new SuperNodeSupplier(
-            spec, p2pConfig.isSubscribedToAllCustodySubnetsEnabled(), ()-> custodyGroupCountManager);
+            spec,
+            p2pConfig.isSubscribedToAllCustodySubnetsEnabled(),
+            () -> custodyGroupCountManager);
 
     assertThat(isSuperNodeSupplier.get())
         .as("Should return false with low custody count")
@@ -156,7 +164,9 @@ public class SuperNodeSupplierTest {
 
     isSuperNodeSupplier =
         new SuperNodeSupplier(
-            spec, p2pConfig.isSubscribedToAllCustodySubnetsEnabled(), ()-> custodyGroupCountManager);
+            spec,
+            p2pConfig.isSubscribedToAllCustodySubnetsEnabled(),
+            () -> custodyGroupCountManager);
 
     assertThat(isSuperNodeSupplier.get())
         .as(

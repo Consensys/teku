@@ -1894,7 +1894,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new SuperNodeSupplier(
             spec,
             beaconConfig.p2pConfig().isSubscribedToAllCustodySubnetsEnabled(),
-                () -> custodyGroupCountManager);
+            () -> custodyGroupCountManager);
 
     this.p2pNetwork =
         createEth2P2PNetworkBuilder()
