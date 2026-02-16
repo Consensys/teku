@@ -37,8 +37,6 @@ class BlockProposalUtilFuluTest {
   private final Bytes32 currentTargetRoot = dataStructureUtil.randomBytes32();
   private final Bytes32 headBlockRoot = dataStructureUtil.randomBytes32();
 
-  //  private final UInt64 headEpoch = dataStructureUtil.randomEpoch();
-
   public static Stream<Arguments> getStateSlotForProposerDutiesTestCases() {
     // | EPOCH | START SLOT | END SLOT |
     // |   0   |       0    |     7    |
