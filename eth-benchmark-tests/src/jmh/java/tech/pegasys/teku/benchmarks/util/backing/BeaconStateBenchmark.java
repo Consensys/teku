@@ -104,7 +104,7 @@ public class BeaconStateBenchmark {
             state -> {
               for (int idx : EB_CHANGE_INDICES) {
                 final UInt64 newBalance =
-                    state.getValidators().get(idx).getEffectiveBalance().plus(1_000_000_00L);
+                    state.getValidators().get(idx).getEffectiveBalance().plus(1_000_000_000L);
                 state
                     .getValidators()
                     .set(idx, state.getValidators().get(idx).withEffectiveBalance(newBalance));
