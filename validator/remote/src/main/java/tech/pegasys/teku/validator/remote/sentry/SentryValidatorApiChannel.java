@@ -105,8 +105,9 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
-    return dutiesProviderChannel.getProposerDuties(epoch);
+  public SafeFuture<Optional<ProposerDuties>> getProposerDuties(
+      final UInt64 epoch, final boolean isFuluCompatible) {
+    return dutiesProviderChannel.getProposerDuties(epoch, isFuluCompatible);
   }
 
   @Override

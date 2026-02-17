@@ -43,14 +43,11 @@ public class BlockProposalUtilFulu extends BlockProposalUtilPhase0 {
   }
 
   @Override
-  public UInt64 getStateSlotForProposerDuties(final Spec spec, final UInt64 dutiesEpoch) {
-    if (forkEpoch.isPresent()
-        && dutiesEpoch.minusMinZero(1).isGreaterThanOrEqualTo(forkEpoch.get())) {
-      // on fulu boundary we have no context,
-      // but after fulu boundary our dependent root is previous epoch
-      return spec.computeStartSlotAtEpoch(dutiesEpoch.minusMinZero(1));
-    }
-    return super.getStateSlotForProposerDuties(spec, dutiesEpoch);
+  public UInt64 getStateSlotForProposerDuties(
+          final Spec spec, final UInt64 stateEpoch, final UInt64 dutiesEpoch) {
+    return dutiesEpoch.isGreaterThan(stateEpoch)
+        ? spec.computeStartSlotAtEpoch(stateEpoch)
+        : spec.computeStartSlotAtEpoch(dutiesEpoch);
   }
 
   @Override
@@ -58,26 +55,26 @@ public class BlockProposalUtilFulu extends BlockProposalUtilPhase0 {
       final Bytes32 headBlockRoot,
       final Bytes32 previousTargetRoot,
       final Bytes32 currentTargetRoot,
-      final UInt64 headEpoch,
+      final UInt64 stateEpoch,
       final UInt64 dutyEpoch) {
     if (forkEpoch.isEmpty() || dutyEpoch.minusMinZero(1).isLessThan(forkEpoch.get())) {
       return super.getBlockProposalDependentRoot(
-          headBlockRoot, previousTargetRoot, currentTargetRoot, headEpoch, dutyEpoch);
+          headBlockRoot, previousTargetRoot, currentTargetRoot, stateEpoch, dutyEpoch);
     }
     checkArgument(
-        dutyEpoch.isGreaterThanOrEqualTo(headEpoch),
+        dutyEpoch.isGreaterThanOrEqualTo(stateEpoch),
         "Attempting to calculate dependent root for duty epoch %s that is before the updated head epoch %s",
         dutyEpoch,
-        headEpoch);
-    if (headEpoch.equals(dutyEpoch)) {
-      LOG.debug("headEpoch {} - returning previousDutyDependentRoot", () -> headEpoch);
+        stateEpoch);
+    if (stateEpoch.equals(dutyEpoch)) {
+      LOG.debug("headEpoch {} - returning previousDutyDependentRoot", () -> stateEpoch);
       return previousTargetRoot;
-    } else if (headEpoch.increment().equals(dutyEpoch)) {
+    } else if (stateEpoch.increment().equals(dutyEpoch)) {
       LOG.debug("dutyEpoch (next epoch) {} - returning currentDutyDependentRoot", () -> dutyEpoch);
       return currentTargetRoot;
     } else {
       LOG.debug(
-          "headBlockRoot returned - dutyEpoch {}, headEpoch {}", () -> dutyEpoch, () -> headEpoch);
+          "headBlockRoot returned - dutyEpoch {}, headEpoch {}", () -> dutyEpoch, () -> stateEpoch);
       return headBlockRoot;
     }
   }
