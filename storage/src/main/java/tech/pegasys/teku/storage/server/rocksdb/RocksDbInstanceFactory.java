@@ -186,10 +186,17 @@ public class RocksDbInstanceFactory {
       final Collection<KvStoreColumn<?, ?>> columns,
       final Collection<Bytes> deletedColumns,
       final ColumnFamilyOptions columnFamilyOptions) {
-    final List<ColumnFamilyDescriptor> columnDescriptors =
-        Stream.concat(columns.stream().map(KvStoreColumn::getId), deletedColumns.stream())
-            .map(id -> new ColumnFamilyDescriptor(id.toArrayUnsafe(), columnFamilyOptions.setEnableBlobFiles(true)))
+
+    final ColumnFamilyOptions columnFamilyOptionsWithBlobDb = columnFamilyOptions;
+    final List<ColumnFamilyDescriptor> columnDescriptors = columns.stream().filter(KvStoreColumn::containsStaticData)
+            .map(column -> new ColumnFamilyDescriptor(column.getId().toArrayUnsafe(), columnFamilyOptionsWithBlobDb.setEnableBlobFiles(true)))
             .collect(Collectors.toCollection(ArrayList::new));
+
+                columnDescriptors.addAll(
+                        Stream.concat(columns.stream().filter(column -> !column.containsStaticData()).map(KvStoreColumn::getId), deletedColumns.stream())
+                                .map(id -> new ColumnFamilyDescriptor(id.toArrayUnsafe(), columnFamilyOptions))
+                                .collect(Collectors.toCollection(ArrayList::new)));
+
     columnDescriptors.add(
         new ColumnFamilyDescriptor(Schema.DEFAULT_COLUMN_ID.toArrayUnsafe(), columnFamilyOptions));
     return Collections.unmodifiableList(columnDescriptors);

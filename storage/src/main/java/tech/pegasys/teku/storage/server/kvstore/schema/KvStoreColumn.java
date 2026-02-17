@@ -88,7 +88,7 @@ public class KvStoreColumn<TKey, TValue> {
     return Objects.equals(id, that.id)
         && Objects.equals(keySerializer, that.keySerializer)
         && Objects.equals(valueSerializer, that.valueSerializer)
-        && Objects.equals(containsStaticData, that.containsStaticData);
+        && containsStaticData == that.containsStaticData;
   }
 
   @Override

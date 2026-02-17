@@ -60,17 +60,17 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
   private V6SchemaCombinedSnapshot(final Spec spec, final int finalizedOffset) {
     super(spec, finalizedOffset);
     slotsByFinalizedRoot =
-        KvStoreColumn.create(finalizedOffset + 1, BYTES32_SERIALIZER, UINT64_SERIALIZER);
+        KvStoreColumn.create(finalizedOffset + 1, BYTES32_SERIALIZER, UINT64_SERIALIZER, true);
     finalizedBlocksBySlot =
         KvStoreColumn.create(
             finalizedOffset + 2,
             UINT64_SERIALIZER,
-            KvStoreSerializer.createSignedBlockSerializer(spec));
+            KvStoreSerializer.createSignedBlockSerializer(spec),true);
     finalizedStatesBySlot =
         KvStoreColumn.create(
-            finalizedOffset + 3, UINT64_SERIALIZER, KvStoreSerializer.createStateSerializer(spec));
+            finalizedOffset + 3, UINT64_SERIALIZER, KvStoreSerializer.createStateSerializer(spec), true);
     slotsByFinalizedStateRoot =
-        KvStoreColumn.create(finalizedOffset + 4, BYTES32_SERIALIZER, UINT64_SERIALIZER);
+        KvStoreColumn.create(finalizedOffset + 4, BYTES32_SERIALIZER, UINT64_SERIALIZER, true);
     nonCanonicalBlocksByRoot =
         KvStoreColumn.create(
             finalizedOffset + 5,
@@ -82,7 +82,7 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
         KvStoreColumn.create(
             finalizedOffset + 12,
             SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX_KEY_SERIALIZER,
-            BYTES_SERIALIZER);
+            BYTES_SERIALIZER,true);
 
     nonCanonicalBlobSidecarBySlotRootBlobIndex =
         KvStoreColumn.create(
@@ -92,7 +92,7 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
 
     sidecarByColumnSlotAndIdentifier =
         KvStoreColumn.create(
-            finalizedOffset + 14, COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER, BYTES_SERIALIZER);
+            finalizedOffset + 14, COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER, BYTES_SERIALIZER, true);
 
     nonCanonicalSidecarByColumnSlotAndIdentifier =
         KvStoreColumn.create(
@@ -100,7 +100,7 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
 
     dataColumnSidecarsProofsBySlot =
         KvStoreColumn.create(
-            finalizedOffset + 17, UINT64_SERIALIZER, DATA_COLUMN_SIDECARS_PROOFS_SERIALIZER);
+            finalizedOffset + 17, UINT64_SERIALIZER, DATA_COLUMN_SIDECARS_PROOFS_SERIALIZER, true);
 
     deletedColumnIds =
         List.of(
