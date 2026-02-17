@@ -42,7 +42,6 @@ import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveRec
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.LoggingPeerId;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.ReqRespResponseLogger;
-import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
@@ -188,10 +187,6 @@ public class DataColumnSidecarsByRootMessageHandler
     if (isSuperNodePruned) {
       return dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(
           block, identifier.columnIndex(), messageId);
-    }
-    final Optional<ChainHead> chainHead = combinedChainDataClient.getChainHead();
-    if (chainHead.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.empty());
     }
     return combinedChainDataClient.getNonCanonicalSidecar(identifier);
   }
