@@ -282,7 +282,8 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
             block.getSlotAndBlockRoot(),
             new RecoveryTask(
                 Optional.of(block.asHeader()),
-                dataColumnSidecarUtil.getKzgCommitments(block.getMessage()),
+                SafeFuture.completedFuture(
+                    Optional.of(dataColumnSidecarUtil.getKzgCommitments(block))),
                 dataColumnSidecarUtil.computeDataColumnKzgCommitmentsInclusionProof(
                     block.getMessage().getBody()),
                 Collections.newSetFromMap(new ConcurrentHashMap<>())))

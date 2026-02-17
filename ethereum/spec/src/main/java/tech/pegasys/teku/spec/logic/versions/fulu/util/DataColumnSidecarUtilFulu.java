@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -340,10 +340,9 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   }
 
   @Override
-  public SafeFuture<Optional<SszList<SszKZGCommitment>>> getKzgCommitments(
-      final BeaconBlock block) {
-    return SafeFuture.completedFuture(
-        BeaconBlockBodyDeneb.required(block.getBody()).getOptionalBlobKzgCommitments());
+  public SszList<SszKZGCommitment> getKzgCommitments(final SignedBeaconBlock signedBeaconBlock) {
+    return BeaconBlockBodyElectra.required(signedBeaconBlock.getMessage().getBody())
+        .getBlobKzgCommitments();
   }
 
   @Override

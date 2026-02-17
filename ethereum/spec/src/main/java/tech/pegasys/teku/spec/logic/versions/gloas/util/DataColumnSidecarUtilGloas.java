@@ -217,19 +217,19 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
     return retrieveSignedBlockByRoot
         .apply(dataColumnSidecar.getBeaconBlockRoot())
         .thenCompose(
-            maybeBeaconBlock -> {
-              if (maybeBeaconBlock.isEmpty()) {
-                return SafeFuture.completedFuture(Optional.empty());
-              }
-              return getKzgCommitments(maybeBeaconBlock.get().getMessage());
-            });
+            maybeBeaconBlock ->
+                maybeBeaconBlock
+                    .map(
+                        signedBeaconBlock ->
+                            SafeFuture.completedFuture(
+                                Optional.of(getKzgCommitments(signedBeaconBlock))))
+                    .orElseGet(() -> SafeFuture.completedFuture(Optional.empty())));
   }
 
   @Override
-  public SafeFuture<Optional<SszList<SszKZGCommitment>>> getKzgCommitments(
-      final BeaconBlock block) {
-    return SafeFuture.completedFuture(
-        Optional.of(BeaconBlockBodyGloas.required(block.getBody()).getBlobKzgCommitments()));
+  public SszList<SszKZGCommitment> getKzgCommitments(final SignedBeaconBlock signedBeaconBlock) {
+    return BeaconBlockBodyGloas.required(signedBeaconBlock.getMessage().getBody())
+        .getBlobKzgCommitments();
   }
 
   @Override

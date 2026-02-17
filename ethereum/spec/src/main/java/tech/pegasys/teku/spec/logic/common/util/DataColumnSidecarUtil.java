@@ -108,7 +108,7 @@ public interface DataColumnSidecarUtil {
       DataColumnSidecar dataColumnSidecar,
       Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot);
 
-  SafeFuture<Optional<SszList<SszKZGCommitment>>> getKzgCommitments(BeaconBlock block);
+  SszList<SszKZGCommitment> getKzgCommitments(SignedBeaconBlock signedBeaconBlock);
 
   List<DataColumnSidecar> constructDataColumnSidecars(
       Optional<SignedBeaconBlockHeader> maybeSignedBeaconBlockHeader,
