@@ -14,10 +14,13 @@
 package tech.pegasys.teku.beaconrestapi.v1.beacon;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 import okhttp3.Response;
@@ -25,11 +28,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetExecutionPayloadEnvelope;
+import tech.pegasys.teku.ethereum.json.types.EthereumTypes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.metadata.ExecutionPayloadAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class GetExecutionPayloadEnvelopeIntegrationTest
@@ -93,6 +98,26 @@ public class GetExecutionPayloadEnvelopeIntegrationTest
         .isEqualTo(chainBuilder.getExecutionPayload(block.getRoot()).orElseThrow());
   }
 
+  @Test
+  public void shouldGetExecutionPayloadEnvelopeAsSsz() throws IOException {
+    final List<SignedBlockAndState> created = createBlocksAtSlots(1, 2, 3);
+
+    final Response response =
+        getResponse(GetExecutionPayloadEnvelope.ROUTE.replace("{block_id}", "head"), OCTET_STREAM);
+
+    assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo("gloas");
+
+    final byte[] responseBody = response.body().bytes();
+
+    assertThat(responseBody)
+        .isEqualTo(
+            getExpectedSsz(
+                chainBuilder
+                    .getExecutionPayload(created.getLast().getBlock().getRoot())
+                    .orElseThrow()));
+  }
+
   private SignedExecutionPayloadEnvelope getSignedExecutionPayloadEnvelope(final JsonNode body)
       throws JsonProcessingException {
     return JsonUtil.parse(
@@ -105,5 +130,14 @@ public class GetExecutionPayloadEnvelopeIntegrationTest
 
   private Response get(final String blockIdString) throws IOException {
     return getResponse(GetExecutionPayloadEnvelope.ROUTE.replace("{block_id}", blockIdString));
+  }
+
+  private byte[] getExpectedSsz(final SignedExecutionPayloadEnvelope data) throws IOException {
+    final ExecutionPayloadAndMetaData value =
+        new ExecutionPayloadAndMetaData(data, SpecMilestone.GLOAS, false, false);
+    try (final ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+      EthereumTypes.executionPayloadAndMetaDataSszResponseType().serialize(value, outputStream);
+      return outputStream.toByteArray();
+    }
   }
 }

@@ -16,7 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllSupportedMilestones;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
-import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.executionPayloadAndMetaDataSszResponseType;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
@@ -65,7 +65,7 @@ public class GetExecutionPayloadEnvelope extends RestApiEndpoint {
                 SC_OK,
                 "Request successful",
                 getResponseType(schemaDefinitionCache),
-                sszResponseType())
+                executionPayloadAndMetaDataSszResponseType())
             .withNotFoundResponse()
             .withChainDataResponses()
             .build());
