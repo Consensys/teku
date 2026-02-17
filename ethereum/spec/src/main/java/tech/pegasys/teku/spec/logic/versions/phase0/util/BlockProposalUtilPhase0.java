@@ -70,7 +70,7 @@ public class BlockProposalUtilPhase0 implements BlockProposalUtil {
 
   @Override
   public UInt64 getStateSlotForProposerDuties(
-          final Spec spec, final UInt64 stateEpoch, final UInt64 dutiesEpoch) {
+      final Spec spec, final UInt64 stateEpoch, final UInt64 dutiesEpoch) {
     return spec.computeStartSlotAtEpoch(dutiesEpoch);
   }
 
