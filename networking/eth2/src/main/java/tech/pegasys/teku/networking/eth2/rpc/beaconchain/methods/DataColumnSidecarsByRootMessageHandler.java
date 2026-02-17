@@ -203,12 +203,6 @@ public class DataColumnSidecarsByRootMessageHandler
     if (chainHead.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
-    final boolean isCanonical =
-        combinedChainDataClient.isCanonicalBlock(
-            block.getSlot(), identifier.blockRoot(), chainHead.get().getRoot());
-    if (isCanonical) {
-      return SafeFuture.completedFuture(Optional.empty());
-    }
     return combinedChainDataClient.getNonCanonicalSidecar(
         new DataColumnSlotAndIdentifier(
             block.getSlot(), identifier.blockRoot(), identifier.columnIndex()));
