@@ -38,6 +38,7 @@ import org.rocksdb.Cache;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
+import org.rocksdb.CompressionType;
 import org.rocksdb.DBOptions;
 import org.rocksdb.Env;
 import org.rocksdb.LRUCache;
@@ -189,7 +190,8 @@ public class RocksDbInstanceFactory {
 
     final ColumnFamilyOptions columnFamilyOptionsWithBlobDb = columnFamilyOptions;
     final List<ColumnFamilyDescriptor> columnDescriptors = columns.stream().filter(KvStoreColumn::containsStaticData)
-            .map(column -> new ColumnFamilyDescriptor(column.getId().toArrayUnsafe(), columnFamilyOptionsWithBlobDb.setEnableBlobFiles(true)))
+            .map(column -> new ColumnFamilyDescriptor(column.getId().toArrayUnsafe(), columnFamilyOptionsWithBlobDb.setEnableBlobFiles(true).setMinBlobSize(100)
+                    .setBlobCompressionType(CompressionType.LZ4_COMPRESSION)))
             .collect(Collectors.toCollection(ArrayList::new));
 
                 columnDescriptors.addAll(
