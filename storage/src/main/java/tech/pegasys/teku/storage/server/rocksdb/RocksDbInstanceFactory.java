@@ -188,7 +188,7 @@ public class RocksDbInstanceFactory {
       final ColumnFamilyOptions columnFamilyOptions) {
     final List<ColumnFamilyDescriptor> columnDescriptors =
         Stream.concat(columns.stream().map(KvStoreColumn::getId), deletedColumns.stream())
-            .map(id -> new ColumnFamilyDescriptor(id.toArrayUnsafe(), columnFamilyOptions))
+            .map(id -> new ColumnFamilyDescriptor(id.toArrayUnsafe(), columnFamilyOptions.setEnableBlobFiles(true)))
             .collect(Collectors.toCollection(ArrayList::new));
     columnDescriptors.add(
         new ColumnFamilyDescriptor(Schema.DEFAULT_COLUMN_ID.toArrayUnsafe(), columnFamilyOptions));
