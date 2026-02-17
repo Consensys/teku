@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.benchmarks.util.backing;
 
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Measurement;
@@ -80,6 +81,33 @@ public class BeaconStateBenchmark {
               UInt64 balance = UInt64.valueOf(777);
               for (int i = 0; i < size; i++) {
                 state.getBalances().setElement(i, balance);
+              }
+            });
+    bh.consume(stateW.hashTreeRoot());
+  }
+
+  private static final int NUM_EB_CHANGES = 2000;
+  private static final int[] EB_CHANGE_INDICES =
+      new Random(42).ints(NUM_EB_CHANGES, 0, 400_000).distinct().sorted().toArray();
+
+  static {
+    // pre-warm: compute and cache the initial hashTreeRoot
+    beaconState.hashTreeRoot();
+  }
+
+  @Benchmark
+  @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  public void updateEffectiveBalancesAndHash(Blackhole bh) {
+    BeaconState stateW =
+        beaconState.updated(
+            state -> {
+              for (int idx : EB_CHANGE_INDICES) {
+                final UInt64 newBalance =
+                    state.getValidators().get(idx).getEffectiveBalance().plus(1_000_000_00L);
+                state
+                    .getValidators()
+                    .set(idx, state.getValidators().get(idx).withEffectiveBalance(newBalance));
               }
             });
     bh.consume(stateW.hashTreeRoot());

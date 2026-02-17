@@ -43,7 +43,8 @@ import tech.pegasys.teku.infrastructure.ssz.tree.SszNodeTemplate.Location;
  * list)
  */
 public class SszSuperNode implements TreeNode, LeafDataNode {
-  private static final TreeNode DEFAULT_NODE = LeafNode.EMPTY_LEAF;
+  private static final byte[] DEFAULT_HASH_BYTES =
+      LeafNode.EMPTY_LEAF.hashTreeRoot().toArrayUnsafe();
 
   private final int depth;
   private final SszNodeTemplate elementTemplate;
@@ -88,25 +89,25 @@ public class SszSuperNode implements TreeNode, LeafDataNode {
   }
 
   private Bytes32 calcHashTreeRoot(final Sha256 sha256) {
-    return hashTreeRoot(0, 0, sha256);
+    return Bytes32.wrap(hashTreeRootRaw(0, 0, sha256));
   }
 
-  private Bytes32 hashTreeRoot(final int curDepth, final int offset, final Sha256 sha256) {
+  private byte[] hashTreeRootRaw(final int curDepth, final int offset, final Sha256 sha256) {
     if (curDepth == depth) {
       if (offset < ssz.size()) {
-        return elementTemplate.calculateHashTreeRoot(ssz, offset, sha256);
+        return elementTemplate.calculateHashTreeRootRaw(ssz, offset, sha256);
       } else {
         assert offset <= elementTemplate.getSszLength() * (getMaxElements() - 1);
-        return DEFAULT_NODE.hashTreeRoot();
+        return DEFAULT_HASH_BYTES;
       }
     } else {
-      final Bytes32 leftRoot = hashTreeRoot(curDepth + 1, offset, sha256);
-      final Bytes32 rightRoot =
-          hashTreeRoot(
+      final byte[] leftRoot = hashTreeRootRaw(curDepth + 1, offset, sha256);
+      final byte[] rightRoot =
+          hashTreeRootRaw(
               curDepth + 1,
               offset + elementTemplate.getSszLength() * (1 << ((depth - curDepth) - 1)),
               sha256);
-      return Bytes32.wrap(sha256.digest(leftRoot, rightRoot));
+      return sha256.digest(leftRoot, rightRoot);
     }
   }
 
