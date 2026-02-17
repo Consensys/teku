@@ -130,7 +130,7 @@ public class SszProgressiveBitlistSchema implements SszBitlistSchema<SszBitlist>
 
   @Override
   public long maxChunks() {
-    return Long.MAX_VALUE;
+    throw new UnsupportedOperationException("Progressive bitlists don't have a fixed maxChunks");
   }
 
   @Override

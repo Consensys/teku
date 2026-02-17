@@ -115,7 +115,7 @@ public class SszProgressiveListSchema<ElementDataT extends SszData>
 
   @Override
   public long maxChunks() {
-    return Long.MAX_VALUE;
+    throw new UnsupportedOperationException("Progressive lists don't have a fixed maxChunks");
   }
 
   @Override
