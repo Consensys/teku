@@ -17,12 +17,17 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVAL
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSortedMap;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
@@ -39,6 +44,7 @@ import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.LoggingPeerId;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.ReqRespResponseLogger;
@@ -57,12 +63,14 @@ public class DataColumnSidecarsByRangeMessageHandler
   private final CombinedChainDataClient combinedChainDataClient;
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalDataColumnSidecarsRequestedCounter;
+  private final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor;
   private final DasReqRespLogger dasLogger;
 
   public DataColumnSidecarsByRangeMessageHandler(
       final SpecConfigFulu specConfigFulu,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient combinedChainDataClient,
+      final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor,
       final DasReqRespLogger dasLogger) {
     this.specConfigFulu = specConfigFulu;
     this.combinedChainDataClient = combinedChainDataClient;
@@ -78,6 +86,7 @@ public class DataColumnSidecarsByRangeMessageHandler
             "rpc_data_column_sidecars_by_range_requested_sidecars_total",
             "Total number of data column sidecars requested in accepted blob sidecars by range requests from peers");
     this.dasLogger = dasLogger;
+    this.dataColumnSidecarArchiveReconstructor = dataColumnSidecarArchiveReconstructor;
   }
 
   @Override
@@ -146,6 +155,8 @@ public class DataColumnSidecarsByRangeMessageHandler
       canonicalHotRoots = ImmutableSortedMap.of();
     }
 
+    final int messageId = dataColumnSidecarArchiveReconstructor.onRequest();
+    callback.alwaysRun(() -> dataColumnSidecarArchiveReconstructor.onRequestCompleted(messageId));
     final RequestState initialState =
         new RequestState(
             callbackWithLogging,
@@ -154,7 +165,8 @@ public class DataColumnSidecarsByRangeMessageHandler
             endSlot,
             columns,
             canonicalHotRoots,
-            finalizedSlot);
+            finalizedSlot,
+            messageId);
 
     final SafeFuture<RequestState> response;
     if (requestedCount == 0 || initialState.isComplete()) {
@@ -211,6 +223,8 @@ public class DataColumnSidecarsByRangeMessageHandler
     private final List<UInt64> columns;
     private final UInt64 finalizedSlot;
     private final Map<UInt64, Bytes32> canonicalHotRoots;
+    private final int messageId;
+    private final boolean maybeSuperNodePruned;
 
     // since our storage stores hot and finalized data columns sidecar on the same "table", this
     // iterator can span over hot and finalized data column sidecar
@@ -224,7 +238,8 @@ public class DataColumnSidecarsByRangeMessageHandler
         final UInt64 endSlot,
         final List<UInt64> columns,
         final Map<UInt64, Bytes32> canonicalHotRoots,
-        final UInt64 finalizedSlot) {
+        final UInt64 finalizedSlot,
+        final int messageId) {
       this.callback = callback;
       this.maxRequestDataColumnSidecars = UInt64.valueOf(maxRequestDataColumnSidecars);
       this.startSlot = startSlot;
@@ -232,6 +247,12 @@ public class DataColumnSidecarsByRangeMessageHandler
       this.columns = columns;
       this.finalizedSlot = finalizedSlot;
       this.canonicalHotRoots = canonicalHotRoots;
+      this.messageId = messageId;
+      final UInt64 highestIndex =
+          columns.stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
+      this.maybeSuperNodePruned =
+          dataColumnSidecarArchiveReconstructor.isSidecarPruned(startSlot, highestIndex)
+              || dataColumnSidecarArchiveReconstructor.isSidecarPruned(endSlot, highestIndex);
     }
 
     SafeFuture<Void> sendDataColumnSidecar(final DataColumnSidecar dataColumnSidecar) {
@@ -246,14 +267,41 @@ public class DataColumnSidecarsByRangeMessageHandler
                 keys -> {
                   dataColumnSidecarKeysIterator =
                       Optional.of(
-                          keys.stream()
-                              .filter(key -> columns.contains(key.columnIndex()))
+                          filterIdentifiers(keys).stream()
+                              .limit(maxRequestDataColumnSidecars.longValue())
                               .iterator());
                   return getNextDataColumnSidecar(dataColumnSidecarKeysIterator.get());
                 });
       } else {
         return getNextDataColumnSidecar(dataColumnSidecarKeysIterator.get());
       }
+    }
+
+    private List<DataColumnSlotAndIdentifier> filterIdentifiers(
+        final List<DataColumnSlotAndIdentifier> dbIdentifiers) {
+      final NavigableMap<UInt64, List<DataColumnSlotAndIdentifier>> slotMap =
+          dbIdentifiers.stream()
+              .collect(
+                  Collectors.groupingBy(
+                      DataColumnSlotAndIdentifier::slot, TreeMap::new, Collectors.toList()));
+      final List<DataColumnSlotAndIdentifier> matchingKeys = new ArrayList<>();
+      for (final UInt64 slot : slotMap.navigableKeySet()) {
+        if (maybeSuperNodePruned && !slotMap.get(slot).isEmpty()) {
+          // Adding all requested, we expect we either have it
+          // or can reconstruct from proof archives
+          final DataColumnSlotAndIdentifier first = slotMap.get(slot).getFirst();
+          columns.forEach(
+              column ->
+                  matchingKeys.add(
+                      new DataColumnSlotAndIdentifier(first.slot(), first.blockRoot(), column)));
+        } else {
+          slotMap.get(slot).stream()
+              .filter(key -> columns.contains(key.columnIndex()))
+              .forEach(matchingKeys::add);
+        }
+      }
+
+      return matchingKeys;
     }
 
     boolean isComplete() {
@@ -269,13 +317,44 @@ public class DataColumnSidecarsByRangeMessageHandler
         if (finalizedSlot.isGreaterThanOrEqualTo(columnSlotAndIdentifier.slot())
             // not finalized, let's check if it is on canonical chain
             || isCanonicalHotDataColumnSidecar(columnSlotAndIdentifier)) {
-          return combinedChainDataClient.getSidecar(columnSlotAndIdentifier);
+
+          return combinedChainDataClient
+              .getSidecar(columnSlotAndIdentifier)
+              .thenCompose(
+                  maybeSidecar -> {
+                    if (maybeSidecar.isPresent()) {
+                      return SafeFuture.completedFuture(maybeSidecar);
+                    } else {
+                      return tryArchiveSidecarReconstruction(columnSlotAndIdentifier);
+                    }
+                  });
         }
         // non-canonical, try next one
         return getNextDataColumnSidecar(dataColumnSidecarIdentifiers);
       }
 
       return SafeFuture.completedFuture(Optional.empty());
+    }
+
+    private SafeFuture<Optional<DataColumnSidecar>> tryArchiveSidecarReconstruction(
+        final DataColumnSlotAndIdentifier columnSlotAndIdentifier) {
+      if (!maybeSuperNodePruned
+          || !dataColumnSidecarArchiveReconstructor.isSidecarPruned(
+              columnSlotAndIdentifier.slot(), columnSlotAndIdentifier.columnIndex())) {
+        return SafeFuture.completedFuture(Optional.empty());
+      }
+
+      return combinedChainDataClient
+          .getBlockAtSlotExact(columnSlotAndIdentifier.slot())
+          .thenCompose(
+              maybeBlock -> {
+                if (maybeBlock.isEmpty()) {
+                  return SafeFuture.completedFuture(Optional.empty());
+                }
+
+                return dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(
+                    maybeBlock.get(), columnSlotAndIdentifier.columnIndex(), messageId);
+              });
     }
 
     private boolean isCanonicalHotDataColumnSidecar(

@@ -427,5 +427,9 @@ public class NoOpDatabase implements Database {
   public void pruneAllSidecars(final UInt64 tillSlotInclusive, final int pruneLimit) {}
 
   @Override
+  public void archiveSidecarsProofs(
+      final UInt64 startSlot, final UInt64 tillSlotInclusive, final int pruneLimit) {}
+
+  @Override
   public void close() {}
 }

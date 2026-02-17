@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.benchmarks.kzg;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.apache.tuweni.bytes.Bytes;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
@@ -23,6 +26,12 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
+import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 
 @Fork(1)
 @Warmup(iterations = 5, time = 2000, timeUnit = TimeUnit.MILLISECONDS)
@@ -63,5 +72,40 @@ public class WithPrecomputeBenchmark {
     final int halfSize = size / 2;
     plan.config.miscHelpersFulu.reconstructAllDataColumnSidecars(
         plan.config.dataColumnSidecars.subList(halfSize, size));
+  }
+
+  /** Similar to {@link DataColumnSidecarArchiveReconstructor} */
+  @Benchmark
+  public void reconstructDataColumnSidecarsFromArchive(final ExecutionPlan plan) {
+    final BlobSchema blobSchema = plan.config.schemaDefinitionsFulu.getBlobSchema();
+    final int size = plan.config.dataColumnSidecars.size();
+    final int halfSize = size / 2;
+    final List<DataColumnSidecar> sidecars = plan.config.dataColumnSidecars.subList(0, halfSize);
+
+    final List<List<KZGProof>> kzgProofs =
+        plan.config.dataColumnSidecars.subList(halfSize, size).stream()
+            .map(sidecar -> sidecar.getKzgProofs().stream().map(SszKZGProof::getKZGProof).toList())
+            .toList();
+    final List<BlobAndCellProofs> blobAndCellProofsList = new ArrayList<>();
+    for (int i = 0; i < sidecars.getFirst().getKzgCommitments().size(); i++) {
+      final int blobIndex = i;
+      final Bytes blob =
+          sidecars.stream()
+              .map(sidecar -> sidecar.getColumn().get(blobIndex).getBytes())
+              .reduce(Bytes.EMPTY, Bytes::concatenate);
+      final List<KZGProof> blobProofs = new ArrayList<>();
+      for (int j = 0; j < halfSize; j++) {
+        blobProofs.add(sidecars.get(j).getKzgProofs().get(blobIndex).getKZGProof());
+      }
+      for (int j = 0; j < halfSize; j++) {
+        blobProofs.add(kzgProofs.get(j).get(blobIndex));
+      }
+      final BlobAndCellProofs blobAndCellProofs =
+          new BlobAndCellProofs(blobSchema.create(blob), blobProofs);
+      blobAndCellProofsList.add(blobAndCellProofs);
+    }
+
+    plan.config.miscHelpersFulu.constructDataColumnSidecars(
+        plan.config.signedBeaconBlock, blobAndCellProofsList);
   }
 }

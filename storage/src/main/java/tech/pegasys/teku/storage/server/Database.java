@@ -299,4 +299,7 @@ public interface Database extends AutoCloseable {
 
   // prunes both canonical and non canonical sidecars
   void pruneAllSidecars(UInt64 tillSlotInclusive, int pruneLimit);
+
+  // prunes extension sidecars, storing proofs from them
+  void archiveSidecarsProofs(UInt64 startSlot, UInt64 tillSlotInclusive, int pruneLimit);
 }
