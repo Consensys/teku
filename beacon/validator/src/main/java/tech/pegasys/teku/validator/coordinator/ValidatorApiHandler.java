@@ -1047,7 +1047,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     final BlockProposalUtil blockProposalUtil;
     if (isFuluCompatible) {
       blockProposalUtil = spec.atEpoch(epoch).getBlockProposalUtil();
-
     } else {
       blockProposalUtil = spec.forMilestone(SpecMilestone.PHASE0).getBlockProposalUtil();
     }

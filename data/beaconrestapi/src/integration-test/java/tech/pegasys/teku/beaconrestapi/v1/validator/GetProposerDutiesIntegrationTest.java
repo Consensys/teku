@@ -131,7 +131,7 @@ public class GetProposerDutiesIntegrationTest extends AbstractDataBackedRestAPII
   // slot         0 | 1  2  3  4  5  6  7 | 8  9 10 11 12 13 14 15 | 16
   // query          |                     |                        |  ^
   // dep            |                   D |                        |
-  // EXPECT - expect epoch 1 duties with dependent root slot 0
+  // EXPECT - expect epoch 1 duties with dependent root slot 7
   //          (previousDependentRoot of epoch 1 state)
   @Test
   void shouldReturnCorrectDependentRootPostFuluExtraSlots() throws IOException {
