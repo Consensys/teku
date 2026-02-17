@@ -14,7 +14,6 @@
 package tech.pegasys.teku.infrastructure.ssz;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -64,14 +63,14 @@ public class SszProgressiveListTest implements SszCollectionTestBase {
   }
 
   @Test
-  void createWritableCopy_shouldThrow() {
+  void createWritableCopy_shouldSucceed() {
     SszList<SszUInt64> list = createUInt64List(3);
-    assertThatThrownBy(list::createWritableCopy).isInstanceOf(UnsupportedOperationException.class);
+    assertThat(list.createWritableCopy()).isNotNull();
   }
 
   @Test
-  void isWritableSupported_shouldReturnFalse() {
+  void isWritableSupported_shouldReturnTrue() {
     SszList<SszUInt64> list = createUInt64List(1);
-    assertThat(list.isWritableSupported()).isFalse();
+    assertThat(list.isWritableSupported()).isTrue();
   }
 }

@@ -60,12 +60,12 @@ public class SszProgressiveListImpl<SszElementT extends SszData>
 
   @Override
   public SszMutableList<SszElementT> createWritableCopy() {
-    throw new UnsupportedOperationException("Mutable copies not supported for progressive lists");
+    return new SszMutableProgressiveListImpl<>(this);
   }
 
   @Override
   public boolean isWritableSupported() {
-    return false;
+    return true;
   }
 
   @Override

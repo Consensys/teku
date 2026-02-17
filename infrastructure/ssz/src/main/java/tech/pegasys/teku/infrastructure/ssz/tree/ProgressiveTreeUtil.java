@@ -15,6 +15,9 @@ package tech.pegasys.teku.infrastructure.ssz.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -106,6 +109,101 @@ public class ProgressiveTreeUtil {
     TreeNode left = TreeUtil.createTree(chunks.subList(0, split), depth);
     TreeNode right = createProgressiveTree(chunks.subList(split, chunks.size()), currentLevel + 1);
     return BranchNode.create(left, right);
+  }
+
+  /**
+   * Applies chunk-level updates to a progressive data tree, growing it if needed.
+   *
+   * <p>This method walks the progressive tree's right spine level-by-level. Changes are grouped by
+   * level and applied as batched {@link TreeUpdates} to each level's balanced subtree (where all
+   * changes share the same depth). New levels are created as needed for appends beyond existing
+   * capacity. Unchanged subtrees are reused for structural sharing.
+   *
+   * @param dataTree existing progressive data tree (left child of the list/container root)
+   * @param chunkUpdates map from chunk index to new TreeNode for that chunk
+   * @param newTotalChunks total number of chunks after updates
+   * @return updated progressive data tree with structural sharing
+   */
+  public static TreeNode updateProgressiveTree(
+      final TreeNode dataTree,
+      final Int2ObjectMap<TreeNode> chunkUpdates,
+      final int newTotalChunks) {
+    if (newTotalChunks == 0) {
+      return LeafNode.EMPTY_LEAF;
+    }
+    if (chunkUpdates.isEmpty()) {
+      return dataTree;
+    }
+    int maxLevel = levelForIndex(newTotalChunks - 1);
+
+    // Group by level and compute gIndices within each level's balanced subtree
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    List<TreeUpdates.Update>[] updatesByLevel = new List[maxLevel + 1];
+
+    for (Int2ObjectMap.Entry<TreeNode> entry : chunkUpdates.int2ObjectEntrySet()) {
+      int chunkIndex = entry.getIntKey();
+      int level = levelForIndex(chunkIndex);
+      long cumulativeBefore = level > 0 ? cumulativeCapacity(level - 1) : 0;
+      long posInLevel = chunkIndex - cumulativeBefore;
+      int depth = levelDepth(level);
+      long gIdx =
+          depth > 0
+              ? GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, posInLevel, depth)
+              : GIndexUtil.SELF_G_INDEX;
+
+      if (updatesByLevel[level] == null) {
+        updatesByLevel[level] = new ArrayList<>();
+      }
+      updatesByLevel[level].add(new TreeUpdates.Update(gIdx, entry.getValue()));
+    }
+
+    // Sort updates within each level by gIndex (required by TreeUpdates)
+    for (List<TreeUpdates.Update> updates : updatesByLevel) {
+      if (updates != null && updates.size() > 1) {
+        updates.sort(Comparator.comparingLong(TreeUpdates.Update::getGeneralizedIndex));
+      }
+    }
+
+    return updateLevel(dataTree, 0, maxLevel, updatesByLevel);
+  }
+
+  private static TreeNode updateLevel(
+      final TreeNode node,
+      final int level,
+      final int maxLevel,
+      final List<TreeUpdates.Update>[] updatesByLevel) {
+    if (level > maxLevel) {
+      return LeafNode.EMPTY_LEAF;
+    }
+
+    TreeNode left;
+    TreeNode right;
+    if (node instanceof BranchNode branch) {
+      left = branch.left();
+      right = branch.right();
+    } else {
+      // Node doesn't exist yet (EMPTY_LEAF) - create zero-filled balanced subtree
+      left = TreeUtil.ZERO_TREES[levelDepth(level)];
+      right = LeafNode.EMPTY_LEAF;
+    }
+
+    TreeNode originalLeft = left;
+
+    // Apply changes for this level
+    List<TreeUpdates.Update> levelUpdates = updatesByLevel[level];
+    if (levelUpdates != null && !levelUpdates.isEmpty()) {
+      TreeUpdates treeUpdates = new TreeUpdates(levelUpdates);
+      left = left.updated(treeUpdates);
+    }
+
+    TreeNode newRight = updateLevel(right, level + 1, maxLevel, updatesByLevel);
+
+    @SuppressWarnings("ReferenceComparison")
+    boolean unchanged = left == originalLeft && newRight == right;
+    if (unchanged) {
+      return node; // structural sharing
+    }
+    return BranchNode.create(left, newRight);
   }
 
   /**

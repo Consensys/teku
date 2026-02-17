@@ -130,12 +130,12 @@ public class SszProgressiveBitlistImpl extends AbstractSszCollection<SszBit> imp
 
   @Override
   public SszMutablePrimitiveList<Boolean, SszBit> createWritableCopy() {
-    throw new UnsupportedOperationException("SszProgressiveBitlist is immutable structure");
+    return new SszMutableProgressiveBitlistImpl(this);
   }
 
   @Override
   public boolean isWritableSupported() {
-    return false;
+    return true;
   }
 
   @Override

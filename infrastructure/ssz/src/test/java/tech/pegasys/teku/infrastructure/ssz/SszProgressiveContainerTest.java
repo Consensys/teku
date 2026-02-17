@@ -14,7 +14,6 @@
 package tech.pegasys.teku.infrastructure.ssz;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -109,16 +108,15 @@ public class SszProgressiveContainerTest implements SszCompositeTestBase {
   }
 
   @Test
-  void createWritableCopy_shouldThrow() {
+  void createWritableCopy_shouldSucceed() {
     SszContainer container = createAllFixed(UInt64.ONE, (byte) 0, UInt64.ZERO);
-    assertThatThrownBy(container::createWritableCopy)
-        .isInstanceOf(UnsupportedOperationException.class);
+    assertThat(container.createWritableCopy()).isNotNull();
   }
 
   @Test
-  void isWritableSupported_shouldReturnFalse() {
+  void isWritableSupported_shouldReturnTrue() {
     SszContainer container = createAllFixed(UInt64.ONE, (byte) 0, UInt64.ZERO);
-    assertThat(container.isWritableSupported()).isFalse();
+    assertThat(container.isWritableSupported()).isTrue();
   }
 
   @Test

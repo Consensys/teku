@@ -35,6 +35,13 @@ public class SszProgressiveContainerImpl extends AbstractSszComposite<SszData>
     super(type, backingNode);
   }
 
+  public SszProgressiveContainerImpl(
+      final SszProgressiveContainerSchema<?> type,
+      final TreeNode backingNode,
+      final IntCache<SszData> cache) {
+    super(type, backingNode, cache);
+  }
+
   @Override
   protected SszData getImpl(final int index) {
     SszProgressiveContainerSchema<?> schema = getSchema();
@@ -49,13 +56,12 @@ public class SszProgressiveContainerImpl extends AbstractSszComposite<SszData>
 
   @Override
   public SszMutableContainer createWritableCopy() {
-    throw new UnsupportedOperationException(
-        "Mutable copies not supported for progressive containers");
+    return new SszMutableProgressiveContainerImpl(this);
   }
 
   @Override
   public boolean isWritableSupported() {
-    return false;
+    return true;
   }
 
   @Override

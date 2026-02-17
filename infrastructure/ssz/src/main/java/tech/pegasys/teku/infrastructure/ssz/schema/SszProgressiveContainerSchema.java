@@ -244,8 +244,7 @@ public class SszProgressiveContainerSchema<C extends SszContainer>
 
   @Override
   public long maxChunks() {
-    throw new UnsupportedOperationException(
-        "Progressive containers don't have a fixed maxChunks");
+    throw new UnsupportedOperationException("Progressive containers don't have a fixed maxChunks");
   }
 
   @Override

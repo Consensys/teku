@@ -14,7 +14,6 @@
 package tech.pegasys.teku.infrastructure.ssz.collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.collections.PrimitiveCollectionAssert.assertThatIntCollection;
 
 import java.util.BitSet;
@@ -194,9 +193,8 @@ public class SszProgressiveBitlistTest implements SszPrimitiveCollectionTestBase
 
   @ParameterizedTest
   @MethodSource("bitlistArgs")
-  void createWritableCopy_shouldThrow(final SszBitlist bitlist) {
-    assertThatThrownBy(bitlist::createWritableCopy)
-        .isInstanceOf(UnsupportedOperationException.class);
+  void createWritableCopy_shouldSucceed(final SszBitlist bitlist) {
+    assertThat(bitlist.createWritableCopy()).isNotNull();
   }
 
   @Test
