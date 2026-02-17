@@ -15,4 +15,4 @@
 
 ### Bug Fixes
 
-
+- fixed an issue with dependent root calculation which was causing future epoch block proposal duties to be recalculated.

@@ -60,7 +60,7 @@ public class BlockProposalUtilFulu extends BlockProposalUtilPhase0 {
       final Bytes32 currentTargetRoot,
       final UInt64 headEpoch,
       final UInt64 dutyEpoch) {
-    if (forkEpoch.isEmpty() || forkEpoch.get().isLessThanOrEqualTo(dutyEpoch.minusMinZero(1))) {
+    if (forkEpoch.isEmpty() || dutyEpoch.minusMinZero(1).isLessThan(forkEpoch.get())) {
       return super.getBlockProposalDependentRoot(
           headBlockRoot, previousTargetRoot, currentTargetRoot, headEpoch, dutyEpoch);
     }
