@@ -368,7 +368,7 @@ class ValidatorApiHandlerTest {
   public void getProposerDuties_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
     final SafeFuture<Optional<ProposerDuties>> duties =
-        validatorApiHandler.getProposerDuties(EPOCH);
+        validatorApiHandler.getProposerDuties(EPOCH, false);
     assertThat(duties).isCompletedExceptionally();
     assertThatThrownBy(duties::get).hasRootCauseInstanceOf(NodeSyncingException.class);
   }
@@ -378,20 +378,22 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(3));
 
     final SafeFuture<Optional<ProposerDuties>> result =
-        validatorApiHandler.getProposerDuties(EPOCH);
+        validatorApiHandler.getProposerDuties(EPOCH, false);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
   public void getProposerDuties_shouldReturnDutiesForNextEpoch() {
+    final Bytes32 headRoot = dataStructureUtil.randomBytes32();
     final BeaconState state = createStateWithActiveValidators(epochStartSlot);
     when(chainDataClient.getStateAtSlotExact(epochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
+    when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
 
     final SafeFuture<Optional<ProposerDuties>> result =
-        validatorApiHandler.getProposerDuties(EPOCH.increment());
+        validatorApiHandler.getProposerDuties(EPOCH.increment(), true);
     final ProposerDuties duties = assertCompletedSuccessfully(result).orElseThrow();
     assertThat(duties.getDuties().size()).isEqualTo(spec.slotsPerEpoch(EPOCH.increment()));
     assertThat(duties.getDependentRoot()).isEqualTo(spec.getCurrentDutyDependentRoot(state));
@@ -399,16 +401,15 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getProposerDuties_shouldReturnDutiesForCurrentEpoch() {
-    final UInt64 previousEpochStartSlot =
-        epochStartSlot.minus(spec.getGenesisSpecConfig().getSlotsPerEpoch());
-    final BeaconState state = createStateWithActiveValidators(previousEpochStartSlot);
-
-    when(chainDataClient.getStateAtSlotExact(previousEpochStartSlot))
+    final BeaconState state = createStateWithActiveValidators(epochStartSlot);
+    final Bytes32 headRoot = dataStructureUtil.randomBytes32();
+    when(chainDataClient.getStateAtSlotExact(epochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
+    when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
 
     final SafeFuture<Optional<ProposerDuties>> result =
-        validatorApiHandler.getProposerDuties(EPOCH);
+        validatorApiHandler.getProposerDuties(EPOCH, true);
     final ProposerDuties duties = assertCompletedSuccessfully(result).orElseThrow();
     assertThat(duties.getDuties().size()).isEqualTo(spec.slotsPerEpoch(EPOCH));
     assertThat(duties.getDependentRoot()).isEqualTo(spec.getCurrentDutyDependentRoot(state));
@@ -419,6 +420,8 @@ class ValidatorApiHandlerTest {
     final UInt64 epoch = EPOCH.minus(1);
     final BeaconState state = createStateWithActiveValidators(epochStartSlot);
     final UInt64 querySlot = spec.computeStartSlotAtEpoch(epoch);
+    final Bytes32 headRoot = dataStructureUtil.randomBytes32();
+
     LOG.debug(
         "Epoch Start slot {}, Test Epoch {}, expect query slot {}",
         epochStartSlot,
@@ -427,24 +430,25 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getStateAtSlotExact(querySlot))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(epoch);
+    when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
 
     final SafeFuture<Optional<ProposerDuties>> result =
-        validatorApiHandler.getProposerDuties(EPOCH);
+        validatorApiHandler.getProposerDuties(EPOCH, false);
     final Optional<ProposerDuties> duties = assertCompletedSuccessfully(result);
     assertThat(duties.orElseThrow().getDuties().size()).isEqualTo(spec.slotsPerEpoch(EPOCH));
   }
 
   @Test
   void getProposerDuties_shouldReturnDutiesInOrder() {
-    final UInt64 previousEpochStartSlot =
-        epochStartSlot.minus(spec.getGenesisSpecConfig().getSlotsPerEpoch());
-    final BeaconState state = createStateWithActiveValidators(previousEpochStartSlot);
-    when(chainDataClient.getStateAtSlotExact(previousEpochStartSlot))
+    final BeaconState state = createStateWithActiveValidators(epochStartSlot);
+    final Bytes32 headRoot = dataStructureUtil.randomBytes32();
+    when(chainDataClient.getStateAtSlotExact(epochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
+    when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
 
     final SafeFuture<Optional<ProposerDuties>> result =
-        validatorApiHandler.getProposerDuties(EPOCH);
+        validatorApiHandler.getProposerDuties(EPOCH, true);
     final Optional<ProposerDuties> duties = assertCompletedSuccessfully(result);
     assertThat(duties.orElseThrow().getDuties())
         .isSortedAccordingTo(Comparator.comparing(ProposerDuty::getSlot));

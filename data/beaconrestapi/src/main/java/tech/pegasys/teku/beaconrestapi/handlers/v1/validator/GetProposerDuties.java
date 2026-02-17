@@ -77,7 +77,8 @@ public class GetProposerDuties extends RestApiEndpoint {
     }
 
     final UInt64 epoch = request.getPathParameter(EPOCH_PARAMETER);
-    SafeFuture<Optional<ProposerDuties>> future = validatorDataProvider.getProposerDuties(epoch);
+    SafeFuture<Optional<ProposerDuties>> future =
+        validatorDataProvider.getProposerDutiesElectraDependentRoot(epoch);
 
     request.respondAsync(
         future.thenApply(
