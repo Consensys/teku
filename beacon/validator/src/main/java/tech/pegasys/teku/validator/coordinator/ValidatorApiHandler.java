@@ -146,7 +146,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private final ChainDataProvider chainDataProvider;
   private final NodeDataProvider nodeDataProvider;
   private final NetworkDataProvider networkDataProvider;
-  private final CombinedChainDataClient combinedChainDataClient;
+  protected final CombinedChainDataClient combinedChainDataClient;
   private final SyncStateProvider syncStateProvider;
   private final BlockFactory blockFactory;
   private final AggregatingAttestationPool attestationPool;
@@ -155,8 +155,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private final ActiveValidatorTracker activeValidatorTracker;
   private final DutyMetrics dutyMetrics;
   private final PerformanceTracker performanceTracker;
-  private final Spec spec;
-  private final ForkChoiceTrigger forkChoiceTrigger;
+  protected final Spec spec;
+  protected final ForkChoiceTrigger forkChoiceTrigger;
   private final SyncCommitteeMessagePool syncCommitteeMessagePool;
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
@@ -445,23 +445,26 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private BlockProductionPreparationContext prepareBlockProductionInternal(final UInt64 slot) {
     return blockProductionPreparationContextBySlotCache.computeIfAbsent(
         slot,
-        keySlot -> {
-          LOG.info("Preparing block production for slot {}", keySlot);
+        __ -> {
+          LOG.info("Preparing block production for slot {}", slot);
           final BlockProductionPerformance productionPerformance =
-              blockProductionAndPublishingPerformanceFactory.createForProduction(keySlot);
+              blockProductionAndPublishingPerformanceFactory.createForProduction(slot);
           final SafeFuture<Optional<BeaconState>> state =
               forkChoiceTrigger
-                  .prepareForBlockProduction(keySlot, productionPerformance)
-                  .thenCompose(
-                      ignored ->
-                          combinedChainDataClient.getStateForBlockProduction(
-                              keySlot,
-                              forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled(),
-                              productionPerformance::lateBlockReorgPreparationCompleted))
-                  .thenPeek(__ -> productionPerformance.getState());
+                  .prepareForBlockProduction(slot, productionPerformance)
+                  .thenCompose(___ -> getStateForBlockProduction(slot, productionPerformance))
+                  .thenPeek(___ -> productionPerformance.getState());
 
           return new BlockProductionPreparationContext(state, productionPerformance);
         });
+  }
+
+  protected SafeFuture<Optional<BeaconState>> getStateForBlockProduction(
+      final UInt64 slot, final BlockProductionPerformance productionPerformance) {
+    return combinedChainDataClient.getStateForBlockProduction(
+        slot,
+        forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled(),
+        productionPerformance::lateBlockReorgPreparationCompleted);
   }
 
   private SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlockInternal(
@@ -1031,10 +1034,18 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
           result,
           combinedChainDataClient.isChainHeadOptimistic());
     }
+    final UInt64 currentEpoch = spec.getCurrentEpoch(state);
+    final boolean greaterThanCurrentEpoch = epoch.isGreaterThan(currentEpoch);
     final Bytes32 dependentRoot =
-        epoch.isGreaterThanOrEqualTo(spec.getCurrentEpoch(state))
+        greaterThanCurrentEpoch
             ? spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state)
             : spec.atEpoch(epoch).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
+    LOG.trace(
+        "state epoch {}, duties epoch {}, greaterThanCurrentEpoch {}, dependentRoot {}",
+        currentEpoch,
+        epoch,
+        greaterThanCurrentEpoch,
+        dependentRoot);
     return new ProposerDuties(
         dependentRoot, result, combinedChainDataClient.isChainHeadOptimistic());
   }

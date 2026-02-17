@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.gloas.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
-import static tech.pegasys.teku.spec.datastructures.forkchoice.PayloadStatusGloas.PAYLOAD_STATUS_EMPTY;
+import static tech.pegasys.teku.spec.datastructures.forkchoice.PayloadStatus.PAYLOAD_STATUS_EMPTY;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
-import tech.pegasys.teku.spec.datastructures.forkchoice.PayloadStatusGloas;
+import tech.pegasys.teku.spec.datastructures.forkchoice.PayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
@@ -64,7 +64,7 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
   }
 
   @Override
-  public SafeFuture<Optional<BeaconState>> retrieveBlockState(
+  public SafeFuture<Optional<BeaconState>> retrievePreStateRequiredOnBlock(
       final ReadOnlyStore store, final SignedBeaconBlock block) {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(block.getSlot(), block.getParentRoot());
@@ -108,15 +108,14 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
    * Determines the payload status of the parent block.
    *
    * <p>Spec reference:
-   * https://github.com/ethereum/consensus-specs/blob/dev/specs/_features/gloas/fork-choice.md#get_parent_payload_status
+   * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-get_parent_payload_status
    *
    * @param store the fork choice store
    * @param block the current block
    * @return PAYLOAD_STATUS_FULL if parent has full payload, PAYLOAD_STATUS_EMPTY otherwise
    */
   // get_parent_payload_status
-  public PayloadStatusGloas getParentPayloadStatus(
-      final ReadOnlyStore store, final BeaconBlock block) {
+  PayloadStatus getParentPayloadStatus(final ReadOnlyStore store, final BeaconBlock block) {
     final SignedBeaconBlock parent =
         store
             .getBlockIfAvailable(block.getParentRoot())
@@ -124,7 +123,7 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
                 () ->
                     new IllegalStateException("Parent block not found: " + block.getParentRoot()));
 
-    // TODO-gloas #10341
+    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10341
     // if the parent is pre-gloas, we'd use the block state,
     // there would be no payload state
     if (parent.getSlot().isLessThan(earliestGloasSlot)) {
@@ -141,7 +140,7 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
         parentBody.getSignedExecutionPayloadBid().getMessage().getBlockHash();
 
     return parentBlockHash.equals(messageBlockHash)
-        ? PayloadStatusGloas.PAYLOAD_STATUS_FULL
+        ? PayloadStatus.PAYLOAD_STATUS_FULL
         : PAYLOAD_STATUS_EMPTY;
   }
 
@@ -149,14 +148,14 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
    * Checks if the parent node has a full payload.
    *
    * <p>Spec reference:
-   * https://github.com/ethereum/consensus-specs/blob/dev/specs/_features/gloas/fork-choice.md#is_parent_node_full
+   * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-is_parent_node_full
    *
    * @param store the fork choice store
    * @param block the current block
    * @return true if parent has full payload status
    */
   // is_parent_node_full
-  public boolean isParentNodeFull(final ReadOnlyStore store, final BeaconBlock block) {
-    return getParentPayloadStatus(store, block) == PayloadStatusGloas.PAYLOAD_STATUS_FULL;
+  boolean isParentNodeFull(final ReadOnlyStore store, final BeaconBlock block) {
+    return getParentPayloadStatus(store, block) == PayloadStatus.PAYLOAD_STATUS_FULL;
   }
 }

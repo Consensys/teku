@@ -41,7 +41,6 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -214,9 +213,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final ExecutionLayerChannel executionLayer) {
     recentChainData.setBlockTimelinessIfEmpty(block);
     final ForkChoiceUtil forkChoiceUtil = spec.atSlot(block.getSlot()).getForkChoiceUtil();
-
     return forkChoiceUtil
-        .retrieveBlockState(recentChainData.getStore(), block)
+        .retrievePreStateRequiredOnBlock(recentChainData.getStore(), block)
         .thenPeek(__ -> blockImportPerformance.ifPresent(BlockImportPerformance::preStateRetrieved))
         .thenCompose(
             blockSlotState ->
@@ -225,7 +223,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                     blockSlotState,
                     blockImportPerformance,
                     blockBroadcastValidator,
-                    executionLayer));
+                    executionLayer,
+                    forkChoiceUtil));
   }
 
   /** Import an execution payload to the store. */
@@ -426,7 +425,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final Optional<BeaconState> blockSlotState,
       final Optional<BlockImportPerformance> blockImportPerformance,
       final BlockBroadcastValidator blockBroadcastValidator,
-      final ExecutionLayerChannel executionLayer) {
+      final ExecutionLayerChannel executionLayer,
+      final ForkChoiceUtil forkChoiceUtil) {
     if (blockSlotState.isEmpty()) {
       return SafeFuture.completedFuture(BlockImportResult.FAILED_UNKNOWN_PARENT);
     }
@@ -436,11 +436,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         block.getSlot(),
         blockSlotState.get().getSlot());
 
-    final SpecVersion specVersion = spec.atSlot(block.getSlot());
-
     final ForkChoicePayloadExecutor payloadExecutor =
         ForkChoicePayloadExecutor.create(spec, recentChainData, block, executionLayer);
-    final ForkChoiceUtil forkChoiceUtil = specVersion.getForkChoiceUtil();
     final BlockImportResult preconditionCheckResult =
         forkChoiceUtil.checkOnBlockConditions(
             block, blockSlotState.get(), recentChainData.getStore());
