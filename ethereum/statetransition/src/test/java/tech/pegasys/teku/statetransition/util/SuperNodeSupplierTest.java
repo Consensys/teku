@@ -19,7 +19,6 @@ import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -31,7 +30,6 @@ public class SuperNodeSupplierTest {
 
   Spec spec;
   SuperNodeSupplier isSuperNodeSupplier;
-  final P2PConfig p2pConfig = mock(P2PConfig.class);
   final CustodyGroupCountManager custodyGroupCountManager = mock(CustodyGroupCountManager.class);
 
   @BeforeEach
