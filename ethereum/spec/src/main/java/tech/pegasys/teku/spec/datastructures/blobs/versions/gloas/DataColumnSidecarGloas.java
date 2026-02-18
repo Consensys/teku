@@ -63,6 +63,11 @@ public class DataColumnSidecarGloas
   }
 
   @Override
+  public Optional<SszList<SszKZGCommitment>> getMaybeKzgCommitments() {
+    return Optional.empty();
+  }
+
+  @Override
   public SszList<SszKZGCommitment> getKzgCommitments() {
     throw new UnsupportedOperationException("kzg_commitments field was removed in Gloas");
   }

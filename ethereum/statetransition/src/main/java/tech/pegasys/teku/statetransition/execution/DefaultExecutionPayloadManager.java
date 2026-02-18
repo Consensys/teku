@@ -42,16 +42,21 @@ public class DefaultExecutionPayloadManager implements ExecutionPayloadManager {
   private final ExecutionPayloadGossipValidator executionPayloadGossipValidator;
   private final ForkChoice forkChoice;
   private final ExecutionLayerChannel executionLayer;
+  private final ReceivedExecutionPayloadEventsChannel
+      receivedExecutionPayloadEventsChannelPublisher;
 
   public DefaultExecutionPayloadManager(
       final AsyncRunner asyncRunner,
       final ExecutionPayloadGossipValidator executionPayloadGossipValidator,
       final ForkChoice forkChoice,
-      final ExecutionLayerChannel executionLayer) {
+      final ExecutionLayerChannel executionLayer,
+      final ReceivedExecutionPayloadEventsChannel receivedExecutionPayloadEventsChannelPublisher) {
     this.asyncRunner = asyncRunner;
     this.executionPayloadGossipValidator = executionPayloadGossipValidator;
     this.forkChoice = forkChoice;
     this.executionLayer = executionLayer;
+    this.receivedExecutionPayloadEventsChannelPublisher =
+        receivedExecutionPayloadEventsChannelPublisher;
   }
 
   @Override
@@ -92,6 +97,8 @@ public class DefaultExecutionPayloadManager implements ExecutionPayloadManager {
                 LOG.debug(
                     "Successfully imported execution payload {}",
                     signedExecutionPayload::toLogString);
+                receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadImported(
+                    signedExecutionPayload);
               } else {
                 LOG.debug(
                     "Failed to import execution payload for reason {}: {}",

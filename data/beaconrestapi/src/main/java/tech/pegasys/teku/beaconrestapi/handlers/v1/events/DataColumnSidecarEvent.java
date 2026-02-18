@@ -46,7 +46,6 @@ public class DataColumnSidecarEvent extends Event<DataColumnSidecarEvent.DataCol
       final UInt64 index,
       final UInt64 slot,
       final List<KZGCommitment> kzgCommitments) {
-
     super(
         DATA_COLUMN_SIDECAR_EVENT_TYPE,
         new DataColumnSidecarData(blockRoot, index, slot, kzgCommitments));
@@ -57,9 +56,14 @@ public class DataColumnSidecarEvent extends Event<DataColumnSidecarEvent.DataCol
         dataColumnSidecar.getBeaconBlockRoot(),
         dataColumnSidecar.getIndex(),
         dataColumnSidecar.getSlot(),
-        dataColumnSidecar.getKzgCommitments().asList().stream()
-            .map(SszKZGCommitment::getKZGCommitment)
-            .toList());
+        dataColumnSidecar
+            .getMaybeKzgCommitments()
+            .map(
+                kzgCommitments ->
+                    kzgCommitments.asList().stream()
+                        .map(SszKZGCommitment::getKZGCommitment)
+                        .toList())
+            .orElse(List.of()));
   }
 
   public static class DataColumnSidecarData {
