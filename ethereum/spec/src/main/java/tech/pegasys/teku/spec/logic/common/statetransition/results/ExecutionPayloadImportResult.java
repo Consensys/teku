@@ -69,14 +69,6 @@ public interface ExecutionPayloadImportResult {
 
   boolean isSuccessful();
 
-  default boolean hasFailedExecution() {
-    return false;
-  }
-
-  default boolean isDataNotAvailable() {
-    return false;
-  }
-
   /**
    * @return If successful, returns a {@code SignedExecutionPayloadEnvelope}, otherwise returns
    *     null.
