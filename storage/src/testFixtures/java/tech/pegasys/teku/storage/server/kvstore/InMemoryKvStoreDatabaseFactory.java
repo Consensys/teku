@@ -35,6 +35,7 @@ public class InMemoryKvStoreDatabaseFactory {
     final SchemaHotAdapter schemaHot = combinedSchema.asSchemaHot();
     final SchemaFinalizedSnapshotStateAdapter schemaFinalized = combinedSchema.asSchemaFinalized();
     return KvStoreDatabase.createV4(
+        new StubMetricsSystem(),
         hotDb,
         coldDb,
         schemaHot,

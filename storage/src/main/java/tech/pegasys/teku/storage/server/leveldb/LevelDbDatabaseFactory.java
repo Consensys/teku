@@ -61,6 +61,7 @@ public class LevelDbDatabaseFactory {
             schemaFinalized.getAllVariables(),
             schemaFinalized.getDeletedVariableIds());
     return KvStoreDatabase.createV4(
+        metricsSystem,
         hotDb,
         finalizedDb,
         schemaHot,

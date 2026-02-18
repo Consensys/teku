@@ -189,15 +189,27 @@ public class RocksDbInstanceFactory {
       final ColumnFamilyOptions columnFamilyOptions) {
 
     final ColumnFamilyOptions columnFamilyOptionsWithBlobDb = columnFamilyOptions;
-    final List<ColumnFamilyDescriptor> columnDescriptors = columns.stream().filter(KvStoreColumn::containsStaticData)
-            .map(column -> new ColumnFamilyDescriptor(column.getId().toArrayUnsafe(), columnFamilyOptionsWithBlobDb.setEnableBlobFiles(true).setMinBlobSize(100)
-                    .setBlobCompressionType(CompressionType.LZ4_COMPRESSION)))
+    final List<ColumnFamilyDescriptor> columnDescriptors =
+        columns.stream()
+            .filter(KvStoreColumn::containsStaticData)
+            .map(
+                column ->
+                    new ColumnFamilyDescriptor(
+                        column.getId().toArrayUnsafe(),
+                        columnFamilyOptionsWithBlobDb
+                            .setEnableBlobFiles(true)
+                            .setMinBlobSize(100)
+                            .setBlobCompressionType(CompressionType.LZ4_COMPRESSION)))
             .collect(Collectors.toCollection(ArrayList::new));
 
-                columnDescriptors.addAll(
-                        Stream.concat(columns.stream().filter(column -> !column.containsStaticData()).map(KvStoreColumn::getId), deletedColumns.stream())
-                                .map(id -> new ColumnFamilyDescriptor(id.toArrayUnsafe(), columnFamilyOptions))
-                                .collect(Collectors.toCollection(ArrayList::new)));
+    columnDescriptors.addAll(
+        Stream.concat(
+                columns.stream()
+                    .filter(column -> !column.containsStaticData())
+                    .map(KvStoreColumn::getId),
+                deletedColumns.stream())
+            .map(id -> new ColumnFamilyDescriptor(id.toArrayUnsafe(), columnFamilyOptions))
+            .collect(Collectors.toCollection(ArrayList::new)));
 
     columnDescriptors.add(
         new ColumnFamilyDescriptor(Schema.DEFAULT_COLUMN_ID.toArrayUnsafe(), columnFamilyOptions));

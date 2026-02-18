@@ -51,10 +51,10 @@ public class KvStoreColumn<TKey, TValue> {
   }
 
   public static <K, V> KvStoreColumn<K, V> create(
-          final int id,
-          final KvStoreSerializer<K> keySerializer,
-          final KvStoreSerializer<V> valueSerializer,
-          final boolean containsStaticData) {
+      final int id,
+      final KvStoreSerializer<K> keySerializer,
+      final KvStoreSerializer<V> valueSerializer,
+      final boolean containsStaticData) {
     return new KvStoreColumn<>(asColumnId(id), keySerializer, valueSerializer, containsStaticData);
   }
 
@@ -74,7 +74,9 @@ public class KvStoreColumn<TKey, TValue> {
     return valueSerializer;
   }
 
-  public boolean containsStaticData() { return containsStaticData; }
+  public boolean containsStaticData() {
+    return containsStaticData;
+  }
 
   @Override
   public boolean equals(final Object o) {

@@ -65,10 +65,14 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
         KvStoreColumn.create(
             finalizedOffset + 2,
             UINT64_SERIALIZER,
-            KvStoreSerializer.createSignedBlockSerializer(spec),true);
+            KvStoreSerializer.createSignedBlockSerializer(spec),
+            true);
     finalizedStatesBySlot =
         KvStoreColumn.create(
-            finalizedOffset + 3, UINT64_SERIALIZER, KvStoreSerializer.createStateSerializer(spec), true);
+            finalizedOffset + 3,
+            UINT64_SERIALIZER,
+            KvStoreSerializer.createStateSerializer(spec),
+            true);
     slotsByFinalizedStateRoot =
         KvStoreColumn.create(finalizedOffset + 4, BYTES32_SERIALIZER, UINT64_SERIALIZER, true);
     nonCanonicalBlocksByRoot =
@@ -82,7 +86,8 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
         KvStoreColumn.create(
             finalizedOffset + 12,
             SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX_KEY_SERIALIZER,
-            BYTES_SERIALIZER,true);
+            BYTES_SERIALIZER,
+            true);
 
     nonCanonicalBlobSidecarBySlotRootBlobIndex =
         KvStoreColumn.create(
@@ -92,7 +97,10 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
 
     sidecarByColumnSlotAndIdentifier =
         KvStoreColumn.create(
-            finalizedOffset + 14, COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER, BYTES_SERIALIZER, true);
+            finalizedOffset + 14,
+            COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER,
+            BYTES_SERIALIZER,
+            true);
 
     nonCanonicalSidecarByColumnSlotAndIdentifier =
         KvStoreColumn.create(
