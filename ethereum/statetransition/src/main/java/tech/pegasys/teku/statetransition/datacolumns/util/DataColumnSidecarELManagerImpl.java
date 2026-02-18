@@ -231,9 +231,10 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
                 DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader(),
                 dataColumnSidecarUtil.getKzgCommitments(
                     dataColumnSidecar, recentChainData::retrieveBlockByRoot),
-                DataColumnSidecarFulu.required(dataColumnSidecar)
-                    .getKzgCommitmentsInclusionProof()
-                    .asListUnboxed(),
+                Optional.of(
+                    DataColumnSidecarFulu.required(dataColumnSidecar)
+                        .getKzgCommitmentsInclusionProof()
+                        .asListUnboxed()),
                 Collections.newSetFromMap(new ConcurrentHashMap<>())))
         == null;
   }
@@ -254,9 +255,11 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
             new RecoveryTask(
                 block.asHeader(),
                 dataColumnSidecarUtil.getKzgCommitments(block.getMessage()),
-                miscHelpersFuluSupplier
-                    .get()
-                    .computeDataColumnKzgCommitmentsInclusionProof(block.getMessage().getBody()),
+                Optional.of(
+                    miscHelpersFuluSupplier
+                        .get()
+                        .computeDataColumnKzgCommitmentsInclusionProof(
+                            block.getMessage().getBody())),
                 Collections.newSetFromMap(new ConcurrentHashMap<>())))
         == null;
   }
@@ -273,7 +276,7 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
               .constructDataColumnSidecars(
                   recoveryTask.signedBeaconBlockHeader(),
                   sszKZGCommitments,
-                  recoveryTask.kzgCommitmentsInclusionProof(),
+                  recoveryTask.maybeKzgCommitmentsInclusionProof(),
                   blobAndCellProofs);
     } catch (final Throwable t) {
       throw new RuntimeException(t);
@@ -329,8 +332,7 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
     }
     final SpecMilestone milestone = spec.atSlot(block.getSlot()).getMilestone();
     // TODO-GLOAS enable recovery for Gloas
-    if (milestone.isLessThan(SpecMilestone.FULU)
-        || milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
       LOG.debug(
           "Received block {} for {} fork. Ignoring.",
           block::getSlotAndBlockRoot,
@@ -491,7 +493,7 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
   public record RecoveryTask(
       SignedBeaconBlockHeader signedBeaconBlockHeader,
       SafeFuture<SszList<SszKZGCommitment>> sszKZGCommitmentsFuture,
-      List<Bytes32> kzgCommitmentsInclusionProof,
+      Optional<List<Bytes32>> maybeKzgCommitmentsInclusionProof,
       Set<UInt64> recoveredColumnIndices) {
     public SlotAndBlockRoot getSlotAndBlockRoot() {
       return signedBeaconBlockHeader.getMessage().getSlotAndBlockRoot();

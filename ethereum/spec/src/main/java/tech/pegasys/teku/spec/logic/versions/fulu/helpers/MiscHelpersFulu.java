@@ -372,7 +372,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   public List<DataColumnSidecar> constructDataColumnSidecars(
       final SignedBeaconBlockHeader signedBeaconBlockHeader,
       final SszList<SszKZGCommitment> sszKZGCommitments,
-      final List<Bytes32> kzgCommitmentsInclusionProof,
+      final Optional<List<Bytes32>> maybeKzgCommitmentsInclusionProof,
       final List<BlobAndCellProofs> blobAndCellProofsList) {
     final List<List<MatrixEntry>> extendedMatrix = computeExtendedMatrix(blobAndCellProofsList);
     return constructDataColumnSidecarsInternal(
@@ -380,7 +380,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
             builder
                 .kzgCommitments(sszKZGCommitments)
                 .signedBlockHeader(signedBeaconBlockHeader)
-                .kzgCommitmentsInclusionProof(kzgCommitmentsInclusionProof),
+                .kzgCommitmentsInclusionProof(maybeKzgCommitmentsInclusionProof.orElseThrow()),
         extendedMatrix);
   }
 
