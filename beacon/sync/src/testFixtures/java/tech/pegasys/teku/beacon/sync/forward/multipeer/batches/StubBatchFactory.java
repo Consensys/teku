@@ -51,7 +51,7 @@ public class StubBatchFactory extends BatchFactory implements Iterable<Batch> {
       final Spec spec,
       final BlobSidecarManager blobSidecarManager,
       final boolean enforceEventThread) {
-    super(eventThread, blobSidecarManager, null);
+    super(eventThread, spec, blobSidecarManager, null);
     this.spec = spec;
     this.blobSidecarManager = blobSidecarManager;
     this.eventThread = eventThread;
