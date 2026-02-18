@@ -184,7 +184,9 @@ public class KvStoreConfiguration {
     return optimizeForSmallDb;
   }
 
-  public boolean blobDbEnabled () {return blobDbEnabled;}
+  public boolean blobDbEnabled() {
+    return blobDbEnabled;
+  }
 
   @Override
   public String toString() {
