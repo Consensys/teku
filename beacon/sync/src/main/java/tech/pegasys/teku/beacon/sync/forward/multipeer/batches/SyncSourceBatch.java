@@ -224,7 +224,6 @@ public class SyncSourceBatch implements Batch {
   public void requestMoreBlocks(final Runnable callback) {
     checkState(
         !isComplete() || isContested(), "Attempting to request more blocks from a complete batch");
-    final BlockRequestHandler blockRequestHandler = new BlockRequestHandler();
     final UInt64 startSlot =
         getLastBlock().map(SignedBeaconBlock::getSlot).map(UInt64::increment).orElse(firstSlot);
     final UInt64 remainingSlots = count.minus(startSlot.minus(firstSlot));
@@ -263,8 +262,8 @@ public class SyncSourceBatch implements Batch {
       blobSidecarsRequest = SafeFuture.COMPLETE;
     }
 
-    final SafeFuture<Void> executionPayloadsRequest;
     final Optional<ExecutionPayloadRequestHandler> maybeExecutionPayloadRequestHandler;
+    final SafeFuture<Void> executionPayloadsRequest;
 
     if (spec.atSlot(endSlot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
       LOG.debug(
@@ -290,6 +289,7 @@ public class SyncSourceBatch implements Batch {
         startSlot,
         syncSource);
 
+    final BlockRequestHandler blockRequestHandler = new BlockRequestHandler();
     final SafeFuture<Void> blocksRequest =
         syncSource.requestBlocksByRange(startSlot, remainingSlots, blockRequestHandler);
 
