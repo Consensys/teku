@@ -22,6 +22,10 @@ public interface ExecutionPayloadImportResult {
       new FailedExecutionPayloadImportResult(
           FailureReason.UNKNOWN_BEACON_BLOCK_ROOT, Optional.empty());
 
+  ExecutionPayloadImportResult FAILED_EXECUTION_SYNCING =
+      new FailedExecutionPayloadImportResult(
+          FailureReason.FAILED_EXECUTION_SYNCING, Optional.empty());
+
   static ExecutionPayloadImportResult failedStateTransition(final Exception cause) {
     return new FailedExecutionPayloadImportResult(
         FailureReason.FAILED_STATE_TRANSITION, Optional.of(cause));
@@ -57,12 +61,21 @@ public interface ExecutionPayloadImportResult {
     UNKNOWN_BEACON_BLOCK_ROOT,
     FAILED_STATE_TRANSITION,
     FAILED_EXECUTION,
+    FAILED_EXECUTION_SYNCING,
     FAILED_DATA_AVAILABILITY_CHECK_INVALID,
     FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE,
     INTERNAL_ERROR // A catch-all category for unexpected errors (bugs)
   }
 
   boolean isSuccessful();
+
+  default boolean hasFailedExecution() {
+    return false;
+  }
+
+  default boolean isDataNotAvailable() {
+    return false;
+  }
 
   /**
    * @return If successful, returns a {@code SignedExecutionPayloadEnvelope}, otherwise returns

@@ -29,23 +29,28 @@ import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 
 public class BatchImporter {
   private static final Logger LOG = LogManager.getLogger();
 
   private final BlockImporter blockImporter;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
+  private final ExecutionPayloadManager executionPayloadManager;
   private final AsyncRunner asyncRunner;
 
   public BatchImporter(
       final BlockImporter blockImporter,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final ExecutionPayloadManager executionPayloadManager,
       final AsyncRunner asyncRunner) {
     this.blockImporter = blockImporter;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
+    this.executionPayloadManager = executionPayloadManager;
     this.asyncRunner = asyncRunner;
   }
 
@@ -62,6 +67,8 @@ public class BatchImporter {
     final List<SignedBeaconBlock> blocks = new ArrayList<>(batch.getBlocks());
     final Map<Bytes32, List<BlobSidecar>> blobSidecarsByBlockRoot =
         Map.copyOf(batch.getBlobSidecarsByBlockRoot());
+    final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloadsByBlockRoot =
+        Map.copyOf(batch.getExecutionPayloadsByBlockRoot());
 
     final Optional<SyncSource> source = batch.getSource();
 
@@ -70,15 +77,22 @@ public class BatchImporter {
         () -> {
           final SignedBeaconBlock firstBlock = blocks.get(0);
           SafeFuture<BlockImportResult> importResult =
-              importBlockAndBlobSidecars(firstBlock, blobSidecarsByBlockRoot, source.orElseThrow());
+              importBlock(
+                  firstBlock,
+                  blobSidecarsByBlockRoot,
+                  executionPayloadsByBlockRoot,
+                  source.orElseThrow());
           for (int i = 1; i < blocks.size(); i++) {
             final SignedBeaconBlock block = blocks.get(i);
             importResult =
                 importResult.thenCompose(
                     previousResult -> {
                       if (previousResult.isSuccessful()) {
-                        return importBlockAndBlobSidecars(
-                            block, blobSidecarsByBlockRoot, source.orElseThrow());
+                        return importBlock(
+                            block,
+                            blobSidecarsByBlockRoot,
+                            executionPayloadsByBlockRoot,
+                            source.orElseThrow());
                       } else {
                         return SafeFuture.completedFuture(previousResult);
                       }
@@ -103,13 +117,16 @@ public class BatchImporter {
         });
   }
 
-  private SafeFuture<BlockImportResult> importBlockAndBlobSidecars(
+  private SafeFuture<BlockImportResult> importBlock(
       final SignedBeaconBlock block,
       final Map<Bytes32, List<BlobSidecar>> blobSidecarsByBlockRoot,
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloadsByBlockRoot,
       final SyncSource source) {
     final Bytes32 blockRoot = block.getRoot();
+    final Optional<SignedExecutionPayloadEnvelope> executionPayload =
+        Optional.ofNullable(executionPayloadsByBlockRoot.get(blockRoot));
     if (!blobSidecarsByBlockRoot.containsKey(blockRoot)) {
-      return importBlock(block, source);
+      return importBlock(block, executionPayload, source);
     }
     final List<BlobSidecar> blobSidecars = blobSidecarsByBlockRoot.get(blockRoot);
     LOG.debug(
@@ -119,14 +136,16 @@ public class BatchImporter {
     // Add blob sidecars to the pool in order for them to be available when the block is being
     // imported
     blockBlobSidecarsTrackersPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
-    return importBlock(block, source);
+    return importBlock(block, executionPayload, source);
   }
 
   private SafeFuture<BlockImportResult> importBlock(
-      final SignedBeaconBlock block, final SyncSource source) {
+      final SignedBeaconBlock block,
+      final Optional<SignedExecutionPayloadEnvelope> executionPayload,
+      final SyncSource source) {
     return blockImporter
         .importBlock(block)
-        .thenApply(
+        .thenCompose(
             result -> {
               if (result.getFailureReason()
                   == BlockImportResult.FailureReason.FAILED_WEAK_SUBJECTIVITY_CHECKS) {
@@ -136,7 +155,29 @@ public class BatchImporter {
                     result);
                 source.disconnectCleanly(DisconnectReason.REMOTE_FAULT).finishWarn(LOG);
               }
-              return result;
+              if (executionPayload.isEmpty()) {
+                return SafeFuture.completedFuture(result);
+              }
+              return executionPayloadManager
+                  .importExecutionPayload(executionPayload.get())
+                  .thenApply(
+                      executionPayloadImportResult -> {
+                        // TODO: very hacky, will refactor
+                        if (executionPayloadImportResult.isSuccessful()) {
+                          return result;
+                        }
+                        return BlockImportResult.failedExecutionPayloadExecution(
+                            executionPayloadImportResult
+                                .getFailureCause()
+                                .orElse(
+                                    new IllegalStateException(
+                                        String.format(
+                                            "Failed execution payload execution %s: %s",
+                                            executionPayloadImportResult.getFailureReason(),
+                                            executionPayloadImportResult
+                                                .getFailureCause()
+                                                .orElse(null)))));
+                      });
             });
   }
 

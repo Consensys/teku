@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 
 class BatchImporterTest {
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
@@ -51,12 +52,15 @@ class BatchImporterTest {
   private final BlockImporter blockImporter = mock(BlockImporter.class);
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool =
       mock(BlockBlobSidecarsTrackersPool.class);
+  private final ExecutionPayloadManager executionPayloadManager =
+      mock(ExecutionPayloadManager.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final Batch batch = mock(Batch.class);
   final SyncSource syncSource = mock(SyncSource.class);
 
   private final BatchImporter importer =
-      new BatchImporter(blockImporter, blockBlobSidecarsTrackersPool, asyncRunner);
+      new BatchImporter(
+          blockImporter, blockBlobSidecarsTrackersPool, executionPayloadManager, asyncRunner);
 
   @BeforeEach
   public void setup() {

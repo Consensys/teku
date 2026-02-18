@@ -36,12 +36,16 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeRe
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class PeerSync {
@@ -74,6 +78,7 @@ public class PeerSync {
   private final BlockImporter blockImporter;
   private final BlobSidecarManager blobSidecarManager;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
+  private final ExecutionPayloadManager executionPayloadManager;
 
   private final AsyncRunner asyncRunner;
   private final Counter blockImportSuccessResult;
@@ -90,6 +95,7 @@ public class PeerSync {
       final BlockImporter blockImporter,
       final BlobSidecarManager blobSidecarManager,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final ExecutionPayloadManager executionPayloadManager,
       final int batchSize,
       final OptionalInt maxDistanceFromHeadReached,
       final MetricsSystem metricsSystem) {
@@ -99,6 +105,7 @@ public class PeerSync {
     this.blockImporter = blockImporter;
     this.blobSidecarManager = blobSidecarManager;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
+    this.executionPayloadManager = executionPayloadManager;
     final LabelledMetric<Counter> blockImportCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
@@ -172,7 +179,6 @@ public class PeerSync {
               final RequestContext requestContext = createRequestContext(ancestorStartSlot, status);
 
               final SafeFuture<Void> blobSidecarsRequest;
-
               final PeerSyncBlobSidecarListener blobSidecarListener =
                   new PeerSyncBlobSidecarListener(requestContext.startSlot, requestContext.endSlot);
 
@@ -190,6 +196,26 @@ public class PeerSync {
                 blobSidecarsRequest = SafeFuture.COMPLETE;
               }
 
+              final SafeFuture<Void> executionPayloadsRequest;
+              final PeerSyncExecutionPayloadListener executionPayloadListener =
+                  new PeerSyncExecutionPayloadListener(
+                      requestContext.startSlot, requestContext.endSlot);
+
+              if (spec.atSlot(requestContext.endSlot)
+                  .getMilestone()
+                  .isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+                LOG.debug(
+                    "Request {} execution payload envelopes starting at {} from peer {}",
+                    requestContext.count,
+                    requestContext.startSlot,
+                    peer.getId());
+                executionPayloadsRequest =
+                    peer.requestExecutionPayloadEnvelopesByRange(
+                        requestContext.startSlot, requestContext.endSlot, executionPayloadListener);
+              } else {
+                executionPayloadsRequest = SafeFuture.COMPLETE;
+              }
+
               final SafeFuture<Void> readyForNextRequest =
                   asyncRunner.getDelayedFuture(NEXT_REQUEST_TIMEOUT);
 
@@ -199,10 +225,13 @@ public class PeerSync {
                       requestContext.startSlot,
                       requestContext.count,
                       block -> {
-                        // at this point, blob sidecars (if any) have been received
+                        // at this point, blob sidecars and execution payloads (if any) have been
+                        // received
                         final Optional<List<BlobSidecar>> blobSidecars =
                             blobSidecarListener.getReceivedBlobSidecars(block.getSlot());
-                        return importBlock(block, blobSidecars);
+                        final Optional<SignedExecutionPayloadEnvelope> executionPayload =
+                            executionPayloadListener.getReceivedExecutionPayload(block.getSlot());
+                        return importBlock(block, blobSidecars, executionPayload);
                       });
 
               LOG.debug(
@@ -211,14 +240,19 @@ public class PeerSync {
                   requestContext.startSlot,
                   peer.getId());
 
-              return blobSidecarsRequest
+              return SafeFuture.allOfFailFast(blobSidecarsRequest, executionPayloadsRequest)
                   .thenCompose(
                       __ ->
                           peer.requestBlocksByRange(
                               requestContext.startSlot, requestContext.count, blockListener))
-                  // the received blob sidecars (if any) can be cleaned from the cache because the
-                  // blocks have been imported. They are also cleaned in case of failures.
-                  .alwaysRun(blobSidecarListener::clearReceivedBlobSidecars)
+                  // the received blob sidecars and execution payloads (if any) can be cleaned from
+                  // the cache because the blocks (and execution payloads have been imported. They
+                  // are also cleaned in case of failures.
+                  .alwaysRun(
+                      () -> {
+                        blobSidecarListener.clearReceivedBlobSidecars();
+                        executionPayloadListener.clearReceivedExecutionPayloads();
+                      })
                   .thenApply(__ -> blockListener);
             })
         .thenCompose(
@@ -341,7 +375,9 @@ public class PeerSync {
   }
 
   private SafeFuture<Void> importBlock(
-      final SignedBeaconBlock block, final Optional<List<BlobSidecar>> maybeBlobSidecars) {
+      final SignedBeaconBlock block,
+      final Optional<List<BlobSidecar>> maybeBlobSidecars,
+      final Optional<SignedExecutionPayloadEnvelope> executionPayload) {
     if (stopped.get()) {
       throw new CancellationException("Peer sync was cancelled");
     }
@@ -353,8 +389,34 @@ public class PeerSync {
 
     return blockImporter
         .importBlock(block)
+        .thenCompose(
+            result -> {
+              if (executionPayload.isEmpty()) {
+                return SafeFuture.completedFuture(result);
+              }
+              return executionPayloadManager
+                  .importExecutionPayload(executionPayload.get())
+                  .thenApply(
+                      executionPayloadImportResult -> {
+                        // TODO: very hacky, will refactor
+                        if (executionPayloadImportResult.isSuccessful()) {
+                          return result;
+                        }
+                        return BlockImportResult.failedExecutionPayloadExecution(
+                            executionPayloadImportResult
+                                .getFailureCause()
+                                .orElse(
+                                    new IllegalStateException(
+                                        String.format(
+                                            "Failed execution payload execution %s: %s",
+                                            executionPayloadImportResult.getFailureReason(),
+                                            executionPayloadImportResult
+                                                .getFailureCause()
+                                                .orElse(null)))));
+                      });
+            })
         .thenAccept(
-            (result) -> {
+            result -> {
               LOG.trace("Block import result for block at slot {}: {}", block.getSlot(), result);
               if (!result.isSuccessful()) {
                 blockImportFailureResult.inc();

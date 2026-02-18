@@ -2187,6 +2187,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         pendingBlocks,
         pendingAttestations,
         blockBlobSidecarsTrackersPool,
+        executionPayloadManager,
         beaconConfig.eth2NetworkConfig().getStartupTargetPeerCount(),
         signatureVerificationService,
         Duration.ofSeconds(beaconConfig.eth2NetworkConfig().getStartupTimeoutSeconds()),

@@ -75,6 +75,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final PendingPool<ValidatableAttestation> pendingAttestations;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
+  private final ExecutionPayloadManager executionPayloadManager;
   private final int getStartupTargetPeerCount;
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final Duration startupTimeout;
@@ -98,6 +99,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final PendingPool<ValidatableAttestation> pendingAttestations,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final ExecutionPayloadManager executionPayloadManager,
       final int getStartupTargetPeerCount,
       final SignatureVerificationService signatureVerifier,
       final Duration startupTimeout,
@@ -119,6 +121,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     this.pendingBlocks = pendingBlocks;
     this.pendingAttestations = pendingAttestations;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
+    this.executionPayloadManager = executionPayloadManager;
     this.getStartupTargetPeerCount = getStartupTargetPeerCount;
     this.signatureVerifier = signatureVerifier;
     this.startupTimeout = startupTimeout;
@@ -206,6 +209,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               blockImporter,
               blobSidecarManager,
               blockBlobSidecarsTrackersPool,
+              executionPayloadManager,
               syncPreImportBlockChannel,
               syncConfig.getForwardSyncBatchSize(),
               syncConfig.getForwardSyncMaxPendingBatches(),
@@ -224,6 +228,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               blockImporter,
               blobSidecarManager,
               blockBlobSidecarsTrackersPool,
+              executionPayloadManager,
               syncConfig.getForwardSyncBatchSize(),
               syncConfig.getForwardSyncMaxDistanceFromHead(),
               spec);

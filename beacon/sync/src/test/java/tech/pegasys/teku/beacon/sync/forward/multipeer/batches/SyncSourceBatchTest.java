@@ -324,6 +324,7 @@ public class SyncSourceBatchTest {
     final SyncSourceBatch batch =
         new SyncSourceBatch(
             eventThread,
+            spec,
             blobSidecarManager,
             emptySourceSelector,
             conflictResolutionStrategy,
@@ -353,6 +354,7 @@ public class SyncSourceBatchTest {
     final SyncSourceBatch batch =
         new SyncSourceBatch(
             eventThread,
+            spec,
             blobSidecarManager,
             syncSourceProvider,
             conflictResolutionStrategy,

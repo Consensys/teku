@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public abstract class AbstractSyncTest {
@@ -56,6 +57,8 @@ public abstract class AbstractSyncTest {
   protected final BlobSidecarManager blobSidecarManager = mock(BlobSidecarManager.class);
   protected final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool =
       mock(BlockBlobSidecarsTrackersPool.class);
+  protected final ExecutionPayloadManager executionPayloadManager =
+      mock(ExecutionPayloadManager.class);
   protected final RecentChainData recentChainData = mock(RecentChainData.class);
 
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
