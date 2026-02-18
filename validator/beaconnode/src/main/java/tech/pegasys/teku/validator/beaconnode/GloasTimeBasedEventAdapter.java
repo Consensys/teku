@@ -43,12 +43,10 @@ public class GloasTimeBasedEventAdapter extends TimeBasedEventAdapter {
   @Override
   void scheduleDuties(
       final UInt64 nextSlotStartTimeMillis,
-      final UInt64 millisPerSlot,
       final Optional<UInt64> expirationTimeMillis,
       final Runnable onExpired) {
     scheduleAll(
         nextSlotStartTimeMillis,
-        millisPerSlot,
         expirationTimeMillis,
         onExpired,
         new ScheduledEvent(0, this::onStartSlot),

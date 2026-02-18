@@ -101,11 +101,10 @@ public class ForkAwareTimeBasedEventAdapter implements BeaconChainEventAdapter {
 
     final UInt64 currentSlot = getCurrentSlot();
     final UInt64 nextSlotStartMillis = getSlotStartTimeMillis(currentSlot.increment());
-    final UInt64 millisPerSlot = getMillisPerSlot(currentSlot);
 
     // Build and start the adapter chain
     final List<ScheduledAdapter> scheduledAdapters = buildChain(currentSlot);
-    activateAdapter(scheduledAdapters, 0, nextSlotStartMillis, millisPerSlot);
+    activateAdapter(scheduledAdapters, 0, nextSlotStartMillis);
   }
 
   /**
@@ -145,10 +144,7 @@ public class ForkAwareTimeBasedEventAdapter implements BeaconChainEventAdapter {
   }
 
   void activateAdapter(
-      final List<ScheduledAdapter> scheduledAdapters,
-      final int index,
-      final UInt64 startFrom,
-      final UInt64 period) {
+      final List<ScheduledAdapter> scheduledAdapters, final int index, final UInt64 startFrom) {
     if (index >= scheduledAdapters.size()) {
       return;
     }
@@ -159,11 +155,10 @@ public class ForkAwareTimeBasedEventAdapter implements BeaconChainEventAdapter {
           if (transitionedToNext.compareAndSet(false, true)) {
             final UInt64 currentSlot = getCurrentSlot();
             final UInt64 nextSlotStart = getSlotStartTimeMillis(currentSlot.increment());
-            final UInt64 newPeriod = getMillisPerSlot(currentSlot.increment());
-            activateAdapter(scheduledAdapters, index + 1, nextSlotStart, newPeriod);
+            activateAdapter(scheduledAdapters, index + 1, nextSlotStart);
           }
         };
-    adapter.adapter().scheduleDuties(startFrom, period, adapter.expiryMillis(), onExpiredStartNext);
+    adapter.adapter().scheduleDuties(startFrom, adapter.expiryMillis(), onExpiredStartNext);
   }
 
   private UInt64 getCurrentSlot() {
@@ -172,9 +167,5 @@ public class ForkAwareTimeBasedEventAdapter implements BeaconChainEventAdapter {
 
   private UInt64 getSlotStartTimeMillis(final UInt64 slot) {
     return spec.computeTimeMillisAtSlot(slot, genesisTimeMillis);
-  }
-
-  private UInt64 getMillisPerSlot(final UInt64 slot) {
-    return UInt64.valueOf(spec.atSlot(slot).getConfig().getSlotDurationMillis());
   }
 }

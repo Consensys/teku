@@ -54,18 +54,14 @@ public abstract class TimeBasedEventAdapter {
   }
 
   abstract void scheduleDuties(
-      UInt64 nextSlotStartTimeMillis,
-      UInt64 millisPerSlot,
-      Optional<UInt64> expirationTimeMillis,
-      Runnable onExpired);
+      UInt64 nextSlotStartTimeMillis, Optional<UInt64> expirationTimeMillis, Runnable onExpired);
 
   void start(final UInt64 genesisTime) {
     setGenesisTime(genesisTime);
     final UInt64 currentSlot = getCurrentSlot();
     final UInt64 nextSlotStartTimeMillis = getSlotStartTimeMillis(currentSlot.increment());
-    final UInt64 millisPerSlot = getMillisPerSlot(currentSlot);
 
-    scheduleDuties(nextSlotStartTimeMillis, millisPerSlot, Optional.empty(), () -> {});
+    scheduleDuties(nextSlotStartTimeMillis, Optional.empty(), () -> {});
   }
 
   void setGenesisTime(final UInt64 genesisTime) {
@@ -76,10 +72,10 @@ public abstract class TimeBasedEventAdapter {
 
   void scheduleAll(
       final UInt64 nextSlotStartTimeMillis,
-      final UInt64 millisPerSlot,
       final Optional<UInt64> expirationTimeMillis,
       final Runnable onExpired,
       final ScheduledEvent... events) {
+    final UInt64 millisPerSlot = getMillisPerSlot();
     LOG.debug(
         "Scheduling {} events for {} starting at {} with period {}ms, expiry {}",
         events.length,
@@ -166,13 +162,11 @@ public abstract class TimeBasedEventAdapter {
   }
 
   boolean isTooLateInMillis(final UInt64 scheduledTimeInMillis, final UInt64 actualTimeInMillis) {
-    final UInt64 currentSlot = getCurrentSlot();
-    final UInt64 millisPerSlot = getMillisPerSlot(currentSlot);
-    return scheduledTimeInMillis.plus(millisPerSlot).isLessThan(actualTimeInMillis);
+    return scheduledTimeInMillis.plus(getMillisPerSlot()).isLessThan(actualTimeInMillis);
   }
 
-  private UInt64 getMillisPerSlot(final UInt64 slot) {
-    return UInt64.valueOf(spec.atSlot(slot).getConfig().getSlotDurationMillis());
+  UInt64 getMillisPerSlot() {
+    return UInt64.valueOf(spec.atSlot(firstSlot).getConfig().getSlotDurationMillis());
   }
 
   private UInt64 getSlotStartTimeMillis(final UInt64 slot) {
