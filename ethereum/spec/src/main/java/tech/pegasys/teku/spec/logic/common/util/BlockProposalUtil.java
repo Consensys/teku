@@ -30,7 +30,7 @@ public interface BlockProposalUtil {
       Bytes32 headBlockRoot,
       Bytes32 previousTargetRoot,
       Bytes32 currentTargetRoot,
-      UInt64 headEpoch,
+      UInt64 stateEpoch,
       UInt64 dutyEpoch);
 
   SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
@@ -41,5 +41,5 @@ public interface BlockProposalUtil {
       Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder,
       BlockProductionPerformance blockProductionPerformance);
 
-  UInt64 getStateSlotForProposerDuties(Spec spec, UInt64 dutiesEpoch);
+  UInt64 getStateSlotForProposerDuties(Spec spec, UInt64 stateEpoch, UInt64 dutiesEpoch);
 }

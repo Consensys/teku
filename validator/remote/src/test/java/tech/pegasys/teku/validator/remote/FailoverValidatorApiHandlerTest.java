@@ -731,7 +731,7 @@ class FailoverValidatorApiHandlerTest {
             Optional.of(mock(SyncCommitteeDuties.class))),
         getArguments(
             "getProposerDuties",
-            apiChannel -> apiChannel.getProposerDuties(epoch),
+            apiChannel -> apiChannel.getProposerDuties(epoch, true),
             BeaconNodeRequestLabels.GET_PROPOSER_DUTIES_REQUESTS_METHOD,
             Optional.of(mock(ProposerDuties.class))),
         getArguments(

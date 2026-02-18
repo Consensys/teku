@@ -11,26 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.forkchoice;
+package tech.pegasys.teku.spec.propertytest.suppliers.datacolumn.versions.fulu;
 
-/**
- * Represents the payload status for Gloas fork choice.
- *
- * <p>Spec reference:
- * https://github.com/ethereum/consensus-specs/blob/dev/specs/_features/gloas/fork-choice.md
- */
-public enum PayloadStatusGloas {
-  PAYLOAD_STATUS_PENDING(0),
-  PAYLOAD_STATUS_EMPTY(1),
-  PAYLOAD_STATUS_FULL(2);
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.Cell;
+import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-  private final int value;
+public class CellSupplier extends DataStructureUtilSupplier<Cell> {
 
-  PayloadStatusGloas(final int value) {
-    this.value = value;
-  }
-
-  public int getValue() {
-    return value;
+  public CellSupplier() {
+    super(DataStructureUtil::randomCell, SpecMilestone.FULU);
   }
 }

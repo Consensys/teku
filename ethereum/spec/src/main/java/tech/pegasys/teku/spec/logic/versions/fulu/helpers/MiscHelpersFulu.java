@@ -209,6 +209,10 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .toList();
   }
 
+  public boolean isSuperNode(final int groupCount) {
+    return groupCount == specConfigFulu.getNumberOfCustodyGroups();
+  }
+
   private UInt256 incrementByModule(final UInt256 n) {
     if (n.equals(UInt256.MAX_VALUE)) {
       return UInt256.ZERO;

@@ -845,7 +845,7 @@ class ForkChoiceTest {
   }
 
   @Test
-  void onBlock_shouldApplyProposerBoostToFirstBlock() {
+  void onBlock_shouldUpdateProposerBoostRootToFirstBlock() {
     final ChainBuilder forkChain = chainBuilder.fork();
 
     final SignedBlockAndState block = chainBuilder.generateNextBlock();

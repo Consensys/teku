@@ -89,7 +89,8 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
         }
 
         @Override
-        public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
+        public SafeFuture<Optional<ProposerDuties>> getProposerDuties(
+            final UInt64 epoch, final boolean isFuluCompatible) {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
@@ -266,7 +267,8 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
   SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
       UInt64 epoch, IntCollection validatorIndices);
 
-  SafeFuture<Optional<ProposerDuties>> getProposerDuties(UInt64 epoch);
+  SafeFuture<Optional<ProposerDuties>> getProposerDuties(
+      UInt64 epoch, final boolean isFuluCompatible);
 
   SafeFuture<Optional<PtcDuties>> getPtcDuties(UInt64 epoch, IntCollection validatorIndices);
 

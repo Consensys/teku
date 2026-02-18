@@ -121,7 +121,10 @@ public class SlotBasedScheduledDuties<P extends Duty, A extends Duty> implements
   @Override
   public boolean requiresRecalculation(final Bytes32 newDependentRoot) {
     LOG.trace(
-        "current dependent root {}, new dependent root {}", getDependentRoot(), newDependentRoot);
+        "duty type {}; current dependent root {}, new dependent root {}",
+        this::getProductionType,
+        this::getDependentRoot,
+        () -> newDependentRoot);
     final boolean requiresRecalculation = !getDependentRoot().equals(newDependentRoot);
     if (requiresRecalculation) {
       LOG.debug(

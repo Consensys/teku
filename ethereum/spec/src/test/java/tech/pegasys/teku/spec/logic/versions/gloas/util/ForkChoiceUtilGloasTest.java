@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
-import tech.pegasys.teku.spec.datastructures.forkchoice.PayloadStatusGloas;
+import tech.pegasys.teku.spec.datastructures.forkchoice.PayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -44,7 +44,7 @@ class ForkChoiceUtilGloasTest {
   void setUp() {
     spec = TestSpecFactory.createMinimalGloas();
     dataStructureUtil = new DataStructureUtil(spec);
-    forkChoiceUtil = (ForkChoiceUtilGloas) spec.getGenesisSpec().getForkChoiceUtil();
+    forkChoiceUtil = ForkChoiceUtilGloas.required(spec.getGenesisSpec().getForkChoiceUtil());
   }
 
   @Test
@@ -63,10 +63,10 @@ class ForkChoiceUtilGloasTest {
         .thenReturn(Optional.of(parentBlock));
 
     // Test
-    final PayloadStatusGloas result =
+    final PayloadStatus result =
         forkChoiceUtil.getParentPayloadStatus(store, currentBlock.getMessage());
 
-    assertThat(result).isEqualTo(PayloadStatusGloas.PAYLOAD_STATUS_FULL);
+    assertThat(result).isEqualTo(PayloadStatus.PAYLOAD_STATUS_FULL);
   }
 
   @Test
@@ -86,10 +86,10 @@ class ForkChoiceUtilGloasTest {
         .thenReturn(Optional.of(parentBlock));
 
     // Test
-    final PayloadStatusGloas result =
+    final PayloadStatus result =
         forkChoiceUtil.getParentPayloadStatus(store, currentBlock.getMessage());
 
-    assertThat(result).isEqualTo(PayloadStatusGloas.PAYLOAD_STATUS_EMPTY);
+    assertThat(result).isEqualTo(PayloadStatus.PAYLOAD_STATUS_EMPTY);
   }
 
   @Test

@@ -29,7 +29,6 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
@@ -42,7 +41,6 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   private final AtomicInteger custodyGroupCount = new AtomicInteger(INITIAL_VALUE);
   private final AtomicInteger custodyGroupSyncedCount;
   private final Spec spec;
-  private final SpecConfigFulu specConfigFulu;
   private final MiscHelpersFulu miscHelpersFulu;
   private final ProposersDataManager proposersDataManager;
   private final CustodyGroupCountChannel custodyGroupCountChannel;
@@ -64,7 +62,6 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
       final MetricsSystem metricsSystem) {
     this(
         spec,
-        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig()),
         MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers()),
         proposersDataManager,
         custodyGroupCountChannel,
@@ -77,7 +74,6 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   @VisibleForTesting
   CustodyGroupCountManagerImpl(
       final Spec spec,
-      final SpecConfigFulu specConfigFulu,
       final MiscHelpersFulu miscHelpersFulu,
       final ProposersDataManager proposersDataManager,
       final CustodyGroupCountChannel custodyGroupCountChannel,
@@ -86,7 +82,6 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
       final UInt256 nodeId,
       final MetricsSystem metricsSystem) {
     this.spec = spec;
-    this.specConfigFulu = specConfigFulu;
     this.miscHelpersFulu = miscHelpersFulu;
     this.custodyGroupCountGauge =
         SettableGauge.create(
@@ -256,6 +251,6 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     }
     custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, getSamplingGroupCount());
     custodyGroupCountGauge.set(newCustodyGroupCount);
-    isMaxCustodyGroups = newCustodyGroupCount == specConfigFulu.getNumberOfCustodyGroups();
+    isMaxCustodyGroups = miscHelpersFulu.isSuperNode(newCustodyGroupCount);
   }
 }
