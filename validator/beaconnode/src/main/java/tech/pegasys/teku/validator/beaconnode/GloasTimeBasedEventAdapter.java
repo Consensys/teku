@@ -30,6 +30,7 @@ public class GloasTimeBasedEventAdapter extends TimeBasedEventAdapter {
       final RepeatingTaskScheduler taskScheduler,
       final TimeProvider timeProvider,
       final ValidatorTimingChannel validatorTimingChannel,
+      final Runnable onLastSlot,
       final Spec spec) {
     super(
         spec.computeStartSlotAtEpoch(
@@ -37,19 +38,24 @@ public class GloasTimeBasedEventAdapter extends TimeBasedEventAdapter {
         taskScheduler,
         timeProvider,
         validatorTimingChannel,
+        onLastSlot,
         spec);
   }
 
   @Override
   void scheduleDuties(
-      final UInt64 nextSlotStartTimeMillis,
-      final Optional<UInt64> expirationTimeMillis,
-      final Runnable onExpired) {
+      final UInt64 nextSlotStartTimeMillis, final Optional<UInt64> expirationTimeMillis) {
+
     scheduleAll(
         nextSlotStartTimeMillis,
         expirationTimeMillis,
-        onExpired,
-        new ScheduledEvent(0, this::onStartSlot),
+        Optional.of(onLastSlot),
+        new ScheduledEvent(0, this::onStartSlot));
+
+    scheduleAll(
+        nextSlotStartTimeMillis,
+        expirationTimeMillis,
+        Optional.empty(),
         new ScheduledEvent(
             spec.getAttestationDueMillis(getFirstSlot()), this::onAttestationCreationDue),
         new ScheduledEvent(spec.getAggregateDueMillis(getFirstSlot()), this::onAggregationDue),

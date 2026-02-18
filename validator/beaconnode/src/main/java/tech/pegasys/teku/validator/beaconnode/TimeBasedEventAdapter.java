@@ -31,21 +31,25 @@ public abstract class TimeBasedEventAdapter {
   private final TimeProvider timeProvider;
   private final UInt64 firstSlot;
   private UInt64 genesisTimeMillis;
-  final ValidatorTimingChannel validatorTimingChannel;
-  final Spec spec;
-  final RepeatingTaskScheduler taskScheduler;
+
+  protected final Runnable onLastSlot;
+  protected final ValidatorTimingChannel validatorTimingChannel;
+  protected final Spec spec;
+  protected final RepeatingTaskScheduler taskScheduler;
 
   public TimeBasedEventAdapter(
       final UInt64 firstSlot,
       final RepeatingTaskScheduler taskScheduler,
       final TimeProvider timeProvider,
       final ValidatorTimingChannel validatorTimingChannel,
+      final Runnable onLastSlot,
       final Spec spec) {
     this.firstSlot = firstSlot;
     this.taskScheduler = taskScheduler;
     this.timeProvider = timeProvider;
     this.validatorTimingChannel = validatorTimingChannel;
     this.spec = spec;
+    this.onLastSlot = onLastSlot;
   }
 
   /** Returns the first slot of this adapter's milestone (used for chain expiry computation). */
@@ -54,14 +58,14 @@ public abstract class TimeBasedEventAdapter {
   }
 
   abstract void scheduleDuties(
-      UInt64 nextSlotStartTimeMillis, Optional<UInt64> expirationTimeMillis, Runnable onExpired);
+      UInt64 nextSlotStartTimeMillis, Optional<UInt64> expirationTimeMillis);
 
   void start(final UInt64 genesisTime) {
     setGenesisTime(genesisTime);
     final UInt64 currentSlot = getCurrentSlot();
     final UInt64 nextSlotStartTimeMillis = getSlotStartTimeMillis(currentSlot.increment());
 
-    scheduleDuties(nextSlotStartTimeMillis, Optional.empty(), () -> {});
+    scheduleDuties(nextSlotStartTimeMillis, Optional.empty());
   }
 
   void setGenesisTime(final UInt64 genesisTime) {
@@ -73,9 +77,10 @@ public abstract class TimeBasedEventAdapter {
   void scheduleAll(
       final UInt64 nextSlotStartTimeMillis,
       final Optional<UInt64> expirationTimeMillis,
-      final Runnable onExpired,
+      final Optional<Runnable> onExpired,
       final ScheduledEvent... events) {
     final UInt64 millisPerSlot = getMillisPerSlot();
+
     LOG.debug(
         "Scheduling {} events for {} starting at {} with period {}ms, expiry {}",
         events.length,
@@ -83,6 +88,7 @@ public abstract class TimeBasedEventAdapter {
         nextSlotStartTimeMillis,
         millisPerSlot,
         expirationTimeMillis.map(UInt64::toString).orElse("none"));
+
     for (final ScheduledEvent event : events) {
       final UInt64 firstInvocation = nextSlotStartTimeMillis.plus(event.offsetMillis());
       if (expirationTimeMillis.isPresent()) {
@@ -91,7 +97,7 @@ public abstract class TimeBasedEventAdapter {
             millisPerSlot,
             event.handler(),
             expirationTimeMillis.get(),
-            (__, ___) -> onExpired.run());
+            (__, ___) -> onExpired.ifPresent(Runnable::run));
       } else {
         taskScheduler.scheduleRepeatingEventInMillis(
             firstInvocation, millisPerSlot, event.handler());

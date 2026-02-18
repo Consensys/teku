@@ -19,6 +19,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
@@ -44,7 +45,7 @@ class GloasBasedEventAdapterTest {
 
   private final GloasTimeBasedEventAdapter eventAdapter =
       new GloasTimeBasedEventAdapter(
-          repeatingTaskScheduler, timeProvider, validatorTimingChannel, spec);
+          repeatingTaskScheduler, timeProvider, validatorTimingChannel, () -> {}, spec);
 
   @Test
   void shouldScheduleAttestationEventsStartingFromNextSlot() {
@@ -118,6 +119,38 @@ class GloasBasedEventAdapterTest {
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, times(1))
         .onPayloadAttestationCreationDue(UInt64.valueOf(nextSlot));
+  }
+
+  @Test
+  void shouldCallOnLastSlotExactlyOnceWhenEventsExpire() {
+    final Runnable onLastSlotCallback = mock(Runnable.class);
+    final GloasTimeBasedEventAdapter adapter =
+        new GloasTimeBasedEventAdapter(
+            repeatingTaskScheduler, timeProvider, validatorTimingChannel, onLastSlotCallback, spec);
+
+    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
+    adapter.setGenesisTime(genesisTime);
+
+    final long nextSlot = 25;
+    final int timeUntilNextSlot = secondsPerSlot / 2;
+    timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
+
+    final long genesisTimeMillis = genesisTime.longValue() * 1000;
+    final UInt64 nextSlotStartMillis = UInt64.valueOf(genesisTimeMillis + nextSlot * millisPerSlot);
+    final UInt64 expiryMillis = UInt64.valueOf(genesisTimeMillis + (nextSlot + 1) * millisPerSlot);
+
+    adapter.scheduleDuties(nextSlotStartMillis, Optional.of(expiryMillis));
+
+    // Advance to slot start — slot event fires and then expires, triggering onLastSlot
+    timeProvider.advanceTimeBySeconds(timeUntilNextSlot);
+    asyncRunner.executeDueActionsRepeatedly();
+    verify(validatorTimingChannel).onSlot(UInt64.valueOf(nextSlot));
+    verify(onLastSlotCallback, times(1)).run();
+
+    // Advance through rest of slot — duties fire and expire, but onLastSlot is NOT called again
+    timeProvider.advanceTimeBySeconds(secondsPerSlot);
+    asyncRunner.executeDueActionsRepeatedly();
+    verify(onLastSlotCallback, times(1)).run();
   }
 
   @Test
