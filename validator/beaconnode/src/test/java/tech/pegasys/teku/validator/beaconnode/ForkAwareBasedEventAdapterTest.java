@@ -130,6 +130,51 @@ class ForkAwareBasedEventAdapterTest {
   }
 
   @Test
+  void shouldUseCorrectAdapterWhenStartingInLastSlotBeforeFork() {
+    // PHASE0 at epoch 0, ALTAIR at epoch 1 (slot 8). Start late in slot 7 (last PHASE0 slot).
+    // The next slot (8) is ALTAIR, so the Altair adapter should handle it — not Phase0.
+    final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.ONE);
+    final int secondsPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot();
+
+    final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100);
+    final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
+    final RepeatingTaskScheduler scheduler = new RepeatingTaskScheduler(asyncRunner, timeProvider);
+
+    final ForkAwareTimeBasedEventAdapter eventAdapter =
+        new ForkAwareTimeBasedEventAdapter(
+            genesisDataProvider, scheduler, timeProvider, validatorTimingChannel, spec);
+
+    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
+    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
+
+    // Advance to slot 7 + 5s (past all Phase0 events, 1s before ALTAIR boundary)
+    timeProvider.advanceTimeBySeconds(secondsPerSlot * 7L + secondsPerSlot - 1);
+
+    assertThat(eventAdapter.start()).isCompleted();
+    asyncRunner.executeDueActionsRepeatedly();
+    verifyNoInteractions(validatorTimingChannel);
+
+    // --- Slot 8: first ALTAIR slot (should be handled by Altair adapter) ---
+
+    // Advance to slot 8 start
+    timeProvider.advanceTimeBySeconds(1);
+    asyncRunner.executeDueActionsRepeatedly();
+    verify(validatorTimingChannel).onSlot(UInt64.valueOf(8));
+
+    // Advance to slot 8 + 1/3 — sync committee should fire (proves Altair adapter is active)
+    timeProvider.advanceTimeBySeconds(secondsPerSlot / 3);
+    asyncRunner.executeDueActionsRepeatedly();
+    verify(validatorTimingChannel, times(1)).onAttestationCreationDue(UInt64.valueOf(8));
+    verify(validatorTimingChannel, times(1)).onSyncCommitteeCreationDue(UInt64.valueOf(8));
+
+    // Advance to slot 8 + 2/3 — contribution should fire
+    timeProvider.advanceTimeBySeconds(secondsPerSlot / 3);
+    asyncRunner.executeDueActionsRepeatedly();
+    verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(UInt64.valueOf(8));
+    verify(validatorTimingChannel, times(1)).onContributionCreationDue(UInt64.valueOf(8));
+  }
+
+  @Test
   void shouldTransitionFromAltairToGloasAtForkBoundary() {
     // ALTAIR at epoch 0, GLOAS at epoch 1 (slot 8). Minimal: 8 slots/epoch, 6 sec/slot
     final Spec spec = TestSpecFactory.createMinimalWithGloasForkEpoch(UInt64.ONE);

@@ -99,11 +99,11 @@ public class ForkAwareTimeBasedEventAdapter implements BeaconChainEventAdapter {
     // Set genesis time on all adapters
     adapters.values().forEach(adapter -> adapter.setGenesisTime(genesisTime));
 
-    final UInt64 currentSlot = getCurrentSlot();
-    final UInt64 nextSlotStartMillis = getSlotStartTimeMillis(currentSlot.increment());
+    final UInt64 nextSlot = getCurrentSlot().increment();
+    final UInt64 nextSlotStartMillis = getSlotStartTimeMillis(nextSlot);
 
-    // Build and start the adapter chain
-    final List<ScheduledAdapter> scheduledAdapters = buildChain(currentSlot);
+    // Build chain based on next slot — that's the first slot events will fire for
+    final List<ScheduledAdapter> scheduledAdapters = buildChain(nextSlot);
     activateAdapter(scheduledAdapters, 0, nextSlotStartMillis);
   }
 
