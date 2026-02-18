@@ -14,8 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container7;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container6;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -23,17 +22,15 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public class ExecutionPayloadEnvelope
-    extends Container7<
+    extends Container6<
         ExecutionPayloadEnvelope,
         ExecutionPayload,
         ExecutionRequests,
         SszUInt64,
         SszBytes32,
         SszUInt64,
-        SszList<SszKZGCommitment>,
         SszBytes32> {
 
   ExecutionPayloadEnvelope(
@@ -43,7 +40,6 @@ public class ExecutionPayloadEnvelope
       final UInt64 builderIndex,
       final Bytes32 beaconBlockRoot,
       final UInt64 slot,
-      final SszList<SszKZGCommitment> blobKzgCommitments,
       final Bytes32 stateRoot) {
     super(
         schema,
@@ -52,7 +48,6 @@ public class ExecutionPayloadEnvelope
         SszUInt64.of(builderIndex),
         SszBytes32.of(beaconBlockRoot),
         SszUInt64.of(slot),
-        blobKzgCommitments,
         SszBytes32.of(stateRoot));
   }
 
@@ -80,12 +75,8 @@ public class ExecutionPayloadEnvelope
     return getField4().get();
   }
 
-  public SszList<SszKZGCommitment> getBlobKzgCommitments() {
-    return getField5();
-  }
-
   public Bytes32 getStateRoot() {
-    return getField6().get();
+    return getField5().get();
   }
 
   public SlotAndBlockRoot getSlotAndBlockRoot() {
@@ -105,7 +96,6 @@ public class ExecutionPayloadEnvelope
         getBuilderIndex(),
         getBeaconBlockRoot(),
         getSlot(),
-        getBlobKzgCommitments(),
         stateRoot);
   }
 }

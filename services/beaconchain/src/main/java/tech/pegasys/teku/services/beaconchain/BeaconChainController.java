@@ -192,11 +192,14 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqResp
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.SimpleSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever;
+import tech.pegasys.teku.statetransition.datacolumns.util.SuperNodeSupplier;
 import tech.pegasys.teku.statetransition.execution.DefaultExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.DefaultExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager.RemoteBidOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadBidEventsChannel;
+import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadEventsChannel;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofGenerator;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofGeneratorImpl;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
@@ -286,6 +289,7 @@ import tech.pegasys.teku.validator.coordinator.GraffitiBuilder;
 import tech.pegasys.teku.validator.coordinator.MilestoneBasedBlockFactory;
 import tech.pegasys.teku.validator.coordinator.StoredLatestCanonicalBlockUpdater;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
+import tech.pegasys.teku.validator.coordinator.ValidatorApiHandlerGloas;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.NoOpPerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
@@ -862,12 +866,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
       dataColumnSidecarGossipValidator =
           DataColumnSidecarGossipValidator.create(
-              spec,
-              invalidBlockRoots,
-              gossipValidationHelper,
-              MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers()),
-              metricsSystem,
-              timeProvider);
+              spec, invalidBlockRoots, gossipValidationHelper, metricsSystem, timeProvider);
       dataColumnSidecarManager =
           new DataColumnSidecarManagerImpl(
               dataColumnSidecarGossipValidator, dasGossipLogger, metricsSystem, timeProvider);
@@ -881,8 +880,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
       final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator =
           new ExecutionPayloadBidGossipValidator(
               spec, gossipValidationHelper, beaconConfig.getMinBidIncrementPercentage());
+      final ReceivedExecutionPayloadBidEventsChannel
+          receivedExecutionPayloadBidEventsChannelPublisher =
+              eventChannels.getPublisher(ReceivedExecutionPayloadBidEventsChannel.class);
       executionPayloadBidManager =
-          new DefaultExecutionPayloadBidManager(spec, executionPayloadBidGossipValidator);
+          new DefaultExecutionPayloadBidManager(
+              spec,
+              executionPayloadBidGossipValidator,
+              receivedExecutionPayloadBidEventsChannelPublisher);
     } else {
       executionPayloadBidManager = ExecutionPayloadBidManager.NOOP;
     }
@@ -892,9 +897,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
       final ExecutionPayloadGossipValidator executionPayloadGossipValidator =
           new ExecutionPayloadGossipValidator(spec, gossipValidationHelper, invalidBlockRoots);
+      final ReceivedExecutionPayloadEventsChannel receivedExecutionPayloadEventsChannelPublisher =
+          eventChannels.getPublisher(ReceivedExecutionPayloadEventsChannel.class);
       executionPayloadManager =
           new DefaultExecutionPayloadManager(
-              beaconAsyncRunner, executionPayloadGossipValidator, forkChoice, executionLayer);
+              beaconAsyncRunner,
+              executionPayloadGossipValidator,
+              forkChoice,
+              executionLayer,
+              receivedExecutionPayloadEventsChannelPublisher);
     } else {
       executionPayloadManager = ExecutionPayloadManager.NOOP;
     }
@@ -1465,6 +1476,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .rejectedExecutionSupplier(rejectedExecutionCountSupplier)
             .custodyGroupCountManager(custodyGroupCountManager)
             .dataColumnSidecarManager(dataColumnSidecarManager)
+            .payloadAttestationPool(payloadAttestationPool)
             .build();
   }
 
@@ -1723,33 +1735,64 @@ public class BeaconChainController extends Service implements BeaconChainControl
       executionPayloadPublisher = ExecutionPayloadPublisher.NOOP;
     }
 
-    this.validatorApiHandler =
-        new ValidatorApiHandler(
-            dataProvider.getChainDataProvider(),
-            dataProvider.getNodeDataProvider(),
-            dataProvider.getNetworkDataProvider(),
-            combinedChainDataClient,
-            syncService,
-            blockFactory,
-            attestationPool,
-            attestationManager,
-            attestationTopicSubscriber,
-            activeValidatorTracker,
-            dutyMetrics,
-            performanceTracker,
-            spec,
-            forkChoiceTrigger,
-            proposersDataManager,
-            syncCommitteeMessagePool,
-            syncCommitteeContributionPool,
-            syncCommitteeSubscriptionManager,
-            blockProductionPerformanceFactory,
-            blockPublisher,
-            payloadAttestationPool,
-            executionPayloadManager,
-            executionPayloadFactory,
-            executionPayloadPublisher,
-            executionProofManager);
+    if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
+      this.validatorApiHandler =
+          new ValidatorApiHandlerGloas(
+              dataProvider.getChainDataProvider(),
+              dataProvider.getNodeDataProvider(),
+              dataProvider.getNetworkDataProvider(),
+              combinedChainDataClient,
+              syncService,
+              blockFactory,
+              attestationPool,
+              attestationManager,
+              attestationTopicSubscriber,
+              activeValidatorTracker,
+              dutyMetrics,
+              performanceTracker,
+              spec,
+              forkChoiceTrigger,
+              proposersDataManager,
+              syncCommitteeMessagePool,
+              syncCommitteeContributionPool,
+              syncCommitteeSubscriptionManager,
+              blockProductionPerformanceFactory,
+              blockPublisher,
+              payloadAttestationPool,
+              executionPayloadManager,
+              executionPayloadFactory,
+              executionPayloadPublisher,
+              executionProofManager);
+    } else {
+      this.validatorApiHandler =
+          new ValidatorApiHandler(
+              dataProvider.getChainDataProvider(),
+              dataProvider.getNodeDataProvider(),
+              dataProvider.getNetworkDataProvider(),
+              combinedChainDataClient,
+              syncService,
+              blockFactory,
+              attestationPool,
+              attestationManager,
+              attestationTopicSubscriber,
+              activeValidatorTracker,
+              dutyMetrics,
+              performanceTracker,
+              spec,
+              forkChoiceTrigger,
+              proposersDataManager,
+              syncCommitteeMessagePool,
+              syncCommitteeContributionPool,
+              syncCommitteeSubscriptionManager,
+              blockProductionPerformanceFactory,
+              blockPublisher,
+              payloadAttestationPool,
+              executionPayloadManager,
+              executionPayloadFactory,
+              executionPayloadPublisher,
+              executionProofManager);
+    }
+
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
         .subscribe(ExecutionClientEventsChannel.class, executionClientVersionProvider)
@@ -1894,6 +1937,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   beaconConfig.p2pConfig().isReworkedSidecarSyncEnabled()));
     }
 
+    final SuperNodeSupplier isSuperNodeSupplier =
+        new SuperNodeSupplier(spec, () -> custodyGroupCountManager);
+
     this.p2pNetwork =
         createEth2P2PNetworkBuilder()
             .config(beaconConfig.p2pConfig())
@@ -1924,6 +1970,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.P2P))
             .gossipDasLogger(dasGossipLogger)
             .reqRespDasLogger(dasReqRespLogger)
+            .isSuperNodeSupplier(isSuperNodeSupplier)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
             .metricsSystem(metricsSystem)

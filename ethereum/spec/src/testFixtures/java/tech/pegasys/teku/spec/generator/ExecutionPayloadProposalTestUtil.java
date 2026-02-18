@@ -52,7 +52,6 @@ public class ExecutionPayloadProposalTestUtil {
                   BUILDER_INDEX_SELF_BUILD,
                   blockAndState.getRoot(),
                   newSlot,
-                  executionPayloadProposalData.kzgCommitments(),
                   blockAndState.getState().hashTreeRoot());
       // Sign execution payload and set signature
       return signer

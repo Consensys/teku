@@ -31,6 +31,12 @@ public interface DataColumnSidecar extends SszContainer {
 
   DataColumn getColumn();
 
+  default Optional<SszList<SszKZGCommitment>> getMaybeKzgCommitments() {
+    return Optional.of(getKzgCommitments());
+  }
+
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/10311 need to verify this is not called
+  // for Gloas or use everywhere getMaybeKzgCommitments() alternatively
   SszList<SszKZGCommitment> getKzgCommitments();
 
   SszList<SszKZGProof> getKzgProofs();

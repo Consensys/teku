@@ -51,6 +51,9 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -67,7 +70,7 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ReorgContext;
 
 public class EventSubscriptionManagerTest {
-  private final Spec spec = TestSpecFactory.createMinimalFulu();
+  private final Spec spec = TestSpecFactory.createMinimalGloas();
   private final SpecConfig specConfig = spec.getGenesisSpecConfig();
   private final DataStructureUtil data = new DataStructureUtil(spec);
   protected final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
@@ -126,7 +129,7 @@ public class EventSubscriptionManagerTest {
       data.randomPayloadBuildingAttributes(true);
   final PayloadAttributesData samplePayloadAttributesData =
       new PayloadAttributesData(
-          SpecMilestone.FULU,
+          SpecMilestone.GLOAS,
           new Data(
               samplePayloadAttributes.getProposalSlot(),
               samplePayloadAttributes.getParentBeaconBlockRoot(),
@@ -152,6 +155,12 @@ public class EventSubscriptionManagerTest {
           Optional.of(samplePayloadAttributes),
           false,
           new SafeFuture<>());
+  private final SignedExecutionPayloadEnvelope sampleExecutionPayload =
+      data.randomSignedExecutionPayloadEnvelope(0);
+  private final SignedExecutionPayloadBid sampleExecutionPayloadBid =
+      data.randomSignedExecutionPayloadBid();
+  private final PayloadAttestationMessage samplePayloadAttestationMessage =
+      data.randomPayloadAttestationMessage();
 
   private final AsyncContext async = mock(AsyncContext.class);
   private final EventChannels channels = mock(EventChannels.class);
@@ -445,6 +454,38 @@ public class EventSubscriptionManagerTest {
     assertThat(outputStream.countEvents()).isEqualTo(0);
   }
 
+  @Test
+  void shouldPropagateExecutionPayloadAvailable() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=execution_payload_available");
+    manager.registerClient(client1);
+
+    triggerExecutionPayloadAvailableEvent();
+    checkEvent(
+        "execution_payload_available",
+        new ExecutionPayloadAvailableEvent(
+            sampleExecutionPayload.getSlot(), sampleExecutionPayload.getBeaconBlockRoot()));
+  }
+
+  @Test
+  void shouldPropagateExecutionPayloadBid() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=execution_payload_bid");
+    manager.registerClient(client1);
+
+    triggerExecutionPayloadBidEvent();
+    checkEvent("execution_payload_bid", new ExecutionPayloadBidEvent(sampleExecutionPayloadBid));
+  }
+
+  @Test
+  void shouldPropagatePayloadAttestationMessage() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=payload_attestation_message");
+    manager.registerClient(client1);
+
+    triggerPayloadAttestationMessageEvent();
+    checkEvent(
+        "payload_attestation_message",
+        new PayloadAttestationMessageEvent(samplePayloadAttestationMessage));
+  }
+
   private void triggerVoluntaryExitEvent() {
     manager.onNewVoluntaryExit(sampleVoluntaryExit, InternalValidationResult.ACCEPT, false);
     asyncRunner.executeQueuedActions();
@@ -548,6 +589,22 @@ public class EventSubscriptionManagerTest {
   private void triggerContributionEvent() {
     manager.onSyncCommitteeContribution(
         contributionAndProof, InternalValidationResult.ACCEPT, false);
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerExecutionPayloadAvailableEvent() {
+    manager.onExecutionPayloadAvailable(sampleExecutionPayload);
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerExecutionPayloadBidEvent() {
+    manager.onExecutionPayloadBidValidated(sampleExecutionPayloadBid);
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerPayloadAttestationMessageEvent() {
+    manager.onNewPayloadAttestationMessage(
+        samplePayloadAttestationMessage, InternalValidationResult.ACCEPT, true);
     asyncRunner.executeQueuedActions();
   }
 

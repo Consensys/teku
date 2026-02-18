@@ -9,7 +9,7 @@
       "in" : "query",
       "schema" : {
         "type" : "string",
-        "description" : "Event types to subscribe to. Supported event types: [`attestation`, `attester_slashing`, `blob_sidecar`, `block_gossip`, `block`, `bls_to_execution_change`, `chain_reorg`, `contribution_and_proof`, `data_column_sidecar`, `finalized_checkpoint`, `head`, `payload_attributes`, `proposer_slashing`, `single_attestation`, `sync_state`, `voluntary_exit`]",
+        "description" : "Event types to subscribe to. Supported event types: [`attestation`, `attester_slashing`, `blob_sidecar`, `block_gossip`, `block`, `bls_to_execution_change`, `chain_reorg`, `contribution_and_proof`, `data_column_sidecar`, `execution_payload_available`, `execution_payload_bid`, `finalized_checkpoint`, `head`, `payload_attestation_message`, `payload_attributes`, `proposer_slashing`, `single_attestation`, `sync_state`, `voluntary_exit`]",
         "example" : "head"
       }
     } ],

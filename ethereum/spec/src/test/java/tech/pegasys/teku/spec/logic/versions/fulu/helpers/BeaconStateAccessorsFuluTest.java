@@ -136,7 +136,7 @@ public class BeaconStateAccessorsFuluTest {
                 stateAccessorsFulu.getBeaconProposerIndex(
                     blockAndState.getState(), UInt64.valueOf(slot)))
         .hasMessageContaining(
-            "get_beacon_proposer_index is only used for requesting a slot in the current or next epoch");
+            "get_beacon_proposer_index is only used for requesting a slot in the current epoch (or next epoch in FULU)");
   }
 
   private List<Integer> getProposerLookaheadFromState(final BeaconStateFulu beaconStateFulu) {

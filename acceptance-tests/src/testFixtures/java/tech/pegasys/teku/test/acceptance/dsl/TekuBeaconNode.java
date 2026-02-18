@@ -72,6 +72,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
@@ -892,5 +894,18 @@ public class TekuBeaconNode extends TekuNode {
 
   public void expectElOnline() throws IOException {
     assertThat(getStatusElOffline()).isFalse();
+  }
+
+  public MetadataMessage getMetadataMessage(final SpecMilestone specMilestone) throws IOException {
+    final JsonNode identityData = fetchIdentity();
+    final MetadataMessageSchema<?> metadataMessageSchema =
+        spec.forMilestone(specMilestone).getSchemaDefinitions().getMetadataMessageSchema();
+    return JsonUtil.parse(
+        identityData.get("metadata").toString(), metadataMessageSchema.getJsonTypeDefinition());
+  }
+
+  private JsonNode fetchIdentity() throws IOException {
+    final String identity = httpClient.get(getRestApiUrl(), "/eth/v1/node/identity");
+    return OBJECT_MAPPER.readTree(identity).get("data");
   }
 }

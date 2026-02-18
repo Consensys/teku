@@ -113,11 +113,8 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       final BeaconBlock beaconBlock,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
-    safelyProcess(
-        () -> {
-          processWithdrawals(genericState, Optional.empty());
-          processExecutionPayloadBid(genericState, beaconBlock);
-        });
+    processWithdrawals(genericState, Optional.empty());
+    safelyProcess(() -> processExecutionPayloadBid(genericState, beaconBlock));
   }
 
   // process_withdrawals with only state as a parameter
@@ -125,7 +122,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
   public void processWithdrawals(
       final MutableBeaconState state, final Optional<ExecutionPayloadSummary> payloadSummary)
       throws BlockProcessingException {
-    withdrawalsHelpers.processWithdrawals(state);
+    safelyProcess(() -> withdrawalsHelpers.processWithdrawals(state));
   }
 
   // process_execution_payload_bid
@@ -170,6 +167,15 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
           state, signedBid, BLSSignatureVerifier.SIMPLE)) {
         throw new BlockProcessingException("Signature for the signed bind was invalid");
       }
+    }
+
+    // Verify commitments are under limit
+    if (bid.getBlobKzgCommitments().size()
+        > miscHelpersGloas
+            .getBlobParameters(beaconStateAccessors.getCurrentEpoch(state))
+            .maxBlobsPerBlock()) {
+      throw new BlockProcessingException(
+          "Number of kzg commitments in the bid exceeds max blobs per block");
     }
 
     // Verify that the bid is for the current slot
