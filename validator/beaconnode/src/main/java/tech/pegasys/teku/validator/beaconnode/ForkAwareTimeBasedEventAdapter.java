@@ -37,18 +37,15 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
  * profiles exist today: PHASE0 (attestation, aggregation), ALTAIR–FULU (adds sync committee,
  * contribution), and GLOAS (changes offsets, adds payload attestation).
  *
- * <p>The slot event (onSlot + onBlockProductionDue) is scheduled once with no expiration, because
- * slot timing does not change across forks. Duty events are managed per-adapter: when an adapter's
- * events expire at a fork boundary, the next adapter in the chain is started for the first slot of
- * the new era.
+ * <p>Each adapter schedules all of its events (including the slot event). When an adapter's events
+ * expire at a fork boundary, the next adapter in the chain is started for the first slot of the new
+ * era.
  */
 public class ForkAwareTimeBasedEventAdapter implements BeaconChainEventAdapter {
   private static final Logger LOG = LogManager.getLogger();
 
   private final GenesisDataProvider genesisDataProvider;
-  private final RepeatingTaskScheduler taskScheduler;
   private final TimeProvider timeProvider;
-  private final ValidatorTimingChannel validatorTimingChannel;
   private final Spec spec;
 
   private UInt64 genesisTimeMillis;
@@ -65,9 +62,7 @@ public class ForkAwareTimeBasedEventAdapter implements BeaconChainEventAdapter {
       final ValidatorTimingChannel validatorTimingChannel,
       final Spec spec) {
     this.genesisDataProvider = genesisDataProvider;
-    this.taskScheduler = taskScheduler;
     this.timeProvider = timeProvider;
-    this.validatorTimingChannel = validatorTimingChannel;
     this.spec = spec;
 
     adapters.put(
@@ -108,11 +103,7 @@ public class ForkAwareTimeBasedEventAdapter implements BeaconChainEventAdapter {
     final UInt64 nextSlotStartMillis = getSlotStartTimeMillis(currentSlot.increment());
     final UInt64 millisPerSlot = getMillisPerSlot(currentSlot);
 
-    // Schedule slot event once — no expiration since slot timing doesn't change across forks
-    taskScheduler.scheduleRepeatingEventInMillis(
-        nextSlotStartMillis, millisPerSlot, this::onStartSlot);
-
-    // Build and start the scheduledAdapters
+    // Build and start the adapter chain
     final List<ScheduledAdapter> scheduledAdapters = buildChain(currentSlot);
     activateAdapter(scheduledAdapters, 0, nextSlotStartMillis, millisPerSlot);
   }
@@ -175,24 +166,8 @@ public class ForkAwareTimeBasedEventAdapter implements BeaconChainEventAdapter {
     adapter.adapter().scheduleDuties(startFrom, period, adapter.expiryMillis(), onExpiredStartNext);
   }
 
-  private void onStartSlot(final UInt64 scheduledTimeMillis, final UInt64 actualTimeMillis) {
-    final UInt64 slot = getCurrentSlotForMillis(scheduledTimeMillis);
-    final UInt64 millisPerSlot = getMillisPerSlot(getCurrentSlot());
-    if (scheduledTimeMillis.plus(millisPerSlot).isLessThan(actualTimeMillis)) {
-      LOG.warn(
-          "Skipping block creation for slot {} due to unexpected delay in slot processing", slot);
-      return;
-    }
-    validatorTimingChannel.onSlot(slot);
-    validatorTimingChannel.onBlockProductionDue(slot);
-  }
-
   private UInt64 getCurrentSlot() {
     return spec.getCurrentSlotFromTimeMillis(timeProvider.getTimeInMillis(), genesisTimeMillis);
-  }
-
-  private UInt64 getCurrentSlotForMillis(final UInt64 millis) {
-    return spec.getCurrentSlotFromTimeMillis(millis, genesisTimeMillis);
   }
 
   private UInt64 getSlotStartTimeMillis(final UInt64 slot) {

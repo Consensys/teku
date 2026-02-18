@@ -127,7 +127,7 @@ class RepeatingTaskSchedulerTest {
   @Test
   void shouldExecuteEventAndExpire() {
     final UInt64 initialSchedule = getTime().plus(1);
-    final UInt64 expirationTime = getTime().plus(13);
+    final UInt64 expirationTime = getTime().plus(14);
     scheduleRepeatingEventWithExpiration(
         initialSchedule, UInt64.valueOf(12), action, expirationTime, expirationAction);
 

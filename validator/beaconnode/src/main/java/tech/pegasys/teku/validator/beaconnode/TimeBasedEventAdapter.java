@@ -65,9 +65,6 @@ public abstract class TimeBasedEventAdapter {
     final UInt64 nextSlotStartTimeMillis = getSlotStartTimeMillis(currentSlot.increment());
     final UInt64 millisPerSlot = getMillisPerSlot(currentSlot);
 
-    taskScheduler.scheduleRepeatingEventInMillis(
-        nextSlotStartTimeMillis, millisPerSlot, this::onStartSlot);
-
     scheduleDuties(nextSlotStartTimeMillis, millisPerSlot, Optional.empty(), () -> {});
   }
 
@@ -83,6 +80,13 @@ public abstract class TimeBasedEventAdapter {
       final Optional<UInt64> expirationTimeMillis,
       final Runnable onExpired,
       final ScheduledEvent... events) {
+    LOG.debug(
+        "Scheduling {} events for {} starting at {} with period {}ms, expiry {}",
+        events.length,
+        getClass().getSimpleName(),
+        nextSlotStartTimeMillis,
+        millisPerSlot,
+        expirationTimeMillis.map(UInt64::toString).orElse("none"));
     for (final ScheduledEvent event : events) {
       final UInt64 firstInvocation = nextSlotStartTimeMillis.plus(event.offsetMillis());
       if (expirationTimeMillis.isPresent()) {
@@ -103,7 +107,7 @@ public abstract class TimeBasedEventAdapter {
     return spec.getCurrentSlotFromTimeMillis(timeProvider.getTimeInMillis(), genesisTimeMillis);
   }
 
-  private void onStartSlot(final UInt64 scheduledTimeMillis, final UInt64 actualTimeMillis) {
+  void onStartSlot(final UInt64 scheduledTimeMillis, final UInt64 actualTimeMillis) {
     final UInt64 slot = getCurrentSlotForMillis(scheduledTimeMillis);
     if (isTooLateInMillis(scheduledTimeMillis, actualTimeMillis)) {
       LOG.warn(

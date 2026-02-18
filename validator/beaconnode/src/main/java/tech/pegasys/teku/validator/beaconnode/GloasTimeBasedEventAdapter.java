@@ -51,6 +51,7 @@ public class GloasTimeBasedEventAdapter extends TimeBasedEventAdapter {
         millisPerSlot,
         expirationTimeMillis,
         onExpired,
+        new ScheduledEvent(0, this::onStartSlot),
         new ScheduledEvent(
             spec.getAttestationDueMillis(getFirstSlot()), this::onAttestationCreationDue),
         new ScheduledEvent(spec.getAggregateDueMillis(getFirstSlot()), this::onAggregationDue),

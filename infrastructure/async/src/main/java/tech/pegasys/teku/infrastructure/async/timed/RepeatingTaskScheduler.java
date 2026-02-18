@@ -195,7 +195,7 @@ public class RepeatingTaskScheduler {
 
     public void moveToNextScheduledTime() {
       nextDue = nextDue.plus(repeatPeriod);
-      expiration.ifPresent(exp -> isExpired = exp.isLessThan(nextDue));
+      expiration.ifPresent(exp -> isExpired = exp.isLessThanOrEqualTo(nextDue));
     }
   }
 
