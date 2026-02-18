@@ -97,11 +97,11 @@ public interface DataColumnSidecarUtil {
       Set<Bytes32> validSignedBlockHeaders,
       Set<InclusionProofInfo> validInclusionProofInfoSet);
 
-  SafeFuture<Optional<SszList<SszKZGCommitment>>> getKzgCommitments(
+  SafeFuture<SszList<SszKZGCommitment>> getKzgCommitments(
       DataColumnSidecar dataColumnSidecar,
       Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot);
 
-  SafeFuture<Optional<SszList<SszKZGCommitment>>> getKzgCommitments(BeaconBlock block);
+  SafeFuture<SszList<SszKZGCommitment>> getKzgCommitments(BeaconBlock block);
 
   record InclusionProofInfo(
       Bytes32 commitmentsRoot, Bytes32 inclusionProofRoot, Bytes32 bodyRoot) {}

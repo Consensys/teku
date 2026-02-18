@@ -19,6 +19,7 @@ import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.LOCAL_PROPOSA
 import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.RECOVERED;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
@@ -423,18 +424,11 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
       return SafeFuture.COMPLETE;
     }
 
-    final SafeFuture<Optional<SszList<SszKZGCommitment>>> maybeSszKZGCommitmentsFuture =
-        recoveryTask.maybeSszKZGCommitmentsFuture();
+    final SafeFuture<SszList<SszKZGCommitment>> sszKZGCommitmentsFuture =
+        recoveryTask.sszKZGCommitmentsFuture();
 
-    return maybeSszKZGCommitmentsFuture.thenCompose(
-        maybeSszKZGCommitments -> {
-          if (maybeSszKZGCommitments.isEmpty()) {
-            throw new IllegalArgumentException(
-                String.format(
-                    "Unable to get kzg commitments for %s, reconstruction is not possible",
-                    slotAndBlockRoot));
-          }
-          final SszList<SszKZGCommitment> sszKZGCommitments = maybeSszKZGCommitments.get();
+    return sszKZGCommitmentsFuture.thenCompose(
+        sszKZGCommitments -> {
           if (sszKZGCommitments.isEmpty()) {
             return SafeFuture.COMPLETE;
           }
@@ -458,32 +452,35 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
                                   .getKZGCommitment()))
                   .toList();
           getBlobsV2RequestsCounter.inc();
-          final MetricsHistogram.Timer timer = getBlobsV2RuntimeSeconds.startTimer();
-          return executionLayer
-              .engineGetBlobAndCellProofsList(versionedHashes, slotAndBlockRoot.getSlot())
-              .whenComplete((result, error) -> timer.closeUnchecked().run())
-              .thenAccept(
-                  blobAndCellProofsList -> {
-                    LOG.debug("Found {} blobs", blobAndCellProofsList.size());
-                    if (blobAndCellProofsList.isEmpty()) {
-                      throw new IllegalArgumentException(
-                          String.format(
-                              "Blobs for %s are not found on local EL, reconstruction is not possible",
-                              slotAndBlockRoot));
-                    } else if (blobAndCellProofsList.size() != versionedHashes.size()) {
-                      throw new IllegalArgumentException(
-                          String.format(
-                              "Queried %s versionedHashes but got %s blobAndProofs",
-                              versionedHashes.size(), blobAndCellProofsList.size()));
-                    }
+          try (MetricsHistogram.Timer timer = getBlobsV2RuntimeSeconds.startTimer()) {
+            return executionLayer
+                .engineGetBlobAndCellProofsList(versionedHashes, slotAndBlockRoot.getSlot())
+                .whenComplete((result, error) -> timer.closeUnchecked().run())
+                .thenAccept(
+                    blobAndCellProofsList -> {
+                      LOG.debug("Found {} blobs", blobAndCellProofsList.size());
+                      if (blobAndCellProofsList.isEmpty()) {
+                        throw new IllegalArgumentException(
+                            String.format(
+                                "Blobs for %s are not found on local EL, reconstruction is not possible",
+                                slotAndBlockRoot));
+                      } else if (blobAndCellProofsList.size() != versionedHashes.size()) {
+                        throw new IllegalArgumentException(
+                            String.format(
+                                "Queried %s versionedHashes but got %s blobAndProofs",
+                                versionedHashes.size(), blobAndCellProofsList.size()));
+                      }
 
-                    getBlobsV2ResponsesCounter.inc();
-                    LOG.debug(
-                        "Collected all blobSidecars from EL for slot {}, recovering data column sidecars",
-                        slotAndBlockRoot::getSlot);
-                    publishRecoveredDataColumnSidecars(
-                        recoveryTask, sszKZGCommitments, blobAndCellProofsList);
-                  });
+                      getBlobsV2ResponsesCounter.inc();
+                      LOG.debug(
+                          "Collected all blobSidecars from EL for slot {}, recovering data column sidecars",
+                          slotAndBlockRoot::getSlot);
+                      publishRecoveredDataColumnSidecars(
+                          recoveryTask, sszKZGCommitments, blobAndCellProofsList);
+                    });
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
         });
   }
 
@@ -493,7 +490,7 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
 
   public record RecoveryTask(
       SignedBeaconBlockHeader signedBeaconBlockHeader,
-      SafeFuture<Optional<SszList<SszKZGCommitment>>> maybeSszKZGCommitmentsFuture,
+      SafeFuture<SszList<SszKZGCommitment>> sszKZGCommitmentsFuture,
       List<Bytes32> kzgCommitmentsInclusionProof,
       Set<UInt64> recoveredColumnIndices) {
     public SlotAndBlockRoot getSlotAndBlockRoot() {
