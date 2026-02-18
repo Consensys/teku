@@ -193,11 +193,14 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqResp
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.SimpleSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever;
+import tech.pegasys.teku.statetransition.datacolumns.util.SuperNodeSupplier;
 import tech.pegasys.teku.statetransition.execution.DefaultExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.DefaultExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager.RemoteBidOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadBidEventsChannel;
+import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadEventsChannel;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofGenerator;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofGeneratorImpl;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
@@ -878,8 +881,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
       final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator =
           new ExecutionPayloadBidGossipValidator(
               spec, gossipValidationHelper, beaconConfig.getMinBidIncrementPercentage());
+      final ReceivedExecutionPayloadBidEventsChannel
+          receivedExecutionPayloadBidEventsChannelPublisher =
+              eventChannels.getPublisher(ReceivedExecutionPayloadBidEventsChannel.class);
       executionPayloadBidManager =
-          new DefaultExecutionPayloadBidManager(spec, executionPayloadBidGossipValidator);
+          new DefaultExecutionPayloadBidManager(
+              spec,
+              executionPayloadBidGossipValidator,
+              receivedExecutionPayloadBidEventsChannelPublisher);
     } else {
       executionPayloadBidManager = ExecutionPayloadBidManager.NOOP;
     }
@@ -889,9 +898,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
       final ExecutionPayloadGossipValidator executionPayloadGossipValidator =
           new ExecutionPayloadGossipValidator(spec, gossipValidationHelper, invalidBlockRoots);
+      final ReceivedExecutionPayloadEventsChannel receivedExecutionPayloadEventsChannelPublisher =
+          eventChannels.getPublisher(ReceivedExecutionPayloadEventsChannel.class);
       executionPayloadManager =
           new DefaultExecutionPayloadManager(
-              beaconAsyncRunner, executionPayloadGossipValidator, forkChoice, executionLayer);
+              beaconAsyncRunner,
+              executionPayloadGossipValidator,
+              forkChoice,
+              executionLayer,
+              receivedExecutionPayloadEventsChannelPublisher);
     } else {
       executionPayloadManager = ExecutionPayloadManager.NOOP;
     }
@@ -1462,6 +1477,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .rejectedExecutionSupplier(rejectedExecutionCountSupplier)
             .custodyGroupCountManager(custodyGroupCountManager)
             .dataColumnSidecarManager(dataColumnSidecarManager)
+            .payloadAttestationPool(payloadAttestationPool)
             .build();
   }
 
@@ -1922,6 +1938,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   beaconConfig.p2pConfig().isReworkedSidecarSyncEnabled()));
     }
 
+    final SuperNodeSupplier isSuperNodeSupplier =
+        new SuperNodeSupplier(spec, () -> custodyGroupCountManager);
+
     // TODO: Implementation + subscription
     final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor =
         DataColumnSidecarArchiveReconstructor.NOOP;
@@ -1957,6 +1976,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipDasLogger(dasGossipLogger)
             .dataColumnSidecarArchiveReconstructor(dataColumnSidecarArchiveReconstructor)
             .reqRespDasLogger(dasReqRespLogger)
+            .isSuperNodeSupplier(isSuperNodeSupplier)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
             .metricsSystem(metricsSystem)

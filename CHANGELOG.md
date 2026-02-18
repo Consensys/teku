@@ -16,3 +16,4 @@
 ### Bug Fixes
 
 - fixed an issue with dependent root calculation which was causing future epoch block proposal duties to be recalculated.
+- fixed v1 proposer duties returning incompatible roots for the v1 endpoint (should be compatible with pre-fulu dependent roots).
