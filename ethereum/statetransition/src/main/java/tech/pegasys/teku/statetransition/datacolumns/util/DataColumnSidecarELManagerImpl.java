@@ -414,18 +414,11 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
       return SafeFuture.COMPLETE;
     }
 
-    final SafeFuture<Optional<SszList<SszKZGCommitment>>> maybeSszKZGCommitmentsFuture =
-        recoveryTask.maybeSszKZGCommitmentsFuture();
+    final SafeFuture<SszList<SszKZGCommitment>> sszKZGCommitmentsFuture =
+        recoveryTask.sszKZGCommitmentsFuture();
 
-    return maybeSszKZGCommitmentsFuture.thenCompose(
-        maybeSszKZGCommitments -> {
-          if (maybeSszKZGCommitments.isEmpty()) {
-            throw new IllegalArgumentException(
-                String.format(
-                    "Unable to get kzg commitments for %s, reconstruction is not possible",
-                    slotAndBlockRoot));
-          }
-          final SszList<SszKZGCommitment> sszKZGCommitments = maybeSszKZGCommitments.get();
+    return sszKZGCommitmentsFuture.thenCompose(
+        sszKZGCommitments -> {
           if (sszKZGCommitments.isEmpty()) {
             return SafeFuture.COMPLETE;
           }
@@ -488,7 +481,7 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
 
   public record RecoveryTask(
       Optional<SignedBeaconBlockHeader> maybeSignedBeaconBlockHeader,
-      SafeFuture<Optional<SszList<SszKZGCommitment>>> maybeSszKZGCommitmentsFuture,
+      SafeFuture<SszList<SszKZGCommitment>> sszKZGCommitmentsFuture,
       Optional<List<Bytes32>> maybeKzgCommitmentsInclusionProof,
       Set<UInt64> recoveredColumnIndices) {}
 }

@@ -210,25 +210,29 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
   }
 
   @Override
-  public SafeFuture<Optional<SszList<SszKZGCommitment>>> getKzgCommitments(
+  public SafeFuture<SszList<SszKZGCommitment>> getKzgCommitments(
       final DataColumnSidecar dataColumnSidecar,
       final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
     return retrieveBlockByRoot
         .apply(dataColumnSidecar.getBeaconBlockRoot())
         .thenCompose(
-            maybeBeaconBlock -> {
-              if (maybeBeaconBlock.isEmpty()) {
-                return SafeFuture.completedFuture(Optional.empty());
-              }
-              return getKzgCommitments(maybeBeaconBlock.get());
-            });
+            maybeBeaconBlock ->
+                getKzgCommitments(
+                    maybeBeaconBlock.orElseThrow(
+                        () ->
+                            new IllegalArgumentException(
+                                String.format(
+                                    "Unable to retrieve block with root %s",
+                                    dataColumnSidecar.getBeaconBlockRoot())))));
   }
 
   @Override
-  public SafeFuture<Optional<SszList<SszKZGCommitment>>> getKzgCommitments(
-      final BeaconBlock block) {
+  public SafeFuture<SszList<SszKZGCommitment>> getKzgCommitments(final BeaconBlock block) {
     return SafeFuture.completedFuture(
-        Optional.of(BeaconBlockBodyGloas.required(block.getBody()).getBlobKzgCommitments()));
+        BeaconBlockBodyGloas.required(block.getBody())
+            .getSignedExecutionPayloadBid()
+            .getMessage()
+            .getBlobKzgCommitments());
   }
 
   @Override

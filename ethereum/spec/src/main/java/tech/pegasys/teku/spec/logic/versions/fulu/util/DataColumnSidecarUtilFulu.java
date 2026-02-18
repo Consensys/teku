@@ -331,18 +331,17 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   }
 
   @Override
-  public SafeFuture<Optional<SszList<SszKZGCommitment>>> getKzgCommitments(
+  public SafeFuture<SszList<SszKZGCommitment>> getKzgCommitments(
       final DataColumnSidecar dataColumnSidecar,
       final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
     return SafeFuture.completedFuture(
-        DataColumnSidecarFulu.required(dataColumnSidecar).getMaybeKzgCommitments());
+        DataColumnSidecarFulu.required(dataColumnSidecar).getKzgCommitments());
   }
 
   @Override
-  public SafeFuture<Optional<SszList<SszKZGCommitment>>> getKzgCommitments(
-      final BeaconBlock block) {
+  public SafeFuture<SszList<SszKZGCommitment>> getKzgCommitments(final BeaconBlock block) {
     return SafeFuture.completedFuture(
-        BeaconBlockBodyDeneb.required(block.getBody()).getOptionalBlobKzgCommitments());
+        BeaconBlockBodyDeneb.required(block.getBody()).getBlobKzgCommitments());
   }
 
   @Override
