@@ -72,7 +72,7 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
             case REJECT, SAVE_FOR_FUTURE, IGNORE -> {}
           }
         });
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+    return validationResult;
   }
 
   @Override
