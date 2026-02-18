@@ -41,6 +41,7 @@ public class BeaconStateBenchmark {
           .withPubKeyGenerator(() -> pubkey);
   private static final BeaconState beaconState = dataStructureUtil.randomBeaconState(400_000);
 
+  private static final int VALIDATOR_COUNT = 400_000;
   private static final int NUM_EB_CHANGES = 2000;
   private int[] ebChangeIndices;
 
@@ -49,7 +50,7 @@ public class BeaconStateBenchmark {
     var random = new Random(42);
     var indSet = new IntOpenHashSet();
     while (indSet.size() < NUM_EB_CHANGES) {
-      indSet.add(random.nextInt(0, 400_000));
+      indSet.add(random.nextInt(0, VALIDATOR_COUNT));
     }
     ebChangeIndices = indSet.toIntArray();
     System.out.println("ebChangeIndices created: " + ebChangeIndices.length);
