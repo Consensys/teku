@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsBy
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 @SuppressWarnings("JavaCase")
 public class DataColumnSidecarsByRangeListenerValidatingProxyTest {
@@ -65,6 +66,8 @@ public class DataColumnSidecarsByRangeListenerValidatingProxyTest {
   private final KZG kzg = mock(KZG.class);
   private final MetricsSystem metricsSystem = new StubMetricsSystem();
   private final TimeProvider timeProvider = StubTimeProvider.withTimeInMillis(ZERO);
+  private final CombinedChainDataClient combinedChainDataClient =
+      mock(CombinedChainDataClient.class);
 
   @SuppressWarnings("unchecked")
   private final RpcResponseListener<DataColumnSidecar> listener = mock(RpcResponseListener.class);
@@ -102,7 +105,8 @@ public class DataColumnSidecarsByRangeListenerValidatingProxyTest {
             signatureValidator,
             ONE,
             UInt64.valueOf(4),
-            columns);
+            columns,
+            combinedChainDataClient);
     spec.reinitializeForTesting(
         AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
         AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
@@ -143,7 +147,8 @@ public class DataColumnSidecarsByRangeListenerValidatingProxyTest {
             signatureValidator,
             ONE,
             UInt64.valueOf(2),
-            columns);
+            columns,
+            combinedChainDataClient);
 
     final DataColumnSidecar datColumnSidecar1_0 =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ZERO);
@@ -182,7 +187,8 @@ public class DataColumnSidecarsByRangeListenerValidatingProxyTest {
             signatureValidator,
             ONE,
             UInt64.valueOf(2),
-            columns);
+            columns,
+            combinedChainDataClient);
 
     final DataColumnSidecar datColumnSidecar1_0 =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ZERO);
@@ -222,7 +228,8 @@ public class DataColumnSidecarsByRangeListenerValidatingProxyTest {
             signatureValidator,
             ONE,
             UInt64.valueOf(1),
-            columns);
+            columns,
+            combinedChainDataClient);
 
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
@@ -272,7 +279,8 @@ public class DataColumnSidecarsByRangeListenerValidatingProxyTest {
             signatureValidator,
             ONE,
             UInt64.valueOf(1),
-            columns);
+            columns,
+            combinedChainDataClient);
 
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
@@ -307,7 +315,8 @@ public class DataColumnSidecarsByRangeListenerValidatingProxyTest {
             signatureValidator,
             ONE,
             UInt64.valueOf(1),
-            columns);
+            columns,
+            combinedChainDataClient);
 
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
@@ -357,7 +366,8 @@ public class DataColumnSidecarsByRangeListenerValidatingProxyTest {
             signatureValidator,
             ONE,
             UInt64.valueOf(1),
-            columns);
+            columns,
+            combinedChainDataClient);
     spec.reinitializeForTesting(
         AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
         AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,

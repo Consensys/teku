@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsBy
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 @SuppressWarnings("JavaCase")
 public class DataColumnSidecarsByRootListenerValidatingProxyTest {
@@ -71,6 +72,9 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
 
   private final DataColumnSidecarSignatureValidator signatureValidator =
       mock(DataColumnSidecarSignatureValidator.class);
+
+  private final CombinedChainDataClient combinedChainDataClient =
+      mock(CombinedChainDataClient.class);
 
   @BeforeEach
   void setUp() {
@@ -104,7 +108,8 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
             metricsSystem,
             timeProvider,
             signatureValidator,
-            dataColumnIdentifiers);
+            dataColumnIdentifiers,
+            combinedChainDataClient);
     spec.reinitializeForTesting(
         AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
         AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
@@ -142,7 +147,8 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
             metricsSystem,
             timeProvider,
             signatureValidator,
-            dataColumnIdentifiers);
+            dataColumnIdentifiers,
+            combinedChainDataClient);
 
     final DataColumnSidecar datColumnSidecar1_0 =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ZERO);
@@ -177,7 +183,8 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
             metricsSystem,
             timeProvider,
             signatureValidator,
-            List.of(dataColumnIdentifier));
+            List.of(dataColumnIdentifier),
+            combinedChainDataClient);
 
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
@@ -223,7 +230,8 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
             metricsSystem,
             timeProvider,
             signatureValidator,
-            List.of(dataColumnIdentifier));
+            List.of(dataColumnIdentifier),
+            combinedChainDataClient);
 
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
@@ -253,7 +261,8 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
             metricsSystem,
             timeProvider,
             signatureValidator,
-            List.of(dataColumnIdentifier));
+            List.of(dataColumnIdentifier),
+            combinedChainDataClient);
 
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
@@ -301,7 +310,8 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
             metricsSystem,
             timeProvider,
             signatureValidator,
-            dataColumnIdentifiers);
+            dataColumnIdentifiers,
+            combinedChainDataClient);
     spec.reinitializeForTesting(
         AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
         AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,

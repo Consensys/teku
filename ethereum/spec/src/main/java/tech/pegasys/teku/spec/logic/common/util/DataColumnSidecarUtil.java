@@ -26,8 +26,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 
@@ -66,7 +66,7 @@ public interface DataColumnSidecarUtil {
 
   SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithBlock(
       DataColumnSidecar dataColumnSidecar,
-      Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot);
+      Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot);
 
   SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithState(
       DataColumnSidecar dataColumnSidecar,
@@ -84,6 +84,8 @@ public interface DataColumnSidecarUtil {
       BeaconBlockHeader header, DataColumnSidecar dataColumnSidecar);
 
   boolean verifyDataColumnSidecarStructure(DataColumnSidecar dataColumnSidecar);
+
+  boolean verifyInclusionProof(DataColumnSidecar dataColumnSidecar);
 
   boolean verifyInclusionProof(
       DataColumnSidecar dataColumnSidecar, Set<InclusionProofInfo> validInclusionProofInfoSet);

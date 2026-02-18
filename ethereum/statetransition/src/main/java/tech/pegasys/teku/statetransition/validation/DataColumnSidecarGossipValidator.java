@@ -349,7 +349,7 @@ public class DataColumnSidecarGossipValidator {
      */
     final SafeFuture<Optional<DataColumnSidecarValidationError>> maybeBlockValidationErrorFuture =
         dataColumnSidecarUtil.validateWithBlock(
-            dataColumnSidecar, gossipValidationHelper::retrieveBlockByRoot);
+            dataColumnSidecar, gossipValidationHelper::retrieveSignedBlockByRoot);
 
     return maybeStateValidationErrorFuture.thenCombine(
         maybeBlockValidationErrorFuture,

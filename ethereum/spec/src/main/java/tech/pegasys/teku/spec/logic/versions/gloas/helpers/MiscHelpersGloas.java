@@ -184,6 +184,21 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
    */
   public boolean verifyDataColumnSidecar(
       final DataColumnSidecar dataColumnSidecar, final SszList<SszKZGCommitment> kzgCommitments) {
+    // The column length must be equal to the number of commitments/proofs
+    if (dataColumnSidecar.getColumn().size() != kzgCommitments.size()
+        || dataColumnSidecar.getColumn().size() != dataColumnSidecar.getKzgProofs().size()) {
+      LOG.trace(
+          "DataColumnSidecar has unequal data column ({}), kzg commitments ({}), and kzg proofs ({}) sizes",
+          dataColumnSidecar.getColumn().size(),
+          kzgCommitments.size(),
+          dataColumnSidecar.getKzgProofs().size());
+      return false;
+    }
+    return true;
+  }
+
+  @Override
+  public boolean verifyDataColumnSidecar(final DataColumnSidecar dataColumnSidecar) {
     final int numberOfColumns = specConfigGloas.getNumberOfColumns();
 
     // The sidecar index must be within the valid range
@@ -200,18 +215,6 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
       LOG.trace("DataColumnSidecar has empty column");
       return false;
     }
-
-    // The column length must be equal to the number of commitments/proofs
-    if (dataColumnSidecar.getColumn().size() != kzgCommitments.size()
-        || dataColumnSidecar.getColumn().size() != dataColumnSidecar.getKzgProofs().size()) {
-      LOG.trace(
-          "DataColumnSidecar has unequal data column ({}), kzg commitments ({}), and kzg proofs ({}) sizes",
-          dataColumnSidecar.getColumn().size(),
-          kzgCommitments.size(),
-          dataColumnSidecar.getKzgProofs().size());
-      return false;
-    }
-
     return true;
   }
 

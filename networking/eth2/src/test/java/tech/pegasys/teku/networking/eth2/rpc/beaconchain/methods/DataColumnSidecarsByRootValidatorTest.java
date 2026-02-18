@@ -19,7 +19,9 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
+import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
@@ -46,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 @SuppressWarnings("JavaCase")
 @TestSpecContext(milestone = {FULU})
@@ -62,20 +65,18 @@ public class DataColumnSidecarsByRootValidatorTest {
   private final TimeProvider timeProvider = StubTimeProvider.withTimeInMillis(0);
   private final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator =
       mock(DataColumnSidecarSignatureValidator.class);
+  private final CombinedChainDataClient combinedChainDataClient =
+      mock(CombinedChainDataClient.class);
 
   @BeforeEach
   void setUp(final TestSpecInvocationContextProvider.SpecContext specContext) {
     spec =
         switch (specContext.getSpecMilestone()) {
-          case PHASE0 -> throw new IllegalArgumentException("Phase0 is an unsupported milestone");
-          case ALTAIR -> throw new IllegalArgumentException("Altair is an unsupported milestone");
-          case BELLATRIX ->
-              throw new IllegalArgumentException("Bellatrix is an unsupported milestone");
-          case CAPELLA -> throw new IllegalArgumentException("Capella is an unsupported milestone");
-          case DENEB -> throw new IllegalArgumentException("Deneb is an unsupported milestone");
-          case ELECTRA -> throw new IllegalArgumentException("Electra is an unsupported milestone");
           case FULU -> TestSpecFactory.createMinimalWithFuluForkEpoch(currentForkEpoch);
           case GLOAS -> TestSpecFactory.createMinimalWithGloasForkEpoch(currentForkEpoch);
+          default ->
+              throw new IllegalArgumentException(
+                  String.format("%s is an unsupported milestone", specContext.getSpecMilestone()));
         };
     currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
     dataStructureUtil = new DataStructureUtil(spec);
@@ -103,7 +104,8 @@ public class DataColumnSidecarsByRootValidatorTest {
             metricsSystem,
             timeProvider,
             dataColumnSidecarSignatureValidator,
-            List.of(sidecarIdentifier1_0));
+            List.of(sidecarIdentifier1_0),
+            combinedChainDataClient);
 
     assertDoesNotThrow(() -> validator.validate(dataColumnSidecar1_0));
   }
@@ -125,10 +127,11 @@ public class DataColumnSidecarsByRootValidatorTest {
             metricsSystem,
             timeProvider,
             dataColumnSidecarSignatureValidator,
-            List.of(sidecarIdentifier1_0));
+            List.of(sidecarIdentifier1_0),
+            combinedChainDataClient);
 
-    assertThatThrownBy(() -> validator.validate(dataColumnSidecar2_0))
-        .isExactlyInstanceOf(DataColumnSidecarsResponseInvalidResponseException.class)
+    assertThatSafeFuture(validator.validate(dataColumnSidecar2_0))
+        .isCompletedExceptionallyWith(DataColumnSidecarsResponseInvalidResponseException.class)
         .hasMessageContaining(
             DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
                 .DATA_COLUMN_SIDECAR_UNEXPECTED_IDENTIFIER
@@ -151,10 +154,11 @@ public class DataColumnSidecarsByRootValidatorTest {
             metricsSystem,
             timeProvider,
             dataColumnSidecarSignatureValidator,
-            List.of(sidecarIdentifier1_0));
+            List.of(sidecarIdentifier1_0),
+            combinedChainDataClient);
 
-    assertThatThrownBy(() -> validator.validate(dataColumnSidecar1_0))
-        .isExactlyInstanceOf(DataColumnSidecarsResponseInvalidResponseException.class)
+    assertThatSafeFuture(validator.validate(dataColumnSidecar1_0))
+        .isCompletedExceptionallyWith(DataColumnSidecarsResponseInvalidResponseException.class)
         .hasMessageContaining(
             DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
                 .DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED
@@ -178,10 +182,11 @@ public class DataColumnSidecarsByRootValidatorTest {
             metricsSystem,
             timeProvider,
             dataColumnSidecarSignatureValidator,
-            List.of(sidecarIdentifier1_0));
+            List.of(sidecarIdentifier1_0),
+            combinedChainDataClient);
 
-    assertThatThrownBy(() -> validator.validate(dataColumnSidecar1_0_modified))
-        .isExactlyInstanceOf(DataColumnSidecarsResponseInvalidResponseException.class)
+    assertThatSafeFuture(validator.validate(dataColumnSidecar1_0_modified))
+        .isCompletedExceptionallyWith(DataColumnSidecarsResponseInvalidResponseException.class)
         .hasMessageContaining(
             DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
                 .DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED
@@ -203,11 +208,12 @@ public class DataColumnSidecarsByRootValidatorTest {
             metricsSystem,
             timeProvider,
             dataColumnSidecarSignatureValidator,
-            List.of(sidecarIdentifier1_0));
+            List.of(sidecarIdentifier1_0),
+            combinedChainDataClient);
 
-    assertDoesNotThrow(() -> validator.validate(dataColumnSidecar1_0));
-    assertThatThrownBy(() -> validator.validate(dataColumnSidecar1_0))
-        .isExactlyInstanceOf(DataColumnSidecarsResponseInvalidResponseException.class)
+    assertDoesNotThrow(() -> validator.validate(dataColumnSidecar1_0).join());
+    assertThatSafeFuture(validator.validate(dataColumnSidecar1_0))
+        .isCompletedExceptionallyWith(DataColumnSidecarsResponseInvalidResponseException.class)
         .hasMessageContaining(
             DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
                 .DATA_COLUMN_SIDECAR_UNEXPECTED_IDENTIFIER
@@ -231,7 +237,8 @@ public class DataColumnSidecarsByRootValidatorTest {
             metricsSystem,
             timeProvider,
             dataColumnSidecarSignatureValidator,
-            List.of(sidecarIdentifier1_0));
+            List.of(sidecarIdentifier1_0),
+            combinedChainDataClient);
 
     // not a part of validate, separate check
     assertThat(validator.verifySignature(dataColumnSidecar1_0)).isCompletedWithValue(false);
@@ -253,10 +260,11 @@ public class DataColumnSidecarsByRootValidatorTest {
             metricsSystem,
             timeProvider,
             dataColumnSidecarSignatureValidator,
-            List.of(sidecarIdentifier1_0));
+            List.of(sidecarIdentifier1_0),
+            combinedChainDataClient);
 
-    assertThatThrownBy(() -> validator.validate(dataColumnSidecar1_0_modified))
-        .isExactlyInstanceOf(DataColumnSidecarsResponseInvalidResponseException.class)
+    assertThatSafeFuture(validator.validate(dataColumnSidecar1_0_modified))
+        .isCompletedExceptionallyWith(DataColumnSidecarsResponseInvalidResponseException.class)
         .hasMessageContaining(
             DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
                 .DATA_COLUMN_SIDECAR_VALIDITY_CHECK_FAILED

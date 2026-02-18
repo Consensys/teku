@@ -27,8 +27,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -246,6 +246,11 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     return miscHelpersFulu.verifyDataColumnSidecar(dataColumnSidecar);
   }
 
+  @Override
+  public boolean verifyInclusionProof(final DataColumnSidecar dataColumnSidecar) {
+    return miscHelpersFulu.verifyDataColumnSidecarInclusionProof(dataColumnSidecar);
+  }
+
   /**
    * Verify inclusion proof if applicable. Gossip rule: [REJECT] The sidecar's kzg_commitments field
    * inclusion proof is valid as verified by verify_data_column_sidecar_inclusion_proof(sidecar)
@@ -321,7 +326,7 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   @Override
   public SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithBlock(
       final DataColumnSidecar dataColumnSidecar,
-      final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
+      final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot) {
     // Fulu sidecars already contain the header, no block validation needed
     return SafeFuture.completedFuture(Optional.empty());
   }

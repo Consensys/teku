@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType;
 
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -22,7 +23,9 @@ import tech.pegasys.teku.networking.eth2.peers.DataColumnSidecarSignatureValidat
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationError;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public abstract class AbstractDataColumnSidecarValidator {
 
@@ -31,31 +34,36 @@ public abstract class AbstractDataColumnSidecarValidator {
   private final Spec spec;
   private final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator;
   final Peer peer;
+  final CombinedChainDataClient combinedChainDataClient;
 
   public AbstractDataColumnSidecarValidator(
       final Peer peer,
       final Spec spec,
-      final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator) {
+      final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator,
+      final CombinedChainDataClient combinedChainDataClient) {
     this.peer = peer;
     this.spec = spec;
     this.dataColumnSidecarSignatureValidator = dataColumnSidecarSignatureValidator;
+    this.combinedChainDataClient = combinedChainDataClient;
   }
 
-  void verifyValidity(final DataColumnSidecar dataColumnSidecar) {
-    if (!verifyDataColumnSidecarValidity(dataColumnSidecar)) {
-      throw new DataColumnSidecarsResponseInvalidResponseException(
-          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_VALIDITY_CHECK_FAILED);
-    }
-  }
-
-  private boolean verifyDataColumnSidecarValidity(final DataColumnSidecar dataColumnSidecar) {
+  SafeFuture<Optional<DataColumnSidecarValidationError>> verifyValidity(
+      final DataColumnSidecar dataColumnSidecar) {
     try {
-      return MiscHelpersFulu.required(spec.atSlot(dataColumnSidecar.getSlot()).miscHelpers())
-          .verifyDataColumnSidecar(dataColumnSidecar);
+      final DataColumnSidecarUtil dataColumnSidecarUtil =
+          spec.getDataColumnSidecarUtil(dataColumnSidecar.getSlot());
+      if (!dataColumnSidecarUtil.verifyDataColumnSidecarStructure(dataColumnSidecar)) {
+        return SafeFuture.completedFuture(
+            Optional.of(
+                DataColumnSidecarValidationError.Critical.format("Invalid DataColumnSidecar")));
+      }
+      return dataColumnSidecarUtil.validateWithBlock(
+          dataColumnSidecar, combinedChainDataClient::getBlockByBlockRoot);
     } catch (final Exception ex) {
       LOG.debug("Validity check failed for DataColumnSidecar {}", dataColumnSidecar.toLogString());
-      throw new DataColumnSidecarsResponseInvalidResponseException(
-          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_VALIDITY_CHECK_FAILED, ex);
+      return SafeFuture.completedFuture(
+          Optional.of(
+              DataColumnSidecarValidationError.Critical.format("Invalid DataColumnSidecar")));
     }
   }
 
@@ -68,7 +76,7 @@ public abstract class AbstractDataColumnSidecarValidator {
 
   private boolean verifyDataColumnSidecarKzgProofs(final DataColumnSidecar dataColumnSidecar) {
     try {
-      return MiscHelpersFulu.required(spec.atSlot(dataColumnSidecar.getSlot()).miscHelpers())
+      return spec.getDataColumnSidecarUtil(dataColumnSidecar.getSlot())
           .verifyDataColumnSidecarKzgProofs(dataColumnSidecar);
     } catch (final Exception ex) {
       LOG.debug(
@@ -91,8 +99,8 @@ public abstract class AbstractDataColumnSidecarValidator {
 
   private boolean verifyDataColumnSidecarInclusionProof(final DataColumnSidecar dataColumnSidecar) {
     try {
-      return MiscHelpersFulu.required(spec.atSlot(dataColumnSidecar.getSlot()).miscHelpers())
-          .verifyDataColumnSidecarInclusionProof(dataColumnSidecar);
+      return spec.getDataColumnSidecarUtil(dataColumnSidecar.getSlot())
+          .verifyInclusionProof(dataColumnSidecar);
     } catch (final Exception ex) {
       LOG.debug(
           "Inclusion proof verification failed for DataColumnSidecar {}",

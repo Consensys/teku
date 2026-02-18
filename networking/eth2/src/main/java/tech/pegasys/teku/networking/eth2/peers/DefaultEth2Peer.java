@@ -88,6 +88,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -125,6 +126,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
           DataColumnSidecarsByRangeRequestMessage.DataColumnSidecarsByRangeRequestMessageSchema>
       dataColumnSidecarsByRangeRequestMessageSchema;
   private final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator;
+  private final CombinedChainDataClient combinedChainDataClient;
 
   DefaultEth2Peer(
       final Spec spec,
@@ -141,7 +143,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final RateTracker executionPayloadEnvelopesRequestTracker,
       final RateTracker requestTracker,
       final MetricsSystem metricsSystem,
-      final TimeProvider timeProvider) {
+      final TimeProvider timeProvider,
+      final CombinedChainDataClient combinedChainDataClient) {
     super(peer);
     this.spec = spec;
     this.discoveryNodeId = discoveryNodeId;
@@ -150,6 +153,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     this.metadataMessagesFactory = metadataMessagesFactory;
     this.peerChainValidator = peerChainValidator;
     this.dataColumnSidecarSignatureValidator = dataColumnSidecarSignatureValidator;
+    this.combinedChainDataClient = combinedChainDataClient;
     requestObjectsTrackers = new EnumMap<>(RequestObject.class);
     requestObjectsTrackers.put(RequestObject.BLOCK, blocksRequestTracker);
     requestObjectsTrackers.put(RequestObject.BLOB_SIDECAR, blobSidecarsRequestTracker);
@@ -361,7 +365,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                         metricsSystem,
                         timeProvider,
                         dataColumnSidecarSignatureValidator,
-                        dataColumnIdentifiers)))
+                        dataColumnIdentifiers,
+                        combinedChainDataClient)))
         .orElse(failWithUnsupportedMethodException("DataColumnSidecarsByRoot"));
   }
 
@@ -530,7 +535,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                       dataColumnSidecarSignatureValidator,
                       request.getStartSlot(),
                       request.getCount(),
-                      request.getColumns()));
+                      request.getColumns(),
+                      combinedChainDataClient));
             })
         .orElse(failWithUnsupportedMethodException("DataColumnSidecarsByRange"));
   }
