@@ -15,14 +15,17 @@ package tech.pegasys.teku.validator.beaconnode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
@@ -63,10 +66,20 @@ class ForkAwareBasedEventAdapterTest {
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
   }
 
-  @Test
-  void shouldTransitionFromPhase0ToAltairAtForkBoundary() {
-    // PHASE0 at epoch 0, ALTAIR at epoch 1 (slot 8). Minimal: 8 slots/epoch, 6 sec/slot
-    final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.ONE);
+  static Stream<Arguments> forkTransitions() {
+    return Stream.of(
+        Arguments.of(
+            "Phase0 to Altair",
+            (Supplier<Spec>) () -> TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.ONE)),
+        Arguments.of(
+            "Altair to Gloas",
+            (Supplier<Spec>) () -> TestSpecFactory.createMinimalWithGloasForkEpoch(UInt64.ONE)));
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("forkTransitions")
+  void shouldTransitionAtForkBoundary(final String name, final Supplier<Spec> specFactory) {
+    final Spec spec = specFactory.get();
     final int secondsPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot();
 
     final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100);
@@ -77,63 +90,65 @@ class ForkAwareBasedEventAdapterTest {
         new ForkAwareTimeBasedEventAdapter(
             genesisDataProvider, scheduler, timeProvider, validatorTimingChannel, spec);
 
-    final UInt64 genesisTime = timeProvider.getTimeInSeconds(); // 100s
+    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
     when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
 
-    // Advance to slot 6 (last PHASE0 epoch, 2 slots before boundary)
+    // Fork at epoch 1 → slot 8 (minimal: 8 slots/epoch). Start 2 slots before boundary.
+    final UInt64 preForkSlot = UInt64.valueOf(7);
+    final UInt64 postForkSlot = UInt64.valueOf(8);
+    final int preForkMillisPerSlot = spec.atSlot(preForkSlot).getConfig().getSlotDurationMillis();
     timeProvider.advanceTimeBySeconds(secondsPerSlot * 6L);
 
     assertThat(eventAdapter.start()).isCompleted();
     asyncRunner.executeDueActionsRepeatedly();
     verifyNoInteractions(validatorTimingChannel);
 
-    // --- Slot 7: last PHASE0 slot ---
-
-    // Advance to slot 7 start
-    timeProvider.advanceTimeBySeconds(secondsPerSlot);
+    // --- Pre-fork slot (7) ---
+    timeProvider.advanceTimeByMillis(preForkMillisPerSlot);
     asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel).onSlot(UInt64.valueOf(7));
-    verify(validatorTimingChannel).onBlockProductionDue(UInt64.valueOf(7));
+    verify(validatorTimingChannel).onSlot(preForkSlot);
+    verify(validatorTimingChannel).onBlockProductionDue(preForkSlot);
+    final long preForkAdvancedMillis =
+        SlotEventVerifierTestUtil.verifySlotEvents(
+            spec, timeProvider, asyncRunner, validatorTimingChannel, preForkSlot);
 
-    // Advance to slot 7 + 1/3 (attestation fires)
-    timeProvider.advanceTimeBySeconds(secondsPerSlot / 3);
+    // --- Post-fork slot (8) ---
+    timeProvider.advanceTimeByMillis(preForkMillisPerSlot - preForkAdvancedMillis);
     asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1)).onAttestationCreationDue(UInt64.valueOf(7));
-    // No sync committee in PHASE0
-    verify(validatorTimingChannel, never()).onSyncCommitteeCreationDue(UInt64.valueOf(7));
-
-    // Advance to slot 7 + 2/3 (aggregation fires)
-    timeProvider.advanceTimeBySeconds(secondsPerSlot / 3);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(UInt64.valueOf(7));
-    // No contribution in PHASE0
-    verify(validatorTimingChannel, never()).onContributionCreationDue(UInt64.valueOf(7));
-
-    // --- Slot 8: first ALTAIR slot ---
-
-    // Advance to slot 8 start
-    timeProvider.advanceTimeBySeconds(secondsPerSlot - secondsPerSlot / 3 * 2);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel).onSlot(UInt64.valueOf(8));
-
-    // Advance to slot 8 + 1/3 — attestation AND sync committee should fire (ALTAIR!)
-    timeProvider.advanceTimeBySeconds(secondsPerSlot / 3);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1)).onAttestationCreationDue(UInt64.valueOf(8));
-    verify(validatorTimingChannel, times(1)).onSyncCommitteeCreationDue(UInt64.valueOf(8));
-
-    // Advance to slot 8 + 2/3 — aggregation AND contribution
-    timeProvider.advanceTimeBySeconds(secondsPerSlot / 3);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(UInt64.valueOf(8));
-    verify(validatorTimingChannel, times(1)).onContributionCreationDue(UInt64.valueOf(8));
+    verify(validatorTimingChannel).onSlot(postForkSlot);
+    verify(validatorTimingChannel).onBlockProductionDue(postForkSlot);
+    SlotEventVerifierTestUtil.verifySlotEvents(
+        spec, timeProvider, asyncRunner, validatorTimingChannel, postForkSlot);
   }
 
-  @Test
-  void shouldUseCorrectAdapterWhenStartingInLastSlotBeforeFork() {
-    // PHASE0 at epoch 0, ALTAIR at epoch 1 (slot 8). Start late in slot 7 (last PHASE0 slot).
-    // The next slot (8) is ALTAIR, so the Altair adapter should handle it — not Phase0.
-    final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.ONE);
+  static Stream<Arguments> singleMilestoneStartups() {
+    return Stream.of(
+        Arguments.of(
+            "Phase0-only network", (Supplier<Spec>) TestSpecFactory::createMinimalPhase0, 25L),
+        Arguments.of(
+            "Mid-chain Altair with Gloas scheduled",
+            (Supplier<Spec>)
+                () -> TestSpecFactory.createMinimalWithGloasForkEpoch(UInt64.valueOf(3)),
+            11L),
+        Arguments.of(
+            "Gloas from genesis", (Supplier<Spec>) TestSpecFactory::createMinimalGloas, 25L),
+        Arguments.of(
+            "Electra no Gloas", (Supplier<Spec>) TestSpecFactory::createMinimalElectra, 25L),
+        Arguments.of(
+            "Pre-Gloas ALTAIR slot",
+            (Supplier<Spec>) () -> TestSpecFactory.createMinimalWithGloasForkEpoch(UInt64.ONE),
+            2L),
+        Arguments.of(
+            "Starting at ALTAIR fork boundary",
+            (Supplier<Spec>) () -> TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.ONE),
+            8L));
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("singleMilestoneStartups")
+  void shouldFireCorrectEventsForSlotInMilestone(
+      final String name, final Supplier<Spec> specFactory, final long nextSlot) {
+    final Spec spec = specFactory.get();
     final int secondsPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot();
 
     final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100);
@@ -147,117 +162,7 @@ class ForkAwareBasedEventAdapterTest {
     final UInt64 genesisTime = timeProvider.getTimeInSeconds();
     when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
 
-    // Advance to slot 7 + 5s (past all Phase0 events, 1s before ALTAIR boundary)
-    timeProvider.advanceTimeBySeconds(secondsPerSlot * 7L + secondsPerSlot - 1);
-
-    assertThat(eventAdapter.start()).isCompleted();
-    asyncRunner.executeDueActionsRepeatedly();
-    verifyNoInteractions(validatorTimingChannel);
-
-    // --- Slot 8: first ALTAIR slot (should be handled by Altair adapter) ---
-
-    // Advance to slot 8 start
-    timeProvider.advanceTimeBySeconds(1);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel).onSlot(UInt64.valueOf(8));
-
-    // Advance to slot 8 + 1/3 — sync committee should fire (proves Altair adapter is active)
-    timeProvider.advanceTimeBySeconds(secondsPerSlot / 3);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1)).onAttestationCreationDue(UInt64.valueOf(8));
-    verify(validatorTimingChannel, times(1)).onSyncCommitteeCreationDue(UInt64.valueOf(8));
-
-    // Advance to slot 8 + 2/3 — contribution should fire
-    timeProvider.advanceTimeBySeconds(secondsPerSlot / 3);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(UInt64.valueOf(8));
-    verify(validatorTimingChannel, times(1)).onContributionCreationDue(UInt64.valueOf(8));
-  }
-
-  @Test
-  void shouldTransitionFromAltairToGloasAtForkBoundary() {
-    // ALTAIR at epoch 0, GLOAS at epoch 1 (slot 8). Minimal: 8 slots/epoch, 6 sec/slot
-    final Spec spec = TestSpecFactory.createMinimalWithGloasForkEpoch(UInt64.ONE);
-    final int millisPerSlot = spec.getGenesisSpecConfig().getSlotDurationMillis();
-    final int secondsPerSlot = millisPerSlot / 1000;
-
-    final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100);
-    final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
-    final RepeatingTaskScheduler scheduler = new RepeatingTaskScheduler(asyncRunner, timeProvider);
-
-    final ForkAwareTimeBasedEventAdapter eventAdapter =
-        new ForkAwareTimeBasedEventAdapter(
-            genesisDataProvider, scheduler, timeProvider, validatorTimingChannel, spec);
-
-    final UInt64 genesisTime = timeProvider.getTimeInSeconds(); // 100s
-    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
-
-    // Advance to slot 6 (2 slots before GLOAS boundary)
-    timeProvider.advanceTimeBySeconds(secondsPerSlot * 6L);
-
-    assertThat(eventAdapter.start()).isCompleted();
-    asyncRunner.executeDueActionsRepeatedly();
-    verifyNoInteractions(validatorTimingChannel);
-
-    // --- Slot 7: last pre-GLOAS slot (ALTAIR timing: 1/3, 2/3) ---
-
-    // Advance to slot 7 + 1/3
-    timeProvider.advanceTimeByMillis(millisPerSlot + millisPerSlot / 3L);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel).onSlot(UInt64.valueOf(7));
-    verify(validatorTimingChannel, times(1)).onAttestationCreationDue(UInt64.valueOf(7));
-    verify(validatorTimingChannel, times(1)).onSyncCommitteeCreationDue(UInt64.valueOf(7));
-
-    // Advance to slot 7 + 2/3
-    timeProvider.advanceTimeByMillis(millisPerSlot / 3L);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(UInt64.valueOf(7));
-    verify(validatorTimingChannel, times(1)).onContributionCreationDue(UInt64.valueOf(7));
-    verify(validatorTimingChannel, never()).onPayloadAttestationCreationDue(UInt64.valueOf(7));
-
-    // --- Slot 8: first GLOAS slot (timing: 1/4, 2/4, 3/4) ---
-
-    // Advance to slot 8 start
-    timeProvider.advanceTimeByMillis(millisPerSlot - millisPerSlot / 3L * 2);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel).onSlot(UInt64.valueOf(8));
-    verify(validatorTimingChannel, never()).onAttestationCreationDue(UInt64.valueOf(8));
-
-    // Advance to slot 8 + 1/4 — GLOAS attestation + sync committee
-    timeProvider.advanceTimeByMillis(millisPerSlot / 4L);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1)).onAttestationCreationDue(UInt64.valueOf(8));
-    verify(validatorTimingChannel, times(1)).onSyncCommitteeCreationDue(UInt64.valueOf(8));
-
-    // Advance to slot 8 + 2/4 — GLOAS aggregation + contribution
-    timeProvider.advanceTimeByMillis(millisPerSlot / 4L);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(UInt64.valueOf(8));
-    verify(validatorTimingChannel, times(1)).onContributionCreationDue(UInt64.valueOf(8));
-
-    // Advance to slot 8 + 3/4 — payload attestation (new in GLOAS)
-    timeProvider.advanceTimeByMillis(millisPerSlot / 4L);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1)).onPayloadAttestationCreationDue(UInt64.valueOf(8));
-  }
-
-  @Test
-  void shouldWorkWithPhase0OnlyNetwork() {
-    final Spec spec = TestSpecFactory.createMinimalPhase0();
-    final int secondsPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot();
-
-    final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100);
-    final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
-    final RepeatingTaskScheduler scheduler = new RepeatingTaskScheduler(asyncRunner, timeProvider);
-
-    final ForkAwareTimeBasedEventAdapter eventAdapter =
-        new ForkAwareTimeBasedEventAdapter(
-            genesisDataProvider, scheduler, timeProvider, validatorTimingChannel, spec);
-
-    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
-
-    final long nextSlot = 25;
+    final UInt64 nextSlotUInt = UInt64.valueOf(nextSlot);
     final int timeUntilNextSlot = secondsPerSlot - 1;
     timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
 
@@ -265,185 +170,13 @@ class ForkAwareBasedEventAdapterTest {
     asyncRunner.executeDueActionsRepeatedly();
     verifyNoMoreInteractions(validatorTimingChannel);
 
-    // Advance to next slot start
+    // Advance to slot start — slot + block production should fire
     timeProvider.advanceTimeBySeconds(timeUntilNextSlot);
     asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel).onSlot(UInt64.valueOf(nextSlot));
+    verify(validatorTimingChannel).onSlot(nextSlotUInt);
+    verify(validatorTimingChannel).onBlockProductionDue(nextSlotUInt);
 
-    // Advance to 1/3 slot — attestation fires
-    timeProvider.advanceTimeBySeconds(secondsPerSlot / 3);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1)).onAttestationCreationDue(UInt64.valueOf(nextSlot));
-    // No sync committee in Phase0
-    verify(validatorTimingChannel, never()).onSyncCommitteeCreationDue(UInt64.valueOf(nextSlot));
-
-    // Advance to 2/3 slot — aggregation fires
-    timeProvider.advanceTimeBySeconds(secondsPerSlot / 3);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(UInt64.valueOf(nextSlot));
-    // No contribution in Phase0
-    verify(validatorTimingChannel, never()).onContributionCreationDue(UInt64.valueOf(nextSlot));
-    // No payload attestation
-    verify(validatorTimingChannel, never())
-        .onPayloadAttestationCreationDue(UInt64.valueOf(nextSlot));
-  }
-
-  @Test
-  void shouldStartMidChainInAltairEraWithGloasScheduled() {
-    // ALTAIR at epoch 0, GLOAS at epoch 3 (slot 24)
-    final Spec spec = TestSpecFactory.createMinimalWithGloasForkEpoch(UInt64.valueOf(3));
-    final int secondsPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot();
-
-    final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100);
-    final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
-    final RepeatingTaskScheduler scheduler = new RepeatingTaskScheduler(asyncRunner, timeProvider);
-
-    final ForkAwareTimeBasedEventAdapter eventAdapter =
-        new ForkAwareTimeBasedEventAdapter(
-            genesisDataProvider, scheduler, timeProvider, validatorTimingChannel, spec);
-
-    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
-
-    // Start at slot 10 (in ALTAIR era, well before GLOAS at slot 24)
-    final long currentSlot = 10;
-    final long nextSlot = currentSlot + 1;
-    timeProvider.advanceTimeBySeconds(secondsPerSlot * currentSlot + secondsPerSlot / 2);
-
-    assertThat(eventAdapter.start()).isCompleted();
-    asyncRunner.executeDueActionsRepeatedly();
-    verifyNoInteractions(validatorTimingChannel);
-
-    // Advance to next slot start
-    timeProvider.advanceTimeBySeconds(secondsPerSlot / 2);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel).onSlot(UInt64.valueOf(nextSlot));
-
-    // Advance to 1/3 slot — ALTAIR attestation + sync committee should fire
-    timeProvider.advanceTimeBySeconds(secondsPerSlot / 3);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1)).onAttestationCreationDue(UInt64.valueOf(nextSlot));
-    verify(validatorTimingChannel, times(1)).onSyncCommitteeCreationDue(UInt64.valueOf(nextSlot));
-
-    // Advance to 2/3 slot — ALTAIR aggregation + contribution
-    timeProvider.advanceTimeBySeconds(secondsPerSlot / 3);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(UInt64.valueOf(nextSlot));
-    verify(validatorTimingChannel, times(1)).onContributionCreationDue(UInt64.valueOf(nextSlot));
-
-    // No payload attestation in ALTAIR era
-    verify(validatorTimingChannel, never())
-        .onPayloadAttestationCreationDue(UInt64.valueOf(nextSlot));
-  }
-
-  @Test
-  void shouldScheduleGloasEventsWhenGloasIsAtGenesis() {
-    final Spec spec = TestSpecFactory.createMinimalGloas();
-    final int millisPerSlot = spec.getGenesisSpecConfig().getSlotDurationMillis();
-    final int secondsPerSlot = millisPerSlot / 1000;
-
-    final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100);
-    final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
-    final RepeatingTaskScheduler scheduler = new RepeatingTaskScheduler(asyncRunner, timeProvider);
-
-    final ForkAwareTimeBasedEventAdapter eventAdapter =
-        new ForkAwareTimeBasedEventAdapter(
-            genesisDataProvider, scheduler, timeProvider, validatorTimingChannel, spec);
-
-    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
-
-    final long nextSlot = 25;
-    final int timeUntilNextSlot = secondsPerSlot - 1;
-    timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
-
-    assertThat(eventAdapter.start()).isCompleted();
-    asyncRunner.executeDueActionsRepeatedly();
-    verifyNoMoreInteractions(validatorTimingChannel);
-
-    // Advance to slot start
-    timeProvider.advanceTimeBySeconds(timeUntilNextSlot);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, never())
-        .onPayloadAttestationCreationDue(UInt64.valueOf(nextSlot));
-
-    // Advance to 3/4 slot — payload attestation fires
-    timeProvider.advanceTimeByMillis(millisPerSlot * 3L / 4);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1))
-        .onPayloadAttestationCreationDue(UInt64.valueOf(nextSlot));
-  }
-
-  @Test
-  void shouldNotScheduleGloasEventsWhenGloasIsNotScheduled() {
-    final Spec spec = TestSpecFactory.createMinimalElectra();
-    final int millisPerSlot = spec.getGenesisSpecConfig().getSlotDurationMillis();
-    final int secondsPerSlot = millisPerSlot / 1000;
-
-    final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100);
-    final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
-    final RepeatingTaskScheduler scheduler = new RepeatingTaskScheduler(asyncRunner, timeProvider);
-
-    final ForkAwareTimeBasedEventAdapter eventAdapter =
-        new ForkAwareTimeBasedEventAdapter(
-            genesisDataProvider, scheduler, timeProvider, validatorTimingChannel, spec);
-
-    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
-
-    final long nextSlot = 25;
-    final int timeUntilNextSlot = secondsPerSlot - 1;
-    timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
-
-    assertThat(eventAdapter.start()).isCompleted();
-    asyncRunner.executeDueActionsRepeatedly();
-    verifyNoMoreInteractions(validatorTimingChannel);
-
-    // Advance through entire slot
-    timeProvider.advanceTimeBySeconds(timeUntilNextSlot);
-    asyncRunner.executeDueActionsRepeatedly();
-
-    timeProvider.advanceTimeByMillis(millisPerSlot * 3L / 4);
-    asyncRunner.executeDueActionsRepeatedly();
-
-    // No payload attestation should fire
-    verify(validatorTimingChannel, never())
-        .onPayloadAttestationCreationDue(UInt64.valueOf(nextSlot));
-  }
-
-  @Test
-  void shouldNotSchedulePayloadAttestationEventsPreGloas() {
-    final Spec spec = TestSpecFactory.createMinimalWithGloasForkEpoch(UInt64.ONE);
-    final int millisPerSlot = spec.getGenesisSpecConfig().getSlotDurationMillis();
-    final int secondsPerSlot = millisPerSlot / 1000;
-
-    final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100);
-    final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
-    final RepeatingTaskScheduler scheduler = new RepeatingTaskScheduler(asyncRunner, timeProvider);
-
-    final ForkAwareTimeBasedEventAdapter eventAdapter =
-        new ForkAwareTimeBasedEventAdapter(
-            genesisDataProvider, scheduler, timeProvider, validatorTimingChannel, spec);
-
-    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
-    final long nextSlot = 2;
-    final int timeUntilNextSlot = secondsPerSlot - 1;
-    timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
-
-    assertThat(eventAdapter.start()).isCompleted();
-
-    // Advance to start of next slot
-    asyncRunner.executeDueActionsRepeatedly();
-    timeProvider.advanceTimeBySeconds(timeUntilNextSlot);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, never())
-        .onPayloadAttestationCreationDue(UInt64.valueOf(nextSlot));
-
-    // Even at 3/4 through slot, no payload attestation pre-GLOAS
-    timeProvider.advanceTimeByMillis(millisPerSlot * 3L / 4);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, never())
-        .onPayloadAttestationCreationDue(UInt64.valueOf(nextSlot));
+    SlotEventVerifierTestUtil.verifySlotEvents(
+        spec, timeProvider, asyncRunner, validatorTimingChannel, nextSlotUInt);
   }
 }
