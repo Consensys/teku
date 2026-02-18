@@ -28,23 +28,44 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
-class GloasBasedEventAdapterTest {
+class Phase0BasedEventAdapterTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalGloas();
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
 
   private final ValidatorTimingChannel validatorTimingChannel = mock(ValidatorTimingChannel.class);
 
-  final int millisPerSlot = spec.getGenesisSpecConfig().getSlotDurationMillis();
-  final int secondsPerSlot = millisPerSlot / 1000;
+  final int secondsPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot();
 
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final RepeatingTaskScheduler repeatingTaskScheduler =
       new RepeatingTaskScheduler(asyncRunner, timeProvider);
 
-  private final GloasTimeBasedEventAdapter eventAdapter =
-      new GloasTimeBasedEventAdapter(
+  private final Phase0TimeBasedEventAdapter eventAdapter =
+      new Phase0TimeBasedEventAdapter(
           repeatingTaskScheduler, timeProvider, validatorTimingChannel, spec);
+
+  @Test
+  void shouldScheduleSlotStartEventsStartingFromNextSlot() {
+    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
+    final long nextSlot = 26;
+    final UInt64 firstSlotToFire = UInt64.valueOf(nextSlot);
+    final int timeUntilNextSlot = secondsPerSlot / 2;
+    timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
+
+    eventAdapter.start(genesisTime);
+
+    // Should not fire any events immediately
+    asyncRunner.executeDueActionsRepeatedly();
+    verifyNoMoreInteractions(validatorTimingChannel);
+
+    // Fire slot start events when the next slot is due to start
+    timeProvider.advanceTimeBySeconds(timeUntilNextSlot);
+    asyncRunner.executeDueActionsRepeatedly();
+    verify(validatorTimingChannel).onSlot(firstSlotToFire);
+    verify(validatorTimingChannel).onBlockProductionDue(firstSlotToFire);
+    verifyNoMoreInteractions(validatorTimingChannel);
+  }
 
   @Test
   void shouldScheduleAttestationEventsStartingFromNextSlot() {
@@ -64,8 +85,8 @@ class GloasBasedEventAdapterTest {
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, never()).onAttestationCreationDue(UInt64.valueOf(nextSlot));
 
-    // But does fire 1/4 through the slot
-    timeProvider.advanceTimeByMillis(millisPerSlot / 4);
+    // But does fire 1/3rds through the slot
+    timeProvider.advanceTimeBySeconds(secondsPerSlot / 3);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, times(1)).onAttestationCreationDue(UInt64.valueOf(nextSlot));
   }
@@ -88,14 +109,14 @@ class GloasBasedEventAdapterTest {
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, never()).onAttestationAggregationDue(UInt64.valueOf(nextSlot));
 
-    // But does fire 2/4 through the slot
-    timeProvider.advanceTimeByMillis(millisPerSlot * 2L / 4);
+    // But does fire 2/3rds through the slot
+    timeProvider.advanceTimeBySeconds(secondsPerSlot / 3 * 2);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(UInt64.valueOf(nextSlot));
   }
 
   @Test
-  void shouldSchedulePayloadAttestationEventsStartingFromNextSlot() {
+  void shouldNeverFireSyncCommitteeEvents() {
     final UInt64 genesisTime = timeProvider.getTimeInSeconds();
     final long nextSlot = 25;
     final int timeUntilNextSlot = secondsPerSlot - 1;
@@ -103,68 +124,13 @@ class GloasBasedEventAdapterTest {
 
     eventAdapter.start(genesisTime);
 
-    // Should not fire any events immediately
+    // Advance through entire slot
+    timeProvider.advanceTimeBySeconds(timeUntilNextSlot + secondsPerSlot);
     asyncRunner.executeDueActionsRepeatedly();
-    verifyNoMoreInteractions(validatorTimingChannel);
 
-    // Payload attestation should not fire at the start of the slot
-    timeProvider.advanceTimeBySeconds(timeUntilNextSlot);
-    asyncRunner.executeDueActionsRepeatedly();
+    verify(validatorTimingChannel, never()).onSyncCommitteeCreationDue(UInt64.valueOf(nextSlot));
+    verify(validatorTimingChannel, never()).onContributionCreationDue(UInt64.valueOf(nextSlot));
     verify(validatorTimingChannel, never())
         .onPayloadAttestationCreationDue(UInt64.valueOf(nextSlot));
-
-    // But does fire 3/4 through the slot
-    timeProvider.advanceTimeByMillis(millisPerSlot * 3L / 4);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1))
-        .onPayloadAttestationCreationDue(UInt64.valueOf(nextSlot));
-  }
-
-  @Test
-  void shouldScheduleSyncCommitteeEventsStartingFromNextSlot() {
-    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    final long nextSlot = 25;
-    final int timeUntilNextSlot = secondsPerSlot - 1;
-    timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
-
-    eventAdapter.start(genesisTime);
-
-    // Should not fire any events immediately
-    asyncRunner.executeDueActionsRepeatedly();
-    verifyNoMoreInteractions(validatorTimingChannel);
-
-    // Sync committee should not fire at the start of the slot
-    timeProvider.advanceTimeBySeconds(timeUntilNextSlot);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, never()).onSyncCommitteeCreationDue(UInt64.valueOf(nextSlot));
-
-    // But does fire 1/4 through the slot (same as attestation in GLOAS)
-    timeProvider.advanceTimeByMillis(millisPerSlot / 4);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1)).onSyncCommitteeCreationDue(UInt64.valueOf(nextSlot));
-  }
-
-  @Test
-  void shouldScheduleContributionEventsStartingFromNextSlot() {
-    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    final long nextSlot = 25;
-    final int timeUntilNextSlot = secondsPerSlot - 1;
-    timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
-
-    eventAdapter.start(genesisTime);
-
-    // Should not fire any events immediately
-    asyncRunner.executeDueActionsRepeatedly();
-    verifyNoMoreInteractions(validatorTimingChannel);
-
-    // Contribution should not fire at the start of the slot
-    timeProvider.advanceTimeBySeconds(timeUntilNextSlot);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, never()).onContributionCreationDue(UInt64.valueOf(nextSlot));
-
-    // But does fire 2/4 through the slot (same as aggregation in GLOAS)
-    timeProvider.advanceTimeByMillis(millisPerSlot * 2L / 4);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1)).onContributionCreationDue(UInt64.valueOf(nextSlot));
   }
 }

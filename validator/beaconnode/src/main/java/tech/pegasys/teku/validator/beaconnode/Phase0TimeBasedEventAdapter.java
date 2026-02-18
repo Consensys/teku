@@ -14,30 +14,20 @@
 package tech.pegasys.teku.validator.beaconnode;
 
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
-public class GloasTimeBasedEventAdapter extends TimeBasedEventAdapter {
-  private static final Logger LOG = LogManager.getLogger();
+public class Phase0TimeBasedEventAdapter extends TimeBasedEventAdapter {
 
-  public GloasTimeBasedEventAdapter(
+  public Phase0TimeBasedEventAdapter(
       final RepeatingTaskScheduler taskScheduler,
       final TimeProvider timeProvider,
       final ValidatorTimingChannel validatorTimingChannel,
       final Spec spec) {
-    super(
-        spec.computeStartSlotAtEpoch(
-            spec.getForkSchedule().getFork(SpecMilestone.GLOAS).getEpoch()),
-        taskScheduler,
-        timeProvider,
-        validatorTimingChannel,
-        spec);
+    super(UInt64.ZERO, taskScheduler, timeProvider, validatorTimingChannel, spec);
   }
 
   @Override
@@ -53,25 +43,6 @@ public class GloasTimeBasedEventAdapter extends TimeBasedEventAdapter {
         onExpired,
         new ScheduledEvent(
             spec.getAttestationDueMillis(getFirstSlot()), this::onAttestationCreationDue),
-        new ScheduledEvent(spec.getAggregateDueMillis(getFirstSlot()), this::onAggregationDue),
-        new ScheduledEvent(
-            spec.getSyncMessageDueMillis(getFirstSlot()), this::onSyncCommitteeCreationDue),
-        new ScheduledEvent(
-            spec.getContributionDueMillis(getFirstSlot()), this::onContributionCreationDue),
-        new ScheduledEvent(
-            spec.getPayloadAttestationDueMillis(getFirstSlot()),
-            this::onPayloadTimelinessAttestationDue));
-  }
-
-  private void onPayloadTimelinessAttestationDue(
-      final UInt64 scheduledTimeInMillis, final UInt64 actualTimeInMillis) {
-    final UInt64 slot = getCurrentSlotForMillis(scheduledTimeInMillis);
-    if (isTooLateInMillis(scheduledTimeInMillis, actualTimeInMillis)) {
-      LOG.warn(
-          "Skipping timeliness attestation for slot {} due to unexpected delay in slot processing",
-          slot);
-      return;
-    }
-    validatorTimingChannel.onPayloadAttestationCreationDue(slot);
+        new ScheduledEvent(spec.getAggregateDueMillis(getFirstSlot()), this::onAggregationDue));
   }
 }

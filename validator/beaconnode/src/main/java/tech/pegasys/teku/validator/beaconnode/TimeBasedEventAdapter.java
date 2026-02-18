@@ -15,9 +15,9 @@ package tech.pegasys.teku.validator.beaconnode;
 
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler.RepeatingTask;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -25,57 +25,85 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
-public abstract class TimeBasedEventAdapter implements BeaconChainEventAdapter {
+public abstract class TimeBasedEventAdapter {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final GenesisDataProvider genesisDataProvider;
   private final TimeProvider timeProvider;
+  private final UInt64 firstSlot;
   private UInt64 genesisTimeMillis;
   final ValidatorTimingChannel validatorTimingChannel;
   final Spec spec;
   final RepeatingTaskScheduler taskScheduler;
 
   public TimeBasedEventAdapter(
-      final GenesisDataProvider genesisDataProvider,
+      final UInt64 firstSlot,
       final RepeatingTaskScheduler taskScheduler,
       final TimeProvider timeProvider,
       final ValidatorTimingChannel validatorTimingChannel,
       final Spec spec) {
-    this.genesisDataProvider = genesisDataProvider;
+    this.firstSlot = firstSlot;
     this.taskScheduler = taskScheduler;
     this.timeProvider = timeProvider;
     this.validatorTimingChannel = validatorTimingChannel;
     this.spec = spec;
   }
 
-  abstract void start(final UInt64 genesisTime);
+  /** Returns the first slot of this adapter's milestone (used for chain expiry computation). */
+  UInt64 getFirstSlot() {
+    return firstSlot;
+  }
+
+  abstract void scheduleDuties(
+      UInt64 nextSlotStartTimeMillis,
+      UInt64 millisPerSlot,
+      Optional<UInt64> expirationTimeMillis,
+      Runnable onExpired);
+
+  void start(final UInt64 genesisTime) {
+    setGenesisTime(genesisTime);
+    final UInt64 currentSlot = getCurrentSlot();
+    final UInt64 nextSlotStartTimeMillis = getSlotStartTimeMillis(currentSlot.increment());
+    final UInt64 millisPerSlot = getMillisPerSlot(currentSlot);
+
+    taskScheduler.scheduleRepeatingEventInMillis(
+        nextSlotStartTimeMillis, millisPerSlot, this::onStartSlot);
+
+    scheduleDuties(nextSlotStartTimeMillis, millisPerSlot, Optional.empty(), () -> {});
+  }
 
   void setGenesisTime(final UInt64 genesisTime) {
     this.genesisTimeMillis = secondsToMillis(genesisTime);
   }
 
-  void scheduleDuty(final UInt64 period, final UInt64 offset, final RepeatingTask dutyTask) {
-    scheduleDuty(getNextSlotStartMillis(), period, offset, dutyTask);
+  record ScheduledEvent(int offsetMillis, RepeatingTask handler) {}
+
+  void scheduleAll(
+      final UInt64 nextSlotStartTimeMillis,
+      final UInt64 millisPerSlot,
+      final Optional<UInt64> expirationTimeMillis,
+      final Runnable onExpired,
+      final ScheduledEvent... events) {
+    for (final ScheduledEvent event : events) {
+      final UInt64 firstInvocation = nextSlotStartTimeMillis.plus(event.offsetMillis());
+      if (expirationTimeMillis.isPresent()) {
+        taskScheduler.scheduleRepeatingEventInMillis(
+            firstInvocation,
+            millisPerSlot,
+            event.handler(),
+            expirationTimeMillis.get(),
+            (__, ___) -> onExpired.run());
+      } else {
+        taskScheduler.scheduleRepeatingEventInMillis(
+            firstInvocation, millisPerSlot, event.handler());
+      }
+    }
   }
 
-  void scheduleDuty(
-      final UInt64 firstInvocationSlotStartTimeMillis,
-      final UInt64 period,
-      final UInt64 offset,
-      final RepeatingTask dutyTask) {
-    taskScheduler.scheduleRepeatingEventInMillis(
-        firstInvocationSlotStartTimeMillis.plus(offset), period, dutyTask);
-  }
-
-  private UInt64 getNextSlotStartMillis() {
-    return spec.computeTimeMillisAtSlot(getCurrentSlot().increment(), genesisTimeMillis);
-  }
-
-  UInt64 getCurrentSlot() {
+  private UInt64 getCurrentSlot() {
     return spec.getCurrentSlotFromTimeMillis(timeProvider.getTimeInMillis(), genesisTimeMillis);
   }
 
-  void onStartSlot(final UInt64 scheduledTimeMillis, final UInt64 actualTimeMillis) {
+  private void onStartSlot(final UInt64 scheduledTimeMillis, final UInt64 actualTimeMillis) {
     final UInt64 slot = getCurrentSlotForMillis(scheduledTimeMillis);
     if (isTooLateInMillis(scheduledTimeMillis, actualTimeMillis)) {
       LOG.warn(
@@ -139,24 +167,11 @@ public abstract class TimeBasedEventAdapter implements BeaconChainEventAdapter {
     return scheduledTimeInMillis.plus(millisPerSlot).isLessThan(actualTimeInMillis);
   }
 
-  UInt64 getMillisPerSlot(final UInt64 slot) {
+  private UInt64 getMillisPerSlot(final UInt64 slot) {
     return UInt64.valueOf(spec.atSlot(slot).getConfig().getSlotDurationMillis());
   }
 
-  UInt64 getSlotStartTimeMillis(final UInt64 slot) {
+  private UInt64 getSlotStartTimeMillis(final UInt64 slot) {
     return spec.computeTimeMillisAtSlot(slot, genesisTimeMillis);
-  }
-
-  @Override
-  public SafeFuture<Void> start() {
-    // Don't wait for the genesis time to be available before considering startup complete
-    // The beacon node may not be available or genesis may not yet be known.
-    genesisDataProvider.getGenesisTime().thenAccept(this::start).finishError(LOG);
-    return SafeFuture.COMPLETE;
-  }
-
-  @Override
-  public SafeFuture<Void> stop() {
-    return SafeFuture.COMPLETE;
   }
 }

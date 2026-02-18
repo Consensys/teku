@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.beaconnode;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -23,63 +24,36 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 public class AltairTimeBasedEventAdapter extends TimeBasedEventAdapter {
 
   public AltairTimeBasedEventAdapter(
-      final GenesisDataProvider genesisDataProvider,
       final RepeatingTaskScheduler taskScheduler,
       final TimeProvider timeProvider,
       final ValidatorTimingChannel validatorTimingChannel,
       final Spec spec) {
-    super(genesisDataProvider, taskScheduler, timeProvider, validatorTimingChannel, spec);
+    super(
+        spec.computeStartSlotAtEpoch(
+            spec.getForkSchedule().getFork(SpecMilestone.ALTAIR).getEpoch()),
+        taskScheduler,
+        timeProvider,
+        validatorTimingChannel,
+        spec);
   }
 
   @Override
-  void start(final UInt64 genesisTime) {
-    setGenesisTime(genesisTime);
-    final UInt64 currentSlot = getCurrentSlot();
-
-    final UInt64 nextSlotStartTimeMillis = getSlotStartTimeMillis(currentSlot.increment());
-    final UInt64 millisPerSlot = getMillisPerSlot(currentSlot);
-
-    // NOTE: seconds_per_slot currently based on current slot, and timings set up based on this
-    //       if seconds_per_slot ever changes, timers would have to be updated, which isn't
-    //       currently implemented.
-
-    taskScheduler.scheduleRepeatingEventInMillis(
-        nextSlotStartTimeMillis, millisPerSlot, this::onStartSlot);
-
-    final UInt64 attestationDueSlotTimeOffset =
-        UInt64.valueOf(spec.getAttestationDueMillis(currentSlot));
-    final UInt64 aggregationDueSlotTimeOffset =
-        UInt64.valueOf(spec.getAggregateDueMillis(currentSlot));
-    final UInt64 syncCommitteeDueSlotTimeOffset =
-        UInt64.valueOf(spec.getSyncMessageDueMillis(currentSlot));
-    final UInt64 contributionDueSlotTimeOffset =
-        UInt64.valueOf(spec.getContributionDueMillis(currentSlot));
-
-    scheduleDuty(
+  void scheduleDuties(
+      final UInt64 nextSlotStartTimeMillis,
+      final UInt64 millisPerSlot,
+      final Optional<UInt64> expirationTimeMillis,
+      final Runnable onExpired) {
+    scheduleAll(
         nextSlotStartTimeMillis,
         millisPerSlot,
-        attestationDueSlotTimeOffset,
-        this::onAttestationCreationDue);
-    scheduleDuty(
-        nextSlotStartTimeMillis,
-        millisPerSlot,
-        aggregationDueSlotTimeOffset,
-        this::onAggregationDue);
-
-    final UInt64 firstAltairSlot =
-        spec.computeStartSlotAtEpoch(
-            spec.getForkSchedule().getFork(SpecMilestone.ALTAIR).getEpoch());
-    final UInt64 altairStartTimeMillis = getSlotStartTimeMillis(firstAltairSlot);
-    final UInt64 altairDutiesStartMillis = altairStartTimeMillis.max(nextSlotStartTimeMillis);
-    scheduleDuty(
-        altairDutiesStartMillis,
-        millisPerSlot,
-        syncCommitteeDueSlotTimeOffset,
-        this::onSyncCommitteeCreationDue);
-    scheduleDuty(
-        altairDutiesStartMillis,
-        millisPerSlot,
-        contributionDueSlotTimeOffset,
-        this::onContributionCreationDue);
+        expirationTimeMillis,
+        onExpired,
+        new ScheduledEvent(
+            spec.getAttestationDueMillis(getFirstSlot()), this::onAttestationCreationDue),
+        new ScheduledEvent(spec.getAggregateDueMillis(getFirstSlot()), this::onAggregationDue),
+        new ScheduledEvent(
+            spec.getSyncMessageDueMillis(getFirstSlot()), this::onSyncCommitteeCreationDue),
+        new ScheduledEvent(
+            spec.getContributionDueMillis(getFirstSlot()), this::onContributionCreationDue));
   }
 }

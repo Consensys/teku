@@ -13,16 +13,50 @@
 
 package tech.pegasys.teku.validator.beaconnode;
 
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
+/**
+ * Coordinates per-milestone {@link TimeBasedEventAdapter} instances, chaining them together so that
+ * each adapter's events expire at the next fork boundary that changes timing. Only three timing
+ * profiles exist today: PHASE0 (attestation, aggregation), ALTAIR–FULU (adds sync committee,
+ * contribution), and GLOAS (changes offsets, adds payload attestation).
+ *
+ * <p>The slot event (onSlot + onBlockProductionDue) is scheduled once with no expiration, because
+ * slot timing does not change across forks. Duty events are managed per-adapter: when an adapter's
+ * events expire at a fork boundary, the next adapter in the chain is started for the first slot of
+ * the new era.
+ */
 public class ForkAwareTimeBasedEventAdapter implements BeaconChainEventAdapter {
+  private static final Logger LOG = LogManager.getLogger();
 
-  private final TimeBasedEventAdapter delegate;
+  private final GenesisDataProvider genesisDataProvider;
+  private final RepeatingTaskScheduler taskScheduler;
+  private final TimeProvider timeProvider;
+  private final ValidatorTimingChannel validatorTimingChannel;
+  private final Spec spec;
+
+  private UInt64 genesisTimeMillis;
+
+  // Keyed by the milestone that introduces a timing change: PHASE0, ALTAIR, GLOAS
+  private final Map<SpecMilestone, TimeBasedEventAdapter> adapters = new LinkedHashMap<>();
+
+  record ScheduledAdapter(TimeBasedEventAdapter adapter, Optional<UInt64> expiryMillis) {}
 
   public ForkAwareTimeBasedEventAdapter(
       final GenesisDataProvider genesisDataProvider,
@@ -30,27 +64,142 @@ public class ForkAwareTimeBasedEventAdapter implements BeaconChainEventAdapter {
       final TimeProvider timeProvider,
       final ValidatorTimingChannel validatorTimingChannel,
       final Spec spec) {
-    if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
-      delegate =
-          new GloasTimeBasedEventAdapter(
-              genesisDataProvider, taskScheduler, timeProvider, validatorTimingChannel, spec);
-    } else if (spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
-      delegate =
+    this.genesisDataProvider = genesisDataProvider;
+    this.taskScheduler = taskScheduler;
+    this.timeProvider = timeProvider;
+    this.validatorTimingChannel = validatorTimingChannel;
+    this.spec = spec;
+
+    adapters.put(
+        SpecMilestone.PHASE0,
+        new Phase0TimeBasedEventAdapter(taskScheduler, timeProvider, validatorTimingChannel, spec));
+    if (spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
+      adapters.put(
+          SpecMilestone.ALTAIR,
           new AltairTimeBasedEventAdapter(
-              genesisDataProvider, taskScheduler, timeProvider, validatorTimingChannel, spec);
-    } else {
-      throw new IllegalArgumentException(
-          "Running network without scheduled ALTAIR fork is not supported");
+              taskScheduler, timeProvider, validatorTimingChannel, spec));
+    }
+    if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
+      adapters.put(
+          SpecMilestone.GLOAS,
+          new GloasTimeBasedEventAdapter(
+              taskScheduler, timeProvider, validatorTimingChannel, spec));
     }
   }
 
   @Override
   public SafeFuture<Void> start() {
-    return delegate.start();
+    genesisDataProvider.getGenesisTime().thenAccept(this::startWithGenesisTime).finishError(LOG);
+    return SafeFuture.COMPLETE;
   }
 
   @Override
   public SafeFuture<Void> stop() {
-    return delegate.stop();
+    return SafeFuture.COMPLETE;
+  }
+
+  void startWithGenesisTime(final UInt64 genesisTime) {
+    this.genesisTimeMillis = secondsToMillis(genesisTime);
+
+    // Set genesis time on all adapters
+    adapters.values().forEach(adapter -> adapter.setGenesisTime(genesisTime));
+
+    final UInt64 currentSlot = getCurrentSlot();
+    final UInt64 nextSlotStartMillis = getSlotStartTimeMillis(currentSlot.increment());
+    final UInt64 millisPerSlot = getMillisPerSlot(currentSlot);
+
+    // Schedule slot event once — no expiration since slot timing doesn't change across forks
+    taskScheduler.scheduleRepeatingEventInMillis(
+        nextSlotStartMillis, millisPerSlot, this::onStartSlot);
+
+    // Build and start the scheduledAdapters
+    final List<ScheduledAdapter> scheduledAdapters = buildChain(currentSlot);
+    activateAdapter(scheduledAdapters, 0, nextSlotStartMillis, millisPerSlot);
+  }
+
+  /**
+   * Builds an ordered list of adapters to run, starting from the adapter whose era includes {@code
+   * currentSlot}. Each entry carries an optional expiry time (the slot-start millis of the next
+   * adapter's first slot). Adapters for eras already passed are skipped; the final adapter in the
+   * chain has no expiry.
+   */
+  private List<ScheduledAdapter> buildChain(final UInt64 currentSlot) {
+    final SpecMilestone currentMilestone = spec.atSlot(currentSlot).getMilestone();
+    final List<ScheduledAdapter> chain = new ArrayList<>();
+
+    // Phase0 adapter: only if we're currently in Phase0
+    if (!currentMilestone.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
+      final Optional<UInt64> expiryMillis =
+          Optional.ofNullable(adapters.get(SpecMilestone.ALTAIR))
+              .map(adapter -> getSlotStartTimeMillis(adapter.getFirstSlot()));
+      chain.add(new ScheduledAdapter(adapters.get(SpecMilestone.PHASE0), expiryMillis));
+    }
+
+    // Altair adapter: if ALTAIR is supported and we're not yet in GLOAS
+    Optional.ofNullable(adapters.get(SpecMilestone.ALTAIR))
+        .filter(__ -> !currentMilestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS))
+        .ifPresent(
+            altairAdapter -> {
+              final Optional<UInt64> expiryMillis =
+                  Optional.ofNullable(adapters.get(SpecMilestone.GLOAS))
+                      .map(adapter -> getSlotStartTimeMillis(adapter.getFirstSlot()));
+              chain.add(new ScheduledAdapter(altairAdapter, expiryMillis));
+            });
+
+    // Gloas adapter: if GLOAS is supported (always last, no expiry)
+    Optional.ofNullable(adapters.get(SpecMilestone.GLOAS))
+        .ifPresent(gloasAdapter -> chain.add(new ScheduledAdapter(gloasAdapter, Optional.empty())));
+
+    return chain;
+  }
+
+  void activateAdapter(
+      final List<ScheduledAdapter> scheduledAdapters,
+      final int index,
+      final UInt64 startFrom,
+      final UInt64 period) {
+    if (index >= scheduledAdapters.size()) {
+      return;
+    }
+    final ScheduledAdapter adapter = scheduledAdapters.get(index);
+    final AtomicBoolean transitionedToNext = new AtomicBoolean(false);
+    final Runnable onExpiredStartNext =
+        () -> {
+          if (transitionedToNext.compareAndSet(false, true)) {
+            final UInt64 currentSlot = getCurrentSlot();
+            final UInt64 nextSlotStart = getSlotStartTimeMillis(currentSlot.increment());
+            final UInt64 newPeriod = getMillisPerSlot(currentSlot.increment());
+            activateAdapter(scheduledAdapters, index + 1, nextSlotStart, newPeriod);
+          }
+        };
+    adapter.adapter().scheduleDuties(startFrom, period, adapter.expiryMillis(), onExpiredStartNext);
+  }
+
+  private void onStartSlot(final UInt64 scheduledTimeMillis, final UInt64 actualTimeMillis) {
+    final UInt64 slot = getCurrentSlotForMillis(scheduledTimeMillis);
+    final UInt64 millisPerSlot = getMillisPerSlot(getCurrentSlot());
+    if (scheduledTimeMillis.plus(millisPerSlot).isLessThan(actualTimeMillis)) {
+      LOG.warn(
+          "Skipping block creation for slot {} due to unexpected delay in slot processing", slot);
+      return;
+    }
+    validatorTimingChannel.onSlot(slot);
+    validatorTimingChannel.onBlockProductionDue(slot);
+  }
+
+  private UInt64 getCurrentSlot() {
+    return spec.getCurrentSlotFromTimeMillis(timeProvider.getTimeInMillis(), genesisTimeMillis);
+  }
+
+  private UInt64 getCurrentSlotForMillis(final UInt64 millis) {
+    return spec.getCurrentSlotFromTimeMillis(millis, genesisTimeMillis);
+  }
+
+  private UInt64 getSlotStartTimeMillis(final UInt64 slot) {
+    return spec.computeTimeMillisAtSlot(slot, genesisTimeMillis);
+  }
+
+  private UInt64 getMillisPerSlot(final UInt64 slot) {
+    return UInt64.valueOf(spec.atSlot(slot).getConfig().getSlotDurationMillis());
   }
 }

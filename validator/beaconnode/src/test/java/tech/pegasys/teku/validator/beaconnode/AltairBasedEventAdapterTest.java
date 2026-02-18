@@ -19,10 +19,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
@@ -38,7 +36,6 @@ class AltairBasedEventAdapterTest {
   private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final Spec gnosisSpec = TestSpecFactory.create(SpecMilestone.ALTAIR, Eth2Network.GNOSIS);
 
-  private final GenesisDataProvider genesisDataProvider = mock(GenesisDataProvider.class);
   private final ValidatorTimingChannel validatorTimingChannel = mock(ValidatorTimingChannel.class);
 
   final int secondsPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot();
@@ -51,66 +48,22 @@ class AltairBasedEventAdapterTest {
 
   private final AltairTimeBasedEventAdapter eventAdapter =
       new AltairTimeBasedEventAdapter(
-          genesisDataProvider, repeatingTaskScheduler, timeProvider, validatorTimingChannel, spec);
+          repeatingTaskScheduler, timeProvider, validatorTimingChannel, spec);
 
   private final AltairTimeBasedEventAdapter eventAdapterGnosis =
       new AltairTimeBasedEventAdapter(
-          genesisDataProvider,
-          repeatingTaskScheduler,
-          timeProvider,
-          validatorTimingChannel,
-          gnosisSpec);
-
-  @Test
-  void shouldScheduleEventsOnceGenesisIsKnown() {
-    final SafeFuture<UInt64> genesisTimeFuture = new SafeFuture<>();
-    when(genesisDataProvider.getGenesisTime()).thenReturn(genesisTimeFuture);
-
-    final SafeFuture<Void> startResult = eventAdapter.start();
-    // Returned future completes immediately so startup can complete pre-genesis
-    assertThat(startResult).isCompleted();
-    // But no slot timings have been scheduled yet
-    assertThat(asyncRunner.hasDelayedActions()).isFalse();
-
-    // Once we get the genesis time, we can schedule the slot events
-    genesisTimeFuture.complete(UInt64.ONE);
-    assertThat(asyncRunner.hasDelayedActions()).isTrue();
-  }
-
-  @Test
-  void shouldScheduleSlotStartEventsStartingFromNextSlot() {
-    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
-    final long nextSlot = 26;
-    final UInt64 firstSlotToFire = UInt64.valueOf(nextSlot);
-    final int timeUntilNextSlot = secondsPerSlot / 2;
-    timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
-
-    assertThat(eventAdapter.start()).isCompleted();
-
-    // Should not fire any events immediately
-    asyncRunner.executeDueActionsRepeatedly();
-    verifyNoMoreInteractions(validatorTimingChannel);
-
-    // Fire slot start events when the next slot is due to start
-    timeProvider.advanceTimeBySeconds(timeUntilNextSlot);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel).onSlot(firstSlotToFire);
-    verify(validatorTimingChannel).onBlockProductionDue(firstSlotToFire);
-    verifyNoMoreInteractions(validatorTimingChannel);
-  }
+          repeatingTaskScheduler, timeProvider, validatorTimingChannel, gnosisSpec);
 
   @Test
   void shouldScheduleAttestationEventsStartingFromNextSlot() {
     final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
     final long nextSlot = 25;
     // Starting time is before the aggregation for the current slot should happen, but should still
     // wait until the next slot to start
     final int timeUntilNextSlot = secondsPerSlot - 1;
     timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
 
-    assertThat(eventAdapter.start()).isCompleted();
+    eventAdapter.start(genesisTime);
 
     // Should not fire any events immediately
     asyncRunner.executeDueActionsRepeatedly();
@@ -133,14 +86,13 @@ class AltairBasedEventAdapterTest {
     assertThat(secondsPerSlotGnosis % 3).isNotZero();
 
     final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
     final long nextSlot = 25;
     // Starting time is before the aggregation for the current slot should happen, but should still
     // wait until the next slot to start
     final int timeUntilNextSlot = secondsPerSlotGnosis - 1;
     timeProvider.advanceTimeBySeconds(secondsPerSlotGnosis * nextSlot - timeUntilNextSlot);
 
-    assertThat(eventAdapterGnosis.start()).isCompleted();
+    eventAdapterGnosis.start(genesisTime);
 
     // Should not fire any events immediately
     asyncRunner.executeDueActionsRepeatedly();
@@ -167,14 +119,13 @@ class AltairBasedEventAdapterTest {
   @Test
   void shouldScheduleAggregateEventsStartingFromNextSlot() {
     final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
     final long nextSlot = 25;
     // Starting time is before the aggregation for the current slot should happen, but should still
     // wait until the next slot to start
     final int timeUntilNextSlot = secondsPerSlot - 1;
     timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
 
-    assertThat(eventAdapter.start()).isCompleted();
+    eventAdapter.start(genesisTime);
 
     // Should not fire any events immediately
     asyncRunner.executeDueActionsRepeatedly();
@@ -197,14 +148,13 @@ class AltairBasedEventAdapterTest {
     assertThat(secondsPerSlotGnosis % 3).isNotZero();
 
     final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
     final long nextSlot = 25;
     // Starting time is before the aggregation for the current slot should happen, but should still
     // wait until the next slot to start
     final int timeUntilNextSlot = secondsPerSlotGnosis - 1;
     timeProvider.advanceTimeBySeconds(secondsPerSlotGnosis * nextSlot - timeUntilNextSlot);
 
-    assertThat(eventAdapterGnosis.start()).isCompleted();
+    eventAdapterGnosis.start(genesisTime);
 
     // Should not fire any events immediately
     asyncRunner.executeDueActionsRepeatedly();
@@ -231,14 +181,13 @@ class AltairBasedEventAdapterTest {
   @Test
   void shouldScheduleSynCommitteeEventsStartingFromNextSlot() {
     final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
     final long nextSlot = 25;
     // Starting time is before the aggregation for the current slot should happen, but should still
     // wait until the next slot to start
     final int timeUntilNextSlot = secondsPerSlot - 1;
     timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
 
-    assertThat(eventAdapter.start()).isCompleted();
+    eventAdapter.start(genesisTime);
 
     // Should not fire any events immediately
     asyncRunner.executeDueActionsRepeatedly();
@@ -258,14 +207,13 @@ class AltairBasedEventAdapterTest {
   @Test
   void shouldScheduleContributionEventsStartingFromNextSlot() {
     final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
     final long nextSlot = 25;
     // Starting time is before the aggregation for the current slot should happen, but should still
     // wait until the next slot to start
     final int timeUntilNextSlot = secondsPerSlot - 1;
     timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
 
-    assertThat(eventAdapter.start()).isCompleted();
+    eventAdapter.start(genesisTime);
 
     // Should not fire any events immediately
     asyncRunner.executeDueActionsRepeatedly();
