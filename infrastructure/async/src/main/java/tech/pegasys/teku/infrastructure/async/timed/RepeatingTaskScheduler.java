@@ -72,6 +72,22 @@ public class RepeatingTaskScheduler {
         initialInvocationTime, repeatingPeriod, task, Optional.empty(), Optional.empty());
   }
 
+  /**
+   * Schedules a repeating event with an expiration boundary. The task executes at each {@code
+   * repeatingPeriod} starting from {@code initialInvocationTime}. After each execution, if the next
+   * scheduled time would be at or past {@code expirationTime}, the task is considered expired: no
+   * further executions occur and {@code expirationTask} is invoked immediately.
+   *
+   * <p>This means the task is guaranteed to execute for every period strictly before the
+   * expiration, and the expiration callback fires right after the last valid execution completes.
+   *
+   * @param initialInvocationTime the epoch millis at which the task should first execute
+   * @param repeatingPeriod the interval in millis between scheduled executions
+   * @param task the task to execute on each repetition
+   * @param expirationTime the epoch millis boundary; the task will not execute at or beyond this
+   *     time
+   * @param expirationTask callback invoked once immediately after the last valid execution
+   */
   public void scheduleRepeatingEventInMillis(
       final UInt64 initialInvocationTime,
       final UInt64 repeatingPeriod,
@@ -195,6 +211,9 @@ public class RepeatingTaskScheduler {
 
     public void moveToNextScheduledTime() {
       nextDue = nextDue.plus(repeatPeriod);
+      // Expires when the next scheduled time is at or past the expiration boundary (<=).
+      // The just-completed execution was the last valid one; the expiration callback
+      // will fire immediately after, giving consumers a chance to react.
       expiration.ifPresent(exp -> isExpired = exp.isLessThanOrEqualTo(nextDue));
     }
   }
@@ -203,7 +222,15 @@ public class RepeatingTaskScheduler {
     void execute(UInt64 scheduledTime, UInt64 actualTime);
   }
 
+  /**
+   * Callback invoked once when a repeating task expires (see {@link
+   * #scheduleRepeatingEventInMillis}).
+   */
   public interface ExpirationTask {
+    /**
+     * @param expirationTime the configured expiration boundary in epoch millis
+     * @param actualTime the current wall-clock time in epoch millis
+     */
     void execute(UInt64 expirationTime, UInt64 actualTime);
   }
 }
