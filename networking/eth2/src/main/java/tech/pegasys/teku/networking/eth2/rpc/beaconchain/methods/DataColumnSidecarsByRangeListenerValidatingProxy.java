@@ -91,24 +91,41 @@ public class DataColumnSidecarsByRangeListenerValidatingProxy
                       throw new DataColumnSidecarsResponseInvalidResponseException(
                           peer, InvalidResponseType.DATA_COLUMN_SIDECAR_VALIDITY_CHECK_FAILED);
                     }
+
+                    final boolean inclusionProofValid;
                     try (MetricsHistogram.Timer ignored =
                         dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer()) {
-                      verifyInclusionProof(dataColumnSidecar);
+                      inclusionProofValid = verifyInclusionProof(dataColumnSidecar);
                     } catch (final IOException ioException) {
                       throw new DataColumnSidecarsResponseInvalidResponseException(
                           peer,
                           DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
                               .DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
                     }
+                    if (!inclusionProofValid) {
+                      throw new DataColumnSidecarsResponseInvalidResponseException(
+                          peer,
+                          DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
+                              .DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
+                    }
+
+                    final boolean kzgProofValid;
                     try (MetricsHistogram.Timer ignored =
                         dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-                      verifyKzgProof(dataColumnSidecar);
+                      kzgProofValid = verifyKzgProof(dataColumnSidecar);
                     } catch (final IOException ioException) {
                       throw new DataColumnSidecarsResponseInvalidResponseException(
                           peer,
                           DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
                               .DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
                     }
+                    if (!kzgProofValid) {
+                      throw new DataColumnSidecarsResponseInvalidResponseException(
+                          peer,
+                          DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
+                              .DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
+                    }
+
                     return verifySignature(dataColumnSidecar);
                   })
               .thenCompose(

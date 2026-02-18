@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType;
-
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -67,46 +65,31 @@ public abstract class AbstractDataColumnSidecarValidator {
     }
   }
 
-  void verifyKzgProof(final DataColumnSidecar dataColumnSidecar) {
-    if (!verifyDataColumnSidecarKzgProofs(dataColumnSidecar)) {
-      throw new DataColumnSidecarsResponseInvalidResponseException(
-          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
-    }
-  }
-
-  private boolean verifyDataColumnSidecarKzgProofs(final DataColumnSidecar dataColumnSidecar) {
+  boolean verifyKzgProof(final DataColumnSidecar dataColumnSidecar) {
     try {
       return spec.getDataColumnSidecarUtil(dataColumnSidecar.getSlot())
           .verifyDataColumnSidecarKzgProofs(dataColumnSidecar);
     } catch (final Exception ex) {
       LOG.debug(
-          "KZG verification failed for DataColumnSidecar {}", dataColumnSidecar.toLogString());
-      throw new DataColumnSidecarsResponseInvalidResponseException(
-          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED, ex);
+          "KZG verification failed for DataColumnSidecar {}", dataColumnSidecar.toLogString(), ex);
+      return false;
     }
   }
 
-  void verifyInclusionProof(final DataColumnSidecar dataColumnSidecar) {
-    if (!verifyDataColumnSidecarInclusionProof(dataColumnSidecar)) {
-      throw new DataColumnSidecarsResponseInvalidResponseException(
-          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
-    }
-  }
-
-  public SafeFuture<Boolean> verifySignature(final DataColumnSidecar dataColumnSidecar) {
-    return dataColumnSidecarSignatureValidator.validateSignature(dataColumnSidecar);
-  }
-
-  private boolean verifyDataColumnSidecarInclusionProof(final DataColumnSidecar dataColumnSidecar) {
+  boolean verifyInclusionProof(final DataColumnSidecar dataColumnSidecar) {
     try {
       return spec.getDataColumnSidecarUtil(dataColumnSidecar.getSlot())
           .verifyInclusionProof(dataColumnSidecar);
     } catch (final Exception ex) {
       LOG.debug(
           "Inclusion proof verification failed for DataColumnSidecar {}",
-          dataColumnSidecar.toLogString());
-      throw new DataColumnSidecarsResponseInvalidResponseException(
-          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED, ex);
+          dataColumnSidecar.toLogString(),
+          ex);
+      return false;
     }
+  }
+
+  public SafeFuture<Boolean> verifySignature(final DataColumnSidecar dataColumnSidecar) {
+    return dataColumnSidecarSignatureValidator.validateSignature(dataColumnSidecar);
   }
 }

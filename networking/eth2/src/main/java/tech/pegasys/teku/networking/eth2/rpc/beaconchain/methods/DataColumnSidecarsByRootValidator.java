@@ -73,21 +73,35 @@ public class DataColumnSidecarsByRootValidator extends AbstractDataColumnSidecar
                 throw new DataColumnSidecarsResponseInvalidResponseException(
                     peer, InvalidResponseType.DATA_COLUMN_SIDECAR_VALIDITY_CHECK_FAILED);
               }
+
+              final boolean inclusionProofValid;
               try (MetricsHistogram.Timer ignored =
                   dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer()) {
-                verifyInclusionProof(dataColumnSidecar);
+                inclusionProofValid = verifyInclusionProof(dataColumnSidecar);
               } catch (final Exception e) {
                 throw new DataColumnSidecarsResponseInvalidResponseException(
                     peer,
                     InvalidResponseType.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
               }
+              if (!inclusionProofValid) {
+                throw new DataColumnSidecarsResponseInvalidResponseException(
+                    peer,
+                    InvalidResponseType.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
+              }
+
+              final boolean kzgProofValid;
               try (MetricsHistogram.Timer ignored =
                   dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-                verifyKzgProof(dataColumnSidecar);
+                kzgProofValid = verifyKzgProof(dataColumnSidecar);
               } catch (final Exception e) {
                 throw new DataColumnSidecarsResponseInvalidResponseException(
                     peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
               }
+              if (!kzgProofValid) {
+                throw new DataColumnSidecarsResponseInvalidResponseException(
+                    peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
+              }
+
               return Optional.empty();
             });
   }
