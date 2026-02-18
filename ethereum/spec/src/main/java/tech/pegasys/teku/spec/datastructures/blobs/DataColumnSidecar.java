@@ -53,7 +53,6 @@ public interface DataColumnSidecar extends SszContainer {
         getBeaconBlockRoot(),
         getIndex(),
         getColumn().toBriefString(),
-        getKzgCommitments().size(),
         getKzgProofs().size());
   }
 }

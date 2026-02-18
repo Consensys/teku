@@ -126,6 +126,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
@@ -2813,18 +2814,24 @@ public final class DataStructureUtil {
     }
 
     public DataColumnSidecar build() {
+      final UInt64 sidecarSlot = slot.orElse(randomSlot());
+      final SchemaDefinitionsFulu schemaDefinitions =
+          SchemaDefinitionsFulu.required(spec.atSlot(sidecarSlot).getSchemaDefinitions());
+
+      // Prepare parameters
       final SignedBeaconBlockHeader signedBlockHeader =
           signedBeaconBlockHeader.orElseGet(
               () ->
                   slot.map(DataStructureUtil.this::randomSignedBeaconBlockHeader)
                       .orElseGet(DataStructureUtil.this::randomSignedBeaconBlockHeader));
-      SchemaDefinitionsFulu schemaDefinitions =
-          getFuluSchemaDefinitions(signedBlockHeader.getMessage().getSlot());
+
       final int numberOfProofs =
           kzgProofs
               .map(List::size)
               .or(() -> kzgCommitments.map(List::size))
               .orElseGet(DataStructureUtil.this::randomNumberOfBlobsPerBlock);
+
+      // Prepare SSZ lists from schema definitions (works for both Fulu and Gloas)
       final SszList<SszKZGCommitment> sszKzgCommitments =
           schemaDefinitions
               .getBlobKzgCommitmentsSchema()
@@ -2854,6 +2861,8 @@ public final class DataStructureUtil {
                       .map(SszKZGProof::new)
                       .toList());
 
+      // Use schema.create() and let the builder handle fork-specific fields
+      // Fork-specific builders will ignore fields that don't apply (NO-OP)
       return schemaDefinitions
           .getDataColumnSidecarSchema()
           .create(
@@ -2861,10 +2870,7 @@ public final class DataStructureUtil {
                   builder
                       .index(index.orElseGet(DataStructureUtil.this::randomDataColumnSidecarIndex))
                       .column(
-                          dataColumn.orElseGet(
-                              () ->
-                                  randomDataColumn(
-                                      signedBlockHeader.getMessage().getSlot(), numberOfProofs)))
+                          dataColumn.orElseGet(() -> randomDataColumn(sidecarSlot, numberOfProofs)))
                       .kzgCommitments(sszKzgCommitments)
                       .kzgProofs(sszKzgProofs)
                       .signedBlockHeader(signedBlockHeader)
@@ -2876,18 +2882,21 @@ public final class DataStructureUtil {
                                       .toList()))
                       .beaconBlockRoot(
                           beaconBlockRoot.orElseGet(() -> signedBlockHeader.getMessage().getRoot()))
-                      .slot(slot.orElseGet(() -> signedBlockHeader.getMessage().getSlot())));
+                      .slot(sidecarSlot));
     }
   }
 
   public DataColumn randomDataColumn(final UInt64 slot, final int blobs) {
-    final DataColumnSchema dataColumnSchema = getFuluSchemaDefinitions(slot).getDataColumnSchema();
+    final DataColumnSchema dataColumnSchema =
+        SchemaDefinitionsFulu.required(spec.atSlot(slot).getSchemaDefinitions())
+            .getDataColumnSchema();
     List<Cell> list = IntStream.range(0, blobs).mapToObj(__ -> randomCell(slot)).toList();
     return dataColumnSchema.create(list);
   }
 
   public Cell randomCell(final UInt64 slot) {
-    final CellSchema cellSchema = getFuluSchemaDefinitions(slot).getCellSchema();
+    final CellSchema cellSchema =
+        SchemaDefinitionsFulu.required(spec.atSlot(slot).getSchemaDefinitions()).getCellSchema();
     return cellSchema.create(randomBytes(cellSchema.getLength()));
   }
 
@@ -2937,20 +2946,44 @@ public final class DataStructureUtil {
         .build();
   }
 
+  /**
+   * Creates a DataColumnSidecar for the given block with fork-appropriate fields. For Fulu:
+   * includes signed header, commitments, and inclusion proof. For Gloas: includes only block
+   * reference (no header, no commitments in sidecar).
+   */
   public DataColumnSidecar randomDataColumnSidecarWithInclusionProof(
       final SignedBeaconBlock signedBeaconBlock, final UInt64 index) {
-    final MiscHelpersFulu miscHelpersFulu =
-        MiscHelpersFulu.required(spec.atSlot(signedBeaconBlock.getSlot()).miscHelpers());
-    final List<KZGCommitment> kzgCommitments =
+    final UInt64 slot = signedBeaconBlock.getSlot();
+    final SpecMilestone milestone = spec.atSlot(slot).getMilestone();
+
+    // Extract commitments from block (works for both Fulu and Gloas)
+    // For Gloas: commitments come from execution payload bid (via getBlobKzgCommitments override)
+    // For Fulu: commitments come from block body
+    final SszList<SszKZGCommitment> blockCommitments =
         signedBeaconBlock
             .getMessage()
             .getBody()
-            .getOptionalBlobKzgCommitments()
-            .orElseThrow()
-            .asList()
-            .stream()
-            .map(SszKZGCommitment::getKZGCommitment)
-            .toList();
+            .toVersionGloas()
+            .map(BeaconBlockBodyGloas::getBlobKzgCommitments)
+            .or(() -> signedBeaconBlock.getMessage().getBody().getOptionalBlobKzgCommitments())
+            .orElseThrow();
+    final List<KZGCommitment> kzgCommitments =
+        blockCommitments.asList().stream().map(SszKZGCommitment::getKZGCommitment).toList();
+
+    // For Gloas, create simplified sidecar without header/commitments
+    // The commitments are passed to ensure correct data column size
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      return new RandomDataColumnSidecarBuilder()
+          .beaconBlockRoot(signedBeaconBlock.getRoot())
+          .slot(slot)
+          .index(index)
+          .kzgCommitments(kzgCommitments)
+          .build();
+    }
+
+    // For Fulu, create full sidecar with header, commitments, and inclusion proof
+    final MiscHelpersFulu miscHelpersFulu =
+        MiscHelpersFulu.required(spec.atSlot(slot).miscHelpers());
     final List<Bytes32> inclusionProof =
         miscHelpersFulu.computeDataColumnKzgCommitmentsInclusionProof(
             signedBeaconBlock.getBeaconBlock().orElseThrow().getBody());
@@ -3337,6 +3370,7 @@ public final class DataStructureUtil {
     return SchemaDefinitionsElectra.required(spec.atSlot(slot).getSchemaDefinitions());
   }
 
+  @SuppressWarnings("unused")
   private SchemaDefinitionsFulu getFuluSchemaDefinitions(final UInt64 slot) {
     return SchemaDefinitionsFulu.required(spec.atSlot(slot).getSchemaDefinitions());
   }
