@@ -13,11 +13,14 @@
 
 package tech.pegasys.teku.benchmarks.util.backing;
 
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
@@ -37,6 +40,23 @@ public class BeaconStateBenchmark {
       new DataStructureUtil(0, TestSpecFactory.createMainnetAltair())
           .withPubKeyGenerator(() -> pubkey);
   private static final BeaconState beaconState = dataStructureUtil.randomBeaconState(400_000);
+
+  private static final int NUM_EB_CHANGES = 2000;
+  private int[] ebChangeIndices;
+
+  @Setup(Level.Trial)
+  public void setup() {
+    var random = new Random(42);
+    var indSet = new IntOpenHashSet();
+    while (indSet.size() < NUM_EB_CHANGES) {
+      indSet.add(random.nextInt(0, 400_000));
+    }
+    ebChangeIndices = indSet.toIntArray();
+    System.out.println("ebChangeIndices created: " + ebChangeIndices.length);
+    // pre-warm: compute and cache the initial hashTreeRoot
+    beaconState.hashTreeRoot();
+    System.out.println("state hashing warmed up");
+  }
 
   @Benchmark
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
@@ -86,15 +106,6 @@ public class BeaconStateBenchmark {
     bh.consume(stateW.hashTreeRoot());
   }
 
-  private static final int NUM_EB_CHANGES = 2000;
-  private static final int[] EB_CHANGE_INDICES =
-      new Random(42).ints(NUM_EB_CHANGES, 0, 400_000).distinct().sorted().toArray();
-
-  static {
-    // pre-warm: compute and cache the initial hashTreeRoot
-    beaconState.hashTreeRoot();
-  }
-
   @Benchmark
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
@@ -102,7 +113,7 @@ public class BeaconStateBenchmark {
     BeaconState stateW =
         beaconState.updated(
             state -> {
-              for (int idx : EB_CHANGE_INDICES) {
+              for (int idx : ebChangeIndices) {
                 final UInt64 newBalance =
                     state.getValidators().get(idx).getEffectiveBalance().plus(1_000_000_000L);
                 state
