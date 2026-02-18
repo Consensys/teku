@@ -218,9 +218,7 @@ public class RocksDbInstanceFactory {
     }
     else{
       columnDescriptors = Stream.concat(
-                      columns.stream()
-                              .filter(column -> !column.containsStaticData())
-                              .map(KvStoreColumn::getId),
+                      columns.stream().map(KvStoreColumn::getId),
                       deletedColumns.stream())
               .map(id -> new ColumnFamilyDescriptor(id.toArrayUnsafe(), columnFamilyOptions))
               .collect(Collectors.toCollection(ArrayList::new));
