@@ -94,7 +94,7 @@ public class RocksDbInstanceFactory {
             List.of(txOptions, dbOptions, columnFamilyOptions, rocksDbStats, blockCache));
 
     List<ColumnFamilyDescriptor> columnDescriptors =
-        createColumnFamilyDescriptors(columns, deletedColumns, columnFamilyOptions);
+        createColumnFamilyDescriptors(configuration,columns, deletedColumns, columnFamilyOptions);
     Map<Bytes, KvStoreColumn<?, ?>> columnsById =
         columns.stream().collect(Collectors.toMap(KvStoreColumn::getId, Function.identity()));
 
@@ -184,33 +184,47 @@ public class RocksDbInstanceFactory {
   }
 
   private static List<ColumnFamilyDescriptor> createColumnFamilyDescriptors(
+      final KvStoreConfiguration configuration,
       final Collection<KvStoreColumn<?, ?>> columns,
       final Collection<Bytes> deletedColumns,
       final ColumnFamilyOptions columnFamilyOptions) {
 
     final ColumnFamilyOptions columnFamilyOptionsWithBlobDb = columnFamilyOptions;
-    final List<ColumnFamilyDescriptor> columnDescriptors =
-        columns.stream()
-            .filter(KvStoreColumn::containsStaticData)
-            .map(
-                column ->
-                    new ColumnFamilyDescriptor(
-                        column.getId().toArrayUnsafe(),
-                        columnFamilyOptionsWithBlobDb
-                            .setEnableBlobFiles(true)
-                            .setMinBlobSize(100)
-                            .setBlobCompressionType(CompressionType.LZ4_COMPRESSION)))
-            .collect(Collectors.toCollection(ArrayList::new));
+    final List<ColumnFamilyDescriptor> columnDescriptors;
 
-    columnDescriptors.addAll(
-        Stream.concat(
-                columns.stream()
-                    .filter(column -> !column.containsStaticData())
-                    .map(KvStoreColumn::getId),
-                deletedColumns.stream())
-            .map(id -> new ColumnFamilyDescriptor(id.toArrayUnsafe(), columnFamilyOptions))
-            .collect(Collectors.toCollection(ArrayList::new)));
+    if(configuration.blobDbEnabled()) {
 
+      columnDescriptors = columns.stream()
+              .filter(KvStoreColumn::containsStaticData)
+              .map(
+                      column ->
+                              new ColumnFamilyDescriptor(
+                                      column.getId().toArrayUnsafe(),
+                                      columnFamilyOptionsWithBlobDb
+                                              .setEnableBlobFiles(true)
+                                              .setMinBlobSize(100)
+                                              .setBlobCompressionType(CompressionType.LZ4_COMPRESSION)))
+              .collect(Collectors.toCollection(ArrayList::new));
+
+      columnDescriptors.addAll(
+                                      Stream.concat(
+                                                      columns.stream()
+                                                              .filter(column -> !column.containsStaticData())
+                                                              .map(KvStoreColumn::getId),
+                                                      deletedColumns.stream())
+                      .map(id -> new ColumnFamilyDescriptor(id.toArrayUnsafe(), columnFamilyOptions))
+                      .collect(Collectors.toCollection(ArrayList::new)));
+
+    }
+    else{
+      columnDescriptors = Stream.concat(
+                      columns.stream()
+                              .filter(column -> !column.containsStaticData())
+                              .map(KvStoreColumn::getId),
+                      deletedColumns.stream())
+              .map(id -> new ColumnFamilyDescriptor(id.toArrayUnsafe(), columnFamilyOptions))
+              .collect(Collectors.toCollection(ArrayList::new));
+    }
     columnDescriptors.add(
         new ColumnFamilyDescriptor(Schema.DEFAULT_COLUMN_ID.toArrayUnsafe(), columnFamilyOptions));
     return Collections.unmodifiableList(columnDescriptors);
