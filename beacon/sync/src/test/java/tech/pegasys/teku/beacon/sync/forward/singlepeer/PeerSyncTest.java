@@ -104,6 +104,7 @@ public class PeerSyncTest extends AbstractSyncTest {
             blockImporter,
             blobSidecarManager,
             blockBlobSidecarsTrackersPool,
+            executionPayloadManager,
             FORWARD_SYNC_BATCH_SIZE.intValue(),
             OptionalInt.empty(),
             new NoOpMetricsSystem());
