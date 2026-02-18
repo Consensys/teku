@@ -30,8 +30,13 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 /**
  * Coordinates per-milestone {@link TimeBasedEventAdapter} instances stored in an {@link EnumMap}
  * keyed by the milestone that introduces a timing change (PHASE0, ALTAIR, GLOAS). Only three timing
- * profiles exist today: PHASE0 (attestation, aggregation), ALTAIR–FULU (adds sync committee,
- * contribution), and GLOAS (changes offsets, adds payload attestation).
+ * profiles exist today:
+ *
+ * <ul>
+ *   <li>PHASE0 (attestation, aggregation)
+ *   <li>ALTAIR–FULU (adds sync committee, contribution)
+ *   <li>GLOAS (changes offsets, adds payload attestation)
+ * </ul>
  *
  * <p>Each adapter schedules all of its events (including the slot event) with an expiry at the next
  * timing-changing fork boundary. When the slot event expires, its {@code onLastSlot} callback

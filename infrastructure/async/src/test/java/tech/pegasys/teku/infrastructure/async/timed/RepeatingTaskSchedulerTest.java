@@ -144,6 +144,8 @@ class RepeatingTaskSchedulerTest {
     advanceTimeBy(12);
     asyncRunner.executeDueActionsRepeatedly();
 
+    // we are at 13, next due will be 14 which is the expiration time,
+    // thus, this is the last action and expiration action should be executed.
     verify(action).execute(getTime(), getTime());
     verify(expirationAction).execute(expirationTime, getTime());
 
