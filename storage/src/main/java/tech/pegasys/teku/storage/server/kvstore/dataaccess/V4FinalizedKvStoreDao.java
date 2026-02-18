@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
-import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE;
 import static tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.MAX_BLOCK_ROOT;
 import static tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.MIN_BLOCK_ROOT;
 
@@ -73,32 +73,28 @@ public class V4FinalizedKvStoreDao {
     // Create latency timers for measuring blob DB performance improvements
     this.getFinalizedBlockTimer =
         metricsSystem.createTimer(
-            STORAGE_FINALIZED_DB,
+            STORAGE,
             "get_finalized_block_latency",
             "Latency for retrieving finalized blocks by slot");
     this.getFinalizedStateTimer =
         metricsSystem.createTimer(
-            STORAGE_FINALIZED_DB,
-            "get_finalized_state_latency",
-            "Latency for retrieving finalized states");
+            STORAGE, "get_finalized_state_latency", "Latency for retrieving finalized states");
     this.getBlobSidecarTimer =
         metricsSystem.createTimer(
-            STORAGE_FINALIZED_DB,
-            "get_blob_sidecar_latency",
-            "Latency for retrieving blob sidecars");
+            STORAGE, "get_blob_sidecar_latency", "Latency for retrieving blob sidecars");
     this.getDataColumnSidecarTimer =
         metricsSystem.createTimer(
-            STORAGE_FINALIZED_DB,
+            STORAGE,
             "get_data_column_sidecar_latency",
             "Latency for retrieving data column sidecars");
     this.getNonCanonicalBlobSidecarTimer =
         metricsSystem.createTimer(
-            STORAGE_FINALIZED_DB,
+            STORAGE,
             "get_non_canonical_blob_sidecar_latency",
             "Latency for retrieving non-canonical blob sidecars");
     this.getDataColumnSidecarsProofsTimer =
         metricsSystem.createTimer(
-            STORAGE_FINALIZED_DB,
+            STORAGE,
             "get_data_column_sidecars_proofs_latency",
             "Latency for retrieving data column sidecar proofs");
   }
