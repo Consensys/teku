@@ -118,6 +118,7 @@ public class KvStoreDatabase implements Database {
   }
 
   public static Database createV4(
+      final MetricsSystem metricsSystem,
       final KvStoreAccessor hotDb,
       final KvStoreAccessor finalizedDb,
       final SchemaHotAdapter schemaHot,
@@ -133,7 +134,8 @@ public class KvStoreDatabase implements Database {
     final KvStoreCombinedDaoAdapter dao =
         new KvStoreCombinedDaoAdapter(
             hotDao,
-            new V4FinalizedKvStoreDao(finalizedDb, schemaFinalized, finalizedStateStorageLogic));
+            new V4FinalizedKvStoreDao(
+                metricsSystem, finalizedDb, schemaFinalized, finalizedStateStorageLogic));
     return new KvStoreDatabase(dao, stateStorageMode, storeNonCanonicalBlocks, spec);
   }
 
