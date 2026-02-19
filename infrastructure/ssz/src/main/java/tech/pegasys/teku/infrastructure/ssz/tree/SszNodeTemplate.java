@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
 import tech.pegasys.teku.infrastructure.crypto.Sha256;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
@@ -158,24 +157,30 @@ public class SszNodeTemplate {
     checkArgument(off == leafPos.getLength());
   }
 
-  public Bytes32 calculateHashTreeRoot(final Bytes ssz, final int offset, final Sha256 sha256) {
+  public byte[] calculateHashTreeRootRaw(final Bytes ssz, final int offset, final Sha256 sha256) {
     return binaryTraverse(
         SELF_G_INDEX,
         defaultTree,
         new BinaryVisitor<>() {
           @Override
-          public Bytes32 visitLeaf(final long gIndex, final LeafNode node) {
-            Location location = gIdxToLoc.get(gIndex);
-            return Bytes32.rightPad(ssz.slice(offset + location.getOffset(), location.getLength()));
+          public byte[] visitLeaf(final long gIndex, final LeafNode node) {
+            final Location location = gIdxToLoc.get(gIndex);
+            final byte[] result = new byte[32];
+            final int srcOffset = offset + location.getOffset();
+            final int length = location.getLength();
+            for (int i = 0; i < length; i++) {
+              result[i] = ssz.get(srcOffset + i);
+            }
+            return result;
           }
 
           @Override
-          public Bytes32 visitBranch(
+          public byte[] visitBranch(
               final long gIndex,
               final TreeNode node,
-              final Bytes32 leftVisitResult,
-              final Bytes32 rightVisitResult) {
-            return Bytes32.wrap(sha256.digest(leftVisitResult, rightVisitResult));
+              final byte[] leftVisitResult,
+              final byte[] rightVisitResult) {
+            return sha256.digest(leftVisitResult, rightVisitResult);
           }
         });
   }
