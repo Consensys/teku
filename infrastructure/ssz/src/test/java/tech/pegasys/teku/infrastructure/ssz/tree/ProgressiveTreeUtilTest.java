@@ -57,8 +57,8 @@ class ProgressiveTreeUtilTest {
     // Level L spans indices [cumulativeCapacity(L-1), cumulativeCapacity(L) - 1]
     // (with level 0 starting at index 0).
     for (int level = 0; level <= 10; level++) {
-      long firstIndex = level == 0 ? 0 : ProgressiveTreeUtil.cumulativeCapacity(level - 1);
-      long lastIndex = ProgressiveTreeUtil.cumulativeCapacity(level) - 1;
+      final long firstIndex = level == 0 ? 0 : ProgressiveTreeUtil.cumulativeCapacity(level - 1);
+      final long lastIndex = ProgressiveTreeUtil.cumulativeCapacity(level) - 1;
 
       assertThat(ProgressiveTreeUtil.levelForIndex(firstIndex))
           .describedAs("first index of level %d", level)
@@ -66,6 +66,23 @@ class ProgressiveTreeUtilTest {
       assertThat(ProgressiveTreeUtil.levelForIndex(lastIndex))
           .describedAs("last index of level %d", level)
           .isEqualTo(level);
+    }
+  }
+
+  @Test
+  void levelForIndex_highLevels() {
+    // Verify the formula handles large indices where 3L * elementIndex + 1 exercises
+    // the full bit-width of numberOfLeadingZeros.
+    for (int level : new int[] {15, 20}) {
+      final long firstIndex = ProgressiveTreeUtil.cumulativeCapacity(level - 1);
+      final long lastIndex = ProgressiveTreeUtil.cumulativeCapacity(level) - 1;
+
+      assertThat(ProgressiveTreeUtil.levelForIndex(firstIndex))
+              .describedAs("first index of level %d", level)
+              .isEqualTo(level);
+      assertThat(ProgressiveTreeUtil.levelForIndex(lastIndex))
+              .describedAs("last index of level %d", level)
+              .isEqualTo(level);
     }
   }
 
@@ -76,53 +93,36 @@ class ProgressiveTreeUtilTest {
   }
 
   @Test
-  void levelForIndex_highLevels() {
-    // Verify the formula handles large indices where 3L * elementIndex + 1 exercises
-    // the full bit-width of numberOfLeadingZeros.
-    for (int level : new int[] {15, 20}) {
-      long firstIndex = ProgressiveTreeUtil.cumulativeCapacity(level - 1);
-      long lastIndex = ProgressiveTreeUtil.cumulativeCapacity(level) - 1;
-
-      assertThat(ProgressiveTreeUtil.levelForIndex(firstIndex))
-          .describedAs("first index of level %d", level)
-          .isEqualTo(level);
-      assertThat(ProgressiveTreeUtil.levelForIndex(lastIndex))
-          .describedAs("last index of level %d", level)
-          .isEqualTo(level);
-    }
-  }
-
-  @Test
   void createProgressiveTree_emptyChunks_returnsEmptyLeaf() {
-    TreeNode tree = ProgressiveTreeUtil.createProgressiveTree(List.of());
+    final TreeNode tree = ProgressiveTreeUtil.createProgressiveTree(List.of());
     assertThat(tree).isEqualTo(LeafNode.EMPTY_LEAF);
   }
 
   @Test
   void createProgressiveTree_singleChunk_createsCorrectTree() {
-    LeafNode leaf = LeafNode.create(Bytes.fromHexString("0x01"));
-    TreeNode tree = ProgressiveTreeUtil.createProgressiveTree(List.of(leaf));
+    final LeafNode leaf = LeafNode.create(Bytes.fromHexString("0x01"));
+    final TreeNode tree = ProgressiveTreeUtil.createProgressiveTree(List.of(leaf));
     // Should be BranchNode(leaf, EMPTY_LEAF)
     assertThat(tree).isInstanceOf(BranchNode.class);
-    BranchNode branch = (BranchNode) tree;
+    final BranchNode branch = (BranchNode) tree;
     assertThat(branch.left()).isEqualTo(leaf);
     assertThat(branch.right()).isEqualTo(LeafNode.EMPTY_LEAF);
   }
 
   @Test
   void createProgressiveTree_twoChunks_createsCorrectStructure() {
-    LeafNode leaf0 = LeafNode.create(Bytes.fromHexString("0x01"));
-    LeafNode leaf1 = LeafNode.create(Bytes.fromHexString("0x02"));
-    TreeNode tree = ProgressiveTreeUtil.createProgressiveTree(List.of(leaf0, leaf1));
+    final LeafNode leaf0 = LeafNode.create(Bytes.fromHexString("0x01"));
+    final LeafNode leaf1 = LeafNode.create(Bytes.fromHexString("0x02"));
+    final TreeNode tree = ProgressiveTreeUtil.createProgressiveTree(List.of(leaf0, leaf1));
     // Level 0 (cap=1): leaf0
     // Level 1 (cap=4): [leaf1, zero, zero, zero] (depth=2 balanced tree)
     // Result: BranchNode(leaf0, BranchNode(level1_tree, EMPTY_LEAF))
     assertThat(tree).isInstanceOf(BranchNode.class);
-    BranchNode root = (BranchNode) tree;
+    final BranchNode root = (BranchNode) tree;
     assertThat(root.left()).isEqualTo(leaf0);
     assertThat(root.right()).isInstanceOf(BranchNode.class);
 
-    BranchNode rightBranch = (BranchNode) root.right();
+    final BranchNode rightBranch = (BranchNode) root.right();
     // Left child of right branch is the level-1 balanced subtree with leaf1
     // Right child is EMPTY_LEAF (no more levels)
     assertThat(rightBranch.right()).isEqualTo(LeafNode.EMPTY_LEAF);
@@ -130,11 +130,11 @@ class ProgressiveTreeUtilTest {
 
   @Test
   void createProgressiveTree_fiveChunks_usesThreeLevels() {
-    List<LeafNode> chunks = new ArrayList<>();
+    final List<LeafNode> chunks = new ArrayList<>();
     for (int i = 0; i < 5; i++) {
       chunks.add(LeafNode.create(Bytes.of((byte) (i + 1))));
     }
-    TreeNode tree = ProgressiveTreeUtil.createProgressiveTree(chunks);
+    final TreeNode tree = ProgressiveTreeUtil.createProgressiveTree(chunks);
     // Level 0 (cap=1): chunks[0]
     // Level 1 (cap=4): chunks[1..4]
     // Level 2 (cap=16): chunks[5..] -> empty -> not created, just EMPTY_LEAF as right
@@ -144,7 +144,7 @@ class ProgressiveTreeUtilTest {
 
   @Test
   void getElementGeneralizedIndex_element0_isLeftChild() {
-    long gIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(0);
+    final long gIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(0);
     // Element 0 is at level 0, which is the left child of root.
     // Level 0 has depth 0, so the element is the left child directly.
     assertThat(gIdx).isEqualTo(GIndexUtil.LEFT_CHILD_G_INDEX); // 0b10
@@ -152,7 +152,7 @@ class ProgressiveTreeUtilTest {
 
   @Test
   void getElementGeneralizedIndex_element1_isAtLevel1() {
-    long gIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(1);
+    final long gIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(1);
     // Element 1 is at level 1, position 0 in a 4-element balanced subtree (depth=2)
     // Path: right, left, then position 0 at depth 2
     // right from root = 0b11
@@ -164,17 +164,17 @@ class ProgressiveTreeUtilTest {
   @Test
   void getElementGeneralizedIndex_canNavigateTree() {
     // Create a tree with known values and verify we can navigate to each element
-    List<LeafNode> chunks = new ArrayList<>();
+    final List<LeafNode> chunks = new ArrayList<>();
     for (int i = 0; i < 6; i++) {
-      byte[] data = new byte[32];
+      final byte[] data = new byte[32];
       data[0] = (byte) (i + 1);
       chunks.add(LeafNode.create(Bytes32.wrap(data)));
     }
-    TreeNode tree = ProgressiveTreeUtil.createProgressiveTree(chunks);
+    final TreeNode tree = ProgressiveTreeUtil.createProgressiveTree(chunks);
 
     for (int i = 0; i < 6; i++) {
-      long gIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(i);
-      TreeNode node = tree.get(gIdx);
+      final long gIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(i);
+      final TreeNode node = tree.get(gIdx);
       assertThat(node).isInstanceOf(LeafNode.class);
       assertThat(((LeafNode) node).getData().get(0)).isEqualTo((byte) (i + 1));
     }
@@ -182,7 +182,7 @@ class ProgressiveTreeUtilTest {
 
   @Test
   void hashTreeRoot_emptyTree_isZero() {
-    TreeNode tree = ProgressiveTreeUtil.createProgressiveTree(List.of());
+    final TreeNode tree = ProgressiveTreeUtil.createProgressiveTree(List.of());
     assertThat(tree.hashTreeRoot()).isEqualTo(Bytes32.ZERO);
   }
 }

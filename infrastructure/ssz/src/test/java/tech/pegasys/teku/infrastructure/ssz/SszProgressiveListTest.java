@@ -32,11 +32,11 @@ public class SszProgressiveListTest implements SszCollectionTestBase {
       SszProgressiveListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA);
 
   private static SszList<SszUInt64> createUInt64List(final int count) {
-    List<SszUInt64> elements =
+    final List<SszUInt64> elements =
         IntStream.range(0, count)
             .mapToObj(i -> SszUInt64.of(UInt64.valueOf(i)))
             .collect(Collectors.toList());
-    TreeNode tree = UINT64_LIST_SCHEMA.createTreeFromElements(elements);
+    final TreeNode tree = UINT64_LIST_SCHEMA.createTreeFromElements(elements);
     return UINT64_LIST_SCHEMA.createFromBackingNode(tree);
   }
 
@@ -56,7 +56,7 @@ public class SszProgressiveListTest implements SszCollectionTestBase {
 
   @Test
   void elementAccess_shouldReturnCorrectValues() {
-    SszList<SszUInt64> list = createUInt64List(5);
+    final SszList<SszUInt64> list = createUInt64List(5);
     for (int i = 0; i < 5; i++) {
       assertThat(list.get(i).get()).isEqualTo(UInt64.valueOf(i));
     }
@@ -64,13 +64,13 @@ public class SszProgressiveListTest implements SszCollectionTestBase {
 
   @Test
   void createWritableCopy_shouldSucceed() {
-    SszList<SszUInt64> list = createUInt64List(3);
+    final SszList<SszUInt64> list = createUInt64List(3);
     assertThat(list.createWritableCopy()).isNotNull();
   }
 
   @Test
   void isWritableSupported_shouldReturnTrue() {
-    SszList<SszUInt64> list = createUInt64List(1);
+    final SszList<SszUInt64> list = createUInt64List(1);
     assertThat(list.isWritableSupported()).isTrue();
   }
 }

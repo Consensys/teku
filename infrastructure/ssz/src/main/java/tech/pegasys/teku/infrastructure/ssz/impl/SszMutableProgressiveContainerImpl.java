@@ -61,21 +61,21 @@ public class SszMutableProgressiveContainerImpl
       return tree;
     }
 
-    SszProgressiveContainerSchema<?> schema = getSchema();
-    TreeNode dataTree = tree.get(GIndexUtil.LEFT_CHILD_G_INDEX);
-    TreeNode activeFieldsNode = tree.get(GIndexUtil.RIGHT_CHILD_G_INDEX);
+    final SszProgressiveContainerSchema<?> schema = getSchema();
+    final TreeNode dataTree = tree.get(GIndexUtil.LEFT_CHILD_G_INDEX);
+    final TreeNode activeFieldsNode = tree.get(GIndexUtil.RIGHT_CHILD_G_INDEX);
 
     // Map field indices to tree-position slots
-    Int2ObjectMap<TreeNode> slotUpdates = new Int2ObjectOpenHashMap<>();
+    final Int2ObjectMap<TreeNode> slotUpdates = new Int2ObjectOpenHashMap<>();
     for (Map.Entry<Integer, SszData> entry : pendingChanges) {
-      int fieldIndex = entry.getKey();
-      int treePosition = schema.getTreePosition(fieldIndex);
+      final int fieldIndex = entry.getKey();
+      final int treePosition = schema.getTreePosition(fieldIndex);
       slotUpdates.put(treePosition, entry.getValue().getBackingNode());
     }
 
-    int totalSlots = schema.getActiveFields().length;
+    final int totalSlots = schema.getActiveFields().length;
 
-    TreeNode updatedDataTree =
+    final TreeNode updatedDataTree =
         ProgressiveTreeUtil.updateProgressiveTree(dataTree, slotUpdates, totalSlots);
 
     pendingChanges = null;

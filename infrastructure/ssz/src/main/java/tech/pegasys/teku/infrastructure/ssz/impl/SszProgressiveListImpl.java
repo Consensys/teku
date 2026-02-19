@@ -78,7 +78,7 @@ public class SszProgressiveListImpl<SszElementT extends SszData>
 
   @Override
   public String toString() {
-    int maxToDisplay = 1024;
+    final int maxToDisplay = 1024;
     String elements =
         stream().limit(maxToDisplay).map(Object::toString).collect(Collectors.joining(", "));
     if (size() > maxToDisplay) {

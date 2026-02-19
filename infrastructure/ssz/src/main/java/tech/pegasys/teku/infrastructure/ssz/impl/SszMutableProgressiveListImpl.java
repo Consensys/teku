@@ -72,17 +72,17 @@ public class SszMutableProgressiveListImpl<
       return updateSize(tree);
     }
 
-    TreeNode dataTree = tree.get(GIndexUtil.LEFT_CHILD_G_INDEX);
-    int elementsPerChunk = getSchema().getElementsPerChunk();
-    int previousSize = backingImmutableData.size();
+    final TreeNode dataTree = tree.get(GIndexUtil.LEFT_CHILD_G_INDEX);
+    final int elementsPerChunk = getSchema().getElementsPerChunk();
+    final int previousSize = backingImmutableData.size();
 
-    Int2ObjectMap<TreeNode> chunkUpdates =
+    final Int2ObjectMap<TreeNode> chunkUpdates =
         buildChunkUpdates(dataTree, elementsPerChunk, previousSize);
 
-    int totalChunks =
+    final int totalChunks =
         elementsPerChunk > 1 ? (size() + elementsPerChunk - 1) / elementsPerChunk : size();
 
-    TreeNode updatedDataTree =
+    final TreeNode updatedDataTree =
         ProgressiveTreeUtil.updateProgressiveTree(dataTree, chunkUpdates, totalChunks);
 
     pendingChanges = null;
@@ -92,21 +92,22 @@ public class SszMutableProgressiveListImpl<
   @SuppressWarnings({"unchecked", "rawtypes"})
   private Int2ObjectMap<TreeNode> buildChunkUpdates(
       final TreeNode dataTree, final int elementsPerChunk, final int previousSize) {
-    Int2ObjectMap<TreeNode> chunkUpdates = new Int2ObjectOpenHashMap<>();
+    final Int2ObjectMap<TreeNode> chunkUpdates = new Int2ObjectOpenHashMap<>();
 
     if (elementsPerChunk > 1) {
       // Packed primitives: group element changes by chunk, apply updatePackedNode
-      SszPrimitiveSchema primitiveSchema = (SszPrimitiveSchema) getSchema().getElementSchema();
-      int previousTotalChunks = (previousSize + elementsPerChunk - 1) / elementsPerChunk;
-      int previousMaxLevel =
+      final SszPrimitiveSchema primitiveSchema =
+          (SszPrimitiveSchema) getSchema().getElementSchema();
+      final int previousTotalChunks = (previousSize + elementsPerChunk - 1) / elementsPerChunk;
+      final int previousMaxLevel =
           previousTotalChunks > 0 ? ProgressiveTreeUtil.levelForIndex(previousTotalChunks - 1) : -1;
 
       // Group by chunk index
-      Int2ObjectMap<List<SszPrimitiveSchema.PackedNodeUpdate>> grouped =
+      final Int2ObjectMap<List<SszPrimitiveSchema.PackedNodeUpdate>> grouped =
           new Int2ObjectOpenHashMap<>();
       for (Map.Entry<Integer, SszElementT> entry : pendingChanges) {
-        int chunkIndex = entry.getKey() / elementsPerChunk;
-        int internalIndex = entry.getKey() % elementsPerChunk;
+        final int chunkIndex = entry.getKey() / elementsPerChunk;
+        final int internalIndex = entry.getKey() % elementsPerChunk;
         grouped
             .computeIfAbsent(chunkIndex, k -> new ArrayList<>())
             .add(
@@ -116,13 +117,13 @@ public class SszMutableProgressiveListImpl<
 
       for (Int2ObjectMap.Entry<List<SszPrimitiveSchema.PackedNodeUpdate>> chunkEntry :
           grouped.int2ObjectEntrySet()) {
-        int chunkIndex = chunkEntry.getIntKey();
-        List<SszPrimitiveSchema.PackedNodeUpdate> packedUpdates = chunkEntry.getValue();
+        final int chunkIndex = chunkEntry.getIntKey();
+        final List<SszPrimitiveSchema.PackedNodeUpdate> packedUpdates = chunkEntry.getValue();
 
         TreeNode originalChunk;
-        int chunkLevel = ProgressiveTreeUtil.levelForIndex(chunkIndex);
+        final int chunkLevel = ProgressiveTreeUtil.levelForIndex(chunkIndex);
         if (chunkLevel <= previousMaxLevel && packedUpdates.size() < elementsPerChunk) {
-          long chunkGIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(chunkIndex);
+          final long chunkGIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(chunkIndex);
           originalChunk = dataTree.get(chunkGIdx);
         } else {
           originalChunk = LeafNode.EMPTY_LEAF;

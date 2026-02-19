@@ -67,7 +67,7 @@ public class ProgressiveTreeUtil {
   public static int levelForIndex(final long elementIndex) {
     // formula: level = floor(log4(3 * elementIndex + 1))
     checkArgument(elementIndex >= 0, "Element index must be non-negative");
-    final long val = 3L * elementIndex + 1;
+    final long val = (3L * elementIndex) + 1;
     final int log2 = 63 - Long.numberOfLeadingZeros(val);
     return log2 / 2; // floor(log2(val)) / 2 == floor(log4(val))
   }
@@ -93,11 +93,12 @@ public class ProgressiveTreeUtil {
     if (chunks.isEmpty()) {
       return LeafNode.EMPTY_LEAF;
     }
-    long cap = levelCapacity(currentLevel);
-    int split = (int) Math.min(chunks.size(), cap);
-    int depth = levelDepth(currentLevel);
-    TreeNode left = TreeUtil.createTree(chunks.subList(0, split), depth);
-    TreeNode right = createProgressiveTree(chunks.subList(split, chunks.size()), currentLevel + 1);
+    final long cap = levelCapacity(currentLevel);
+    final int split = (int) Math.min(chunks.size(), cap);
+    final int depth = levelDepth(currentLevel);
+    final TreeNode left = TreeUtil.createTree(chunks.subList(0, split), depth);
+    final TreeNode right =
+        createProgressiveTree(chunks.subList(split, chunks.size()), currentLevel + 1);
     return BranchNode.create(left, right);
   }
 
@@ -124,19 +125,19 @@ public class ProgressiveTreeUtil {
     if (chunkUpdates.isEmpty()) {
       return dataTree;
     }
-    int maxLevel = levelForIndex(newTotalChunks - 1);
+    final int maxLevel = levelForIndex(newTotalChunks - 1);
 
     // Group by level and compute gIndices within each level's balanced subtree
     @SuppressWarnings({"unchecked", "rawtypes"})
-    List<TreeUpdates.Update>[] updatesByLevel = new List[maxLevel + 1];
+    final List<TreeUpdates.Update>[] updatesByLevel = new List[maxLevel + 1];
 
     for (Int2ObjectMap.Entry<TreeNode> entry : chunkUpdates.int2ObjectEntrySet()) {
-      int chunkIndex = entry.getIntKey();
-      int level = levelForIndex(chunkIndex);
-      long cumulativeBefore = level > 0 ? cumulativeCapacity(level - 1) : 0;
-      long posInLevel = chunkIndex - cumulativeBefore;
-      int depth = levelDepth(level);
-      long gIdx =
+      final int chunkIndex = entry.getIntKey();
+      final int level = levelForIndex(chunkIndex);
+      final long cumulativeBefore = level > 0 ? cumulativeCapacity(level - 1) : 0;
+      final long posInLevel = chunkIndex - cumulativeBefore;
+      final int depth = levelDepth(level);
+      final long gIdx =
           depth > 0
               ? GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, posInLevel, depth)
               : GIndexUtil.SELF_G_INDEX;
@@ -177,16 +178,16 @@ public class ProgressiveTreeUtil {
       right = LeafNode.EMPTY_LEAF;
     }
 
-    TreeNode originalLeft = left;
+    final TreeNode originalLeft = left;
 
     // Apply changes for this level
-    List<TreeUpdates.Update> levelUpdates = updatesByLevel[level];
+    final List<TreeUpdates.Update> levelUpdates = updatesByLevel[level];
     if (levelUpdates != null && !levelUpdates.isEmpty()) {
-      TreeUpdates treeUpdates = new TreeUpdates(levelUpdates);
+      final TreeUpdates treeUpdates = new TreeUpdates(levelUpdates);
       left = left.updated(treeUpdates);
     }
 
-    TreeNode newRight = updateLevel(right, level + 1, maxLevel, updatesByLevel);
+    final TreeNode newRight = updateLevel(right, level + 1, maxLevel, updatesByLevel);
 
     @SuppressWarnings("ReferenceComparison")
     boolean unchanged = left == originalLeft && newRight == right;
@@ -210,8 +211,8 @@ public class ProgressiveTreeUtil {
    */
   public static long getElementGeneralizedIndex(final long elementIndex) {
     checkArgument(elementIndex >= 0, "Element index must be non-negative");
-    int level = levelForIndex(elementIndex);
-    long posInLevel = elementIndex - (level > 0 ? cumulativeCapacity(level - 1) : 0);
+    final int level = levelForIndex(elementIndex);
+    final long posInLevel = elementIndex - (level > 0 ? cumulativeCapacity(level - 1) : 0);
 
     // Navigate from root: take 'level' right turns, then one left turn into the balanced subtree
     // Each right turn is gIdxRightGIndex, one left turn is gIdxLeftGIndex
@@ -222,9 +223,10 @@ public class ProgressiveTreeUtil {
     gIdx = GIndexUtil.gIdxLeftGIndex(gIdx);
 
     // Within the balanced subtree at this level
-    int depth = levelDepth(level);
+    final int depth = levelDepth(level);
     if (depth > 0) {
-      long subtreeGIdx = GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, posInLevel, depth);
+      final long subtreeGIdx =
+          GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, posInLevel, depth);
       gIdx = GIndexUtil.gIdxCompose(gIdx, subtreeGIdx);
     }
 

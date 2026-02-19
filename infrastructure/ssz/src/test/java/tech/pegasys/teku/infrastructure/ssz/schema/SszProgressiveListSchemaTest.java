@@ -40,21 +40,21 @@ public class SszProgressiveListSchemaTest {
 
   @Test
   void primitiveListRoundtrip() {
-    List<SszUInt64> elements =
+    final List<SszUInt64> elements =
         IntStream.range(0, 10)
             .mapToObj(i -> SszUInt64.of(UInt64.valueOf(i)))
             .collect(Collectors.toList());
 
-    TreeNode tree = UINT64_LIST_SCHEMA.createTreeFromElements(elements);
-    SszList<SszUInt64> list = UINT64_LIST_SCHEMA.createFromBackingNode(tree);
+    final TreeNode tree = UINT64_LIST_SCHEMA.createTreeFromElements(elements);
+    final SszList<SszUInt64> list = UINT64_LIST_SCHEMA.createFromBackingNode(tree);
 
     assertThat(list.size()).isEqualTo(10);
     for (int i = 0; i < 10; i++) {
       assertThat(list.get(i).get()).isEqualTo(UInt64.valueOf(i));
     }
 
-    Bytes ssz = list.sszSerialize();
-    SszList<SszUInt64> deserialized = UINT64_LIST_SCHEMA.sszDeserialize(ssz);
+    final Bytes ssz = list.sszSerialize();
+    final SszList<SszUInt64> deserialized = UINT64_LIST_SCHEMA.sszDeserialize(ssz);
     assertThat(deserialized.size()).isEqualTo(10);
     assertThat(deserialized.hashTreeRoot()).isEqualTo(list.hashTreeRoot());
 
@@ -66,19 +66,19 @@ public class SszProgressiveListSchemaTest {
   @Test
   void fixedSizeCompositeListRoundtrip() {
     // Fixed-size composite elements (all fields fixed) — exercises sszSerializeFixed composite path
-    SszProgressiveContainerSchema<? extends SszContainer> elementSchema =
+    final SszProgressiveContainerSchema<? extends SszContainer> elementSchema =
         new SszProgressiveContainerSchema<>(
             "FixedElement",
             new boolean[] {true, true},
             NamedSchema.of("a", SszPrimitiveSchemas.UINT64_SCHEMA),
             NamedSchema.of("b", SszPrimitiveSchemas.BYTE_SCHEMA));
 
-    SszProgressiveListSchema<? extends SszData> listSchema =
+    final SszProgressiveListSchema<? extends SszData> listSchema =
         SszProgressiveListSchema.create(elementSchema);
 
-    List<SszData> elements = new ArrayList<>();
+    final List<SszData> elements = new ArrayList<>();
     for (int i = 0; i < 3; i++) {
-      TreeNode fieldTree =
+      final TreeNode fieldTree =
           elementSchema.createTreeFromFieldValues(
               List.of(
                   SszUInt64.of(UInt64.valueOf(i)),
@@ -87,14 +87,15 @@ public class SszProgressiveListSchemaTest {
     }
 
     @SuppressWarnings("unchecked")
-    SszProgressiveListSchema<SszData> rawSchema = (SszProgressiveListSchema<SszData>) listSchema;
-    TreeNode tree = rawSchema.createTreeFromElements(elements);
-    SszList<SszData> list = rawSchema.createFromBackingNode(tree);
+    final SszProgressiveListSchema<SszData> rawSchema =
+        (SszProgressiveListSchema<SszData>) listSchema;
+    final TreeNode tree = rawSchema.createTreeFromElements(elements);
+    final SszList<SszData> list = rawSchema.createFromBackingNode(tree);
 
     assertThat(list.size()).isEqualTo(3);
 
-    Bytes ssz = list.sszSerialize();
-    SszList<SszData> deserialized = rawSchema.sszDeserialize(ssz);
+    final Bytes ssz = list.sszSerialize();
+    final SszList<SszData> deserialized = rawSchema.sszDeserialize(ssz);
     assertThat(deserialized.size()).isEqualTo(3);
     assertThat(deserialized.hashTreeRoot()).isEqualTo(list.hashTreeRoot());
   }
@@ -102,19 +103,19 @@ public class SszProgressiveListSchemaTest {
   @Test
   void variableSizeCompositeListRoundtrip() {
     // Variable-size composite elements — exercises sszSerializeVariable path
-    SszProgressiveContainerSchema<? extends SszContainer> elementSchema =
+    final SszProgressiveContainerSchema<? extends SszContainer> elementSchema =
         new SszProgressiveContainerSchema<>(
             "VarElement",
             new boolean[] {true, true},
             NamedSchema.of("a", SszPrimitiveSchemas.UINT64_SCHEMA),
             NamedSchema.of("b", new SszProgressiveBitlistSchema()));
 
-    SszProgressiveListSchema<? extends SszData> listSchema =
+    final SszProgressiveListSchema<? extends SszData> listSchema =
         SszProgressiveListSchema.create(elementSchema);
 
-    List<SszData> elements = new ArrayList<>();
+    final List<SszData> elements = new ArrayList<>();
     for (int i = 0; i < 3; i++) {
-      TreeNode fieldTree =
+      final TreeNode fieldTree =
           elementSchema.createTreeFromFieldValues(
               List.of(
                   SszUInt64.of(UInt64.valueOf(i)),
@@ -123,21 +124,22 @@ public class SszProgressiveListSchemaTest {
     }
 
     @SuppressWarnings("unchecked")
-    SszProgressiveListSchema<SszData> rawSchema = (SszProgressiveListSchema<SszData>) listSchema;
-    TreeNode tree = rawSchema.createTreeFromElements(elements);
-    SszList<SszData> list = rawSchema.createFromBackingNode(tree);
+    final SszProgressiveListSchema<SszData> rawSchema =
+        (SszProgressiveListSchema<SszData>) listSchema;
+    final TreeNode tree = rawSchema.createTreeFromElements(elements);
+    final SszList<SszData> list = rawSchema.createFromBackingNode(tree);
 
     assertThat(list.size()).isEqualTo(3);
 
-    Bytes ssz = list.sszSerialize();
-    SszList<SszData> deserialized = rawSchema.sszDeserialize(ssz);
+    final Bytes ssz = list.sszSerialize();
+    final SszList<SszData> deserialized = rawSchema.sszDeserialize(ssz);
     assertThat(deserialized.size()).isEqualTo(3);
     assertThat(deserialized.hashTreeRoot()).isEqualTo(list.hashTreeRoot());
   }
 
   @Test
   void emptyList() {
-    SszList<SszUInt64> list = UINT64_LIST_SCHEMA.getDefault();
+    final SszList<SszUInt64> list = UINT64_LIST_SCHEMA.getDefault();
     assertThat(list.size()).isZero();
     assertThat(list.sszSerialize()).isEqualTo(Bytes.EMPTY);
     assertThat(list.hashTreeRoot())
@@ -173,7 +175,7 @@ public class SszProgressiveListSchemaTest {
 
   @Test
   void getDefaultTree_shouldBeEmptyList() {
-    SszList<SszUInt64> defaultList =
+    final SszList<SszUInt64> defaultList =
         UINT64_LIST_SCHEMA.createFromBackingNode(UINT64_LIST_SCHEMA.getDefaultTree());
     assertThat(defaultList.size()).isZero();
   }
@@ -191,7 +193,7 @@ public class SszProgressiveListSchemaTest {
 
   @Test
   void equals_sameElementSchema_shouldBeEqual() {
-    SszProgressiveListSchema<SszUInt64> other =
+    final SszProgressiveListSchema<SszUInt64> other =
         SszProgressiveListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA);
     assertThat(UINT64_LIST_SCHEMA).isEqualTo(other);
     assertThat(UINT64_LIST_SCHEMA.hashCode()).isEqualTo(other.hashCode());
@@ -199,7 +201,7 @@ public class SszProgressiveListSchemaTest {
 
   @Test
   void equals_differentElementSchema_shouldNotBeEqual() {
-    SszProgressiveListSchema<?> byteListSchema =
+    final SszProgressiveListSchema<?> byteListSchema =
         SszProgressiveListSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA);
     assertThat(UINT64_LIST_SCHEMA).isNotEqualTo(byteListSchema);
   }
@@ -219,23 +221,23 @@ public class SszProgressiveListSchemaTest {
   @Test
   void variableSizeElements_roundtrip() {
     // List of variable-size elements (lists inside a progressive list)
-    SszListSchema<SszUInt64, ?> innerListSchema =
+    final SszListSchema<SszUInt64, ?> innerListSchema =
         SszListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, 10);
-    SszProgressiveListSchema<SszList<SszUInt64>> varListSchema =
+    final SszProgressiveListSchema<SszList<SszUInt64>> varListSchema =
         createProgressiveListSchema(innerListSchema);
 
-    SszList<SszUInt64> inner1 = innerListSchema.getDefault();
-    SszList<SszUInt64> inner2 =
+    final SszList<SszUInt64> inner1 = innerListSchema.getDefault();
+    final SszList<SszUInt64> inner2 =
         innerListSchema.createFromElements(List.of(SszUInt64.of(UInt64.valueOf(42))));
 
-    List<SszList<SszUInt64>> elements = List.of(inner1, inner2);
-    TreeNode tree = varListSchema.createTreeFromElements(elements);
-    SszList<SszList<SszUInt64>> list = varListSchema.createFromBackingNode(tree);
+    final List<SszList<SszUInt64>> elements = List.of(inner1, inner2);
+    final TreeNode tree = varListSchema.createTreeFromElements(elements);
+    final SszList<SszList<SszUInt64>> list = varListSchema.createFromBackingNode(tree);
 
     assertThat(list.size()).isEqualTo(2);
 
-    Bytes ssz = list.sszSerialize();
-    SszList<SszList<SszUInt64>> deserialized = varListSchema.sszDeserialize(ssz);
+    final Bytes ssz = list.sszSerialize();
+    final SszList<SszList<SszUInt64>> deserialized = varListSchema.sszDeserialize(ssz);
     assertThat(deserialized.size()).isEqualTo(2);
     assertThat(deserialized.hashTreeRoot()).isEqualTo(list.hashTreeRoot());
   }
@@ -243,13 +245,13 @@ public class SszProgressiveListSchemaTest {
   @Test
   void invalidSsz_firstOffsetExceedsData_shouldThrow() {
     // For variable-size elements, the first offset in SSZ cannot exceed available data
-    SszListSchema<SszUInt64, ?> innerListSchema =
+    final SszListSchema<SszUInt64, ?> innerListSchema =
         SszListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, 10);
-    SszProgressiveListSchema<SszList<SszUInt64>> varListSchema =
+    final SszProgressiveListSchema<SszList<SszUInt64>> varListSchema =
         createProgressiveListSchema(innerListSchema);
 
     // Build invalid SSZ: 4-byte offset that points beyond available data
-    Bytes invalidSsz = Bytes.of(0xFF, 0x00, 0x00, 0x00);
+    final Bytes invalidSsz = Bytes.of(0xFF, 0x00, 0x00, 0x00);
     assertThatThrownBy(() -> varListSchema.sszDeserialize(invalidSsz))
         .isInstanceOf(SszDeserializeException.class);
   }

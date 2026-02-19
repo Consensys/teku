@@ -112,7 +112,7 @@ public class SszGenericProgressiveContainerTestExecutor extends AbstractSszGener
    * ProgressiveList[ProgressiveVarTestStruct]
    */
   private static SszProgressiveContainerSchema<?> createProgressiveComplexTestStructSchema() {
-    SszProgressiveContainerSchema<?> singleFieldSchema =
+    final SszProgressiveContainerSchema<?> singleFieldSchema =
         new SszProgressiveContainerSchema<>(
             "ProgressiveSingleFieldContainerTestStruct",
             new boolean[] {true},

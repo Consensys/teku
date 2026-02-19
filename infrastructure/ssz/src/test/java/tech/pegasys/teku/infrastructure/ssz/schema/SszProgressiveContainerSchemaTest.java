@@ -53,12 +53,12 @@ public class SszProgressiveContainerSchemaTest {
 
   @Test
   void singleFieldContainer_sszRoundtrip() {
-    TreeNode tree =
+    final TreeNode tree =
         SINGLE_FIELD_SCHEMA.createTreeFromFieldValues(List.of(SszUInt64.of(UInt64.valueOf(42))));
-    SszContainer container = SINGLE_FIELD_SCHEMA.createFromBackingNode(tree);
+    final SszContainer container = SINGLE_FIELD_SCHEMA.createFromBackingNode(tree);
 
-    Bytes ssz = container.sszSerialize();
-    SszContainer deserialized = SINGLE_FIELD_SCHEMA.sszDeserialize(ssz);
+    final Bytes ssz = container.sszSerialize();
+    final SszContainer deserialized = SINGLE_FIELD_SCHEMA.sszDeserialize(ssz);
 
     assertThat(deserialized.hashTreeRoot()).isEqualTo(container.hashTreeRoot());
     assertThat(((SszUInt64) deserialized.get(0)).get()).isEqualTo(UInt64.valueOf(42));
@@ -66,16 +66,16 @@ public class SszProgressiveContainerSchemaTest {
 
   @Test
   void multiFieldContainer_sszRoundtrip() {
-    TreeNode tree =
+    final TreeNode tree =
         MULTI_FIELD_SCHEMA.createTreeFromFieldValues(
             List.of(
                 SszUInt64.of(UInt64.valueOf(100)),
                 SszPrimitiveSchemas.BYTE_SCHEMA.boxed((byte) 7),
                 SszUInt64.of(UInt64.valueOf(200))));
-    SszContainer container = MULTI_FIELD_SCHEMA.createFromBackingNode(tree);
+    final SszContainer container = MULTI_FIELD_SCHEMA.createFromBackingNode(tree);
 
-    Bytes ssz = container.sszSerialize();
-    SszContainer deserialized = MULTI_FIELD_SCHEMA.sszDeserialize(ssz);
+    final Bytes ssz = container.sszSerialize();
+    final SszContainer deserialized = MULTI_FIELD_SCHEMA.sszDeserialize(ssz);
 
     assertThat(deserialized.hashTreeRoot()).isEqualTo(container.hashTreeRoot());
     assertThat(deserialized.size()).isEqualTo(3);
@@ -86,14 +86,14 @@ public class SszProgressiveContainerSchemaTest {
 
   @Test
   void gappedContainer_sszRoundtrip() {
-    TreeNode tree =
+    final TreeNode tree =
         GAPPED_SCHEMA.createTreeFromFieldValues(
             List.of(
                 SszUInt64.of(UInt64.valueOf(99)), SszPrimitiveSchemas.BYTE_SCHEMA.boxed((byte) 3)));
-    SszContainer container = GAPPED_SCHEMA.createFromBackingNode(tree);
+    final SszContainer container = GAPPED_SCHEMA.createFromBackingNode(tree);
 
-    Bytes ssz = container.sszSerialize();
-    SszContainer deserialized = GAPPED_SCHEMA.sszDeserialize(ssz);
+    final Bytes ssz = container.sszSerialize();
+    final SszContainer deserialized = GAPPED_SCHEMA.sszDeserialize(ssz);
 
     assertThat(deserialized.hashTreeRoot()).isEqualTo(container.hashTreeRoot());
     assertThat(deserialized.size()).isEqualTo(2);
@@ -103,21 +103,21 @@ public class SszProgressiveContainerSchemaTest {
 
   @Test
   void variableSizeFields_sszRoundtrip() {
-    SszProgressiveContainerSchema<SszContainer> varSchema =
+    final SszProgressiveContainerSchema<SszContainer> varSchema =
         new SszProgressiveContainerSchema<>(
             "VarContainer",
             new boolean[] {true, true},
             NamedSchema.of("fixed", SszPrimitiveSchemas.UINT64_SCHEMA),
             NamedSchema.of("varField", SszBitlistSchema.create(100)));
 
-    TreeNode tree =
+    final TreeNode tree =
         varSchema.createTreeFromFieldValues(
             List.of(
                 SszUInt64.of(UInt64.valueOf(5)), SszBitlistSchema.create(100).ofBits(10, 0, 3, 9)));
-    SszContainer container = varSchema.createFromBackingNode(tree);
+    final SszContainer container = varSchema.createFromBackingNode(tree);
 
-    Bytes ssz = container.sszSerialize();
-    SszContainer deserialized = varSchema.sszDeserialize(ssz);
+    final Bytes ssz = container.sszSerialize();
+    final SszContainer deserialized = varSchema.sszDeserialize(ssz);
 
     assertThat(deserialized.hashTreeRoot()).isEqualTo(container.hashTreeRoot());
     assertThat(deserialized.size()).isEqualTo(2);
@@ -125,7 +125,7 @@ public class SszProgressiveContainerSchemaTest {
 
   @Test
   void getActiveFields_shouldReturnClonedCopy() {
-    boolean[] activeFields = GAPPED_SCHEMA.getActiveFields();
+    final boolean[] activeFields = GAPPED_SCHEMA.getActiveFields();
     assertThat(activeFields).isEqualTo(new boolean[] {true, false, true});
 
     // Modifying returned array should not affect schema
@@ -157,7 +157,7 @@ public class SszProgressiveContainerSchemaTest {
 
   @Test
   void getFieldSchemas_shouldReturnActiveFieldSchemas() {
-    List<? extends SszSchema<?>> schemas = MULTI_FIELD_SCHEMA.getFieldSchemas();
+    final List<? extends SszSchema<?>> schemas = MULTI_FIELD_SCHEMA.getFieldSchemas();
     assertThat(schemas).hasSize(3);
     assertThat(schemas.get(0)).isEqualTo(SszPrimitiveSchemas.UINT64_SCHEMA);
     assertThat(schemas.get(1)).isEqualTo(SszPrimitiveSchemas.BYTE_SCHEMA);
@@ -171,7 +171,7 @@ public class SszProgressiveContainerSchemaTest {
 
   @Test
   void isFixedSize_withVariable_shouldReturnFalse() {
-    SszProgressiveContainerSchema<SszContainer> varSchema =
+    final SszProgressiveContainerSchema<SszContainer> varSchema =
         new SszProgressiveContainerSchema<>(
             "VarTest",
             new boolean[] {true, true},
@@ -201,7 +201,7 @@ public class SszProgressiveContainerSchemaTest {
 
   @Test
   void equals_sameSchemas_shouldBeEqual() {
-    SszProgressiveContainerSchema<SszContainer> other =
+    final SszProgressiveContainerSchema<SszContainer> other =
         new SszProgressiveContainerSchema<>(
             "MultiField",
             new boolean[] {true, true, true},
@@ -214,7 +214,7 @@ public class SszProgressiveContainerSchemaTest {
 
   @Test
   void equals_differentActiveFields_shouldNotBeEqual() {
-    SszProgressiveContainerSchema<SszContainer> other =
+    final SszProgressiveContainerSchema<SszContainer> other =
         new SszProgressiveContainerSchema<>(
             "MultiField",
             new boolean[] {true, false, true, true},
@@ -232,16 +232,16 @@ public class SszProgressiveContainerSchemaTest {
 
   @Test
   void defaultTree_shouldCreateValidDefaultContainer() {
-    SszContainer defaultContainer =
+    final SszContainer defaultContainer =
         MULTI_FIELD_SCHEMA.createFromBackingNode(MULTI_FIELD_SCHEMA.getDefaultTree());
     assertThat(defaultContainer.size()).isEqualTo(3);
 
     // All fields should have default values
-    SszData field0 = defaultContainer.get(0);
+    final SszData field0 = defaultContainer.get(0);
     assertThat(field0).isNotNull();
-    SszData field1 = defaultContainer.get(1);
+    final SszData field1 = defaultContainer.get(1);
     assertThat(field1).isNotNull();
-    SszData field2 = defaultContainer.get(2);
+    final SszData field2 = defaultContainer.get(2);
     assertThat(field2).isNotNull();
   }
 
@@ -275,9 +275,9 @@ public class SszProgressiveContainerSchemaTest {
 
   @Test
   void getChildGeneralizedIndex_shouldReturnDifferentForDifferentFields() {
-    long gIdx0 = MULTI_FIELD_SCHEMA.getChildGeneralizedIndex(0);
-    long gIdx1 = MULTI_FIELD_SCHEMA.getChildGeneralizedIndex(1);
-    long gIdx2 = MULTI_FIELD_SCHEMA.getChildGeneralizedIndex(2);
+    final long gIdx0 = MULTI_FIELD_SCHEMA.getChildGeneralizedIndex(0);
+    final long gIdx1 = MULTI_FIELD_SCHEMA.getChildGeneralizedIndex(1);
+    final long gIdx2 = MULTI_FIELD_SCHEMA.getChildGeneralizedIndex(2);
 
     assertThat(gIdx0).isPositive();
     assertThat(gIdx1).isPositive();

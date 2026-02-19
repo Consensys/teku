@@ -44,14 +44,14 @@ class SszMutableProgressiveContainerTest {
           NamedSchema.of("third", SszPrimitiveSchemas.BYTE_SCHEMA));
 
   private static SszContainer createAllFixed(final UInt64 a, final byte b, final UInt64 c) {
-    TreeNode tree =
+    final TreeNode tree =
         ALL_FIXED_SCHEMA.createTreeFromFieldValues(
             List.of(SszUInt64.of(a), SszPrimitiveSchemas.BYTE_SCHEMA.boxed(b), SszUInt64.of(c)));
     return ALL_FIXED_SCHEMA.createFromBackingNode(tree);
   }
 
   private static SszContainer createGapped(final UInt64 first, final byte third) {
-    TreeNode tree =
+    final TreeNode tree =
         GAPPED_SCHEMA.createTreeFromFieldValues(
             List.of(SszUInt64.of(first), SszPrimitiveSchemas.BYTE_SCHEMA.boxed(third)));
     return GAPPED_SCHEMA.createFromBackingNode(tree);
@@ -59,22 +59,23 @@ class SszMutableProgressiveContainerTest {
 
   @Test
   void isWritableSupported_shouldReturnTrue() {
-    SszContainer container = createAllFixed(UInt64.ONE, (byte) 0, UInt64.ZERO);
+    final SszContainer container = createAllFixed(UInt64.ONE, (byte) 0, UInt64.ZERO);
     assertThat(container.isWritableSupported()).isTrue();
   }
 
   @Test
   void createWritableCopy_shouldSucceed() {
-    SszContainer container = createAllFixed(UInt64.valueOf(10), (byte) 20, UInt64.valueOf(30));
-    SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
+    final SszContainer container =
+        createAllFixed(UInt64.valueOf(10), (byte) 20, UInt64.valueOf(30));
+    final SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
     assertThat(mutable.size()).isEqualTo(3);
     assertThat(((SszUInt64) mutable.get(0)).get()).isEqualTo(UInt64.valueOf(10));
   }
 
   @Test
   void setAndGet_roundtrip() {
-    SszContainer container = createAllFixed(UInt64.valueOf(1), (byte) 2, UInt64.valueOf(3));
-    SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
+    final SszContainer container = createAllFixed(UInt64.valueOf(1), (byte) 2, UInt64.valueOf(3));
+    final SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
 
     mutable.set(0, SszUInt64.of(UInt64.valueOf(100)));
 
@@ -85,11 +86,11 @@ class SszMutableProgressiveContainerTest {
 
   @Test
   void commitChanges_producesCorrectImmutable() {
-    SszContainer container = createAllFixed(UInt64.valueOf(1), (byte) 2, UInt64.valueOf(3));
-    SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
+    final SszContainer container = createAllFixed(UInt64.valueOf(1), (byte) 2, UInt64.valueOf(3));
+    final SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
 
     mutable.set(1, SszPrimitiveSchemas.BYTE_SCHEMA.boxed((byte) 99));
-    SszContainer committed = mutable.commitChanges();
+    final SszContainer committed = mutable.commitChanges();
 
     assertThat(((SszUInt64) committed.get(0)).get()).isEqualTo(UInt64.ONE);
     assertThat(((SszByte) committed.get(1)).get()).isEqualTo((byte) 99);
@@ -98,25 +99,27 @@ class SszMutableProgressiveContainerTest {
 
   @Test
   void commitChanges_hashTreeRootMatchesFreshCreation() {
-    SszContainer container = createAllFixed(UInt64.valueOf(1), (byte) 2, UInt64.valueOf(3));
-    SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
+    final SszContainer container = createAllFixed(UInt64.valueOf(1), (byte) 2, UInt64.valueOf(3));
+    final SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
 
     mutable.set(0, SszUInt64.of(UInt64.valueOf(100)));
     mutable.set(2, SszUInt64.of(UInt64.valueOf(300)));
-    SszContainer committed = mutable.commitChanges();
+    final SszContainer committed = mutable.commitChanges();
 
-    SszContainer expected = createAllFixed(UInt64.valueOf(100), (byte) 2, UInt64.valueOf(300));
+    final SszContainer expected =
+        createAllFixed(UInt64.valueOf(100), (byte) 2, UInt64.valueOf(300));
     assertThat(committed.hashTreeRoot()).isEqualTo(expected.hashTreeRoot());
   }
 
   @Test
   void unchangedFields_remainUntouched() {
-    SszContainer container = createAllFixed(UInt64.valueOf(10), (byte) 20, UInt64.valueOf(30));
-    SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
+    final SszContainer container =
+        createAllFixed(UInt64.valueOf(10), (byte) 20, UInt64.valueOf(30));
+    final SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
 
     // Only modify field 1
     mutable.set(1, SszPrimitiveSchemas.BYTE_SCHEMA.boxed((byte) 99));
-    SszContainer committed = mutable.commitChanges();
+    final SszContainer committed = mutable.commitChanges();
 
     assertThat(((SszUInt64) committed.get(0)).get()).isEqualTo(UInt64.valueOf(10));
     assertThat(((SszByte) committed.get(1)).get()).isEqualTo((byte) 99);
@@ -125,60 +128,60 @@ class SszMutableProgressiveContainerTest {
 
   @Test
   void gappedContainer_setAndCommit() {
-    SszContainer container = createGapped(UInt64.valueOf(42), (byte) 7);
-    SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
+    final SszContainer container = createGapped(UInt64.valueOf(42), (byte) 7);
+    final SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
 
     mutable.set(0, SszUInt64.of(UInt64.valueOf(100)));
-    SszContainer committed = mutable.commitChanges();
+    final SszContainer committed = mutable.commitChanges();
 
     assertThat(((SszUInt64) committed.get(0)).get()).isEqualTo(UInt64.valueOf(100));
     assertThat(((SszByte) committed.get(1)).get()).isEqualTo((byte) 7);
 
     // Verify hash matches fresh creation
-    SszContainer expected = createGapped(UInt64.valueOf(100), (byte) 7);
+    final SszContainer expected = createGapped(UInt64.valueOf(100), (byte) 7);
     assertThat(committed.hashTreeRoot()).isEqualTo(expected.hashTreeRoot());
   }
 
   @Test
   void multipleCommits() {
-    SszContainer container = createAllFixed(UInt64.ONE, (byte) 2, UInt64.valueOf(3));
+    final SszContainer container = createAllFixed(UInt64.ONE, (byte) 2, UInt64.valueOf(3));
 
     // First mutation
-    SszMutableContainer mutable1 = (SszMutableContainer) container.createWritableCopy();
+    final SszMutableContainer mutable1 = (SszMutableContainer) container.createWritableCopy();
     mutable1.set(0, SszUInt64.of(UInt64.valueOf(10)));
-    SszContainer committed1 = mutable1.commitChanges();
+    final SszContainer committed1 = mutable1.commitChanges();
 
     // Second mutation
-    SszMutableContainer mutable2 = (SszMutableContainer) committed1.createWritableCopy();
+    final SszMutableContainer mutable2 = (SszMutableContainer) committed1.createWritableCopy();
     mutable2.set(2, SszUInt64.of(UInt64.valueOf(30)));
-    SszContainer committed2 = mutable2.commitChanges();
+    final SszContainer committed2 = mutable2.commitChanges();
 
     assertThat(((SszUInt64) committed2.get(0)).get()).isEqualTo(UInt64.valueOf(10));
     assertThat(((SszByte) committed2.get(1)).get()).isEqualTo((byte) 2);
     assertThat(((SszUInt64) committed2.get(2)).get()).isEqualTo(UInt64.valueOf(30));
 
-    SszContainer expected = createAllFixed(UInt64.valueOf(10), (byte) 2, UInt64.valueOf(30));
+    final SszContainer expected = createAllFixed(UInt64.valueOf(10), (byte) 2, UInt64.valueOf(30));
     assertThat(committed2.hashTreeRoot()).isEqualTo(expected.hashTreeRoot());
   }
 
   @Test
   void commitWithNoChanges_returnsSameData() {
-    SszContainer container = createAllFixed(UInt64.ONE, (byte) 2, UInt64.valueOf(3));
-    SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
+    final SszContainer container = createAllFixed(UInt64.ONE, (byte) 2, UInt64.valueOf(3));
+    final SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
 
-    SszContainer committed = mutable.commitChanges();
+    final SszContainer committed = mutable.commitChanges();
     assertThat(committed.hashTreeRoot()).isEqualTo(container.hashTreeRoot());
   }
 
   @Test
   void sszSerializationRoundtrip_afterMutation() {
-    SszContainer container = createAllFixed(UInt64.ONE, (byte) 2, UInt64.valueOf(3));
-    SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
+    final SszContainer container = createAllFixed(UInt64.ONE, (byte) 2, UInt64.valueOf(3));
+    final SszMutableContainer mutable = (SszMutableContainer) container.createWritableCopy();
     mutable.set(0, SszUInt64.of(UInt64.valueOf(42)));
-    SszContainer committed = mutable.commitChanges();
+    final SszContainer committed = mutable.commitChanges();
 
-    Bytes serialized = committed.sszSerialize();
-    SszContainer deserialized = ALL_FIXED_SCHEMA.sszDeserialize(serialized);
+    final Bytes serialized = committed.sszSerialize();
+    final SszContainer deserialized = ALL_FIXED_SCHEMA.sszDeserialize(serialized);
 
     assertThat(deserialized.hashTreeRoot()).isEqualTo(committed.hashTreeRoot());
     assertThat(((SszUInt64) deserialized.get(0)).get()).isEqualTo(UInt64.valueOf(42));

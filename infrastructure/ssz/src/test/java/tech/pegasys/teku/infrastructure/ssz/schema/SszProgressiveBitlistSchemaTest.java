@@ -47,7 +47,7 @@ public class SszProgressiveBitlistSchemaTest {
 
   @Test
   void ofBits_withSetBits() {
-    SszBitlist bitlist = SCHEMA.ofBits(300, 0, 100, 299);
+    final SszBitlist bitlist = SCHEMA.ofBits(300, 0, 100, 299);
     assertThat(bitlist.size()).isEqualTo(300);
     assertThat(bitlist.getBit(0)).isTrue();
     assertThat(bitlist.getBit(100)).isTrue();
@@ -59,7 +59,8 @@ public class SszProgressiveBitlistSchemaTest {
 
   @Test
   void createFromElements_shouldReturnSszBitlist() {
-    SszBitlist bitlist = SCHEMA.createFromElements(List.of(SszBit.of(false), SszBit.of(true)));
+    final SszBitlist bitlist =
+        SCHEMA.createFromElements(List.of(SszBit.of(false), SszBit.of(true)));
     assertThat(bitlist).isInstanceOf(SszBitlist.class);
     assertThat(bitlist.size()).isEqualTo(2);
     assertThat(bitlist.getBit(0)).isFalse();
@@ -132,7 +133,7 @@ public class SszProgressiveBitlistSchemaTest {
 
   @Test
   void getDefaultTree_shouldBeEmptySize0() {
-    SszBitlist defaultBitlist = SCHEMA.createFromBackingNode(SCHEMA.getDefaultTree());
+    final SszBitlist defaultBitlist = SCHEMA.createFromBackingNode(SCHEMA.getDefaultTree());
     assertThat(defaultBitlist.size()).isZero();
   }
 
@@ -153,7 +154,7 @@ public class SszProgressiveBitlistSchemaTest {
 
   @Test
   void equals_allInstancesShouldBeEqual() {
-    SszProgressiveBitlistSchema other = new SszProgressiveBitlistSchema();
+    final SszProgressiveBitlistSchema other = new SszProgressiveBitlistSchema();
     assertThat(SCHEMA).isEqualTo(other);
     assertThat(SCHEMA.hashCode()).isEqualTo(other.hashCode());
   }

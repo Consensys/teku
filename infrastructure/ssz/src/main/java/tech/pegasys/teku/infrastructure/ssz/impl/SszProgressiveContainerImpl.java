@@ -44,8 +44,8 @@ public class SszProgressiveContainerImpl extends AbstractSszComposite<SszData>
 
   @Override
   protected SszData getImpl(final int index) {
-    SszProgressiveContainerSchema<?> schema = getSchema();
-    TreeNode node = getBackingNode().get(schema.getChildGeneralizedIndex(index));
+    final SszProgressiveContainerSchema<?> schema = getSchema();
+    final TreeNode node = getBackingNode().get(schema.getChildGeneralizedIndex(index));
     return schema.getChildSchema(index).createFromBackingNode(node);
   }
 

@@ -70,7 +70,7 @@ public class SszProgressiveContainerTest implements SszCompositeTestBase {
   }
 
   private static SszContainer createAllFixed(final UInt64 a, final byte b, final UInt64 c) {
-    TreeNode tree =
+    final TreeNode tree =
         ALL_FIXED_SCHEMA.createTreeFromFieldValues(
             List.of(SszUInt64.of(a), SszPrimitiveSchemas.BYTE_SCHEMA.boxed(b), SszUInt64.of(c)));
     return ALL_FIXED_SCHEMA.createFromBackingNode(tree);
@@ -78,7 +78,7 @@ public class SszProgressiveContainerTest implements SszCompositeTestBase {
 
   private static SszContainer createMixed(
       final UInt64 fixedVal, final int bitlistSize, final int... setBits) {
-    TreeNode tree =
+    final TreeNode tree =
         MIXED_SCHEMA.createTreeFromFieldValues(
             List.of(
                 SszUInt64.of(fixedVal), SszBitlistSchema.create(100).ofBits(bitlistSize, setBits)));
@@ -86,7 +86,7 @@ public class SszProgressiveContainerTest implements SszCompositeTestBase {
   }
 
   private static SszContainer createGapped(final UInt64 first, final byte third) {
-    TreeNode tree =
+    final TreeNode tree =
         GAPPED_SCHEMA.createTreeFromFieldValues(
             List.of(SszUInt64.of(first), SszPrimitiveSchemas.BYTE_SCHEMA.boxed(third)));
     return GAPPED_SCHEMA.createFromBackingNode(tree);
@@ -94,7 +94,8 @@ public class SszProgressiveContainerTest implements SszCompositeTestBase {
 
   @Test
   void fieldAccess_allFixed() {
-    SszContainer container = createAllFixed(UInt64.valueOf(10), (byte) 20, UInt64.valueOf(30));
+    final SszContainer container =
+        createAllFixed(UInt64.valueOf(10), (byte) 20, UInt64.valueOf(30));
     assertThat(((SszUInt64) container.get(0)).get()).isEqualTo(UInt64.valueOf(10));
     assertThat(((SszByte) container.get(1)).get()).isEqualTo((byte) 20);
     assertThat(((SszUInt64) container.get(2)).get()).isEqualTo(UInt64.valueOf(30));
@@ -102,27 +103,27 @@ public class SszProgressiveContainerTest implements SszCompositeTestBase {
 
   @Test
   void fieldAccess_gapped() {
-    SszContainer container = createGapped(UInt64.valueOf(99), (byte) 3);
+    final SszContainer container = createGapped(UInt64.valueOf(99), (byte) 3);
     assertThat(((SszUInt64) container.get(0)).get()).isEqualTo(UInt64.valueOf(99));
     assertThat(((SszByte) container.get(1)).get()).isEqualTo((byte) 3);
   }
 
   @Test
   void createWritableCopy_shouldSucceed() {
-    SszContainer container = createAllFixed(UInt64.ONE, (byte) 0, UInt64.ZERO);
+    final SszContainer container = createAllFixed(UInt64.ONE, (byte) 0, UInt64.ZERO);
     assertThat(container.createWritableCopy()).isNotNull();
   }
 
   @Test
   void isWritableSupported_shouldReturnTrue() {
-    SszContainer container = createAllFixed(UInt64.ONE, (byte) 0, UInt64.ZERO);
+    final SszContainer container = createAllFixed(UInt64.ONE, (byte) 0, UInt64.ZERO);
     assertThat(container.isWritableSupported()).isTrue();
   }
 
   @Test
   void toString_shouldIncludeContainerNameAndFieldValues() {
-    SszContainer container = createAllFixed(UInt64.valueOf(1), (byte) 2, UInt64.valueOf(3));
-    String str = container.toString();
+    final SszContainer container = createAllFixed(UInt64.valueOf(1), (byte) 2, UInt64.valueOf(3));
+    final String str = container.toString();
     assertThat(str).contains("AllFixed");
     assertThat(str).contains("a=");
     assertThat(str).contains("b=");

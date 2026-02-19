@@ -87,8 +87,8 @@ public class SszProgressiveBitlistTest implements SszPrimitiveCollectionTestBase
   @ParameterizedTest
   @MethodSource("bitlistArgs")
   void testSszRoundtrip(final SszBitlist bitlist1) {
-    Bytes ssz1 = bitlist1.sszSerialize();
-    SszBitlist bitlist2 = bitlist1.getSchema().sszDeserialize(ssz1);
+    final Bytes ssz1 = bitlist1.sszSerialize();
+    final SszBitlist bitlist2 = bitlist1.getSchema().sszDeserialize(ssz1);
 
     assertThatIntCollection(bitlist2.getAllSetBits()).isEqualTo(bitlist1.getAllSetBits());
     assertThat(bitlist2.size()).isEqualTo(bitlist1.size());
@@ -98,7 +98,7 @@ public class SszProgressiveBitlistTest implements SszPrimitiveCollectionTestBase
     }
     assertThat(bitlist2.hashTreeRoot()).isEqualTo(bitlist1.hashTreeRoot());
 
-    Bytes ssz2 = bitlist2.sszSerialize();
+    final Bytes ssz2 = bitlist2.sszSerialize();
     assertThat(ssz2).isEqualTo(ssz1);
   }
 
@@ -120,8 +120,8 @@ public class SszProgressiveBitlistTest implements SszPrimitiveCollectionTestBase
   @ParameterizedTest
   @MethodSource("bitlistArgs")
   void testTreeRoundtrip(final SszBitlist bitlist1) {
-    TreeNode tree = bitlist1.getBackingNode();
-    SszBitlist bitlist2 = bitlist1.getSchema().createFromBackingNode(tree);
+    final TreeNode tree = bitlist1.getBackingNode();
+    final SszBitlist bitlist2 = bitlist1.getSchema().createFromBackingNode(tree);
 
     assertThatIntCollection(bitlist2.getAllSetBits()).isEqualTo(bitlist1.getAllSetBits());
     assertThat(bitlist2.size()).isEqualTo(bitlist1.size());
@@ -136,15 +136,15 @@ public class SszProgressiveBitlistTest implements SszPrimitiveCollectionTestBase
   @ParameterizedTest
   @MethodSource("bitlistArgs")
   void or_testEqualList(final SszBitlist bitlist) {
-    SszBitlist res = bitlist.or(bitlist);
+    final SszBitlist res = bitlist.or(bitlist);
     assertThat(res.sszSerialize()).isEqualTo(bitlist.sszSerialize());
   }
 
   @ParameterizedTest
   @MethodSource("bitlistArgs")
   void testOrWithEmptyBitlist(final SszBitlist bitlist) {
-    SszBitlist empty = SCHEMA.ofBits(0);
-    SszBitlist res = bitlist.or(empty);
+    final SszBitlist empty = SCHEMA.ofBits(0);
+    final SszBitlist res = bitlist.or(empty);
     assertThat(res.size()).isEqualTo(bitlist.size());
     for (int i = 0; i < bitlist.size(); i++) {
       assertThat(res.getBit(i)).isEqualTo(bitlist.getBit(i));
@@ -187,7 +187,7 @@ public class SszProgressiveBitlistTest implements SszPrimitiveCollectionTestBase
   @ParameterizedTest
   @MethodSource("bitlistArgs")
   void getBitCount_shouldReturnCorrectCount(final SszBitlist bitlist) {
-    long bitCount = bitlist.stream().filter(AbstractSszPrimitive::get).count();
+    final long bitCount = bitlist.stream().filter(AbstractSszPrimitive::get).count();
     assertThat(bitlist.getBitCount()).isEqualTo(bitCount);
   }
 
@@ -199,7 +199,7 @@ public class SszProgressiveBitlistTest implements SszPrimitiveCollectionTestBase
 
   @Test
   void testEmptyBitlistSsz() {
-    SszBitlist empty = SCHEMA.ofBits(0);
+    final SszBitlist empty = SCHEMA.ofBits(0);
     assertThat(empty.sszSerialize()).isEqualTo(Bytes.of(1));
   }
 
@@ -212,7 +212,7 @@ public class SszProgressiveBitlistTest implements SszPrimitiveCollectionTestBase
   @ParameterizedTest
   @MethodSource("fromBytesTestCases")
   void testFromBytes(final SszBitlist bitlist, final Bytes serialized) {
-    SszBitlist deserialized = SCHEMA.fromBytes(serialized);
+    final SszBitlist deserialized = SCHEMA.fromBytes(serialized);
 
     assertThat(deserialized.size()).isEqualTo(bitlist.size());
     assertThatIntCollection(deserialized.getAllSetBits()).isEqualTo(bitlist.getAllSetBits());
@@ -222,7 +222,7 @@ public class SszProgressiveBitlistTest implements SszPrimitiveCollectionTestBase
   @ParameterizedTest
   @MethodSource("fromHexStringTestCases")
   void testFromHexString(final SszBitlist bitlist, final String hexString) {
-    SszBitlist deserialized = SCHEMA.fromHexString(hexString);
+    final SszBitlist deserialized = SCHEMA.fromHexString(hexString);
 
     assertThat(deserialized.size()).isEqualTo(bitlist.size());
     assertThatIntCollection(deserialized.getAllSetBits()).isEqualTo(bitlist.getAllSetBits());

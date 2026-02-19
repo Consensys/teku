@@ -32,24 +32,24 @@ class SszMutableProgressiveListTest {
       SszProgressiveListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA);
 
   private static SszList<SszUInt64> createUInt64List(final int count) {
-    List<SszUInt64> elements =
+    final List<SszUInt64> elements =
         IntStream.range(0, count)
             .mapToObj(i -> SszUInt64.of(UInt64.valueOf(i)))
             .collect(Collectors.toList());
-    TreeNode tree = UINT64_LIST_SCHEMA.createTreeFromElements(elements);
+    final TreeNode tree = UINT64_LIST_SCHEMA.createTreeFromElements(elements);
     return UINT64_LIST_SCHEMA.createFromBackingNode(tree);
   }
 
   @Test
   void isWritableSupported_shouldReturnTrue() {
-    SszList<SszUInt64> list = createUInt64List(1);
+    final SszList<SszUInt64> list = createUInt64List(1);
     assertThat(list.isWritableSupported()).isTrue();
   }
 
   @Test
   void createWritableCopy_shouldSucceed() {
-    SszList<SszUInt64> list = createUInt64List(3);
-    SszMutableList<SszUInt64> mutable = list.createWritableCopy();
+    final SszList<SszUInt64> list = createUInt64List(3);
+    final SszMutableList<SszUInt64> mutable = list.createWritableCopy();
     assertThat(mutable.size()).isEqualTo(3);
     for (int i = 0; i < 3; i++) {
       assertThat(mutable.get(i).get()).isEqualTo(UInt64.valueOf(i));
@@ -58,8 +58,8 @@ class SszMutableProgressiveListTest {
 
   @Test
   void setAndGet_roundtrip() {
-    SszList<SszUInt64> list = createUInt64List(5);
-    SszMutableList<SszUInt64> mutable = list.createWritableCopy();
+    final SszList<SszUInt64> list = createUInt64List(5);
+    final SszMutableList<SszUInt64> mutable = list.createWritableCopy();
 
     mutable.set(2, SszUInt64.of(UInt64.valueOf(999)));
 
@@ -69,11 +69,11 @@ class SszMutableProgressiveListTest {
 
   @Test
   void commitChanges_producesCorrectImmutable() {
-    SszList<SszUInt64> list = createUInt64List(5);
-    SszMutableList<SszUInt64> mutable = list.createWritableCopy();
+    final SszList<SszUInt64> list = createUInt64List(5);
+    final SszMutableList<SszUInt64> mutable = list.createWritableCopy();
 
     mutable.set(2, SszUInt64.of(UInt64.valueOf(999)));
-    SszList<SszUInt64> committed = mutable.commitChanges();
+    final SszList<SszUInt64> committed = mutable.commitChanges();
 
     assertThat(committed.size()).isEqualTo(5);
     assertThat(committed.get(0).get()).isEqualTo(UInt64.ZERO);
@@ -85,30 +85,30 @@ class SszMutableProgressiveListTest {
 
   @Test
   void commitChanges_hashTreeRootMatchesFreshCreation() {
-    SszList<SszUInt64> list = createUInt64List(5);
-    SszMutableList<SszUInt64> mutable = list.createWritableCopy();
+    final SszList<SszUInt64> list = createUInt64List(5);
+    final SszMutableList<SszUInt64> mutable = list.createWritableCopy();
 
     mutable.set(2, SszUInt64.of(UInt64.valueOf(999)));
-    SszList<SszUInt64> committed = mutable.commitChanges();
+    final SszList<SszUInt64> committed = mutable.commitChanges();
 
     // Build expected from scratch
-    List<SszUInt64> expectedElements =
+    final List<SszUInt64> expectedElements =
         List.of(
             SszUInt64.of(UInt64.ZERO),
             SszUInt64.of(UInt64.ONE),
             SszUInt64.of(UInt64.valueOf(999)),
             SszUInt64.of(UInt64.valueOf(3)),
             SszUInt64.of(UInt64.valueOf(4)));
-    TreeNode expectedTree = UINT64_LIST_SCHEMA.createTreeFromElements(expectedElements);
-    SszList<SszUInt64> expected = UINT64_LIST_SCHEMA.createFromBackingNode(expectedTree);
+    final TreeNode expectedTree = UINT64_LIST_SCHEMA.createTreeFromElements(expectedElements);
+    final SszList<SszUInt64> expected = UINT64_LIST_SCHEMA.createFromBackingNode(expectedTree);
 
     assertThat(committed.hashTreeRoot()).isEqualTo(expected.hashTreeRoot());
   }
 
   @Test
   void append_incrementsSize() {
-    SszList<SszUInt64> list = createUInt64List(3);
-    SszMutableList<SszUInt64> mutable = list.createWritableCopy();
+    final SszList<SszUInt64> list = createUInt64List(3);
+    final SszMutableList<SszUInt64> mutable = list.createWritableCopy();
 
     mutable.append(SszUInt64.of(UInt64.valueOf(100)));
 
@@ -119,12 +119,12 @@ class SszMutableProgressiveListTest {
   @Test
   void append_crossesLevelBoundary() {
     // Create list with 5 elements (fills levels 0 and 1)
-    SszList<SszUInt64> list = createUInt64List(5);
-    SszMutableList<SszUInt64> mutable = list.createWritableCopy();
+    final SszList<SszUInt64> list = createUInt64List(5);
+    final SszMutableList<SszUInt64> mutable = list.createWritableCopy();
 
     // Append element at index 5 (starts level 2)
     mutable.append(SszUInt64.of(UInt64.valueOf(500)));
-    SszList<SszUInt64> committed = mutable.commitChanges();
+    final SszList<SszUInt64> committed = mutable.commitChanges();
 
     assertThat(committed.size()).isEqualTo(6);
     for (int i = 0; i < 5; i++) {
@@ -133,30 +133,30 @@ class SszMutableProgressiveListTest {
     assertThat(committed.get(5).get()).isEqualTo(UInt64.valueOf(500));
 
     // Verify hash matches fresh creation
-    List<SszUInt64> expectedElements =
+    final List<SszUInt64> expectedElements =
         IntStream.range(0, 5)
             .mapToObj(i -> SszUInt64.of(UInt64.valueOf(i)))
             .collect(Collectors.toList());
     expectedElements.add(SszUInt64.of(UInt64.valueOf(500)));
-    TreeNode expectedTree = UINT64_LIST_SCHEMA.createTreeFromElements(expectedElements);
-    SszList<SszUInt64> expected = UINT64_LIST_SCHEMA.createFromBackingNode(expectedTree);
+    final TreeNode expectedTree = UINT64_LIST_SCHEMA.createTreeFromElements(expectedElements);
+    final SszList<SszUInt64> expected = UINT64_LIST_SCHEMA.createFromBackingNode(expectedTree);
 
     assertThat(committed.hashTreeRoot()).isEqualTo(expected.hashTreeRoot());
   }
 
   @Test
   void multipleCommits_worksCorrectly() {
-    SszList<SszUInt64> list = createUInt64List(3);
+    final SszList<SszUInt64> list = createUInt64List(3);
 
     // First mutation
-    SszMutableList<SszUInt64> mutable1 = list.createWritableCopy();
+    final SszMutableList<SszUInt64> mutable1 = list.createWritableCopy();
     mutable1.set(0, SszUInt64.of(UInt64.valueOf(10)));
-    SszList<SszUInt64> committed1 = mutable1.commitChanges();
+    final SszList<SszUInt64> committed1 = mutable1.commitChanges();
 
     // Second mutation on the committed result
-    SszMutableList<SszUInt64> mutable2 = committed1.createWritableCopy();
+    final SszMutableList<SszUInt64> mutable2 = committed1.createWritableCopy();
     mutable2.set(1, SszUInt64.of(UInt64.valueOf(20)));
-    SszList<SszUInt64> committed2 = mutable2.commitChanges();
+    final SszList<SszUInt64> committed2 = mutable2.commitChanges();
 
     assertThat(committed2.get(0).get()).isEqualTo(UInt64.valueOf(10));
     assertThat(committed2.get(1).get()).isEqualTo(UInt64.valueOf(20));
@@ -165,14 +165,14 @@ class SszMutableProgressiveListTest {
 
   @Test
   void clear_thenAppend() {
-    SszList<SszUInt64> list = createUInt64List(5);
-    SszMutableList<SszUInt64> mutable = list.createWritableCopy();
+    final SszList<SszUInt64> list = createUInt64List(5);
+    final SszMutableList<SszUInt64> mutable = list.createWritableCopy();
 
     mutable.clear();
     assertThat(mutable.size()).isEqualTo(0);
 
     mutable.append(SszUInt64.of(UInt64.valueOf(42)));
-    SszList<SszUInt64> committed = mutable.commitChanges();
+    final SszList<SszUInt64> committed = mutable.commitChanges();
 
     assertThat(committed.size()).isEqualTo(1);
     assertThat(committed.get(0).get()).isEqualTo(UInt64.valueOf(42));
@@ -180,46 +180,47 @@ class SszMutableProgressiveListTest {
 
   @Test
   void commitWithNoChanges_returnsSameData() {
-    SszList<SszUInt64> list = createUInt64List(3);
-    SszMutableList<SszUInt64> mutable = list.createWritableCopy();
+    final SszList<SszUInt64> list = createUInt64List(3);
+    final SszMutableList<SszUInt64> mutable = list.createWritableCopy();
 
-    SszList<SszUInt64> committed = mutable.commitChanges();
+    final SszList<SszUInt64> committed = mutable.commitChanges();
 
     assertThat(committed.hashTreeRoot()).isEqualTo(list.hashTreeRoot());
   }
 
   @Test
   void appendFromEmpty() {
-    SszList<SszUInt64> list = createUInt64List(0);
-    SszMutableList<SszUInt64> mutable = list.createWritableCopy();
+    final SszList<SszUInt64> list = createUInt64List(0);
+    final SszMutableList<SszUInt64> mutable = list.createWritableCopy();
 
     mutable.append(SszUInt64.of(UInt64.valueOf(1)));
     mutable.append(SszUInt64.of(UInt64.valueOf(2)));
-    SszList<SszUInt64> committed = mutable.commitChanges();
+    final SszList<SszUInt64> committed = mutable.commitChanges();
 
     assertThat(committed.size()).isEqualTo(2);
     assertThat(committed.get(0).get()).isEqualTo(UInt64.ONE);
     assertThat(committed.get(1).get()).isEqualTo(UInt64.valueOf(2));
 
     // Verify hash matches fresh creation
-    List<SszUInt64> elems = List.of(SszUInt64.of(UInt64.ONE), SszUInt64.of(UInt64.valueOf(2)));
-    TreeNode expectedTree = UINT64_LIST_SCHEMA.createTreeFromElements(elems);
-    SszList<SszUInt64> expectedList = UINT64_LIST_SCHEMA.createFromBackingNode(expectedTree);
+    final List<SszUInt64> elems =
+        List.of(SszUInt64.of(UInt64.ONE), SszUInt64.of(UInt64.valueOf(2)));
+    final TreeNode expectedTree = UINT64_LIST_SCHEMA.createTreeFromElements(elems);
+    final SszList<SszUInt64> expectedList = UINT64_LIST_SCHEMA.createFromBackingNode(expectedTree);
     assertThat(committed.hashTreeRoot()).isEqualTo(expectedList.hashTreeRoot());
   }
 
   @Test
   void modifyMultipleElementsInSameChunk() {
     // UInt64 is 8 bytes, so 4 UInt64 values per 32-byte chunk
-    SszList<SszUInt64> list = createUInt64List(8);
-    SszMutableList<SszUInt64> mutable = list.createWritableCopy();
+    final SszList<SszUInt64> list = createUInt64List(8);
+    final SszMutableList<SszUInt64> mutable = list.createWritableCopy();
 
     // Modify two values in the same chunk (indices 1 and 2 are in chunk 0 at level 0)
     // Actually for progressive list: chunk 0 = elements 0-3, chunk 1 = elements 4-7
     // chunk 0 is at level 0, chunk 1 is at level 1
     mutable.set(0, SszUInt64.of(UInt64.valueOf(100)));
     mutable.set(1, SszUInt64.of(UInt64.valueOf(200)));
-    SszList<SszUInt64> committed = mutable.commitChanges();
+    final SszList<SszUInt64> committed = mutable.commitChanges();
 
     assertThat(committed.get(0).get()).isEqualTo(UInt64.valueOf(100));
     assertThat(committed.get(1).get()).isEqualTo(UInt64.valueOf(200));
@@ -228,14 +229,14 @@ class SszMutableProgressiveListTest {
 
   @Test
   void largeList_modifyAndVerify() {
-    SszList<SszUInt64> list = createUInt64List(100);
-    SszMutableList<SszUInt64> mutable = list.createWritableCopy();
+    final SszList<SszUInt64> list = createUInt64List(100);
+    final SszMutableList<SszUInt64> mutable = list.createWritableCopy();
 
     // Modify several elements
     mutable.set(0, SszUInt64.of(UInt64.valueOf(1000)));
     mutable.set(50, SszUInt64.of(UInt64.valueOf(2000)));
     mutable.set(99, SszUInt64.of(UInt64.valueOf(3000)));
-    SszList<SszUInt64> committed = mutable.commitChanges();
+    final SszList<SszUInt64> committed = mutable.commitChanges();
 
     assertThat(committed.size()).isEqualTo(100);
     assertThat(committed.get(0).get()).isEqualTo(UInt64.valueOf(1000));
@@ -246,14 +247,14 @@ class SszMutableProgressiveListTest {
 
   @Test
   void sszSerializationRoundtrip_afterMutation() {
-    SszList<SszUInt64> list = createUInt64List(5);
-    SszMutableList<SszUInt64> mutable = list.createWritableCopy();
+    final SszList<SszUInt64> list = createUInt64List(5);
+    final SszMutableList<SszUInt64> mutable = list.createWritableCopy();
     mutable.set(2, SszUInt64.of(UInt64.valueOf(42)));
-    SszList<SszUInt64> committed = mutable.commitChanges();
+    final SszList<SszUInt64> committed = mutable.commitChanges();
 
     // Serialize and deserialize
-    Bytes serialized = committed.sszSerialize();
-    SszList<SszUInt64> deserialized = UINT64_LIST_SCHEMA.sszDeserialize(serialized);
+    final Bytes serialized = committed.sszSerialize();
+    final SszList<SszUInt64> deserialized = UINT64_LIST_SCHEMA.sszDeserialize(serialized);
 
     assertThat(deserialized.size()).isEqualTo(5);
     assertThat(deserialized.get(2).get()).isEqualTo(UInt64.valueOf(42));

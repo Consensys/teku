@@ -91,8 +91,8 @@ public class SszProgressiveListSchema<ElementDataT extends SszData>
 
   @Override
   public TreeNode createTreeFromElements(final List<? extends ElementDataT> elements) {
-    List<TreeNode> chunks = packElementsToChunks(elements);
-    TreeNode progressiveTree = ProgressiveTreeUtil.createProgressiveTree(chunks);
+    final List<TreeNode> chunks = packElementsToChunks(elements);
+    final TreeNode progressiveTree = ProgressiveTreeUtil.createProgressiveTree(chunks);
     return BranchNode.create(progressiveTree, toLengthNode(elements.size()));
   }
 
@@ -174,7 +174,7 @@ public class SszProgressiveListSchema<ElementDataT extends SszData>
 
   @Override
   public int getSszVariablePartSize(final TreeNode node) {
-    int length = getLength(node);
+    final int length = getLength(node);
     if (elementSchema.isFixedSize()) {
       return (int) bitsCeilToBytes((long) length * getSszElementBitSize());
     } else {
@@ -189,11 +189,11 @@ public class SszProgressiveListSchema<ElementDataT extends SszData>
 
   @Override
   public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
-    int elementsCount = getLength(node);
+    final int elementsCount = getLength(node);
     if (elementsCount == 0) {
       return 0;
     }
-    TreeNode dataNode = getVectorNode(node);
+    final TreeNode dataNode = getVectorNode(node);
     if (elementSchema.isFixedSize()) {
       return sszSerializeFixed(dataNode, writer, elementsCount);
     } else {
@@ -205,12 +205,12 @@ public class SszProgressiveListSchema<ElementDataT extends SszData>
       final TreeNode dataNode, final SszWriter writer, final int elementsCount) {
     if (elementSchema instanceof AbstractSszPrimitiveSchema) {
       // Primitive packing: multiple values per 32-byte leaf chunk
-      int chunksCount = getChunks(elementsCount);
+      final int chunksCount = getChunks(elementsCount);
       int bytesCnt = 0;
       for (int c = 0; c < chunksCount; c++) {
-        long gIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(c);
-        LeafNode leafNode = (LeafNode) dataNode.get(gIdx);
-        Bytes data = leafNode.getData();
+        final long gIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(c);
+        final LeafNode leafNode = (LeafNode) dataNode.get(gIdx);
+        final Bytes data = leafNode.getData();
         writer.write(data);
         bytesCnt += data.size();
       }
@@ -219,8 +219,8 @@ public class SszProgressiveListSchema<ElementDataT extends SszData>
       // Fixed-size composite elements: one per chunk
       int bytesCnt = 0;
       for (int i = 0; i < elementsCount; i++) {
-        long gIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(i);
-        TreeNode childSubtree = dataNode.get(gIdx);
+        final long gIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(i);
+        final TreeNode childSubtree = dataNode.get(gIdx);
         bytesCnt += elementSchema.sszSerializeTree(childSubtree, writer);
       }
       return bytesCnt;
@@ -230,17 +230,17 @@ public class SszProgressiveListSchema<ElementDataT extends SszData>
   private int sszSerializeVariable(
       final TreeNode dataNode, final SszWriter writer, final int elementsCount) {
     int variableOffset = SszType.SSZ_LENGTH_SIZE * elementsCount;
-    int[] childSizes = new int[elementsCount];
+    final int[] childSizes = new int[elementsCount];
     for (int i = 0; i < elementsCount; i++) {
-      long gIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(i);
-      TreeNode childSubtree = dataNode.get(gIdx);
+      final long gIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(i);
+      final TreeNode childSubtree = dataNode.get(gIdx);
       childSizes[i] = elementSchema.getSszSize(childSubtree);
       writer.write(SszType.sszLengthToBytes(variableOffset));
       variableOffset += childSizes[i];
     }
     for (int i = 0; i < elementsCount; i++) {
-      long gIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(i);
-      TreeNode childSubtree = dataNode.get(gIdx);
+      final long gIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(i);
+      final TreeNode childSubtree = dataNode.get(gIdx);
       elementSchema.sszSerializeTree(childSubtree, writer);
     }
     return variableOffset;
@@ -256,8 +256,8 @@ public class SszProgressiveListSchema<ElementDataT extends SszData>
   }
 
   private TreeNode sszDeserializeFixed(final SszReader reader) {
-    int bytesSize = reader.getAvailableBytes();
-    int elementBitSize = getSszElementBitSize();
+    final int bytesSize = reader.getAvailableBytes();
+    final int elementBitSize = getSszElementBitSize();
     if (elementBitSize >= 8) {
       if (bytesSize * 8L % elementBitSize != 0) {
         throw new SszDeserializeException(
@@ -267,41 +267,41 @@ public class SszProgressiveListSchema<ElementDataT extends SszData>
 
     if (elementSchema instanceof AbstractSszPrimitiveSchema) {
       // Primitive packing: multiple values per 32-byte leaf
-      int bytesPerElement = elementBitSize / 8;
+      final int bytesPerElement = elementBitSize / 8;
       int bytesRemain = bytesSize;
-      List<LeafNode> childNodes = new ArrayList<>(bytesRemain / LeafNode.MAX_BYTE_SIZE + 1);
+      final List<LeafNode> childNodes = new ArrayList<>(bytesRemain / LeafNode.MAX_BYTE_SIZE + 1);
       while (bytesRemain > 0) {
-        int toRead = Math.min(bytesRemain, LeafNode.MAX_BYTE_SIZE);
+        final int toRead = Math.min(bytesRemain, LeafNode.MAX_BYTE_SIZE);
         bytesRemain -= toRead;
-        Bytes bytes = reader.read(toRead);
+        final Bytes bytes = reader.read(toRead);
         // Validate each element within the chunk (e.g., booleans must be 0 or 1)
         for (int offset = 0; offset < bytes.size(); offset += bytesPerElement) {
           elementSchema.sszDeserialize(bytes.slice(offset, bytesPerElement));
         }
         childNodes.add(LeafNode.create(bytes));
       }
-      int elementsCount = (int) (bytesSize * 8L / elementBitSize);
-      TreeNode progressiveTree = ProgressiveTreeUtil.createProgressiveTree(childNodes);
+      final int elementsCount = (int) (bytesSize * 8L / elementBitSize);
+      final TreeNode progressiveTree = ProgressiveTreeUtil.createProgressiveTree(childNodes);
       return BranchNode.create(progressiveTree, toLengthNode(elementsCount));
     } else {
       // Fixed-size composite elements: one per chunk
-      int elementsCount = bytesSize / elementSchema.getSszFixedPartSize();
-      List<TreeNode> childNodes = new ArrayList<>();
+      final int elementsCount = bytesSize / elementSchema.getSszFixedPartSize();
+      final List<TreeNode> childNodes = new ArrayList<>();
       for (int i = 0; i < elementsCount; i++) {
         try (SszReader sszReader = reader.slice(elementSchema.getSszFixedPartSize())) {
           childNodes.add(elementSchema.sszDeserializeTree(sszReader));
         }
       }
-      TreeNode progressiveTree = ProgressiveTreeUtil.createProgressiveTree(childNodes);
+      final TreeNode progressiveTree = ProgressiveTreeUtil.createProgressiveTree(childNodes);
       return BranchNode.create(progressiveTree, toLengthNode(elementsCount));
     }
   }
 
   private TreeNode sszDeserializeVariable(final SszReader reader) {
-    int endOffset = reader.getAvailableBytes();
-    List<TreeNode> childNodes = new ArrayList<>();
+    final int endOffset = reader.getAvailableBytes();
+    final List<TreeNode> childNodes = new ArrayList<>();
     if (endOffset > 0) {
-      int firstElementOffset = SszType.sszBytesToLength(reader.read(SszType.SSZ_LENGTH_SIZE));
+      final int firstElementOffset = SszType.sszBytesToLength(reader.read(SszType.SSZ_LENGTH_SIZE));
       if (firstElementOffset % SszType.SSZ_LENGTH_SIZE != 0) {
         throw new SszDeserializeException("Invalid first element offset");
       }
@@ -312,8 +312,8 @@ public class SszProgressiveListSchema<ElementDataT extends SszData>
                 + " > "
                 + endOffset);
       }
-      int elementsCount = firstElementOffset / SszType.SSZ_LENGTH_SIZE;
-      List<Integer> elementOffsets = new ArrayList<>(elementsCount + 1);
+      final int elementsCount = firstElementOffset / SszType.SSZ_LENGTH_SIZE;
+      final List<Integer> elementOffsets = new ArrayList<>(elementsCount + 1);
       elementOffsets.add(firstElementOffset);
       for (int i = 1; i < elementsCount; i++) {
         elementOffsets.add(SszType.sszBytesToLength(reader.read(SszType.SSZ_LENGTH_SIZE)));
@@ -321,7 +321,7 @@ public class SszProgressiveListSchema<ElementDataT extends SszData>
       elementOffsets.add(endOffset);
 
       for (int i = 0; i < elementsCount; i++) {
-        int elementSize = elementOffsets.get(i + 1) - elementOffsets.get(i);
+        final int elementSize = elementOffsets.get(i + 1) - elementOffsets.get(i);
         if (elementSize < 0) {
           throw new SszDeserializeException("Invalid SSZ: wrong child offsets");
         }
@@ -330,7 +330,7 @@ public class SszProgressiveListSchema<ElementDataT extends SszData>
         }
       }
     }
-    TreeNode progressiveTree = ProgressiveTreeUtil.createProgressiveTree(childNodes);
+    final TreeNode progressiveTree = ProgressiveTreeUtil.createProgressiveTree(childNodes);
     return BranchNode.create(progressiveTree, toLengthNode(childNodes.size()));
   }
 
@@ -395,15 +395,15 @@ public class SszProgressiveListSchema<ElementDataT extends SszData>
   private List<TreeNode> packElementsToChunks(final List<? extends ElementDataT> elements) {
     if (elementSchema.isPrimitive()) {
       // Pack primitive values into 32-byte chunks
-      int bitsPerElement = ((SszPrimitiveSchema<?, ?>) elementSchema).getBitsSize();
-      int elemPerChunk = 256 / bitsPerElement;
-      int bytesPerElement = bitsPerElement / 8;
-      List<TreeNode> chunks = new ArrayList<>();
+      final int bitsPerElement = ((SszPrimitiveSchema<?, ?>) elementSchema).getBitsSize();
+      final int elemPerChunk = 256 / bitsPerElement;
+      final int bytesPerElement = bitsPerElement / 8;
+      final List<TreeNode> chunks = new ArrayList<>();
       for (int i = 0; i < elements.size(); i += elemPerChunk) {
-        int count = Math.min(elemPerChunk, elements.size() - i);
-        byte[] chunkData = new byte[count * bytesPerElement];
+        final int count = Math.min(elemPerChunk, elements.size() - i);
+        final byte[] chunkData = new byte[count * bytesPerElement];
         for (int j = 0; j < count; j++) {
-          Bytes elemBytes = elements.get(i + j).getBackingNode().hashTreeRoot();
+          final Bytes elemBytes = elements.get(i + j).getBackingNode().hashTreeRoot();
           System.arraycopy(
               elemBytes.toArrayUnsafe(), 0, chunkData, j * bytesPerElement, bytesPerElement);
         }

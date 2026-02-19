@@ -26,21 +26,21 @@ class SszMutableProgressiveBitlistTest {
 
   @Test
   void isWritableSupported_shouldReturnTrue() {
-    SszBitlist bitlist = SCHEMA.ofBits(10, 0, 3, 9);
+    final SszBitlist bitlist = SCHEMA.ofBits(10, 0, 3, 9);
     assertThat(bitlist.isWritableSupported()).isTrue();
   }
 
   @Test
   void createWritableCopy_shouldSucceed() {
-    SszBitlist bitlist = SCHEMA.ofBits(10, 0, 3, 9);
-    SszMutablePrimitiveList<Boolean, SszBit> mutable = bitlist.createWritableCopy();
+    final SszBitlist bitlist = SCHEMA.ofBits(10, 0, 3, 9);
+    final SszMutablePrimitiveList<Boolean, SszBit> mutable = bitlist.createWritableCopy();
     assertThat(mutable.size()).isEqualTo(10);
   }
 
   @Test
   void setIndividualBits() {
-    SszBitlist bitlist = SCHEMA.ofBits(10);
-    SszMutablePrimitiveList<Boolean, SszBit> mutable = bitlist.createWritableCopy();
+    final SszBitlist bitlist = SCHEMA.ofBits(10);
+    final SszMutablePrimitiveList<Boolean, SszBit> mutable = bitlist.createWritableCopy();
 
     // Set bits 2 and 7
     mutable.set(2, SszBit.of(true));
@@ -54,12 +54,12 @@ class SszMutableProgressiveBitlistTest {
 
   @Test
   void commitChanges_producesCorrectImmutable() {
-    SszBitlist bitlist = SCHEMA.ofBits(10);
-    SszMutablePrimitiveList<Boolean, SszBit> mutable = bitlist.createWritableCopy();
+    final SszBitlist bitlist = SCHEMA.ofBits(10);
+    final SszMutablePrimitiveList<Boolean, SszBit> mutable = bitlist.createWritableCopy();
 
     mutable.set(2, SszBit.of(true));
     mutable.set(7, SszBit.of(true));
-    SszPrimitiveList<Boolean, SszBit> committed = mutable.commitChanges();
+    final SszPrimitiveList<Boolean, SszBit> committed = mutable.commitChanges();
 
     assertThat(committed.size()).isEqualTo(10);
     assertThat(committed.get(2).get()).isTrue();
@@ -69,27 +69,27 @@ class SszMutableProgressiveBitlistTest {
 
   @Test
   void commitChanges_hashTreeRootMatchesFreshCreation() {
-    SszBitlist bitlist = SCHEMA.ofBits(10);
-    SszMutablePrimitiveList<Boolean, SszBit> mutable = bitlist.createWritableCopy();
+    final SszBitlist bitlist = SCHEMA.ofBits(10);
+    final SszMutablePrimitiveList<Boolean, SszBit> mutable = bitlist.createWritableCopy();
 
     mutable.set(2, SszBit.of(true));
     mutable.set(7, SszBit.of(true));
-    SszPrimitiveList<Boolean, SszBit> committed = mutable.commitChanges();
+    final SszPrimitiveList<Boolean, SszBit> committed = mutable.commitChanges();
 
-    SszBitlist expected = SCHEMA.ofBits(10, 2, 7);
+    final SszBitlist expected = SCHEMA.ofBits(10, 2, 7);
     assertThat(committed.hashTreeRoot()).isEqualTo(expected.hashTreeRoot());
   }
 
   @Test
   void appendBits() {
-    SszBitlist bitlist = SCHEMA.ofBits(5, 0, 2);
-    SszMutablePrimitiveList<Boolean, SszBit> mutable = bitlist.createWritableCopy();
+    final SszBitlist bitlist = SCHEMA.ofBits(5, 0, 2);
+    final SszMutablePrimitiveList<Boolean, SszBit> mutable = bitlist.createWritableCopy();
 
     // Append a true bit
     mutable.set(5, SszBit.of(true));
     assertThat(mutable.size()).isEqualTo(6);
 
-    SszPrimitiveList<Boolean, SszBit> committed = mutable.commitChanges();
+    final SszPrimitiveList<Boolean, SszBit> committed = mutable.commitChanges();
     assertThat(committed.size()).isEqualTo(6);
     assertThat(committed.get(0).get()).isTrue();
     assertThat(committed.get(2).get()).isTrue();
@@ -99,8 +99,8 @@ class SszMutableProgressiveBitlistTest {
 
   @Test
   void sizeTracking() {
-    SszBitlist bitlist = SCHEMA.ofBits(3, 1);
-    SszMutablePrimitiveList<Boolean, SszBit> mutable = bitlist.createWritableCopy();
+    final SszBitlist bitlist = SCHEMA.ofBits(3, 1);
+    final SszMutablePrimitiveList<Boolean, SszBit> mutable = bitlist.createWritableCopy();
 
     assertThat(mutable.size()).isEqualTo(3);
 
@@ -114,16 +114,16 @@ class SszMutableProgressiveBitlistTest {
 
   @Test
   void serializationRoundtripAfterCommit() {
-    SszBitlist bitlist = SCHEMA.ofBits(20, 0, 5, 10, 15, 19);
-    SszMutablePrimitiveList<Boolean, SszBit> mutable = bitlist.createWritableCopy();
+    final SszBitlist bitlist = SCHEMA.ofBits(20, 0, 5, 10, 15, 19);
+    final SszMutablePrimitiveList<Boolean, SszBit> mutable = bitlist.createWritableCopy();
 
     // Flip bit 5 off, set bit 3
     mutable.set(5, SszBit.of(false));
     mutable.set(3, SszBit.of(true));
-    SszPrimitiveList<Boolean, SszBit> committed = mutable.commitChanges();
+    final SszPrimitiveList<Boolean, SszBit> committed = mutable.commitChanges();
 
-    Bytes serialized = committed.sszSerialize();
-    SszBitlist deserialized = SCHEMA.sszDeserialize(serialized);
+    final Bytes serialized = committed.sszSerialize();
+    final SszBitlist deserialized = SCHEMA.sszDeserialize(serialized);
 
     assertThat(deserialized.hashTreeRoot()).isEqualTo(committed.hashTreeRoot());
     assertThat(deserialized.size()).isEqualTo(20);
@@ -131,36 +131,36 @@ class SszMutableProgressiveBitlistTest {
 
   @Test
   void multipleCommits() {
-    SszBitlist bitlist = SCHEMA.ofBits(5);
+    final SszBitlist bitlist = SCHEMA.ofBits(5);
 
     // First mutation
-    SszMutablePrimitiveList<Boolean, SszBit> mutable1 = bitlist.createWritableCopy();
+    final SszMutablePrimitiveList<Boolean, SszBit> mutable1 = bitlist.createWritableCopy();
     mutable1.set(0, SszBit.of(true));
-    SszPrimitiveList<Boolean, SszBit> committed1 = mutable1.commitChanges();
+    final SszPrimitiveList<Boolean, SszBit> committed1 = mutable1.commitChanges();
 
     // Second mutation
-    SszMutablePrimitiveList<Boolean, SszBit> mutable2 = committed1.createWritableCopy();
+    final SszMutablePrimitiveList<Boolean, SszBit> mutable2 = committed1.createWritableCopy();
     mutable2.set(4, SszBit.of(true));
-    SszPrimitiveList<Boolean, SszBit> committed2 = mutable2.commitChanges();
+    final SszPrimitiveList<Boolean, SszBit> committed2 = mutable2.commitChanges();
 
     assertThat(committed2.get(0).get()).isTrue();
     assertThat(committed2.get(4).get()).isTrue();
     assertThat(committed2.get(1).get()).isFalse();
 
-    SszBitlist expected = SCHEMA.ofBits(5, 0, 4);
+    final SszBitlist expected = SCHEMA.ofBits(5, 0, 4);
     assertThat(committed2.hashTreeRoot()).isEqualTo(expected.hashTreeRoot());
   }
 
   @Test
   void clear_thenModify() {
-    SszBitlist bitlist = SCHEMA.ofBits(10, 0, 5, 9);
-    SszMutablePrimitiveList<Boolean, SszBit> mutable = bitlist.createWritableCopy();
+    final SszBitlist bitlist = SCHEMA.ofBits(10, 0, 5, 9);
+    final SszMutablePrimitiveList<Boolean, SszBit> mutable = bitlist.createWritableCopy();
 
     mutable.clear();
     assertThat(mutable.size()).isEqualTo(0);
 
     mutable.set(0, SszBit.of(true));
-    SszPrimitiveList<Boolean, SszBit> committed = mutable.commitChanges();
+    final SszPrimitiveList<Boolean, SszBit> committed = mutable.commitChanges();
 
     assertThat(committed.size()).isEqualTo(1);
     assertThat(committed.get(0).get()).isTrue();
@@ -168,10 +168,10 @@ class SszMutableProgressiveBitlistTest {
 
   @Test
   void commitWithNoChanges_returnsSameData() {
-    SszBitlist bitlist = SCHEMA.ofBits(10, 3, 7);
-    SszMutablePrimitiveList<Boolean, SszBit> mutable = bitlist.createWritableCopy();
+    final SszBitlist bitlist = SCHEMA.ofBits(10, 3, 7);
+    final SszMutablePrimitiveList<Boolean, SszBit> mutable = bitlist.createWritableCopy();
 
-    SszPrimitiveList<Boolean, SszBit> committed = mutable.commitChanges();
+    final SszPrimitiveList<Boolean, SszBit> committed = mutable.commitChanges();
 
     assertThat(committed.hashTreeRoot()).isEqualTo(bitlist.hashTreeRoot());
   }

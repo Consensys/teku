@@ -185,33 +185,33 @@ public class SszProgressiveBitlistSchema implements SszBitlistSchema<SszBitlist>
 
   @Override
   public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
-    int bitCount = getLength(node);
+    final int bitCount = getLength(node);
     if (bitCount == 0) {
       // Empty bitlist: just the boundary bit (0x01)
       writer.write(new byte[] {1});
       return 1;
     }
 
-    TreeNode dataNode = getVectorNode(node);
-    int chunksCount = chunksForBitCount(bitCount);
-    int totalDataBytes = bitsCeilToBytes(bitCount);
+    final TreeNode dataNode = getVectorNode(node);
+    final int chunksCount = chunksForBitCount(bitCount);
+    final int totalDataBytes = bitsCeilToBytes(bitCount);
 
     // Collect all chunk data
-    byte[] allData = new byte[totalDataBytes];
+    final byte[] allData = new byte[totalDataBytes];
     int offset = 0;
     for (int c = 0; c < chunksCount; c++) {
-      long gIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(c);
-      TreeNode chunkNode = dataNode.get(gIdx);
+      final long gIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(c);
+      final TreeNode chunkNode = dataNode.get(gIdx);
       if (chunkNode instanceof LeafNode leafNode) {
-        Bytes data = leafNode.getData();
-        int toCopy = Math.min(data.size(), totalDataBytes - offset);
+        final Bytes data = leafNode.getData();
+        final int toCopy = Math.min(data.size(), totalDataBytes - offset);
         System.arraycopy(data.toArrayUnsafe(), 0, allData, offset, toCopy);
         offset += LeafNode.MAX_BYTE_SIZE;
       }
     }
 
     // Add boundary bit
-    int bitIdx = bitCount % 8;
+    final int bitIdx = bitCount % 8;
     if (bitIdx == 0) {
       writer.write(allData, 0, totalDataBytes);
       writer.write(new byte[] {1});
@@ -225,26 +225,26 @@ public class SszProgressiveBitlistSchema implements SszBitlistSchema<SszBitlist>
 
   @Override
   public TreeNode sszDeserializeTree(final SszReader reader) {
-    int availableBytes = reader.getAvailableBytes();
+    final int availableBytes = reader.getAvailableBytes();
     if (availableBytes == 0) {
       throw new SszDeserializeException("Empty progressive bitlist SSZ data");
     }
-    Bytes bytes = reader.read(availableBytes);
+    final Bytes bytes = reader.read(availableBytes);
 
-    int length = sszGetLengthAndValidate(bytes);
-    Bytes treeBytes = sszTruncateLeadingBit(bytes, length);
+    final int length = sszGetLengthAndValidate(bytes);
+    final Bytes treeBytes = sszTruncateLeadingBit(bytes, length);
 
     // Split into 32-byte leaf chunks
-    List<LeafNode> chunks = new ArrayList<>();
+    final List<LeafNode> chunks = new ArrayList<>();
     int off = 0;
-    int size = treeBytes.size();
+    final int size = treeBytes.size();
     while (off < size) {
-      int chunkSize = Math.min(LeafNode.MAX_BYTE_SIZE, size - off);
+      final int chunkSize = Math.min(LeafNode.MAX_BYTE_SIZE, size - off);
       chunks.add(LeafNode.create(treeBytes.slice(off, chunkSize)));
       off += LeafNode.MAX_BYTE_SIZE;
     }
 
-    TreeNode progressiveTree = ProgressiveTreeUtil.createProgressiveTree(chunks);
+    final TreeNode progressiveTree = ProgressiveTreeUtil.createProgressiveTree(chunks);
     return BranchNode.create(progressiveTree, toLengthNode(length));
   }
 
@@ -282,15 +282,15 @@ public class SszProgressiveBitlistSchema implements SszBitlistSchema<SszBitlist>
     final byte[] paddedBytes =
         dataByteLen == 0 ? new byte[0] : Arrays.copyOf(bitSetBytes, dataByteLen);
 
-    List<LeafNode> chunks = new ArrayList<>();
+    final List<LeafNode> chunks = new ArrayList<>();
     int off = 0;
     while (off < paddedBytes.length) {
-      int chunkSize = Math.min(LeafNode.MAX_BYTE_SIZE, paddedBytes.length - off);
+      final int chunkSize = Math.min(LeafNode.MAX_BYTE_SIZE, paddedBytes.length - off);
       chunks.add(LeafNode.create(Bytes.wrap(paddedBytes, off, chunkSize)));
       off += LeafNode.MAX_BYTE_SIZE;
     }
 
-    TreeNode progressiveTree = ProgressiveTreeUtil.createProgressiveTree(chunks);
+    final TreeNode progressiveTree = ProgressiveTreeUtil.createProgressiveTree(chunks);
     return BranchNode.create(progressiveTree, toLengthNode(size));
   }
 
@@ -324,23 +324,23 @@ public class SszProgressiveBitlistSchema implements SszBitlistSchema<SszBitlist>
    * as SszBitlistImpl.sszGetLengthAndValidate().
    */
   private static int sszGetLengthAndValidate(final Bytes bytes) {
-    int numBytes = bytes.size();
+    final int numBytes = bytes.size();
     checkArgument(numBytes > 0, "BitlistImpl must contain at least one byte");
     checkArgument(bytes.get(numBytes - 1) != 0, "BitlistImpl data must contain end marker bit");
-    int lastByte = 0xFF & bytes.get(bytes.size() - 1);
-    int leadingBitIndex = Integer.bitCount(Integer.highestOneBit(lastByte) - 1);
+    final int lastByte = 0xFF & bytes.get(bytes.size() - 1);
+    final int leadingBitIndex = Integer.bitCount(Integer.highestOneBit(lastByte) - 1);
     return leadingBitIndex + 8 * (numBytes - 1);
   }
 
   /** Removes the boundary bit from SSZ bytes. */
   private static Bytes sszTruncateLeadingBit(final Bytes bytes, final int length) {
-    Bytes bytesWithoutLast = bytes.slice(0, bytes.size() - 1);
+    final Bytes bytesWithoutLast = bytes.slice(0, bytes.size() - 1);
     if (length % 8 == 0) {
       return bytesWithoutLast;
     } else {
-      int lastByte = 0xFF & bytes.get(bytes.size() - 1);
-      int leadingBit = 1 << (length % 8);
-      int lastByteWithoutLeadingBit = lastByte ^ leadingBit;
+      final int lastByte = 0xFF & bytes.get(bytes.size() - 1);
+      final int leadingBit = 1 << (length % 8);
+      final int lastByteWithoutLeadingBit = lastByte ^ leadingBit;
       return Bytes.concatenate(bytesWithoutLast, Bytes.of(lastByteWithoutLeadingBit));
     }
   }

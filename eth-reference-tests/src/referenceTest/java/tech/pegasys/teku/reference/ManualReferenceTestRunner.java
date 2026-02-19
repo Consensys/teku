@@ -63,7 +63,7 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
    *
    * <p>May be overridden by the ENV_DISPLAY_NAME environment variable.
    */
-  private static final String DISPLAY_NAME = "";
+  private static final String DISPLAY_NAME = "progressive";
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("loadReferenceTests")
