@@ -351,11 +351,14 @@ public class SyncSourceBatch implements Batch {
       final Optional<BlobSidecarRequestHandler> maybeBlobSidecarRequestHandler,
       final Optional<ExecutionPayloadRequestHandler> maybeExecutionPayloadRequestHandler) {
     eventThread.checkOnEventThread();
+
+    final Optional<SignedBeaconBlock> lastBlock =
+        blocks.isEmpty() ? Optional.empty() : Optional.ofNullable(blocks.getLast());
     final List<SignedBeaconBlock> newBlocks = blockRequestHandler.complete();
 
     awaitingBlocks = false;
 
-    if (!validateNewBlocks(newBlocks)) {
+    if (!validateNewBlocks(newBlocks, lastBlock)) {
       markAsInvalid();
       return;
     }
@@ -374,7 +377,7 @@ public class SyncSourceBatch implements Batch {
     if (maybeExecutionPayloadRequestHandler.isPresent()) {
       final Map<Bytes32, SignedExecutionPayloadEnvelope> newExecutionPayloadsByBlockRoot =
           maybeExecutionPayloadRequestHandler.get().complete();
-      if (!validateNewExecutionPayloads(newBlocks, newExecutionPayloadsByBlockRoot)) {
+      if (!validateNewExecutionPayloads(newBlocks, newExecutionPayloadsByBlockRoot, lastBlock)) {
         markAsInvalid();
         return;
       }
@@ -410,13 +413,13 @@ public class SyncSourceBatch implements Batch {
         .toString();
   }
 
-  private boolean validateNewBlocks(final List<SignedBeaconBlock> newBlocks) {
-    if (blocks.isEmpty() || newBlocks.isEmpty()) {
+  private boolean validateNewBlocks(
+      final List<SignedBeaconBlock> newBlocks, final Optional<SignedBeaconBlock> lastBlock) {
+    if (lastBlock.isEmpty() || newBlocks.isEmpty()) {
       return true;
     }
-    final SignedBeaconBlock previousBlock = blocks.getLast();
     final SignedBeaconBlock firstNewBlock = newBlocks.getFirst();
-    if (!firstNewBlock.getParentRoot().equals(previousBlock.getRoot())) {
+    if (!firstNewBlock.getParentRoot().equals(lastBlock.get().getRoot())) {
       LOG.debug(
           "Marking batch invalid because new blocks do not form a chain with previous blocks");
       return false;
@@ -482,21 +485,29 @@ public class SyncSourceBatch implements Batch {
 
   private boolean validateNewExecutionPayloads(
       final List<SignedBeaconBlock> newBlocks,
-      final Map<Bytes32, SignedExecutionPayloadEnvelope> newExecutionPayloadsByBlockRoot) {
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> newExecutionPayloadsByBlockRoot,
+      final Optional<SignedBeaconBlock> lastBlock) {
     for (int i = 0; i < newBlocks.size(); i++) {
-      final SignedBeaconBlock block = newBlocks.get(i);
+      final SignedBeaconBlock newBlock = newBlocks.get(i);
+      if (i == 0 && lastBlock.isPresent()) {
+        // we want to verify the execution payload is not missing for the last block
+        if (getBidFromBlock(newBlock)
+                .getParentBlockHash()
+                .equals(getBidFromBlock(lastBlock.get()).getBlockHash())
+            && !executionPayloadsByBlockRoot.containsKey(lastBlock.get().getRoot())) {
+          logBatchInvalidBecauseOfExecutionPayloadMissing(lastBlock.get());
+          return false;
+        }
+      }
       // if we don't have an execution payload and is not a last block in the batch, we want to
       // verify that the block is empty (no execution payload)
-      if (!newExecutionPayloadsByBlockRoot.containsKey(block.getRoot())
+      if (!newExecutionPayloadsByBlockRoot.containsKey(newBlock.getRoot())
           && i != newBlocks.size() - 1) {
-        final SignedBeaconBlock nextBlock = newBlocks.get(i + 1);
-        if (getBidFromBlock(block)
+        final SignedBeaconBlock nextNewBlock = newBlocks.get(i + 1);
+        if (getBidFromBlock(newBlock)
             .getBlockHash()
-            .equals(getBidFromBlock(nextBlock).getParentBlockHash())) {
-          LOG.debug(
-              "Marking batch invalid because block is full for slot {} and root {} but the execution payload envelope was missing",
-              block.getSlot(),
-              block.getRoot());
+            .equals(getBidFromBlock(nextNewBlock).getParentBlockHash())) {
+          logBatchInvalidBecauseOfExecutionPayloadMissing(newBlock);
           return false;
         }
       }
@@ -508,6 +519,13 @@ public class SyncSourceBatch implements Batch {
     return BeaconBlockBodyGloas.required(block.getMessage().getBody())
         .getSignedExecutionPayloadBid()
         .getMessage();
+  }
+
+  private void logBatchInvalidBecauseOfExecutionPayloadMissing(final SignedBeaconBlock block) {
+    LOG.debug(
+        "Marking batch invalid because block is full for slot {} and root {} but the execution payload envelope was missing",
+        block.getSlot(),
+        block.getRoot());
   }
 
   private String formatBlockAndParent(final SignedBeaconBlock block1) {
