@@ -27,17 +27,14 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
 public interface DataColumnSidecar extends SszContainer {
 
+  @Override
+  DataColumnSidecarSchema<? extends DataColumnSidecar> getSchema();
+
   UInt64 getIndex();
 
   DataColumn getColumn();
 
-  default Optional<SszList<SszKZGCommitment>> getMaybeKzgCommitments() {
-    return Optional.of(getKzgCommitments());
-  }
-
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/10311 need to verify this is not called
-  // for Gloas or use everywhere getMaybeKzgCommitments() alternatively
-  SszList<SszKZGCommitment> getKzgCommitments();
+  Optional<SszList<SszKZGCommitment>> getMaybeKzgCommitments();
 
   SszList<SszKZGProof> getKzgProofs();
 
@@ -57,7 +54,6 @@ public interface DataColumnSidecar extends SszContainer {
         getBeaconBlockRoot(),
         getIndex(),
         getColumn().toBriefString(),
-        getKzgCommitments().size(),
         getKzgProofs().size());
   }
 }

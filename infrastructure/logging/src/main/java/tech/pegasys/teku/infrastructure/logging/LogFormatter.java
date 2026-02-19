@@ -47,11 +47,10 @@ public class LogFormatter {
       final Bytes32 blockRoot,
       final UInt64 index,
       final String blob,
-      final int kzgCommitmentsSize,
       final int kzgProofsSize) {
     return String.format(
-        "DataColumnSidecar[block %s (%s), index %s, 1st cell %s, commitments %s, proofs %s]",
-        formatAbbreviatedHashRoot(blockRoot), slot, index, blob, kzgCommitmentsSize, kzgProofsSize);
+        "DataColumnSidecar[block %s (%s), index %s, 1st cell %s, proofs %s]",
+        formatAbbreviatedHashRoot(blockRoot), slot, index, blob, kzgProofsSize);
   }
 
   public static String formatExecutionPayload(

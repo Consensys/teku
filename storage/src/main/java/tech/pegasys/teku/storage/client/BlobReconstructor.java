@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
 public abstract class BlobReconstructor {
@@ -45,7 +46,12 @@ public abstract class BlobReconstructor {
       final List<UInt64> blobIndices,
       final BlobSchema blobSchema) {
 
-    return IntStream.range(0, dataColumnSidecars.getFirst().getKzgCommitments().size())
+    // TODO-GLOAS retrieve the kzg commitments from the bid in Gloas
+    return IntStream.range(
+            0,
+            DataColumnSidecarFulu.required(dataColumnSidecars.getFirst())
+                .getKzgCommitments()
+                .size())
         .filter(index -> blobIndices.isEmpty() || blobIndices.contains(UInt64.valueOf(index)))
         .mapToObj(blobIndex -> constructBlob(dataColumnSidecars, blobIndex, blobSchema))
         .toList();

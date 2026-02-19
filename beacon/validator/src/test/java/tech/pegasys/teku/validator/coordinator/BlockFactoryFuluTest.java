@@ -165,7 +165,7 @@ public class BlockFactoryFuluTest extends AbstractBlockFactoryTest {
                                       .getProofs()
                                       .get(blobIndex * CELLS_PER_EXT_BLOB + index))
                           .toList());
-              assertThat(dataColumnSidecar.getKzgCommitments()).isEqualTo(expectedCommitments);
+              assertThat(dataColumnSidecar.getMaybeKzgCommitments()).contains(expectedCommitments);
             });
   }
 

@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class BlobReconstructorTest extends BlobReconstructionAbstractTest {
+  // TODO-GLOAS add a test for Gloas
   final MiscHelpersFulu miscHelpersFulu =
       MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
   final SchemaDefinitionsElectra schemaDefinitionsElectra =
