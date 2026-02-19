@@ -65,21 +65,11 @@ public class ProgressiveTreeUtil {
 
   /** Determines which level contains the element at the given zero-based index. */
   public static int levelForIndex(final long elementIndex) {
+    // formula: level = floor(log4(3 * elementIndex + 1))
     checkArgument(elementIndex >= 0, "Element index must be non-negative");
-    // Level 0 holds indices [0, 0] (capacity 1, cumulative 1)
-    // Level 1 holds indices [1, 4] (capacity 4, cumulative 5)
-    // Level 2 holds indices [5, 20] (capacity 16, cumulative 21)
-    // ...
-    int level = 0;
-    long cumulative = 0;
-    while (true) {
-      long cap = levelCapacity(level);
-      if (elementIndex < cumulative + cap) {
-        return level;
-      }
-      cumulative += cap;
-      level++;
-    }
+    final long val = 3L * elementIndex + 1;
+    final int log2 = 63 - Long.numberOfLeadingZeros(val);
+    return log2 / 2; // floor(log2(val)) / 2 == floor(log4(val))
   }
 
   /**

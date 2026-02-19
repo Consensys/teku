@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.ssz.tree;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,18 +52,44 @@ class ProgressiveTreeUtilTest {
   }
 
   @Test
-  void levelForIndex_returnsCorrectLevel() {
-    // Level 0: indices [0, 0]
-    assertThat(ProgressiveTreeUtil.levelForIndex(0)).isEqualTo(0);
-    // Level 1: indices [1, 4]
-    assertThat(ProgressiveTreeUtil.levelForIndex(1)).isEqualTo(1);
-    assertThat(ProgressiveTreeUtil.levelForIndex(4)).isEqualTo(1);
-    // Level 2: indices [5, 20]
-    assertThat(ProgressiveTreeUtil.levelForIndex(5)).isEqualTo(2);
-    assertThat(ProgressiveTreeUtil.levelForIndex(20)).isEqualTo(2);
-    // Level 3: indices [21, 84]
-    assertThat(ProgressiveTreeUtil.levelForIndex(21)).isEqualTo(3);
-    assertThat(ProgressiveTreeUtil.levelForIndex(84)).isEqualTo(3);
+  void levelForIndex_boundariesForLevels0Through10() {
+    // Test first and last index of each level using cumulativeCapacity to compute boundaries.
+    // Level L spans indices [cumulativeCapacity(L-1), cumulativeCapacity(L) - 1]
+    // (with level 0 starting at index 0).
+    for (int level = 0; level <= 10; level++) {
+      long firstIndex = level == 0 ? 0 : ProgressiveTreeUtil.cumulativeCapacity(level - 1);
+      long lastIndex = ProgressiveTreeUtil.cumulativeCapacity(level) - 1;
+
+      assertThat(ProgressiveTreeUtil.levelForIndex(firstIndex))
+          .describedAs("first index of level %d", level)
+          .isEqualTo(level);
+      assertThat(ProgressiveTreeUtil.levelForIndex(lastIndex))
+          .describedAs("last index of level %d", level)
+          .isEqualTo(level);
+    }
+  }
+
+  @Test
+  void levelForIndex_negativeIndexThrows() {
+    assertThatThrownBy(() -> ProgressiveTreeUtil.levelForIndex(-1))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void levelForIndex_highLevels() {
+    // Verify the formula handles large indices where 3L * elementIndex + 1 exercises
+    // the full bit-width of numberOfLeadingZeros.
+    for (int level : new int[] {15, 20}) {
+      long firstIndex = ProgressiveTreeUtil.cumulativeCapacity(level - 1);
+      long lastIndex = ProgressiveTreeUtil.cumulativeCapacity(level) - 1;
+
+      assertThat(ProgressiveTreeUtil.levelForIndex(firstIndex))
+          .describedAs("first index of level %d", level)
+          .isEqualTo(level);
+      assertThat(ProgressiveTreeUtil.levelForIndex(lastIndex))
+          .describedAs("last index of level %d", level)
+          .isEqualTo(level);
+    }
   }
 
   @Test
