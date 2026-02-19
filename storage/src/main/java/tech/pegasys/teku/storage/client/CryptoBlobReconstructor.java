@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.client;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -21,21 +22,17 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 
 public class CryptoBlobReconstructor extends BlobReconstructor {
   private static final Logger LOG = LogManager.getLogger();
-  private final Supplier<MiscHelpersFulu> miscHelpersFuluSupplier;
 
   public CryptoBlobReconstructor(final Spec spec, final Supplier<BlobSchema> blobSchemaSupplier) {
     super(spec, blobSchemaSupplier);
-    this.miscHelpersFuluSupplier =
-        () -> MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
   }
 
   @Override
@@ -55,8 +52,13 @@ public class CryptoBlobReconstructor extends BlobReconstructor {
 
   private List<Blob> reconstructBlobsFromDataColumns(
       final List<DataColumnSidecar> dataColumnSidecars, final List<UInt64> blobIndices) {
+    if (dataColumnSidecars.isEmpty()) {
+      return Collections.emptyList();
+    }
+    final DataColumnSidecarUtil dataColumnSidecarUtil =
+        spec.getDataColumnSidecarUtil(dataColumnSidecars.getFirst().getSlot());
     final List<DataColumnSidecar> dataColumnSidecarsAll =
-        miscHelpersFuluSupplier.get().reconstructAllDataColumnSidecars(dataColumnSidecars);
+        dataColumnSidecarUtil.reconstructAllDataColumnSidecars(dataColumnSidecars);
     final List<DataColumnSidecar> firstHalfOfDataColumnSidecars =
         dataColumnSidecarsAll.subList(0, spec.getNumberOfDataColumns().orElseThrow() / 2);
 
