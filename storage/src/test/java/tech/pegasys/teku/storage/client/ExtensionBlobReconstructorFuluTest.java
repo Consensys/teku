@@ -52,14 +52,14 @@ public class ExtensionBlobReconstructorFuluTest extends BlobReconstructionAbstra
         dataColumnSidecars.subList(1, numberOfColumns / 2);
     assertThat(
             extensionBlobReconstructor.reconstructBlobs(
-                block.getSlotAndBlockRoot(), almostHalfSidecars, List.of(), blockRetrieval))
+                block.getSlotAndBlockRoot(), almostHalfSidecars, List.of()))
         .isCompletedWithValueMatching(Optional::isEmpty);
 
     final List<DataColumnSidecar> notFirstHalfSidecars =
         dataColumnSidecars.subList(1, numberOfColumns / 2 + 1);
     assertThat(
             extensionBlobReconstructor.reconstructBlobs(
-                block.getSlotAndBlockRoot(), notFirstHalfSidecars, List.of(), blockRetrieval))
+                block.getSlotAndBlockRoot(), notFirstHalfSidecars, List.of()))
         .isCompletedWithValueMatching(Optional::isEmpty);
   }
 
@@ -77,28 +77,22 @@ public class ExtensionBlobReconstructorFuluTest extends BlobReconstructionAbstra
 
     assertThat(
             extensionBlobReconstructor.reconstructBlobs(
-                block.getSlotAndBlockRoot(), halfSidecars, List.of(), blockRetrieval))
+                block.getSlotAndBlockRoot(), halfSidecars, List.of()))
         .isCompletedWithValueMatching(
             result -> result.orElseThrow().equals(blobsAndMatrix.blobs()));
     assertThat(
             extensionBlobReconstructor.reconstructBlobs(
-                block.getSlotAndBlockRoot(),
-                halfSidecars,
-                List.of(UInt64.ZERO, UInt64.valueOf(1)),
-                blockRetrieval))
+                block.getSlotAndBlockRoot(), halfSidecars, List.of(UInt64.ZERO, UInt64.valueOf(1))))
         .isCompletedWithValueMatching(
             result -> result.orElseThrow().equals(blobsAndMatrix.blobs()));
     assertThat(
             extensionBlobReconstructor.reconstructBlobs(
-                block.getSlotAndBlockRoot(), halfSidecars, List.of(UInt64.ZERO), blockRetrieval))
+                block.getSlotAndBlockRoot(), halfSidecars, List.of(UInt64.ZERO)))
         .isCompletedWithValueMatching(
             result -> result.orElseThrow().equals(blobsAndMatrix.blobs().subList(0, 1)));
     assertThat(
             extensionBlobReconstructor.reconstructBlobs(
-                block.getSlotAndBlockRoot(),
-                halfSidecars,
-                List.of(UInt64.ZERO, UInt64.valueOf(2)),
-                blockRetrieval))
+                block.getSlotAndBlockRoot(), halfSidecars, List.of(UInt64.ZERO, UInt64.valueOf(2))))
         .isCompletedWithValueMatching(
             result -> result.orElseThrow().equals(blobsAndMatrix.blobs().subList(0, 1)));
   }

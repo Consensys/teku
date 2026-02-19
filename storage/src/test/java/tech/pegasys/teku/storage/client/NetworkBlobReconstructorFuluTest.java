@@ -58,7 +58,7 @@ public class NetworkBlobReconstructorFuluTest extends BlobReconstructionAbstract
             block.getMessage(), block.asHeader(), blobsAndMatrix.extendedMatrix());
     assertThat(
             networkBlobReconstructor.reconstructBlobs(
-                block.getSlotAndBlockRoot(), dataColumnSidecars, List.of(), blockRetrieval))
+                block.getSlotAndBlockRoot(), dataColumnSidecars, List.of()))
         .isCompletedWithValueMatching(Optional::isEmpty);
     verify(dataColumnSidecarNetworkRetriever).isEnabled();
     verifyNoMoreInteractions(dataColumnSidecarNetworkRetriever);
@@ -84,10 +84,7 @@ public class NetworkBlobReconstructorFuluTest extends BlobReconstructionAbstract
         .thenReturn(SafeFuture.completedFuture(List.of(missingSidecar)));
     assertThat(
             networkBlobReconstructor.reconstructBlobs(
-                missingSidecar.getSlotAndBlockRoot(),
-                halfSidecarsWithGap,
-                List.of(),
-                blockRetrieval))
+                missingSidecar.getSlotAndBlockRoot(), halfSidecarsWithGap, List.of()))
         .isCompletedWithValueMatching(
             result -> result.orElseThrow().equals(blobsAndMatrix.blobs()));
   }
@@ -114,7 +111,7 @@ public class NetworkBlobReconstructorFuluTest extends BlobReconstructionAbstract
 
     assertThat(
             networkBlobReconstructor.reconstructBlobs(
-                block.getSlotAndBlockRoot(), sidecarsWithGaps, List.of(), blockRetrieval))
+                block.getSlotAndBlockRoot(), sidecarsWithGaps, List.of()))
         .isCompletedWithValueMatching(Optional::isEmpty);
   }
 }

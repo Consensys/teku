@@ -16,12 +16,9 @@ package tech.pegasys.teku.storage.client;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.IntStream;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -64,9 +61,7 @@ public class BlobReconstructorGloasTest extends BlobReconstructionAbstractTest {
           SafeFuture<Optional<List<Blob>>> reconstructBlobs(
               final SlotAndBlockRoot slotAndBlockRoot,
               final List<DataColumnSidecar> existingSidecars,
-              final List<UInt64> blobIndices,
-              final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>>
-                  retrieveSignedBlockByRoot) {
+              final List<UInt64> blobIndices) {
             return SafeFuture.completedFuture(Optional.empty());
           }
         };
@@ -97,7 +92,7 @@ public class BlobReconstructorGloasTest extends BlobReconstructionAbstractTest {
         miscHelpersGloas.constructDataColumnSidecars(
             Optional.empty(),
             new SlotAndBlockRoot(block.getSlot(), block.getRoot()),
-            gloasDataStructureUtil.randomBlobKzgCommitments(commitmentCount),
+            Optional.empty(),
             Optional.empty(),
             blobAndCellProofs);
 
@@ -134,42 +129,35 @@ public class BlobReconstructorGloasTest extends BlobReconstructionAbstractTest {
         miscHelpersGloas.constructDataColumnSidecars(
             Optional.empty(),
             new SlotAndBlockRoot(block.getSlot(), block.getRoot()),
-            gloasDataStructureUtil.randomBlobKzgCommitments(commitmentCount),
+            Optional.empty(),
             Optional.empty(),
             blobAndCellProofs);
 
     final int numberOfColumns = gloasSpec.getNumberOfDataColumns().orElseThrow();
     final List<DataColumnSidecar> halfSidecars = dataColumnSidecars.subList(0, numberOfColumns / 2);
 
-    // In Gloas, kzg commitments are retrieved from the block's execution payload bid
-    blockRetrieval = (blockRoot) -> SafeFuture.completedFuture(Optional.of(block));
-
     // empty blob indices (should return all blobs)
     assertThat(
             blobReconstructor.reconstructBlobsFromFirstHalfDataColumns(
-                halfSidecars, List.of(), blobSchema, blockRetrieval))
-        .succeedsWithin(Duration.ofSeconds(5))
+                halfSidecars, List.of(), blobSchema))
         .matches(blobs -> blobs.size() == commitmentCount);
 
     // specific blob indices
     assertThat(
             blobReconstructor.reconstructBlobsFromFirstHalfDataColumns(
-                halfSidecars, List.of(UInt64.ZERO, UInt64.valueOf(1)), blobSchema, blockRetrieval))
-        .succeedsWithin(Duration.ofSeconds(5))
+                halfSidecars, List.of(UInt64.ZERO, UInt64.valueOf(1)), blobSchema))
         .matches(blobs -> blobs.size() == commitmentCount);
 
     // single blob index
     assertThat(
             blobReconstructor.reconstructBlobsFromFirstHalfDataColumns(
-                halfSidecars, List.of(UInt64.ZERO), blobSchema, blockRetrieval))
-        .succeedsWithin(Duration.ofSeconds(5))
+                halfSidecars, List.of(UInt64.ZERO), blobSchema))
         .matches(blobs -> blobs.size() == 1);
 
     // out of range blob index
     assertThat(
             blobReconstructor.reconstructBlobsFromFirstHalfDataColumns(
-                halfSidecars, List.of(UInt64.ZERO, UInt64.valueOf(2)), blobSchema, blockRetrieval))
-        .succeedsWithin(Duration.ofSeconds(5))
+                halfSidecars, List.of(UInt64.ZERO, UInt64.valueOf(2)), blobSchema))
         .matches(blobs -> blobs.size() == 1);
   }
 }

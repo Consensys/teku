@@ -20,20 +20,17 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
@@ -54,8 +51,7 @@ public class NetworkBlobReconstructor extends BlobReconstructor {
   public SafeFuture<Optional<List<Blob>>> reconstructBlobs(
       final SlotAndBlockRoot slotAndBlockRoot,
       final List<DataColumnSidecar> existingSidecars,
-      final List<UInt64> blobIndices,
-      final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot) {
+      final List<UInt64> blobIndices) {
     LOG.trace(
         "Reconstructing blobs from {} sidecars for {}", existingSidecars.size(), slotAndBlockRoot);
     if (!networkRetriever.isEnabled()) {
@@ -97,12 +93,10 @@ public class NetworkBlobReconstructor extends BlobReconstructor {
                       .sorted(Comparator.comparing(DataColumnSidecar::getIndex))
                       .toList();
               checkState(firstHalfColumns.size() == halfColumns, "Wrong number of columns");
-              return reconstructBlobsFromFirstHalfDataColumns(
-                      firstHalfColumns,
-                      blobIndices,
-                      blobSchemaSupplier.get(),
-                      retrieveSignedBlockByRoot)
-                  .thenApply(Optional::of);
+              return SafeFuture.completedFuture(
+                  Optional.of(
+                      reconstructBlobsFromFirstHalfDataColumns(
+                          firstHalfColumns, blobIndices, blobSchemaSupplier.get())));
             });
   }
 }

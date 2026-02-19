@@ -17,12 +17,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.IntStream;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -45,7 +42,6 @@ public class CryptoBlobReconstructorGloasTest extends BlobReconstructionAbstract
   private BlobSchema blobSchema;
   private CryptoBlobReconstructor cryptoBlobReconstructor;
   private SignedBeaconBlock testBlock;
-  private Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> gloasBlockRetrieval;
 
   @BeforeEach
   void setupGloas() {
@@ -66,9 +62,6 @@ public class CryptoBlobReconstructorGloasTest extends BlobReconstructionAbstract
             UInt64.ZERO,
             gloasDataStructureUtil.randomBeaconBlockBodyWithCommitments(commitmentCount));
     testBlock = gloasDataStructureUtil.signedBlock(beaconBlock);
-
-    // block retrieval must return actual block with commitments
-    gloasBlockRetrieval = (blockRoot) -> SafeFuture.completedFuture(Optional.of(testBlock));
   }
 
   @Test
@@ -89,7 +82,7 @@ public class CryptoBlobReconstructorGloasTest extends BlobReconstructionAbstract
         miscHelpersGloas.constructDataColumnSidecars(
             Optional.empty(),
             new SlotAndBlockRoot(testBlock.getSlot(), testBlock.getRoot()),
-            gloasDataStructureUtil.randomBlobKzgCommitments(commitmentCount),
+            Optional.empty(),
             Optional.empty(),
             blobAndCellProofs);
 
@@ -99,10 +92,7 @@ public class CryptoBlobReconstructorGloasTest extends BlobReconstructionAbstract
 
     assertThat(
             cryptoBlobReconstructor.reconstructBlobs(
-                testBlock.getSlotAndBlockRoot(),
-                almostHalfSidecars,
-                List.of(),
-                gloasBlockRetrieval))
+                testBlock.getSlotAndBlockRoot(), almostHalfSidecars, List.of()))
         .isCompletedWithValueMatching(Optional::isEmpty);
   }
 
@@ -124,7 +114,7 @@ public class CryptoBlobReconstructorGloasTest extends BlobReconstructionAbstract
         miscHelpersGloas.constructDataColumnSidecars(
             Optional.empty(),
             new SlotAndBlockRoot(testBlock.getSlot(), testBlock.getRoot()),
-            gloasDataStructureUtil.randomBlobKzgCommitments(commitmentCount),
+            Optional.empty(),
             Optional.empty(),
             blobAndCellProofs);
 
@@ -136,28 +126,23 @@ public class CryptoBlobReconstructorGloasTest extends BlobReconstructionAbstract
     // but at least we could check the size
     assertThat(
             cryptoBlobReconstructor.reconstructBlobs(
-                testBlock.getSlotAndBlockRoot(), halfSidecars, List.of(), gloasBlockRetrieval))
+                testBlock.getSlotAndBlockRoot(), halfSidecars, List.of()))
         .isCompletedWithValueMatching(result -> result.orElseThrow().size() == 2);
     assertThat(
             cryptoBlobReconstructor.reconstructBlobs(
                 testBlock.getSlotAndBlockRoot(),
                 halfSidecars,
-                List.of(UInt64.ZERO, UInt64.valueOf(1)),
-                gloasBlockRetrieval))
+                List.of(UInt64.ZERO, UInt64.valueOf(1))))
         .isCompletedWithValueMatching(result -> result.orElseThrow().size() == 2);
     assertThat(
             cryptoBlobReconstructor.reconstructBlobs(
-                testBlock.getSlotAndBlockRoot(),
-                halfSidecars,
-                List.of(UInt64.ZERO),
-                gloasBlockRetrieval))
+                testBlock.getSlotAndBlockRoot(), halfSidecars, List.of(UInt64.ZERO)))
         .isCompletedWithValueMatching(result -> result.orElseThrow().size() == 1);
     assertThat(
             cryptoBlobReconstructor.reconstructBlobs(
                 testBlock.getSlotAndBlockRoot(),
                 halfSidecars,
-                List.of(UInt64.ZERO, UInt64.valueOf(2)),
-                gloasBlockRetrieval))
+                List.of(UInt64.ZERO, UInt64.valueOf(2))))
         .isCompletedWithValueMatching(result -> result.orElseThrow().size() == 1);
   }
 }

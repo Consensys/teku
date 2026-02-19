@@ -23,9 +23,7 @@ import static org.mockito.Mockito.when;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.IntStream;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -52,7 +50,6 @@ public class NetworkBlobReconstructorGloasTest extends BlobReconstructionAbstrac
   private SchemaDefinitionsElectra schemaDefinitionsElectra;
   private BlobSchema blobSchema;
   private SignedBeaconBlock testBlock;
-  private Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> gloasBlockRetrieval;
   private final DataColumnSidecarNetworkRetriever dataColumnSidecarNetworkRetriever =
       mock(DataColumnSidecarNetworkRetriever.class);
   private NetworkBlobReconstructor networkBlobReconstructor;
@@ -76,9 +73,6 @@ public class NetworkBlobReconstructorGloasTest extends BlobReconstructionAbstrac
             UInt64.ZERO,
             gloasDataStructureUtil.randomBeaconBlockBodyWithCommitments(commitmentCount));
     testBlock = gloasDataStructureUtil.signedBlock(beaconBlock);
-
-    // In Gloas the block retrieval must return actual block with commitments
-    gloasBlockRetrieval = (blockRoot) -> SafeFuture.completedFuture(Optional.of(testBlock));
   }
 
   @Test
@@ -101,16 +95,13 @@ public class NetworkBlobReconstructorGloasTest extends BlobReconstructionAbstrac
         miscHelpersGloas.constructDataColumnSidecars(
             Optional.empty(),
             new SlotAndBlockRoot(testBlock.getSlot(), testBlock.getRoot()),
-            gloasDataStructureUtil.randomBlobKzgCommitments(commitmentCount),
+            Optional.empty(),
             Optional.empty(),
             blobAndCellProofs);
 
     assertThat(
             networkBlobReconstructor.reconstructBlobs(
-                testBlock.getSlotAndBlockRoot(),
-                dataColumnSidecars,
-                List.of(),
-                gloasBlockRetrieval))
+                testBlock.getSlotAndBlockRoot(), dataColumnSidecars, List.of()))
         .isCompletedWithValueMatching(Optional::isEmpty);
     verify(dataColumnSidecarNetworkRetriever).isEnabled();
     verifyNoMoreInteractions(dataColumnSidecarNetworkRetriever);
@@ -136,7 +127,7 @@ public class NetworkBlobReconstructorGloasTest extends BlobReconstructionAbstrac
         miscHelpersGloas.constructDataColumnSidecars(
             Optional.empty(),
             new SlotAndBlockRoot(testBlock.getSlot(), testBlock.getRoot()),
-            gloasDataStructureUtil.randomBlobKzgCommitments(commitmentCount),
+            Optional.empty(),
             Optional.empty(),
             blobAndCellProofs);
 
@@ -150,10 +141,7 @@ public class NetworkBlobReconstructorGloasTest extends BlobReconstructionAbstrac
         .thenReturn(SafeFuture.completedFuture(List.of(missingSidecar)));
     assertThat(
             networkBlobReconstructor.reconstructBlobs(
-                missingSidecar.getSlotAndBlockRoot(),
-                halfSidecarsWithGap,
-                List.of(),
-                gloasBlockRetrieval))
+                missingSidecar.getSlotAndBlockRoot(), halfSidecarsWithGap, List.of()))
         .succeedsWithin(Duration.ofSeconds(5))
         .matches(result -> result.isPresent() && result.orElseThrow().size() == commitmentCount);
   }
@@ -178,7 +166,7 @@ public class NetworkBlobReconstructorGloasTest extends BlobReconstructionAbstrac
         miscHelpersGloas.constructDataColumnSidecars(
             Optional.empty(),
             new SlotAndBlockRoot(testBlock.getSlot(), testBlock.getRoot()),
-            gloasDataStructureUtil.randomBlobKzgCommitments(commitmentCount),
+            Optional.empty(),
             Optional.empty(),
             blobAndCellProofs);
 
@@ -195,7 +183,7 @@ public class NetworkBlobReconstructorGloasTest extends BlobReconstructionAbstrac
 
     assertThat(
             networkBlobReconstructor.reconstructBlobs(
-                testBlock.getSlotAndBlockRoot(), sidecarsWithGaps, List.of(), gloasBlockRetrieval))
+                testBlock.getSlotAndBlockRoot(), sidecarsWithGaps, List.of()))
         .isCompletedWithValueMatching(Optional::isEmpty);
   }
 }

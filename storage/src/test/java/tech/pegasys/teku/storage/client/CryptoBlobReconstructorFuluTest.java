@@ -52,7 +52,7 @@ public class CryptoBlobReconstructorFuluTest extends BlobReconstructionAbstractT
         dataColumnSidecars.subList(1, numberOfColumns / 2);
     assertThat(
             cryptoBlobReconstructor.reconstructBlobs(
-                block.getSlotAndBlockRoot(), almostHalfSidecars, List.of(), blockRetrieval))
+                block.getSlotAndBlockRoot(), almostHalfSidecars, List.of()))
         .isCompletedWithValueMatching(Optional::isEmpty);
   }
 
@@ -73,25 +73,19 @@ public class CryptoBlobReconstructorFuluTest extends BlobReconstructionAbstractT
     // but at least we could check the size
     assertThat(
             cryptoBlobReconstructor.reconstructBlobs(
-                block.getSlotAndBlockRoot(), halfSidecars, List.of(), blockRetrieval))
+                block.getSlotAndBlockRoot(), halfSidecars, List.of()))
         .isCompletedWithValueMatching(result -> result.orElseThrow().size() == 2);
     assertThat(
             cryptoBlobReconstructor.reconstructBlobs(
-                block.getSlotAndBlockRoot(),
-                halfSidecars,
-                List.of(UInt64.ZERO, UInt64.valueOf(1)),
-                blockRetrieval))
+                block.getSlotAndBlockRoot(), halfSidecars, List.of(UInt64.ZERO, UInt64.valueOf(1))))
         .isCompletedWithValueMatching(result -> result.orElseThrow().size() == 2);
     assertThat(
             cryptoBlobReconstructor.reconstructBlobs(
-                block.getSlotAndBlockRoot(), halfSidecars, List.of(UInt64.ZERO), blockRetrieval))
+                block.getSlotAndBlockRoot(), halfSidecars, List.of(UInt64.ZERO)))
         .isCompletedWithValueMatching(result -> result.orElseThrow().size() == 1);
     assertThat(
             cryptoBlobReconstructor.reconstructBlobs(
-                block.getSlotAndBlockRoot(),
-                halfSidecars,
-                List.of(UInt64.ZERO, UInt64.valueOf(2)),
-                blockRetrieval))
+                block.getSlotAndBlockRoot(), halfSidecars, List.of(UInt64.ZERO, UInt64.valueOf(2))))
         .isCompletedWithValueMatching(result -> result.orElseThrow().size() == 1);
   }
 }

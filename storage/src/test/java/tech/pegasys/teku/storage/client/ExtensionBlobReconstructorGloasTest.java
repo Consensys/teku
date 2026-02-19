@@ -18,12 +18,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.IntStream;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -46,7 +43,6 @@ public class ExtensionBlobReconstructorGloasTest extends BlobReconstructionAbstr
   private BlobSchema blobSchema;
   private ExtensionBlobReconstructor extensionBlobReconstructor;
   private SignedBeaconBlock testBlock;
-  private Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> gloasBlockRetrieval;
 
   @BeforeEach
   void setupGloas() {
@@ -67,9 +63,6 @@ public class ExtensionBlobReconstructorGloasTest extends BlobReconstructionAbstr
             UInt64.ZERO,
             gloasDataStructureUtil.randomBeaconBlockBodyWithCommitments(commitmentCount));
     testBlock = gloasDataStructureUtil.signedBlock(beaconBlock);
-
-    // In Gloas, block retrieval must return actual block with commitments
-    gloasBlockRetrieval = (blockRoot) -> SafeFuture.completedFuture(Optional.of(testBlock));
   }
 
   @Test
@@ -90,7 +83,7 @@ public class ExtensionBlobReconstructorGloasTest extends BlobReconstructionAbstr
         miscHelpersGloas.constructDataColumnSidecars(
             Optional.empty(),
             new SlotAndBlockRoot(testBlock.getSlot(), testBlock.getRoot()),
-            gloasDataStructureUtil.randomBlobKzgCommitments(commitmentCount),
+            Optional.empty(),
             Optional.empty(),
             blobAndCellProofs);
 
@@ -100,20 +93,14 @@ public class ExtensionBlobReconstructorGloasTest extends BlobReconstructionAbstr
         dataColumnSidecars.subList(1, numberOfColumns / 2);
     assertThat(
             extensionBlobReconstructor.reconstructBlobs(
-                testBlock.getSlotAndBlockRoot(),
-                almostHalfSidecars,
-                List.of(),
-                gloasBlockRetrieval))
+                testBlock.getSlotAndBlockRoot(), almostHalfSidecars, List.of()))
         .isCompletedWithValueMatching(Optional::isEmpty);
 
     final List<DataColumnSidecar> notFirstHalfSidecars =
         dataColumnSidecars.subList(1, numberOfColumns / 2 + 1);
     assertThat(
             extensionBlobReconstructor.reconstructBlobs(
-                testBlock.getSlotAndBlockRoot(),
-                notFirstHalfSidecars,
-                List.of(),
-                gloasBlockRetrieval))
+                testBlock.getSlotAndBlockRoot(), notFirstHalfSidecars, List.of()))
         .isCompletedWithValueMatching(Optional::isEmpty);
   }
 
@@ -135,7 +122,7 @@ public class ExtensionBlobReconstructorGloasTest extends BlobReconstructionAbstr
         miscHelpersGloas.constructDataColumnSidecars(
             Optional.empty(),
             new SlotAndBlockRoot(testBlock.getSlot(), testBlock.getRoot()),
-            gloasDataStructureUtil.randomBlobKzgCommitments(commitmentCount),
+            Optional.empty(),
             Optional.empty(),
             blobAndCellProofs);
 
@@ -144,31 +131,26 @@ public class ExtensionBlobReconstructorGloasTest extends BlobReconstructionAbstr
 
     assertThat(
             extensionBlobReconstructor.reconstructBlobs(
-                testBlock.getSlotAndBlockRoot(), halfSidecars, List.of(), gloasBlockRetrieval))
+                testBlock.getSlotAndBlockRoot(), halfSidecars, List.of()))
         .succeedsWithin(Duration.ofSeconds(5))
         .matches(result -> result.isPresent() && result.orElseThrow().size() == commitmentCount);
     assertThat(
             extensionBlobReconstructor.reconstructBlobs(
                 testBlock.getSlotAndBlockRoot(),
                 halfSidecars,
-                List.of(UInt64.ZERO, UInt64.valueOf(1)),
-                gloasBlockRetrieval))
+                List.of(UInt64.ZERO, UInt64.valueOf(1))))
         .succeedsWithin(Duration.ofSeconds(5))
         .matches(result -> result.isPresent() && result.orElseThrow().size() == commitmentCount);
     assertThat(
             extensionBlobReconstructor.reconstructBlobs(
-                testBlock.getSlotAndBlockRoot(),
-                halfSidecars,
-                List.of(UInt64.ZERO),
-                gloasBlockRetrieval))
+                testBlock.getSlotAndBlockRoot(), halfSidecars, List.of(UInt64.ZERO)))
         .succeedsWithin(Duration.ofSeconds(5))
         .matches(result -> result.isPresent() && result.orElseThrow().size() == 1);
     assertThat(
             extensionBlobReconstructor.reconstructBlobs(
                 testBlock.getSlotAndBlockRoot(),
                 halfSidecars,
-                List.of(UInt64.ZERO, UInt64.valueOf(2)),
-                gloasBlockRetrieval))
+                List.of(UInt64.ZERO, UInt64.valueOf(2))))
         .succeedsWithin(Duration.ofSeconds(5))
         .matches(result -> result.isPresent() && result.orElseThrow().size() == 1);
   }
