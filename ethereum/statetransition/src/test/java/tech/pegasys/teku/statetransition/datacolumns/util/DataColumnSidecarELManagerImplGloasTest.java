@@ -21,7 +21,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELManagerImpl.LOCAL_OR_RECOVERED_ORIGINS;
 
 import java.util.List;
 import java.util.Optional;
@@ -75,23 +74,6 @@ public class DataColumnSidecarELManagerImplGloasTest
   }
 
   @Test
-  public void onNewDataColumnSidecar_ignoresLocalOrRecovered() {
-    final DataColumnSidecar dataColumnSidecar =
-        dataStructureUtil.new RandomDataColumnSidecarBuilder()
-            .slot(currentSlot)
-            .index(custodyGroupCountManager.getSamplingColumnIndices().get(0))
-            .build();
-
-    dataColumnSidecarELManager.onSlot(currentSlot);
-
-    LOCAL_OR_RECOVERED_ORIGINS.forEach(
-        origin -> dataColumnSidecarELManager.onNewDataColumnSidecar(dataColumnSidecar, origin));
-
-    assertThat(asyncRunner.hasDelayedActions()).isFalse();
-    verifyNoInteractions(executionLayer);
-  }
-
-  @Test
   public void onNewDataColumnSidecar_doesNotCreateRecoveryTask() {
     // In Gloas, sidecars cannot trigger recovery because they don't contain KZG commitments
     final DataColumnSidecar dataColumnSidecar =
@@ -141,10 +123,7 @@ public class DataColumnSidecarELManagerImplGloasTest
     dataColumnSidecarELManager.onSlot(currentSlot);
     dataColumnSidecarELManager.onNewBlock(block, Optional.empty());
 
-    // execute queued actions to complete the async recovery operation
-    if (asyncRunner.hasDelayedActions()) {
-      asyncRunner.executeQueuedActions();
-    }
+    asyncRunner.executeQueuedActions();
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
 
     // recovery succeeded and data was published

@@ -210,42 +210,24 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
   }
 
   @Override
-  public SafeFuture<SszList<SszKZGCommitment>> getKzgCommitments(
-      final DataColumnSidecar dataColumnSidecar,
-      final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
-    return retrieveBlockByRoot
-        .apply(dataColumnSidecar.getBeaconBlockRoot())
-        .thenCompose(
-            maybeBeaconBlock ->
-                getKzgCommitments(
-                    maybeBeaconBlock.orElseThrow(
-                        () ->
-                            new IllegalArgumentException(
-                                String.format(
-                                    "Unable to retrieve block with root %s",
-                                    dataColumnSidecar.getBeaconBlockRoot())))));
-  }
-
-  @Override
-  public SafeFuture<SszList<SszKZGCommitment>> getKzgCommitments(final BeaconBlock block) {
-    return SafeFuture.completedFuture(
-        BeaconBlockBodyGloas.required(block.getBody())
-            .getSignedExecutionPayloadBid()
-            .getMessage()
-            .getBlobKzgCommitments());
+  public SszList<SszKZGCommitment> getKzgCommitments(final BeaconBlock block) {
+    return BeaconBlockBodyGloas.required(block.getBody())
+        .getSignedExecutionPayloadBid()
+        .getMessage()
+        .getBlobKzgCommitments();
   }
 
   @Override
   public List<DataColumnSidecar> constructDataColumnSidecars(
       final Optional<SignedBeaconBlockHeader> maybeSignedBeaconBlockHeader,
       final SlotAndBlockRoot slotAndBlockRoot,
-      final SszList<SszKZGCommitment> sszKZGCommitments,
+      final Optional<SszList<SszKZGCommitment>> maybeSszKZGCommitments,
       final Optional<List<Bytes32>> maybeKzgCommitmentsInclusionProof,
       final List<BlobAndCellProofs> blobAndCellProofsList) {
     return miscHelpersGloas.constructDataColumnSidecars(
         maybeSignedBeaconBlockHeader,
         slotAndBlockRoot,
-        sszKZGCommitments,
+        maybeSszKZGCommitments,
         maybeKzgCommitmentsInclusionProof,
         blobAndCellProofsList);
   }
@@ -352,13 +334,5 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
               "DataColumnSidecar's KZG proofs do not match the bid's KZG proofs"));
     }
     return Optional.empty();
-  }
-
-  @Override
-  public boolean canDataColumnSidecarTriggerRecovery() {
-    // In Gloas, data column sidecars only reference the block and do not contain
-    // KZG commitments. Recovery can only be triggered by blocks which provide
-    // the execution payload bid with commitments.
-    return false;
   }
 }

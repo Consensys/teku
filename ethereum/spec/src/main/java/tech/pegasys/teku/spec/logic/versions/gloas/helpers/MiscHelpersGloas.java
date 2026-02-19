@@ -177,7 +177,7 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
   public List<DataColumnSidecar> constructDataColumnSidecars(
       final Optional<SignedBeaconBlockHeader> maybeSignedBeaconBlockHeader,
       final SlotAndBlockRoot slotAndBlockRoot,
-      final SszList<SszKZGCommitment> sszKZGCommitments,
+      final Optional<SszList<SszKZGCommitment>> maybeSszKZGCommitments,
       final Optional<List<Bytes32>> maybeKzgCommitmentsInclusionProof,
       final List<BlobAndCellProofs> blobAndCellProofsList) {
     final List<List<MatrixEntry>> extendedMatrix = computeExtendedMatrix(blobAndCellProofsList);

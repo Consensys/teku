@@ -331,30 +331,21 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   }
 
   @Override
-  public SafeFuture<SszList<SszKZGCommitment>> getKzgCommitments(
-      final DataColumnSidecar dataColumnSidecar,
-      final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
-    return SafeFuture.completedFuture(
-        DataColumnSidecarFulu.required(dataColumnSidecar).getKzgCommitments());
-  }
-
-  @Override
-  public SafeFuture<SszList<SszKZGCommitment>> getKzgCommitments(final BeaconBlock block) {
-    return SafeFuture.completedFuture(
-        BeaconBlockBodyDeneb.required(block.getBody()).getBlobKzgCommitments());
+  public SszList<SszKZGCommitment> getKzgCommitments(final BeaconBlock block) {
+    return BeaconBlockBodyDeneb.required(block.getBody()).getBlobKzgCommitments();
   }
 
   @Override
   public List<DataColumnSidecar> constructDataColumnSidecars(
       final Optional<SignedBeaconBlockHeader> maybeSignedBeaconBlockHeader,
       final SlotAndBlockRoot slotAndBlockRoot,
-      final SszList<SszKZGCommitment> sszKZGCommitments,
+      final Optional<SszList<SszKZGCommitment>> maybeSszKZGCommitments,
       final Optional<List<Bytes32>> maybeKzgCommitmentsInclusionProof,
       final List<BlobAndCellProofs> blobAndCellProofsList) {
     return miscHelpersFulu.constructDataColumnSidecars(
         maybeSignedBeaconBlockHeader,
         slotAndBlockRoot,
-        sszKZGCommitments,
+        maybeSszKZGCommitments,
         maybeKzgCommitmentsInclusionProof,
         blobAndCellProofsList);
   }
@@ -505,12 +496,5 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
 
     return new SignatureVerificationData(
         signingRoot, header.getProposerIndex(), signedBlockHeader.getSignature(), state);
-  }
-
-  @Override
-  public boolean canDataColumnSidecarTriggerRecovery() {
-    // In Fulu, data column sidecars are self-contained with KZG commitments,
-    // signed headers, and inclusion proofs, allowing them to trigger recovery.
-    return true;
   }
 }

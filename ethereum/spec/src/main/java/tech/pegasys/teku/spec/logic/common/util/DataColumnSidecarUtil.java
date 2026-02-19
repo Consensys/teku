@@ -103,16 +103,12 @@ public interface DataColumnSidecarUtil {
       Set<Bytes32> validSignedBlockHeaders,
       Set<InclusionProofInfo> validInclusionProofInfoSet);
 
-  SafeFuture<SszList<SszKZGCommitment>> getKzgCommitments(
-      DataColumnSidecar dataColumnSidecar,
-      Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot);
-
-  SafeFuture<SszList<SszKZGCommitment>> getKzgCommitments(BeaconBlock block);
+  SszList<SszKZGCommitment> getKzgCommitments(BeaconBlock block);
 
   List<DataColumnSidecar> constructDataColumnSidecars(
       Optional<SignedBeaconBlockHeader> maybeSignedBeaconBlockHeader,
       SlotAndBlockRoot slotAndBlockRoot,
-      SszList<SszKZGCommitment> sszKZGCommitments,
+      Optional<SszList<SszKZGCommitment>> maybeSszKZGCommitments,
       Optional<List<Bytes32>> maybeKzgCommitmentsInclusionProof,
       List<BlobAndCellProofs> blobAndCellProofsList);
 
@@ -120,20 +116,6 @@ public interface DataColumnSidecarUtil {
       BeaconBlockBody beaconBlockBody);
 
   Optional<SszBytes32Vector> getMaybeKzgCommitmentsProof(DataColumnSidecar dataColumnSidecar);
-
-  /**
-   * Determines if data column sidecars can trigger recovery for this fork.
-   *
-   * <p>In Fulu, data column sidecars are self-contained with KZG commitments, signed headers, and
-   * inclusion proofs, allowing them to trigger recovery independently.
-   *
-   * <p>In Gloas, data column sidecars only reference the block and do not contain KZG commitments,
-   * so recovery can only be triggered by blocks which provide the execution payload bid with
-   * commitments.
-   *
-   * @return true if data column sidecars can trigger recovery for this fork, false otherwise
-   */
-  boolean canDataColumnSidecarTriggerRecovery();
 
   record InclusionProofInfo(
       Bytes32 commitmentsRoot, Bytes32 inclusionProofRoot, Bytes32 bodyRoot) {}
