@@ -47,7 +47,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 
@@ -491,9 +490,7 @@ public class SyncSourceBatch implements Batch {
       final SignedBeaconBlock newBlock = newBlocks.get(i);
       if (i == 0 && lastBlock.isPresent()) {
         // we want to verify the execution payload is not missing for the last block
-        if (getBidFromBlock(newBlock)
-                .getParentBlockHash()
-                .equals(getBidFromBlock(lastBlock.get()).getBlockHash())
+        if (isParentBlockFull(lastBlock.get(), newBlock)
             && !executionPayloadsByBlockRoot.containsKey(lastBlock.get().getRoot())) {
           logBatchInvalidBecauseOfExecutionPayloadMissing(lastBlock.get());
           return false;
@@ -504,9 +501,7 @@ public class SyncSourceBatch implements Batch {
       if (!newExecutionPayloadsByBlockRoot.containsKey(newBlock.getRoot())
           && i != newBlocks.size() - 1) {
         final SignedBeaconBlock nextNewBlock = newBlocks.get(i + 1);
-        if (getBidFromBlock(newBlock)
-            .getBlockHash()
-            .equals(getBidFromBlock(nextNewBlock).getParentBlockHash())) {
+        if (isParentBlockFull(newBlock, nextNewBlock)) {
           logBatchInvalidBecauseOfExecutionPayloadMissing(newBlock);
           return false;
         }
@@ -515,10 +510,21 @@ public class SyncSourceBatch implements Batch {
     return true;
   }
 
-  private ExecutionPayloadBid getBidFromBlock(final SignedBeaconBlock block) {
+  private boolean isParentBlockFull(
+      final SignedBeaconBlock parentBlock, final SignedBeaconBlock block) {
+    if (parentBlock.getMessage().getBody().toVersionGloas().isEmpty()) {
+      // we don't expect execution payloads for blocks prior to Gloas
+      return false;
+    }
     return BeaconBlockBodyGloas.required(block.getMessage().getBody())
         .getSignedExecutionPayloadBid()
-        .getMessage();
+        .getMessage()
+        .getParentBlockHash()
+        .equals(
+            BeaconBlockBodyGloas.required(parentBlock.getMessage().getBody())
+                .getSignedExecutionPayloadBid()
+                .getMessage()
+                .getBlockHash());
   }
 
   private void logBatchInvalidBecauseOfExecutionPayloadMissing(final SignedBeaconBlock block) {
