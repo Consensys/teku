@@ -36,6 +36,7 @@ import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 
 public class BatchImporter {
+
   private static final Logger LOG = LogManager.getLogger();
 
   private final BlockImporter blockImporter;
@@ -136,7 +137,7 @@ public class BatchImporter {
     // Add blob sidecars to the pool in order for them to be available when the block is being
     // imported
     blockBlobSidecarsTrackersPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
-    return importBlock(block, executionPayload, source);
+    return importBlock(block, Optional.empty(), source);
   }
 
   private SafeFuture<SingleImportResult> importBlock(

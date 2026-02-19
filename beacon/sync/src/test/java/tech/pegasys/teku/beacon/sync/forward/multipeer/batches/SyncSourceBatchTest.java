@@ -31,6 +31,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,15 +49,30 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 
 public class SyncSourceBatchTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalDeneb();
+  private final UInt64 gloasForkEpoch = UInt64.valueOf(1000);
+  private final Spec spec =
+      TestSpecFactory.createMinimalGloas(
+          specConfigBuilder -> {
+            specConfigBuilder
+                .denebForkEpoch(UInt64.ZERO)
+                .electraForkEpoch(gloasForkEpoch.minus(2))
+                .fuluForkEpoch(gloasForkEpoch.minus(1))
+                .gloasForkEpoch(gloasForkEpoch);
+          });
+  private final long gloasSlot = spec.computeStartSlotAtEpoch(gloasForkEpoch).plus(70).longValue();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
   private final TargetChain targetChain =
       chainWith(new SlotAndBlockRoot(UInt64.valueOf(1000), Bytes32.ZERO));
   private final InlineEventThread eventThread = new InlineEventThread();
@@ -343,6 +361,114 @@ public class SyncSourceBatchTest {
     assertThatBatch(batch).isNotAwaitingBlocks();
   }
 
+  @Test
+  void requestMoreBlocks_shouldRequestExecutionPayloadsForGloas() {
+    final int batchCount = 5;
+
+    final Runnable callback = mock(Runnable.class);
+    final Batch batch = createBatch(gloasSlot, batchCount);
+
+    batch.requestMoreBlocks(callback);
+    verifyNoInteractions(callback);
+
+    generateRealisticChain(gloasSlot, batch.getLastSlot().longValue());
+
+    receiveBlocksFromChainBuilder(batch, gloasSlot, batch.getLastSlot().longValue());
+    receiveExecutionPayloadsFromChainBuilder(
+        batch, gloasSlot, batch.getLastSlot().longValue(), __ -> true);
+
+    getSyncSource(batch).assertRequestedBlocks(gloasSlot, batchCount);
+    getSyncSource(batch).assertRequestedExecutionPayloadEnvelopes(gloasSlot, batchCount);
+
+    verify(callback).run();
+    verifyNoMoreInteractions(callback);
+
+    assertThat(batch.isComplete()).isTrue();
+    assertThat(batch.getBlocks())
+        .hasSize(batchCount)
+        .containsExactlyElementsOf(
+            chainBuilder
+                .streamBlocksAndStates(gloasSlot, batch.getLastSlot().longValue())
+                .map(SignedBlockAndState::getBlock)
+                .toList());
+    final Map<Bytes32, SignedExecutionPayloadEnvelope> expectedExecutionPayloadsByBlockRoot =
+        chainBuilder
+            .streamExecutionPayloadsAndStates(gloasSlot, batch.getLastSlot().longValue())
+            .map(SignedExecutionPayloadAndState::executionPayload)
+            .collect(
+                Collectors.toMap(
+                    SignedExecutionPayloadEnvelope::getBeaconBlockRoot, Function.identity()));
+    assertThat(batch.getExecutionPayloadsByBlockRoot())
+        .hasSize(batchCount)
+        .isEqualTo(expectedExecutionPayloadsByBlockRoot);
+  }
+
+  @Test
+  void shouldReportBatchAsInvalidWhenExecutionPayloadIsMissing() {
+    final int batchCount = 5;
+
+    final Batch batch = createBatch(gloasSlot, batchCount);
+
+    batch.requestMoreBlocks(() -> {});
+
+    generateRealisticChain(gloasSlot, batch.getLastSlot().longValue());
+
+    receiveBlocksFromChainBuilder(batch, gloasSlot, batch.getLastSlot().longValue());
+    receiveExecutionPayloadsFromChainBuilder(
+        batch,
+        gloasSlot,
+        batch.getLastSlot().longValue(),
+        // skip one execution payload in the middle of the batch to make it invalid
+        executionPayload ->
+            !executionPayload.getSlot().equals(UInt64.valueOf(gloasSlot + (batchCount / 2))));
+
+    // batch should be reported as invalid
+    verify(conflictResolutionStrategy).reportInvalidBatch(batch, getSyncSource(batch));
+  }
+
+  @Test
+  void shouldReportBatchAsInvalidWhenExecutionPayloadIsMissingFromAPreviousRequest() {
+    final int batchCount = 5;
+
+    final Batch batch = createBatch(gloasSlot, batchCount);
+
+    generateRealisticChain(gloasSlot, batch.getLastSlot().longValue());
+
+    // first request
+    batch.requestMoreBlocks(() -> {});
+
+    final long lastSlotOfFirstRequest = batch.getLastSlot().longValue() - 1;
+
+    // receive blocks and execution payloads apart from the last one
+    receiveBlocksFromChainBuilder(batch, gloasSlot, lastSlotOfFirstRequest);
+    receiveExecutionPayloadsFromChainBuilder(
+        batch,
+        gloasSlot,
+        lastSlotOfFirstRequest,
+        // skip the last execution payload to make the next request invalid
+        executionPayload ->
+            !executionPayload.getSlot().equals(UInt64.valueOf(lastSlotOfFirstRequest)));
+
+    verifyNoInteractions(conflictResolutionStrategy);
+
+    // second request returns the last block whose parent doesn't have an execution payload
+    batch.requestMoreBlocks(() -> {});
+
+    receiveBlocks(batch, chainBuilder.getBlockAtSlot(batch.getLastSlot().longValue()));
+    receiveExecutionPayloads(
+        batch, chainBuilder.getExecutionPayloadAtSlot(batch.getLastSlot().longValue()));
+
+    // batch should be reported as invalid
+    verify(conflictResolutionStrategy).reportInvalidBatch(batch, getSyncSource(batch));
+  }
+
+  protected void generateRealisticChain(final long fromSlot, final long toSlot) {
+    chainBuilder.generateGenesis();
+    for (long i = fromSlot; i <= toSlot; i++) {
+      chainBuilder.generateBlockAtSlot(i);
+    }
+  }
+
   protected Batch createBatch(final long startSlot, final long count) {
     final List<StubSyncSource> syncSources = new ArrayList<>();
     final SyncSourceSelector syncSourceProvider =
@@ -371,6 +497,35 @@ public class SyncSourceBatchTest {
 
   protected void receiveBlobSidecars(final Batch batch, final List<BlobSidecar> blobSidecars) {
     getSyncSource(batch).receiveBlobSidecars(blobSidecars.toArray(new BlobSidecar[] {}));
+  }
+
+  protected void receiveExecutionPayloads(
+      final Batch batch, final SignedExecutionPayloadEnvelope... executionPayloads) {
+    getSyncSource(batch).receiveExecutionPayloadEnvelopes(executionPayloads);
+  }
+
+  protected void receiveBlocksFromChainBuilder(
+      final Batch batch, final long fromSlot, final long toSlot) {
+    getSyncSource(batch)
+        .receiveBlocks(
+            chainBuilder
+                .streamBlocksAndStates(fromSlot, toSlot)
+                .map(SignedBlockAndState::getBlock)
+                .toArray(SignedBeaconBlock[]::new));
+  }
+
+  protected void receiveExecutionPayloadsFromChainBuilder(
+      final Batch batch,
+      final long fromSlot,
+      final long toSlot,
+      final Predicate<SignedExecutionPayloadEnvelope> executionPayloadsFilter) {
+    getSyncSource(batch)
+        .receiveExecutionPayloadEnvelopes(
+            chainBuilder
+                .streamExecutionPayloadsAndStates(fromSlot, toSlot)
+                .map(SignedExecutionPayloadAndState::executionPayload)
+                .filter(executionPayloadsFilter)
+                .toArray(SignedExecutionPayloadEnvelope[]::new));
   }
 
   protected void requestError(final Batch batch, final Throwable error) {
