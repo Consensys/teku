@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.beaconnode;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
@@ -24,27 +23,21 @@ public class Phase0TimeBasedEventAdapter extends TimeBasedEventAdapter {
 
   public Phase0TimeBasedEventAdapter(
       final RepeatingTaskScheduler taskScheduler,
-      final TimeProvider timeProvider,
       final ValidatorTimingChannel validatorTimingChannel,
       final Runnable onLastSlot,
       final Spec spec) {
-    super(UInt64.ZERO, taskScheduler, timeProvider, validatorTimingChannel, onLastSlot, spec);
+    super(UInt64.ZERO, taskScheduler, validatorTimingChannel, onLastSlot, spec);
   }
 
   @Override
   void scheduleDuties(
       final UInt64 nextSlotStartTimeMillis, final Optional<UInt64> expirationTimeMillis) {
 
-    scheduleAll(
-        nextSlotStartTimeMillis,
-        expirationTimeMillis,
-        Optional.of(onLastSlot),
-        new ScheduledEvent(0, this::onStartSlot));
+    scheduleOnSlot(nextSlotStartTimeMillis, expirationTimeMillis);
 
     scheduleAll(
         nextSlotStartTimeMillis,
         expirationTimeMillis,
-        Optional.empty(),
         new ScheduledEvent(
             spec.getAttestationDueMillis(getFirstSlot()), this::onAttestationCreationDue),
         new ScheduledEvent(spec.getAggregateDueMillis(getFirstSlot()), this::onAggregationDue));

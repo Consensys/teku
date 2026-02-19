@@ -69,20 +69,19 @@ public class ForkAwareTimeBasedEventAdapter implements BeaconChainEventAdapter {
     adapters.put(
         SpecMilestone.PHASE0,
         new Phase0TimeBasedEventAdapter(
-            taskScheduler, timeProvider, validatorTimingChannel, this::activateAltair, spec));
+            taskScheduler, validatorTimingChannel, this::activateAltair, spec));
 
     if (spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
       adapters.put(
           SpecMilestone.ALTAIR,
           new AltairTimeBasedEventAdapter(
-              taskScheduler, timeProvider, validatorTimingChannel, this::activateGloas, spec));
+              taskScheduler, validatorTimingChannel, this::activateGloas, spec));
     }
 
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
       adapters.put(
           SpecMilestone.GLOAS,
-          new GloasTimeBasedEventAdapter(
-              taskScheduler, timeProvider, validatorTimingChannel, () -> {}, spec));
+          new GloasTimeBasedEventAdapter(taskScheduler, validatorTimingChannel, () -> {}, spec));
     }
   }
 
@@ -118,7 +117,7 @@ public class ForkAwareTimeBasedEventAdapter implements BeaconChainEventAdapter {
     final SpecMilestone currentMilestone = spec.atSlot(nextSlot).getMilestone();
 
     // Set genesis time on all adapters
-    adapters.values().forEach(adapter -> adapter.setGenesisTime(genesisTime));
+    adapters.values().forEach(adapter -> adapter.setGenesisTimeMillis(genesisTimeMillis));
 
     switch (currentMilestone) {
       case PHASE0 -> activatePhase0();

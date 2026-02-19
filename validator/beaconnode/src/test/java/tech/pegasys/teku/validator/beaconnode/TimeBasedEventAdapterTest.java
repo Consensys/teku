@@ -64,14 +64,11 @@ class TimeBasedEventAdapterTest {
     final SpecMilestone milestone = spec.atSlot(UInt64.ZERO).getMilestone();
     return switch (milestone) {
       case PHASE0 ->
-          new Phase0TimeBasedEventAdapter(
-              taskScheduler, timeProvider, validatorTimingChannel, onLastSlot, spec);
+          new Phase0TimeBasedEventAdapter(taskScheduler, validatorTimingChannel, onLastSlot, spec);
       case ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA, FULU ->
-          new AltairTimeBasedEventAdapter(
-              taskScheduler, timeProvider, validatorTimingChannel, onLastSlot, spec);
+          new AltairTimeBasedEventAdapter(taskScheduler, validatorTimingChannel, onLastSlot, spec);
       case GLOAS ->
-          new GloasTimeBasedEventAdapter(
-              taskScheduler, timeProvider, validatorTimingChannel, onLastSlot, spec);
+          new GloasTimeBasedEventAdapter(taskScheduler, validatorTimingChannel, onLastSlot, spec);
     };
   }
 
@@ -82,13 +79,13 @@ class TimeBasedEventAdapterTest {
     final Spec spec = specFactory.get();
     final TimeBasedEventAdapter adapter = createAdapter(spec, () -> {});
     final int secondsPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot();
-    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
+    final UInt64 genesisTimeMillis = timeProvider.getTimeInMillis();
     final long nextSlot = 25;
     final UInt64 nextSlotUInt = UInt64.valueOf(nextSlot);
     final int timeUntilNextSlot = secondsPerSlot - 1;
     timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
 
-    adapter.start(genesisTime);
+    startAdapter(adapter, genesisTimeMillis, spec);
 
     // Should not fire any events immediately
     asyncRunner.executeDueActionsRepeatedly();
@@ -114,16 +111,17 @@ class TimeBasedEventAdapterTest {
     final int millisPerSlot = spec.getGenesisSpecConfig().getSlotDurationMillis();
     final int secondsPerSlot = millisPerSlot / 1000;
 
-    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    adapter.setGenesisTime(genesisTime);
+    final UInt64 genesisTimeMillis = timeProvider.getTimeInMillis();
+    adapter.setGenesisTimeMillis(genesisTimeMillis);
 
     final long nextSlot = 25;
     final int timeUntilNextSlot = secondsPerSlot / 2;
     timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
 
-    final long genesisTimeMillis = genesisTime.longValue() * 1000;
-    final UInt64 nextSlotStartMillis = UInt64.valueOf(genesisTimeMillis + nextSlot * millisPerSlot);
-    final UInt64 expiryMillis = UInt64.valueOf(genesisTimeMillis + (nextSlot + 1) * millisPerSlot);
+    final UInt64 nextSlotStartMillis =
+        UInt64.valueOf(genesisTimeMillis.longValue() + (nextSlot * millisPerSlot));
+    final UInt64 expiryMillis =
+        UInt64.valueOf(genesisTimeMillis.longValue() + ((nextSlot + 1) * millisPerSlot));
 
     adapter.scheduleDuties(nextSlotStartMillis, Optional.of(expiryMillis));
 
@@ -148,14 +146,14 @@ class TimeBasedEventAdapterTest {
 
     final TimeBasedEventAdapter adapter =
         new AltairTimeBasedEventAdapter(
-            taskScheduler, timeProvider, validatorTimingChannel, () -> {}, gnosisSpec);
+            taskScheduler, validatorTimingChannel, () -> {}, gnosisSpec);
 
-    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
+    final UInt64 genesisTimeMillis = timeProvider.getTimeInMillis();
     final long nextSlot = 25;
     final int timeUntilNextSlot = secondsPerSlot - 1;
     timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
 
-    adapter.start(genesisTime);
+    startAdapter(adapter, genesisTimeMillis, gnosisSpec);
     asyncRunner.executeDueActionsRepeatedly();
     verifyNoMoreInteractions(validatorTimingChannel);
 
@@ -186,5 +184,18 @@ class TimeBasedEventAdapterTest {
     timeProvider.advanceTimeByMillis(twoThirdsMillis - twoThirdsSeconds);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(UInt64.valueOf(nextSlot));
+  }
+
+  private void startAdapter(
+      final TimeBasedEventAdapter adapter, final UInt64 genesisTimeMillis, final Spec spec) {
+
+    adapter.setGenesisTimeMillis(genesisTimeMillis);
+
+    final UInt64 currentSlot =
+        spec.getCurrentSlotFromTimeMillis(timeProvider.getTimeInMillis(), genesisTimeMillis);
+    final UInt64 nextSlotStartTimeMillis =
+        spec.computeTimeMillisAtSlot(currentSlot.increment(), genesisTimeMillis);
+
+    adapter.scheduleDuties(nextSlotStartTimeMillis, Optional.empty());
   }
 }

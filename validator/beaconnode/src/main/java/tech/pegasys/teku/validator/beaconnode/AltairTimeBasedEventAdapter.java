@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.beaconnode;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -25,7 +24,6 @@ public class AltairTimeBasedEventAdapter extends TimeBasedEventAdapter {
 
   public AltairTimeBasedEventAdapter(
       final RepeatingTaskScheduler taskScheduler,
-      final TimeProvider timeProvider,
       final ValidatorTimingChannel validatorTimingChannel,
       final Runnable onLastSlot,
       final Spec spec) {
@@ -33,7 +31,6 @@ public class AltairTimeBasedEventAdapter extends TimeBasedEventAdapter {
         spec.computeStartSlotAtEpoch(
             spec.getForkSchedule().getFork(SpecMilestone.ALTAIR).getEpoch()),
         taskScheduler,
-        timeProvider,
         validatorTimingChannel,
         onLastSlot,
         spec);
@@ -43,16 +40,11 @@ public class AltairTimeBasedEventAdapter extends TimeBasedEventAdapter {
   void scheduleDuties(
       final UInt64 nextSlotStartTimeMillis, final Optional<UInt64> expirationTimeMillis) {
 
-    scheduleAll(
-        nextSlotStartTimeMillis,
-        expirationTimeMillis,
-        Optional.of(onLastSlot),
-        new ScheduledEvent(0, this::onStartSlot));
+    scheduleOnSlot(nextSlotStartTimeMillis, expirationTimeMillis);
 
     scheduleAll(
         nextSlotStartTimeMillis,
         expirationTimeMillis,
-        Optional.empty(),
         new ScheduledEvent(
             spec.getAttestationDueMillis(getFirstSlot()), this::onAttestationCreationDue),
         new ScheduledEvent(spec.getAggregateDueMillis(getFirstSlot()), this::onAggregationDue),
