@@ -75,8 +75,8 @@ public class BatchImporter {
     checkState(!blocks.isEmpty(), "Batch has no blocks to import");
     return asyncRunner.runAsync(
         () -> {
-          final SignedBeaconBlock firstBlock = blocks.get(0);
-          SafeFuture<BlockImportResult> importResult =
+          final SignedBeaconBlock firstBlock = blocks.getFirst();
+          SafeFuture<SingleImportResult> importResult =
               importBlock(
                   firstBlock,
                   blobSidecarsByBlockRoot,
@@ -99,25 +99,25 @@ public class BatchImporter {
                     });
           }
           return importResult.thenApply(
-              lastBlockImportResult -> {
-                if (lastBlockImportResult.isSuccessful()) {
+              lastImportResult -> {
+                if (lastImportResult.isSuccessful()) {
                   return BatchImportResult.IMPORTED_ALL_BLOCKS;
-                } else if (lastBlockImportResult.hasFailedExecutingExecutionPayload()) {
+                } else if (lastImportResult.failedPayloadExecution()) {
                   return BatchImportResult.EXECUTION_CLIENT_OFFLINE;
-                } else if (lastBlockImportResult.isDataNotAvailable()) {
+                } else if (lastImportResult.dataNotAvailable) {
                   return BatchImportResult.DATA_NOT_AVAILABLE;
                 }
                 LOG.debug(
                     "Failed to import batch {}: {}",
                     batch,
-                    lastBlockImportResult.getFailureReason(),
-                    lastBlockImportResult.getFailureCause().orElse(null));
+                    lastImportResult.failureReason(),
+                    lastImportResult.failureCause().orElse(null));
                 return BatchImportResult.IMPORT_FAILED;
               });
         });
   }
 
-  private SafeFuture<BlockImportResult> importBlock(
+  private SafeFuture<SingleImportResult> importBlock(
       final SignedBeaconBlock block,
       final Map<Bytes32, List<BlobSidecar>> blobSidecarsByBlockRoot,
       final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloadsByBlockRoot,
@@ -129,8 +129,8 @@ public class BatchImporter {
       return importBlock(block, executionPayload, source);
     }
     final List<BlobSidecar> blobSidecars = blobSidecarsByBlockRoot.get(blockRoot);
-    LOG.debug(
-        "Sending {} blob sidecars to the pool for block with root {}",
+    LOG.trace(
+        "Sending {} blob sidecars to the pool during syncing for block with root {}",
         blobSidecars.size(),
         blockRoot);
     // Add blob sidecars to the pool in order for them to be available when the block is being
@@ -139,47 +139,60 @@ public class BatchImporter {
     return importBlock(block, executionPayload, source);
   }
 
-  private SafeFuture<BlockImportResult> importBlock(
+  private SafeFuture<SingleImportResult> importBlock(
       final SignedBeaconBlock block,
       final Optional<SignedExecutionPayloadEnvelope> executionPayload,
       final SyncSource source) {
+    LOG.trace(
+        "Importing block during syncing for slot {} and root {}", block.getSlot(), block.getRoot());
     return blockImporter
         .importBlock(block)
         .thenCompose(
-            result -> {
-              if (result.getFailureReason()
+            blockImportResult -> {
+              if (blockImportResult.getFailureReason()
                   == BlockImportResult.FailureReason.FAILED_WEAK_SUBJECTIVITY_CHECKS) {
                 LOG.warn(
                     "Disconnecting source ({}) for sending block that failed weak subjectivity checks: {}",
                     source,
-                    result);
+                    blockImportResult);
                 source.disconnectCleanly(DisconnectReason.REMOTE_FAULT).finishWarn(LOG);
               }
-              if (executionPayload.isEmpty()) {
-                return SafeFuture.completedFuture(result);
+              if (executionPayload.isEmpty() || !blockImportResult.isSuccessful()) {
+                return SafeFuture.completedFuture(
+                    new SingleImportResult(
+                        blockImportResult.isSuccessful(),
+                        blockImportResult.hasFailedExecutingExecutionPayload(),
+                        blockImportResult.isDataNotAvailable(),
+                        Optional.ofNullable(blockImportResult.getFailureReason())
+                            .map(Enum::name)
+                            .orElse(null),
+                        blockImportResult.getFailureCause()));
               }
+              LOG.trace(
+                  "Importing execution payload during syncing for slot {} and block root {}",
+                  block.getSlot(),
+                  block.getRoot());
               return executionPayloadManager
                   .importExecutionPayload(executionPayload.get())
                   .thenApply(
-                      executionPayloadImportResult -> {
-                        // TODO: very hacky, will refactor
-                        if (executionPayloadImportResult.isSuccessful()) {
-                          return result;
-                        }
-                        return BlockImportResult.failedExecutionPayloadExecution(
-                            executionPayloadImportResult
-                                .getFailureCause()
-                                .orElse(
-                                    new IllegalStateException(
-                                        String.format(
-                                            "Failed execution payload execution %s: %s",
-                                            executionPayloadImportResult.getFailureReason(),
-                                            executionPayloadImportResult
-                                                .getFailureCause()
-                                                .orElse(null)))));
-                      });
+                      executionPayloadImportResult ->
+                          new SingleImportResult(
+                              executionPayloadImportResult.isSuccessful(),
+                              executionPayloadImportResult.hasFailedExecution(),
+                              executionPayloadImportResult.isDataNotAvailable(),
+                              Optional.ofNullable(executionPayloadImportResult.getFailureReason())
+                                  .map(Enum::name)
+                                  .orElse(null),
+                              executionPayloadImportResult.getFailureCause()));
             });
   }
+
+  public record SingleImportResult(
+      boolean isSuccessful,
+      boolean failedPayloadExecution,
+      boolean dataNotAvailable,
+      String failureReason,
+      Optional<Throwable> failureCause) {}
 
   public enum BatchImportResult {
     IMPORTED_ALL_BLOCKS,
