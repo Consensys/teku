@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.common.statetransition.results;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 
+@SuppressWarnings("ClassInitializationDeadlock")
 public interface ExecutionPayloadImportResult {
 
   ExecutionPayloadImportResult FAILED_UNKNOWN_BEACON_BLOCK_ROOT =
@@ -68,6 +69,14 @@ public interface ExecutionPayloadImportResult {
   }
 
   boolean isSuccessful();
+
+  default boolean hasFailedExecution() {
+    return false;
+  }
+
+  default boolean isDataNotAvailable() {
+    return false;
+  }
 
   /**
    * @return If successful, returns a {@code SignedExecutionPayloadEnvelope}, otherwise returns

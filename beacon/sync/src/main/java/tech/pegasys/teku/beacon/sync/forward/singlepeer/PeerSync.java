@@ -21,6 +21,7 @@ import java.util.OptionalInt;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -41,7 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
@@ -51,12 +52,19 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class PeerSync {
   private static final Duration NEXT_REQUEST_TIMEOUT = Duration.ofSeconds(3);
 
-  private static final List<FailureReason> BAD_BLOCK_FAILURE_REASONS =
+  private static final List<BlockImportResult.FailureReason> BAD_BLOCK_FAILURE_REASONS =
       List.of(
-          FailureReason.FAILED_WEAK_SUBJECTIVITY_CHECKS,
-          FailureReason.FAILED_STATE_TRANSITION,
-          FailureReason.UNKNOWN_PARENT,
-          FailureReason.FAILED_DATA_AVAILABILITY_CHECK_INVALID);
+          BlockImportResult.FailureReason.FAILED_WEAK_SUBJECTIVITY_CHECKS,
+          BlockImportResult.FailureReason.FAILED_STATE_TRANSITION,
+          BlockImportResult.FailureReason.UNKNOWN_PARENT,
+          BlockImportResult.FailureReason.FAILED_DATA_AVAILABILITY_CHECK_INVALID);
+
+  private static final List<ExecutionPayloadImportResult.FailureReason>
+      BAD_EXECUTION_PAYLOAD_FAILURE_REASONS =
+          List.of(
+              ExecutionPayloadImportResult.FailureReason.FAILED_STATE_TRANSITION,
+              ExecutionPayloadImportResult.FailureReason.UNKNOWN_BEACON_BLOCK_ROOT,
+              ExecutionPayloadImportResult.FailureReason.FAILED_DATA_AVAILABILITY_CHECK_INVALID);
 
   private static final Logger LOG = LogManager.getLogger();
   static final int MAX_THROTTLED_REQUESTS = 10;
@@ -83,6 +91,8 @@ public class PeerSync {
   private final AsyncRunner asyncRunner;
   private final Counter blockImportSuccessResult;
   private final Counter blockImportFailureResult;
+  private final Counter executionPayloadImportSuccessResult;
+  private final Counter executionPayloadImportFailureResult;
   private final OptionalInt maxDistanceFromHeadReached;
 
   private final AtomicInteger throttledRequestCount = new AtomicInteger(0);
@@ -112,8 +122,16 @@ public class PeerSync {
             "block_import_total",
             "The number of block imports performed",
             "result");
+    final LabelledMetric<Counter> executionPayloadImportCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.BEACON,
+            "execution_payload_import_total",
+            "The number of execution payloads imports performed",
+            "result");
     this.blockImportSuccessResult = blockImportCounter.labels("imported");
     this.blockImportFailureResult = blockImportCounter.labels("rejected");
+    this.executionPayloadImportSuccessResult = executionPayloadImportCounter.labels("imported");
+    this.executionPayloadImportFailureResult = executionPayloadImportCounter.labels("rejected");
     this.batchSize = UInt64.valueOf(batchSize);
     this.maxDistanceFromHeadReached = maxDistanceFromHeadReached;
     this.minSlotsToProgressPerRequest = this.batchSize.dividedBy(4);
@@ -182,6 +200,7 @@ public class PeerSync {
               final PeerSyncBlobSidecarListener blobSidecarListener =
                   new PeerSyncBlobSidecarListener(requestContext.startSlot, requestContext.endSlot);
 
+              // syncing blob sidecars
               if (blobSidecarManager.isAvailabilityRequiredAtSlot(requestContext.startSlot)
                   || blobSidecarManager.isAvailabilityRequiredAtSlot(requestContext.endSlot)) {
                 LOG.debug(
@@ -201,6 +220,7 @@ public class PeerSync {
                   new PeerSyncExecutionPayloadListener(
                       requestContext.startSlot, requestContext.endSlot);
 
+              // syncing execution payloads
               if (spec.atSlot(requestContext.endSlot)
                   .getMilestone()
                   .isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
@@ -211,7 +231,7 @@ public class PeerSync {
                     peer.getId());
                 executionPayloadsRequest =
                     peer.requestExecutionPayloadEnvelopesByRange(
-                        requestContext.startSlot, requestContext.endSlot, executionPayloadListener);
+                        requestContext.startSlot, requestContext.count, executionPayloadListener);
               } else {
                 executionPayloadsRequest = SafeFuture.COMPLETE;
               }
@@ -246,7 +266,7 @@ public class PeerSync {
                           peer.requestBlocksByRange(
                               requestContext.startSlot, requestContext.count, blockListener))
                   // the received blob sidecars and execution payloads (if any) can be cleaned from
-                  // the cache because the blocks (and execution payloads have been imported. They
+                  // the cache because the blocks and execution payloads have been imported. They
                   // are also cleaned in case of failures.
                   .alwaysRun(
                       () -> {
@@ -290,11 +310,12 @@ public class PeerSync {
   private PeerSyncResult handleFailedRequestToPeer(
       final Eth2Peer peer, final PeerStatus peerStatus, final Throwable err) {
     final Throwable rootException = Throwables.getRootCause(err);
+
     if (rootException instanceof FailedBlockImportException importException) {
-      final FailureReason reason = importException.getResult().getFailureReason();
+      final BlockImportResult.FailureReason reason = importException.getResult().getFailureReason();
       final SignedBeaconBlock block = importException.getBlock();
 
-      if (reason.equals(FailureReason.UNKNOWN_PARENT)
+      if (reason.equals(BlockImportResult.FailureReason.UNKNOWN_PARENT)
           && !hasPeerFinalizedBlock(block, peerStatus)) {
         // We received a block that doesn't connect to our chain.
         // This can happen if our peer is sending us blocks from the non-final portion of their
@@ -304,7 +325,7 @@ public class PeerSync {
             "Failed to import non-final block from peer (err: {}) {}: {}", reason, block, peer);
         return PeerSyncResult.BLOCK_IMPORT_FAILED;
       } else if (BAD_BLOCK_FAILURE_REASONS.contains(reason)) {
-        LOG.warn("Failed to import block from peer (err: {}) {}: {}", reason, block, peer);
+        logWarningForFailedBlockImport(block, reason, peer);
         LOG.debug(
             "Disconnecting from peer ({}) who sent invalid block ({}): {}",
             peer,
@@ -313,8 +334,28 @@ public class PeerSync {
         disconnectFromPeer(peer);
         return PeerSyncResult.BAD_BLOCK;
       } else {
-        LOG.warn("Failed to import block from peer (err: {}) {}: {}", reason, block, peer);
+        logWarningForFailedBlockImport(block, reason, peer);
         return PeerSyncResult.BLOCK_IMPORT_FAILED;
+      }
+    }
+
+    if (rootException instanceof FailedExecutionPayloadImportException importException) {
+      final ExecutionPayloadImportResult.FailureReason reason =
+          importException.getResult().getFailureReason();
+      final SignedExecutionPayloadEnvelope executionPayload = importException.getExecutionPayload();
+
+      if (BAD_EXECUTION_PAYLOAD_FAILURE_REASONS.contains(reason)) {
+        logWarningForFailedExecutionPayloadImport(executionPayload, reason, peer);
+        LOG.debug(
+            "Disconnecting from peer ({}) who sent invalid execution payload ({}): {}",
+            peer,
+            reason.name(),
+            executionPayload);
+        disconnectFromPeer(peer);
+        return PeerSyncResult.BAD_EXECUTION_PAYLOAD;
+      } else {
+        logWarningForFailedExecutionPayloadImport(executionPayload, reason, peer);
+        return PeerSyncResult.EXECUTION_PAYLOAD_IMPORT_FAILED;
       }
     }
 
@@ -333,6 +374,24 @@ public class PeerSync {
     } else {
       throw new RuntimeException("Unhandled error while syncing", err);
     }
+  }
+
+  private void logWarningForFailedBlockImport(
+      final SignedBeaconBlock block,
+      final BlockImportResult.FailureReason reason,
+      final Eth2Peer peer) {
+    LOG.warn("Failed to import block from peer (err: {}) {}: {}", reason, block, peer);
+  }
+
+  private void logWarningForFailedExecutionPayloadImport(
+      final SignedExecutionPayloadEnvelope executionPayload,
+      final ExecutionPayloadImportResult.FailureReason reason,
+      final Eth2Peer peer) {
+    LOG.warn(
+        "Failed to import execution payload from peer (err: {}) {}: {}",
+        reason,
+        executionPayload,
+        peer);
   }
 
   private boolean hasPeerFinalizedBlock(final SignedBeaconBlock block, final PeerStatus status) {
@@ -377,7 +436,7 @@ public class PeerSync {
   private SafeFuture<Void> importBlock(
       final SignedBeaconBlock block,
       final Optional<List<BlobSidecar>> maybeBlobSidecars,
-      final Optional<SignedExecutionPayloadEnvelope> executionPayload) {
+      final Optional<SignedExecutionPayloadEnvelope> maybeExecutionPayload) {
     if (stopped.get()) {
       throw new CancellationException("Peer sync was cancelled");
     }
@@ -390,41 +449,50 @@ public class PeerSync {
     return blockImporter
         .importBlock(block)
         .thenCompose(
-            result -> {
-              if (executionPayload.isEmpty()) {
-                return SafeFuture.completedFuture(result);
+            blockImportResult -> {
+              LOG.trace(
+                  "Block import result for block at slot {}: {}",
+                  block.getSlot(),
+                  blockImportResult);
+              if (maybeExecutionPayload.isEmpty() || !blockImportResult.isSuccessful()) {
+                processImportResult(
+                    blockImportResult.isSuccessful(),
+                    blockImportSuccessResult,
+                    blockImportFailureResult,
+                    () -> new FailedBlockImportException(block, blockImportResult));
+                return SafeFuture.COMPLETE;
               }
+              final SignedExecutionPayloadEnvelope executionPayload = maybeExecutionPayload.get();
               return executionPayloadManager
-                  .importExecutionPayload(executionPayload.get())
-                  .thenApply(
+                  .importExecutionPayload(executionPayload)
+                  .thenAccept(
                       executionPayloadImportResult -> {
-                        // TODO: very hacky, will refactor
-                        if (executionPayloadImportResult.isSuccessful()) {
-                          return result;
-                        }
-                        return BlockImportResult.failedExecutionPayloadExecution(
-                            executionPayloadImportResult
-                                .getFailureCause()
-                                .orElse(
-                                    new IllegalStateException(
-                                        String.format(
-                                            "Failed execution payload execution %s: %s",
-                                            executionPayloadImportResult.getFailureReason(),
-                                            executionPayloadImportResult
-                                                .getFailureCause()
-                                                .orElse(null)))));
+                        LOG.trace(
+                            "Execution payload import result for execution payload at slot {}: {}",
+                            executionPayload.getSlot(),
+                            executionPayloadImportResult);
+                        processImportResult(
+                            executionPayloadImportResult.isSuccessful(),
+                            executionPayloadImportSuccessResult,
+                            executionPayloadImportFailureResult,
+                            () ->
+                                new FailedExecutionPayloadImportException(
+                                    executionPayload, executionPayloadImportResult));
                       });
-            })
-        .thenAccept(
-            result -> {
-              LOG.trace("Block import result for block at slot {}: {}", block.getSlot(), result);
-              if (!result.isSuccessful()) {
-                blockImportFailureResult.inc();
-                throw new FailedBlockImportException(block, result);
-              } else {
-                blockImportSuccessResult.inc();
-              }
             });
+  }
+
+  private void processImportResult(
+      final boolean isSuccessful,
+      final Counter importSuccessResult,
+      final Counter importFailureResult,
+      final Supplier<RuntimeException> exceptionToThrowOnFailure) {
+    if (!isSuccessful) {
+      importFailureResult.inc();
+      throw exceptionToThrowOnFailure.get();
+    } else {
+      importSuccessResult.inc();
+    }
   }
 
   private void disconnectFromPeer(final Eth2Peer peer) {

@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
@@ -49,9 +50,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public abstract class AbstractSyncTest {
 
-  protected final UInt64 denebForkEpoch = UInt64.valueOf(100);
-  protected final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
-  protected final UInt64 denebFirstSlot = spec.computeStartSlotAtEpoch(denebForkEpoch);
+  protected final Spec spec = getSpec();
   protected final Eth2Peer peer = mock(Eth2Peer.class);
   protected final BlockImporter blockImporter = mock(BlockImporter.class);
   protected final BlobSidecarManager blobSidecarManager = mock(BlobSidecarManager.class);
@@ -69,6 +68,10 @@ public abstract class AbstractSyncTest {
     when(recentChainData.getSpec()).thenReturn(spec);
   }
 
+  protected Spec getSpec() {
+    return TestSpecFactory.createDefault();
+  }
+
   @SuppressWarnings("unchecked")
   protected final ArgumentCaptor<RpcResponseListener<SignedBeaconBlock>>
       blockResponseListenerArgumentCaptor = ArgumentCaptor.forClass(RpcResponseListener.class);
@@ -76,6 +79,11 @@ public abstract class AbstractSyncTest {
   @SuppressWarnings("unchecked")
   protected final ArgumentCaptor<RpcResponseListener<BlobSidecar>>
       blobSidecarResponseListenerArgumentCaptor =
+          ArgumentCaptor.forClass(RpcResponseListener.class);
+
+  @SuppressWarnings("unchecked")
+  protected final ArgumentCaptor<RpcResponseListener<SignedExecutionPayloadEnvelope>>
+      executionPayloadResponseListenerArgumentCaptor =
           ArgumentCaptor.forClass(RpcResponseListener.class);
 
   protected void completeRequestWithBlockAtSlot(final SafeFuture<Void> request, final UInt64 slot) {
@@ -111,6 +119,21 @@ public abstract class AbstractSyncTest {
     request.complete(null);
     asyncRunner.executeQueuedActions();
     return blobSidecarsBySlot;
+  }
+
+  protected Map<UInt64, SignedExecutionPayloadEnvelope> completeRequestWithExecutionPayloadsAtSlots(
+      final SafeFuture<Void> request, final UInt64 startSlot, final UInt64 count) {
+    // Capture latest response listener
+    verify(peer, atLeastOnce())
+        .requestExecutionPayloadEnvelopesByRange(
+            any(), any(), executionPayloadResponseListenerArgumentCaptor.capture());
+    final RpcResponseListener<SignedExecutionPayloadEnvelope> responseListener =
+        executionPayloadResponseListenerArgumentCaptor.getValue();
+    final Map<UInt64, SignedExecutionPayloadEnvelope> executionPayloadsBySlot =
+        respondWithExecutionPayloadsAtSlots(request, responseListener, startSlot, count);
+    request.complete(null);
+    asyncRunner.executeQueuedActions();
+    return executionPayloadsBySlot;
   }
 
   protected List<SignedBeaconBlock> respondWithBlocksAtSlots(
@@ -160,6 +183,29 @@ public abstract class AbstractSyncTest {
     return blobSidecarsBySlot;
   }
 
+  protected Map<UInt64, SignedExecutionPayloadEnvelope> respondWithExecutionPayloadsAtSlots(
+      final SafeFuture<Void> request,
+      final RpcResponseListener<SignedExecutionPayloadEnvelope> responseListener,
+      final UInt64 startSlot,
+      final UInt64 count) {
+    return respondWithExecutionPayloadsAtSlots(
+        request, responseListener, getSlotsRange(startSlot, count));
+  }
+
+  protected Map<UInt64, SignedExecutionPayloadEnvelope> respondWithExecutionPayloadsAtSlots(
+      final SafeFuture<Void> request,
+      final RpcResponseListener<SignedExecutionPayloadEnvelope> responseListener,
+      final UInt64... slots) {
+    final Map<UInt64, SignedExecutionPayloadEnvelope> executionPayloadsBySlot = new HashMap<>();
+    for (final UInt64 slot : slots) {
+      final SignedExecutionPayloadEnvelope executionPayload =
+          dataStructureUtil.randomSignedExecutionPayloadEnvelope(slot.longValue());
+      executionPayloadsBySlot.put(slot, executionPayload);
+      responseListener.onResponse(executionPayload).propagateExceptionTo(request);
+    }
+    return executionPayloadsBySlot;
+  }
+
   protected PeerStatus withPeerHeadSlot(
       final UInt64 peerHeadSlot, final UInt64 peerFinalizedEpoch, final Bytes32 peerHeadBlockRoot) {
     final StatusMessage statusMessage =
@@ -172,7 +218,7 @@ public abstract class AbstractSyncTest {
                 peerFinalizedEpoch,
                 peerHeadBlockRoot,
                 peerHeadSlot,
-                Optional.empty());
+                Optional.of(UInt64.ZERO));
 
     final PeerStatus peerStatus = PeerStatus.fromStatusMessage(statusMessage);
 
