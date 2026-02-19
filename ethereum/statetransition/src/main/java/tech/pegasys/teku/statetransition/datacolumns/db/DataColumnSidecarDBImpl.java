@@ -23,37 +23,37 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.storage.api.SidecarQueryChannel;
 import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
-import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final CombinedChainDataClient combinedChainDataClient;
+  private final SidecarQueryChannel sidecarQueryChannel;
   private final SidecarUpdateChannel sidecarUpdateChannel;
   private final DetailLogger detailLogger = new DetailLogger();
 
   public DataColumnSidecarDBImpl(
-      final CombinedChainDataClient combinedChainDataClient,
+      final SidecarQueryChannel sidecarQueryChannel,
       final SidecarUpdateChannel sidecarUpdateChannel) {
-    this.combinedChainDataClient = combinedChainDataClient;
+    this.sidecarQueryChannel = sidecarQueryChannel;
     this.sidecarUpdateChannel = sidecarUpdateChannel;
   }
 
   @Override
   public SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot() {
-    return combinedChainDataClient.getFirstCustodyIncompleteSlot();
+    return sidecarQueryChannel.getFirstCustodyIncompleteSlot();
   }
 
   @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
       final DataColumnSlotAndIdentifier identifier) {
-    return combinedChainDataClient.getSidecar(identifier);
+    return sidecarQueryChannel.getSidecar(identifier);
   }
 
   @Override
   public SafeFuture<List<DataColumnSlotAndIdentifier>> getColumnIdentifiers(final UInt64 slot) {
-    return combinedChainDataClient.getDataColumnIdentifiers(slot);
+    return sidecarQueryChannel.getDataColumnIdentifiers(slot);
   }
 
   @Override
@@ -74,7 +74,7 @@ class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
 
   @Override
   public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot() {
-    return combinedChainDataClient.getEarliestAvailableDataColumnSlot();
+    return sidecarQueryChannel.getEarliestAvailableDataColumnSlot();
   }
 
   @Override
