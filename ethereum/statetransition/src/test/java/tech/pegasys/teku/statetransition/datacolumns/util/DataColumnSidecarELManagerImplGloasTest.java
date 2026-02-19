@@ -76,7 +76,7 @@ public class DataColumnSidecarELManagerImplGloasTest
 
   @Test
   public void shouldSkipELFetch_whenAllCustodyColumnsSidecarsArrivedBeforeBlock() {
-    // All sampling-column sidecars arrive before their block (Gloas: no KZG commitments in sidecar)
+    // all data column sidecars arrive before their block
     final int commitmentCount = 2;
     final BeaconBlock beaconBlock =
         dataStructureUtil.randomBeaconBlock(
@@ -85,7 +85,6 @@ public class DataColumnSidecarELManagerImplGloasTest
 
     dataColumnSidecarELManager.onSlot(currentSlot);
 
-    // All sampling column sidecars arrive before the block
     for (final UInt64 index : custodyGroupCountManager.getSamplingColumnIndices()) {
       final DataColumnSidecar sidecar =
           dataStructureUtil.new RandomDataColumnSidecarBuilder()
@@ -96,10 +95,10 @@ public class DataColumnSidecarELManagerImplGloasTest
       dataColumnSidecarELManager.onNewDataColumnSidecar(sidecar, RemoteOrigin.GOSSIP);
     }
 
-    // Block arrives now — recoveredColumnIndices should already contain all sampling columns
+    // block arrives now: recoveredColumnIndices should already contain all data column sidecars
     dataColumnSidecarELManager.onNewBlock(block, Optional.empty());
 
-    // The short-circuit in fetchMissingBlobsFromLocalEL should fire; no EL call needed
+    // the short circuit in fetchMissingBlobsFromLocalEL should fire: no EL call needed
     asyncRunner.executeQueuedActions();
     verifyNoInteractions(executionLayer);
   }

@@ -295,8 +295,8 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
         spec.getDataColumnSidecarUtil(block.getSlot());
     // sidecar indices that arrived before the block
     final Set<UInt64> recoveredColumnIndices =
-        Optional.ofNullable(earlyColumnIndices.remove(slotAndBlockRoot))
-            .orElseGet(() -> Collections.newSetFromMap(new ConcurrentHashMap<>()));
+        earlyColumnIndices.computeIfAbsent(
+            slotAndBlockRoot, key -> Collections.newSetFromMap(new ConcurrentHashMap<>()));
     return recoveryTasks.putIfAbsent(
             slotAndBlockRoot,
             new RecoveryTask(
