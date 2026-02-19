@@ -83,19 +83,19 @@ public class DataColumnSidecarELManagerImplGloasTest
             .build();
 
     dataColumnSidecarELManager.onSlot(currentSlot);
-    dataColumnSidecarELManager.onNewDataColumnSidecar(dataColumnSidecar, RemoteOrigin.GOSSIP);
 
-    // no recovery task was created
-    assertThat(
-            ((DataColumnSidecarELManagerImpl) dataColumnSidecarELManager)
-                .getRecoveryTask(dataColumnSidecar.getSlotAndBlockRoot()))
-        .isNull();
-
-    // no EL interaction attempted
-    verifyNoInteractions(executionLayer);
-
-    // no async actions scheduled
-    assertThat(asyncRunner.hasDelayedActions()).isFalse();
+    for (final RemoteOrigin origin : RemoteOrigin.values()) {
+      dataColumnSidecarELManager.onNewDataColumnSidecar(dataColumnSidecar, origin);
+      // no recovery task was created
+      assertThat(
+              ((DataColumnSidecarELManagerImpl) dataColumnSidecarELManager)
+                  .getRecoveryTask(dataColumnSidecar.getSlotAndBlockRoot()))
+          .isNull();
+      // no EL interaction attempted
+      verifyNoInteractions(executionLayer);
+      // no async actions scheduled
+      assertThat(asyncRunner.hasDelayedActions()).isFalse();
+    }
   }
 
   @Test
