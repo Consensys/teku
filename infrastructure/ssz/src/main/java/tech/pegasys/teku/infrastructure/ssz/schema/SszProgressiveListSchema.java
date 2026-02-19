@@ -69,7 +69,6 @@ public class SszProgressiveListSchema<ElementDataT extends SszData>
             elementSchema.getJsonTypeDefinition(), this::createFromElements);
   }
 
-  @SuppressWarnings("unchecked")
   public static <T extends SszData> SszProgressiveListSchema<T> create(
       final SszSchema<T> elementSchema) {
     return new SszProgressiveListSchema<>(elementSchema);

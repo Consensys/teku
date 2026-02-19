@@ -78,11 +78,11 @@ class ProgressiveTreeUtilTest {
       final long lastIndex = ProgressiveTreeUtil.cumulativeCapacity(level) - 1;
 
       assertThat(ProgressiveTreeUtil.levelForIndex(firstIndex))
-              .describedAs("first index of level %d", level)
-              .isEqualTo(level);
+          .describedAs("first index of level %d", level)
+          .isEqualTo(level);
       assertThat(ProgressiveTreeUtil.levelForIndex(lastIndex))
-              .describedAs("last index of level %d", level)
-              .isEqualTo(level);
+          .describedAs("last index of level %d", level)
+          .isEqualTo(level);
     }
   }
 
@@ -90,6 +90,21 @@ class ProgressiveTreeUtilTest {
   void levelForIndex_negativeIndexThrows() {
     assertThatThrownBy(() -> ProgressiveTreeUtil.levelForIndex(-1))
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void spineGIndex_matchesIterativeComputation() {
+    for (int level = 0; level <= 20; level++) {
+      long expected = GIndexUtil.SELF_G_INDEX;
+      for (int i = 0; i < level; i++) {
+        expected = GIndexUtil.gIdxRightGIndex(expected);
+      }
+      expected = GIndexUtil.gIdxLeftGIndex(expected);
+
+      assertThat(ProgressiveTreeUtil.spineGIndex(level))
+          .describedAs("spineGIndex for level %d", level)
+          .isEqualTo(expected);
+    }
   }
 
   @Test
