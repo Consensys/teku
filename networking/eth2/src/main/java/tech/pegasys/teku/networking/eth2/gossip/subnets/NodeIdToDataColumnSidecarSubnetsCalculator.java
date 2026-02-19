@@ -16,10 +16,10 @@ package tech.pegasys.teku.networking.eth2.gossip.subnets;
 import com.google.common.base.Supplier;
 import java.util.List;
 import java.util.Optional;
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.peers.PeerId;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -29,14 +29,16 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 @FunctionalInterface
 public interface NodeIdToDataColumnSidecarSubnetsCalculator {
 
-  Optional<SszBitvector> calculateSubnets(UInt256 nodeId, Optional<Integer> groupCount);
+  Optional<SszBitvector> calculateSubnets(PeerId peerId, Optional<Integer> groupCount);
 
-  NodeIdToDataColumnSidecarSubnetsCalculator NOOP = (nodeId, subnetCount) -> Optional.empty();
+  NodeIdToDataColumnSidecarSubnetsCalculator NOOP = (peerId, subnetCount) -> Optional.empty();
 
+  // DataColumnSidecarSubnet calculation currently only works for CandidatePeers, not for existing
+  // peers.
   static NodeIdToDataColumnSidecarSubnetsCalculator create(
       final Spec spec, final Supplier<Optional<UInt64>> currentSlotSupplier) {
 
-    return (nodeId, groupCount) ->
+    return (peerId, groupCount) ->
         currentSlotSupplier
             .get()
             .flatMap(
@@ -47,7 +49,8 @@ public interface NodeIdToDataColumnSidecarSubnetsCalculator {
                     final List<UInt64> subnets =
                         MiscHelpersFulu.required(version.miscHelpers())
                             .computeDataColumnSidecarBackboneSubnets(
-                                nodeId, groupCount.orElse(config.getCustodyRequirement()));
+                                peerId.toUInt256().orElseThrow(), // Only for candidate peers
+                                groupCount.orElse(config.getCustodyRequirement()));
                     return Optional.of(
                         SszBitvectorSchema.create(config.getDataColumnSidecarSubnetCount())
                             .ofBits(subnets.stream().map(UInt64::intValue).toList()));
