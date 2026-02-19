@@ -227,13 +227,15 @@ public class MiscHelpersFuluTest {
                             dataStructureUtil.randomBytes32(),
                             dataStructureUtil.randomBytes32())));
 
+    final DataColumnSidecarFulu dataColumnSideCarFulu =
+        DataColumnSidecarFulu.required(dataColumnSidecar);
     assertThat(
             predicatesMock.isValidMerkleBranch(
-                dataColumnSidecar.getKzgCommitments().hashTreeRoot(),
-                DataColumnSidecarFulu.required(dataColumnSidecar).getKzgCommitmentsInclusionProof(),
+                dataColumnSideCarFulu.getKzgCommitments().hashTreeRoot(),
+                dataColumnSideCarFulu.getKzgCommitmentsInclusionProof(),
                 specConfigFulu.getKzgCommitmentsInclusionProofDepth().intValue(),
                 miscHelpersFuluWithMockPredicates.getBlockBodyKzgCommitmentsGeneralizedIndex(),
-                DataColumnSidecarFulu.required(dataColumnSidecar).getBlockBodyRoot()))
+                dataColumnSideCarFulu.getBlockBodyRoot()))
         .isTrue();
     assertThat(
             miscHelpersFuluWithMockPredicates.verifyDataColumnSidecarInclusionProof(

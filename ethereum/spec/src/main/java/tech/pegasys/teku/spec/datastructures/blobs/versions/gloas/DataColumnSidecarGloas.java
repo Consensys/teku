@@ -53,6 +53,11 @@ public class DataColumnSidecarGloas
   }
 
   @Override
+  public DataColumnSidecarSchemaGloas getSchema() {
+    return (DataColumnSidecarSchemaGloas) super.getSchema();
+  }
+
+  @Override
   public UInt64 getIndex() {
     return getField0().get();
   }
@@ -65,11 +70,6 @@ public class DataColumnSidecarGloas
   @Override
   public Optional<SszList<SszKZGCommitment>> getMaybeKzgCommitments() {
     return Optional.empty();
-  }
-
-  @Override
-  public SszList<SszKZGCommitment> getKzgCommitments() {
-    throw new UnsupportedOperationException("kzg_commitments field was removed in Gloas");
   }
 
   @Override
