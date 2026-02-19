@@ -454,12 +454,12 @@ public class PeerSync {
                   "Block import result for block at slot {}: {}",
                   block.getSlot(),
                   blockImportResult);
-              if (maybeExecutionPayload.isEmpty() || !blockImportResult.isSuccessful()) {
-                processImportResult(
-                    blockImportResult.isSuccessful(),
-                    blockImportSuccessResult,
-                    blockImportFailureResult,
-                    () -> new FailedBlockImportException(block, blockImportResult));
+              processImportResult(
+                  blockImportResult.isSuccessful(),
+                  blockImportSuccessResult,
+                  blockImportFailureResult,
+                  () -> new FailedBlockImportException(block, blockImportResult));
+              if (maybeExecutionPayload.isEmpty()) {
                 return SafeFuture.COMPLETE;
               }
               final SignedExecutionPayloadEnvelope executionPayload = maybeExecutionPayload.get();
