@@ -85,6 +85,10 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
 
   private final ConcurrentSkipListMap<SlotAndBlockRoot, RecoveryTask> recoveryTasks =
       new ConcurrentSkipListMap<>();
+  // Tracks column indices seen before a full recovery task could be created (Gloas sidecars
+  // arriving before their block). Consumed when the block arrives to seed recoveredColumnIndices.
+  private final ConcurrentSkipListMap<SlotAndBlockRoot, Set<UInt64>> earlyColumnIndices =
+      new ConcurrentSkipListMap<>();
   private final Spec spec;
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
@@ -237,7 +241,8 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
 
   private boolean createRecoveryTaskFromDataColumnSidecar(
       final DataColumnSidecar dataColumnSidecar) {
-    final RecoveryTask existingTask = recoveryTasks.get(dataColumnSidecar.getSlotAndBlockRoot());
+    final SlotAndBlockRoot slotAndBlockRoot = dataColumnSidecar.getSlotAndBlockRoot();
+    final RecoveryTask existingTask = recoveryTasks.get(slotAndBlockRoot);
     if (existingTask != null) {
       existingTask.recoveredColumnIndices().add(dataColumnSidecar.getIndex());
       return false;
@@ -249,10 +254,14 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
         createRecoveryTaskForSelfContainedDataColumnSidecar(dataColumnSidecar);
     if (maybeRecoveryTask.isPresent()) {
       makeRoomForNewTracker();
-      return recoveryTasks.putIfAbsent(
-              dataColumnSidecar.getSlotAndBlockRoot(), maybeRecoveryTask.get())
-          == null;
+      return recoveryTasks.putIfAbsent(slotAndBlockRoot, maybeRecoveryTask.get()) == null;
     }
+    // can't create a full task (no KZG commitments). Track index so it is available
+    // when the block arrives and creates the recovery task
+    earlyColumnIndices
+        .computeIfAbsent(
+            slotAndBlockRoot, key -> Collections.newSetFromMap(new ConcurrentHashMap<>()))
+        .add(dataColumnSidecar.getIndex());
     return false;
   }
 
@@ -284,14 +293,18 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
     makeRoomForNewTracker();
     final DataColumnSidecarUtil dataColumnSidecarUtil =
         spec.getDataColumnSidecarUtil(block.getSlot());
+    // sidecar indices that arrived before the block
+    final Set<UInt64> recoveredColumnIndices =
+        Optional.ofNullable(earlyColumnIndices.remove(slotAndBlockRoot))
+            .orElseGet(() -> Collections.newSetFromMap(new ConcurrentHashMap<>()));
     return recoveryTasks.putIfAbsent(
-            block.getSlotAndBlockRoot(),
+            slotAndBlockRoot,
             new RecoveryTask(
                 Optional.of(block.asHeader()),
                 Optional.of(dataColumnSidecarUtil.getKzgCommitments(block.getMessage())),
                 dataColumnSidecarUtil.computeDataColumnKzgCommitmentsInclusionProof(
                     block.getMessage().getBody()),
-                Collections.newSetFromMap(new ConcurrentHashMap<>())))
+                recoveredColumnIndices))
         == null;
   }
 
@@ -351,6 +364,7 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
 
   private void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {
     recoveryTasks.remove(slotAndBlockRoot);
+    earlyColumnIndices.remove(slotAndBlockRoot);
   }
 
   @VisibleForTesting
@@ -383,6 +397,7 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
       removeAllForBlock(toRemove);
       toRemove = recoveryTasks.keySet().pollFirst();
     }
+    earlyColumnIndices.keySet().removeIf(k -> k.getSlot().isLessThanOrEqualTo(slotLimit));
   }
 
   private void makeRoomForNewTracker() {

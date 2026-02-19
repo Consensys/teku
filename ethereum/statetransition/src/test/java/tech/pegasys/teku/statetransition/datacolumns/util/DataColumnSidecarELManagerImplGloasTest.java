@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -71,6 +72,36 @@ public class DataColumnSidecarELManagerImplGloasTest
 
     // block is processed and recovery is triggered
     verify(executionLayer).engineGetBlobAndCellProofsList(any(), eq(currentSlot));
+  }
+
+  @Test
+  public void shouldSkipELFetch_whenAllCustodyColumnsSidecarsArrivedBeforeBlock() {
+    // All sampling-column sidecars arrive before their block (Gloas: no KZG commitments in sidecar)
+    final int commitmentCount = 2;
+    final BeaconBlock beaconBlock =
+        dataStructureUtil.randomBeaconBlock(
+            currentSlot, dataStructureUtil.randomBeaconBlockBodyWithCommitments(commitmentCount));
+    final SignedBeaconBlock block = dataStructureUtil.signedBlock(beaconBlock);
+
+    dataColumnSidecarELManager.onSlot(currentSlot);
+
+    // All sampling column sidecars arrive before the block
+    for (final UInt64 index : custodyGroupCountManager.getSamplingColumnIndices()) {
+      final DataColumnSidecar sidecar =
+          dataStructureUtil.new RandomDataColumnSidecarBuilder()
+              .slot(currentSlot)
+              .beaconBlockRoot(block.getRoot())
+              .index(index)
+              .build();
+      dataColumnSidecarELManager.onNewDataColumnSidecar(sidecar, RemoteOrigin.GOSSIP);
+    }
+
+    // Block arrives now — recoveredColumnIndices should already contain all sampling columns
+    dataColumnSidecarELManager.onNewBlock(block, Optional.empty());
+
+    // The short-circuit in fetchMissingBlobsFromLocalEL should fire; no EL call needed
+    asyncRunner.executeQueuedActions();
+    verifyNoInteractions(executionLayer);
   }
 
   @Test
