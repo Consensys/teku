@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.execution;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
 
 import java.util.Optional;
@@ -49,8 +50,15 @@ public class DefaultExecutionPayloadBidManagerTest {
   private final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator =
       mock(ExecutionPayloadBidGossipValidator.class);
 
+  private final ReceivedExecutionPayloadBidEventsChannel
+      receivedExecutionPayloadBidEventsChannelPublisher =
+          mock(ReceivedExecutionPayloadBidEventsChannel.class);
+
   private final DefaultExecutionPayloadBidManager executionPayloadBidManager =
-      new DefaultExecutionPayloadBidManager(spec, executionPayloadBidGossipValidator);
+      new DefaultExecutionPayloadBidManager(
+          spec,
+          executionPayloadBidGossipValidator,
+          receivedExecutionPayloadBidEventsChannelPublisher);
 
   @Test
   public void createsLocalBidForBlock() {
@@ -97,5 +105,9 @@ public class DefaultExecutionPayloadBidManagerTest {
                 expectedBlobKzgCommitments);
 
     assertThat(bid).isEqualTo(expectedBid);
+
+    // verify event is triggered to subscribers
+    verify(receivedExecutionPayloadBidEventsChannelPublisher)
+        .onExecutionPayloadBidValidated(signedBid);
   }
 }

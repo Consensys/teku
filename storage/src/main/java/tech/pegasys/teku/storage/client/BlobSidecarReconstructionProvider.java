@@ -23,6 +23,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
@@ -135,7 +136,9 @@ public class BlobSidecarReconstructionProvider {
         SchemaDefinitionsDeneb.required(
             spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions());
 
-    return IntStream.range(0, dataColumnSidecars.getFirst().getKzgCommitments().size())
+    final int kzgCommitmentsSize = getKzgCommitmentsSize(dataColumnSidecars, signedBeaconBlock);
+
+    return IntStream.range(0, kzgCommitmentsSize)
         .filter(index -> blobIndices.isEmpty() || blobIndices.contains(UInt64.valueOf(index)))
         .mapToObj(
             blobIndex ->
@@ -146,6 +149,27 @@ public class BlobSidecarReconstructionProvider {
                     miscHelpersDeneb,
                     schemaDefinitionsDeneb))
         .toList();
+  }
+
+  private int getKzgCommitmentsSize(
+      final List<DataColumnSidecar> dataColumnSidecars, final SignedBeaconBlock signedBeaconBlock) {
+    return dataColumnSidecars
+        .getFirst()
+        .getMaybeKzgCommitments()
+        .map(SszList::size)
+        .orElseGet(
+            () ->
+                signedBeaconBlock
+                    .getMessage()
+                    .getBody()
+                    .getOptionalSignedExecutionPayloadBid()
+                    .orElseThrow(
+                        () ->
+                            new IllegalStateException(
+                                "Unable to get the kzg commitments from the corresponding bid to reconstruct the blob sidecars from the data column sidecars"))
+                    .getMessage()
+                    .getBlobKzgCommitments()
+                    .size());
   }
 
   private BlobSidecar constructBlobSidecar(

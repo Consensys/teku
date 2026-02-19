@@ -39,6 +39,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarTrackingKey;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
@@ -418,27 +419,29 @@ public class DataColumnSidecarGossipValidator {
   }
 
   public void markForEquivocation(
-      final BeaconBlockHeader beaconBlockHeader, final List<DataColumnSidecar> sidecars) {
-    LOG.debug(
-        "Added recovered {} data column sidecars from block {} to gossip tracker",
-        sidecars.size(),
-        beaconBlockHeader.getRoot());
+      final Optional<BeaconBlockHeader> maybeBeaconBlockHeader,
+      final List<DataColumnSidecar> sidecars,
+      final SlotAndBlockRoot slotAndBlockRoot) {
     if (sidecars.isEmpty()) {
       return;
     }
-
+    LOG.debug(
+        "Added recovered {} data column sidecars from block {} to gossip tracker",
+        sidecars.size(),
+        slotAndBlockRoot.getBlockRoot());
     final DataColumnSidecarUtil dataColumnSidecarUtil =
-        spec.getDataColumnSidecarUtil(beaconBlockHeader.getSlot());
+        spec.getDataColumnSidecarUtil(slotAndBlockRoot.getSlot());
     sidecars.forEach(
-        sidecar -> markForEquivocation(dataColumnSidecarUtil, beaconBlockHeader, sidecar));
+        sidecar -> markForEquivocation(dataColumnSidecarUtil, maybeBeaconBlockHeader, sidecar));
   }
 
   private boolean markForEquivocation(
       final DataColumnSidecarUtil dataColumnSidecarUtil,
-      final BeaconBlockHeader beaconBlockHeader,
+      final Optional<BeaconBlockHeader> maybeBeaconBlockHeader,
       final DataColumnSidecar dataColumnSidecar) {
     final DataColumnSidecarTrackingKey key =
-        dataColumnSidecarUtil.extractTrackingKeyFromHeader(beaconBlockHeader, dataColumnSidecar);
+        dataColumnSidecarUtil.extractTrackingKeyFromHeader(
+            maybeBeaconBlockHeader, dataColumnSidecar);
     return receivedValidDataColumnSidecarInfoSet.add(key);
   }
 

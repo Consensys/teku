@@ -82,20 +82,21 @@ public class NetworkBlobReconstructor extends BlobReconstructor {
 
     return networkRetriever
         .retrieveDataColumnSidecars(missingSidecars)
-        .thenApply(
+        .thenCompose(
             retrievedDataColumnSidecars -> {
               if (missingSidecars.size() != retrievedDataColumnSidecars.size()) {
                 // Not able to retrieve all requested columns
-                return Optional.empty();
+                return SafeFuture.completedFuture(Optional.empty());
               }
               final List<DataColumnSidecar> firstHalfColumns =
                   Streams.concat(retrievedDataColumnSidecars.stream(), existingSidecars.stream())
                       .sorted(Comparator.comparing(DataColumnSidecar::getIndex))
                       .toList();
               checkState(firstHalfColumns.size() == halfColumns, "Wrong number of columns");
-              return Optional.of(
-                  reconstructBlobsFromFirstHalfDataColumns(
-                      firstHalfColumns, blobIndices, blobSchemaSupplier.get()));
+              return SafeFuture.completedFuture(
+                  Optional.of(
+                      reconstructBlobsFromFirstHalfDataColumns(
+                          firstHalfColumns, blobIndices, blobSchemaSupplier.get())));
             });
   }
 }

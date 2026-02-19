@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.util;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -22,12 +23,18 @@ import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -133,13 +140,14 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
   /**
    * Extract tracking key from block header and dataColumnSidecar for late validation check.
    *
-   * @param header the beacon block header (may be null for Gloas)
+   * @param maybeBeaconBlockHeader maybe the beacon block header (empty for Gloas)
    * @param dataColumnSidecar the data column dataColumnSidecar
    * @return the fork-appropriate tracking key
    */
   @Override
   public DataColumnSidecarTrackingKey extractTrackingKeyFromHeader(
-      final BeaconBlockHeader header, final DataColumnSidecar dataColumnSidecar) {
+      final Optional<BeaconBlockHeader> maybeBeaconBlockHeader,
+      final DataColumnSidecar dataColumnSidecar) {
     return extractTrackingKey(dataColumnSidecar);
   }
 
@@ -207,6 +215,43 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
       final Set<Bytes32> validSignedBlockHeaders,
       final Set<InclusionProofInfo> validInclusionProofInfoSet) {
     // Nothing to cache for Gloas (no header, no inclusion proof)
+  }
+
+  @Override
+  public SszList<SszKZGCommitment> getKzgCommitments(final BeaconBlock block) {
+    return BeaconBlockBodyGloas.required(block.getBody())
+        .getSignedExecutionPayloadBid()
+        .getMessage()
+        .getBlobKzgCommitments();
+  }
+
+  @Override
+  public List<DataColumnSidecar> constructDataColumnSidecars(
+      final Optional<SignedBeaconBlockHeader> maybeSignedBeaconBlockHeader,
+      final SlotAndBlockRoot slotAndBlockRoot,
+      final Optional<SszList<SszKZGCommitment>> maybeSszKZGCommitments,
+      final Optional<List<Bytes32>> maybeKzgCommitmentsInclusionProof,
+      final List<BlobAndCellProofs> blobAndCellProofsList) {
+    return miscHelpersGloas.constructDataColumnSidecars(
+        maybeSignedBeaconBlockHeader,
+        slotAndBlockRoot,
+        maybeSszKZGCommitments,
+        maybeKzgCommitmentsInclusionProof,
+        blobAndCellProofsList);
+  }
+
+  @Override
+  public Optional<List<Bytes32>> computeDataColumnKzgCommitmentsInclusionProof(
+      final BeaconBlockBody beaconBlockBody) {
+    // No kzg commitments inclusion proof in Gloas
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<SszBytes32Vector> getMaybeKzgCommitmentsProof(
+      final DataColumnSidecar dataColumnSidecar) {
+    // No kzg commitments proof in Gloas
+    return Optional.empty();
   }
 
   /**
@@ -294,5 +339,11 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
               "DataColumnSidecar's KZG proofs do not match the bid's KZG proofs"));
     }
     return Optional.empty();
+  }
+
+  @Override
+  public List<DataColumnSidecar> reconstructAllDataColumnSidecars(
+      final List<DataColumnSidecar> dataColumnSidecars) {
+    return miscHelpersGloas.reconstructAllDataColumnSidecars(dataColumnSidecars);
   }
 }

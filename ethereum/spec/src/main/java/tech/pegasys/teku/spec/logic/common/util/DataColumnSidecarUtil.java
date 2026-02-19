@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -23,12 +24,20 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 
 /**
@@ -81,7 +90,7 @@ public interface DataColumnSidecarUtil {
   DataColumnSidecarTrackingKey extractTrackingKey(DataColumnSidecar dataColumnSidecar);
 
   DataColumnSidecarTrackingKey extractTrackingKeyFromHeader(
-      BeaconBlockHeader header, DataColumnSidecar dataColumnSidecar);
+      Optional<BeaconBlockHeader> maybeBeaconBlockHeader, DataColumnSidecar dataColumnSidecar);
 
   boolean verifyDataColumnSidecarStructure(DataColumnSidecar dataColumnSidecar);
 
@@ -96,6 +105,23 @@ public interface DataColumnSidecarUtil {
       DataColumnSidecar dataColumnSidecar,
       Set<Bytes32> validSignedBlockHeaders,
       Set<InclusionProofInfo> validInclusionProofInfoSet);
+
+  SszList<SszKZGCommitment> getKzgCommitments(BeaconBlock block);
+
+  List<DataColumnSidecar> constructDataColumnSidecars(
+      Optional<SignedBeaconBlockHeader> maybeSignedBeaconBlockHeader,
+      SlotAndBlockRoot slotAndBlockRoot,
+      Optional<SszList<SszKZGCommitment>> maybeSszKZGCommitments,
+      Optional<List<Bytes32>> maybeKzgCommitmentsInclusionProof,
+      List<BlobAndCellProofs> blobAndCellProofsList);
+
+  Optional<List<Bytes32>> computeDataColumnKzgCommitmentsInclusionProof(
+      BeaconBlockBody beaconBlockBody);
+
+  Optional<SszBytes32Vector> getMaybeKzgCommitmentsProof(DataColumnSidecar dataColumnSidecar);
+
+  List<DataColumnSidecar> reconstructAllDataColumnSidecars(
+      List<DataColumnSidecar> dataColumnSidecars);
 
   record InclusionProofInfo(
       Bytes32 commitmentsRoot, Bytes32 inclusionProofRoot, Bytes32 bodyRoot) {}

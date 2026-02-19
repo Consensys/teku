@@ -53,6 +53,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 @SuppressWarnings("JavaCase")
 public class DataColumnSidecarsByRangeListenerValidatingProxyTest {
+  // TODO-GLOAS add Gloas test
   private final Spec spec = TestSpecFactory.createMainnetFulu();
   private final SchemaDefinitionsFulu schemaDefinitionsFulu =
       SchemaDefinitionsFulu.required(spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions());
@@ -327,7 +328,8 @@ public class DataColumnSidecarsByRangeListenerValidatingProxyTest {
                 builder
                     .index(dataColumnSidecar.getIndex())
                     .column(dataColumnSidecar.getColumn())
-                    .kzgCommitments(dataColumnSidecar.getKzgCommitments())
+                    .kzgCommitments(
+                        DataColumnSidecarFulu.required(dataColumnSidecar).getKzgCommitments())
                     .kzgProofs(dataColumnSidecar.getKzgProofs())
                     .signedBlockHeader(
                         DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader())

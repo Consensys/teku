@@ -44,6 +44,9 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -52,6 +55,8 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadBidEventsChannel;
+import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
@@ -59,7 +64,11 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
 
 public class EventSubscriptionManager
-    implements ChainHeadChannel, FinalizedCheckpointChannel, ReceivedBlockEventsChannel {
+    implements ChainHeadChannel,
+        FinalizedCheckpointChannel,
+        ReceivedBlockEventsChannel,
+        ReceivedExecutionPayloadEventsChannel,
+        ReceivedExecutionPayloadBidEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
@@ -91,6 +100,8 @@ public class EventSubscriptionManager
     eventChannels.subscribe(ChainHeadChannel.class, this);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, this);
     eventChannels.subscribe(ReceivedBlockEventsChannel.class, this);
+    eventChannels.subscribe(ReceivedExecutionPayloadEventsChannel.class, this);
+    eventChannels.subscribe(ReceivedExecutionPayloadBidEventsChannel.class, this);
     syncDataProvider.subscribeToSyncStateChanges(this::onSyncStateChange);
     nodeDataProvider.subscribeToReceivedBlobSidecar(this::onNewBlobSidecar);
     nodeDataProvider.subscribeToAttesterSlashing(this::onNewAttesterSlashing);
@@ -102,6 +113,7 @@ public class EventSubscriptionManager
     nodeDataProvider.subscribeToForkChoiceUpdatedResult(this::onForkChoiceUpdatedResult);
     nodeDataProvider.subscribeToValidDataColumnSidecars(
         (dataColumnSidecar, remoteOrigin) -> onNewDataColumnSidecar(dataColumnSidecar));
+    nodeDataProvider.subscribeToPayloadAttestationMessages(this::onNewPayloadAttestationMessage);
   }
 
   public void registerClient(final SseClient sseClient) {
@@ -184,6 +196,16 @@ public class EventSubscriptionManager
     onNewBlock(block, executionOptimistic);
   }
 
+  @Override
+  public void onExecutionPayloadImported(final SignedExecutionPayloadEnvelope executionPayload) {
+    onExecutionPayloadAvailable(executionPayload);
+  }
+
+  @Override
+  public void onExecutionPayloadBidValidated(final SignedExecutionPayloadBid executionPayloadBid) {
+    onExecutionPayloadBid(executionPayloadBid);
+  }
+
   protected void onNewVoluntaryExit(
       final SignedVoluntaryExit exit,
       final InternalValidationResult result,
@@ -243,7 +265,7 @@ public class EventSubscriptionManager
 
   protected void onNewDataColumnSidecar(final DataColumnSidecar dataColumnSidecar) {
     final DataColumnSidecarEvent dataColumnSidecarEvent =
-        DataColumnSidecarEvent.create(dataColumnSidecar);
+        new DataColumnSidecarEvent(dataColumnSidecar);
     notifySubscribersOfEvent(EventType.data_column_sidecar, dataColumnSidecarEvent);
   }
 
@@ -286,6 +308,30 @@ public class EventSubscriptionManager
 
   protected void onSyncStateChange(final SyncState syncState) {
     notifySubscribersOfEvent(EventType.sync_state, new SyncStateChangeEvent(syncState.name()));
+  }
+
+  protected void onExecutionPayloadAvailable(
+      final SignedExecutionPayloadEnvelope executionPayload) {
+    final ExecutionPayloadAvailableEvent executionPayloadAvailableEvent =
+        new ExecutionPayloadAvailableEvent(
+            executionPayload.getSlot(), executionPayload.getBeaconBlockRoot());
+    notifySubscribersOfEvent(EventType.execution_payload_available, executionPayloadAvailableEvent);
+  }
+
+  protected void onExecutionPayloadBid(final SignedExecutionPayloadBid executionPayloadBid) {
+    notifySubscribersOfEvent(
+        EventType.execution_payload_bid, new ExecutionPayloadBidEvent(executionPayloadBid));
+  }
+
+  protected void onNewPayloadAttestationMessage(
+      final PayloadAttestationMessage payloadAttestationMessage,
+      final InternalValidationResult result,
+      final boolean fromNetwork) {
+    if (result.isAccept()) {
+      notifySubscribersOfEvent(
+          EventType.payload_attestation_message,
+          new PayloadAttestationMessageEvent(payloadAttestationMessage));
+    }
   }
 
   private void notifySubscribersOfEvent(final EventType eventType, final Event<?> event) {

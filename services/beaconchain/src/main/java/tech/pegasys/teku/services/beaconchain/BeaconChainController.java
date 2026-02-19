@@ -198,6 +198,8 @@ import tech.pegasys.teku.statetransition.execution.DefaultExecutionPayloadManage
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager.RemoteBidOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadBidEventsChannel;
+import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadEventsChannel;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofGenerator;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofGeneratorImpl;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
@@ -878,8 +880,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
       final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator =
           new ExecutionPayloadBidGossipValidator(
               spec, gossipValidationHelper, beaconConfig.getMinBidIncrementPercentage());
+      final ReceivedExecutionPayloadBidEventsChannel
+          receivedExecutionPayloadBidEventsChannelPublisher =
+              eventChannels.getPublisher(ReceivedExecutionPayloadBidEventsChannel.class);
       executionPayloadBidManager =
-          new DefaultExecutionPayloadBidManager(spec, executionPayloadBidGossipValidator);
+          new DefaultExecutionPayloadBidManager(
+              spec,
+              executionPayloadBidGossipValidator,
+              receivedExecutionPayloadBidEventsChannelPublisher);
     } else {
       executionPayloadBidManager = ExecutionPayloadBidManager.NOOP;
     }
@@ -889,9 +897,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
       final ExecutionPayloadGossipValidator executionPayloadGossipValidator =
           new ExecutionPayloadGossipValidator(spec, gossipValidationHelper, invalidBlockRoots);
+      final ReceivedExecutionPayloadEventsChannel receivedExecutionPayloadEventsChannelPublisher =
+          eventChannels.getPublisher(ReceivedExecutionPayloadEventsChannel.class);
       executionPayloadManager =
           new DefaultExecutionPayloadManager(
-              beaconAsyncRunner, executionPayloadGossipValidator, forkChoice, executionLayer);
+              beaconAsyncRunner,
+              executionPayloadGossipValidator,
+              forkChoice,
+              executionLayer,
+              receivedExecutionPayloadEventsChannelPublisher);
     } else {
       executionPayloadManager = ExecutionPayloadManager.NOOP;
     }
@@ -1462,6 +1476,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .rejectedExecutionSupplier(rejectedExecutionCountSupplier)
             .custodyGroupCountManager(custodyGroupCountManager)
             .dataColumnSidecarManager(dataColumnSidecarManager)
+            .payloadAttestationPool(payloadAttestationPool)
             .build();
   }
 

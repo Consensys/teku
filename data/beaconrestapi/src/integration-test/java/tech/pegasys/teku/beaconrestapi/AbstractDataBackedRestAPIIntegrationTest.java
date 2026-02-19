@@ -169,7 +169,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final PerformanceTracker performanceTracker = mock(PerformanceTracker.class);
   protected final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
       mock(SyncCommitteeSubscriptionManager.class);
-  protected final PayloadAttestationPool payloadAttestationPool = PayloadAttestationPool.NOOP;
+  protected final PayloadAttestationPool payloadAttestationPool =
+      mock(PayloadAttestationPool.class);
   protected final ExecutionPayloadManager executionPayloadManager =
       mock(ExecutionPayloadManager.class);
   protected final ExecutionPayloadFactory executionPayloadFactory =
@@ -284,6 +285,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .forkChoiceNotifier(forkChoiceNotifier)
             .rewardCalculator(rewardCalculator)
             .dataColumnSidecarManager(dataColumnSidecarManager)
+            .payloadAttestationPool(payloadAttestationPool)
             .build();
 
     beaconRestApi =
