@@ -12,13 +12,13 @@
   },
   "main": "./publish.js",
   "dependencies": {
-    "gh-pages": "^5.0.0",
+    "gh-pages": "^6.3.0",
     "git-url-parse": "^13.1.0",
     "js-yaml": "^4.1.1",
     "node-fetch": "^3.3.1"
   },
   "devDependencies": {
-    "eslint": "^7.9.0"
+    "eslint": "^10.0.0"
   },
   "scripts": {
     "lint": "eslint publish.js config.js",
