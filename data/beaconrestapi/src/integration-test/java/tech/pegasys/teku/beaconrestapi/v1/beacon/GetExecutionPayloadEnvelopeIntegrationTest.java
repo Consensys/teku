@@ -38,7 +38,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.metadata.ExecutionPayloadAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
-@Disabled("Integration tests failing in CI")
 public class GetExecutionPayloadEnvelopeIntegrationTest
     extends AbstractDataBackedRestAPIIntegrationTest {
 
