@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSid
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.LoggingPeerId;
@@ -61,6 +62,7 @@ public class DataColumnSidecarsByRootMessageHandler
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalDataColumnSidecarsRequestedCounter;
   private final DasReqRespLogger dasLogger;
+  private final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor;
 
   public DataColumnSidecarsByRootMessageHandler(
       final Spec spec,
@@ -68,12 +70,14 @@ public class DataColumnSidecarsByRootMessageHandler
       final CombinedChainDataClient combinedChainDataClient,
       final Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier,
       final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
+      final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor,
       final DasReqRespLogger dasLogger) {
     this.spec = spec;
     this.combinedChainDataClient = combinedChainDataClient;
     this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
     this.dataColumnSidecarCustodySupplier = dataColumnSidecarCustodySupplier;
     this.dasLogger = dasLogger;
+    this.dataColumnSidecarArchiveReconstructor = dataColumnSidecarArchiveReconstructor;
     this.requestCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.NETWORK,
@@ -133,6 +137,11 @@ public class DataColumnSidecarsByRootMessageHandler
 
     final Set<UInt64> myCustodyColumns =
         new HashSet<>(custodyGroupCountManagerSupplier.get().getCustodyColumnIndices());
+    final int messageId = dataColumnSidecarArchiveReconstructor.onRequest();
+    final CompletionAwareResponseCallback<DataColumnSidecar> completionCallback =
+        new CompletionAwareResponseCallback<>(responseCallbackWithLogging);
+    completionCallback.onCompletion(
+        () -> dataColumnSidecarArchiveReconstructor.onRequestCompleted(messageId));
     final Stream<SafeFuture<Boolean>> responseStream =
         message.stream()
             .flatMap(
@@ -144,13 +153,11 @@ public class DataColumnSidecarsByRootMessageHandler
                                 new DataColumnIdentifier(byRootIdentifier.getBlockRoot(), column)))
             .map(
                 dataColumnIdentifier ->
-                    retrieveDataColumnSidecar(dataColumnIdentifier)
+                    retrieveDataColumnSidecar(dataColumnIdentifier, messageId)
                         .thenCompose(
                             maybeSidecar ->
                                 validateAndMaybeRespond(
-                                    dataColumnIdentifier,
-                                    maybeSidecar,
-                                    responseCallbackWithLogging)));
+                                    dataColumnIdentifier, maybeSidecar, completionCallback)));
 
     final SafeFuture<List<Boolean>> listOfResponses = SafeFuture.collectAll(responseStream);
 
@@ -162,27 +169,38 @@ public class DataColumnSidecarsByRootMessageHandler
                 peer.adjustDataColumnSidecarsRequest(
                     maybeRequestKey.get(), sentDataColumnSidecarsCount);
               }
-              responseCallbackWithLogging.completeSuccessfully();
+              completionCallback.completeSuccessfully();
             })
-        .finish(
-            err -> handleError(err, responseCallbackWithLogging, "data column sidecars by root"));
+        .finish(err -> handleError(err, completionCallback, "data column sidecars by root"));
   }
 
-  private SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalDataColumnSidecar(
-      final DataColumnIdentifier identifier) {
+  private SafeFuture<Optional<DataColumnSidecar>> getArchiveOrNonCanonicalDataColumnSidecar(
+      final DataColumnIdentifier identifier, final int messageId) {
     return combinedChainDataClient
         .getBlockByBlockRoot(identifier.blockRoot())
-        .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot))
         .thenCompose(
-            maybeSlot -> {
-              if (maybeSlot.isPresent()) {
-                return combinedChainDataClient.getNonCanonicalSidecar(
-                    new DataColumnSlotAndIdentifier(
-                        maybeSlot.get(), identifier.blockRoot(), identifier.columnIndex()));
+            maybeBlock -> {
+              if (maybeBlock.isPresent()) {
+                final SignedBeaconBlock block = maybeBlock.get();
+                return getDataColumnSidecar(block, identifier, messageId);
               } else {
                 return SafeFuture.completedFuture(Optional.empty());
               }
             });
+  }
+
+  private SafeFuture<Optional<DataColumnSidecar>> getDataColumnSidecar(
+      final SignedBeaconBlock block, final DataColumnIdentifier identifier, final int messageId) {
+    final boolean isSuperNodePruned =
+        dataColumnSidecarArchiveReconstructor.isSidecarPruned(
+            block.getSlot(), identifier.columnIndex());
+    if (isSuperNodePruned) {
+      return dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(
+          block, identifier.columnIndex(), messageId);
+    }
+    return combinedChainDataClient.getNonCanonicalSidecar(
+        new DataColumnSlotAndIdentifier(
+            block.getSlot(), identifier.blockRoot(), identifier.columnIndex()));
   }
 
   /**
@@ -219,7 +237,7 @@ public class DataColumnSidecarsByRootMessageHandler
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> retrieveDataColumnSidecar(
-      final DataColumnIdentifier identifier) {
+      final DataColumnIdentifier identifier, final int messageId) {
     return dataColumnSidecarCustodySupplier
         .get()
         .getCustodyDataColumnSidecarByRoot(identifier)
@@ -228,8 +246,9 @@ public class DataColumnSidecarsByRootMessageHandler
               if (maybeSidecar.isPresent()) {
                 return SafeFuture.completedFuture(maybeSidecar);
               }
-              // Fallback to non-canonical sidecar if the canonical one is not found
-              return getNonCanonicalDataColumnSidecar(identifier);
+              // Fallback to compacted archive or non-canonical sidecar if the canonical one is not
+              // found
+              return getArchiveOrNonCanonicalDataColumnSidecar(identifier, messageId);
             });
   }
 }

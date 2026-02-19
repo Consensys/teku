@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -65,6 +66,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSid
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -82,6 +84,8 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
 
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
+  private final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor =
+      mock(DataColumnSidecarArchiveReconstructor.class);
   private static final RpcEncoding RPC_ENCODING =
       RpcEncoding.createSszSnappyEncoding(
           TestSpecFactory.createDefault().getNetworkingConfig().getMaxPayloadSize());
@@ -116,6 +120,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
             SpecConfigFulu.required(specVersionFulu.getConfig()),
             metricsSystem,
             combinedChainDataClient,
+            dataColumnSidecarArchiveReconstructor,
             DasReqRespLogger.NOOP);
     final SchemaDefinitionsFulu schemaDefinitionsFulu =
         specVersionFulu.getSchemaDefinitions().toVersionFulu().orElseThrow();
@@ -268,15 +273,13 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     verify(peer)
         .approveDataColumnSidecarsRequest(any(), eq(count.times(columnIndices.size()).longValue()));
     // Sending expectedSent data column sidecars
-    verify(peer)
-        .adjustDataColumnSidecarsRequest(
-            eq(allowedObjectsRequest.orElseThrow()), eq(Long.valueOf(expectedSent.size())));
+    verify(peer, never()).adjustDataColumnSidecarsRequest(any(), anyLong());
     final ArgumentCaptor<DataColumnSidecar> argumentCaptor =
         ArgumentCaptor.forClass(DataColumnSidecar.class);
     verify(listener, times(expectedSent.size())).respond(argumentCaptor.capture());
     final List<DataColumnSidecar> actualSent = argumentCaptor.getAllValues();
     verify(listener).completeSuccessfully();
-    AssertionsForInterfaceTypes.assertThat(actualSent).containsExactlyElementsOf(expectedSent);
+    AssertionsForInterfaceTypes.assertThat(actualSent).hasSameElementsAs(expectedSent);
   }
 
   @TestTemplate
@@ -343,22 +346,19 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     final DataColumnSidecarsByRangeRequestMessage request =
         dataColumnSidecarsByRangeRequestMessageSchema.create(startSlot, ONE, columnIndices);
     final List<DataColumnSidecar> expectedSent =
-        setUpDataColumnSidecarsData(startSlot, request.getMaxSlot(), columnIndices);
+        setUpDataColumnSidecarsData(startSlot, startSlot, columnIndices);
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
     // Requesting 2 data column sidecars
     verify(peer).approveDataColumnSidecarsRequest(any(), eq(Long.valueOf(columnIndices.size())));
     // Sending expectedSent data column sidecars
-    verify(peer)
-        .adjustDataColumnSidecarsRequest(
-            eq(allowedObjectsRequest.orElseThrow()), eq(Long.valueOf(expectedSent.size())));
+    verify(peer, never()).adjustDataColumnSidecarsRequest(any(), anyLong());
     final ArgumentCaptor<DataColumnSidecar> argumentCaptor =
         ArgumentCaptor.forClass(DataColumnSidecar.class);
     verify(listener, times(expectedSent.size())).respond(argumentCaptor.capture());
     final List<DataColumnSidecar> actualSent = argumentCaptor.getAllValues();
     verify(listener).completeSuccessfully();
-    assertThat(actualSent.size()).isOne();
-    AssertionsForInterfaceTypes.assertThat(actualSent).containsExactlyElementsOf(expectedSent);
+    AssertionsForInterfaceTypes.assertThat(actualSent).hasSameElementsAs(expectedSent);
   }
 
   @TestTemplate
@@ -417,6 +417,85 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     AssertionsForInterfaceTypes.assertThat(actualSent).isEmpty();
   }
 
+  @TestTemplate
+  public void shouldReconstructArchivePrunedDataColumnSidecars() {
+    final UInt64 latestFinalizedSlot = startSlot.plus(count).minus(3);
+    when(combinedChainDataClient.getFinalizedBlockSlot())
+        .thenReturn(Optional.of(latestFinalizedSlot));
+
+    final List<UInt64> columnIndicesPruned = List.of(UInt64.valueOf(1), UInt64.valueOf(72));
+
+    final DataColumnSidecarsByRangeRequestMessage request =
+        dataColumnSidecarsByRangeRequestMessageSchema.create(startSlot, count, columnIndicesPruned);
+
+    // We have one and not another
+    when(combinedChainDataClient.getSidecar(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    final List<DataColumnSidecar> allAvailableDataColumnSidecars =
+        setUpDataColumnSidecarsData(
+            startSlot,
+            request.getMaxSlot(),
+            new ArrayList<>(List.of(columnIndicesPruned.getFirst())));
+
+    // we simulate that the canonical non-finalized chain only contains data column sidecars from
+    // last slotAndBlockRoot
+    final SlotAndBlockRoot canonicalSlotAndBlockRoot =
+        allAvailableDataColumnSidecars.getLast().getSlotAndBlockRoot();
+
+    final List<DataColumnSidecar> expectedSent =
+        allAvailableDataColumnSidecars.stream()
+            .filter(
+                dataColumnSidecar ->
+                    dataColumnSidecar
+                            .getSlot()
+                            .isLessThanOrEqualTo(latestFinalizedSlot) // include finalized
+                        || dataColumnSidecar
+                            .getSlotAndBlockRoot()
+                            .equals(canonicalSlotAndBlockRoot) // include non finalized
+                )
+            .toList();
+
+    // let return only canonical slot and block root as canonical
+    when(combinedChainDataClient.getAncestorRoots(eq(startSlot), eq(ONE), any()))
+        .thenReturn(
+            ImmutableSortedMap.of(
+                canonicalSlotAndBlockRoot.getSlot(), canonicalSlotAndBlockRoot.getBlockRoot()));
+    // Let's simulate that we call it "pruned"
+    when(dataColumnSidecarArchiveReconstructor.isSidecarPruned(any(), any())).thenReturn(true);
+
+    when(combinedChainDataClient.getBlockAtSlotExact(any()))
+        .thenReturn(
+            SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomSignedBeaconBlock())));
+    when(dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(any(), any(), anyInt()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    handler.onIncomingMessage(protocolId, peer, request, listener);
+
+    // Requesting 5 * 2 data column sidecars
+    verify(peer)
+        .approveDataColumnSidecarsRequest(
+            any(), eq(count.times(columnIndicesPruned.size()).longValue()));
+    // Sending expectedSent data column sidecars
+    verify(peer)
+        .adjustDataColumnSidecarsRequest(
+            eq(allowedObjectsRequest.orElseThrow()), eq(Long.valueOf(expectedSent.size())));
+
+    final ArgumentCaptor<DataColumnSidecar> argumentCaptor =
+        ArgumentCaptor.forClass(DataColumnSidecar.class);
+
+    verify(listener, times(expectedSent.size())).respond(argumentCaptor.capture());
+
+    final List<DataColumnSidecar> actualSent = argumentCaptor.getAllValues();
+
+    verify(listener).completeSuccessfully();
+    verify(dataColumnSidecarArchiveReconstructor).onRequestCompleted(anyInt());
+    // same slot-roots as we have in DB, but other indices
+    verify(dataColumnSidecarArchiveReconstructor, times(expectedSent.size()))
+        .reconstructDataColumnSidecar(any(), any(), anyInt());
+
+    AssertionsForInterfaceTypes.assertThat(actualSent).containsExactlyElementsOf(expectedSent);
+  }
+
   private List<DataColumnSidecar> setUpDataColumnSidecarsData(
       final UInt64 startSlot, final UInt64 maxSlot, final List<UInt64> columns) {
     final List<Pair<SignedBeaconBlockHeader, DataColumnSlotAndIdentifier>>
@@ -450,16 +529,13 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
         .forEach(
             slot -> {
               final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
-              UInt64.rangeClosed(
-                      ZERO, dataStructureUtil.randomUInt64(columnIndices.size()).minusMinZero(1))
-                  .forEach(
-                      columnIndex -> {
-                        headersAndDataColumnSlotAndIdentifiers.add(
-                            Pair.of(
-                                block.asHeader(),
-                                new DataColumnSlotAndIdentifier(
-                                    slot, block.getRoot(), columnIndex)));
-                      });
+              columnIndices.forEach(
+                  columnIndex -> {
+                    headersAndDataColumnSlotAndIdentifiers.add(
+                        Pair.of(
+                            block.asHeader(),
+                            new DataColumnSlotAndIdentifier(slot, block.getRoot(), columnIndex)));
+                  });
             });
     return headersAndDataColumnSlotAndIdentifiers;
   }

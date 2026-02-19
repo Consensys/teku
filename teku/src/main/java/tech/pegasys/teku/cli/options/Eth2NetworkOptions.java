@@ -410,6 +410,18 @@ public class Eth2NetworkOptions {
       Eth2NetworkConfiguration
           .DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_TOTAL_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS;
 
+  @Option(
+      names = {"--Xdata-column-sidecar-extension-retention-epochs"},
+      paramLabel = "<NUMBER>",
+      description =
+          "Configures period, when all sidecars are kept on supernode. When it's over, half of the older "
+              + "finalized sidecars outside the boundary of this period will be pruned, decreasing "
+              + "occupied storage, but slowing down ReqResp responses. It will not affect Beacon-API speed.",
+      arity = "1",
+      hidden = true)
+  private int dataColumnSidecarExtensionRetentionEpochs =
+      Eth2NetworkConfiguration.DEFAULT_DATA_COLUMN_SIDECAR_EXTENSION_RETENTION_EPOCHS;
+
   public Eth2NetworkConfiguration getNetworkConfiguration() {
     return createEth2NetworkConfig(builder -> {});
   }
@@ -548,7 +560,8 @@ public class Eth2NetworkOptions {
         .epochsStoreBlobs(epochsStoreBlobs)
         .attestationWaitLimitMillis(attestationWaitlimitMillis)
         .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes)
-        .rustKzgEnabled(rustKzgEnabled);
+        .rustKzgEnabled(rustKzgEnabled)
+        .dataColumnSidecarExtensionRetentionEpochs(dataColumnSidecarExtensionRetentionEpochs);
     kzgPrecompute.ifPresent(builder::kzgPrecompute);
     dataColumnSidecarRecoveryMaxDelayMillis.ifPresent(
         builder::dataColumnSidecarRecoveryMaxDelayMillis);
