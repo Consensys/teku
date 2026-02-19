@@ -28,6 +28,12 @@ public class Sha256 {
     this.messageDigest = messageDigest;
   }
 
+  public byte[] digest(final byte[] a, final byte[] b) {
+    messageDigest.update(a);
+    messageDigest.update(b);
+    return messageDigest.digest();
+  }
+
   public byte[] digest(final Bytes a, final Bytes b) {
     a.update(messageDigest);
     b.update(messageDigest);
