@@ -229,15 +229,18 @@ public abstract class BeaconStateAccessors {
 
   protected void validateStateCanCalculateProposerIndexAtSlot(
       final BeaconState state, final UInt64 requestedSlot) {
+    checkArgument(
+        canCalculateProposerIndexAtSlot(state, requestedSlot),
+        "get_beacon_proposer_index is only used for requesting a slot in the current epoch (or next epoch in FULU). Requested slot %s, state slot %s",
+        requestedSlot,
+        state.getSlot());
+  }
+
+  public boolean canCalculateProposerIndexAtSlot(
+      final BeaconState state, final UInt64 requestedSlot) {
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(requestedSlot);
     final UInt64 stateEpoch = getCurrentEpoch(state);
-    checkArgument(
-        epoch.equals(stateEpoch),
-        "get_beacon_proposer_index is only used for requesting a slot in the current epoch. Requested slot %s (in epoch %s), state slot %s (in epoch %s)",
-        requestedSlot,
-        epoch,
-        state.getSlot(),
-        stateEpoch);
+    return epoch.equals(stateEpoch);
   }
 
   public UInt64 getFinalityDelay(final BeaconState state) {

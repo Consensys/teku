@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
+import com.google.common.base.Supplier;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -124,7 +125,7 @@ public class DataColumnSidecarGossipManagerTest {
             forkDigest);
 
     dataColumnSidecarGossipManager =
-        new DataColumnSidecarGossipManager(subnetSubscriptions, dasGossipLogger);
+        new DataColumnSidecarGossipManager(subnetSubscriptions, dasGossipLogger, () -> false);
     IntStream.range(0, spec.getNumberOfDataColumnSubnets().orElseThrow())
         .forEach(dataColumnSidecarGossipManager::subscribeToSubnetId);
   }
@@ -261,5 +262,70 @@ public class DataColumnSidecarGossipManagerTest {
 
     verify(dasGossipLogger).onPublish(any(), any());
     verify(gossipNetwork).gossip(any(), any(Bytes.class));
+  }
+
+  @TestTemplate
+  public void testIsEnabledDuringOptimisticSync_whenSuperNodeSupplierReturnsTrue() {
+    final DataColumnSidecarGossipManager managerWithSuperNode =
+        new DataColumnSidecarGossipManager(subnetSubscriptions, dasGossipLogger, () -> true);
+
+    assertThat(managerWithSuperNode.isEnabledDuringOptimisticSync())
+        .as(
+            "isEnabledDuringOptimisticSync should return true when isSuperNodeSupplier returns true")
+        .isTrue();
+  }
+
+  @TestTemplate
+  public void testIsDisabledDuringOptimisticSync_whenSuperNodeSupplierReturnsFalse() {
+    final DataColumnSidecarGossipManager managerWithoutSuperNode =
+        new DataColumnSidecarGossipManager(subnetSubscriptions, dasGossipLogger, () -> false);
+
+    assertThat(managerWithoutSuperNode.isEnabledDuringOptimisticSync())
+        .as(
+            "isEnabledDuringOptimisticSync should return false when isSuperNodeSupplier returns false")
+        .isFalse();
+  }
+
+  @TestTemplate
+  public void testIsEnabledDuringOptimisticSync_respectsDynamicSupplierChanges() {
+    // Create a mutable supplier that we can change
+    final MutableSupplier<Boolean> mutableSupplier = new MutableSupplier<>(false);
+    final DataColumnSidecarGossipManager managerWithDynamicSupplier =
+        new DataColumnSidecarGossipManager(subnetSubscriptions, dasGossipLogger, mutableSupplier);
+
+    // Initially false
+    assertThat(managerWithDynamicSupplier.isEnabledDuringOptimisticSync())
+        .as("Should initially return false")
+        .isFalse();
+
+    // Change supplier to return true
+    mutableSupplier.setValue(true);
+    assertThat(managerWithDynamicSupplier.isEnabledDuringOptimisticSync())
+        .as("Should return true after supplier changes to true")
+        .isTrue();
+
+    // Change supplier back to false
+    mutableSupplier.setValue(false);
+    assertThat(managerWithDynamicSupplier.isEnabledDuringOptimisticSync())
+        .as("Should return false after supplier changes back to false")
+        .isFalse();
+  }
+
+  // Helper class for testing dynamic supplier behavior
+  private static class MutableSupplier<T> implements Supplier<T> {
+    private T value;
+
+    MutableSupplier(final T initialValue) {
+      this.value = initialValue;
+    }
+
+    void setValue(final T value) {
+      this.value = value;
+    }
+
+    @Override
+    public T get() {
+      return value;
+    }
   }
 }

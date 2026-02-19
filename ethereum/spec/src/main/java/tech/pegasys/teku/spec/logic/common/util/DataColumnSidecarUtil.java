@@ -31,7 +31,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -104,16 +103,12 @@ public interface DataColumnSidecarUtil {
       Set<Bytes32> validSignedBlockHeaders,
       Set<InclusionProofInfo> validInclusionProofInfoSet);
 
-  SafeFuture<Optional<SszList<SszKZGCommitment>>> getKzgCommitments(
-      DataColumnSidecar dataColumnSidecar,
-      Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot);
-
-  SszList<SszKZGCommitment> getKzgCommitments(SignedBeaconBlock signedBeaconBlock);
+  SszList<SszKZGCommitment> getKzgCommitments(BeaconBlock block);
 
   List<DataColumnSidecar> constructDataColumnSidecars(
       Optional<SignedBeaconBlockHeader> maybeSignedBeaconBlockHeader,
       SlotAndBlockRoot slotAndBlockRoot,
-      SszList<SszKZGCommitment> sszKZGCommitments,
+      Optional<SszList<SszKZGCommitment>> maybeSszKZGCommitments,
       Optional<List<Bytes32>> maybeKzgCommitmentsInclusionProof,
       List<BlobAndCellProofs> blobAndCellProofsList);
 
@@ -121,20 +116,6 @@ public interface DataColumnSidecarUtil {
       BeaconBlockBody beaconBlockBody);
 
   Optional<SszBytes32Vector> getMaybeKzgCommitmentsProof(DataColumnSidecar dataColumnSidecar);
-
-  /**
-   * Determines if data column sidecars can trigger recovery for this fork.
-   *
-   * <p>In Fulu, data column sidecars are self-contained with KZG commitments, signed headers, and
-   * inclusion proofs, allowing them to trigger recovery independently.
-   *
-   * <p>In Gloas, data column sidecars only reference the block and do not contain KZG commitments,
-   * so recovery can only be triggered by blocks which provide the execution payload bid with
-   * commitments.
-   *
-   * @return true if data column sidecars can trigger recovery for this fork, false otherwise
-   */
-  boolean canDataColumnSidecarTriggerRecovery();
 
   List<DataColumnSidecar> reconstructAllDataColumnSidecars(
       List<DataColumnSidecar> dataColumnSidecars);

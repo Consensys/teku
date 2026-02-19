@@ -32,11 +32,10 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -332,30 +331,21 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   }
 
   @Override
-  public SafeFuture<Optional<SszList<SszKZGCommitment>>> getKzgCommitments(
-      final DataColumnSidecar dataColumnSidecar,
-      final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot) {
-    return SafeFuture.completedFuture(
-        DataColumnSidecarFulu.required(dataColumnSidecar).getMaybeKzgCommitments());
-  }
-
-  @Override
-  public SszList<SszKZGCommitment> getKzgCommitments(final SignedBeaconBlock signedBeaconBlock) {
-    return BeaconBlockBodyElectra.required(signedBeaconBlock.getMessage().getBody())
-        .getBlobKzgCommitments();
+  public SszList<SszKZGCommitment> getKzgCommitments(final BeaconBlock block) {
+    return BeaconBlockBodyDeneb.required(block.getBody()).getBlobKzgCommitments();
   }
 
   @Override
   public List<DataColumnSidecar> constructDataColumnSidecars(
       final Optional<SignedBeaconBlockHeader> maybeSignedBeaconBlockHeader,
       final SlotAndBlockRoot slotAndBlockRoot,
-      final SszList<SszKZGCommitment> sszKZGCommitments,
+      final Optional<SszList<SszKZGCommitment>> maybeSszKZGCommitments,
       final Optional<List<Bytes32>> maybeKzgCommitmentsInclusionProof,
       final List<BlobAndCellProofs> blobAndCellProofsList) {
     return miscHelpersFulu.constructDataColumnSidecars(
         maybeSignedBeaconBlockHeader,
         slotAndBlockRoot,
-        sszKZGCommitments,
+        maybeSszKZGCommitments,
         maybeKzgCommitmentsInclusionProof,
         blobAndCellProofsList);
   }
@@ -506,13 +496,6 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
 
     return new SignatureVerificationData(
         signingRoot, header.getProposerIndex(), signedBlockHeader.getSignature(), state);
-  }
-
-  @Override
-  public boolean canDataColumnSidecarTriggerRecovery() {
-    // In Fulu, data column sidecars are self-contained with KZG commitments,
-    // signed headers, and inclusion proofs, allowing them to trigger recovery.
-    return true;
   }
 
   @Override

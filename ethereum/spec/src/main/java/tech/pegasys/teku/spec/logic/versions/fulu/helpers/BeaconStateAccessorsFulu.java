@@ -70,17 +70,11 @@ public class BeaconStateAccessorsFulu extends BeaconStateAccessorsElectra {
   }
 
   @Override
-  protected void validateStateCanCalculateProposerIndexAtSlot(
+  public boolean canCalculateProposerIndexAtSlot(
       final BeaconState state, final UInt64 requestedSlot) {
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(requestedSlot);
     final UInt64 stateEpoch = getCurrentEpoch(state);
-    checkArgument(
-        stateEpoch.equals(epoch) || stateEpoch.increment().equals(epoch),
-        "get_beacon_proposer_index is only used for requesting a slot in the current or next epoch. Requested slot %s (in epoch %s), state slot %s (in epoch %s)",
-        requestedSlot,
-        epoch,
-        state.getSlot(),
-        stateEpoch);
+    return epoch.equals(stateEpoch) || stateEpoch.increment().equals(epoch);
   }
 
   public List<Integer> getBeaconProposerIndices(final BeaconState state, final UInt64 epoch) {

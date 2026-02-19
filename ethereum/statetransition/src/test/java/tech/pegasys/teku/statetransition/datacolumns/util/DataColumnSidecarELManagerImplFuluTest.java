@@ -522,9 +522,8 @@ public class DataColumnSidecarELManagerImplFuluTest
                 0,
                 dataColumnSidecarELRecoveryManager
                     .getRecoveryTask(slotAndBlockRoot)
-                    .maybeSszKZGCommitmentsFuture()
-                    .getImmediately()
-                    .get()
+                    .maybeSszKzgCommitments()
+                    .orElseThrow()
                     .size())
             .mapToObj(
                 index -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), UInt64.valueOf(index)))
@@ -537,9 +536,8 @@ public class DataColumnSidecarELManagerImplFuluTest
     final SszList<SszKZGCommitment> sszKZGCommitments =
         dataColumnSidecarELRecoveryManager
             .getRecoveryTask(slotAndBlockRoot)
-            .maybeSszKZGCommitmentsFuture()
-            .getImmediately()
-            .get();
+            .maybeSszKzgCommitments()
+            .orElseThrow();
     return missingBlobsIdentifiers.stream()
         .map(
             blobIdentifier ->

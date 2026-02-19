@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.execution;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -43,10 +44,17 @@ class DefaultExecutionPayloadManagerTest {
       mock(ExecutionPayloadGossipValidator.class);
   private final ForkChoice forkChoice = mock(ForkChoice.class);
   private final ExecutionLayerChannel executionLayer = mock(ExecutionLayerChannel.class);
+  private final ReceivedExecutionPayloadEventsChannel
+      receivedExecutionPayloadEventsChannelPublisher =
+          mock(ReceivedExecutionPayloadEventsChannel.class);
 
   private final DefaultExecutionPayloadManager executionPayloadManager =
       new DefaultExecutionPayloadManager(
-          asyncRunner, executionPayloadGossipValidator, forkChoice, executionLayer);
+          asyncRunner,
+          executionPayloadGossipValidator,
+          forkChoice,
+          executionLayer,
+          receivedExecutionPayloadEventsChannelPublisher);
 
   private final SignedExecutionPayloadEnvelope signedExecutionPayload =
       dataStructureUtil.randomSignedExecutionPayloadEnvelope(42);
@@ -70,6 +78,9 @@ class DefaultExecutionPayloadManagerTest {
     }
 
     assertThat(resultFuture).isCompletedWithValue(InternalValidationResult.ACCEPT);
+
+    verify(receivedExecutionPayloadEventsChannelPublisher)
+        .onExecutionPayloadImported(signedExecutionPayload);
 
     // verify the `beacon_block_root` is cached
     assertThat(

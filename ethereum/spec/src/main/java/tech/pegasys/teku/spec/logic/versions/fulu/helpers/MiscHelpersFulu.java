@@ -210,6 +210,10 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .toList();
   }
 
+  public boolean isSuperNode(final int groupCount) {
+    return groupCount == specConfigFulu.getNumberOfCustodyGroups();
+  }
+
   private UInt256 incrementByModule(final UInt256 n) {
     if (n.equals(UInt256.MAX_VALUE)) {
       return UInt256.ZERO;
@@ -373,14 +377,14 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   public List<DataColumnSidecar> constructDataColumnSidecars(
       final Optional<SignedBeaconBlockHeader> maybeSignedBeaconBlockHeader,
       final SlotAndBlockRoot slotAndBlockRoot,
-      final SszList<SszKZGCommitment> sszKZGCommitments,
+      final Optional<SszList<SszKZGCommitment>> maybeSszKZGCommitments,
       final Optional<List<Bytes32>> maybeKzgCommitmentsInclusionProof,
       final List<BlobAndCellProofs> blobAndCellProofsList) {
     final List<List<MatrixEntry>> extendedMatrix = computeExtendedMatrix(blobAndCellProofsList);
     return constructDataColumnSidecarsInternal(
         builder ->
             builder
-                .kzgCommitments(sszKZGCommitments)
+                .kzgCommitments(maybeSszKZGCommitments.orElseThrow())
                 .signedBlockHeader(maybeSignedBeaconBlockHeader.orElseThrow())
                 .kzgCommitmentsInclusionProof(maybeKzgCommitmentsInclusionProof.orElseThrow()),
         extendedMatrix);
