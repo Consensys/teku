@@ -18,7 +18,6 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.datastructures.forkchoice.PayloadStatus.PAYLOAD_STATUS_EMPTY;
 
 import java.util.Optional;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -134,15 +133,15 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
                 throw new IllegalStateException("Parent block not found: " + block.getParentRoot());
               }
               final BeaconBlock parent = maybeParentBlock.get();
-              final BeaconBlockBodyGloas blockBody = BeaconBlockBodyGloas.required(block.getBody());
-              final BeaconBlockBodyGloas parentBody =
-                  BeaconBlockBodyGloas.required(parent.getBody());
               // TODO-GLOAS: https://github.com/Consensys/teku/issues/10341
               // if the parent is pre-gloas, we'd use the block state,
               // there would be no payload state
               if (parent.getSlot().isLessThan(earliestGloasSlot)) {
                 return PAYLOAD_STATUS_EMPTY;
               }
+              final BeaconBlockBodyGloas blockBody = BeaconBlockBodyGloas.required(block.getBody());
+              final BeaconBlockBodyGloas parentBody =
+                  BeaconBlockBodyGloas.required(parent.getBody());
               final Bytes32 parentBlockHash =
                   blockBody.getSignedExecutionPayloadBid().getMessage().getParentBlockHash();
               final Bytes32 messageBlockHash =
