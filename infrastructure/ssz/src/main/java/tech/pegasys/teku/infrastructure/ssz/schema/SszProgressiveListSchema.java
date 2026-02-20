@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil.bitsCeilToBytes;
 
 import java.nio.ByteOrder;
@@ -150,15 +149,9 @@ public class SszProgressiveListSchema<ElementDataT extends SszData>
     return defaultTree;
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public SszList<ElementDataT> createFromBackingNode(final TreeNode node) {
     return new SszProgressiveListImpl<>(this, node);
-  }
-
-  @Override
-  public boolean isPrimitive() {
-    return false;
   }
 
   @Override
@@ -229,13 +222,12 @@ public class SszProgressiveListSchema<ElementDataT extends SszData>
   private int sszSerializeVariable(
       final TreeNode dataNode, final SszWriter writer, final int elementsCount) {
     int variableOffset = SszType.SSZ_LENGTH_SIZE * elementsCount;
-    final int[] childSizes = new int[elementsCount];
     for (int i = 0; i < elementsCount; i++) {
       final long gIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(i);
       final TreeNode childSubtree = dataNode.get(gIdx);
-      childSizes[i] = elementSchema.getSszSize(childSubtree);
+      final int childSize = elementSchema.getSszSize(childSubtree);
       writer.write(SszType.sszLengthToBytes(variableOffset));
-      variableOffset += childSizes[i];
+      variableOffset += childSize;
     }
     for (int i = 0; i < elementsCount; i++) {
       final long gIdx = ProgressiveTreeUtil.getElementGeneralizedIndex(i);
@@ -372,8 +364,7 @@ public class SszProgressiveListSchema<ElementDataT extends SszData>
 
   static int getLength(final TreeNode listNode) {
     long longLength = fromLengthNode(listNode.get(GIndexUtil.RIGHT_CHILD_G_INDEX));
-    checkArgument(longLength < Integer.MAX_VALUE, "List length exceeds integer range");
-    return (int) longLength;
+    return Math.toIntExact(longLength);
   }
 
   static TreeNode getVectorNode(final TreeNode listNode) {

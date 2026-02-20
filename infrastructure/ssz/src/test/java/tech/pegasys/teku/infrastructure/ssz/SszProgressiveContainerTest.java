@@ -69,6 +69,23 @@ public class SszProgressiveContainerTest implements SszCompositeTestBase {
         createGapped(UInt64.valueOf(42), (byte) 7));
   }
 
+  @Test
+  void s() {
+    var squareSchema =
+        new SszProgressiveContainerSchema<>(
+            "Square",
+            new boolean[] {true, false, true},
+            NamedSchema.of("side", SszPrimitiveSchemas.UINT64_SCHEMA),
+            NamedSchema.of("color", SszPrimitiveSchemas.UINT8_SCHEMA));
+
+    final TreeNode tree =
+        squareSchema.createTreeFromFieldValues(
+            List.of(
+                SszUInt64.of(UInt64.valueOf(3)), SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 2)));
+    var a = squareSchema.createFromBackingNode(tree);
+    var b = a.getSchema().getChildGeneralizedIndex(0);
+  }
+
   private static SszContainer createAllFixed(final UInt64 a, final byte b, final UInt64 c) {
     final TreeNode tree =
         ALL_FIXED_SCHEMA.createTreeFromFieldValues(
