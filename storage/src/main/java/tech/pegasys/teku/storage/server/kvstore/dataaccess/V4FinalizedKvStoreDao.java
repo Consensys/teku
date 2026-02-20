@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
-import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE;
 import static tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.MAX_BLOCK_ROOT;
 import static tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.MIN_BLOCK_ROOT;
 
@@ -30,8 +29,6 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
-import org.hyperledger.besu.plugin.services.metrics.OperationTimer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -54,8 +51,6 @@ public class V4FinalizedKvStoreDao {
   private final SchemaFinalizedSnapshotStateAdapter schema;
   private final V4FinalizedStateStorageLogic<SchemaFinalizedSnapshotStateAdapter> stateStorageLogic;
 
-
-
   public V4FinalizedKvStoreDao(
       final MetricsSystem metricsSystem,
       final KvStoreAccessor db,
@@ -64,7 +59,7 @@ public class V4FinalizedKvStoreDao {
     this.db = db;
     this.schema = schema;
     this.stateStorageLogic = stateStorageLogic;
-   }
+  }
 
   public void close() throws Exception {
     db.close();
@@ -72,8 +67,7 @@ public class V4FinalizedKvStoreDao {
 
   public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
 
-      return db.get(schema.getColumnFinalizedBlocksBySlot(), slot);
-
+    return db.get(schema.getColumnFinalizedBlocksBySlot(), slot);
   }
 
   public Optional<UInt64> getEarliestFinalizedBlockSlot() {
@@ -93,9 +87,8 @@ public class V4FinalizedKvStoreDao {
 
   public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
 
-      return db.getFloorEntry(schema.getColumnFinalizedBlocksBySlot(), slot)
-          .map(ColumnEntry::getValue);
-
+    return db.getFloorEntry(schema.getColumnFinalizedBlocksBySlot(), slot)
+        .map(ColumnEntry::getValue);
   }
 
   public List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
@@ -107,7 +100,7 @@ public class V4FinalizedKvStoreDao {
   }
 
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
-      return stateStorageLogic.getLatestAvailableFinalizedState(db, schema, maxSlot);
+    return stateStorageLogic.getLatestAvailableFinalizedState(db, schema, maxSlot);
   }
 
   @MustBeClosed
@@ -147,11 +140,11 @@ public class V4FinalizedKvStoreDao {
   }
 
   public Optional<Bytes> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
-      return db.get(schema.getColumnBlobSidecarBySlotRootBlobIndex(), key);
+    return db.get(schema.getColumnBlobSidecarBySlotRootBlobIndex(), key);
   }
 
   public Optional<Bytes> getNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
-      return db.get(schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex(), key);
+    return db.get(schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex(), key);
   }
 
   @MustBeClosed
@@ -218,7 +211,7 @@ public class V4FinalizedKvStoreDao {
   }
 
   public Optional<Bytes> getSidecar(final DataColumnSlotAndIdentifier identifier) {
-      return db.get(schema.getColumnSidecarByColumnSlotAndIdentifier(), identifier);
+    return db.get(schema.getColumnSidecarByColumnSlotAndIdentifier(), identifier);
   }
 
   public Optional<Bytes> getNonCanonicalSidecar(final DataColumnSlotAndIdentifier identifier) {
@@ -271,7 +264,7 @@ public class V4FinalizedKvStoreDao {
   }
 
   public Optional<List<List<KZGProof>>> getDataColumnSidecarProofs(final UInt64 slot) {
-          return db.get(schema.getColumnDataColumnSidecarsProofsBySlot(), slot);
+    return db.get(schema.getColumnDataColumnSidecarsProofsBySlot(), slot);
   }
 
   public <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {

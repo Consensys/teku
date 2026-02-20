@@ -84,32 +84,31 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
     // Create latency timers for measuring blob DB performance improvements
     this.getFinalizedBlockTimer =
-            metricsSystem.createLabelledTimer(
-                    STORAGE,
-                    "get_finalized_block_latency",
-                    "Latency for retrieving finalized blocks by slot");
+        metricsSystem.createLabelledTimer(
+            STORAGE,
+            "get_finalized_block_latency",
+            "Latency for retrieving finalized blocks by slot");
     this.getFinalizedStateTimer =
-            metricsSystem.createLabelledTimer(
-                    STORAGE, "get_finalized_state_latency", "Latency for retrieving finalized states");
+        metricsSystem.createLabelledTimer(
+            STORAGE, "get_finalized_state_latency", "Latency for retrieving finalized states");
     this.getBlobSidecarTimer =
-            metricsSystem.createLabelledTimer(
-                    STORAGE, "get_blob_sidecar_latency", "Latency for retrieving blob sidecars");
+        metricsSystem.createLabelledTimer(
+            STORAGE, "get_blob_sidecar_latency", "Latency for retrieving blob sidecars");
     this.getDataColumnSidecarTimer =
-            metricsSystem.createLabelledTimer(
-                    STORAGE,
-                    "get_data_column_sidecar_latency",
-                    "Latency for retrieving data column sidecars");
+        metricsSystem.createLabelledTimer(
+            STORAGE,
+            "get_data_column_sidecar_latency",
+            "Latency for retrieving data column sidecars");
     this.getNonCanonicalBlobSidecarTimer =
-            metricsSystem.createLabelledTimer(
-                    STORAGE,
-                    "get_non_canonical_blob_sidecar_latency",
-                    "Latency for retrieving non-canonical blob sidecars");
+        metricsSystem.createLabelledTimer(
+            STORAGE,
+            "get_non_canonical_blob_sidecar_latency",
+            "Latency for retrieving non-canonical blob sidecars");
     this.getDataColumnSidecarsProofsTimer =
-            metricsSystem.createLabelledTimer(
-                    STORAGE,
-                    "get_data_column_sidecars_proofs_latency",
-                    "Latency for retrieving data column sidecar proofs");
-
+        metricsSystem.createLabelledTimer(
+            STORAGE,
+            "get_data_column_sidecars_proofs_latency",
+            "Latency for retrieving data column sidecar proofs");
   }
 
   @Override
@@ -310,7 +309,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
     try (final OperationTimer.TimingContext ignored =
-                 getFinalizedBlockTimer.labels().startTimer()) {
+        getFinalizedBlockTimer.labels().startTimer()) {
       return db.get(schema.getColumnFinalizedBlocksBySlot(), slot);
     }
   }
@@ -336,9 +335,9 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
     try (final OperationTimer.TimingContext ignored =
-                 getFinalizedBlockTimer.labels().startTimer()) {
+        getFinalizedBlockTimer.labels().startTimer()) {
       return db.getFloorEntry(schema.getColumnFinalizedBlocksBySlot(), slot)
-              .map(ColumnEntry::getValue);
+          .map(ColumnEntry::getValue);
     }
   }
 
@@ -360,7 +359,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
     try (final OperationTimer.TimingContext ignored =
-                 getFinalizedStateTimer.labels().startTimer()) {
+        getFinalizedStateTimer.labels().startTimer()) {
       return stateStorageLogic.getLatestAvailableFinalizedState(db, schema, maxSlot);
     }
   }
@@ -418,7 +417,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   public Optional<Bytes> getNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
     try (final OperationTimer.TimingContext ignored =
-                 getNonCanonicalBlobSidecarTimer.labels().startTimer()) {
+        getNonCanonicalBlobSidecarTimer.labels().startTimer()) {
       return db.get(schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex(), key);
     }
   }
@@ -676,7 +675,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   public Optional<Bytes> getSidecar(final DataColumnSlotAndIdentifier identifier) {
     try (final OperationTimer.TimingContext ignored =
-                 getDataColumnSidecarTimer.labels().startTimer()) {
+        getDataColumnSidecarTimer.labels().startTimer()) {
       return db.get(schema.getColumnSidecarByColumnSlotAndIdentifier(), identifier);
     }
   }
@@ -735,7 +734,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   public Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(final UInt64 slot) {
     try (final OperationTimer.TimingContext ignored =
-                 getDataColumnSidecarsProofsTimer.labels().startTimer()) {
+        getDataColumnSidecarsProofsTimer.labels().startTimer()) {
       return db.get(schema.getColumnDataColumnSidecarsProofsBySlot(), slot);
     }
   }

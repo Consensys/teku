@@ -91,7 +91,13 @@ public class LevelDbDatabaseFactory {
             schema.getDeletedVariableIds());
 
     return KvStoreDatabase.createWithStateSnapshots(
-        db, schema, stateStorageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec, metricsSystem);
+        db,
+        schema,
+        stateStorageMode,
+        stateStorageFrequency,
+        storeNonCanonicalBlocks,
+        spec,
+        metricsSystem);
   }
 
   public static Database createLevelDbTree(
