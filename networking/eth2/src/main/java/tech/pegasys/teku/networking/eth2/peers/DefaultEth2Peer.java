@@ -428,6 +428,21 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> requestExecutionPayloadEnvelopeByRoot(
+      final Bytes32 beaconBlockRoot) {
+    return rpcMethods
+        .executionPayloadEnvelopesByRoot()
+        .map(
+            method ->
+                requestOptionalItem(
+                    method,
+                    new ExecutionPayloadEnvelopesByRootRequestMessage(
+                        executionPayloadEnvelopesByRootRequestMessageSchema.get(),
+                        List.of(beaconBlockRoot))))
+        .orElse(failWithUnsupportedMethodException("ExecutionPayloadEnvelopesByRoot"));
+  }
+
+  @Override
   public SafeFuture<Void> requestBlocksByRange(
       final UInt64 startSlot,
       final UInt64 count,

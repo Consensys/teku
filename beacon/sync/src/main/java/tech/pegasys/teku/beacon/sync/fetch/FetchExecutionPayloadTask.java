@@ -17,49 +17,54 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.beacon.sync.fetch.FetchResult.Status;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 
-public class FetchBlockTask extends AbstractFetchTask<Bytes32, SignedBeaconBlock> {
+public class FetchExecutionPayloadTask
+    extends AbstractFetchTask<Bytes32, SignedExecutionPayloadEnvelope> {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Bytes32 blockRoot;
+  private final Bytes32 beaconBlockRoot;
 
-  FetchBlockTask(final P2PNetwork<Eth2Peer> eth2Network, final Bytes32 blockRoot) {
+  protected FetchExecutionPayloadTask(
+      final P2PNetwork<Eth2Peer> eth2Network, final Bytes32 beaconBlockRoot) {
     super(eth2Network, Optional.empty());
-    this.blockRoot = blockRoot;
+    this.beaconBlockRoot = beaconBlockRoot;
   }
 
-  public FetchBlockTask(
+  public FetchExecutionPayloadTask(
       final P2PNetwork<Eth2Peer> eth2Network,
       final Optional<Eth2Peer> preferredPeer,
-      final Bytes32 blockRoot) {
+      final Bytes32 beaconBlockRoot) {
     super(eth2Network, preferredPeer);
-    this.blockRoot = blockRoot;
+    this.beaconBlockRoot = beaconBlockRoot;
   }
 
   @Override
   public Bytes32 getKey() {
-    return blockRoot;
+    return beaconBlockRoot;
   }
 
   @Override
-  SafeFuture<FetchResult<SignedBeaconBlock>> fetch(final Eth2Peer peer) {
-    return peer.requestBlockByRoot(blockRoot)
+  SafeFuture<FetchResult<SignedExecutionPayloadEnvelope>> fetch(final Eth2Peer peer) {
+    return peer.requestExecutionPayloadEnvelopeByRoot(beaconBlockRoot)
         .thenApply(
-            maybeBlock ->
-                maybeBlock
-                    .map(block -> FetchResult.createSuccessful(peer, block))
-                    .orElseGet(() -> FetchResult.createFailed(peer, Status.FETCH_FAILED)))
+            maybeExecutionPayload ->
+                maybeExecutionPayload
+                    .map(executionPayload -> FetchResult.createSuccessful(peer, executionPayload))
+                    .orElseGet(
+                        () -> FetchResult.createFailed(peer, FetchResult.Status.FETCH_FAILED)))
         .exceptionally(
             err -> {
               LOG.debug(
-                  "Failed to fetch block by root {} from peer {}", blockRoot, peer.getId(), err);
-              return FetchResult.createFailed(peer, Status.FETCH_FAILED);
+                  "Failed to fetch execution payload by beacon block root {} from peer {}",
+                  beaconBlockRoot,
+                  peer.getId(),
+                  err);
+              return FetchResult.createFailed(peer, FetchResult.Status.FETCH_FAILED);
             });
   }
 }
