@@ -14,10 +14,12 @@
 package tech.pegasys.teku.spec.logic.versions.gloas.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import java.util.concurrent.CompletionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -100,18 +102,15 @@ class ForkChoiceUtilGloasTest {
     when(store.retrieveBlock(currentBlock.getParentRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
-    // Test
     final SafeFuture<Boolean> result =
-        forkChoiceUtil
-            .isParentNodeFull(store, currentBlock.getMessage())
-            .exceptionally(
-                t -> {
-                  assertThat(t.getCause())
-                      .isInstanceOf(IllegalStateException.class)
-                      .hasMessage("Parent block not found");
-                  return null;
-                });
+        forkChoiceUtil.isParentNodeFull(store, currentBlock.getMessage());
+
     assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::join)
+        .isInstanceOf(CompletionException.class)
+        .hasCauseInstanceOf(IllegalStateException.class)
+        .cause()
+        .hasMessageStartingWith("Parent block not found");
   }
 
   @Test
@@ -170,18 +169,15 @@ class ForkChoiceUtilGloasTest {
     when(store.retrieveBlock(currentBlock.getParentRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
-    // Test
     final SafeFuture<Boolean> result =
-        forkChoiceUtil
-            .isParentNodeFull(store, currentBlock.getMessage())
-            .exceptionally(
-                t -> {
-                  assertThat(t.getCause())
-                      .isInstanceOf(IllegalStateException.class)
-                      .hasMessage("Parent block not found");
-                  return null;
-                });
+        forkChoiceUtil.isParentNodeFull(store, currentBlock.getMessage());
+
     assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::join)
+        .isInstanceOf(CompletionException.class)
+        .hasCauseInstanceOf(IllegalStateException.class)
+        .cause()
+        .hasMessageStartingWith("Parent block not found");
   }
 
   // Helper methods to create blocks with specific properties
