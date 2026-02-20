@@ -14,6 +14,9 @@
 package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.getLength;
+import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.getVectorNode;
+import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.toLengthNode;
 import static tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil.bitsCeilToBytes;
 
 import java.nio.ByteOrder;
@@ -35,7 +38,6 @@ import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszWriter;
 import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
-import tech.pegasys.teku.infrastructure.ssz.tree.LeafNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.SszSuperNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource;
@@ -278,27 +280,6 @@ public abstract class AbstractSszListSchema<
             lastUsefulGIndex,
             childLoader);
     return BranchNode.create(vectorNode, toLengthNode(length));
-  }
-
-  private static TreeNode toLengthNode(final int length) {
-    return length == 0
-        ? LeafNode.ZERO_LEAVES[8]
-        : LeafNode.create(Bytes.ofUnsignedLong(length, ByteOrder.LITTLE_ENDIAN));
-  }
-
-  private static long fromLengthNode(final TreeNode lengthNode) {
-    assert lengthNode instanceof LeafNode;
-    return ((LeafNode) lengthNode).getData().toLong(ByteOrder.LITTLE_ENDIAN);
-  }
-
-  protected static int getLength(final TreeNode listNode) {
-    long longLength = fromLengthNode(listNode.get(GIndexUtil.RIGHT_CHILD_G_INDEX));
-    assert longLength < Integer.MAX_VALUE;
-    return (int) longLength;
-  }
-
-  protected static TreeNode getVectorNode(final TreeNode listNode) {
-    return listNode.get(GIndexUtil.LEFT_CHILD_G_INDEX);
   }
 
   @Override

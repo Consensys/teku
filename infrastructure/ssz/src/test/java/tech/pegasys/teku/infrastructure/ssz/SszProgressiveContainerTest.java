@@ -83,7 +83,7 @@ public class SszProgressiveContainerTest implements SszCompositeTestBase {
             List.of(
                 SszUInt64.of(UInt64.valueOf(3)), SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 2)));
     var a = squareSchema.createFromBackingNode(tree);
-    var b = a.getSchema().getChildGeneralizedIndex(0);
+    a.getSchema().getChildGeneralizedIndex(0);
   }
 
   private static SszContainer createAllFixed(final UInt64 a, final byte b, final UInt64 c) {

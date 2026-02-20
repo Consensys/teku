@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
+import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.getLength;
+import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.getVectorNode;
+import static tech.pegasys.teku.infrastructure.ssz.schema.ListSchemaUtil.toLengthNode;
 import static tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil.bitsCeilToBytes;
 
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -360,26 +362,6 @@ public class SszProgressiveListSchema<ElementDataT extends SszData>
       return ((SszPrimitiveSchema<?, ?>) elementSchema).getBitsSize();
     }
     return elementSchema.getSszFixedPartSize() * 8;
-  }
-
-  static int getLength(final TreeNode listNode) {
-    long longLength = fromLengthNode(listNode.get(GIndexUtil.RIGHT_CHILD_G_INDEX));
-    return Math.toIntExact(longLength);
-  }
-
-  static TreeNode getVectorNode(final TreeNode listNode) {
-    return listNode.get(GIndexUtil.LEFT_CHILD_G_INDEX);
-  }
-
-  private static TreeNode toLengthNode(final int length) {
-    return length == 0
-        ? LeafNode.ZERO_LEAVES[8]
-        : LeafNode.create(Bytes.ofUnsignedLong(length, ByteOrder.LITTLE_ENDIAN));
-  }
-
-  private static long fromLengthNode(final TreeNode lengthNode) {
-    assert lengthNode instanceof LeafNode;
-    return ((LeafNode) lengthNode).getData().toLong(ByteOrder.LITTLE_ENDIAN);
   }
 
   private List<TreeNode> packElementsToChunks(final List<? extends ElementDataT> elements) {
