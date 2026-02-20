@@ -13,12 +13,20 @@
 
 package tech.pegasys.teku.infrastructure.async.timed;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import java.time.Duration;
+import java.util.concurrent.RejectedExecutionException;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.ExceptionThrowingFutureSupplier;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler.ExpirationTask;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler.RepeatingTask;
@@ -151,6 +159,37 @@ class RepeatingTaskSchedulerTest {
 
     advanceTimeBy(24);
 
+    verifyNoMoreInteractions(action);
+    verifyNoMoreInteractions(expirationAction);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void shouldExpireViaErrorHandlerWhenRunAfterDelayFails() {
+    // Use a mock AsyncRunner where runAfterDelay always returns a failed future
+    final AsyncRunner failingAsyncRunner = mock(AsyncRunner.class, Mockito.CALLS_REAL_METHODS);
+    doReturn(SafeFuture.failedFuture(new RejectedExecutionException("Pool full")))
+        .when(failingAsyncRunner)
+        .runAfterDelay(any(ExceptionThrowingFutureSupplier.class), any(Duration.class));
+
+    final RepeatingTaskScheduler scheduler =
+        new RepeatingTaskScheduler(failingAsyncRunner, timeProvider);
+
+    final UInt64 startTime = getTime();
+    final UInt64 period = UInt64.valueOf(6);
+    final UInt64 expirationTime = startTime.plus(12);
+
+    // Schedule: event executes immediately at startTime via the while loop.
+    // After execution, nextDue = startTime+6. Not expired (startTime+6 < startTime+12).
+    // runAfterDelay fails, error handler fires:
+    //   moveToNextScheduledTime() -> nextDue = startTime+12. isExpired (startTime+12 >=
+    // startTime+12).
+    //   expireEvent(event) called directly instead of scheduleEvent(event).
+    scheduler.scheduleRepeatingEventInMillis(
+        startTime, period, action, expirationTime, expirationAction);
+
+    verify(action).execute(startTime, startTime);
+    verify(expirationAction).execute(expirationTime, startTime);
     verifyNoMoreInteractions(action);
     verifyNoMoreInteractions(expirationAction);
   }

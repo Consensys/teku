@@ -126,7 +126,11 @@ public class RepeatingTaskScheduler {
               // If the thread pool and its queue are full, we should still be able to schedule a
               // task in the future.
               event.moveToNextScheduledTime();
-              scheduleEvent(event);
+              if (event.isExpired) {
+                expireEvent(event);
+              } else {
+                scheduleEvent(event);
+              }
             });
   }
 
