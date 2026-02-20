@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler.RepeatingTask;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 public abstract class TimeBasedEventAdapter {
@@ -31,7 +32,7 @@ public abstract class TimeBasedEventAdapter {
   private UInt64 genesisTimeMillis;
 
   protected final ValidatorTimingChannel validatorTimingChannel;
-  protected final Spec spec;
+  protected final SpecVersion specVersion;
   protected final RepeatingTaskScheduler taskScheduler;
 
   public TimeBasedEventAdapter(
@@ -43,9 +44,9 @@ public abstract class TimeBasedEventAdapter {
     this.firstSlot = firstSlot;
     this.taskScheduler = taskScheduler;
     this.validatorTimingChannel = validatorTimingChannel;
-    this.spec = spec;
+    this.specVersion = spec.atSlot(firstSlot);
     this.onLastSlot = onLastSlot;
-    this.millisPerSlot = UInt64.valueOf(spec.atSlot(firstSlot).getConfig().getSlotDurationMillis());
+    this.millisPerSlot = UInt64.valueOf(specVersion.getConfig().getSlotDurationMillis());
   }
 
   abstract void scheduleDuties(
@@ -171,7 +172,7 @@ public abstract class TimeBasedEventAdapter {
   // utils //
 
   protected UInt64 getCurrentSlotForMillis(final UInt64 millis) {
-    return spec.getCurrentSlotFromTimeMillis(millis, genesisTimeMillis);
+    return specVersion.miscHelpers().computeSlotAtTimeMillis(genesisTimeMillis, millis);
   }
 
   boolean isTooLateInMillis(final UInt64 scheduledTimeInMillis, final UInt64 actualTimeInMillis) {

@@ -39,7 +39,9 @@ public class Phase0TimeBasedEventAdapter extends TimeBasedEventAdapter {
         nextSlotStartTimeMillis,
         expirationTimeMillis,
         new ScheduledEvent(
-            spec.getAttestationDueMillis(getFirstSlot()), this::onAttestationCreationDue),
-        new ScheduledEvent(spec.getAggregateDueMillis(getFirstSlot()), this::onAggregationDue));
+            specVersion.getForkChoiceUtil().getAttestationDueMillis(),
+            this::onAttestationCreationDue),
+        new ScheduledEvent(
+            specVersion.getForkChoiceUtil().getAggregateDueMillis(), this::onAggregationDue));
   }
 }

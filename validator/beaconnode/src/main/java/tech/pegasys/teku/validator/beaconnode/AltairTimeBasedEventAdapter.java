@@ -46,11 +46,15 @@ public class AltairTimeBasedEventAdapter extends TimeBasedEventAdapter {
         nextSlotStartTimeMillis,
         expirationTimeMillis,
         new ScheduledEvent(
-            spec.getAttestationDueMillis(getFirstSlot()), this::onAttestationCreationDue),
-        new ScheduledEvent(spec.getAggregateDueMillis(getFirstSlot()), this::onAggregationDue),
+            specVersion.getForkChoiceUtil().getAttestationDueMillis(),
+            this::onAttestationCreationDue),
         new ScheduledEvent(
-            spec.getSyncMessageDueMillis(getFirstSlot()), this::onSyncCommitteeCreationDue),
+            specVersion.getForkChoiceUtil().getAggregateDueMillis(), this::onAggregationDue),
         new ScheduledEvent(
-            spec.getContributionDueMillis(getFirstSlot()), this::onContributionCreationDue));
+            specVersion.getForkChoiceUtil().getSyncMessageDueMillis(),
+            this::onSyncCommitteeCreationDue),
+        new ScheduledEvent(
+            specVersion.getForkChoiceUtil().getContributionDueMillis(),
+            this::onContributionCreationDue));
   }
 }
