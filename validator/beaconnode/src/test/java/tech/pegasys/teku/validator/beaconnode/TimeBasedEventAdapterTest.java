@@ -19,11 +19,15 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import java.util.Optional;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
@@ -31,252 +35,167 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 class TimeBasedEventAdapterTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final Spec gnosisSpec = TestSpecFactory.create(SpecMilestone.PHASE0, Eth2Network.GNOSIS);
+  private StubTimeProvider timeProvider;
+  private StubAsyncRunner asyncRunner;
+  private RepeatingTaskScheduler taskScheduler;
+  private ValidatorTimingChannel validatorTimingChannel;
 
-  private final GenesisDataProvider genesisDataProvider = mock(GenesisDataProvider.class);
-  private final ValidatorTimingChannel validatorTimingChannel = mock(ValidatorTimingChannel.class);
-
-  final int millisPerSlot = spec.getSlotDurationMillis(ZERO);
-  final int millisPerSlotGnosis = gnosisSpec.getSlotDurationMillis(SpecConfig.GENESIS_SLOT);
-
-  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100);
-  private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
-  private final RepeatingTaskScheduler repeatingTaskScheduler =
-      new RepeatingTaskScheduler(asyncRunner, timeProvider);
-
-  private final TimeBasedEventAdapter eventAdapter =
-      new TimeBasedEventAdapter(
-          genesisDataProvider, repeatingTaskScheduler, timeProvider, validatorTimingChannel, spec);
-
-  private final TimeBasedEventAdapter eventAdapterGnosis =
-      new TimeBasedEventAdapter(
-          genesisDataProvider,
-          repeatingTaskScheduler,
-          timeProvider,
-          validatorTimingChannel,
-          gnosisSpec);
-
-  @Test
-  void shouldScheduleEventsOnceGenesisIsKnown() {
-    final SafeFuture<UInt64> genesisTimeFuture = new SafeFuture<>();
-    when(genesisDataProvider.getGenesisTime()).thenReturn(genesisTimeFuture);
-
-    final SafeFuture<Void> startResult = eventAdapter.start();
-    // Returned future completes immediately so startup can complete pre-genesis
-    assertThat(startResult).isCompleted();
-    // But no slot timings have been scheduled yet
-    assertThat(asyncRunner.hasDelayedActions()).isFalse();
-
-    // Once we get the genesis time, we can schedule the slot events
-    genesisTimeFuture.complete(UInt64.ONE);
-    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+  @BeforeEach
+  void setUp() {
+    timeProvider = StubTimeProvider.withTimeInSeconds(100);
+    asyncRunner = new StubAsyncRunner(timeProvider);
+    taskScheduler = new RepeatingTaskScheduler(asyncRunner, timeProvider);
+    validatorTimingChannel = mock(ValidatorTimingChannel.class);
   }
 
-  @Test
-  void shouldScheduleSlotStartEventsStartingFromNextSlot() {
-    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
-    final long nextSlot = 26;
-    final UInt64 firstSlotToFire = UInt64.valueOf(nextSlot);
-    final int timeUntilNextSlot = (millisPerSlot / 2) - 1;
-    timeProvider.advanceTimeByMillis(millisPerSlot * nextSlot - timeUntilNextSlot);
+  static Stream<Arguments> milestones() {
+    return Stream.of(
+        Arguments.of("PHASE0", (Supplier<Spec>) TestSpecFactory::createMinimalPhase0),
+        Arguments.of("ALTAIR", (Supplier<Spec>) TestSpecFactory::createMinimalAltair),
+        Arguments.of("GLOAS", (Supplier<Spec>) TestSpecFactory::createMinimalGloas));
+  }
 
-    assertThat(eventAdapter.start()).isCompleted();
+  private TimeBasedEventAdapter createAdapter(final Spec spec, final Runnable onLastSlot) {
+    final SpecMilestone milestone = spec.atSlot(UInt64.ZERO).getMilestone();
+    return switch (milestone) {
+      case PHASE0 ->
+          new Phase0TimeBasedEventAdapter(taskScheduler, validatorTimingChannel, onLastSlot, spec);
+      case ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA, FULU ->
+          new AltairTimeBasedEventAdapter(taskScheduler, validatorTimingChannel, onLastSlot, spec);
+      case GLOAS ->
+          new GloasTimeBasedEventAdapter(taskScheduler, validatorTimingChannel, onLastSlot, spec);
+    };
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("milestones")
+  void shouldScheduleExpectedEventsWithCorrectTiming(
+      final String name, final Supplier<Spec> specFactory) {
+    final Spec spec = specFactory.get();
+    final TimeBasedEventAdapter adapter = createAdapter(spec, () -> {});
+    final int secondsPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot();
+    final UInt64 genesisTimeMillis = timeProvider.getTimeInMillis();
+    final long nextSlot = 25;
+    final UInt64 nextSlotUInt = UInt64.valueOf(nextSlot);
+    final int timeUntilNextSlot = secondsPerSlot - 1;
+    timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
+
+    startAdapter(adapter, genesisTimeMillis, spec);
 
     // Should not fire any events immediately
     asyncRunner.executeDueActionsRepeatedly();
     verifyNoMoreInteractions(validatorTimingChannel);
 
-    // Fire slot start events when the next slot is due to start
-    timeProvider.advanceTimeByMillis(timeUntilNextSlot);
+    // Advance to slot start — slot + block production should fire
+    timeProvider.advanceTimeBySeconds(timeUntilNextSlot);
     asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel).onSlot(firstSlotToFire);
-    verify(validatorTimingChannel).onBlockProductionDue(firstSlotToFire);
-    verifyNoMoreInteractions(validatorTimingChannel);
+    verify(validatorTimingChannel).onSlot(nextSlotUInt);
+    verify(validatorTimingChannel).onBlockProductionDue(nextSlotUInt);
+
+    SlotEventVerifierTestUtil.verifySlotEvents(
+        spec, timeProvider, asyncRunner, validatorTimingChannel, nextSlotUInt);
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("milestones")
+  void shouldCallOnLastSlotExactlyOnceWhenEventsExpire(
+      final String name, final Supplier<Spec> specFactory) {
+    final Spec spec = specFactory.get();
+    final Runnable onLastSlotCallback = mock(Runnable.class);
+    final TimeBasedEventAdapter adapter = createAdapter(spec, onLastSlotCallback);
+    final int millisPerSlot = spec.getGenesisSpecConfig().getSlotDurationMillis();
+    final int secondsPerSlot = millisPerSlot / 1000;
+
+    final UInt64 genesisTimeMillis = timeProvider.getTimeInMillis();
+    adapter.setGenesisTimeMillis(genesisTimeMillis);
+
+    final long nextSlot = 25;
+    final int timeUntilNextSlot = secondsPerSlot / 2;
+    timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
+
+    final UInt64 nextSlotStartMillis =
+        UInt64.valueOf(genesisTimeMillis.longValue() + (nextSlot * millisPerSlot));
+    final UInt64 expiryMillis =
+        UInt64.valueOf(genesisTimeMillis.longValue() + ((nextSlot + 1) * millisPerSlot));
+
+    adapter.scheduleDuties(nextSlotStartMillis, Optional.of(expiryMillis));
+
+    // Advance to slot start — slot event fires and then expires, triggering onLastSlot
+    timeProvider.advanceTimeBySeconds(timeUntilNextSlot);
+    asyncRunner.executeDueActionsRepeatedly();
+    verify(validatorTimingChannel).onSlot(UInt64.valueOf(nextSlot));
+    verify(onLastSlotCallback, times(1)).run();
+
+    // Advance through rest of slot — duties fire and expire, but onLastSlot is NOT called again
+    timeProvider.advanceTimeBySeconds(secondsPerSlot);
+    asyncRunner.executeDueActionsRepeatedly();
+    verify(onLastSlotCallback, times(1)).run();
   }
 
   @Test
-  void shouldScheduleAttestationEventsStartingFromNextSlot() {
-    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
-    final UInt64 nextSlot = UInt64.valueOf(25);
-    // Starting time is before the aggregation for the current slot should happen, but should still
-    // wait until the next slot to start
-    final int timeUntilNextSlot = millisPerSlot - 1;
-    timeProvider.advanceTimeByMillis(nextSlot.times(millisPerSlot).minus(timeUntilNextSlot));
+  void shouldComputeMillisOffsetsCorrectlyForNonDivisibleSlotDuration() {
+    // Gnosis has 5-second slots (not divisible by 3), verifying millis-based offsets
+    final Spec gnosisSpec = TestSpecFactory.create(SpecMilestone.ALTAIR, Eth2Network.GNOSIS);
+    final int secondsPerSlot = gnosisSpec.getGenesisSpecConfig().getSecondsPerSlot();
+    assertThat(secondsPerSlot % 3).isNotZero();
 
-    assertThat(eventAdapter.start()).isCompleted();
+    final TimeBasedEventAdapter adapter =
+        new AltairTimeBasedEventAdapter(
+            taskScheduler, validatorTimingChannel, () -> {}, gnosisSpec);
 
-    // Should not fire any events immediately
+    final UInt64 genesisTimeMillis = timeProvider.getTimeInMillis();
+    final long nextSlot = 25;
+    final int timeUntilNextSlot = secondsPerSlot - 1;
+    timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
+
+    startAdapter(adapter, genesisTimeMillis, gnosisSpec);
     asyncRunner.executeDueActionsRepeatedly();
     verifyNoMoreInteractions(validatorTimingChannel);
 
-    // Attestation should not fire at the start of the slot
-    timeProvider.advanceTimeByMillis(timeUntilNextSlot);
+    // Advance to slot start
+    timeProvider.advanceTimeBySeconds(timeUntilNextSlot);
     asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, never()).onAttestationCreationDue(nextSlot);
 
-    // But does fire 1/3rds through the slot
-    timeProvider.advanceTimeByMillis(spec.getAttestationDueMillis(nextSlot));
+    // Attestation should not fire at 1/3 seconds (integer division rounds down)
+    timeProvider.advanceTimeBySeconds(secondsPerSlot / 3);
     asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1)).onAttestationCreationDue(nextSlot);
+    verify(validatorTimingChannel, never()).onAttestationCreationDue(UInt64.valueOf(nextSlot));
+
+    // But does fire at 1/3 millis (precise offset)
+    final long alreadyPassedMillis = (long) (secondsPerSlot / 3) * 1000;
+    final long oneThirdMillis = (secondsPerSlot * 1000L) / 3;
+    timeProvider.advanceTimeByMillis(oneThirdMillis - alreadyPassedMillis);
+    asyncRunner.executeDueActionsRepeatedly();
+    verify(validatorTimingChannel, times(1)).onAttestationCreationDue(UInt64.valueOf(nextSlot));
+
+    // Aggregation should not fire at 2/3 seconds (integer division rounds down)
+    final long twoThirdsSeconds = (long) (secondsPerSlot / 3) * 2 * 1000;
+    timeProvider.advanceTimeByMillis(twoThirdsSeconds - oneThirdMillis);
+    asyncRunner.executeDueActionsRepeatedly();
+    verify(validatorTimingChannel, never()).onAttestationAggregationDue(UInt64.valueOf(nextSlot));
+
+    // But does fire at 2/3 millis (precise offset)
+    final long twoThirdsMillis = (secondsPerSlot * 2000L) / 3;
+    timeProvider.advanceTimeByMillis(twoThirdsMillis - twoThirdsSeconds);
+    asyncRunner.executeDueActionsRepeatedly();
+    verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(UInt64.valueOf(nextSlot));
   }
 
-  @Test
-  void shouldScheduleAttestationEventsStartingFromNextSlotForGnosis() {
-    // ensure seconds per slot not divisible by 3 is tested
-    assertThat(millisPerSlotGnosis % 3).isNotZero();
+  private void startAdapter(
+      final TimeBasedEventAdapter adapter, final UInt64 genesisTimeMillis, final Spec spec) {
 
-    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
-    final UInt64 nextSlot = UInt64.valueOf(25);
-    // Starting time is before the aggregation for the current slot should happen, but should still
-    // wait until the next slot to start
-    final int timeUntilNextSlot = millisPerSlotGnosis - 1000;
-    timeProvider.advanceTimeByMillis(nextSlot.times(millisPerSlotGnosis).minus(timeUntilNextSlot));
+    adapter.setGenesisTimeMillis(genesisTimeMillis);
 
-    assertThat(eventAdapterGnosis.start()).isCompleted();
+    final UInt64 currentSlot =
+        spec.getCurrentSlotFromTimeMillis(timeProvider.getTimeInMillis(), genesisTimeMillis);
+    final UInt64 nextSlotStartTimeMillis =
+        spec.computeTimeMillisAtSlot(currentSlot.increment(), genesisTimeMillis);
 
-    // Should not fire any events immediately
-    asyncRunner.executeDueActionsRepeatedly();
-    verifyNoMoreInteractions(validatorTimingChannel);
-
-    // Attestation should not fire at the start of the slot
-    timeProvider.advanceTimeByMillis(timeUntilNextSlot);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, never()).onAttestationCreationDue(nextSlot);
-
-    // It should also not fire at 1/3 seconds (whole number)
-    final int attestationDueMillis = gnosisSpec.getAttestationDueMillis(nextSlot);
-    final int offsetMillis = 1;
-    timeProvider.advanceTimeByMillis(attestationDueMillis - offsetMillis);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, never()).onAttestationCreationDue(nextSlot);
-
-    // But does fire 1/3rds in millis through the slot
-    timeProvider.advanceTimeByMillis(offsetMillis);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1)).onAttestationCreationDue(nextSlot);
-  }
-
-  @Test
-  void shouldScheduleAggregateEventsStartingFromNextSlot() {
-    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
-    final UInt64 nextSlot = UInt64.valueOf(25);
-    // Starting time is before the aggregation for the current slot should happen, but should still
-    // wait until the next slot to start
-    final int timeUntilNextSlot = millisPerSlot - 1;
-    timeProvider.advanceTimeByMillis(nextSlot.times(millisPerSlot).minus(timeUntilNextSlot));
-
-    assertThat(eventAdapter.start()).isCompleted();
-
-    // Should not fire any events immediately
-    asyncRunner.executeDueActionsRepeatedly();
-    verifyNoMoreInteractions(validatorTimingChannel);
-
-    // Aggregation should not fire at the start of the slot
-    timeProvider.advanceTimeByMillis(timeUntilNextSlot);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, never()).onAttestationAggregationDue(nextSlot);
-
-    // But does fire when aggregation is due
-    timeProvider.advanceTimeByMillis(spec.getAggregateDueMillis(nextSlot));
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(nextSlot);
-  }
-
-  @Test
-  void shouldScheduleAggregateEventsStartingFromNextSlotForGnosis() {
-    // ensure seconds per slot not divisible by 3 is tested
-    assertThat(gnosisSpec.getAttestationDueMillis(ZERO)).isNotZero();
-
-    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
-    final UInt64 nextSlot = UInt64.valueOf(25);
-    // Starting time is before the aggregation for the current slot should happen, but should still
-    // wait until the next slot to start
-    final int timeUntilNextSlot = millisPerSlotGnosis - 1;
-    timeProvider.advanceTimeByMillis(nextSlot.times(millisPerSlotGnosis).minus(timeUntilNextSlot));
-
-    assertThat(eventAdapterGnosis.start()).isCompleted();
-
-    // Should not fire any events immediately
-    asyncRunner.executeDueActionsRepeatedly();
-    verifyNoMoreInteractions(validatorTimingChannel);
-
-    // Aggregation should not fire at the start of the slot
-    timeProvider.advanceTimeByMillis(timeUntilNextSlot);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, never()).onAttestationAggregationDue(nextSlot);
-
-    // should not advance early
-    timeProvider.advanceTimeByMillis(gnosisSpec.getAggregateDueMillis(nextSlot) - 1L);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, never()).onAttestationAggregationDue(nextSlot);
-
-    // But does fire 2/3rds in millis through the slot
-    timeProvider.advanceTimeByMillis(1);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(nextSlot);
-  }
-
-  @Test
-  void shouldScheduleEventsAtCorrectTimesStartingFromNextSlotForGloas() {
-    final Spec spec = TestSpecFactory.createMinimalGloas();
-    final TimeBasedEventAdapter eventAdapter =
-        new TimeBasedEventAdapter(
-            genesisDataProvider,
-            repeatingTaskScheduler,
-            timeProvider,
-            validatorTimingChannel,
-            spec);
-
-    final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
-
-    final UInt64 nextSlot = UInt64.valueOf(25);
-    // Starting time is before the aggregation for the current slot should happen, but should still
-    // wait until the next slot to start
-    final int timeUntilNextSlot = millisPerSlot - 1;
-    timeProvider.advanceTimeByMillis(nextSlot.times(millisPerSlot).minus(timeUntilNextSlot));
-
-    assertThat(eventAdapter.start()).isCompleted();
-
-    // Should not fire any events immediately
-    asyncRunner.executeDueActionsRepeatedly();
-    verifyNoMoreInteractions(validatorTimingChannel);
-
-    // on slot and block production due should fire at the start of the slot
-    timeProvider.advanceTimeByMillis(timeUntilNextSlot);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel).onSlot(nextSlot);
-    verify(validatorTimingChannel).onBlockProductionDue(nextSlot);
-
-    // on attestation creation due and on sync committee creation due should fire at 25 % of the
-    // slot
-    timeProvider.advanceTimeByMillis(millisPerSlot / 4);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel).onAttestationCreationDue(nextSlot);
-    verify(validatorTimingChannel).onSyncCommitteeCreationDue(nextSlot);
-
-    // on attestation aggregation due and on contribution creation due should fire at 50 % of the
-    // slot
-    timeProvider.advanceTimeByMillis(millisPerSlot / 4);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel).onAttestationAggregationDue(nextSlot);
-    verify(validatorTimingChannel).onContributionCreationDue(nextSlot);
-
-    // on payload attestation creation due should fire at 75% of the slot
-    timeProvider.advanceTimeByMillis(millisPerSlot / 4);
-    asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel).onPayloadAttestationCreationDue(nextSlot);
+    adapter.scheduleDuties(nextSlotStartTimeMillis, Optional.empty());
   }
 }
