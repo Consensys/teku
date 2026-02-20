@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.versions.gloas.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -59,14 +58,14 @@ class ForkChoiceUtilGloasTest {
 
     // Mock store
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
-    when(store.getBlockIfAvailable(currentBlock.getParentRoot()))
-        .thenReturn(Optional.of(parentBlock));
+    when(store.retrieveBlock(currentBlock.getParentRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(parentBlock.getMessage())));
 
     // Test
-    final PayloadStatus result =
+    final SafeFuture<PayloadStatus> result =
         forkChoiceUtil.getParentPayloadStatus(store, currentBlock.getMessage());
 
-    assertThat(result).isEqualTo(PayloadStatus.PAYLOAD_STATUS_FULL);
+    assertThat(result).isCompletedWithValue(PayloadStatus.PAYLOAD_STATUS_FULL);
   }
 
   @Test
@@ -82,14 +81,14 @@ class ForkChoiceUtilGloasTest {
 
     // Mock store
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
-    when(store.getBlockIfAvailable(currentBlock.getParentRoot()))
-        .thenReturn(Optional.of(parentBlock));
+    when(store.retrieveBlock(currentBlock.getParentRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(parentBlock.getMessage())));
 
     // Test
-    final PayloadStatus result =
+    final SafeFuture<PayloadStatus> result =
         forkChoiceUtil.getParentPayloadStatus(store, currentBlock.getMessage());
 
-    assertThat(result).isEqualTo(PayloadStatus.PAYLOAD_STATUS_EMPTY);
+    assertThat(result).isCompletedWithValue(PayloadStatus.PAYLOAD_STATUS_EMPTY);
   }
 
   @Test
@@ -98,13 +97,21 @@ class ForkChoiceUtilGloasTest {
 
     // Mock store with no parent block
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
-    when(store.getBlockIfAvailable(currentBlock.getParentRoot())).thenReturn(Optional.empty());
+    when(store.retrieveBlock(currentBlock.getParentRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     // Test
-    assertThatThrownBy(
-            () -> forkChoiceUtil.getParentPayloadStatus(store, currentBlock.getMessage()))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("Parent block not found");
+    final SafeFuture<Boolean> result =
+        forkChoiceUtil
+            .isParentNodeFull(store, currentBlock.getMessage())
+            .exceptionally(
+                t -> {
+                  assertThat(t.getCause())
+                      .isInstanceOf(IllegalStateException.class)
+                      .hasMessage("Parent block not found");
+                  return null;
+                });
+    assertThat(result).isCompletedExceptionally();
   }
 
   @Test
@@ -119,13 +126,15 @@ class ForkChoiceUtilGloasTest {
 
     // Mock store
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
-    when(store.getBlockIfAvailable(currentBlock.getParentRoot()))
-        .thenReturn(Optional.of(parentBlock));
+    final SafeFuture<Optional<BeaconBlock>> parentFuture =
+        SafeFuture.completedFuture(Optional.of(parentBlock.getMessage()));
+    when(store.retrieveBlock(currentBlock.getParentRoot())).thenReturn(parentFuture);
 
     // Test
-    final boolean result = forkChoiceUtil.isParentNodeFull(store, currentBlock.getMessage());
+    final SafeFuture<Boolean> result =
+        forkChoiceUtil.isParentNodeFull(store, currentBlock.getMessage());
 
-    assertThat(result).isTrue();
+    assertThat(result).isCompletedWithValue(true);
   }
 
   @Test
@@ -141,13 +150,15 @@ class ForkChoiceUtilGloasTest {
 
     // Mock store
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
-    when(store.getBlockIfAvailable(currentBlock.getParentRoot()))
-        .thenReturn(Optional.of(parentBlock));
+
+    final SafeFuture<Optional<BeaconBlock>> parentFuture =
+        SafeFuture.completedFuture(Optional.of(parentBlock.getMessage()));
+    when(store.retrieveBlock(currentBlock.getParentRoot())).thenReturn(parentFuture);
 
     // Test
-    final boolean result = forkChoiceUtil.isParentNodeFull(store, currentBlock.getMessage());
-
-    assertThat(result).isFalse();
+    final SafeFuture<Boolean> result =
+        forkChoiceUtil.isParentNodeFull(store, currentBlock.getMessage());
+    assertThat(result).isCompletedWithValue(false);
   }
 
   @Test
@@ -156,12 +167,21 @@ class ForkChoiceUtilGloasTest {
 
     // Mock store with no parent block
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
-    when(store.getBlockIfAvailable(currentBlock.getParentRoot())).thenReturn(Optional.empty());
+    when(store.retrieveBlock(currentBlock.getParentRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     // Test
-    assertThatThrownBy(() -> forkChoiceUtil.isParentNodeFull(store, currentBlock.getMessage()))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("Parent block not found");
+    final SafeFuture<Boolean> result =
+        forkChoiceUtil
+            .isParentNodeFull(store, currentBlock.getMessage())
+            .exceptionally(
+                t -> {
+                  assertThat(t.getCause())
+                      .isInstanceOf(IllegalStateException.class)
+                      .hasMessage("Parent block not found");
+                  return null;
+                });
+    assertThat(result).isCompletedExceptionally();
   }
 
   // Helper methods to create blocks with specific properties

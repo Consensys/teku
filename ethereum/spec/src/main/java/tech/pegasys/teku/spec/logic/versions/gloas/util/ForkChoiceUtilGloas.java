@@ -18,6 +18,9 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.datastructures.forkchoice.PayloadStatus.PAYLOAD_STATUS_EMPTY;
 
 import java.util.Optional;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -40,6 +43,7 @@ import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochPr
 
 public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
   private final UInt64 earliestGloasSlot;
+  private static final Logger LOG = LogManager.getLogger();
 
   public ForkChoiceUtilGloas(
       final SpecConfigGloas specConfig,
@@ -74,11 +78,16 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     // execution-state: State at slot after consensus and execution has been applied
     // The state to build on for the next slot is the best available of this list
     // (execution-state > block-state > pre-state)
-    if (isParentNodeFull(store, block.getMessage().getBlock())) {
-      return store.retrieveExecutionPayloadState(slotAndBlockRoot);
-    } else {
-      return store.retrieveBlockState(slotAndBlockRoot);
-    }
+    return isParentNodeFull(store, block.getMessage().getBlock())
+        .thenCompose(
+            isParentNodeFull -> {
+              LOG.debug("ParentNodeIsFull {}: state for {}", isParentNodeFull, slotAndBlockRoot);
+              if (isParentNodeFull) {
+                return store.retrieveExecutionPayloadState(slotAndBlockRoot);
+              } else {
+                return store.retrieveBlockState(slotAndBlockRoot);
+              }
+            });
   }
 
   @Override
@@ -115,33 +124,33 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
    * @return PAYLOAD_STATUS_FULL if parent has full payload, PAYLOAD_STATUS_EMPTY otherwise
    */
   // get_parent_payload_status
-  PayloadStatus getParentPayloadStatus(final ReadOnlyStore store, final BeaconBlock block) {
-    final SignedBeaconBlock parent =
-        store
-            .getBlockIfAvailable(block.getParentRoot())
-            .orElseThrow(
-                () ->
-                    new IllegalStateException("Parent block not found: " + block.getParentRoot()));
-
-    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10341
-    // if the parent is pre-gloas, we'd use the block state,
-    // there would be no payload state
-    if (parent.getSlot().isLessThan(earliestGloasSlot)) {
-      return PAYLOAD_STATUS_EMPTY;
-    }
-
-    final BeaconBlockBodyGloas blockBody = BeaconBlockBodyGloas.required(block.getBody());
-    final BeaconBlockBodyGloas parentBody =
-        BeaconBlockBodyGloas.required(parent.getMessage().getBody());
-
-    final Bytes32 parentBlockHash =
-        blockBody.getSignedExecutionPayloadBid().getMessage().getParentBlockHash();
-    final Bytes32 messageBlockHash =
-        parentBody.getSignedExecutionPayloadBid().getMessage().getBlockHash();
-
-    return parentBlockHash.equals(messageBlockHash)
-        ? PayloadStatus.PAYLOAD_STATUS_FULL
-        : PAYLOAD_STATUS_EMPTY;
+  SafeFuture<PayloadStatus> getParentPayloadStatus(
+      final ReadOnlyStore store, final BeaconBlock block) {
+    return store
+        .retrieveBlock(block.getParentRoot())
+        .thenApply(
+            maybeParentBlock -> {
+              if (maybeParentBlock.isEmpty()) {
+                throw new IllegalStateException("Parent block not found: " + block.getParentRoot());
+              }
+              final BeaconBlock parent = maybeParentBlock.get();
+              final BeaconBlockBodyGloas blockBody = BeaconBlockBodyGloas.required(block.getBody());
+              final BeaconBlockBodyGloas parentBody =
+                  BeaconBlockBodyGloas.required(parent.getBody());
+              // TODO-GLOAS: https://github.com/Consensys/teku/issues/10341
+              // if the parent is pre-gloas, we'd use the block state,
+              // there would be no payload state
+              if (parent.getSlot().isLessThan(earliestGloasSlot)) {
+                return PAYLOAD_STATUS_EMPTY;
+              }
+              final Bytes32 parentBlockHash =
+                  blockBody.getSignedExecutionPayloadBid().getMessage().getParentBlockHash();
+              final Bytes32 messageBlockHash =
+                  parentBody.getSignedExecutionPayloadBid().getMessage().getBlockHash();
+              return parentBlockHash.equals(messageBlockHash)
+                  ? PayloadStatus.PAYLOAD_STATUS_FULL
+                  : PAYLOAD_STATUS_EMPTY;
+            });
   }
 
   /**
@@ -155,7 +164,8 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
    * @return true if parent has full payload status
    */
   // is_parent_node_full
-  boolean isParentNodeFull(final ReadOnlyStore store, final BeaconBlock block) {
-    return getParentPayloadStatus(store, block) == PayloadStatus.PAYLOAD_STATUS_FULL;
+  SafeFuture<Boolean> isParentNodeFull(final ReadOnlyStore store, final BeaconBlock block) {
+    return getParentPayloadStatus(store, block)
+        .thenApply(status -> status == PayloadStatus.PAYLOAD_STATUS_FULL);
   }
 }
