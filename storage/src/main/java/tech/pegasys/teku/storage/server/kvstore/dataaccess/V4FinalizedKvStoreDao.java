@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import org.hyperledger.besu.plugin.services.metrics.OperationTimer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGProof;
@@ -53,13 +54,7 @@ public class V4FinalizedKvStoreDao {
   private final SchemaFinalizedSnapshotStateAdapter schema;
   private final V4FinalizedStateStorageLogic<SchemaFinalizedSnapshotStateAdapter> stateStorageLogic;
 
-  // Latency metrics for finalized data operations
-  private final OperationTimer getFinalizedBlockTimer;
-  private final OperationTimer getFinalizedStateTimer;
-  private final OperationTimer getBlobSidecarTimer;
-  private final OperationTimer getDataColumnSidecarTimer;
-  private final OperationTimer getNonCanonicalBlobSidecarTimer;
-  private final OperationTimer getDataColumnSidecarsProofsTimer;
+
 
   public V4FinalizedKvStoreDao(
       final MetricsSystem metricsSystem,
@@ -69,44 +64,16 @@ public class V4FinalizedKvStoreDao {
     this.db = db;
     this.schema = schema;
     this.stateStorageLogic = stateStorageLogic;
-
-    // Create latency timers for measuring blob DB performance improvements
-    this.getFinalizedBlockTimer =
-        metricsSystem.createTimer(
-            STORAGE,
-            "get_finalized_block_latency",
-            "Latency for retrieving finalized blocks by slot");
-    this.getFinalizedStateTimer =
-        metricsSystem.createTimer(
-            STORAGE, "get_finalized_state_latency", "Latency for retrieving finalized states");
-    this.getBlobSidecarTimer =
-        metricsSystem.createTimer(
-            STORAGE, "get_blob_sidecar_latency", "Latency for retrieving blob sidecars");
-    this.getDataColumnSidecarTimer =
-        metricsSystem.createTimer(
-            STORAGE,
-            "get_data_column_sidecar_latency",
-            "Latency for retrieving data column sidecars");
-    this.getNonCanonicalBlobSidecarTimer =
-        metricsSystem.createTimer(
-            STORAGE,
-            "get_non_canonical_blob_sidecar_latency",
-            "Latency for retrieving non-canonical blob sidecars");
-    this.getDataColumnSidecarsProofsTimer =
-        metricsSystem.createTimer(
-            STORAGE,
-            "get_data_column_sidecars_proofs_latency",
-            "Latency for retrieving data column sidecar proofs");
-  }
+   }
 
   public void close() throws Exception {
     db.close();
   }
 
   public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
-    try (final OperationTimer.TimingContext ignored = getFinalizedBlockTimer.startTimer()) {
+
       return db.get(schema.getColumnFinalizedBlocksBySlot(), slot);
-    }
+
   }
 
   public Optional<UInt64> getEarliestFinalizedBlockSlot() {
@@ -125,10 +92,10 @@ public class V4FinalizedKvStoreDao {
   }
 
   public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
-    try (final OperationTimer.TimingContext ignored = getFinalizedBlockTimer.startTimer()) {
+
       return db.getFloorEntry(schema.getColumnFinalizedBlocksBySlot(), slot)
           .map(ColumnEntry::getValue);
-    }
+
   }
 
   public List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
@@ -140,9 +107,7 @@ public class V4FinalizedKvStoreDao {
   }
 
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
-    try (final OperationTimer.TimingContext ignored = getFinalizedStateTimer.startTimer()) {
       return stateStorageLogic.getLatestAvailableFinalizedState(db, schema, maxSlot);
-    }
   }
 
   @MustBeClosed
@@ -182,16 +147,11 @@ public class V4FinalizedKvStoreDao {
   }
 
   public Optional<Bytes> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
-    try (final OperationTimer.TimingContext ignored = getBlobSidecarTimer.startTimer()) {
       return db.get(schema.getColumnBlobSidecarBySlotRootBlobIndex(), key);
-    }
   }
 
   public Optional<Bytes> getNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
-    try (final OperationTimer.TimingContext ignored =
-        getNonCanonicalBlobSidecarTimer.startTimer()) {
       return db.get(schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex(), key);
-    }
   }
 
   @MustBeClosed
@@ -258,9 +218,7 @@ public class V4FinalizedKvStoreDao {
   }
 
   public Optional<Bytes> getSidecar(final DataColumnSlotAndIdentifier identifier) {
-    try (final OperationTimer.TimingContext ignored = getDataColumnSidecarTimer.startTimer()) {
       return db.get(schema.getColumnSidecarByColumnSlotAndIdentifier(), identifier);
-    }
   }
 
   public Optional<Bytes> getNonCanonicalSidecar(final DataColumnSlotAndIdentifier identifier) {
@@ -313,10 +271,7 @@ public class V4FinalizedKvStoreDao {
   }
 
   public Optional<List<List<KZGProof>>> getDataColumnSidecarProofs(final UInt64 slot) {
-    try (final OperationTimer.TimingContext ignored =
-        getDataColumnSidecarsProofsTimer.startTimer()) {
-      return db.get(schema.getColumnDataColumnSidecarsProofsBySlot(), slot);
-    }
+          return db.get(schema.getColumnDataColumnSidecarsProofsBySlot(), slot);
   }
 
   public <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
