@@ -27,9 +27,11 @@ import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -254,5 +256,61 @@ public class SszProgressiveListSchemaTest {
     final Bytes invalidSsz = Bytes.of(0xFF, 0x00, 0x00, 0x00);
     assertThatThrownBy(() -> varListSchema.sszDeserialize(invalidSsz))
         .isInstanceOf(SszDeserializeException.class);
+  }
+
+  // ===== SszLengthBounds overflow tests =====
+
+  @Test
+  void getSszLengthBounds_maxBytesShouldBePositive() {
+    final SszLengthBounds bounds = UINT64_LIST_SCHEMA.getSszLengthBounds();
+    assertThat(bounds.getMaxBytes()).isPositive();
+  }
+
+  @Test
+  void getSszLengthBounds_isWithinBounds_shouldAcceptReasonableSizes() {
+    final SszLengthBounds bounds = UINT64_LIST_SCHEMA.getSszLengthBounds();
+    assertThat(bounds.isWithinBounds(1000)).isTrue();
+  }
+
+  @Test
+  void progressiveListAsFieldOfStandardContainer_boundsShouldNotOverflow() {
+    // Standard container with a progressive list field + a UINT64 field
+    final ContainerSchema2<SszContainer, SszUInt64, SszList<SszUInt64>> containerSchema =
+        ContainerSchema2.create(
+            SszPrimitiveSchemas.UINT64_SCHEMA,
+            UINT64_LIST_SCHEMA,
+            (schema, node) -> {
+              throw new UnsupportedOperationException("not needed for bounds test");
+            });
+
+    final SszLengthBounds bounds = containerSchema.getSszLengthBounds();
+    assertThat(bounds.getMaxBytes()).isPositive();
+    assertThat(bounds.isWithinBounds(1000)).isTrue();
+  }
+
+  @Test
+  void progressiveListAsElementOfStandardList_boundsShouldNotOverflow() {
+    // Standard list with progressive list elements
+    final SszListSchema<SszList<SszUInt64>, ?> outerListSchema =
+        SszListSchema.create(UINT64_LIST_SCHEMA, 100);
+
+    final SszLengthBounds bounds = outerListSchema.getSszLengthBounds();
+    assertThat(bounds.getMaxBytes()).isPositive();
+    assertThat(bounds.isWithinBounds(1000)).isTrue();
+  }
+
+  @Test
+  void progressiveContainerWithProgressiveListField_nestedPropagation() {
+    // Progressive container with a progressive list field, nested in a standard container
+    final SszProgressiveContainerSchema<SszContainer> innerSchema =
+        new SszProgressiveContainerSchema<>(
+            "Inner",
+            new boolean[] {true, true},
+            NamedSchema.of("value", SszPrimitiveSchemas.UINT64_SCHEMA),
+            NamedSchema.of("items", UINT64_LIST_SCHEMA));
+
+    final SszLengthBounds innerBounds = innerSchema.getSszLengthBounds();
+    assertThat(innerBounds.getMaxBytes()).isPositive();
+    assertThat(innerBounds.isWithinBounds(1000)).isTrue();
   }
 }

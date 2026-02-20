@@ -252,7 +252,10 @@ public class SszProgressiveBitlistSchema implements SszBitlistSchema<SszBitlist>
 
   @Override
   public SszLengthBounds getSszLengthBounds() {
-    return SszLengthBounds.ofBytes(1, Long.MAX_VALUE / 2);
+    // Progressive bitlists have no max capacity — use Long.MAX_VALUE bits directly
+    // to avoid overflow when converting from bytes to bits. Min is 8 bits (1 byte for boundary
+    // bit).
+    return SszLengthBounds.ofBits(8, Long.MAX_VALUE);
   }
 
   @Override

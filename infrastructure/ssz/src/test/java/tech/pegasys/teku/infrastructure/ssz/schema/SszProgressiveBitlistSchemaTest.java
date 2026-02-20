@@ -26,8 +26,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
@@ -157,5 +161,34 @@ public class SszProgressiveBitlistSchemaTest {
     final SszProgressiveBitlistSchema other = new SszProgressiveBitlistSchema();
     assertThat(SCHEMA).isEqualTo(other);
     assertThat(SCHEMA.hashCode()).isEqualTo(other.hashCode());
+  }
+
+  // ===== SszLengthBounds overflow tests =====
+
+  @Test
+  void getSszLengthBounds_maxBytesShouldBePositive() {
+    final SszLengthBounds bounds = SCHEMA.getSszLengthBounds();
+    assertThat(bounds.getMaxBytes()).isPositive();
+  }
+
+  @Test
+  void getSszLengthBounds_isWithinBounds_shouldAcceptReasonableSizes() {
+    final SszLengthBounds bounds = SCHEMA.getSszLengthBounds();
+    assertThat(bounds.isWithinBounds(1000)).isTrue();
+  }
+
+  @Test
+  void progressiveBitlistAsFieldOfStandardContainer_boundsShouldNotOverflow() {
+    final ContainerSchema2<SszContainer, SszUInt64, SszBitlist> containerSchema =
+        ContainerSchema2.create(
+            SszPrimitiveSchemas.UINT64_SCHEMA,
+            SCHEMA,
+            (schema, node) -> {
+              throw new UnsupportedOperationException("not needed for bounds test");
+            });
+
+    final SszLengthBounds bounds = containerSchema.getSszLengthBounds();
+    assertThat(bounds.getMaxBytes()).isPositive();
+    assertThat(bounds.isWithinBounds(1000)).isTrue();
   }
 }

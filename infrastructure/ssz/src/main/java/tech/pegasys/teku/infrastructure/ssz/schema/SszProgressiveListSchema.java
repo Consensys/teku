@@ -329,8 +329,9 @@ public class SszProgressiveListSchema<ElementDataT extends SszData>
 
   @Override
   public SszLengthBounds getSszLengthBounds() {
-    // Progressive lists have no max - use a very large upper bound
-    return SszLengthBounds.ofBytes(0, Long.MAX_VALUE / 2);
+    // Progressive lists have no max capacity — use Long.MAX_VALUE bits directly
+    // to avoid overflow when converting from bytes to bits
+    return SszLengthBounds.ofBits(0, Long.MAX_VALUE);
   }
 
   @Override

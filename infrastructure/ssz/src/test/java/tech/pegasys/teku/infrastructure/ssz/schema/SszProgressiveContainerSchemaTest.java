@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -284,5 +285,18 @@ public class SszProgressiveContainerSchemaTest {
     assertThat(gIdx2).isPositive();
     assertThat(gIdx0).isNotEqualTo(gIdx1);
     assertThat(gIdx1).isNotEqualTo(gIdx2);
+  }
+
+  // ===== SszLengthBounds tests =====
+
+  @Test
+  void getMaxLength_shouldReturnFieldCount() {
+    assertThat(MULTI_FIELD_SCHEMA.getMaxLength()).isEqualTo(3);
+  }
+
+  @Test
+  void getSszLengthBounds_maxBytesShouldBePositive() {
+    final SszLengthBounds bounds = MULTI_FIELD_SCHEMA.getSszLengthBounds();
+    assertThat(bounds.getMaxBytes()).isPositive();
   }
 }
