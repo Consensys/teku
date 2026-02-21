@@ -144,6 +144,9 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         TestDataUtils.loadStateFromSsz(testDefinition, "anchor_state" + SSZ_SNAPPY_EXTENSION);
     final SignedBeaconBlock anchorBlock = loadAnchorBlock(testDefinition);
 
+    LOG.debug(
+        "AnchorState: {}, anchorBlock: {}", anchorState.hashTreeRoot(), anchorBlock.getRoot());
+
     final StorageSystem storageSystem =
         InMemoryStorageSystemBuilder.create().specProvider(spec).build();
     final RecentChainData recentChainData = storageSystem.recentChainData();
