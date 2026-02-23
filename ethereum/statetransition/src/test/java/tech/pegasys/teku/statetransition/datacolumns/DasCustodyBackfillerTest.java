@@ -82,7 +82,7 @@ class DasCustodyBackfillerTest {
   private DasCustodyBackfiller backfiller;
 
   private static final int BATCH_SIZE = 10;
-  private static final int SYNCED_CUSTODY_GROUP_COUNT = 1;
+  private static final int SYNCED_CUSTODY_GROUP_COUNT = 2;
   private static final int CUSTODY_GROUP_COUNT = 2;
   private static final List<UInt64> CUSTODY_INDICES = List.of(UInt64.ZERO, UInt64.ONE);
 
@@ -143,8 +143,8 @@ class DasCustodyBackfillerTest {
     earliestAvailableColumnSlotStore.set(Optional.of(UInt64.valueOf(500)));
     safeJoin(backfiller.start());
 
-    // Increase custody count
-    backfiller.onGroupCountUpdate(CUSTODY_GROUP_COUNT, 32);
+    // Increase custody count above the current stable value
+    backfiller.onGroupCountUpdate(CUSTODY_GROUP_COUNT + 1, 32);
 
     // Run the triggered task
     asyncRunner.executeQueuedActions();
@@ -173,6 +173,36 @@ class DasCustodyBackfillerTest {
 
     // Should not trigger logic to reset cursor
     assertThat(earliestAvailableColumnSlotStore.get()).isPresent().hasValue(UInt64.valueOf(500));
+  }
+
+  @Test
+  void shouldTriggerResyncOnStartupWhenCustodyGroupCountIncreasedSinceLastSync() {
+    // Simulate node restarting with a higher custody group count than last synced
+    // (e.g. --p2p-subscribe-all-custody-subnets-enabled added between restarts)
+    when(custodyGroupCountManager.getCustodyGroupSyncedCount()).thenReturn(1);
+    when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(4);
+    final DasCustodyBackfiller backfillerWithIncreasedCount =
+        new DasCustodyBackfiller(
+            combinedChainDataClient,
+            Duration.ofSeconds(1),
+            dataColumnSidecarCustody,
+            custodyGroupCountManager,
+            retriever,
+            minCustodyPeriodSlotCalculator,
+            asyncRunner,
+            earliestAvailableColumnSlotProvider,
+            earliestAvailableColumnSlotWriter,
+            BATCH_SIZE);
+    backfillerWithIncreasedCount.setFirstRoundAfterStartup(false);
+    backfillerWithIncreasedCount.onNodeSyncStateChanged(true);
+
+    earliestAvailableColumnSlotStore.set(Optional.of(UInt64.valueOf(500)));
+
+    safeJoin(backfillerWithIncreasedCount.start());
+    asyncRunner.executeQueuedActions();
+
+    // Cursor should be reset to current slot (1000), not remain at the old position (500)
+    assertThat(earliestAvailableColumnSlotStore.get()).isPresent().hasValue(UInt64.valueOf(1000));
   }
 
   @Test
@@ -540,6 +570,81 @@ class DasCustodyBackfillerTest {
 
     // Cursor should be updated to minCustodySlot
     assertThat(earliestAvailableColumnSlotStore.get()).isPresent().hasValue(minCustodySlot);
+  }
+
+  // --- Tests for subscribe-all-custody-subnets-enabled restart behaviour ---
+
+  @Test
+  void subscribeAll_shouldResetCursorWhenPreviousBackfillWasCompleteForSmallerCount() {
+    // Critical bug scenario: node previously ran with 4 custody groups, completed backfill
+    // (cursor sat exactly at minCustodyPeriodSlot), then restarted with
+    // --p2p-subscribe-all-custody-subnets-enabled (now needs 128 groups).
+    // Without the fix, prepareAndExecuteBatch would see cursor <= minCustodyPeriodSlot and
+    // immediately declare the backfill done, never fetching the additional 124 group columns.
+    when(custodyGroupCountManager.getCustodyGroupSyncedCount()).thenReturn(4);
+    when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(128);
+    final DasCustodyBackfiller subscribeAllBackfiller = createBackfiller();
+    subscribeAllBackfiller.setFirstRoundAfterStartup(false);
+    subscribeAllBackfiller.onNodeSyncStateChanged(true);
+
+    final UInt64 minCustodySlot = UInt64.valueOf(100);
+    // Cursor is exactly at minCustodyPeriodSlot — the "already done" position for 4 groups.
+    earliestAvailableColumnSlotStore.set(Optional.of(minCustodySlot));
+    when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any()))
+        .thenReturn(Optional.of(minCustodySlot));
+
+    safeJoin(subscribeAllBackfiller.start());
+    asyncRunner.executeQueuedActions();
+
+    // Cursor must be reset to currentSlot (1000), proving a full re-backfill was triggered
+    // rather than the backfiller silently declaring success at the old cursor position.
+    assertThat(earliestAvailableColumnSlotStore.get()).isPresent().hasValue(UInt64.valueOf(1000));
+  }
+
+  @Test
+  void subscribeAll_shouldNotResetCursorWhenAlreadyStableAt128Groups() {
+    // Scenario: subscribe-all was enabled on the previous run too (synced == custody == 128).
+    // The backfiller should continue from its existing cursor without any resync.
+    when(custodyGroupCountManager.getCustodyGroupSyncedCount()).thenReturn(128);
+    when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(128);
+    final DasCustodyBackfiller subscribeAllBackfiller = createBackfiller();
+    subscribeAllBackfiller.setFirstRoundAfterStartup(false);
+    subscribeAllBackfiller.onNodeSyncStateChanged(true);
+
+    final UInt64 cursorInProgress = UInt64.valueOf(500);
+    earliestAvailableColumnSlotStore.set(Optional.of(cursorInProgress));
+
+    // All slots in the batch are finalized with no blocks — backfill finds nothing to do
+    // and makes no progress this cycle, leaving the cursor unchanged at 500.
+    when(combinedChainDataClient.getFinalizedBlockSlot()).thenReturn(Optional.of(UInt64.MAX_VALUE));
+    when(combinedChainDataClient.isFinalized(any())).thenReturn(true);
+    when(combinedChainDataClient.getFinalizedBlockAtSlotExact(any()))
+        .thenReturn(completedFuture(Optional.empty()));
+    when(combinedChainDataClient.getDataColumnIdentifiers(any(), any(), any()))
+        .thenReturn(completedFuture(List.of()));
+    when(combinedChainDataClient.getBlockInEffectAtSlot(any()))
+        .thenReturn(completedFuture(Optional.empty()));
+
+    safeJoin(subscribeAllBackfiller.start());
+    asyncRunner.executeQueuedActions();
+
+    // Cursor must NOT be reset to currentSlot (1000) — no resync was triggered.
+    // It stays at its original position because there are no blocks to backfill this cycle.
+    assertThat(earliestAvailableColumnSlotStore.get()).isPresent().hasValue(cursorInProgress);
+  }
+
+  private DasCustodyBackfiller createBackfiller() {
+    return new DasCustodyBackfiller(
+        combinedChainDataClient,
+        Duration.ofSeconds(1),
+        dataColumnSidecarCustody,
+        custodyGroupCountManager,
+        retriever,
+        minCustodyPeriodSlotCalculator,
+        asyncRunner,
+        earliestAvailableColumnSlotProvider,
+        earliestAvailableColumnSlotWriter,
+        BATCH_SIZE);
   }
 
   // --- Helper Methods ---

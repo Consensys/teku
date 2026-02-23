@@ -191,6 +191,59 @@ public class CustodyGroupCountManagerImplTest {
         .isEqualTo(10);
   }
 
+  // --- Tests for synced count baseline on initialisation ---
+
+  @Test
+  public void shouldUsePreviouslyStoredCountAsSyncedBaseline_whenRestartingWithHigherInitCount() {
+    // Scenario: node previously ran with 4 custody groups (stored in DB), then restarted with
+    // --p2p-subscribe-all-custody-subnets-enabled which raises initCustodyGroupCount to 128.
+    // The synced count must stay at 4 so the backfiller can detect the increase and re-backfill.
+    spec = TestSpecFactory.createMinimalFulu();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    when(combinedChainDataClient.getCustodyGroupCount()).thenReturn(Optional.of(UInt64.valueOf(4)));
+
+    custodyGroupCountManager =
+        new CustodyGroupCountManagerImpl(
+            spec,
+            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
+            proposersDataManager,
+            custodyGroupCountChannel,
+            combinedChainDataClient,
+            128,
+            dataStructureUtil.randomUInt256(),
+            metricsSystem);
+
+    assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(128);
+    // Synced count must reflect the previously stored count, not the new (higher) init count,
+    // so the backfiller detects the increase and re-backfills the additional columns.
+    assertThat(custodyGroupCountManager.getCustodyGroupSyncedCount()).isEqualTo(4);
+  }
+
+  @Test
+  public void shouldUseInitCountAsSyncedBaseline_onFreshStart() {
+    // Scenario: fresh start with --p2p-subscribe-all-custody-subnets-enabled (no DB entry yet).
+    // On a fresh start the cursor is empty, so the backfiller handles everything via the normal
+    // cursor-based path; there is no stale cursor to worry about.
+    spec = TestSpecFactory.createMinimalFulu();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    when(combinedChainDataClient.getCustodyGroupCount()).thenReturn(Optional.empty());
+
+    custodyGroupCountManager =
+        new CustodyGroupCountManagerImpl(
+            spec,
+            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
+            proposersDataManager,
+            custodyGroupCountChannel,
+            combinedChainDataClient,
+            128,
+            dataStructureUtil.randomUInt256(),
+            metricsSystem);
+
+    assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(128);
+    // On a fresh start, synced count equals the init count (no prior stored count to compare).
+    assertThat(custodyGroupCountManager.getCustodyGroupSyncedCount()).isEqualTo(128);
+  }
+
   private void setUpManager(
       final int defaultCustodyRequirement,
       final int defaultSamplesPerSlot,
