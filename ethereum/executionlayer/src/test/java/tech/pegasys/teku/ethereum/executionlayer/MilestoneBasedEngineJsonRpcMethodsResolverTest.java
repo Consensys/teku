@@ -300,6 +300,7 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
             "engine_forkchoiceUpdatedV3",
             "engine_newPayloadV4",
             "engine_getPayloadV4",
+            "engine_forkchoiceUpdatedV4",
             "engine_newPayloadV5",
             "engine_getPayloadV5",
             "engine_getPayloadV6");
