@@ -157,6 +157,10 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final Bytes4 gloasForkVersion;
   private final UInt64 gloasForkEpoch;
 
+  // heze fork
+  private final Bytes4 hezeForkVersion;
+  private final UInt64 hezeForkEpoch;
+
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
       final UInt64 eth1FollowDistance,
@@ -242,7 +246,9 @@ public class SpecConfigPhase0 implements SpecConfig {
       final Bytes4 fuluForkVersion,
       final UInt64 fuluForkEpoch,
       final Bytes4 gloasForkVersion,
-      final UInt64 gloasForkEpoch) {
+      final UInt64 gloasForkEpoch,
+      final Bytes4 hezeForkVersion,
+      final UInt64 hezeForkEpoch) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -327,6 +333,8 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.fuluForkEpoch = fuluForkEpoch;
     this.gloasForkVersion = gloasForkVersion;
     this.gloasForkEpoch = gloasForkEpoch;
+    this.hezeForkVersion = hezeForkVersion;
+    this.hezeForkEpoch = hezeForkEpoch;
     this.blsSignatureVerifier = blsSignatureVerifier;
     this.batchSignatureVerifierSupplier = batchSignatureVerifierSupplier;
   }
@@ -524,6 +532,16 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public UInt64 getGloasForkEpoch() {
     return gloasForkEpoch;
+  }
+
+  @Override
+  public Bytes4 getHezeForkVersion() {
+    return hezeForkVersion;
+  }
+
+  @Override
+  public UInt64 getHezeForkEpoch() {
+    return hezeForkEpoch;
   }
 
   @Override
@@ -861,6 +879,8 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(fuluForkEpoch, that.fuluForkEpoch)
         && Objects.equals(gloasForkVersion, that.gloasForkVersion)
         && Objects.equals(gloasForkEpoch, that.gloasForkEpoch)
+        && Objects.equals(hezeForkVersion, that.hezeForkVersion)
+        && Objects.equals(hezeForkEpoch, that.hezeForkEpoch)
         && Objects.equals(genesisDelay, that.genesisDelay)
         && Objects.equals(minEpochsToInactivityPenalty, that.minEpochsToInactivityPenalty)
         && Objects.equals(shardCommitteePeriod, that.shardCommitteePeriod)
@@ -947,6 +967,8 @@ public class SpecConfigPhase0 implements SpecConfig {
         fuluForkEpoch,
         gloasForkVersion,
         gloasForkEpoch,
+        hezeForkVersion,
+        hezeForkEpoch,
         attestationSubnetPrefixBits);
   }
 }

@@ -235,6 +235,14 @@ public class Eth2NetworkOptions {
   private UInt64 gloasForkEpoch;
 
   @Option(
+      names = {"--Xnetwork-heze-fork-epoch"},
+      hidden = true,
+      paramLabel = "<epoch>",
+      description = "Override the Heze fork activation epoch.",
+      arity = "1")
+  private UInt64 hezeForkEpoch;
+
+  @Option(
       names = {"--Xmin-bid-increment-percentage"},
       hidden = true,
       paramLabel = "<INTEGER>",
@@ -414,11 +422,6 @@ public class Eth2NetworkOptions {
     return createEth2NetworkConfig(builder -> {});
   }
 
-  public Eth2NetworkConfiguration getNetworkConfiguration(
-      final Consumer<Eth2NetworkConfiguration.Builder> modifier) {
-    return createEth2NetworkConfig(modifier);
-  }
-
   public void configure(final TekuConfiguration.Builder builder) {
     builder.eth2NetworkConfig(this::configureEth2Network);
     builder.minBidIncrementPercentage(minBidIncrementPercentage);
@@ -516,6 +519,18 @@ public class Eth2NetworkOptions {
         implicitEpochDefault(denebForkEpoch, builder::denebForkEpoch);
         implicitEpochDefault(electraForkEpoch, builder::electraForkEpoch);
         implicitEpochDefault(fuluForkEpoch, builder::fuluForkEpoch);
+      }
+    }
+    if (hezeForkEpoch != null) {
+      builder.hezeForkEpoch(hezeForkEpoch);
+      if (hezeForkEpoch.isZero()) {
+        implicitEpochDefault(altairForkEpoch, builder::altairForkEpoch);
+        implicitEpochDefault(bellatrixForkEpoch, builder::bellatrixForkEpoch);
+        implicitEpochDefault(capellaForkEpoch, builder::capellaForkEpoch);
+        implicitEpochDefault(denebForkEpoch, builder::denebForkEpoch);
+        implicitEpochDefault(electraForkEpoch, builder::electraForkEpoch);
+        implicitEpochDefault(fuluForkEpoch, builder::fuluForkEpoch);
+        implicitEpochDefault(gloasForkEpoch, builder::gloasForkEpoch);
       }
     }
     if (totalTerminalDifficultyOverride != null) {

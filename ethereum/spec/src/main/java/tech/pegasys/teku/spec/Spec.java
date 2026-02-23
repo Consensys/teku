@@ -1406,7 +1406,7 @@ public class Spec {
       case PHASE0, ALTAIR, BELLATRIX, CAPELLA -> Optional.empty();
       case DENEB, ELECTRA ->
           Optional.of(SpecConfigDeneb.required(specVersion.getConfig()).getMaxBlobsPerBlock());
-      case FULU, GLOAS -> {
+      case FULU, GLOAS, HEZE -> {
         final UInt64 epoch = specVersion.miscHelpers().computeEpochAtSlot(slot);
         yield Optional.of(
             MiscHelpersFulu.required(specVersion.miscHelpers())
