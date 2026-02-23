@@ -130,7 +130,8 @@ class EngineForkChoiceUpdatedV4Test {
 
     assertThat(jsonRpcMethod.execute(params)).isCompleted();
 
-    verify(executionEngineClient).forkChoiceUpdatedV4(forkChoiceStateV1, payloadAttributesV4);
+    verify(executionEngineClient)
+        .forkChoiceUpdatedV4(forkChoiceStateV1, Optional.of(payloadAttributesV4));
   }
 
   private SafeFuture<Response<ForkChoiceUpdatedResult>> dummySuccessfulResponse() {
