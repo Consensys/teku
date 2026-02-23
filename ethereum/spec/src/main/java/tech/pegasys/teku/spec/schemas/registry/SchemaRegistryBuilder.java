@@ -289,8 +289,6 @@ public class SchemaRegistryBuilder {
         .addProvider(createBuilderPendingPaymentsSchemaProvider())
         .addProvider(createBuilderPendingWithdrawalsSchemaProvider())
         .addProvider(createExecutionPayloadEnvelopesByRootRequestMessageSchemaProvider());
-
-    // Note: HEZE reuses all GLOAS schema providers (no new schemas in HEZE)
   }
 
   private static SchemaProvider<?> createSingleAttestationSchemaProvider() {
