@@ -32,7 +32,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 
 public class GetPayloadV6Response {
-  public final ExecutionPayloadV3 executionPayload;
+  public final ExecutionPayloadV4 executionPayload;
 
   @JsonSerialize(using = UInt256AsHexSerializer.class)
   @JsonDeserialize(using = UInt256AsHexDeserializer.class)

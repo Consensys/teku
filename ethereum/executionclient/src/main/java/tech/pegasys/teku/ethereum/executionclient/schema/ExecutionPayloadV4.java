@@ -26,6 +26,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.executionclient.serialization.BytesDeserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.BytesSerializer;
+import tech.pegasys.teku.ethereum.executionclient.serialization.UInt64AsHexDeserializer;
+import tech.pegasys.teku.ethereum.executionclient.serialization.UInt64AsHexSerializer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -39,8 +41,8 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
   @JsonDeserialize(using = BytesDeserializer.class)
   public final Bytes blockAccessList;
 
-  @JsonSerialize(using = BytesSerializer.class)
-  @JsonDeserialize(using = BytesDeserializer.class)
+  @JsonSerialize(using = UInt64AsHexSerializer.class)
+  @JsonDeserialize(using = UInt64AsHexDeserializer.class)
   public final UInt64 slotNumber;
 
   public ExecutionPayloadV4(
