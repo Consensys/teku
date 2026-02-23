@@ -20,6 +20,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
+import static tech.pegasys.teku.spec.SpecMilestone.HEZE;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
@@ -46,8 +47,9 @@ public class SpecFactory {
 
   public static Spec create(final SpecConfigAndParent<? extends SpecConfig> config) {
     final SpecConfig specConfig = config.specConfig();
-
-    if (!specConfig.getGloasForkEpoch().equals(FAR_FUTURE_EPOCH)) {
+    if (!specConfig.getHezeForkEpoch().equals(FAR_FUTURE_EPOCH)) {
+      return Spec.create(config, HEZE);
+    } else if (!specConfig.getGloasForkEpoch().equals(FAR_FUTURE_EPOCH)) {
       return Spec.create(config, GLOAS);
     } else if (!specConfig.getFuluForkEpoch().equals(FAR_FUTURE_EPOCH)) {
       return Spec.create(config, FULU);
