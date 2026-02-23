@@ -1,0 +1,24 @@
+{
+  "title" : "GetExecutionPayloadEnvelopeResponse",
+  "type" : "object",
+  "required" : [ "version", "execution_optimistic", "finalized", "data" ],
+  "properties" : {
+    "version" : {
+      "type" : "string",
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu", "gloas" ]
+    },
+    "execution_optimistic" : {
+      "type" : "boolean"
+    },
+    "finalized" : {
+      "type" : "boolean"
+    },
+    "data" : {
+      "title" : "SignedExecutionPayloadEnvelope",
+      "type" : "object",
+      "oneOf" : [ {
+        "$ref" : "#/components/schemas/SignedExecutionPayloadEnvelope"
+      } ]
+    }
+  }
+}
