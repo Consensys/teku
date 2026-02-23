@@ -100,6 +100,12 @@ public class DasCustodyBackfiller extends Service
     this.dataColumnSidecarCustody = dataColumnSidecarCustody;
     this.custodyGroupCountManager = custodyGroupCountManager;
     this.currentSyncCustodyGroupCount = custodyGroupCountManager.getCustodyGroupSyncedCount();
+    // Trigger resync on startup if the custody group count has increased since last backfill
+    // (e.g. --p2p-subscribe-all-custody-subnets-enabled was added between restarts).
+    if (custodyGroupCountManager.getCustodyGroupCount() > this.currentSyncCustodyGroupCount) {
+      this.requiresResyncDueToCustodyGroupCountChange = true;
+      this.currentSyncCustodyGroupCount = custodyGroupCountManager.getCustodyGroupCount();
+    }
     this.batchSizeInSlots = batchSizeInSlots;
     this.retriever = retriever;
     this.minCustodyPeriodSlotCalculator = minCustodyPeriodSlotCalculator;

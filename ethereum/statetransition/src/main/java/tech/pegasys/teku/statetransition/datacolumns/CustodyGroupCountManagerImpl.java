@@ -247,7 +247,11 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     }
     final int oldValue = custodyGroupCount.getAndSet(newCustodyGroupCount);
     if (oldValue == INITIAL_VALUE) {
-      setCustodyGroupSyncedCount(newCustodyGroupCount);
+      // Use the previously stored count as synced baseline on restart, so the backfiller detects
+      // and re-backfills if custody group count increased between restarts (e.g. when
+      // --p2p-subscribe-all-custody-subnets-enabled is added). On fresh start (no stored count),
+      // fall back to newCustodyGroupCount to preserve existing behaviour.
+      setCustodyGroupSyncedCount(maybeCustodyGroupCount.orElse(newCustodyGroupCount));
     }
     custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, getSamplingGroupCount());
     custodyGroupCountGauge.set(newCustodyGroupCount);
