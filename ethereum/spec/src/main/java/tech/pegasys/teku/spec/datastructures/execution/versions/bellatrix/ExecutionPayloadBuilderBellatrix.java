@@ -158,7 +158,7 @@ public class ExecutionPayloadBuilderBellatrix implements ExecutionPayloadBuilder
   }
 
   @Override
-  public ExecutionPayloadBuilder slotNumber(final Supplier<UInt64> slotNUmberSupplier) {
+  public ExecutionPayloadBuilder slotNumber(final Supplier<UInt64> slotNumberSupplier) {
     return this;
   }
 

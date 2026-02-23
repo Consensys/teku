@@ -118,7 +118,8 @@ class EngineNewPayloadV5Test {
 
   @Test
   public void shouldReturnFailedExecutionWhenEngineClientRequestFails() {
-    final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
+    final UInt64 slot = dataStructureUtil.randomSlot();
+    final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload(slot);
     final List<VersionedHash> blobVersionedHashes = dataStructureUtil.randomVersionedHashes(3);
     final Bytes32 parentBeaconBlockRoot = dataStructureUtil.randomBytes32();
     final List<Bytes> executionRequests = dataStructureUtil.randomEncodedExecutionRequests();
@@ -133,6 +134,7 @@ class EngineNewPayloadV5Test {
             .add(blobVersionedHashes)
             .add(parentBeaconBlockRoot)
             .add(executionRequests)
+            .add(slot)
             .build();
 
     assertThat(jsonRpcMethod.execute(params))
@@ -167,6 +169,7 @@ class EngineNewPayloadV5Test {
             .add(blobVersionedHashes)
             .add(parentBeaconBlockRoot)
             .add(executionRequests)
+            .add(slot)
             .build();
 
     assertThat(jsonRpcMethod.execute(params)).isCompleted();

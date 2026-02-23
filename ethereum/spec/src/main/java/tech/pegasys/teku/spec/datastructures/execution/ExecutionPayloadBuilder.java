@@ -59,7 +59,7 @@ public interface ExecutionPayloadBuilder {
 
   ExecutionPayloadBuilder blockAccessList(Supplier<Bytes> blockAccessListSupplier);
 
-  ExecutionPayloadBuilder slotNumber(Supplier<UInt64> slotNUmberSupplier);
+  ExecutionPayloadBuilder slotNumber(Supplier<UInt64> slotNumberSupplier);
 
   ExecutionPayload build();
 }
