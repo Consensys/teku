@@ -113,13 +113,13 @@ class EngineForkChoiceUpdatedV4Test {
         dataStructureUtil.randomPayloadBuildingAttributes(false);
     final ForkChoiceStateV1 forkChoiceStateV1 =
         ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState);
-    final Optional<PayloadAttributesV4> payloadAttributesV4 =
-        PayloadAttributesV4.fromInternalPayloadBuildingAttributesV4(
-            Optional.of(payloadBuildingAttributes));
+    final PayloadAttributesV4 payloadAttributesV4 =
+        PayloadAttributesV4.fromInternalPayloadBuildingAttributesV4(payloadBuildingAttributes);
 
     jsonRpcMethod = new EngineForkChoiceUpdatedV4(executionEngineClient);
 
-    when(executionEngineClient.forkChoiceUpdatedV4(forkChoiceStateV1, payloadAttributesV4))
+    when(executionEngineClient.forkChoiceUpdatedV4(
+            forkChoiceStateV1, Optional.of(payloadAttributesV4)))
         .thenReturn(dummySuccessfulResponse());
 
     final JsonRpcRequestParams params =

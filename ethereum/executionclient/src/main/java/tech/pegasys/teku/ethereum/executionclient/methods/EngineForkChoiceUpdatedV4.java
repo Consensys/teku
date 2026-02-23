@@ -59,10 +59,7 @@ public class EngineForkChoiceUpdatedV4
         payloadBuildingAttributes);
 
     final Optional<PayloadAttributesV4> maybePayloadAttributes =
-        payloadBuildingAttributes.flatMap(
-            attributes ->
-                PayloadAttributesV4.fromInternalPayloadBuildingAttributesV4(
-                    payloadBuildingAttributes));
+        payloadBuildingAttributes.map(PayloadAttributesV4::fromInternalPayloadBuildingAttributesV4);
 
     return executionEngineClient
         .forkChoiceUpdatedV4(

@@ -147,8 +147,8 @@ public class GloasExecutionClientHandlerTest extends ExecutionHandlerClientTest 
             Optional.empty(),
             Optional.of(List.of()),
             dataStructureUtil.randomBytes32());
-    final Optional<PayloadAttributesV4> payloadAttributes =
-        PayloadAttributesV4.fromInternalPayloadBuildingAttributesV4(Optional.of(attributes));
+    final PayloadAttributesV4 payloadAttributes =
+        PayloadAttributesV4.fromInternalPayloadBuildingAttributesV4(attributes);
     final ForkChoiceUpdatedResult responseData =
         new ForkChoiceUpdatedResult(
             new PayloadStatusV1(
@@ -156,11 +156,13 @@ public class GloasExecutionClientHandlerTest extends ExecutionHandlerClientTest 
             dataStructureUtil.randomBytes8());
     final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =
         SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(responseData));
-    when(executionEngineClient.forkChoiceUpdatedV4(forkChoiceStateV1, payloadAttributes))
+    when(executionEngineClient.forkChoiceUpdatedV4(
+            forkChoiceStateV1, Optional.of(payloadAttributes)))
         .thenReturn(dummyResponse);
     final SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult> future =
         handler.engineForkChoiceUpdated(forkChoiceState, Optional.of(attributes));
-    verify(executionEngineClient).forkChoiceUpdatedV4(forkChoiceStateV1, payloadAttributes);
+    verify(executionEngineClient)
+        .forkChoiceUpdatedV4(forkChoiceStateV1, Optional.of(payloadAttributes));
     assertThat(future).isCompletedWithValue(responseData.asInternalExecutionPayload());
   }
 

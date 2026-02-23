@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt64AsHexDeserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt64AsHexSerializer;
@@ -44,17 +43,15 @@ public class PayloadAttributesV4 extends PayloadAttributesV3 {
     this.slotNumber = slotNumber;
   }
 
-  public static Optional<PayloadAttributesV4> fromInternalPayloadBuildingAttributesV4(
-      final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
-    return payloadBuildingAttributes.map(
-        payloadAttributes ->
-            new PayloadAttributesV4(
-                payloadAttributes.getTimestamp(),
-                payloadAttributes.getPrevRandao(),
-                payloadAttributes.getFeeRecipient(),
-                getWithdrawals(payloadAttributes),
-                payloadAttributes.getParentBeaconBlockRoot(),
-                payloadAttributes.getProposalSlot()));
+  public static PayloadAttributesV4 fromInternalPayloadBuildingAttributesV4(
+      final PayloadBuildingAttributes payloadBuildingAttributes) {
+    return new PayloadAttributesV4(
+        payloadBuildingAttributes.getTimestamp(),
+        payloadBuildingAttributes.getPrevRandao(),
+        payloadBuildingAttributes.getFeeRecipient(),
+        getWithdrawals(payloadBuildingAttributes),
+        payloadBuildingAttributes.getParentBeaconBlockRoot(),
+        payloadBuildingAttributes.getProposalSlot());
   }
 
   @Override
