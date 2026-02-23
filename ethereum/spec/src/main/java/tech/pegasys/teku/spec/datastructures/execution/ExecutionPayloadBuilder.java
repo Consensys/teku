@@ -57,5 +57,9 @@ public interface ExecutionPayloadBuilder {
 
   ExecutionPayloadBuilder excessBlobGas(Supplier<UInt64> excessBlobGasSupplier);
 
+  ExecutionPayloadBuilder blockAccessList(Supplier<Bytes> blockAccessListSupplier);
+
+  ExecutionPayloadBuilder slotNumber(Supplier<UInt64> slotNumberSupplier);
+
   ExecutionPayload build();
 }
