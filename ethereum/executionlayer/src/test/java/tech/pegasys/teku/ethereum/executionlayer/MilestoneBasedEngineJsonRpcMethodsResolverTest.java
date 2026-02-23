@@ -33,16 +33,19 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV3;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV4;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV4;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV5;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV6;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV4;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV5;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -238,10 +241,46 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
   }
 
   @Test
+  void gloasMilestoneMethodIsNotSupportedInFulu() {
+    final Spec fuluSpec = TestSpecFactory.createMinimalFulu();
+
+    final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
+        new MilestoneBasedEngineJsonRpcMethodsResolver(fuluSpec, executionEngineClient);
+
+    assertThatThrownBy(
+            () ->
+                engineMethodsResolver.getMethod(
+                    ENGINE_GET_PAYLOAD, () -> SpecMilestone.GLOAS, Object.class))
+        .hasMessage("Can't find method with name engine_getPayload for milestone GLOAS");
+  }
+
+  @ParameterizedTest
+  @MethodSource("gloasMethods")
+  void shouldProvideExpectedMethodsForGloas(
+      final EngineApiMethod method, final Class<EngineJsonRpcMethod<?>> expectedMethodClass) {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+
+    final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
+        new MilestoneBasedEngineJsonRpcMethodsResolver(gloasSpec, executionEngineClient);
+
+    final EngineJsonRpcMethod<Object> providedMethod =
+        engineMethodsResolver.getMethod(method, () -> SpecMilestone.GLOAS, Object.class);
+
+    assertThat(providedMethod).isExactlyInstanceOf(expectedMethodClass);
+  }
+
+  private static Stream<Arguments> gloasMethods() {
+    return Stream.of(
+        arguments(ENGINE_NEW_PAYLOAD, EngineNewPayloadV5.class),
+        arguments(ENGINE_GET_PAYLOAD, EngineGetPayloadV6.class),
+        arguments(ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV4.class));
+  }
+
+  @Test
   void getsCapabilities() {
     final Spec spec =
-        TestSpecFactory.createMinimalWithCapellaDenebElectraAndFuluForkEpoch(
-            UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3), UInt64.valueOf(4));
+        TestSpecFactory.createMinimalWithCapellaDenebElectraFuluAndGloasForkEpoch(
+            UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3), UInt64.valueOf(4), UInt64.valueOf(5));
 
     final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
         new MilestoneBasedEngineJsonRpcMethodsResolver(spec, executionEngineClient);
@@ -261,6 +300,8 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
             "engine_forkchoiceUpdatedV3",
             "engine_newPayloadV4",
             "engine_getPayloadV4",
-            "engine_getPayloadV5");
+            "engine_newPayloadV5",
+            "engine_getPayloadV5",
+            "engine_getPayloadV6");
   }
 }

@@ -152,6 +152,16 @@ public class ExecutionPayloadBuilderBellatrix implements ExecutionPayloadBuilder
     return this;
   }
 
+  @Override
+  public ExecutionPayloadBuilder blockAccessList(final Supplier<Bytes> blockAccessListSupplier) {
+    return this;
+  }
+
+  @Override
+  public ExecutionPayloadBuilder slotNumber(final Supplier<UInt64> slotNUmberSupplier) {
+    return this;
+  }
+
   protected void validateSchema() {
     checkNotNull(schema, "schema must be specified");
   }
