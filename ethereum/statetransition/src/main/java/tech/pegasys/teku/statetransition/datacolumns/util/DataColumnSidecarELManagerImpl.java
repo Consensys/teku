@@ -256,6 +256,7 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
     if (!dataColumnSidecar.getSlot().equals(getCurrentSlot())) {
       return Optional.empty();
     }
+    makeRoomForNewTracker();
     return Optional.of(
         recoveryTasks.computeIfAbsent(
             dataColumnSidecar.getSlotAndBlockRoot(), __ -> createRecoveryTask(dataColumnSidecar)));
