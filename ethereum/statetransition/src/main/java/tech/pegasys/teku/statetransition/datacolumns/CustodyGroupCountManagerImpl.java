@@ -244,13 +244,25 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
           newCustodyGroupCount,
           maybeCustodyGroupCount.map(Object::toString).orElse("<not set>"));
       combinedChainDataClient.updateCustodyGroupCount(newCustodyGroupCount);
+      notifyCustodyGroupCount(newCustodyGroupCount);
+    } else {
+      combinedChainDataClient
+          .getEarliestAvailableDataColumnSlot()
+          .thenAccept(
+              maybeSlot -> {
+                // Teku is restarted after Backfiller done something
+                if (maybeSlot.isPresent()) {
+                  setCustodyGroupSyncedCount(newCustodyGroupCount);
+                }
+              })
+          .always(() -> notifyCustodyGroupCount(newCustodyGroupCount));
     }
-    final int oldValue = custodyGroupCount.getAndSet(newCustodyGroupCount);
-    if (oldValue == INITIAL_VALUE) {
-      setCustodyGroupSyncedCount(newCustodyGroupCount);
-    }
-    custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, getSamplingGroupCount());
-    custodyGroupCountGauge.set(newCustodyGroupCount);
+
     isMaxCustodyGroups = miscHelpersFulu.isSuperNode(newCustodyGroupCount);
+  }
+
+  private void notifyCustodyGroupCount(final int count) {
+    custodyGroupCountChannel.onGroupCountUpdate(count, getSamplingGroupCount());
+    custodyGroupCountGauge.set(count);
   }
 }

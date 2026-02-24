@@ -140,6 +140,8 @@ public class DasCustodyBackfiller extends Service
 
   @Override
   public void onGroupCountUpdate(final int custodyGroupCount, final int samplingGroupCount) {
+    // refresh to be sure it's not outdated
+    this.currentSyncCustodyGroupCount = custodyGroupCountManager.getCustodyGroupSyncedCount();
     if (custodyGroupCount > currentSyncCustodyGroupCount) {
       currentSyncCustodyGroupCount = custodyGroupCount;
       requiresResyncDueToCustodyGroupCountChange = true;
@@ -255,7 +257,11 @@ public class DasCustodyBackfiller extends Service
       isFirstRoundAfterStartup = false; // we don't need to do the first round
       return earliestAvailableCustodySlotWriter
           .apply(combinedChainDataClient.getCurrentSlot())
-          .thenApply(__ -> true);
+          .thenApply(
+              __ -> {
+                custodyGroupCountManager.setCustodyGroupSyncedCount(currentSyncCustodyGroupCount);
+                return true;
+              });
     }
 
     if (isFirstRoundAfterStartup) {
@@ -320,7 +326,11 @@ public class DasCustodyBackfiller extends Service
 
       return earliestAvailableCustodySlotWriter
           .apply(mostRecentHeadSlotPlus1.get())
-          .thenApply(__ -> false);
+          .thenApply(
+              __ -> {
+                custodyGroupCountManager.setCustodyGroupSyncedCount(currentSyncCustodyGroupCount);
+                return false;
+              });
     }
 
     LOG.debug(
@@ -329,7 +339,13 @@ public class DasCustodyBackfiller extends Service
     if (earliestAvailableCustodySlot.get().isLessThanOrEqualTo(minCustodyPeriodSlot)) {
       // All required custody is available, backfill is not needed, move
       // earliestAvailableCustodySlot forward and return
-      return earliestAvailableCustodySlotWriter.apply(minCustodyPeriodSlot).thenApply(__ -> false);
+      return earliestAvailableCustodySlotWriter
+          .apply(minCustodyPeriodSlot)
+          .thenApply(
+              __ -> {
+                custodyGroupCountManager.setCustodyGroupSyncedCount(currentSyncCustodyGroupCount);
+                return false;
+              });
     }
 
     var latestSlotInBatch = earliestAvailableCustodySlot.get().minusMinZero(1);
@@ -435,9 +451,9 @@ public class DasCustodyBackfiller extends Service
         .apply(slot)
         .thenApply(
             __ -> {
-              if (slot.isLessThanOrEqualTo(batchData.minCustodyPeriodSlot)) {
-                custodyGroupCountManager.setCustodyGroupSyncedCount(batchData.custodyGroupCount);
+              custodyGroupCountManager.setCustodyGroupSyncedCount(batchData.custodyGroupCount);
 
+              if (slot.isLessThanOrEqualTo(batchData.minCustodyPeriodSlot)) {
                 LOG.debug("DasCustodyBackfiller: Column custody backfill completed successfully.");
                 return false;
               }
