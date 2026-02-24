@@ -265,7 +265,7 @@ public class EventSubscriptionManager
 
   protected void onNewDataColumnSidecar(final DataColumnSidecar dataColumnSidecar) {
     final DataColumnSidecarEvent dataColumnSidecarEvent =
-        new DataColumnSidecarEvent(dataColumnSidecar);
+        DataColumnSidecarEvent.create(dataColumnSidecar);
     notifySubscribersOfEvent(EventType.data_column_sidecar, dataColumnSidecarEvent);
   }
 
