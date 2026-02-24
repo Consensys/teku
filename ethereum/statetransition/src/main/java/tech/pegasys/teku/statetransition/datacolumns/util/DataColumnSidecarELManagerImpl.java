@@ -275,7 +275,7 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
               dataColumnSidecar.getMaybeSignedBlockHeader(),
               dataColumnSidecar.getMaybeKzgCommitments(),
               dataColumnSidecarUtil
-                  .getMaybeKzgCommitmentsProof(dataColumnSidecar)
+                  .getMaybeKzgCommitmentsInclusionProof(dataColumnSidecar)
                   .map(SszPrimitiveCollection::asListUnboxed),
               Collections.newSetFromMap(new ConcurrentHashMap<>())));
     }

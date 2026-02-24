@@ -38,20 +38,19 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlobReconstructorGloasTest extends BlobReconstructionAbstractTest {
-  private Spec gloasSpec;
   private DataStructureUtil gloasDataStructureUtil;
-  private MiscHelpersGloas miscHelpersGloas;
-  private SchemaDefinitionsElectra schemaDefinitionsElectra;
   private BlobSchema blobSchema;
   private BlobReconstructor blobReconstructor;
+  private List<DataColumnSidecar> halfSidecars;
+  private final int commitmentCount = 2;
 
   @BeforeEach
   void setupGloas() {
-    gloasSpec = TestSpecFactory.createMinimalGloas();
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
     gloasDataStructureUtil = new DataStructureUtil(gloasSpec);
-    miscHelpersGloas =
+    final MiscHelpersGloas miscHelpersGloas =
         MiscHelpersGloas.required(gloasSpec.forMilestone(SpecMilestone.GLOAS).miscHelpers());
-    schemaDefinitionsElectra =
+    final SchemaDefinitionsElectra schemaDefinitionsElectra =
         SchemaDefinitionsElectra.required(
             gloasSpec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions());
     blobSchema = schemaDefinitionsElectra.getBlobSchema();
@@ -65,19 +64,11 @@ public class BlobReconstructorGloasTest extends BlobReconstructionAbstractTest {
             return SafeFuture.completedFuture(Optional.empty());
           }
         };
-  }
-
-  @Test
-  public void shouldBuildBlobFromSidecars() {
-    final int commitmentCount = 2;
     final BeaconBlock beaconBlock =
         gloasDataStructureUtil.randomBeaconBlock(
             UInt64.ZERO,
             gloasDataStructureUtil.randomBeaconBlockBodyWithCommitments(commitmentCount));
     final SignedBeaconBlock block = gloasDataStructureUtil.signedBlock(beaconBlock);
-
-    // In Gloas, construct sidecars using SlotAndBlockRoot and commitments from execution payload
-    // bid
     final List<BlobAndCellProofs> blobAndCellProofs =
         IntStream.range(0, commitmentCount)
             .mapToObj(
@@ -95,10 +86,12 @@ public class BlobReconstructorGloasTest extends BlobReconstructionAbstractTest {
             Optional.empty(),
             Optional.empty(),
             blobAndCellProofs);
+    int numberOfColumns = gloasSpec.getNumberOfDataColumns().orElseThrow();
+    halfSidecars = dataColumnSidecars.subList(0, numberOfColumns / 2);
+  }
 
-    final int numberOfColumns = gloasSpec.getNumberOfDataColumns().orElseThrow();
-    final List<DataColumnSidecar> halfSidecars = dataColumnSidecars.subList(0, numberOfColumns / 2);
-
+  @Test
+  public void shouldBuildBlobFromSidecars() {
     assertThat(blobReconstructor.constructBlob(halfSidecars, 0, blobSchema)).isNotNull();
     assertThat(blobReconstructor.constructBlob(halfSidecars, 1, blobSchema)).isNotNull();
     assertThatThrownBy(() -> blobReconstructor.constructBlob(halfSidecars, 2, blobSchema));
@@ -106,36 +99,6 @@ public class BlobReconstructorGloasTest extends BlobReconstructionAbstractTest {
 
   @Test
   public void shouldBuildAndFilterBlobsFromSidecars() {
-    final int commitmentCount = 2;
-    final BeaconBlock beaconBlock =
-        gloasDataStructureUtil.randomBeaconBlock(
-            UInt64.ZERO,
-            gloasDataStructureUtil.randomBeaconBlockBodyWithCommitments(commitmentCount));
-    final SignedBeaconBlock block = gloasDataStructureUtil.signedBlock(beaconBlock);
-
-    // In Gloas, construct sidecars using SlotAndBlockRoot and commitments from execution payload
-    // bid
-    final List<BlobAndCellProofs> blobAndCellProofs =
-        IntStream.range(0, commitmentCount)
-            .mapToObj(
-                i ->
-                    new BlobAndCellProofs(
-                        gloasDataStructureUtil.randomValidBlob(),
-                        IntStream.range(0, 128)
-                            .mapToObj(__ -> gloasDataStructureUtil.randomKZGProof())
-                            .toList()))
-            .toList();
-    final List<DataColumnSidecar> dataColumnSidecars =
-        miscHelpersGloas.constructDataColumnSidecars(
-            Optional.empty(),
-            new SlotAndBlockRoot(block.getSlot(), block.getRoot()),
-            Optional.empty(),
-            Optional.empty(),
-            blobAndCellProofs);
-
-    final int numberOfColumns = gloasSpec.getNumberOfDataColumns().orElseThrow();
-    final List<DataColumnSidecar> halfSidecars = dataColumnSidecars.subList(0, numberOfColumns / 2);
-
     // empty blob indices (should return all blobs)
     assertThat(
             blobReconstructor.reconstructBlobsFromFirstHalfDataColumns(

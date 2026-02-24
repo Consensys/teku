@@ -358,7 +358,7 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   }
 
   @Override
-  public Optional<SszBytes32Vector> getMaybeKzgCommitmentsProof(
+  public Optional<SszBytes32Vector> getMaybeKzgCommitmentsInclusionProof(
       final DataColumnSidecar dataColumnSidecar) {
     return Optional.of(
         DataColumnSidecarFulu.required(dataColumnSidecar).getKzgCommitmentsInclusionProof());

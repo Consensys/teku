@@ -240,7 +240,7 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
   }
 
   @Override
-  public Optional<SszBytes32Vector> getMaybeKzgCommitmentsProof(
+  public Optional<SszBytes32Vector> getMaybeKzgCommitmentsInclusionProof(
       final DataColumnSidecar dataColumnSidecar) {
     // No kzg commitments proof in Gloas
     return Optional.empty();
