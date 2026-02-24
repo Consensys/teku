@@ -293,20 +293,18 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
     final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
     final DataColumnSidecarUtil dataColumnSidecarUtil =
         spec.getDataColumnSidecarUtil(block.getSlot());
-    if (recoveryTasks.containsKey(slotAndBlockRoot)) {
-      final RecoveryTask recoveryTask = recoveryTasks.get(slotAndBlockRoot);
-      if (!recoveryTask.sszKzgCommitmentsFuture().isDone()) {
-        recoveryTask
-            .sszKzgCommitmentsFuture()
-            .complete(dataColumnSidecarUtil.getKzgCommitments(block.getMessage()));
-      }
-      return Optional.of(recoveryTask);
+    final RecoveryTask existingTask = recoveryTasks.get(slotAndBlockRoot);
+    if (existingTask != null) {
+      existingTask
+          .sszKzgCommitmentsFuture()
+          .complete(dataColumnSidecarUtil.getKzgCommitments(block.getMessage()));
+      return Optional.of(existingTask);
     }
     if (!block.getSlot().equals(getCurrentSlot())) {
       return Optional.empty();
     }
     makeRoomForNewTracker();
-    return Optional.of(
+    final RecoveryTask task =
         recoveryTasks.computeIfAbsent(
             slotAndBlockRoot,
             __ ->
@@ -317,7 +315,10 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
                     dataColumnSidecarUtil.computeDataColumnKzgCommitmentsInclusionProof(
                         block.getMessage().getBody()),
                     Collections.newSetFromMap(new ConcurrentHashMap<>()),
-                    new AtomicBoolean(false))));
+                    new AtomicBoolean(false)));
+    task.sszKzgCommitmentsFuture()
+        .complete(dataColumnSidecarUtil.getKzgCommitments(block.getMessage()));
+    return Optional.of(task);
   }
 
   private void publishRecoveredDataColumnSidecars(
@@ -445,6 +446,11 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
     }
     final SszList<SszKZGCommitment> sszKzgCommitments =
         recoveryTask.sszKzgCommitmentsFuture().getImmediately();
+
+    if (sszKzgCommitments.isEmpty()) {
+      return SafeFuture.COMPLETE;
+    }
+
     final List<BlobIdentifier> missingBlobsIdentifiers =
         IntStream.range(0, sszKzgCommitments.size())
             .mapToObj(
