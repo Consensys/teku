@@ -13,16 +13,37 @@
 
 package tech.pegasys.teku.api;
 
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
+import tech.pegasys.teku.ethereum.executionclient.ExecutionClientVersionChannel;
+import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 
-public class ExecutionClientDataProvider implements ExecutionClientEventsChannel {
+public class ExecutionClientDataProvider
+    implements ExecutionClientEventsChannel, ExecutionClientVersionChannel {
 
   private final AtomicBoolean isExecutionClientAvailable = new AtomicBoolean(true);
+  private final AtomicReference<Optional<ClientVersion>> executionClientVersion =
+      new AtomicReference<>(Optional.empty());
 
   @Override
   public void onAvailabilityUpdated(final boolean isAvailable) {
     isExecutionClientAvailable.set(isAvailable);
+  }
+
+  @Override
+  public void onExecutionClientVersion(final ClientVersion version) {
+    executionClientVersion.set(Optional.of(version));
+  }
+
+  @Override
+  public void onExecutionClientVersionNotAvailable() {
+    executionClientVersion.set(Optional.empty());
+  }
+
+  public Optional<ClientVersion> getExecutionClientVersion() {
+    return executionClientVersion.get();
   }
 
   public boolean isExecutionClientAvailable() {
