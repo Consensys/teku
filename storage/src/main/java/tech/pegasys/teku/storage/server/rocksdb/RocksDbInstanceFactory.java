@@ -204,7 +204,9 @@ public class RocksDbInstanceFactory {
                           columnFamilyOptionsWithBlobDb
                               .setEnableBlobFiles(true)
                               .setMinBlobSize(100)
-                              .setBlobCompressionType(CompressionType.LZ4_COMPRESSION)))
+                              .setBlobCompressionType(CompressionType.LZ4_COMPRESSION)
+                              .setEnableBlobGarbageCollection(true)))
+
               .collect(Collectors.toCollection(ArrayList::new));
 
       columnDescriptors.addAll(
