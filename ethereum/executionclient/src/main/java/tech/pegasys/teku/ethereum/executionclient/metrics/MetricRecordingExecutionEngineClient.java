@@ -26,15 +26,18 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV5Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV6Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -63,11 +66,16 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   public static final String FORKCHOICE_UPDATED_V3_METHOD = "forkchoice_updatedV3";
   public static final String FORKCHOICE_UPDATED_WITH_ATTRIBUTES_V3_METHOD =
       "forkchoice_updated_with_attributesV3";
+  public static final String FORKCHOICE_UPDATED_V4_METHOD = "forkchoice_updatedV4";
+  public static final String FORKCHOICE_UPDATED_WITH_ATTRIBUTES_V4_METHOD =
+      "forkchoice_updated_with_attributesV4";
   public static final String GET_PAYLOAD_V3_METHOD = "get_payloadV3";
   public static final String GET_PAYLOAD_V4_METHOD = "get_payloadV4";
   public static final String GET_PAYLOAD_V5_METHOD = "get_payloadV5";
+  public static final String GET_PAYLOAD_V6_METHOD = "get_payloadV6";
   public static final String NEW_PAYLOAD_V3_METHOD = "new_payloadV3";
   public static final String NEW_PAYLOAD_V4_METHOD = "new_payloadV4";
+  public static final String NEW_PAYLOAD_V5_METHOD = "new_payloadV5";
   public static final String EXCHANGE_CAPABILITIES_METHOD = "exchange_capabilities";
   public static final String GET_CLIENT_VERSION_V1_METHOD = "get_client_versionV1";
   public static final String GET_BLOBS_V1_METHOD = "get_blobs_versionV1";
@@ -127,6 +135,11 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   }
 
   @Override
+  public SafeFuture<Response<GetPayloadV6Response>> getPayloadV6(final Bytes8 payloadId) {
+    return countRequest(() -> delegate.getPayloadV6(payloadId), GET_PAYLOAD_V6_METHOD);
+  }
+
+  @Override
   public SafeFuture<Response<PayloadStatusV1>> newPayloadV1(
       final ExecutionPayloadV1 executionPayload) {
     return countRequest(() -> delegate.newPayloadV1(executionPayload), NEW_PAYLOAD_METHOD);
@@ -162,6 +175,19 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   }
 
   @Override
+  public SafeFuture<Response<PayloadStatusV1>> newPayloadV5(
+      final ExecutionPayloadV4 executionPayload,
+      final List<VersionedHash> blobVersionedHashes,
+      final Bytes32 parentBeaconBlockRoot,
+      final List<Bytes> executionRequests) {
+    return countRequest(
+        () ->
+            delegate.newPayloadV5(
+                executionPayload, blobVersionedHashes, parentBeaconBlockRoot, executionRequests),
+        NEW_PAYLOAD_V5_METHOD);
+  }
+
+  @Override
   public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV1(
       final ForkChoiceStateV1 forkChoiceState,
       final Optional<PayloadAttributesV1> payloadAttributes) {
@@ -192,6 +218,17 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
         payloadAttributes.isPresent()
             ? FORKCHOICE_UPDATED_WITH_ATTRIBUTES_V3_METHOD
             : FORKCHOICE_UPDATED_V3_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV4(
+      final ForkChoiceStateV1 forkChoiceState,
+      final Optional<PayloadAttributesV4> payloadAttributes) {
+    return countRequest(
+        () -> delegate.forkChoiceUpdatedV4(forkChoiceState, payloadAttributes),
+        payloadAttributes.isPresent()
+            ? FORKCHOICE_UPDATED_WITH_ATTRIBUTES_V4_METHOD
+            : FORKCHOICE_UPDATED_V4_METHOD);
   }
 
   @Override
