@@ -48,7 +48,8 @@ public class GetVersionV2 extends RestApiEndpoint {
   private static final SerializableTypeDefinition<VersionDataV2> DATA_TYPE =
       SerializableTypeDefinition.object(VersionDataV2.class)
           .withField("version", STRING_TYPE, VersionDataV2::getVersion)
-          .withOptionalField("execution_client", EXECUTION_CLIENT_TYPE, VersionDataV2::getExecutionClient)
+          .withOptionalField(
+              "execution_client", EXECUTION_CLIENT_TYPE, VersionDataV2::getExecutionClient)
           .build();
 
   private static final SerializableTypeDefinition<VersionDataV2> RESPONSE_TYPE =
@@ -87,7 +88,7 @@ public class GetVersionV2 extends RestApiEndpoint {
     request.respondOk(new VersionDataV2(VersionProvider.VERSION, executionClient));
   }
 
-  static class ExecutionClientInfo {
+  public static class ExecutionClientInfo {
     private final String code;
     private final String name;
     private final String version;
@@ -109,20 +110,20 @@ public class GetVersionV2 extends RestApiEndpoint {
           clientVersion.commit());
     }
 
-    public String getCode() {
-      return code;
+    public Optional<String> getCode() {
+      return Optional.ofNullable(code);
     }
 
-    public String getName() {
-      return name;
+    public Optional<String> getName() {
+      return Optional.ofNullable(name);
     }
 
-    public String getVersion() {
-      return version;
+    public Optional<String> getVersion() {
+      return Optional.ofNullable(version);
     }
 
-    public Bytes4 getCommit() {
-      return commit;
+    public Optional<Bytes4> getCommit() {
+      return Optional.ofNullable(commit);
     }
 
     @Override
@@ -146,11 +147,12 @@ public class GetVersionV2 extends RestApiEndpoint {
     }
   }
 
-  static class VersionDataV2 {
+  public static class VersionDataV2 {
     private final String version;
     private final Optional<ExecutionClientInfo> executionClient;
 
-    public VersionDataV2(final String version, final Optional<ExecutionClientInfo> executionClient) {
+    public VersionDataV2(
+        final String version, final Optional<ExecutionClientInfo> executionClient) {
       this.version = version;
       this.executionClient = executionClient;
     }
