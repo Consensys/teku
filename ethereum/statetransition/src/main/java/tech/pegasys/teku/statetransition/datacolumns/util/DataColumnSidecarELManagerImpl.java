@@ -357,9 +357,7 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
         .addAll(localCustodySidecars.stream().map(DataColumnSidecar::getIndex).toList());
 
     LOG.debug(
-        "Publishing {} data column sidecars for {}",
-        localCustodySidecars.size(),
-        slotAndBlockRoot.getBlockRoot());
+        "Publishing {} data column sidecars for {}", localCustodySidecars.size(), slotAndBlockRoot);
 
     dataColumnSidecarGossipValidator.markForEquivocation(
         recoveryTask.maybeSignedBeaconBlockHeader().map(SignedBeaconBlockHeader::getMessage),

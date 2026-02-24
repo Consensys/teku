@@ -122,10 +122,9 @@ public class DataColumnSidecarELManagerImplFuluTest
     LOCAL_OR_RECOVERED_ORIGINS.forEach(
         origin -> {
           dataColumnSidecarELManager.onNewDataColumnSidecar(dataColumnSidecar, origin);
+          assertThat(asyncRunner.hasDelayedActions()).isFalse();
+          verifyNoInteractions(executionLayer);
         });
-
-    assertThat(asyncRunner.hasDelayedActions()).isFalse();
-    verifyNoInteractions(executionLayer);
   }
 
   @Test
