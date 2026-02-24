@@ -606,6 +606,23 @@ public class TestSpecFactory {
     return create(config, SpecMilestone.FULU);
   }
 
+  public static Spec createMinimalWithCapellaDenebElectraFuluAndGloasForkEpoch(
+      final UInt64 capellaForkEpoch,
+      final UInt64 denebForkEpoch,
+      final UInt64 electraForkEpoch,
+      final UInt64 fuluForkEpoch,
+      final UInt64 gloasForkEpoch) {
+    final SpecConfigAndParent<? extends SpecConfig> config =
+        getGloasSpecConfig(
+            Eth2Network.MINIMAL,
+            capellaForkEpoch,
+            denebForkEpoch,
+            electraForkEpoch,
+            fuluForkEpoch,
+            gloasForkEpoch);
+    return create(config, SpecMilestone.GLOAS);
+  }
+
   // Our current config files contain Fulu params.
   // So all specConfigs created from them will be Fulu.
   // Here we just want to make sure that a given config supports the given milestone

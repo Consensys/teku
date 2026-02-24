@@ -118,7 +118,8 @@ public interface DataColumnSidecarUtil {
   Optional<List<Bytes32>> computeDataColumnKzgCommitmentsInclusionProof(
       BeaconBlockBody beaconBlockBody);
 
-  Optional<SszBytes32Vector> getMaybeKzgCommitmentsProof(DataColumnSidecar dataColumnSidecar);
+  Optional<SszBytes32Vector> getMaybeKzgCommitmentsInclusionProof(
+      DataColumnSidecar dataColumnSidecar);
 
   List<DataColumnSidecar> reconstructAllDataColumnSidecars(
       List<DataColumnSidecar> dataColumnSidecars);

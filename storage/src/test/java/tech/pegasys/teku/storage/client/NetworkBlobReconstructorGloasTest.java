@@ -44,42 +44,34 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
 
 public class NetworkBlobReconstructorGloasTest extends BlobReconstructionAbstractTest {
-  private Spec gloasSpec;
   private DataStructureUtil gloasDataStructureUtil;
-  private MiscHelpersGloas miscHelpersGloas;
-  private SchemaDefinitionsElectra schemaDefinitionsElectra;
   private BlobSchema blobSchema;
   private SignedBeaconBlock testBlock;
   private final DataColumnSidecarNetworkRetriever dataColumnSidecarNetworkRetriever =
       mock(DataColumnSidecarNetworkRetriever.class);
   private NetworkBlobReconstructor networkBlobReconstructor;
+  private List<DataColumnSidecar> dataColumnSidecars;
+  private int numberOfColumns;
+  private final int commitmentCount = 2;
 
   @BeforeEach
   void setupGloas() {
-    gloasSpec = TestSpecFactory.createMinimalGloas();
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
     gloasDataStructureUtil = new DataStructureUtil(gloasSpec);
-    miscHelpersGloas =
+    final MiscHelpersGloas miscHelpersGloas =
         MiscHelpersGloas.required(gloasSpec.forMilestone(SpecMilestone.GLOAS).miscHelpers());
-    schemaDefinitionsElectra =
+    final SchemaDefinitionsElectra schemaDefinitionsElectra =
         SchemaDefinitionsElectra.required(
             gloasSpec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions());
     blobSchema = schemaDefinitionsElectra.getBlobSchema();
     networkBlobReconstructor =
         new NetworkBlobReconstructor(
             gloasSpec, () -> blobSchema, dataColumnSidecarNetworkRetriever);
-    final int commitmentCount = 2;
     final BeaconBlock beaconBlock =
         gloasDataStructureUtil.randomBeaconBlock(
             UInt64.ZERO,
             gloasDataStructureUtil.randomBeaconBlockBodyWithCommitments(commitmentCount));
     testBlock = gloasDataStructureUtil.signedBlock(beaconBlock);
-  }
-
-  @Test
-  public void shouldNotRetrieveIfDisabled() {
-    when(dataColumnSidecarNetworkRetriever.isEnabled()).thenReturn(false);
-
-    final int commitmentCount = 2;
     final List<BlobAndCellProofs> blobAndCellProofs =
         IntStream.range(0, commitmentCount)
             .mapToObj(
@@ -90,15 +82,19 @@ public class NetworkBlobReconstructorGloasTest extends BlobReconstructionAbstrac
                             .mapToObj(__ -> gloasDataStructureUtil.randomKZGProof())
                             .toList()))
             .toList();
-
-    final List<DataColumnSidecar> dataColumnSidecars =
+    dataColumnSidecars =
         miscHelpersGloas.constructDataColumnSidecars(
             Optional.empty(),
             new SlotAndBlockRoot(testBlock.getSlot(), testBlock.getRoot()),
             Optional.empty(),
             Optional.empty(),
             blobAndCellProofs);
+    numberOfColumns = gloasSpec.getNumberOfDataColumns().orElseThrow();
+  }
 
+  @Test
+  public void shouldNotRetrieveIfDisabled() {
+    when(dataColumnSidecarNetworkRetriever.isEnabled()).thenReturn(false);
     assertThat(
             networkBlobReconstructor.reconstructBlobs(
                 testBlock.getSlotAndBlockRoot(), dataColumnSidecars, List.of()))
@@ -110,28 +106,6 @@ public class NetworkBlobReconstructorGloasTest extends BlobReconstructionAbstrac
   @Test
   public void shouldBuildAndFilterBlobsFromSidecars() {
     when(dataColumnSidecarNetworkRetriever.isEnabled()).thenReturn(true);
-
-    final int commitmentCount = 2;
-    final List<BlobAndCellProofs> blobAndCellProofs =
-        IntStream.range(0, commitmentCount)
-            .mapToObj(
-                i ->
-                    new BlobAndCellProofs(
-                        gloasDataStructureUtil.randomValidBlob(),
-                        IntStream.range(0, 128)
-                            .mapToObj(__ -> gloasDataStructureUtil.randomKZGProof())
-                            .toList()))
-            .toList();
-
-    final List<DataColumnSidecar> dataColumnSidecars =
-        miscHelpersGloas.constructDataColumnSidecars(
-            Optional.empty(),
-            new SlotAndBlockRoot(testBlock.getSlot(), testBlock.getRoot()),
-            Optional.empty(),
-            Optional.empty(),
-            blobAndCellProofs);
-
-    final int numberOfColumns = gloasSpec.getNumberOfDataColumns().orElseThrow();
     final List<DataColumnSidecar> halfSidecarsWithGap =
         dataColumnSidecars.subList(0, numberOfColumns / 2 - 1);
 
@@ -149,33 +123,9 @@ public class NetworkBlobReconstructorGloasTest extends BlobReconstructionAbstrac
   @Test
   public void shouldReturnEmptyWhenNetworkRetrieverReturnsPartialResults() {
     when(dataColumnSidecarNetworkRetriever.isEnabled()).thenReturn(true);
-
-    final int commitmentCount = 2;
-    final List<BlobAndCellProofs> blobAndCellProofs =
-        IntStream.range(0, commitmentCount)
-            .mapToObj(
-                i ->
-                    new BlobAndCellProofs(
-                        gloasDataStructureUtil.randomValidBlob(),
-                        IntStream.range(0, 128)
-                            .mapToObj(__ -> gloasDataStructureUtil.randomKZGProof())
-                            .toList()))
-            .toList();
-
-    final List<DataColumnSidecar> dataColumnSidecars =
-        miscHelpersGloas.constructDataColumnSidecars(
-            Optional.empty(),
-            new SlotAndBlockRoot(testBlock.getSlot(), testBlock.getRoot()),
-            Optional.empty(),
-            Optional.empty(),
-            blobAndCellProofs);
-
-    final int numberOfColumns = gloasSpec.getNumberOfDataColumns().orElseThrow();
-
     // sidecars with 2 missing
     final List<DataColumnSidecar> sidecarsWithGaps =
         dataColumnSidecars.subList(0, numberOfColumns / 2 - 2);
-
     // retriever returns only 1 of the 2 missing sidecars
     final DataColumnSidecar missingSidecar = dataColumnSidecars.get(numberOfColumns / 2 - 2);
     when(dataColumnSidecarNetworkRetriever.retrieveDataColumnSidecars(any()))

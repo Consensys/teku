@@ -35,21 +35,20 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class CryptoBlobReconstructorGloasTest extends BlobReconstructionAbstractTest {
-  private Spec gloasSpec;
   private DataStructureUtil gloasDataStructureUtil;
   private MiscHelpersGloas miscHelpersGloas;
-  private SchemaDefinitionsElectra schemaDefinitionsElectra;
   private BlobSchema blobSchema;
   private CryptoBlobReconstructor cryptoBlobReconstructor;
   private SignedBeaconBlock testBlock;
+  private int numberOfColumns;
 
   @BeforeEach
   void setupGloas() {
-    gloasSpec = TestSpecFactory.createMinimalGloas();
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
     gloasDataStructureUtil = new DataStructureUtil(gloasSpec);
     miscHelpersGloas =
         MiscHelpersGloas.required(gloasSpec.forMilestone(SpecMilestone.GLOAS).miscHelpers());
-    schemaDefinitionsElectra =
+    SchemaDefinitionsElectra schemaDefinitionsElectra =
         SchemaDefinitionsElectra.required(
             gloasSpec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions());
     blobSchema = schemaDefinitionsElectra.getBlobSchema();
@@ -62,6 +61,7 @@ public class CryptoBlobReconstructorGloasTest extends BlobReconstructionAbstract
             UInt64.ZERO,
             gloasDataStructureUtil.randomBeaconBlockBodyWithCommitments(commitmentCount));
     testBlock = gloasDataStructureUtil.signedBlock(beaconBlock);
+    numberOfColumns = gloasSpec.getNumberOfDataColumns().orElseThrow();
   }
 
   @Test
@@ -85,8 +85,6 @@ public class CryptoBlobReconstructorGloasTest extends BlobReconstructionAbstract
             Optional.empty(),
             Optional.empty(),
             blobAndCellProofs);
-
-    final int numberOfColumns = gloasSpec.getNumberOfDataColumns().orElseThrow();
     final List<DataColumnSidecar> almostHalfSidecars =
         dataColumnSidecars.subList(1, numberOfColumns / 2);
 
@@ -118,7 +116,6 @@ public class CryptoBlobReconstructorGloasTest extends BlobReconstructionAbstract
             Optional.empty(),
             blobAndCellProofs);
 
-    final int numberOfColumns = gloasSpec.getNumberOfDataColumns().orElseThrow();
     final List<DataColumnSidecar> halfSidecars =
         dataColumnSidecars.subList(5, numberOfColumns / 2 + 5);
 

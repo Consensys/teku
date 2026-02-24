@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -52,6 +53,27 @@ import tech.pegasys.teku.statetransition.util.PoolFactory;
 
 public class DataColumnSidecarELManagerImplFuluTest
     extends AbstractDataColumnSidecarELManagerImplTest {
+
+  private SignedBeaconBlock block;
+  private List<BlobAndCellProofs> blobAndCellProofs;
+
+  @Override
+  @BeforeEach
+  public void setup() {
+    super.setup();
+    block = dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
+    blobAndCellProofs =
+        blobSidecars.stream()
+            .map(
+                blobSidecar ->
+                    new BlobAndCellProofs(
+                        blobSidecar.getBlob(),
+                        IntStream.range(0, 128)
+                            .mapToObj(__ -> dataStructureUtil.randomKZGProof())
+                            .toList()))
+            .toList();
+  }
 
   @Override
   protected Spec createSpec() {
@@ -168,20 +190,7 @@ public class DataColumnSidecarELManagerImplFuluTest
 
   @Test
   public void shouldPublish_whenAllBlobsRetrieved() {
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     dataColumnSidecarELManager.onSlot(currentSlot);
-    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
-    final List<BlobAndCellProofs> blobAndCellProofs =
-        blobSidecars.stream()
-            .map(
-                blobSidecar ->
-                    new BlobAndCellProofs(
-                        blobSidecar.getBlob(),
-                        IntStream.range(0, 128)
-                            .mapToObj(__ -> dataStructureUtil.randomKZGProof())
-                            .toList()))
-            .toList();
     when(executionLayer.engineGetBlobAndCellProofsList(any(), any()))
         .thenReturn(SafeFuture.completedFuture(blobAndCellProofs));
     dataColumnSidecarELManager.onNewBlock(block, Optional.empty());
@@ -193,20 +202,7 @@ public class DataColumnSidecarELManagerImplFuluTest
 
   @Test
   public void shouldMarkForEquivocation_AllColumnsRebuiltFromRetrievedFromEL() {
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     dataColumnSidecarELManager.onSlot(currentSlot);
-    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
-    final List<BlobAndCellProofs> blobAndCellProofs =
-        blobSidecars.stream()
-            .map(
-                blobSidecar ->
-                    new BlobAndCellProofs(
-                        blobSidecar.getBlob(),
-                        IntStream.range(0, 128)
-                            .mapToObj(__ -> dataStructureUtil.randomKZGProof())
-                            .toList()))
-            .toList();
     when(executionLayer.engineGetBlobAndCellProofsList(any(), any()))
         .thenReturn(SafeFuture.completedFuture(blobAndCellProofs));
     dataColumnSidecarELManager.onNewBlock(block, Optional.empty());
@@ -235,8 +231,6 @@ public class DataColumnSidecarELManagerImplFuluTest
             EL_BLOBS_FETCHING_DELAY,
             EL_BLOBS_FETCHING_MAX_RETRIES,
             dataColumnSidecarGossipValidator);
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     dataColumnSidecarELRecoveryManager.onSlot(currentSlot);
     when(executionLayer.engineGetBlobAndCellProofsList(any(), any()))
         .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("error")));
@@ -269,8 +263,6 @@ public class DataColumnSidecarELManagerImplFuluTest
             EL_BLOBS_FETCHING_DELAY,
             EL_BLOBS_FETCHING_MAX_RETRIES,
             dataColumnSidecarGossipValidator);
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     dataColumnSidecarELRecoveryManager.onSlot(currentSlot);
     final List<BlobSidecar> blobSidecars =
         dataStructureUtil.randomBlobSidecarsForBlock(block).subList(0, 1);
@@ -318,8 +310,6 @@ public class DataColumnSidecarELManagerImplFuluTest
             EL_BLOBS_FETCHING_DELAY,
             EL_BLOBS_FETCHING_MAX_RETRIES,
             dataColumnSidecarGossipValidator);
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     dataColumnSidecarELRecoveryManager.onSlot(currentSlot);
     when(executionLayer.engineGetBlobAndCellProofsList(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
@@ -355,20 +345,7 @@ public class DataColumnSidecarELManagerImplFuluTest
             EL_BLOBS_FETCHING_DELAY,
             EL_BLOBS_FETCHING_MAX_RETRIES,
             dataColumnSidecarGossipValidator);
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     dataColumnSidecarELRecoveryManager.onSlot(currentSlot);
-    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
-    final List<BlobAndCellProofs> blobAndCellProofs =
-        blobSidecars.stream()
-            .map(
-                blobSidecar ->
-                    new BlobAndCellProofs(
-                        blobSidecar.getBlob(),
-                        IntStream.range(0, 128)
-                            .mapToObj(__ -> dataStructureUtil.randomKZGProof())
-                            .toList()))
-            .toList();
     // 2 first call fails and then the 3rd succeeds
     when(executionLayer.engineGetBlobAndCellProofsList(any(), any()))
         .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("error")))
@@ -414,8 +391,6 @@ public class DataColumnSidecarELManagerImplFuluTest
             EL_BLOBS_FETCHING_DELAY,
             EL_BLOBS_FETCHING_MAX_RETRIES,
             dataColumnSidecarGossipValidator);
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     dataColumnSidecarELRecoveryManager.onSlot(currentSlot);
     // all calls fail so we keep retrying
     when(executionLayer.engineGetBlobAndCellProofsList(any(), any()))
@@ -456,23 +431,10 @@ public class DataColumnSidecarELManagerImplFuluTest
             EL_BLOBS_FETCHING_DELAY,
             EL_BLOBS_FETCHING_MAX_RETRIES,
             dataColumnSidecarGossipValidator);
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     dataColumnSidecarELRecoveryManager.onSlot(currentSlot);
     dataColumnSidecarELRecoveryManager.onSyncingStatusChanged(true);
     dataColumnSidecarELRecoveryManager.subscribeToRecoveredColumnSidecar(
         validDataColumnSidecarsListener);
-    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
-    final List<BlobAndCellProofs> blobAndCellProofs =
-        blobSidecars.stream()
-            .map(
-                blobSidecar ->
-                    new BlobAndCellProofs(
-                        blobSidecar.getBlob(),
-                        IntStream.range(0, 128)
-                            .mapToObj(__ -> dataStructureUtil.randomKZGProof())
-                            .toList()))
-            .toList();
     // 2 first call fails and then the 3rd succeeds
     when(executionLayer.engineGetBlobAndCellProofsList(any(), any()))
         .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("error")))
@@ -522,8 +484,8 @@ public class DataColumnSidecarELManagerImplFuluTest
                 0,
                 dataColumnSidecarELRecoveryManager
                     .getRecoveryTask(slotAndBlockRoot)
-                    .maybeSszKzgCommitments()
-                    .orElseThrow()
+                    .sszKzgCommitmentsFuture()
+                    .getImmediately()
                     .size())
             .mapToObj(
                 index -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), UInt64.valueOf(index)))
@@ -536,8 +498,8 @@ public class DataColumnSidecarELManagerImplFuluTest
     final SszList<SszKZGCommitment> sszKZGCommitments =
         dataColumnSidecarELRecoveryManager
             .getRecoveryTask(slotAndBlockRoot)
-            .maybeSszKzgCommitments()
-            .orElseThrow();
+            .sszKzgCommitmentsFuture()
+            .getImmediately();
     return missingBlobsIdentifiers.stream()
         .map(
             blobIdentifier ->

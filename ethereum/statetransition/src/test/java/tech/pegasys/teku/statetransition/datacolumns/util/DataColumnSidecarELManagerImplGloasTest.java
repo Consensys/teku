@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -39,22 +40,19 @@ import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 public class DataColumnSidecarELManagerImplGloasTest
     extends AbstractDataColumnSidecarELManagerImplTest {
 
-  @Override
-  protected Spec createSpec() {
-    return TestSpecFactory.createMinimalGloas();
-  }
+  private SignedBeaconBlock block;
+  private List<BlobAndCellProofs> blobAndCellProofs;
+  final int commitmentCount = 2;
 
-  @Test
-  public void onNewBlock_processesGloasBlocks() {
-    // Gloas block with commitments
-    final int commitmentCount = 2;
+  @Override
+  @BeforeEach
+  public void setup() {
+    super.setup();
     final BeaconBlock beaconBlock =
         dataStructureUtil.randomBeaconBlock(
             currentSlot, dataStructureUtil.randomBeaconBlockBodyWithCommitments(commitmentCount));
-    final SignedBeaconBlock block = dataStructureUtil.signedBlock(beaconBlock);
-
-    // EL returns blob and cell proofs
-    final List<BlobAndCellProofs> blobAndCellProofs =
+    block = dataStructureUtil.signedBlock(beaconBlock);
+    blobAndCellProofs =
         IntStream.range(0, commitmentCount)
             .mapToObj(
                 i ->
@@ -64,6 +62,15 @@ public class DataColumnSidecarELManagerImplGloasTest
                             .mapToObj(__ -> dataStructureUtil.randomKZGProof())
                             .toList()))
             .toList();
+  }
+
+  @Override
+  protected Spec createSpec() {
+    return TestSpecFactory.createMinimalGloas();
+  }
+
+  @Test
+  public void onNewBlock_processesGloasBlocks() {
     when(executionLayer.engineGetBlobAndCellProofsList(any(), any()))
         .thenReturn(SafeFuture.completedFuture(blobAndCellProofs));
 
@@ -77,14 +84,7 @@ public class DataColumnSidecarELManagerImplGloasTest
   @Test
   public void shouldSkipELFetch_whenAllCustodyColumnsSidecarsArrivedBeforeBlock() {
     // all data column sidecars arrive before their block
-    final int commitmentCount = 2;
-    final BeaconBlock beaconBlock =
-        dataStructureUtil.randomBeaconBlock(
-            currentSlot, dataStructureUtil.randomBeaconBlockBodyWithCommitments(commitmentCount));
-    final SignedBeaconBlock block = dataStructureUtil.signedBlock(beaconBlock);
-
     dataColumnSidecarELManager.onSlot(currentSlot);
-
     for (final UInt64 index : custodyGroupCountManager.getSamplingColumnIndices()) {
       final DataColumnSidecar sidecar =
           dataStructureUtil.new RandomDataColumnSidecarBuilder()
@@ -104,8 +104,8 @@ public class DataColumnSidecarELManagerImplGloasTest
   }
 
   @Test
-  public void onNewDataColumnSidecar_doesNotCreateRecoveryTask() {
-    // In Gloas, sidecars cannot trigger recovery because they don't contain KZG commitments
+  public void onNewDataColumnSidecar_createRecoveryTaskThatCannotBeStarted() {
+    // In Gloas, sidecars create non startable recovery task (no kzg commitments)
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.new RandomDataColumnSidecarBuilder()
             .slot(currentSlot)
@@ -116,11 +116,12 @@ public class DataColumnSidecarELManagerImplGloasTest
 
     for (final RemoteOrigin origin : RemoteOrigin.values()) {
       dataColumnSidecarELManager.onNewDataColumnSidecar(dataColumnSidecar, origin);
-      // no recovery task was created
+      // recovery task cannot be started
       assertThat(
               ((DataColumnSidecarELManagerImpl) dataColumnSidecarELManager)
-                  .getRecoveryTask(dataColumnSidecar.getSlotAndBlockRoot()))
-          .isNull();
+                  .getRecoveryTask(dataColumnSidecar.getSlotAndBlockRoot())
+                  .canStart())
+          .isFalse();
       // no EL interaction attempted
       verifyNoInteractions(executionLayer);
       // no async actions scheduled
@@ -130,23 +131,6 @@ public class DataColumnSidecarELManagerImplGloasTest
 
   @Test
   public void shouldPublish_whenAllBlobsRetrievedFromBid() {
-    // In Gloas, KZG commitments come from the execution payload bid
-    final int commitmentCount = 2;
-    final BeaconBlock beaconBlock =
-        dataStructureUtil.randomBeaconBlock(
-            currentSlot, dataStructureUtil.randomBeaconBlockBodyWithCommitments(commitmentCount));
-    final SignedBeaconBlock block = dataStructureUtil.signedBlock(beaconBlock);
-
-    final List<BlobAndCellProofs> blobAndCellProofs =
-        IntStream.range(0, commitmentCount)
-            .mapToObj(
-                i ->
-                    new BlobAndCellProofs(
-                        dataStructureUtil.randomValidBlob(),
-                        IntStream.range(0, 128)
-                            .mapToObj(__ -> dataStructureUtil.randomKZGProof())
-                            .toList()))
-            .toList();
     when(executionLayer.engineGetBlobAndCellProofsList(any(), any()))
         .thenReturn(SafeFuture.completedFuture(blobAndCellProofs));
 
@@ -167,22 +151,6 @@ public class DataColumnSidecarELManagerImplGloasTest
 
   @Test
   public void shouldMarkForEquivocation_whenRecoverySucceeds() {
-    final int commitmentCount = 2;
-    final BeaconBlock beaconBlock =
-        dataStructureUtil.randomBeaconBlock(
-            currentSlot, dataStructureUtil.randomBeaconBlockBodyWithCommitments(commitmentCount));
-    final SignedBeaconBlock block = dataStructureUtil.signedBlock(beaconBlock);
-
-    final List<BlobAndCellProofs> blobAndCellProofs =
-        IntStream.range(0, commitmentCount)
-            .mapToObj(
-                i ->
-                    new BlobAndCellProofs(
-                        dataStructureUtil.randomValidBlob(),
-                        IntStream.range(0, 128)
-                            .mapToObj(__ -> dataStructureUtil.randomKZGProof())
-                            .toList()))
-            .toList();
     when(executionLayer.engineGetBlobAndCellProofsList(any(), any()))
         .thenReturn(SafeFuture.completedFuture(blobAndCellProofs));
 
@@ -201,25 +169,8 @@ public class DataColumnSidecarELManagerImplGloasTest
 
   @Test
   public void shouldNotPublish_whenNotInSync() {
-    final int commitmentCount = 2;
-    final BeaconBlock beaconBlock =
-        dataStructureUtil.randomBeaconBlock(
-            currentSlot, dataStructureUtil.randomBeaconBlockBodyWithCommitments(commitmentCount));
-    final SignedBeaconBlock block = dataStructureUtil.signedBlock(beaconBlock);
-
     dataColumnSidecarELManager.onSyncingStatusChanged(false);
     dataColumnSidecarELManager.onSlot(currentSlot);
-
-    final List<BlobAndCellProofs> blobAndCellProofs =
-        IntStream.range(0, commitmentCount)
-            .mapToObj(
-                i ->
-                    new BlobAndCellProofs(
-                        dataStructureUtil.randomValidBlob(),
-                        IntStream.range(0, 128)
-                            .mapToObj(__ -> dataStructureUtil.randomKZGProof())
-                            .toList()))
-            .toList();
     when(executionLayer.engineGetBlobAndCellProofsList(any(), any()))
         .thenReturn(SafeFuture.completedFuture(blobAndCellProofs));
 

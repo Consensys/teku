@@ -59,7 +59,6 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlobSidecarReconstructionProviderTest {
   private final CombinedChainDataClient client = mock(CombinedChainDataClient.class);
-  // TODO-GLOAS add a test for Gloas
   private final Spec spec = TestSpecFactory.createMinimalFulu();
 
   private final BlobSidecarReconstructionProvider blobSidecarReconstructionProvider =
