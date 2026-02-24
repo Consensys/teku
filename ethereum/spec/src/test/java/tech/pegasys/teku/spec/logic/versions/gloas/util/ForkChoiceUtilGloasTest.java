@@ -14,15 +14,16 @@
 package tech.pegasys.teku.spec.logic.versions.gloas.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -36,60 +37,89 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ForkChoiceUtilGloasTest {
+
+  private static final UInt64 GLOAS_FORK_EPOCH = UInt64.ONE;
+
   private Spec spec;
   private DataStructureUtil dataStructureUtil;
   private ForkChoiceUtilGloas forkChoiceUtil;
+  private UInt64 gloasSlot;
 
   @BeforeEach
   void setUp() {
-    spec = TestSpecFactory.createMinimalGloas();
+    spec = TestSpecFactory.createMinimalWithGloasForkEpoch(GLOAS_FORK_EPOCH);
     dataStructureUtil = new DataStructureUtil(spec);
-    forkChoiceUtil = ForkChoiceUtilGloas.required(spec.getGenesisSpec().getForkChoiceUtil());
+    gloasSlot = spec.computeStartSlotAtEpoch(GLOAS_FORK_EPOCH);
+    forkChoiceUtil = ForkChoiceUtilGloas.required(spec.atSlot(gloasSlot).getForkChoiceUtil());
   }
 
   @Test
   void getParentPayloadStatus_shouldReturnFull_whenParentBlockHashMatchesMessageBlockHash() {
     // Create parent block with a specific block hash
     final Bytes32 parentBlockHash = dataStructureUtil.randomBytes32();
-    final SignedBeaconBlock parentBlock = createBlockWithBlockHash(parentBlockHash);
+    final BeaconBlock parentBlock = createBlockWithBlockHash(parentBlockHash);
 
     // Create current block that references the parent's block hash
-    final SignedBeaconBlock currentBlock =
+    final BeaconBlock currentBlock =
         createBlockWithParentAndParentBlockHash(parentBlock.getRoot(), parentBlockHash);
 
     // Mock store
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
-    when(store.getBlockIfAvailable(currentBlock.getParentRoot()))
-        .thenReturn(Optional.of(parentBlock));
+    when(store.retrieveBlock(currentBlock.getParentRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(parentBlock)));
 
     // Test
-    final PayloadStatus result =
-        forkChoiceUtil.getParentPayloadStatus(store, currentBlock.getMessage());
+    final SafeFuture<PayloadStatus> result =
+        forkChoiceUtil.getParentPayloadStatus(store, currentBlock);
 
-    assertThat(result).isEqualTo(PayloadStatus.PAYLOAD_STATUS_FULL);
+    assertThat(result).isCompletedWithValue(PayloadStatus.PAYLOAD_STATUS_FULL);
+  }
+
+  @Test
+  void getParentPayloadStatus_shouldReturnEmpty_whenParentBlockIsPreGloas() {
+    // Create parent block which is pre-Gloas
+    final UInt64 preGloasSlot = spec.computeStartSlotAtEpoch(GLOAS_FORK_EPOCH).minusMinZero(1);
+    final BeaconBlock parentBlock = dataStructureUtil.randomBeaconBlock(preGloasSlot);
+
+    // Create current block that references any block hash (doesn't matter since the check is not
+    // done) but its parent is the pre-Gloas block
+    final BeaconBlock currentBlock =
+        createBlockWithParentAndParentBlockHash(
+            parentBlock.getRoot(), dataStructureUtil.randomBytes32());
+
+    // Mock store
+    final ReadOnlyStore store = mock(ReadOnlyStore.class);
+    when(store.retrieveBlock(currentBlock.getParentRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(parentBlock)));
+
+    // Test
+    final SafeFuture<PayloadStatus> result =
+        forkChoiceUtil.getParentPayloadStatus(store, currentBlock);
+
+    assertThat(result).isCompletedWithValue(PayloadStatus.PAYLOAD_STATUS_EMPTY);
   }
 
   @Test
   void getParentPayloadStatus_shouldReturnEmpty_whenParentBlockHashDoesNotMatch() {
     // Create parent block with one block hash
     final Bytes32 parentBlockHash = dataStructureUtil.randomBytes32();
-    final SignedBeaconBlock parentBlock = createBlockWithBlockHash(parentBlockHash);
+    final BeaconBlock parentBlock = createBlockWithBlockHash(parentBlockHash);
 
     // Create current block that references a DIFFERENT parent block hash
     final Bytes32 differentParentBlockHash = dataStructureUtil.randomBytes32();
-    final SignedBeaconBlock currentBlock =
+    final BeaconBlock currentBlock =
         createBlockWithParentAndParentBlockHash(parentBlock.getRoot(), differentParentBlockHash);
 
     // Mock store
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
-    when(store.getBlockIfAvailable(currentBlock.getParentRoot()))
-        .thenReturn(Optional.of(parentBlock));
+    when(store.retrieveBlock(currentBlock.getParentRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(parentBlock)));
 
     // Test
-    final PayloadStatus result =
-        forkChoiceUtil.getParentPayloadStatus(store, currentBlock.getMessage());
+    final SafeFuture<PayloadStatus> result =
+        forkChoiceUtil.getParentPayloadStatus(store, currentBlock);
 
-    assertThat(result).isEqualTo(PayloadStatus.PAYLOAD_STATUS_EMPTY);
+    assertThat(result).isCompletedWithValue(PayloadStatus.PAYLOAD_STATUS_EMPTY);
   }
 
   @Test
@@ -98,78 +128,81 @@ class ForkChoiceUtilGloasTest {
 
     // Mock store with no parent block
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
-    when(store.getBlockIfAvailable(currentBlock.getParentRoot())).thenReturn(Optional.empty());
+    when(store.retrieveBlock(currentBlock.getParentRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     // Test
-    assertThatThrownBy(
-            () -> forkChoiceUtil.getParentPayloadStatus(store, currentBlock.getMessage()))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("Parent block not found");
+    assertThat(forkChoiceUtil.getParentPayloadStatus(store, currentBlock.getMessage()))
+        .failsWithin(Duration.ofSeconds(1))
+        .withThrowableThat()
+        .withCauseInstanceOf(IllegalStateException.class)
+        .withMessageContaining("Parent block not found");
   }
 
   @Test
   void isParentNodeFull_shouldReturnTrue_whenParentHasFullPayload() {
     // Create parent block with a specific block hash
     final Bytes32 parentBlockHash = dataStructureUtil.randomBytes32();
-    final SignedBeaconBlock parentBlock = createBlockWithBlockHash(parentBlockHash);
+    final BeaconBlock parentBlock = createBlockWithBlockHash(parentBlockHash);
 
     // Create current block that references the parent's block hash
-    final SignedBeaconBlock currentBlock =
+    final BeaconBlock currentBlock =
         createBlockWithParentAndParentBlockHash(parentBlock.getRoot(), parentBlockHash);
 
     // Mock store
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
-    when(store.getBlockIfAvailable(currentBlock.getParentRoot()))
-        .thenReturn(Optional.of(parentBlock));
+    when(store.retrieveBlock(currentBlock.getParentRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(parentBlock)));
 
     // Test
-    final boolean result = forkChoiceUtil.isParentNodeFull(store, currentBlock.getMessage());
+    final SafeFuture<Boolean> result = forkChoiceUtil.isParentNodeFull(store, currentBlock);
 
-    assertThat(result).isTrue();
+    assertThat(result).isCompletedWithValue(true);
   }
 
   @Test
   void isParentNodeFull_shouldReturnFalse_whenParentHasEmptyPayload() {
     // Create parent block with one block hash
     final Bytes32 parentBlockHash = dataStructureUtil.randomBytes32();
-    final SignedBeaconBlock parentBlock = createBlockWithBlockHash(parentBlockHash);
+    final BeaconBlock parentBlock = createBlockWithBlockHash(parentBlockHash);
 
     // Create current block that references a DIFFERENT parent block hash
     final Bytes32 differentParentBlockHash = dataStructureUtil.randomBytes32();
-    final SignedBeaconBlock currentBlock =
+    final BeaconBlock currentBlock =
         createBlockWithParentAndParentBlockHash(parentBlock.getRoot(), differentParentBlockHash);
 
     // Mock store
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
-    when(store.getBlockIfAvailable(currentBlock.getParentRoot()))
-        .thenReturn(Optional.of(parentBlock));
+    when(store.retrieveBlock(currentBlock.getParentRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(parentBlock)));
 
     // Test
-    final boolean result = forkChoiceUtil.isParentNodeFull(store, currentBlock.getMessage());
+    final SafeFuture<Boolean> result = forkChoiceUtil.isParentNodeFull(store, currentBlock);
 
-    assertThat(result).isFalse();
+    assertThat(result).isCompletedWithValue(false);
   }
 
   @Test
   void isParentNodeFull_shouldThrowException_whenParentBlockNotFound() {
-    final SignedBeaconBlock currentBlock = dataStructureUtil.randomSignedBeaconBlock();
+    final BeaconBlock currentBlock = dataStructureUtil.randomBeaconBlock();
 
     // Mock store with no parent block
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
-    when(store.getBlockIfAvailable(currentBlock.getParentRoot())).thenReturn(Optional.empty());
+    when(store.retrieveBlock(currentBlock.getParentRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     // Test
-    assertThatThrownBy(() -> forkChoiceUtil.isParentNodeFull(store, currentBlock.getMessage()))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("Parent block not found");
+    assertThat(forkChoiceUtil.getParentPayloadStatus(store, currentBlock))
+        .failsWithin(Duration.ofSeconds(1))
+        .withThrowableThat()
+        .withCauseInstanceOf(IllegalStateException.class)
+        .withMessageContaining("Parent block not found");
   }
 
   // Helper methods to create blocks with specific properties
-
-  private SignedBeaconBlock createBlockWithBlockHash(final Bytes32 blockHash) {
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
-    final BeaconBlock message = block.getMessage();
-    final BeaconBlockBodyGloas body = BeaconBlockBodyGloas.required(message.getBody());
+  private BeaconBlock createBlockWithBlockHash(final Bytes32 blockHash) {
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(gloasSlot);
+    final BeaconBlockBodyGloas body = BeaconBlockBodyGloas.required(block.getBody());
     final SignedExecutionPayloadBid signedBid = body.getSignedExecutionPayloadBid();
     final ExecutionPayloadBid bid = signedBid.getMessage();
 
@@ -216,25 +249,20 @@ class ForkChoiceUtilGloasTest {
             .join();
 
     // Create a new block with the new body
-    final BeaconBlock newMessage =
-        message
-            .getSchema()
-            .create(
-                message.getSlot(),
-                message.getProposerIndex(),
-                message.getParentRoot(),
-                message.getStateRoot(),
-                newBody);
-
-    // Create a new signed block
-    return block.getSchema().create(newMessage, block.getSignature());
+    return block
+        .getSchema()
+        .create(
+            block.getSlot(),
+            block.getProposerIndex(),
+            block.getParentRoot(),
+            block.getStateRoot(),
+            newBody);
   }
 
-  private SignedBeaconBlock createBlockWithParentAndParentBlockHash(
+  private BeaconBlock createBlockWithParentAndParentBlockHash(
       final Bytes32 parentRoot, final Bytes32 parentBlockHash) {
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
-    final BeaconBlock message = block.getMessage();
-    final BeaconBlockBodyGloas body = BeaconBlockBodyGloas.required(message.getBody());
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(gloasSlot);
+    final BeaconBlockBodyGloas body = BeaconBlockBodyGloas.required(block.getBody());
     final SignedExecutionPayloadBid signedBid = body.getSignedExecutionPayloadBid();
     final ExecutionPayloadBid bid = signedBid.getMessage();
 
@@ -281,17 +309,13 @@ class ForkChoiceUtilGloasTest {
             .join();
 
     // Create a new block with the new body and parent root
-    final BeaconBlock newMessage =
-        message
-            .getSchema()
-            .create(
-                message.getSlot(),
-                message.getProposerIndex(),
-                parentRoot, // Set the desired parent root
-                message.getStateRoot(),
-                newBody);
-
-    // Create a new signed block
-    return block.getSchema().create(newMessage, block.getSignature());
+    return block
+        .getSchema()
+        .create(
+            block.getSlot(),
+            block.getProposerIndex(),
+            parentRoot, // Set the desired parent root
+            block.getStateRoot(),
+            newBody);
   }
 }
