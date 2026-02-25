@@ -74,9 +74,12 @@ public class DefaultExecutionPayloadManager implements ExecutionPayloadManager {
     validationResult.thenAccept(
         result -> {
           switch (result.code()) {
-            case ACCEPT ->
-                doImportExecutionPayload(signedExecutionPayload)
-                    .finish(err -> LOG.error("Failed to process received execution payload.", err));
+            case ACCEPT -> {
+              // cache the seen `beacon_block_root`
+              recentSeenExecutionPayloads.add(signedExecutionPayload.getBeaconBlockRoot());
+              importExecutionPayload(signedExecutionPayload)
+                  .finish(err -> LOG.error("Failed to process received execution payload.", err));
+            }
             // TODO-GLOAS: what do we do in these cases??
             // https://github.com/Consensys/teku/issues/9878
             case REJECT, SAVE_FOR_FUTURE, IGNORE -> {}
@@ -85,10 +88,9 @@ public class DefaultExecutionPayloadManager implements ExecutionPayloadManager {
     return validationResult;
   }
 
-  private SafeFuture<ExecutionPayloadImportResult> doImportExecutionPayload(
+  @Override
+  public SafeFuture<ExecutionPayloadImportResult> importExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
-    // cache the seen `beacon_block_root`
-    recentSeenExecutionPayloads.add(signedExecutionPayload.getBeaconBlockRoot());
     return asyncRunner
         .runAsync(() -> forkChoice.onExecutionPayload(signedExecutionPayload, executionLayer))
         .thenPeek(
@@ -110,16 +112,11 @@ public class DefaultExecutionPayloadManager implements ExecutionPayloadManager {
             ex -> {
               final String internalErrorMessage =
                   String.format(
-                      "Internal error while importing execution payload: %s. Block content: %s",
+                      "Internal error while importing execution payload: %s. Execution payload content: %s",
                       signedExecutionPayload.toLogString(),
-                      getExecutionPayloadContent(signedExecutionPayload));
+                      signedExecutionPayload.sszSerialize().toHexString());
               LOG.error(internalErrorMessage, ex);
               return ExecutionPayloadImportResult.internalError(ex);
             });
-  }
-
-  private String getExecutionPayloadContent(
-      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
-    return signedExecutionPayload.sszSerialize().toHexString();
   }
 }

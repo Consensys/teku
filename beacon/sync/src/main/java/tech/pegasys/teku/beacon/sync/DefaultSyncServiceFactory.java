@@ -206,6 +206,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               blockImporter,
               blobSidecarManager,
               blockBlobSidecarsTrackersPool,
+              executionPayloadManager,
               syncPreImportBlockChannel,
               syncConfig.getForwardSyncBatchSize(),
               syncConfig.getForwardSyncMaxPendingBatches(),
@@ -224,6 +225,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               blockImporter,
               blobSidecarManager,
               blockBlobSidecarsTrackersPool,
+              executionPayloadManager,
               syncConfig.getForwardSyncBatchSize(),
               syncConfig.getForwardSyncMaxDistanceFromHead(),
               spec);

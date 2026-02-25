@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SyncManager extends Service {
@@ -93,6 +94,7 @@ public class SyncManager extends Service {
       final BlockImporter blockImporter,
       final BlobSidecarManager blobSidecarManager,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final ExecutionPayloadManager executionPayloadManager,
       final MetricsSystem metricsSystem,
       final int batchSize,
       final OptionalInt maxDistanceFromHeadReached,
@@ -104,6 +106,7 @@ public class SyncManager extends Service {
             blockImporter,
             blobSidecarManager,
             blockBlobSidecarsTrackersPool,
+            executionPayloadManager,
             batchSize,
             maxDistanceFromHeadReached,
             metricsSystem);

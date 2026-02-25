@@ -87,6 +87,12 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
     return UInt64.valueOf(validatorIndex.longValue() & ~BUILDER_INDEX_FLAG.longValue());
   }
 
+  @Override
+  public boolean isAvailabilityOfBlobSidecarsRequiredAtEpoch(
+      final UInt64 currentEpoch, final UInt64 epoch) {
+    return false;
+  }
+
   /**
    * compute_proposer_indices is refactored to use compute_balance_weighted_selection as a helper
    * for the balance-weighted sampling process.
