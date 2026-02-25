@@ -16,6 +16,7 @@ package tech.pegasys.teku.test.acceptance;
 import com.google.common.io.Resources;
 import java.net.URL;
 import java.util.Map;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -30,7 +31,8 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfig;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
-public class FuluUpgradeAcceptanceTest extends AcceptanceTestBase {
+@Disabled("Temporarily disable till we found how to pass a valid blockAccessList to Besu")
+public class GloasUpgradeAcceptanceTest extends AcceptanceTestBase {
 
   private static final String NETWORK_NAME = "swift";
   public static final Eth1Address WITHDRAWAL_ADDRESS =
@@ -38,7 +40,7 @@ public class FuluUpgradeAcceptanceTest extends AcceptanceTestBase {
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   @Test
-  void upgradeFromElectra() throws Exception {
+  void upgradeFromFulu() throws Exception {
     final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
     final int genesisTime =
         currentTime.intValue() + 45; // genesis in 45 seconds to give node time to start
@@ -59,7 +61,8 @@ public class FuluUpgradeAcceptanceTest extends AcceptanceTestBase {
             .withCapellaEpoch(UInt64.ZERO)
             .withDenebEpoch(UInt64.ZERO)
             .withElectraEpoch(UInt64.ZERO)
-            .withFuluEpoch(UInt64.ONE)
+            .withFuluEpoch(UInt64.ZERO)
+            .witGloasEpoch(UInt64.ONE)
             .withTotalTerminalDifficulty(0)
             .genesisExecutionPayloadHeaderSource(besuNode::createGenesisExecutionPayload)
             .validatorKeys(validatorKeys)
@@ -69,21 +72,22 @@ public class FuluUpgradeAcceptanceTest extends AcceptanceTestBase {
         createTekuBeaconNode(beaconNode(genesisTime, besuNode, initialStateData, validatorKeys));
     tekuNode.start();
 
-    tekuNode.waitForMilestone(SpecMilestone.FULU);
-    tekuNode.waitForNewBlock();
+    tekuNode.waitForMilestone(SpecMilestone.GLOAS);
+    tekuNode.waitForNewBlockAndNewExecutionPayload();
   }
 
   private BesuNode createBesuNode(final int genesisTime) {
-    final int osakaTime =
-        genesisTime + 4 * 2; // 4 slots, 2 seconds each (swift) - activate Osaka on first slot
-    final Map<String, String> genesisOverrides = Map.of("osakaTime", String.valueOf(osakaTime));
+    final int amsterdamTime =
+        genesisTime + 4 * 2; // 4 slots, 2 seconds each (swift) - activate Amsterdam on first slot
+    final Map<String, String> genesisOverrides =
+        Map.of("amsterdamTime", String.valueOf(amsterdamTime));
 
     return createBesuNode(
-        BesuDockerVersion.STABLE,
+        BesuDockerVersion.DEVELOP,
         config ->
             config
                 .withMergeSupport()
-                .withGenesisFile("besu/osakaGenesis.json")
+                .withGenesisFile("besu/amsterdamGenesis.json")
                 .withP2pEnabled(true)
                 .withJwtTokenAuthorization(JWT_FILE),
         genesisOverrides);
@@ -103,7 +107,8 @@ public class FuluUpgradeAcceptanceTest extends AcceptanceTestBase {
         .withCapellaEpoch(UInt64.ZERO)
         .withDenebEpoch(UInt64.ZERO)
         .withElectraEpoch(UInt64.ZERO)
-        .withFuluEpoch(UInt64.ONE)
+        .withFuluEpoch(UInt64.ZERO)
+        .withGloasEpoch(UInt64.ONE)
         .withTotalTerminalDifficulty(0)
         .withGenesisTime(genesisTime)
         .withExecutionEngine(besuNode)

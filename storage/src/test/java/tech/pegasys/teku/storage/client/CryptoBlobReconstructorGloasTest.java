@@ -36,17 +36,17 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class CryptoBlobReconstructorGloasTest extends BlobReconstructionAbstractTest {
   private DataStructureUtil gloasDataStructureUtil;
-  private MiscHelpersGloas miscHelpersGloas;
   private BlobSchema blobSchema;
   private CryptoBlobReconstructor cryptoBlobReconstructor;
   private SignedBeaconBlock testBlock;
   private int numberOfColumns;
+  private List<DataColumnSidecar> dataColumnSidecars;
 
   @BeforeEach
   void setupGloas() {
     final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
     gloasDataStructureUtil = new DataStructureUtil(gloasSpec);
-    miscHelpersGloas =
+    final MiscHelpersGloas miscHelpersGloas =
         MiscHelpersGloas.required(gloasSpec.forMilestone(SpecMilestone.GLOAS).miscHelpers());
     SchemaDefinitionsElectra schemaDefinitionsElectra =
         SchemaDefinitionsElectra.required(
@@ -62,12 +62,7 @@ public class CryptoBlobReconstructorGloasTest extends BlobReconstructionAbstract
             gloasDataStructureUtil.randomBeaconBlockBodyWithCommitments(commitmentCount));
     testBlock = gloasDataStructureUtil.signedBlock(beaconBlock);
     numberOfColumns = gloasSpec.getNumberOfDataColumns().orElseThrow();
-  }
-
-  @Test
-  public void shouldNotBuildIfNotHalfOfSidecars() {
-    final int commitmentCount = 2;
-    final List<BlobAndCellProofs> blobAndCellProofs =
+    List<BlobAndCellProofs> blobAndCellProofs =
         IntStream.range(0, commitmentCount)
             .mapToObj(
                 i ->
@@ -77,14 +72,17 @@ public class CryptoBlobReconstructorGloasTest extends BlobReconstructionAbstract
                             .mapToObj(__ -> gloasDataStructureUtil.randomKZGProof())
                             .toList()))
             .toList();
-
-    final List<DataColumnSidecar> dataColumnSidecars =
+    dataColumnSidecars =
         miscHelpersGloas.constructDataColumnSidecars(
             Optional.empty(),
             new SlotAndBlockRoot(testBlock.getSlot(), testBlock.getRoot()),
             Optional.empty(),
             Optional.empty(),
             blobAndCellProofs);
+  }
+
+  @Test
+  public void shouldNotBuildIfNotHalfOfSidecars() {
     final List<DataColumnSidecar> almostHalfSidecars =
         dataColumnSidecars.subList(1, numberOfColumns / 2);
 
@@ -96,26 +94,6 @@ public class CryptoBlobReconstructorGloasTest extends BlobReconstructionAbstract
 
   @Test
   public void shouldBuildAndFilterBlobsFromSidecars() {
-    final int commitmentCount = 2;
-    final List<BlobAndCellProofs> blobAndCellProofs =
-        IntStream.range(0, commitmentCount)
-            .mapToObj(
-                i ->
-                    new BlobAndCellProofs(
-                        gloasDataStructureUtil.randomValidBlob(),
-                        IntStream.range(0, 128)
-                            .mapToObj(__ -> gloasDataStructureUtil.randomKZGProof())
-                            .toList()))
-            .toList();
-
-    final List<DataColumnSidecar> dataColumnSidecars =
-        miscHelpersGloas.constructDataColumnSidecars(
-            Optional.empty(),
-            new SlotAndBlockRoot(testBlock.getSlot(), testBlock.getRoot()),
-            Optional.empty(),
-            Optional.empty(),
-            blobAndCellProofs);
-
     final List<DataColumnSidecar> halfSidecars =
         dataColumnSidecars.subList(5, numberOfColumns / 2 + 5);
 

@@ -21,6 +21,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELManagerImpl.LOCAL_OR_RECOVERED_ORIGINS;
 
 import java.util.List;
 import java.util.Optional;
@@ -104,8 +105,7 @@ public class DataColumnSidecarELManagerImplGloasTest
   }
 
   @Test
-  public void onNewDataColumnSidecar_createRecoveryTaskThatCannotBeStarted() {
-    // In Gloas, sidecars create non startable recovery task (no kzg commitments)
+  public void onNewDataColumnSidecar_ignoresLocalOrRecovered() {
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.new RandomDataColumnSidecarBuilder()
             .slot(currentSlot)
@@ -114,23 +114,20 @@ public class DataColumnSidecarELManagerImplGloasTest
 
     dataColumnSidecarELManager.onSlot(currentSlot);
 
-    for (final RemoteOrigin origin : RemoteOrigin.values()) {
-      dataColumnSidecarELManager.onNewDataColumnSidecar(dataColumnSidecar, origin);
-      // recovery task cannot be started
-      assertThat(
-              ((DataColumnSidecarELManagerImpl) dataColumnSidecarELManager)
-                  .getRecoveryTask(dataColumnSidecar.getSlotAndBlockRoot())
-                  .canStart())
-          .isFalse();
-      // no EL interaction attempted
-      verifyNoInteractions(executionLayer);
-      // no async actions scheduled
-      assertThat(asyncRunner.hasDelayedActions()).isFalse();
-    }
+    LOCAL_OR_RECOVERED_ORIGINS.forEach(
+        origin -> {
+          dataColumnSidecarELManager.onNewDataColumnSidecar(dataColumnSidecar, origin);
+          assertThat(
+                  ((DataColumnSidecarELManagerImpl) dataColumnSidecarELManager)
+                      .getRecoveryTask(dataColumnSidecar.getSlotAndBlockRoot()))
+              .isNull();
+          verifyNoInteractions(executionLayer);
+          assertThat(asyncRunner.hasDelayedActions()).isFalse();
+        });
   }
 
   @Test
-  public void shouldPublish_whenAllBlobsRetrievedFromBid() {
+  public void shouldPublish_whenAllBlobsRetrievedFromEl() {
     when(executionLayer.engineGetBlobAndCellProofsList(any(), any()))
         .thenReturn(SafeFuture.completedFuture(blobAndCellProofs));
 
