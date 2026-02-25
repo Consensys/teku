@@ -65,6 +65,7 @@ public class GetBlobSidecars extends RestApiEndpoint {
     return EndpointMetadata.get(ROUTE)
         .operationId("getBlobSidecars")
         .summary("Get blob sidecars")
+        .deprecated(true)
         .description(
             """
                 Retrieves blob sidecars for a given block id.
