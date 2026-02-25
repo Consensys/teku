@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
-public class ExtensionBlobReconstructorTest extends BlobReconstructionAbstractTest {
+public class CryptoBlobReconstructorFuluTest extends BlobReconstructionAbstractTest {
   final SchemaDefinitionsElectra schemaDefinitionsElectra =
       SchemaDefinitionsElectra.required(
           spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions());
@@ -34,11 +34,11 @@ public class ExtensionBlobReconstructorTest extends BlobReconstructionAbstractTe
   final MiscHelpersFulu miscHelpersFulu =
       MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
 
-  private final ExtensionBlobReconstructor extensionBlobReconstructor =
-      new ExtensionBlobReconstructor(spec, () -> blobSchema);
+  private final CryptoBlobReconstructor cryptoBlobReconstructor =
+      new CryptoBlobReconstructor(spec, () -> blobSchema);
 
   @Test
-  public void shouldNotBuildIfNotFirstHalfOfSidecars() {
+  public void shouldNotBuildIfNotHalfOfSidecars() {
     final BlobsAndMatrix blobsAndMatrix = loadBlobsAndMatrixFixture();
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlockWithCommitments(2);
 
@@ -51,15 +51,8 @@ public class ExtensionBlobReconstructorTest extends BlobReconstructionAbstractTe
     final List<DataColumnSidecar> almostHalfSidecars =
         dataColumnSidecars.subList(1, numberOfColumns / 2);
     assertThat(
-            extensionBlobReconstructor.reconstructBlobs(
+            cryptoBlobReconstructor.reconstructBlobs(
                 block.getSlotAndBlockRoot(), almostHalfSidecars, List.of()))
-        .isCompletedWithValueMatching(Optional::isEmpty);
-
-    final List<DataColumnSidecar> notFirstHalfSidecars =
-        dataColumnSidecars.subList(1, numberOfColumns / 2 + 1);
-    assertThat(
-            extensionBlobReconstructor.reconstructBlobs(
-                block.getSlotAndBlockRoot(), notFirstHalfSidecars, List.of()))
         .isCompletedWithValueMatching(Optional::isEmpty);
   }
 
@@ -72,28 +65,27 @@ public class ExtensionBlobReconstructorTest extends BlobReconstructionAbstractTe
         miscHelpersFulu.constructDataColumnSidecars(
             block.getMessage(), block.asHeader(), blobsAndMatrix.extendedMatrix());
     final int numberOfColumns = spec.getNumberOfDataColumns().orElseThrow();
-    final List<DataColumnSidecar> halfSidecars = dataColumnSidecars.subList(0, numberOfColumns / 2);
+    final List<DataColumnSidecar> halfSidecars =
+        dataColumnSidecars.subList(5, numberOfColumns / 2 + 5);
     assertThat(blobsAndMatrix.blobs()).hasSize(2);
 
+    // we have non-operational KZG in tests so it will not match,
+    // but at least we could check the size
     assertThat(
-            extensionBlobReconstructor.reconstructBlobs(
+            cryptoBlobReconstructor.reconstructBlobs(
                 block.getSlotAndBlockRoot(), halfSidecars, List.of()))
-        .isCompletedWithValueMatching(
-            result -> result.orElseThrow().equals(blobsAndMatrix.blobs()));
+        .isCompletedWithValueMatching(result -> result.orElseThrow().size() == 2);
     assertThat(
-            extensionBlobReconstructor.reconstructBlobs(
+            cryptoBlobReconstructor.reconstructBlobs(
                 block.getSlotAndBlockRoot(), halfSidecars, List.of(UInt64.ZERO, UInt64.valueOf(1))))
-        .isCompletedWithValueMatching(
-            result -> result.orElseThrow().equals(blobsAndMatrix.blobs()));
+        .isCompletedWithValueMatching(result -> result.orElseThrow().size() == 2);
     assertThat(
-            extensionBlobReconstructor.reconstructBlobs(
+            cryptoBlobReconstructor.reconstructBlobs(
                 block.getSlotAndBlockRoot(), halfSidecars, List.of(UInt64.ZERO)))
-        .isCompletedWithValueMatching(
-            result -> result.orElseThrow().equals(blobsAndMatrix.blobs().subList(0, 1)));
+        .isCompletedWithValueMatching(result -> result.orElseThrow().size() == 1);
     assertThat(
-            extensionBlobReconstructor.reconstructBlobs(
+            cryptoBlobReconstructor.reconstructBlobs(
                 block.getSlotAndBlockRoot(), halfSidecars, List.of(UInt64.ZERO, UInt64.valueOf(2))))
-        .isCompletedWithValueMatching(
-            result -> result.orElseThrow().equals(blobsAndMatrix.blobs().subList(0, 1)));
+        .isCompletedWithValueMatching(result -> result.orElseThrow().size() == 1);
   }
 }
