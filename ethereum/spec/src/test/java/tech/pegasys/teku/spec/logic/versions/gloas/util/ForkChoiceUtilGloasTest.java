@@ -192,7 +192,7 @@ class ForkChoiceUtilGloasTest {
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     // Test
-    assertThat(forkChoiceUtil.getParentPayloadStatus(store, currentBlock))
+    assertThat(forkChoiceUtil.isParentNodeFull(store, currentBlock))
         .failsWithin(Duration.ofSeconds(1))
         .withThrowableThat()
         .withCauseInstanceOf(IllegalStateException.class)
