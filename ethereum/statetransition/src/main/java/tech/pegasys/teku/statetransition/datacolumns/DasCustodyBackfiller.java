@@ -99,7 +99,7 @@ public class DasCustodyBackfiller extends Service
     this.backfillCheckInterval = backfillCheckInterval;
     this.dataColumnSidecarCustody = dataColumnSidecarCustody;
     this.custodyGroupCountManager = custodyGroupCountManager;
-    this.currentSyncCustodyGroupCount = custodyGroupCountManager.getCustodyGroupSyncedCount();
+    this.currentSyncCustodyGroupCount = custodyGroupCountManager.getCustodyGroupCount();
     this.batchSizeInSlots = batchSizeInSlots;
     this.retriever = retriever;
     this.minCustodyPeriodSlotCalculator = minCustodyPeriodSlotCalculator;
@@ -110,15 +110,25 @@ public class DasCustodyBackfiller extends Service
   @Override
   protected synchronized SafeFuture<?> doStart() {
     if (scheduledBackfiller.map(Cancellable::isCancelled).orElse(true)) {
-      scheduledBackfiller =
-          Optional.of(
-              asyncRunner.runWithFixedDelay(
-                  this::runBackfillCycle,
-                  Duration.ZERO,
-                  backfillCheckInterval,
-                  error -> LOG.error("Failed to run data column backfill", error)));
+      retrieveSyncedCustodyGroupCount()
+          .thenAccept(
+              syncedCount -> {
+                requiresResyncDueToCustodyGroupCountChange =
+                    syncedCount < currentSyncCustodyGroupCount;
+              })
+          .always(this::scheduleBackfiller);
     }
     return SafeFuture.COMPLETE;
+  }
+
+  private void scheduleBackfiller() {
+    scheduledBackfiller =
+        Optional.of(
+            asyncRunner.runWithFixedDelay(
+                this::runBackfillCycle,
+                Duration.ZERO,
+                backfillCheckInterval,
+                error -> LOG.error("Failed to run data column backfill", error)));
   }
 
   @Override
@@ -140,17 +150,12 @@ public class DasCustodyBackfiller extends Service
 
   @Override
   public void onGroupCountUpdate(final int custodyGroupCount, final int samplingGroupCount) {
-    // refresh to be sure it's not outdated
-    this.currentSyncCustodyGroupCount = custodyGroupCountManager.getCustodyGroupSyncedCount();
     if (custodyGroupCount > currentSyncCustodyGroupCount) {
       currentSyncCustodyGroupCount = custodyGroupCount;
       requiresResyncDueToCustodyGroupCountChange = true;
       LOG.debug("DasCustodyBackfiller: custody increase detected");
     }
   }
-
-  @Override
-  public void onCustodyGroupCountSynced(final int groupCount) {}
 
   /**
    * We want to cancel pending requests related to blocks that did not become canonical on
@@ -257,11 +262,7 @@ public class DasCustodyBackfiller extends Service
       isFirstRoundAfterStartup = false; // we don't need to do the first round
       return earliestAvailableCustodySlotWriter
           .apply(combinedChainDataClient.getCurrentSlot())
-          .thenApply(
-              __ -> {
-                custodyGroupCountManager.setCustodyGroupSyncedCount(currentSyncCustodyGroupCount);
-                return true;
-              });
+          .thenApply(__ -> true);
     }
 
     if (isFirstRoundAfterStartup) {
@@ -326,11 +327,7 @@ public class DasCustodyBackfiller extends Service
 
       return earliestAvailableCustodySlotWriter
           .apply(mostRecentHeadSlotPlus1.get())
-          .thenApply(
-              __ -> {
-                custodyGroupCountManager.setCustodyGroupSyncedCount(currentSyncCustodyGroupCount);
-                return false;
-              });
+          .thenApply(__ -> false);
     }
 
     LOG.debug(
@@ -339,13 +336,7 @@ public class DasCustodyBackfiller extends Service
     if (earliestAvailableCustodySlot.get().isLessThanOrEqualTo(minCustodyPeriodSlot)) {
       // All required custody is available, backfill is not needed, move
       // earliestAvailableCustodySlot forward and return
-      return earliestAvailableCustodySlotWriter
-          .apply(minCustodyPeriodSlot)
-          .thenApply(
-              __ -> {
-                custodyGroupCountManager.setCustodyGroupSyncedCount(currentSyncCustodyGroupCount);
-                return false;
-              });
+      return earliestAvailableCustodySlotWriter.apply(minCustodyPeriodSlot).thenApply(__ -> false);
     }
 
     var latestSlotInBatch = earliestAvailableCustodySlot.get().minusMinZero(1);
@@ -451,8 +442,6 @@ public class DasCustodyBackfiller extends Service
         .apply(slot)
         .thenApply(
             __ -> {
-              custodyGroupCountManager.setCustodyGroupSyncedCount(batchData.custodyGroupCount);
-
               if (slot.isLessThanOrEqualTo(batchData.minCustodyPeriodSlot)) {
                 LOG.debug("DasCustodyBackfiller: Column custody backfill completed successfully.");
                 return false;
@@ -489,6 +478,52 @@ public class DasCustodyBackfiller extends Service
                     colId,
                     err))
         .alwaysRun(() -> pendingRequests.remove(colId));
+  }
+
+  private SafeFuture<Integer> retrieveSyncedCustodyGroupCount() {
+    return earliestAvailableCustodySlotProvider
+        .get()
+        .thenCompose(
+            maybeSlot ->
+                maybeSlot
+                    .map(
+                        slot ->
+                            // First we do scan query because it's not guaranteed we have sidecars
+                            // in earliestAvailableCustodySlot
+                            combinedChainDataClient
+                                .getDataColumnIdentifiers(slot, UInt64.MAX_VALUE, UInt64.ONE)
+                                .thenCompose(
+                                    identifiersScan -> {
+                                      if (identifiersScan.isEmpty()) {
+                                        return SafeFuture.completedFuture(0);
+                                      } else {
+                                        final UInt64 slotWithSidecars =
+                                            identifiersScan.getFirst().slot();
+
+                                        return getSyncedCustodyGroupCountForSlot(slotWithSidecars);
+                                      }
+                                    }))
+                    .orElseGet(() -> SafeFuture.completedFuture(0)));
+  }
+
+  private SafeFuture<Integer> getSyncedCustodyGroupCountForSlot(final UInt64 slot) {
+    return combinedChainDataClient
+        .getDataColumnIdentifiers(slot)
+        .thenApply(
+            identifiers -> {
+              final Set<UInt64> availableIndices =
+                  identifiers.stream()
+                      .map(DataColumnSlotAndIdentifier::columnIndex)
+                      .collect(Collectors.toSet());
+              final List<UInt64> requiredIndices =
+                  custodyGroupCountManager.getCustodyColumnIndices();
+              final Set<UInt64> missingIndices =
+                  requiredIndices.stream()
+                      .filter(index -> !availableIndices.contains(index))
+                      .collect(Collectors.toSet());
+
+              return requiredIndices.size() - missingIndices.size();
+            });
   }
 
   private SafeFuture<List<SlotAndBlockRootWithBlobsPresence>> retrieveBlocksWithBlobsInRange(

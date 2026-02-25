@@ -18,29 +18,14 @@ import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 
 public interface CustodyGroupCountChannel extends VoidReturningChannelInterface {
 
-  CustodyGroupCountChannel NOOP =
-      new CustodyGroupCountChannel() {
-        @Override
-        public void onGroupCountUpdate(final int custodyGroupCount, final int samplingGroupCount) {}
-
-        @Override
-        public void onCustodyGroupCountSynced(final int groupCount) {}
-      };
+  CustodyGroupCountChannel NOOP = (custodyGroupCount, samplingGroupCount) -> {};
 
   static CustodyGroupCountChannel createCustodyGroupCountSyncedSubscriber(
       final Consumer<Integer> custodyGroupCountSyncedSubscriber) {
-    return new CustodyGroupCountChannel() {
-      @Override
-      public void onGroupCountUpdate(final int custodyGroupCount, final int samplingGroupCount) {}
-
-      @Override
-      public void onCustodyGroupCountSynced(final int groupCount) {
-        custodyGroupCountSyncedSubscriber.accept(groupCount);
-      }
+    return (custodyGroupCount, samplingGroupCount) -> {
+      custodyGroupCountSyncedSubscriber.accept(custodyGroupCount);
     };
   }
 
   void onGroupCountUpdate(int custodyGroupCount, int samplingGroupCount);
-
-  void onCustodyGroupCountSynced(int groupCount);
 }
