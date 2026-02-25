@@ -2817,8 +2817,6 @@ public final class DataStructureUtil {
       final UInt64 sidecarSlot = slot.orElse(randomSlot());
       final SchemaDefinitionsFulu schemaDefinitions =
           SchemaDefinitionsFulu.required(spec.atSlot(sidecarSlot).getSchemaDefinitions());
-
-      // Prepare parameters
       final SignedBeaconBlockHeader signedBlockHeader =
           signedBeaconBlockHeader.orElseGet(
               () ->
@@ -2830,8 +2828,7 @@ public final class DataStructureUtil {
               .map(List::size)
               .or(() -> kzgCommitments.map(List::size))
               .orElseGet(DataStructureUtil.this::randomNumberOfBlobsPerBlock);
-
-      // Prepare SSZ lists from schema definitions (works for both Fulu and Gloas)
+      // works for both Fulu and Gloas
       final SszList<SszKZGCommitment> sszKzgCommitments =
           schemaDefinitions
               .getBlobKzgCommitmentsSchema()
@@ -2861,8 +2858,7 @@ public final class DataStructureUtil {
                       .map(SszKZGProof::new)
                       .toList());
 
-      // Use schema.create() and let the builder handle fork-specific fields
-      // Fork-specific builders will ignore fields that don't apply (NO-OP)
+      // Use create and let the builder handle fork-specific fields
       return schemaDefinitions
           .getDataColumnSidecarSchema()
           .create(
@@ -2887,9 +2883,7 @@ public final class DataStructureUtil {
   }
 
   public DataColumn randomDataColumn(final UInt64 slot, final int blobs) {
-    final DataColumnSchema dataColumnSchema =
-        SchemaDefinitionsFulu.required(spec.atSlot(slot).getSchemaDefinitions())
-            .getDataColumnSchema();
+    final DataColumnSchema dataColumnSchema = getFuluSchemaDefinitions(slot).getDataColumnSchema();
     List<Cell> list = IntStream.range(0, blobs).mapToObj(__ -> randomCell(slot)).toList();
     return dataColumnSchema.create(list);
   }
@@ -2899,8 +2893,7 @@ public final class DataStructureUtil {
   }
 
   public Cell randomCell(final UInt64 slot) {
-    final CellSchema cellSchema =
-        SchemaDefinitionsFulu.required(spec.atSlot(slot).getSchemaDefinitions()).getCellSchema();
+    final CellSchema cellSchema = getFuluSchemaDefinitions(slot).getCellSchema();
     return cellSchema.create(randomBytes(cellSchema.getLength()));
   }
 
@@ -2954,19 +2947,15 @@ public final class DataStructureUtil {
         .build();
   }
 
-  /**
-   * Creates a DataColumnSidecar for the given block with fork-appropriate fields. For Fulu:
-   * includes signed header, commitments, and inclusion proof. For Gloas: includes only block
-   * reference (no header, no commitments in sidecar).
-   */
+  /** Creates a DataColumnSidecar for the given block with fork specific fields */
   public DataColumnSidecar randomDataColumnSidecarWithInclusionProof(
       final SignedBeaconBlock signedBeaconBlock, final UInt64 index) {
     final UInt64 slot = signedBeaconBlock.getSlot();
     final SpecMilestone milestone = spec.atSlot(slot).getMilestone();
 
     // Extract commitments from block (works for both Fulu and Gloas)
-    // For Gloas: commitments come from execution payload bid (via getBlobKzgCommitments override)
-    // For Fulu: commitments come from block body
+    // Gloas: commitments come from execution payload bid (via getBlobKzgCommitments override)
+    // Fulu: commitments come from block body
     final SszList<SszKZGCommitment> blockCommitments =
         signedBeaconBlock
             .getMessage()
@@ -3378,7 +3367,6 @@ public final class DataStructureUtil {
     return SchemaDefinitionsElectra.required(spec.atSlot(slot).getSchemaDefinitions());
   }
 
-  @SuppressWarnings("unused")
   private SchemaDefinitionsFulu getFuluSchemaDefinitions(final UInt64 slot) {
     return SchemaDefinitionsFulu.required(spec.atSlot(slot).getSchemaDefinitions());
   }
