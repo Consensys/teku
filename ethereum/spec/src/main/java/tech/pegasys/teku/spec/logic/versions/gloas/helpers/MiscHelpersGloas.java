@@ -248,7 +248,7 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
    * @param kzgCommitments the KZG commitments from the execution payload bid
    * @return true if the sidecar structure is valid
    */
-  public boolean verifyDataColumnSidecar(
+  public boolean verifyDataColumnSidecarWithCommitments(
       final DataColumnSidecar dataColumnSidecar, final SszList<SszKZGCommitment> kzgCommitments) {
     // The column length must be equal to the number of commitments/proofs
     if (dataColumnSidecar.getColumn().size() != kzgCommitments.size()

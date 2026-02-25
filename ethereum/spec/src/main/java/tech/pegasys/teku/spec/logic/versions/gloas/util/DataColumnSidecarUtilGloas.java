@@ -318,7 +318,8 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
         BeaconBlockBodyGloas.required(signedBeaconBlock.getMessage().getBody())
             .getBlobKzgCommitments();
     final boolean validDataColumnSidecar =
-        miscHelpersGloas.verifyDataColumnSidecar(dataColumnSidecar, bidKzgCommitments);
+        miscHelpersGloas.verifyDataColumnSidecarWithCommitments(
+            dataColumnSidecar, bidKzgCommitments);
     if (!validDataColumnSidecar) {
       return Optional.of(
           DataColumnSidecarValidationError.Critical.format("Invalid DataColumnSidecar"));
