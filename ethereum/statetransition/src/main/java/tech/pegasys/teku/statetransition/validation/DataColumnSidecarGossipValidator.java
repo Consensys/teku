@@ -390,10 +390,17 @@ public class DataColumnSidecarGossipValidator {
      * [REJECT] The sidecar's kzg_commitments field inclusion proof is valid
      * as verified by verify_data_column_sidecar_inclusion_proof(sidecar).
      */
+    final Optional<InclusionProofInfo> maybeInclusionProof =
+        dataColumnSidecarUtil.getInclusionProofCacheKey(dataColumnSidecar);
+    if (maybeInclusionProof.isPresent()) {
+      final InclusionProofInfo inclusionProof = maybeInclusionProof.get();
+      if (validInclusionProofInfoSet.contains(inclusionProof)) {
+        return Optional.empty();
+      }
+    }
     try (MetricsHistogram.Timer ignored =
         dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer()) {
-      if (!dataColumnSidecarUtil.verifyInclusionProof(
-          dataColumnSidecar, validInclusionProofInfoSet)) {
+      if (!dataColumnSidecarUtil.verifyInclusionProof(dataColumnSidecar)) {
         return Optional.of(reject("DataColumnSidecar inclusion proof validation failed"));
       }
     } catch (final Throwable t) {

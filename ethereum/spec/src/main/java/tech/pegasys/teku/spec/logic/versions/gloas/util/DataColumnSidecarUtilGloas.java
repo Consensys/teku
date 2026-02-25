@@ -184,14 +184,6 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
     return true;
   }
 
-  @Override
-  public boolean verifyInclusionProof(
-      final DataColumnSidecar dataColumnSidecar,
-      final Set<InclusionProofInfo> validInclusionProofInfoSet) {
-    // Gloas doesn't have inclusion proof requirement (no header in Gloas sidecars)
-    return true;
-  }
-
   /**
    * Verify KZG proofs for the data column sidecar. Gossip rule: [REJECT] The sidecar's column data
    * is valid as verified by verify_data_column_sidecar_kzg_proofs(sidecar,
@@ -207,14 +199,6 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
   public boolean verifyDataColumnSidecarKzgProofs(final DataColumnSidecar dataColumnSidecar) {
     // Cannot verify without commitments from the bid - validation happens in validateWithBlock
     return true;
-  }
-
-  @Override
-  public void cacheValidatedInfo(
-      final DataColumnSidecar dataColumnSidecar,
-      final Set<Bytes32> validSignedBlockHeaders,
-      final Set<InclusionProofInfo> validInclusionProofInfoSet) {
-    // Nothing to cache for Gloas (no header, no inclusion proof)
   }
 
   @Override
@@ -312,6 +296,19 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
     return SafeFuture.completedFuture(Optional.empty());
   }
 
+  @Override
+  public List<DataColumnSidecar> reconstructAllDataColumnSidecars(
+      final List<DataColumnSidecar> dataColumnSidecars) {
+    return miscHelpersGloas.reconstructAllDataColumnSidecars(dataColumnSidecars);
+  }
+
+  @Override
+  public Optional<InclusionProofInfo> getInclusionProofCacheKey(
+      final DataColumnSidecar dataColumnSidecar) {
+    // Gloas doesn't have inclusion proof requirement (no header in Gloas sidecars)
+    return Optional.empty();
+  }
+
   private Optional<DataColumnSidecarValidationError> verifyDataColumnSidecar(
       final DataColumnSidecar dataColumnSidecar, final SignedBeaconBlock signedBeaconBlock) {
     final SszList<SszKZGCommitment> bidKzgCommitments =
@@ -340,11 +337,5 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
               "DataColumnSidecar's KZG proofs do not match the bid's KZG proofs"));
     }
     return Optional.empty();
-  }
-
-  @Override
-  public List<DataColumnSidecar> reconstructAllDataColumnSidecars(
-      final List<DataColumnSidecar> dataColumnSidecars) {
-    return miscHelpersGloas.reconstructAllDataColumnSidecars(dataColumnSidecars);
   }
 }

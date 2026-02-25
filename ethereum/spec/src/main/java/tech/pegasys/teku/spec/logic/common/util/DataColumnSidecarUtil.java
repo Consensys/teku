@@ -96,15 +96,7 @@ public interface DataColumnSidecarUtil {
 
   boolean verifyInclusionProof(DataColumnSidecar dataColumnSidecar);
 
-  boolean verifyInclusionProof(
-      DataColumnSidecar dataColumnSidecar, Set<InclusionProofInfo> validInclusionProofInfoSet);
-
   boolean verifyDataColumnSidecarKzgProofs(DataColumnSidecar dataColumnSidecar);
-
-  void cacheValidatedInfo(
-      DataColumnSidecar dataColumnSidecar,
-      Set<Bytes32> validSignedBlockHeaders,
-      Set<InclusionProofInfo> validInclusionProofInfoSet);
 
   SszList<SszKZGCommitment> getKzgCommitments(BeaconBlock block);
 
@@ -123,6 +115,8 @@ public interface DataColumnSidecarUtil {
 
   List<DataColumnSidecar> reconstructAllDataColumnSidecars(
       List<DataColumnSidecar> dataColumnSidecars);
+
+  Optional<InclusionProofInfo> getInclusionProofCacheKey(DataColumnSidecar dataColumnSidecar);
 
   record InclusionProofInfo(
       Bytes32 commitmentsRoot, Bytes32 inclusionProofRoot, Bytes32 bodyRoot) {}
