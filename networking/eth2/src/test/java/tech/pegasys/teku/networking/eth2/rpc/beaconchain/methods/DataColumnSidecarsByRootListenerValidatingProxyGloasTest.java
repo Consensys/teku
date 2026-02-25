@@ -13,8 +13,12 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,7 +52,6 @@ public class DataColumnSidecarsByRootListenerValidatingProxyGloasTest
     super.setUp();
     blocksByRoot.clear();
     // For Gloas, set up mock to retrieve blocks by root
-    // Blocks will be registered as they're created in tests
     when(combinedChainDataClient.getBlockByBlockRoot(any()))
         .thenAnswer(
             invocation -> {
@@ -64,11 +67,8 @@ public class DataColumnSidecarsByRootListenerValidatingProxyGloasTest
 
   @Override
   protected SignedBeaconBlock createBlock(final UInt64 slot) {
-    // For Gloas, we need to create blocks with a specific number of commitments
-    // Use a moderate number that's typical for tests (e.g., 3 blobs)
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(slot, 3);
-    // Register block so it can be retrieved by the mock
     blocksByRoot.put(block.getRoot(), block);
     return block;
   }
@@ -94,8 +94,7 @@ public class DataColumnSidecarsByRootListenerValidatingProxyGloasTest
       final DataColumnSidecar validSidecar) {
     final DataColumnSidecarSchemaGloas sidecarSchema =
         (DataColumnSidecarSchemaGloas) validSidecar.getSchema();
-
-    // Create an invalid sidecar by making wrong number of proofs (skip first proof)
+    // invalid sidecar with wrong number of proofs (skip first proof)
     return sidecarSchema.create(
         builder ->
             builder
@@ -113,7 +112,33 @@ public class DataColumnSidecarsByRootListenerValidatingProxyGloasTest
   @Override
   @Test
   void dataColumnSidecarFailsKzgVerification() {
-    // Gloas defers KZG verification (always returns true), so this test doesn't apply
-    // KZG verification for Gloas happens during validateWithBlock, not as a separate step
+    when(kzg.verifyCellProofBatch(any(), any(), any())).thenReturn(false);
+    final SignedBeaconBlock block1 = createBlock(ONE);
+    final List<DataColumnsByRootIdentifier> dataColumnIdentifiers =
+        createDataColumnIdentifiers(List.of(block1), List.of(List.of(ZERO)));
+
+    listenerWrapper =
+        new DataColumnSidecarsByRootListenerValidatingProxy(
+            peer,
+            spec,
+            listener,
+            metricsSystem,
+            timeProvider,
+            signatureValidator,
+            dataColumnIdentifiers,
+            combinedChainDataClient);
+
+    final DataColumnSidecar dataColumnSidecar =
+        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ZERO);
+
+    final SafeFuture<?> result = listenerWrapper.onResponse(dataColumnSidecar);
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get)
+        .hasCauseExactlyInstanceOf(DataColumnSidecarsResponseInvalidResponseException.class);
+    assertThatThrownBy(result::get)
+        .hasMessageContaining(
+            DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
+                .DATA_COLUMN_SIDECAR_VALIDITY_CHECK_FAILED
+                .describe());
   }
 }

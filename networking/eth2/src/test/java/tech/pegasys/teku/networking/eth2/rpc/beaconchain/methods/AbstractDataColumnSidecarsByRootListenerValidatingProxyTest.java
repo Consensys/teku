@@ -44,10 +44,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.availability.Availabi
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
-/**
- * Abstract base class for testing DataColumnSidecarsByRootListenerValidatingProxy across different
- * forks. Subclasses should implement createSpec() to provide fork-specific Spec instances.
- */
 @SuppressWarnings("JavaCase")
 public abstract class AbstractDataColumnSidecarsByRootListenerValidatingProxyTest {
 
@@ -65,25 +61,17 @@ public abstract class AbstractDataColumnSidecarsByRootListenerValidatingProxyTes
 
   protected final DataColumnSidecarSignatureValidator signatureValidator =
       mock(DataColumnSidecarSignatureValidator.class);
-
   protected final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
 
-  /** Subclasses must implement this to provide fork-specific Spec instances */
   protected abstract Spec createSpec();
 
-  /** Subclasses must implement this to create DataColumnsByRootIdentifier for their fork schema */
   protected abstract List<DataColumnsByRootIdentifier> createDataColumnIdentifiers(
       List<SignedBeaconBlock> blocks, List<List<UInt64>> columnIndices);
 
-  /** Subclasses can override to provide fork-specific modified sidecars for validation tests */
   protected abstract DataColumnSidecar createSidecarWithInvalidStructure(
       DataColumnSidecar validSidecar);
 
-  /**
-   * Hook method for creating blocks. Subclasses can override to customize block creation for
-   * fork-specific requirements (e.g., Gloas needs blocks with specific commitments).
-   */
   protected SignedBeaconBlock createBlock(final UInt64 slot) {
     return dataStructureUtil.randomSignedBeaconBlock(slot);
   }
@@ -113,7 +101,8 @@ public abstract class AbstractDataColumnSidecarsByRootListenerValidatingProxyTes
             List.of(block1, block2, block3, block4),
             List.of(
                 List.of(ZERO, ONE),
-                List.of(ZERO, ONE), // ONE will be missed, shouldn't be fatal
+                // 1 will be missed, shouldn't be fatal
+                List.of(ZERO, ONE),
                 List.of(ZERO),
                 List.of(ZERO)));
 

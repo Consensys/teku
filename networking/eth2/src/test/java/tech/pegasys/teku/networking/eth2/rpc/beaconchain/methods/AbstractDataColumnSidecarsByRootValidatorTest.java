@@ -19,15 +19,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
-import static tech.pegasys.teku.spec.SpecMilestone.FULU;
-import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import java.util.List;
-import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.TestTemplate;
+import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -36,13 +33,7 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.peers.DataColumnSidecarSignatureValidator;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecContext;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
@@ -50,33 +41,33 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 @SuppressWarnings("JavaCase")
-@TestSpecContext(milestone = {FULU})
-public class DataColumnSidecarsByRootValidatorTest {
+public abstract class AbstractDataColumnSidecarsByRootValidatorTest {
 
-  private final UInt64 currentForkEpoch = UInt64.valueOf(1);
-  private final Eth2Peer peer = mock(Eth2Peer.class);
-  private final KZG kzg = mock(KZG.class);
-  private Spec spec;
-  private DataStructureUtil dataStructureUtil;
-  private DataColumnSidecarsByRootValidator validator;
-  private UInt64 currentForkFirstSlot;
-  private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
-  private final TimeProvider timeProvider = StubTimeProvider.withTimeInMillis(0);
-  private final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator =
+  protected final UInt64 currentForkEpoch = UInt64.valueOf(1);
+  protected final Eth2Peer peer = mock(Eth2Peer.class);
+  protected final KZG kzg = mock(KZG.class);
+  protected Spec spec;
+  protected DataStructureUtil dataStructureUtil;
+  protected DataColumnSidecarsByRootValidator validator;
+  protected UInt64 currentForkFirstSlot;
+  protected final MetricsSystem metricsSystem = new NoOpMetricsSystem();
+  protected final TimeProvider timeProvider = StubTimeProvider.withTimeInMillis(0);
+  protected final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator =
       mock(DataColumnSidecarSignatureValidator.class);
-  private final CombinedChainDataClient combinedChainDataClient =
+  protected final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
 
+  protected abstract Spec createSpec();
+
+  protected abstract DataColumnSidecar createSidecarWithBrokenValidity(DataColumnSidecar sidecar);
+
+  protected SignedBeaconBlock createBlock(final UInt64 slot) {
+    return dataStructureUtil.randomSignedBeaconBlock(slot);
+  }
+
   @BeforeEach
-  void setUp(final TestSpecInvocationContextProvider.SpecContext specContext) {
-    spec =
-        switch (specContext.getSpecMilestone()) {
-          case FULU -> TestSpecFactory.createMinimalWithFuluForkEpoch(currentForkEpoch);
-          case GLOAS -> TestSpecFactory.createMinimalWithGloasForkEpoch(currentForkEpoch);
-          default ->
-              throw new IllegalArgumentException(
-                  String.format("%s is an unsupported milestone", specContext.getSpecMilestone()));
-        };
+  void setUp() {
+    spec = createSpec();
     currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
     dataStructureUtil = new DataStructureUtil(spec);
     spec.reinitializeForTesting(
@@ -88,10 +79,9 @@ public class DataColumnSidecarsByRootValidatorTest {
     when(kzg.verifyCellProofBatch(any(), any(), any())).thenReturn(true);
   }
 
-  @TestTemplate
+  @Test
   void dataColumnSidecarIsCorrect() {
-    final SignedBeaconBlock block1 =
-        dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot);
+    final SignedBeaconBlock block1 = createBlock(currentForkFirstSlot);
     final DataColumnSidecar dataColumnSidecar1_0 =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, UInt64.ZERO);
     final DataColumnIdentifier sidecarIdentifier1_0 =
@@ -109,10 +99,9 @@ public class DataColumnSidecarsByRootValidatorTest {
     assertDoesNotThrow(() -> validator.validate(dataColumnSidecar1_0));
   }
 
-  @TestTemplate
+  @Test
   void dataColumnSidecarIdentifierNotRequested() {
-    final SignedBeaconBlock block1 =
-        dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot);
+    final SignedBeaconBlock block1 = createBlock(currentForkFirstSlot);
     final DataColumnSidecar dataColumnSidecar2_0 =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
             dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot.increment()),
@@ -137,11 +126,12 @@ public class DataColumnSidecarsByRootValidatorTest {
                 .describe());
   }
 
-  @TestTemplate
+  @Test
   void dataColumnSidecarFailsKzgVerification() {
+    // Default: Fulu standalone KZG check. Gloas overrides because its KZG check runs
+    // inside validateWithBlock using commitments from the block's execution payload bid
     when(kzg.verifyCellProofBatch(any(), any(), any())).thenReturn(false);
-    final SignedBeaconBlock block1 =
-        dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot);
+    final SignedBeaconBlock block1 = createBlock(currentForkFirstSlot);
     final DataColumnSidecar dataColumnSidecar1_0 =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, UInt64.ZERO);
     final DataColumnIdentifier sidecarIdentifier1_0 =
@@ -164,38 +154,9 @@ public class DataColumnSidecarsByRootValidatorTest {
                 .describe());
   }
 
-  @TestTemplate
-  void dataColumnSidecarFailsInclusionProofVerification() {
-    final SignedBeaconBlock block1 =
-        dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot);
-    final DataColumnSidecar dataColumnSidecar1_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, UInt64.ZERO);
-    final DataColumnSidecar dataColumnSidecar1_0_modified =
-        breakInclusionProof(dataColumnSidecar1_0);
-    final DataColumnIdentifier sidecarIdentifier1_0 =
-        DataColumnIdentifier.createFromSidecar(dataColumnSidecar1_0);
-    validator =
-        new DataColumnSidecarsByRootValidator(
-            peer,
-            spec,
-            metricsSystem,
-            timeProvider,
-            dataColumnSidecarSignatureValidator,
-            List.of(sidecarIdentifier1_0),
-            combinedChainDataClient);
-
-    assertThatSafeFuture(validator.validate(dataColumnSidecar1_0_modified))
-        .isCompletedExceptionallyWith(DataColumnSidecarsResponseInvalidResponseException.class)
-        .hasMessageContaining(
-            DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
-                .DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED
-                .describe());
-  }
-
-  @TestTemplate
+  @Test
   void dataColumnSidecarResponseWithDuplicateSidecar() {
-    final SignedBeaconBlock block1 =
-        dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot);
+    final SignedBeaconBlock block1 = createBlock(currentForkFirstSlot);
     final DataColumnSidecar dataColumnSidecar1_0 =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, UInt64.ZERO);
     final DataColumnIdentifier sidecarIdentifier1_0 =
@@ -219,12 +180,11 @@ public class DataColumnSidecarsByRootValidatorTest {
                 .describe());
   }
 
-  @TestTemplate
+  @Test
   void dataColumnSidecarFailsSignatureVerification() {
     when(dataColumnSidecarSignatureValidator.validateSignature(any()))
         .thenReturn(SafeFuture.completedFuture(false));
-    final SignedBeaconBlock block1 =
-        dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot);
+    final SignedBeaconBlock block1 = createBlock(currentForkFirstSlot);
     final DataColumnSidecar dataColumnSidecar1_0 =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, UInt64.ZERO);
     final DataColumnIdentifier sidecarIdentifier1_0 =
@@ -239,17 +199,17 @@ public class DataColumnSidecarsByRootValidatorTest {
             List.of(sidecarIdentifier1_0),
             combinedChainDataClient);
 
-    // not a part of validate, separate check
+    // verifySignature is separate from validate
     assertThat(validator.verifySignature(dataColumnSidecar1_0)).isCompletedWithValue(false);
   }
 
-  @TestTemplate
+  @Test
   void dataColumnSidecarFailsValidityCheck() {
-    final SignedBeaconBlock block1 =
-        dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot);
+    final SignedBeaconBlock block1 = createBlock(currentForkFirstSlot);
     final DataColumnSidecar dataColumnSidecar1_0 =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, UInt64.ZERO);
-    final DataColumnSidecar dataColumnSidecar1_0_modified = breakValidity(dataColumnSidecar1_0);
+    final DataColumnSidecar dataColumnSidecar1_0_modified =
+        createSidecarWithBrokenValidity(dataColumnSidecar1_0);
     final DataColumnIdentifier sidecarIdentifier1_0 =
         DataColumnIdentifier.createFromSidecar(dataColumnSidecar1_0);
     validator =
@@ -268,54 +228,5 @@ public class DataColumnSidecarsByRootValidatorTest {
             DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
                 .DATA_COLUMN_SIDECAR_VALIDITY_CHECK_FAILED
                 .describe());
-  }
-
-  public static DataColumnSidecar breakInclusionProof(final DataColumnSidecar dataColumnSidecar) {
-    final DataColumnSidecarSchemaFulu dataColumnSidecarSchemaFulu =
-        DataColumnSidecarSchemaFulu.required(
-            (DataColumnSidecarSchema<?>) dataColumnSidecar.getSchema());
-    return dataColumnSidecarSchemaFulu.create(
-        builder ->
-            builder
-                .index(dataColumnSidecar.getIndex())
-                .column(dataColumnSidecar.getColumn())
-                .kzgCommitments(
-                    DataColumnSidecarFulu.required(dataColumnSidecar).getKzgCommitments())
-                .kzgProofs(dataColumnSidecar.getKzgProofs())
-                .signedBlockHeader(
-                    DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader())
-                .kzgCommitmentsInclusionProof(
-                    DataColumnSidecarFulu.required(dataColumnSidecar)
-                        .getKzgCommitmentsInclusionProof()
-                        .asListUnboxed()
-                        .stream()
-                        .map(Bytes32::not) // modify inclusion proof list
-                        .toList()));
-  }
-
-  public static DataColumnSidecar breakValidity(final DataColumnSidecar dataColumnSidecar) {
-    final DataColumnSidecarSchemaFulu dataColumnSidecarSchemaFulu =
-        DataColumnSidecarSchemaFulu.required(
-            (DataColumnSidecarSchema<?>) dataColumnSidecar.getSchema());
-    return dataColumnSidecarSchemaFulu.create(
-        builder ->
-            builder
-                .index(dataColumnSidecar.getIndex())
-                .column(dataColumnSidecar.getColumn())
-                .kzgCommitments(
-                    DataColumnSidecarFulu.required(dataColumnSidecar).getKzgCommitments())
-                // wrong number of proofs
-                .kzgProofs(
-                    dataColumnSidecar
-                        .getKzgProofs()
-                        .getSchema()
-                        .createFromElements(
-                            dataColumnSidecar.getKzgProofs().stream().skip(1).toList()))
-                .signedBlockHeader(
-                    DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader())
-                .kzgCommitmentsInclusionProof(
-                    DataColumnSidecarFulu.required(dataColumnSidecar)
-                        .getKzgCommitmentsInclusionProof()
-                        .asListUnboxed()));
   }
 }
