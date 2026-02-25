@@ -3,7 +3,7 @@
     "tags" : [ "Validator", "Validator Required Api" ],
     "operationId" : "produceAttestationData",
     "summary" : "Produce an AttestationData",
-    "description" : "Requests that the beacon node produce an AttestationData. For `slot`s in Electra and later, this AttestationData must have a `committee_index` of 0.\n\nA 503 error must be returned if the block identified by the response `beacon_block_root` is optimistic (i.e. the attestation attests to a block that has not been fully verified by an execution engine).\n",
+    "description" : "Requests that the beacon node produce an AttestationData. For `slot`s in Electra and later, this AttestationData must have a `committee_index` of 0.\n\nFor `slot`s in Gloas and later, the `index` in `AttestationData` is used to signal payload availability which is determined and set by the beacon node.\n\nA 503 error must be returned if the block identified by the response `beacon_block_root` is optimistic (i.e. the attestation attests to a block that has not been fully verified by an execution engine).\n",
     "parameters" : [ {
       "name" : "slot",
       "in" : "query",
