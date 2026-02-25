@@ -257,9 +257,11 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
       return Optional.empty();
     }
     makeRoomForNewTracker();
-    return Optional.of(
+    final RecoveryTask task =
         recoveryTasks.computeIfAbsent(
-            dataColumnSidecar.getSlotAndBlockRoot(), __ -> createRecoveryTask(dataColumnSidecar)));
+            dataColumnSidecar.getSlotAndBlockRoot(), __ -> createRecoveryTask(dataColumnSidecar));
+    task.recoveredColumnIndices().add(dataColumnSidecar.getIndex());
+    return Optional.of(task);
   }
 
   private RecoveryTask createRecoveryTask(final DataColumnSidecar dataColumnSidecar) {
