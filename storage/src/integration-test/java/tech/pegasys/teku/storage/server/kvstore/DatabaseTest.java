@@ -71,6 +71,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -2546,12 +2547,14 @@ public class DatabaseTest {
         DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar0);
     final DataColumnSidecar block1Sidecar1 =
         dataStructureUtil.randomDataColumnSidecar(
-            blockHeader1, block1Sidecar0.getKzgCommitments(), ONE);
+            blockHeader1, DataColumnSidecarFulu.required(block1Sidecar0).getKzgCommitments(), ONE);
     final DataColumnSlotAndIdentifier block1Column1 =
         DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar1);
     final DataColumnSidecar block1Sidecar2 =
         dataStructureUtil.randomDataColumnSidecar(
-            blockHeader1, block1Sidecar0.getKzgCommitments(), UInt64.valueOf(2));
+            blockHeader1,
+            DataColumnSidecarFulu.required(block1Sidecar0).getKzgCommitments(),
+            UInt64.valueOf(2));
     final DataColumnSlotAndIdentifier block1Column2 =
         DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar2);
 
