@@ -31,8 +31,7 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfig;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
-// TODO
-@Disabled("Temporarily disable till we found how to pass blockAccessList to Besu")
+@Disabled("Temporarily disable till we found how to pass a valid blockAccessList to Besu")
 public class GloasUpgradeAcceptanceTest extends AcceptanceTestBase {
 
   private static final String NETWORK_NAME = "swift";
