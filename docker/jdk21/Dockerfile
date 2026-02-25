@@ -10,8 +10,8 @@ RUN JAVA_TOOL_OPTIONS="-Djdk.lang.Process.launchMechanism=vfork" $JAVA_HOME/bin/
          --output /javaruntime
 
 FROM mirror.gcr.io/library/ubuntu:24.04
-ENV JAVA_HOME /opt/java/openjdk
-ENV PATH "${JAVA_HOME}/bin:${PATH}"
+ENV JAVA_HOME=/opt/java/openjdk
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
 COPY --from=jre-build /javaruntime $JAVA_HOME
 
 RUN apt-get -y update && apt-get -y upgrade && apt-get -y install curl libc-bin libc6 adduser libjemalloc-dev && \
@@ -33,14 +33,14 @@ WORKDIR /opt/teku
 COPY --chown=teku:teku teku /opt/teku/
 
 # Default to UTF-8 locale
-ENV LANG C.UTF-8
+ENV LANG=C.UTF-8
 
-ENV TEKU_REST_API_INTERFACE "0.0.0.0"
-ENV TEKU_VALIDATOR_API_INTERFACE "0.0.0.0"
-ENV TEKU_METRICS_INTERFACE "0.0.0.0"
-ENV PATH "/opt/teku/bin:${PATH}"
+ENV TEKU_REST_API_INTERFACE="0.0.0.0"
+ENV TEKU_VALIDATOR_API_INTERFACE="0.0.0.0"
+ENV TEKU_METRICS_INTERFACE="0.0.0.0"
+ENV PATH="/opt/teku/bin:${PATH}"
 
-ENV MALLOC_CONF "background_thread:true,dirty_decay_ms:1000,muzzy_decay_ms:1000"
+ENV MALLOC_CONF="background_thread:true,dirty_decay_ms:1000,muzzy_decay_ms:1000"
 
 # List Exposed Ports
 # Metrics, Rest API, LibP2P, Discv5
