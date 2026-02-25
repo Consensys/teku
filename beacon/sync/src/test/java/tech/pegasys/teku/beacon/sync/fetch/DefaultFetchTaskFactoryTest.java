@@ -42,4 +42,11 @@ public class DefaultFetchTaskFactoryTest {
         fetchTaskFactory.createFetchBlobSidecarTask(new BlobIdentifier(Bytes32.ZERO, UInt64.ZERO));
     assertThat(task).isNotNull();
   }
+
+  @Test
+  public void createsFetchExecutionPayloadTask() {
+    final FetchExecutionPayloadTask task =
+        fetchTaskFactory.createFetchExecutionPayloadTask(Bytes32.ZERO);
+    assertThat(task).isNotNull();
+  }
 }
