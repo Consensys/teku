@@ -272,7 +272,8 @@ public class DataColumnSidecarsByRootValidatorTest {
             builder
                 .index(dataColumnSidecar.getIndex())
                 .column(dataColumnSidecar.getColumn())
-                .kzgCommitments(dataColumnSidecar.getKzgCommitments())
+                .kzgCommitments(
+                    DataColumnSidecarFulu.required(dataColumnSidecar).getKzgCommitments())
                 .kzgProofs(dataColumnSidecar.getKzgProofs())
                 .signedBlockHeader(
                     DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader())
@@ -294,7 +295,8 @@ public class DataColumnSidecarsByRootValidatorTest {
             builder
                 .index(dataColumnSidecar.getIndex())
                 .column(dataColumnSidecar.getColumn())
-                .kzgCommitments(dataColumnSidecar.getKzgCommitments())
+                .kzgCommitments(
+                    DataColumnSidecarFulu.required(dataColumnSidecar).getKzgCommitments())
                 // wrong number of proofs
                 .kzgProofs(
                     dataColumnSidecar
