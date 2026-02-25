@@ -57,6 +57,7 @@ import tech.pegasys.teku.beacon.sync.events.CoalescingChainHeadChannel;
 import tech.pegasys.teku.beacon.sync.events.SyncPreImportBlockChannel;
 import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarsFetcher;
 import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetcher;
+import tech.pegasys.teku.beacon.sync.gossip.executionpayloads.RecentExecutionPayloadsFetcher;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.beaconrestapi.JsonTypeDefinitionBeaconRestApi;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
@@ -503,6 +504,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
         (executionProof, remoteOrigin) ->
             // TODO add actual logic to handle valid execution proofs
             LOG.debug("Received valid execution proof: {}", executionProof));
+    final RecentExecutionPayloadsFetcher recentExecutionPayloadsFetcher =
+        syncService.getRecentExecutionPayloadsFetcher();
+    eventChannels.subscribe(
+        ReceivedExecutionPayloadEventsChannel.class, recentExecutionPayloadsFetcher);
+    // TODO-GLOAS: configure usage of RecentExecutionPayloadsFetcher (importing payload/cancelling
+    // request) (not required for devnet-0)
 
     final Optional<Eth2Network> network = beaconConfig.eth2NetworkConfig().getEth2Network();
     if (network.isPresent() && network.get() == Eth2Network.EPHEMERY) {
@@ -2176,6 +2183,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         p2pNetwork,
         blockImporter,
         blobSidecarManager,
+        executionPayloadManager,
         pendingBlocks,
         pendingAttestations,
         blockBlobSidecarsTrackersPool,
