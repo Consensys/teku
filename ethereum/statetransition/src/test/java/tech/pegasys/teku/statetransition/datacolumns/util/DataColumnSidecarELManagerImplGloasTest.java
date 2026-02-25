@@ -127,7 +127,7 @@ public class DataColumnSidecarELManagerImplGloasTest
   }
 
   @Test
-  public void shouldPublish_whenAllBlobsRetrievedFromBid() {
+  public void shouldPublish_whenAllBlobsRetrievedFromEl() {
     when(executionLayer.engineGetBlobAndCellProofsList(any(), any()))
         .thenReturn(SafeFuture.completedFuture(blobAndCellProofs));
 
