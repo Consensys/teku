@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @SuppressWarnings("JavaCase")
 public class DataColumnSidecarsByRootListenerValidatingProxyTest {
+  // TODO-GLOAS add Gloas test
   private final Spec spec = TestSpecFactory.createMainnetFulu();
   private final SchemaDefinitionsFulu schemaDefinitionsFulu =
       SchemaDefinitionsFulu.required(spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions());
@@ -264,7 +265,8 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
                 builder
                     .index(dataColumnSidecar.getIndex())
                     .column(dataColumnSidecar.getColumn())
-                    .kzgCommitments(dataColumnSidecar.getKzgCommitments())
+                    .kzgCommitments(
+                        DataColumnSidecarFulu.required(dataColumnSidecar).getKzgCommitments())
                     .kzgProofs(dataColumnSidecar.getKzgProofs())
                     .signedBlockHeader(
                         DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader())

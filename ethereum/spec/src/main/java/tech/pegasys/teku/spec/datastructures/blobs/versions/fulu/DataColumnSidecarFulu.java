@@ -75,6 +75,11 @@ public class DataColumnSidecarFulu
   }
 
   @Override
+  public DataColumnSidecarSchemaFulu getSchema() {
+    return (DataColumnSidecarSchemaFulu) super.getSchema();
+  }
+
+  @Override
   public UInt64 getIndex() {
     return getField0().get();
   }
@@ -85,6 +90,10 @@ public class DataColumnSidecarFulu
   }
 
   @Override
+  public Optional<SszList<SszKZGCommitment>> getMaybeKzgCommitments() {
+    return Optional.of(getField2());
+  }
+
   public SszList<SszKZGCommitment> getKzgCommitments() {
     return getField2();
   }

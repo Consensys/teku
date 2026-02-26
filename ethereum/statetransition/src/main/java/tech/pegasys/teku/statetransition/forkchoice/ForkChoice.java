@@ -720,6 +720,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       return result;
     }
 
+    if (payloadStatus.hasNotValidatedStatus()) {
+      return ExecutionPayloadImportResult.FAILED_EXECUTION_SYNCING;
+    }
+
     if (payloadStatus.hasFailedExecution()) {
       return ExecutionPayloadImportResult.failedExecution(
           payloadStatus.getFailureCause().orElseThrow());
