@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
 
-public class NetworkBlobReconstructorTest extends BlobReconstructionAbstractTest {
+public class NetworkBlobReconstructorFuluTest extends BlobReconstructionAbstractTest {
   final SchemaDefinitionsElectra schemaDefinitionsElectra =
       SchemaDefinitionsElectra.required(
           spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions());

@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 
 /** A section of a particular target chain that can be downloaded in parallel. */
 public interface Batch {
@@ -38,6 +39,8 @@ public interface Batch {
   List<SignedBeaconBlock> getBlocks();
 
   Map<Bytes32, List<BlobSidecar>> getBlobSidecarsByBlockRoot();
+
+  Map<Bytes32, SignedExecutionPayloadEnvelope> getExecutionPayloadsByBlockRoot();
 
   Optional<SyncSource> getSource();
 

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.fulu.util;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -22,6 +23,8 @@ import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
@@ -30,7 +33,12 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidec
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarTrackingKey;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
@@ -223,15 +231,18 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   /**
    * Extract tracking key from block header and dataColumnSidecar for late validation check.
    *
-   * @param header the beacon block header (may be null for Gloas)
+   * @param maybeBeaconBlockHeader maybe the beacon block header (must be present for Fulu)
    * @param dataColumnSidecar the data column dataColumnSidecar
    * @return the fork-appropriate tracking key
    */
   @Override
   public DataColumnSidecarTrackingKey extractTrackingKeyFromHeader(
-      final BeaconBlockHeader header, final DataColumnSidecar dataColumnSidecar) {
+      final Optional<BeaconBlockHeader> maybeBeaconBlockHeader,
+      final DataColumnSidecar dataColumnSidecar) {
     return new FuluTrackingKey(
-        header.getSlot(), header.getProposerIndex(), dataColumnSidecar.getIndex());
+        maybeBeaconBlockHeader.orElseThrow().getSlot(),
+        maybeBeaconBlockHeader.orElseThrow().getProposerIndex(),
+        dataColumnSidecar.getIndex());
   }
 
   /**
@@ -259,14 +270,15 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   public boolean verifyInclusionProof(
       final DataColumnSidecar dataColumnSidecar,
       final Set<InclusionProofInfo> validInclusionProofInfoSet) {
-    final DataColumnSidecarFulu fuluSidecar = DataColumnSidecarFulu.required(dataColumnSidecar);
+    final DataColumnSidecarFulu dataColumnSidecarFulu =
+        DataColumnSidecarFulu.required(dataColumnSidecar);
 
     // Check cache first for optimization
     final InclusionProofInfo proofInfo =
         new InclusionProofInfo(
-            dataColumnSidecar.getKzgCommitments().hashTreeRoot(),
-            fuluSidecar.getKzgCommitmentsInclusionProof().hashTreeRoot(),
-            fuluSidecar.getBlockBodyRoot());
+            dataColumnSidecarFulu.getKzgCommitments().hashTreeRoot(),
+            dataColumnSidecarFulu.getKzgCommitmentsInclusionProof().hashTreeRoot(),
+            dataColumnSidecarFulu.getBlockBodyRoot());
 
     if (validInclusionProofInfoSet.contains(proofInfo)) {
       return true;
@@ -313,9 +325,43 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     // Cache inclusion proof info for future validations
     validInclusionProofInfoSet.add(
         new InclusionProofInfo(
-            dataColumnSidecar.getKzgCommitments().hashTreeRoot(),
+            dataColumnSidecarFulu.getKzgCommitments().hashTreeRoot(),
             dataColumnSidecarFulu.getKzgCommitmentsInclusionProof().hashTreeRoot(),
             dataColumnSidecarFulu.getBlockBodyRoot()));
+  }
+
+  @Override
+  public SszList<SszKZGCommitment> getKzgCommitments(final BeaconBlock block) {
+    return BeaconBlockBodyDeneb.required(block.getBody()).getBlobKzgCommitments();
+  }
+
+  @Override
+  public List<DataColumnSidecar> constructDataColumnSidecars(
+      final Optional<SignedBeaconBlockHeader> maybeSignedBeaconBlockHeader,
+      final SlotAndBlockRoot slotAndBlockRoot,
+      final Optional<SszList<SszKZGCommitment>> maybeSszKZGCommitments,
+      final Optional<List<Bytes32>> maybeKzgCommitmentsInclusionProof,
+      final List<BlobAndCellProofs> blobAndCellProofsList) {
+    return miscHelpersFulu.constructDataColumnSidecars(
+        maybeSignedBeaconBlockHeader,
+        slotAndBlockRoot,
+        maybeSszKZGCommitments,
+        maybeKzgCommitmentsInclusionProof,
+        blobAndCellProofsList);
+  }
+
+  @Override
+  public Optional<List<Bytes32>> computeDataColumnKzgCommitmentsInclusionProof(
+      final BeaconBlockBody beaconBlockBody) {
+    return Optional.of(
+        miscHelpersFulu.computeDataColumnKzgCommitmentsInclusionProof(beaconBlockBody));
+  }
+
+  @Override
+  public Optional<SszBytes32Vector> getMaybeKzgCommitmentsInclusionProof(
+      final DataColumnSidecar dataColumnSidecar) {
+    return Optional.of(
+        DataColumnSidecarFulu.required(dataColumnSidecar).getKzgCommitmentsInclusionProof());
   }
 
   @Override
@@ -450,5 +496,11 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
 
     return new SignatureVerificationData(
         signingRoot, header.getProposerIndex(), signedBlockHeader.getSignature(), state);
+  }
+
+  @Override
+  public List<DataColumnSidecar> reconstructAllDataColumnSidecars(
+      final List<DataColumnSidecar> dataColumnSidecars) {
+    return miscHelpersFulu.reconstructAllDataColumnSidecars(dataColumnSidecars);
   }
 }
