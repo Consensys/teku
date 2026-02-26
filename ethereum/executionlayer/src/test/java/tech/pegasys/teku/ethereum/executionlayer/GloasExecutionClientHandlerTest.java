@@ -34,7 +34,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV5Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
-import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
