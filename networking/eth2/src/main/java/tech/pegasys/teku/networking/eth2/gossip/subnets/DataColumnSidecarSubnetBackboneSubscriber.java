@@ -17,6 +17,8 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -28,6 +30,7 @@ import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 
 public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
+  private final Lock lock = new ReentrantLock();
   private final Eth2P2PNetwork eth2P2PNetwork;
   private final UInt256 nodeId;
   private final CustodyGroupCountManager custodyGroupCountManager;
@@ -85,11 +88,16 @@ public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChan
   }
 
   @Override
-  public synchronized void onSlot(final UInt64 slot) {
-    final UInt64 epoch = spec.computeEpochAtSlot(slot);
-    if (!epoch.equals(lastEpoch)) {
-      lastEpoch = epoch;
-      onEpoch(epoch);
+  public void onSlot(final UInt64 slot) {
+    lock.lock();
+    try {
+      final UInt64 epoch = spec.computeEpochAtSlot(slot);
+      if (!epoch.equals(lastEpoch)) {
+        lastEpoch = epoch;
+        onEpoch(epoch);
+      }
+    } finally {
+      lock.unlock();
     }
   }
 }

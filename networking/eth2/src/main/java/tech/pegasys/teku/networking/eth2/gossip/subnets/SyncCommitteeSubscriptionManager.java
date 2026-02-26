@@ -16,6 +16,8 @@ package tech.pegasys.teku.networking.eth2.gossip.subnets;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -24,6 +26,7 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 
 public class SyncCommitteeSubscriptionManager implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
+  private final Lock lock = new ReentrantLock();
   private final Int2ObjectMap<UInt64> subcommitteeToUnsubscribeSlot = new Int2ObjectOpenHashMap<>();
   final Eth2P2PNetwork p2PNetwork;
 
@@ -32,35 +35,45 @@ public class SyncCommitteeSubscriptionManager implements SlotEventsChannel {
   }
 
   @Override
-  public synchronized void onSlot(final UInt64 slot) {
-    final ObjectIterator<Int2ObjectMap.Entry<UInt64>> iterator =
-        subcommitteeToUnsubscribeSlot.int2ObjectEntrySet().iterator();
-    while (iterator.hasNext()) {
-      final Int2ObjectMap.Entry<UInt64> entry = iterator.next();
-      if (entry.getValue().isLessThanOrEqualTo(slot)) {
-        LOG.trace("Unsubscribing at slot {}, committee subnet {}", slot, entry.getIntKey());
-        p2PNetwork.unsubscribeFromSyncCommitteeSubnetId(entry.getIntKey());
-        iterator.remove();
+  public void onSlot(final UInt64 slot) {
+    lock.lock();
+    try {
+      final ObjectIterator<Int2ObjectMap.Entry<UInt64>> iterator =
+          subcommitteeToUnsubscribeSlot.int2ObjectEntrySet().iterator();
+      while (iterator.hasNext()) {
+        final Int2ObjectMap.Entry<UInt64> entry = iterator.next();
+        if (entry.getValue().isLessThanOrEqualTo(slot)) {
+          LOG.trace("Unsubscribing at slot {}, committee subnet {}", slot, entry.getIntKey());
+          p2PNetwork.unsubscribeFromSyncCommitteeSubnetId(entry.getIntKey());
+          iterator.remove();
+        }
       }
+    } finally {
+      lock.unlock();
     }
   }
 
-  public synchronized void subscribe(final int committeeSubnet, final UInt64 unsubscribeSlot) {
-    final UInt64 currentUnsubscribeSlot =
-        subcommitteeToUnsubscribeSlot.getOrDefault(committeeSubnet, null);
-    if (currentUnsubscribeSlot == null) {
-      LOG.trace(
-          "Subscribe to committee subnet {}, unsubscribe due at slot {}",
-          committeeSubnet,
-          unsubscribeSlot.toString());
-      p2PNetwork.subscribeToSyncCommitteeSubnetId(committeeSubnet);
-      subcommitteeToUnsubscribeSlot.put(committeeSubnet, unsubscribeSlot);
-    } else if (currentUnsubscribeSlot.isLessThan(unsubscribeSlot)) {
-      LOG.trace(
-          "Update subscription of committee subnet {}, unsubscribe due at slot {}",
-          committeeSubnet,
-          unsubscribeSlot.toString());
-      subcommitteeToUnsubscribeSlot.put(committeeSubnet, unsubscribeSlot);
+  public void subscribe(final int committeeSubnet, final UInt64 unsubscribeSlot) {
+    lock.lock();
+    try {
+      final UInt64 currentUnsubscribeSlot =
+          subcommitteeToUnsubscribeSlot.getOrDefault(committeeSubnet, null);
+      if (currentUnsubscribeSlot == null) {
+        LOG.trace(
+            "Subscribe to committee subnet {}, unsubscribe due at slot {}",
+            committeeSubnet,
+            unsubscribeSlot.toString());
+        p2PNetwork.subscribeToSyncCommitteeSubnetId(committeeSubnet);
+        subcommitteeToUnsubscribeSlot.put(committeeSubnet, unsubscribeSlot);
+      } else if (currentUnsubscribeSlot.isLessThan(unsubscribeSlot)) {
+        LOG.trace(
+            "Update subscription of committee subnet {}, unsubscribe due at slot {}",
+            committeeSubnet,
+            unsubscribeSlot.toString());
+        subcommitteeToUnsubscribeSlot.put(committeeSubnet, unsubscribeSlot);
+      }
+    } finally {
+      lock.unlock();
     }
   }
 }

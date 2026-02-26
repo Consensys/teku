@@ -28,6 +28,8 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -52,6 +54,7 @@ public class DasCustodySync implements SlotEventsChannel {
   private final int maxPendingColumnRequests;
   private final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator;
 
+  private final Lock lock = new ReentrantLock();
   private final Map<DataColumnSlotAndIdentifier, PendingRequest> pendingRequests =
       new ConcurrentHashMap<>();
   private boolean started = false;
@@ -90,10 +93,13 @@ public class DasCustodySync implements SlotEventsChannel {
         .onNewValidatedDataColumnSidecar(response, RemoteOrigin.RPC)
         .thenRun(
             () -> {
-              synchronized (this) {
+              lock.lock();
+              try {
                 pendingRequests.remove(request.columnId);
                 syncedColumnCount.incrementAndGet();
                 fillUpIfNeeded();
+              } finally {
+                lock.unlock();
               }
             })
         .finishStackTrace();
@@ -105,12 +111,16 @@ public class DasCustodySync implements SlotEventsChannel {
             && exception.getCause() instanceof CancellationException);
   }
 
-  private synchronized void onRequestException(
-      final PendingRequest request, final Throwable exception) {
-    if (wasCancelledImplicitly(exception)) {
-      // request was cancelled explicitly here
-    } else {
-      LOG.warn("Unexpected exception for request " + request, exception);
+  private void onRequestException(final PendingRequest request, final Throwable exception) {
+    lock.lock();
+    try {
+      if (wasCancelledImplicitly(exception)) {
+        // request was cancelled explicitly here
+      } else {
+        LOG.warn("Unexpected exception for request " + request, exception);
+      }
+    } finally {
+      lock.unlock();
     }
   }
 
@@ -179,20 +189,31 @@ public class DasCustodySync implements SlotEventsChannel {
         .finishStackTrace();
   }
 
-  private synchronized void addPendingRequest(final DataColumnSlotAndIdentifier missingColumn) {
-    if (pendingRequests.containsKey(missingColumn)) {
-      return;
+  private void addPendingRequest(final DataColumnSlotAndIdentifier missingColumn) {
+    lock.lock();
+    try {
+      if (pendingRequests.containsKey(missingColumn)) {
+        return;
+      }
+      final SafeFuture<DataColumnSidecar> future = retriever.retrieve(missingColumn);
+      final PendingRequest request = new PendingRequest(missingColumn, future);
+      pendingRequests.put(missingColumn, request);
+      future.finish(
+          response -> onRequestComplete(request, response),
+          err -> onRequestException(request, err));
+    } finally {
+      lock.unlock();
     }
-    final SafeFuture<DataColumnSidecar> future = retriever.retrieve(missingColumn);
-    final PendingRequest request = new PendingRequest(missingColumn, future);
-    pendingRequests.put(missingColumn, request);
-    future.finish(
-        response -> onRequestComplete(request, response), err -> onRequestException(request, err));
   }
 
-  private synchronized Collection<PendingRequest> removeNotMissingPendingRequests(
+  private Collection<PendingRequest> removeNotMissingPendingRequests(
       final Set<DataColumnSlotAndIdentifier> missingColumns) {
-    return removeIf(pendingRequests, id -> !missingColumns.contains(id));
+    lock.lock();
+    try {
+      return removeIf(pendingRequests, id -> !missingColumns.contains(id));
+    } finally {
+      lock.unlock();
+    }
   }
 
   public void start() {
@@ -200,12 +221,17 @@ public class DasCustodySync implements SlotEventsChannel {
     fillUp();
   }
 
-  public synchronized void stop() {
-    started = false;
-    for (final PendingRequest request : pendingRequests.values()) {
-      request.columnPromise.cancel(true);
+  public void stop() {
+    lock.lock();
+    try {
+      started = false;
+      for (final PendingRequest request : pendingRequests.values()) {
+        request.columnPromise.cancel(true);
+      }
+      pendingRequests.clear();
+    } finally {
+      lock.unlock();
     }
-    pendingRequests.clear();
   }
 
   @Override
