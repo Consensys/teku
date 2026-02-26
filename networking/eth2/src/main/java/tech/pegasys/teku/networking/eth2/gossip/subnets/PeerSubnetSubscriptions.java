@@ -142,6 +142,10 @@ public class PeerSubnetSubscriptions {
     return subscriptions;
   }
 
+  public IntStream streamRelevantSubnets() {
+    return dataColumnSidecarSubnetSubscriptions.streamRelevantSubnets();
+  }
+
   private static void updateMetrics(
       final SchemaDefinitionsSupplier currentSchemaDefinitions,
       final SettableLabelledGauge subnetPeerCountGauge,
