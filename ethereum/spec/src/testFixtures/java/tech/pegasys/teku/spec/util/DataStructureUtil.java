@@ -3307,6 +3307,19 @@ public final class DataStructureUtil {
     return randomExecutionPayloadEnvelope(randomSlot());
   }
 
+  public ExecutionPayloadEnvelope randomExecutionPayloadEnvelopeForBlock(
+      final SignedBeaconBlock block) {
+    return getGloasSchemaDefinitions()
+        .getExecutionPayloadEnvelopeSchema()
+        .create(
+            randomExecutionPayload(),
+            randomExecutionRequests(),
+            randomBuilderIndex(),
+            block.getRoot(),
+            block.getSlot(),
+            randomBytes32());
+  }
+
   public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope(final UInt64 slot) {
     return getGloasSchemaDefinitions()
         .getExecutionPayloadEnvelopeSchema()
@@ -3323,6 +3336,13 @@ public final class DataStructureUtil {
     return getGloasSchemaDefinitions()
         .getSignedExecutionPayloadEnvelopeSchema()
         .create(randomExecutionPayloadEnvelope(UInt64.valueOf(slot)), randomSignature());
+  }
+
+  public SignedExecutionPayloadEnvelope randomSignedExecutionPayloadEnvelopeForBlock(
+      final SignedBeaconBlock block) {
+    return getGloasSchemaDefinitions()
+        .getSignedExecutionPayloadEnvelopeSchema()
+        .create(randomExecutionPayloadEnvelopeForBlock(block), randomSignature());
   }
 
   public ExecutionProof randomExecutionProof() {

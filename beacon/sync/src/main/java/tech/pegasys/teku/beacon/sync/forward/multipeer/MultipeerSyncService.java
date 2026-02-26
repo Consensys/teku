@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -77,6 +78,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
       final BlockImporter blockImporter,
       final BlobSidecarManager blobSidecarManager,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final ExecutionPayloadManager executionPayloadManager,
       final SyncPreImportBlockChannel syncPreImportBlockChannel,
       final int batchSize,
       final int maxPendingBatches,
@@ -100,9 +102,10 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
             eventThread,
             asyncRunner,
             recentChainData,
-            new BatchImporter(blockImporter, blockBlobSidecarsTrackersPool, asyncRunner),
+            new BatchImporter(
+                blockImporter, blockBlobSidecarsTrackersPool, executionPayloadManager, asyncRunner),
             new BatchFactory(
-                eventThread, blobSidecarManager, new PeerScoringConflictResolutionStrategy()),
+                eventThread, spec, blobSidecarManager, new PeerScoringConflictResolutionStrategy()),
             batchSize,
             maxPendingBatches,
             MultipeerCommonAncestorFinder.create(

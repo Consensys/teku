@@ -40,16 +40,22 @@ import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 
 public class SyncSourceBatch implements Batch {
+
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventThread eventThread;
+  private final Spec spec;
   private final BlobSidecarManager blobSidecarManager;
   private final SyncSourceSelector syncSourceProvider;
   private final ConflictResolutionStrategy conflictResolutionStrategy;
@@ -66,9 +72,12 @@ public class SyncSourceBatch implements Batch {
 
   private final List<SignedBeaconBlock> blocks = new ArrayList<>();
   private final Map<Bytes32, List<BlobSidecar>> blobSidecarsByBlockRoot = new HashMap<>();
+  private final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloadsByBlockRoot =
+      new HashMap<>();
 
   SyncSourceBatch(
       final EventThread eventThread,
+      final Spec spec,
       final BlobSidecarManager blobSidecarManager,
       final SyncSourceSelector syncSourceProvider,
       final ConflictResolutionStrategy conflictResolutionStrategy,
@@ -78,6 +87,7 @@ public class SyncSourceBatch implements Batch {
     checkArgument(
         count.isGreaterThanOrEqualTo(UInt64.ONE), "Must include at least one slot in a batch");
     this.eventThread = eventThread;
+    this.spec = spec;
     this.blobSidecarManager = blobSidecarManager;
     this.syncSourceProvider = syncSourceProvider;
     this.conflictResolutionStrategy = conflictResolutionStrategy;
@@ -119,6 +129,11 @@ public class SyncSourceBatch implements Batch {
   @Override
   public Map<Bytes32, List<BlobSidecar>> getBlobSidecarsByBlockRoot() {
     return blobSidecarsByBlockRoot;
+  }
+
+  @Override
+  public Map<Bytes32, SignedExecutionPayloadEnvelope> getExecutionPayloadsByBlockRoot() {
+    return executionPayloadsByBlockRoot;
   }
 
   @Override
@@ -208,7 +223,6 @@ public class SyncSourceBatch implements Batch {
   public void requestMoreBlocks(final Runnable callback) {
     checkState(
         !isComplete() || isContested(), "Attempting to request more blocks from a complete batch");
-    final BlockRequestHandler blockRequestHandler = new BlockRequestHandler();
     final UInt64 startSlot =
         getLastBlock().map(SignedBeaconBlock::getSlot).map(UInt64::increment).orElse(firstSlot);
     final UInt64 remainingSlots = count.minus(startSlot.minus(firstSlot));
@@ -227,8 +241,8 @@ public class SyncSourceBatch implements Batch {
     awaitingBlocks = true;
     final SyncSource syncSource = currentSyncSource.orElseThrow();
 
-    final SafeFuture<Void> blobSidecarsRequest;
     final Optional<BlobSidecarRequestHandler> maybeBlobSidecarRequestHandler;
+    final SafeFuture<Void> blobSidecarsRequest;
 
     if (blobSidecarManager.isAvailabilityRequiredAtSlot(endSlot)
         || blobSidecarManager.isAvailabilityRequiredAtSlot(startSlot)) {
@@ -247,18 +261,44 @@ public class SyncSourceBatch implements Batch {
       blobSidecarsRequest = SafeFuture.COMPLETE;
     }
 
+    final Optional<ExecutionPayloadRequestHandler> maybeExecutionPayloadRequestHandler;
+    final SafeFuture<Void> executionPayloadsRequest;
+
+    if (spec.atSlot(endSlot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      LOG.debug(
+          "Requesting execution payload envelopes for {} slots starting at {} from peer {}",
+          remainingSlots,
+          startSlot,
+          syncSource);
+      final ExecutionPayloadRequestHandler executionPayloadRequestHandler =
+          new ExecutionPayloadRequestHandler();
+      maybeExecutionPayloadRequestHandler = Optional.of(executionPayloadRequestHandler);
+      executionPayloadsRequest =
+          syncSource.requestExecutionPayloadEnvelopesByRange(
+              startSlot, remainingSlots, executionPayloadRequestHandler);
+
+    } else {
+      maybeExecutionPayloadRequestHandler = Optional.empty();
+      executionPayloadsRequest = SafeFuture.COMPLETE;
+    }
+
     LOG.debug(
         "Requesting blocks for {} slots starting at {} from peer {}",
         remainingSlots,
         startSlot,
         syncSource);
 
+    final BlockRequestHandler blockRequestHandler = new BlockRequestHandler();
     final SafeFuture<Void> blocksRequest =
         syncSource.requestBlocksByRange(startSlot, remainingSlots, blockRequestHandler);
 
-    SafeFuture.allOfFailFast(blocksRequest, blobSidecarsRequest)
+    SafeFuture.allOfFailFast(blocksRequest, blobSidecarsRequest, executionPayloadsRequest)
         .thenRunAsync(
-            () -> onRequestComplete(blockRequestHandler, maybeBlobSidecarRequestHandler),
+            () ->
+                onRequestComplete(
+                    blockRequestHandler,
+                    maybeBlobSidecarRequestHandler,
+                    maybeExecutionPayloadRequestHandler),
             eventThread)
         .handleAsync(
             (__, error) -> {
@@ -302,17 +342,22 @@ public class SyncSourceBatch implements Batch {
     lastBlockConfirmed = false;
     blocks.clear();
     blobSidecarsByBlockRoot.clear();
+    executionPayloadsByBlockRoot.clear();
   }
 
   private void onRequestComplete(
       final BlockRequestHandler blockRequestHandler,
-      final Optional<BlobSidecarRequestHandler> maybeBlobSidecarRequestHandler) {
+      final Optional<BlobSidecarRequestHandler> maybeBlobSidecarRequestHandler,
+      final Optional<ExecutionPayloadRequestHandler> maybeExecutionPayloadRequestHandler) {
     eventThread.checkOnEventThread();
+
+    final Optional<SignedBeaconBlock> lastBlock =
+        blocks.isEmpty() ? Optional.empty() : Optional.ofNullable(blocks.getLast());
     final List<SignedBeaconBlock> newBlocks = blockRequestHandler.complete();
 
     awaitingBlocks = false;
 
-    if (!validateNewBlocks(newBlocks)) {
+    if (!validateNewBlocks(newBlocks, lastBlock)) {
       markAsInvalid();
       return;
     }
@@ -326,6 +371,16 @@ public class SyncSourceBatch implements Batch {
         return;
       }
       blobSidecarsByBlockRoot.putAll(newBlobSidecarsByBlockRoot);
+    }
+
+    if (maybeExecutionPayloadRequestHandler.isPresent()) {
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> newExecutionPayloadsByBlockRoot =
+          maybeExecutionPayloadRequestHandler.get().complete();
+      if (!validateNewExecutionPayloads(newBlocks, newExecutionPayloadsByBlockRoot, lastBlock)) {
+        markAsInvalid();
+        return;
+      }
+      executionPayloadsByBlockRoot.putAll(newExecutionPayloadsByBlockRoot);
     }
 
     if (newBlocks.isEmpty() || newBlocks.getLast().getSlot().equals(getLastSlot())) {
@@ -357,13 +412,13 @@ public class SyncSourceBatch implements Batch {
         .toString();
   }
 
-  private boolean validateNewBlocks(final List<SignedBeaconBlock> newBlocks) {
-    if (blocks.isEmpty() || newBlocks.isEmpty()) {
+  private boolean validateNewBlocks(
+      final List<SignedBeaconBlock> newBlocks, final Optional<SignedBeaconBlock> lastBlock) {
+    if (lastBlock.isEmpty() || newBlocks.isEmpty()) {
       return true;
     }
-    final SignedBeaconBlock previousBlock = blocks.getLast();
     final SignedBeaconBlock firstNewBlock = newBlocks.getFirst();
-    if (!firstNewBlock.getParentRoot().equals(previousBlock.getRoot())) {
+    if (!firstNewBlock.getParentRoot().equals(lastBlock.get().getRoot())) {
       LOG.debug(
           "Marking batch invalid because new blocks do not form a chain with previous blocks");
       return false;
@@ -427,6 +482,58 @@ public class SyncSourceBatch implements Batch {
     return true;
   }
 
+  private boolean validateNewExecutionPayloads(
+      final List<SignedBeaconBlock> newBlocks,
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> newExecutionPayloadsByBlockRoot,
+      final Optional<SignedBeaconBlock> lastBlock) {
+    for (int i = 0; i < newBlocks.size(); i++) {
+      final SignedBeaconBlock newBlock = newBlocks.get(i);
+      if (i == 0 && lastBlock.isPresent()) {
+        // we want to verify the execution payload is not missing for the last block
+        if (isParentBlockFull(lastBlock.get(), newBlock)
+            && !executionPayloadsByBlockRoot.containsKey(lastBlock.get().getRoot())) {
+          logBatchInvalidBecauseOfExecutionPayloadMissing(lastBlock.get());
+          return false;
+        }
+      }
+      // if we don't have an execution payload and is not a last block in the batch, we want to
+      // verify that the block is empty (no execution payload)
+      if (!newExecutionPayloadsByBlockRoot.containsKey(newBlock.getRoot())
+          && i != newBlocks.size() - 1) {
+        final SignedBeaconBlock nextNewBlock = newBlocks.get(i + 1);
+        if (isParentBlockFull(newBlock, nextNewBlock)) {
+          logBatchInvalidBecauseOfExecutionPayloadMissing(newBlock);
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  private boolean isParentBlockFull(
+      final SignedBeaconBlock parentBlock, final SignedBeaconBlock block) {
+    if (parentBlock.getMessage().getBody().toVersionGloas().isEmpty()) {
+      // we don't expect execution payloads for blocks prior to Gloas
+      return false;
+    }
+    return BeaconBlockBodyGloas.required(block.getMessage().getBody())
+        .getSignedExecutionPayloadBid()
+        .getMessage()
+        .getParentBlockHash()
+        .equals(
+            BeaconBlockBodyGloas.required(parentBlock.getMessage().getBody())
+                .getSignedExecutionPayloadBid()
+                .getMessage()
+                .getBlockHash());
+  }
+
+  private void logBatchInvalidBecauseOfExecutionPayloadMissing(final SignedBeaconBlock block) {
+    LOG.debug(
+        "Marking batch invalid because block is full for slot {} and root {} but the execution payload envelope was missing",
+        block.getSlot(),
+        block.getRoot());
+  }
+
   private String formatBlockAndParent(final SignedBeaconBlock block1) {
     return block1.toLogString()
         + " (parent: "
@@ -462,6 +569,22 @@ public class SyncSourceBatch implements Batch {
 
     public Map<Bytes32, List<BlobSidecar>> complete() {
       return blobSidecarsByBlockRoot;
+    }
+  }
+
+  private static class ExecutionPayloadRequestHandler
+      implements RpcResponseListener<SignedExecutionPayloadEnvelope> {
+    private final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloadsByBlockRoot =
+        new HashMap<>();
+
+    @Override
+    public SafeFuture<?> onResponse(final SignedExecutionPayloadEnvelope executionPayload) {
+      executionPayloadsByBlockRoot.put(executionPayload.getBeaconBlockRoot(), executionPayload);
+      return SafeFuture.COMPLETE;
+    }
+
+    public Map<Bytes32, SignedExecutionPayloadEnvelope> complete() {
+      return executionPayloadsByBlockRoot;
     }
   }
 }
