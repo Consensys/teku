@@ -84,8 +84,16 @@ public class DataColumnSidecarsByRangeMessageHandler
   public Optional<RpcException> validateRequest(
       final String protocolId, final DataColumnSidecarsByRangeRequestMessage request) {
     final int requestedCount = calculateRequestedCount(request);
-    final int maxRequestDataColumnSidecars =
-        spec.atSlot(request.getMaxSlot()).miscHelpers().getMaxRequestDataColumnSidecars();
+    final int maxRequestDataColumnSidecars;
+    try {
+      maxRequestDataColumnSidecars =
+          spec.atSlot(request.getMaxSlot()).miscHelpers().getMaxRequestDataColumnSidecars();
+    } catch (final UnsupportedOperationException __) {
+      return Optional.of(
+          new RpcException(
+              INVALID_REQUEST_CODE,
+              "Data column sidecars not supported for the requested slot range"));
+    }
     if (requestedCount == -1 || requestedCount > maxRequestDataColumnSidecars) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
