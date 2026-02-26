@@ -147,6 +147,13 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
 
     LOG.debug("Validators at genesis epoch detected, initializing custody group count.");
     computeAndUpdateCustodyGroupCount(preparedValidators)
+        .thenAccept(
+            maybeCustodyGroupCountUpdated ->
+                maybeCustodyGroupCountUpdated.ifPresent(
+                    integer ->
+                        LOG.info(
+                            "Custody group count updated to {}, because genesis validators were found.",
+                            integer)))
         .finish(
             error ->
                 LOG.error(
