@@ -75,7 +75,8 @@ public class GetEvents extends RestApiEndpoint {
                     + " [eventsource](https://html.spec.whatwg.org/multipage/server-sent-events.html#the-eventsource-interface)"
                     + " implementation to listen on those events.\n\n"
                     + "Servers _may_ send SSE comments beginning with `:` for any purpose, including to keep the"
-                    + " event stream connection alive in the presence of proxy servers.")
+                    + " event stream connection alive in the presence of proxy servers.\n\n"
+                    + "__Note:__ blob_sidecar events will be removed at gloas hard fork")
             .tags(TAG_EVENTS, TAG_VALIDATOR_REQUIRED)
             .queryParam(TOPICS_PARAMETER)
             .response(SC_OK, "Request successful", new EventStreamResponseContentTypeDefinition())
