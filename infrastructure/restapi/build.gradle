@@ -17,7 +17,7 @@ dependencies {
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.google.guava:guava'
   implementation 'io.javalin:javalin'
-  implementation 'io.javalin:javalin-rendering'
+  implementation 'io.javalin:javalin-rendering-thymeleaf'
   implementation 'it.unimi.dsi:fastutil'
   implementation 'org.webjars:swagger-ui'
   implementation 'org.thymeleaf:thymeleaf'

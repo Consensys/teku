@@ -31,9 +31,9 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.7.7'
 
-    dependencySet(group: 'io.javalin', version: '6.7.0') {
+    dependencySet(group: 'io.javalin', version: '7.0.0') {
       entry 'javalin'
-      entry 'javalin-rendering'
+      entry 'javalin-rendering-thymeleaf'
     }
 
     dependency 'io.libp2p:jvm-libp2p:1.2.2-RELEASE'

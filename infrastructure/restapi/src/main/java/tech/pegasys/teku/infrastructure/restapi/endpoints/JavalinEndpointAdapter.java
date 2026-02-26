@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
-import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 
@@ -21,14 +20,8 @@ public class JavalinEndpointAdapter implements Handler {
 
   private final RestApiEndpoint endpoint;
 
-  private JavalinEndpointAdapter(final RestApiEndpoint endpoint) {
+  public JavalinEndpointAdapter(final RestApiEndpoint endpoint) {
     this.endpoint = endpoint;
-  }
-
-  public static void addEndpoint(final Javalin app, final RestApiEndpoint endpoint) {
-    final EndpointMetadata metadata = endpoint.getMetadata();
-    app.addHttpHandler(
-        metadata.getMethod(), metadata.getPath(), new JavalinEndpointAdapter(endpoint));
   }
 
   @Override

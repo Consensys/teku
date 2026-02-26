@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.restapi;
 
-import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.http.Handler;
 import io.javalin.http.staticfiles.Location;
@@ -35,7 +34,7 @@ public class SwaggerUIBuilder {
   private static final String SWAGGER_UI_PATH = "/swagger-ui";
   private static final String SWAGGER_HOSTED_PATH = "/webjars/swagger-ui/" + SWAGGER_UI_VERSION;
   // Be careful when modifying this, it's used in static js files for serving Swagger UI
-  private static final String SWAGGER_DOCS_PATH = "/swagger-docs";
+  static final String SWAGGER_DOCS_PATH = "/swagger-docs";
   public static final String SWAGGER_INITIALIZER_JS = "/swagger-initializer.js";
   private static final Set<String> MODIFIED_FILES =
       Set.of(SWAGGER_HOSTED_PATH + SWAGGER_INITIALIZER_JS);
@@ -81,14 +80,11 @@ public class SwaggerUIBuilder {
     config.spaRoot.addHandler(SWAGGER_UI_PATH, INDEX);
   }
 
-  public Optional<String> configureDocs(
-      final Javalin app, final OpenApiDocBuilder openApiDocBuilder) {
+  public Optional<String> buildDocs(final OpenApiDocBuilder openApiDocBuilder) {
     if (!enabled) {
       return Optional.empty();
     }
-    final String apiDocs = openApiDocBuilder.build();
-    app.get(SWAGGER_DOCS_PATH, ctx -> ctx.json(apiDocs));
-    return Optional.of(apiDocs);
+    return Optional.of(openApiDocBuilder.build());
   }
 
   private JavalinThymeleaf createThymeleafRenderer(final String templatePath) {
