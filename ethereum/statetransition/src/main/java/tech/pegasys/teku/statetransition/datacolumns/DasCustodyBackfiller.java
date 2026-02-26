@@ -137,6 +137,7 @@ public class DasCustodyBackfiller extends Service
 
   @Override
   protected synchronized SafeFuture<?> doStop() {
+    this.cancelled = true;
     scheduledBackfiller.ifPresent(Cancellable::cancel);
     pendingRequests.values().forEach(f -> f.cancel(true));
     pendingRequests.clear();
