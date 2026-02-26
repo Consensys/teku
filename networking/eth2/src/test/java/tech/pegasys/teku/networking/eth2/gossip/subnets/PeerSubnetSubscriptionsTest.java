@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
@@ -152,6 +153,49 @@ class PeerSubnetSubscriptionsTest {
   }
 
   @Test
+  public void getSubscribersRequiredWithTargetPerSubnetSubscribers() {
+    // Set up some sync committee subnets we should be participating in
+    syncnetSubscriptions.setSubscriptions(IntList.of(0, 1));
+    dataColumnSubscriptions.setSubscriptions(IntList.of(0, 1));
+
+    // Set up subscribers
+    final List<NodeId> subscribers1 = new ArrayList<>();
+    IntStream.range(0, 1).mapToObj(MockNodeId::new).forEach(subscribers1::add);
+    final List<NodeId> subscribers2 = new ArrayList<>();
+    IntStream.range(0, 2).mapToObj(MockNodeId::new).forEach(subscribers2::add);
+    // Set up attestation topic subscriptions
+    final Map<String, Collection<NodeId>> subscribersByTopic = new HashMap<>();
+    // 10 attestation subnets x2 peers
+    IntStream.range(0, 10)
+        .forEach(
+            subnetId ->
+                subscribersByTopic.put(
+                    attestationTopicProvider.getTopicForSubnet(subnetId), subscribers2));
+    // 54 attestation subnets x1 peer
+    IntStream.range(10, spec.getNetworkingConfig().getAttestationSubnetCount())
+        .forEach(
+            subnetId ->
+                subscribersByTopic.put(
+                    attestationTopicProvider.getTopicForSubnet(subnetId), subscribers1));
+    // 2 sync committee subnets x2 peers
+    syncnetSubscriptions
+        .getSubnets()
+        .forEach(
+            subnetId ->
+                subscribersByTopic.put(
+                    syncCommitteeTopicProvider.getTopicForSubnet(subnetId), subscribers2));
+    // all peers for data column sidecars 0 topic, no for 1
+    subscribersByTopic.put(dataColumnSidecarSubnetTopicProvider.getTopicForSubnet(0), subscribers2);
+
+    when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
+
+    final int requiredPeers = createPeerSubnetSubscriptions(2).getSubscribersRequired();
+    // Missing: 0 for sync committees, 54 subnets x 1 peers for attestations, 1 subnet x 2 peers for
+    // sidecars
+    assertThat(requiredPeers).isEqualTo(56);
+  }
+
+  @Test
   public void getSubscribersRequired_allSubnetsHaveExactlyEnoughSubscribers() {
     // Set up some sync committee subnets we should be participating in
     syncnetSubscriptions.setSubscriptions(IntList.of(0, 1));
@@ -257,6 +301,23 @@ class PeerSubnetSubscriptionsTest {
         dataColumnSidecarSubnetTopicProvider,
         dataColumnSubscriptions,
         TARGET_SUBSCRIBER_COUNT,
+        OptionalInt.empty(),
+        subnetPeerCountGauge);
+  }
+
+  private PeerSubnetSubscriptions createPeerSubnetSubscriptions(
+      final int targetPerSubnetSubscribers) {
+    return PeerSubnetSubscriptions.create(
+        currentSpecVersionSupplier.get(),
+        NodeIdToDataColumnSidecarSubnetsCalculator.NOOP,
+        gossipNetwork,
+        attestationTopicProvider,
+        syncCommitteeTopicProvider,
+        syncnetSubscriptions,
+        dataColumnSidecarSubnetTopicProvider,
+        dataColumnSubscriptions,
+        TARGET_SUBSCRIBER_COUNT,
+        OptionalInt.of(targetPerSubnetSubscribers),
         subnetPeerCountGauge);
   }
 
