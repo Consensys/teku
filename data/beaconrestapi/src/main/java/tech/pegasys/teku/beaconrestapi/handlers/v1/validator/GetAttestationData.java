@@ -96,7 +96,7 @@ public class GetAttestationData extends RestApiEndpoint {
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final UInt64 slot = request.getQueryParameter(SLOT_PARAM);
-    // TODO gloas  committeeIndex will become not reuqired for gloas
+    // TODO gloas #10413 committeeIndex will become not required
     final UInt64 committeeIndex = request.getQueryParameter(COMMITTEE_INDEX_PARAMETER);
     if (committeeIndex.isLessThan(0)) {
       request.respondError(
