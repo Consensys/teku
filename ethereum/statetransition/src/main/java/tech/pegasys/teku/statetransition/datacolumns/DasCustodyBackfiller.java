@@ -65,6 +65,7 @@ public class DasCustodyBackfiller extends Service
   private final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator;
 
   private Optional<Cancellable> scheduledBackfiller = Optional.empty();
+  private boolean cancelled = false;
 
   private final Supplier<SafeFuture<Optional<UInt64>>> earliestAvailableCustodySlotProvider;
   private final Function<UInt64, SafeFuture<Void>> earliestAvailableCustodySlotWriter;
@@ -121,7 +122,10 @@ public class DasCustodyBackfiller extends Service
     return SafeFuture.COMPLETE;
   }
 
-  private void scheduleBackfiller() {
+  private synchronized void scheduleBackfiller() {
+    if (cancelled) {
+      return;
+    }
     scheduledBackfiller =
         Optional.of(
             asyncRunner.runWithFixedDelay(
