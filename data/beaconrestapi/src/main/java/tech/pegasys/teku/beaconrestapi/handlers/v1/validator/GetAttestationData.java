@@ -67,6 +67,9 @@ public class GetAttestationData extends RestApiEndpoint {
                   Requests that the beacon node produce an AttestationData. For `slot`s in \
                   Electra and later, this AttestationData must have a `committee_index` of 0.
 
+                  For `slot`s in Gloas and later, the `index` in `AttestationData` is used to signal \
+                  payload availability which is determined and set by the beacon node.
+
                   A 503 error must be returned if the block identified by the response \
                   `beacon_block_root` is optimistic (i.e. the attestation attests to a block \
                   that has not been fully verified by an execution engine).
@@ -93,6 +96,7 @@ public class GetAttestationData extends RestApiEndpoint {
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final UInt64 slot = request.getQueryParameter(SLOT_PARAM);
+    // TODO gloas #10413 committeeIndex will become not required
     final UInt64 committeeIndex = request.getQueryParameter(COMMITTEE_INDEX_PARAMETER);
     if (committeeIndex.isLessThan(0)) {
       request.respondError(
