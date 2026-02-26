@@ -23,7 +23,6 @@ import io.javalin.Javalin;
 import io.javalin.compression.CompressionStrategy;
 import io.javalin.config.JavalinConfig;
 import io.javalin.plugin.bundled.CorsPluginConfig;
-import io.javalin.util.JavalinLogger;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,12 +35,15 @@ import java.util.OptionalInt;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.eclipse.jetty.util.thread.VirtualThreadPool;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.JavalinEndpointAdapter;
@@ -127,45 +129,62 @@ public class RestApiBuilder {
 
   public RestApi build() {
     final SwaggerUIBuilder swaggerBuilder = new SwaggerUIBuilder(openApiDocsEnabled);
+
+    // Create password file if needed (must exist before AuthorizationHandler reads it)
+    passwordFilePath.ifPresent(RestApiBuilder::ensurePasswordFile);
+
+    // Build OpenAPI docs before config block (needed for route registration)
+    final Optional<String> restApiDocs = swaggerBuilder.buildDocs(openApiDocBuilder);
+
     final Javalin app =
         Javalin.create(
             config -> {
               config.http.defaultContentType = "application/json";
-              config.showJavalinBanner = false;
-              config.startupWatcherEnabled = false;
-              // Work around a bug in Javalin where it decides whether to compress on each call to
-              // write which could result in a mix of compressed and uncompressed content
-              // and means it doesn't evaluate the length of the response correctly.
-              CompressionStrategy strategy = CompressionStrategy.GZIP;
-              strategy.setDefaultMinSizeForCompression(0);
-              config.http.customCompression(strategy);
+              config.startup.showJavalinBanner = false;
+              config.startup.startupWatcherEnabled = false;
+              config.http.compressionStrategy = CompressionStrategy.GZIP;
               configureCors(config);
               swaggerBuilder.configureUI(config);
               config.jetty.modifyServer(this::modifyJettyServer);
+
+              // All routes must be registered in config block (Javalin 7 requirement)
+              if (!hostAllowlist.isEmpty()) {
+                config.routes.before(new HostAllowlistHandler(hostAllowlist));
+              }
+
+              endpoints.forEach(
+                  endpoint ->
+                      config.routes.addHttpHandler(
+                          endpoint.getMetadata().getMethod(),
+                          endpoint.getMetadata().getPath(),
+                          new JavalinEndpointAdapter(endpoint)));
+
+              addExceptionHandlers(config);
+
+              restApiDocs.ifPresent(
+                  docs ->
+                      config.routes.get(SwaggerUIBuilder.SWAGGER_DOCS_PATH, ctx -> ctx.json(docs)));
+
+              passwordFilePath.ifPresent(
+                  path -> config.routes.beforeMatched(new AuthorizationHandler(path)));
             });
 
-    if (!hostAllowlist.isEmpty()) {
-      app.before(new HostAllowlistHandler(hostAllowlist));
-    }
-
-    endpoints.forEach(endpoint -> JavalinEndpointAdapter.addEndpoint(app, endpoint));
-
-    addExceptionHandlers(app);
-    Optional<String> restApiDocs = swaggerBuilder.configureDocs(app, openApiDocBuilder);
-    return new RestApi(app, restApiDocs, passwordFilePath);
+    return new RestApi(app, restApiDocs);
   }
 
-  private void addExceptionHandlers(final Javalin app) {
+  private void addExceptionHandlers(final JavalinConfig config) {
     exceptionHandlers.forEach(
-        (exceptionType, handler) -> addExceptionHandler(app, exceptionType, handler));
+        (exceptionType, handler) -> addExceptionHandler(config, exceptionType, handler));
     // Always register a catch-all exception handler
-    app.exception(Exception.class, new DefaultExceptionHandler<>());
+    config.routes.exception(Exception.class, new DefaultExceptionHandler<>());
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"}) // builder API guarantees types match up
   private void addExceptionHandler(
-      final Javalin app, final Class<?> exceptionType, final RestApiExceptionHandler<?> handler) {
-    app.exception(
+      final JavalinConfig config,
+      final Class<?> exceptionType,
+      final RestApiExceptionHandler<?> handler) {
+    config.routes.exception(
         (Class) exceptionType,
         (exception, ctx) -> {
           try {
@@ -215,7 +234,16 @@ public class RestApiBuilder {
             }
           }
         });
-    JavalinLogger.startupInfo = false;
+
+    // Enable bounded virtual threads for request handling
+    if (server.getThreadPool() instanceof QueuedThreadPool qtp) {
+      final VirtualThreadPool virtualThreadPool = new VirtualThreadPool();
+      virtualThreadPool.setMaxConcurrentTasks(250);
+      qtp.setVirtualThreadsExecutor(virtualThreadPool);
+      LOG.info(
+          "Virtual threads enabled for REST API (max concurrent tasks: {})",
+          virtualThreadPool.getMaxConcurrentTasks());
+    }
   }
 
   private SslContextFactory.Server getSslContextFactory() {
@@ -232,9 +260,25 @@ public class RestApiBuilder {
         },
         () -> sslContextFactory.setKeyStorePassword(""));
 
-    sslContextFactory.setProvider("Conscrypt");
-
     return sslContextFactory;
+  }
+
+  static void ensurePasswordFile(final Path path) {
+    if (!path.toFile().exists()) {
+      try {
+        if (!path.getParent().toFile().mkdirs() && !path.getParent().toFile().isDirectory()) {
+          LOG.error("Could not mkdirs for file {}", path.toAbsolutePath());
+          throw new IllegalStateException(
+              String.format("Cannot create directories %s", path.getParent().toAbsolutePath()));
+        }
+        final Bytes generated = Bytes.random(16);
+        LOG.info("Initializing API auth access file {}", path.toAbsolutePath());
+        Files.writeString(path, generated.toUnprefixedHexString(), UTF_8);
+      } catch (IOException e) {
+        LOG.error("Failed to write auth file to {}", path, e);
+        throw new IllegalStateException("Failed to initialise access file for validator-api.");
+      }
+    }
   }
 
   public interface RestApiExceptionHandler<T extends Exception> {
