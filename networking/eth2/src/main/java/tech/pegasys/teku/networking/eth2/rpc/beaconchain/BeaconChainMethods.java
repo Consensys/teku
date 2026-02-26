@@ -47,7 +47,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.methods.VersionedEth2RpcMethod
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -531,7 +530,7 @@ public class BeaconChainMethods {
 
     final DataColumnSidecarsByRangeMessageHandler dataColumnSidecarsByRangeMessageHandler =
         new DataColumnSidecarsByRangeMessageHandler(
-            getSpecConfigFulu(spec), metricsSystem, combinedChainDataClient, dasLogger);
+            spec, metricsSystem, combinedChainDataClient, dasLogger);
 
     return Optional.of(
         new SingleProtocolEth2RpcMethod<>(
@@ -736,10 +735,6 @@ public class BeaconChainMethods {
         contextCodec,
         statusHandler,
         peerLookup);
-  }
-
-  private static SpecConfigFulu getSpecConfigFulu(final Spec spec) {
-    return SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
   }
 
   private static SpecConfigGloas getSpecConfigGloas(final Spec spec) {

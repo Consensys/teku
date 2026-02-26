@@ -26,6 +26,8 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
+import static tech.pegasys.teku.spec.SpecMilestone.FULU;
+import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import com.google.common.collect.ImmutableSortedMap;
 import java.util.ArrayList;
@@ -51,7 +53,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -68,7 +69,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
-@TestSpecContext(milestone = SpecMilestone.FULU)
+@TestSpecContext(milestone = {FULU, GLOAS})
 public class DataColumnSidecarsByRangeMessageHandlerTest {
 
   private static final RequestKey ZERO_OBJECTS_REQUEST_APPROVAL = new RequestKey(ZERO, 101);
@@ -113,10 +114,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     maxRequestDataColumnSidecars = UInt64.valueOf(specConfigFulu.getMaxRequestDataColumnSidecars());
     handler =
         new DataColumnSidecarsByRangeMessageHandler(
-            SpecConfigFulu.required(specVersionFulu.getConfig()),
-            metricsSystem,
-            combinedChainDataClient,
-            DasReqRespLogger.NOOP);
+            spec, metricsSystem, combinedChainDataClient, DasReqRespLogger.NOOP);
     final SchemaDefinitionsFulu schemaDefinitionsFulu =
         specVersionFulu.getSchemaDefinitions().toVersionFulu().orElseThrow();
     dataColumnSidecarsByRangeRequestMessageSchema =

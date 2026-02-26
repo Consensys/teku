@@ -626,6 +626,11 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   }
 
   @Override
+  public int getMaxRequestDataColumnSidecars() {
+    return specConfigFulu.getMaxRequestDataColumnSidecars();
+  }
+
+  @Override
   public boolean isAvailabilityOfBlobSidecarsRequiredAtEpoch(
       final UInt64 currentEpoch, final UInt64 epoch) {
     return !epoch.isGreaterThanOrEqualTo(specConfigFulu.getFuluForkEpoch());
