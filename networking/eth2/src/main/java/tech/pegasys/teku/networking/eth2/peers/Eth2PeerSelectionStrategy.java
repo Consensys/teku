@@ -24,7 +24,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -124,12 +123,15 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
       final int scoreBasedPeersToAdd,
       final List<DiscoveryPeer> allCandidatePeers) {
     final PeerScorer peerScorer = peerSubnetSubscriptions.createScorer();
-    return allCandidatePeers.stream()
-        .sorted(
-            Comparator.comparing((Function<DiscoveryPeer, Integer>) peerScorer::scoreCandidatePeer)
-                .reversed())
-        .flatMap(candidate -> checkCandidate(candidate, network).stream())
-        .limit(scoreBasedPeersToAdd)
+
+    return peerScorer
+        .selectCandidatePeers(
+            allCandidatePeers.stream()
+                .filter(candidate -> checkCandidate(candidate, network).isPresent())
+                .toList(),
+            scoreBasedPeersToAdd)
+        .stream()
+        .map(network::createPeerAddress)
         .toList();
   }
 
@@ -183,7 +185,9 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     return Stream.concat(
             randomlySelectedPeersBeingDropped.stream(),
             peersBySource.getOrDefault(SCORE_BASED, emptyList()).stream())
-        .sorted(Comparator.comparing(peerScorer::scoreExistingPeer))
+        .sorted(
+            Comparator.comparing(
+                id -> peerScorer.scoreExistingPeer(PeerId.fromExistingId(id.getId()))))
         .limit(peersToDrop)
         .toList();
   }

@@ -15,6 +15,11 @@ package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.p2p.discovery.discv5.DiscV5Service.DEFAULT_NODE_RECORD_CONVERTER;
 
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -33,10 +38,10 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.networking.eth2.peers.PeerId;
 import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
-import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -57,7 +62,8 @@ class SubnetScorerTest {
             scorer.scoreCandidatePeer(
                 createDiscoveryPeer(
                     schemaDefinitions.getAttnetsENRFieldSchema().getDefault(),
-                    schemaDefinitions.getSyncnetsENRFieldSchema().getDefault())))
+                    schemaDefinitions.getSyncnetsENRFieldSchema().getDefault()),
+                new SubnetScorer.SelectedCandidateSubnetCountChanges()))
         .isZero();
   }
 
@@ -68,16 +74,16 @@ class SubnetScorerTest {
             PeerSubnetSubscriptions.createEmpty(
                 () -> schemaDefinitions,
                 SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT)));
-    assertThat(scorer.scoreExistingPeer(new MockNodeId(1))).isZero();
+    assertThat(scorer.scoreExistingPeer(PeerId.fromExistingId(new MockNodeId(1)))).isZero();
   }
 
   @Test
   void shouldScoreExistingPeersOnSubnetsWithFewPeersMoreHighly() {
-    final MockNodeId node1 = new MockNodeId(0);
-    final MockNodeId node2 = new MockNodeId(1);
-    final MockNodeId node3 = new MockNodeId(2);
-    final MockNodeId node4 = new MockNodeId(3);
-    final MockNodeId node5 = new MockNodeId(4);
+    final PeerId node1 = PeerId.fromExistingId(new MockNodeId(0));
+    final PeerId node2 = PeerId.fromExistingId(new MockNodeId(1));
+    final PeerId node3 = PeerId.fromExistingId(new MockNodeId(2));
+    final PeerId node4 = PeerId.fromExistingId(new MockNodeId(3));
+    final PeerId node5 = PeerId.fromExistingId(new MockNodeId(4));
     final SubnetScorer scorer =
         SubnetScorer.create(
             PeerSubnetSubscriptions.builder(
@@ -117,18 +123,18 @@ class SubnetScorerTest {
 
     assertExistingPeerScores(
         scorer,
-        entry(node1, 562),
-        entry(node2, 312),
-        entry(node3, 1062),
-        entry(node4, 312),
+        entry(node1, 265),
+        entry(node2, 140),
+        entry(node3, 1015),
+        entry(node4, 140),
         entry(node5, 0));
   }
 
   @Test
   void shouldScoreCandidatePeersOnSubnetsWithFewPeersMoreHighly() {
-    final MockNodeId node1 = new MockNodeId(0);
-    final MockNodeId node2 = new MockNodeId(1);
-    final MockNodeId node3 = new MockNodeId(2);
+    final PeerId node1 = PeerId.fromExistingId(new MockNodeId(0));
+    final PeerId node2 = PeerId.fromExistingId(new MockNodeId(1));
+    final PeerId node3 = PeerId.fromExistingId(new MockNodeId(2));
     final SubnetScorer scorer =
         SubnetScorer.create(
             PeerSubnetSubscriptions.builder(
@@ -165,10 +171,10 @@ class SubnetScorerTest {
 
     assertCandidatePeerScores(
         scorer,
-        entry(candidateWithSubnets(IntList.of(1, 3), IntList.of(1)), 562),
-        entry(candidateWithSubnets(IntList.of(1), IntList.of(1)), 312),
-        entry(candidateWithSubnets(IntList.of(2), IntList.of(1)), 1062),
-        entry(candidateWithSubnets(IntList.of(3), IntList.of(1)), 312),
+        entry(candidateWithSubnets(IntList.of(1, 3), IntList.of(1)), 265),
+        entry(candidateWithSubnets(IntList.of(1), IntList.of(1)), 140),
+        entry(candidateWithSubnets(IntList.of(2), IntList.of(1)), 1015),
+        entry(candidateWithSubnets(IntList.of(3), IntList.of(1)), 140),
         entry(candidateWithSubnets(IntLists.emptyList(), IntLists.emptyList()), 0),
         entry(candidateWithSubnets(IntList.of(5), IntLists.emptyList()), 1000),
         entry(candidateWithSubnets(IntList.of(4), IntLists.emptyList()), 0),
@@ -176,10 +182,495 @@ class SubnetScorerTest {
         entry(candidateWithSubnets(IntLists.emptyList(), IntList.of(3)), 0));
   }
 
+  @Test
+  void scoreCandidatePeer_shouldReturnZeroForPeerWithNoRelevantSubnets() {
+    final SubnetScorer scorer =
+        SubnetScorer.create(
+            PeerSubnetSubscriptions.builder(
+                    () -> schemaDefinitions,
+                    SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT))
+                .attestationSubnetSubscriptions(b -> b.addRelevantSubnet(1).addRelevantSubnet(2))
+                .syncCommitteeSubnetSubscriptions(b -> b.addRelevantSubnet(1))
+                .nodeIdToDataColumnSidecarSubnetsCalculator(
+                    NodeIdToDataColumnSidecarSubnetsCalculator.NOOP)
+                .build());
+
+    // Candidate with subnets that are not relevant
+    final DiscoveryPeer candidate =
+        createDiscoveryPeer(
+            schemaDefinitions.getAttnetsENRFieldSchema().ofBits(IntList.of(3, 4)),
+            schemaDefinitions.getSyncnetsENRFieldSchema().ofBits(IntList.of(2)));
+
+    assertThat(
+            scorer.scoreCandidatePeer(
+                candidate, new SubnetScorer.SelectedCandidateSubnetCountChanges()))
+        .isZero();
+  }
+
+  @Test
+  void scoreCandidatePeer_shouldScoreHigherForUniqueSubnets() {
+    final SubnetScorer scorer =
+        SubnetScorer.create(
+            PeerSubnetSubscriptions.builder(
+                    () -> schemaDefinitions,
+                    SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT))
+                .attestationSubnetSubscriptions(
+                    b -> b.addRelevantSubnet(1).addRelevantSubnet(2).addRelevantSubnet(3))
+                .syncCommitteeSubnetSubscriptions(b -> b.addRelevantSubnet(1))
+                .nodeIdToDataColumnSidecarSubnetsCalculator(
+                    NodeIdToDataColumnSidecarSubnetsCalculator.NOOP)
+                .build());
+
+    // Candidate with unique attestation subnets (no existing subscribers)
+    final DiscoveryPeer candidateWithUniqueSubnet =
+        createDiscoveryPeer(
+            schemaDefinitions.getAttnetsENRFieldSchema().ofBits(IntList.of(1)),
+            schemaDefinitions.getSyncnetsENRFieldSchema().getDefault());
+
+    // Candidate with multiple unique attestation subnets
+    final DiscoveryPeer candidateWithMultipleUniqueSubnets =
+        createDiscoveryPeer(
+            schemaDefinitions.getAttnetsENRFieldSchema().ofBits(IntList.of(1, 2, 3)),
+            schemaDefinitions.getSyncnetsENRFieldSchema().getDefault());
+
+    final int singleSubnetScore =
+        scorer.scoreCandidatePeer(
+            candidateWithUniqueSubnet, new SubnetScorer.SelectedCandidateSubnetCountChanges());
+    final int multipleSubnetsScore =
+        scorer.scoreCandidatePeer(
+            candidateWithMultipleUniqueSubnets,
+            new SubnetScorer.SelectedCandidateSubnetCountChanges());
+
+    assertThat(multipleSubnetsScore).isGreaterThan(singleSubnetScore);
+    assertThat(singleSubnetScore).isEqualTo(1000); // MAX_SUBNET_SCORE / (1^3)
+    assertThat(multipleSubnetsScore).isEqualTo(3000); // 3 * 1000
+  }
+
+  @Test
+  void scoreCandidatePeer_shouldConsiderSubnetCountChanges() {
+    final PeerId node1 = PeerId.fromExistingId(new MockNodeId(0));
+    final SubnetScorer scorer =
+        SubnetScorer.create(
+            PeerSubnetSubscriptions.builder(
+                    () -> schemaDefinitions,
+                    SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT))
+                .attestationSubnetSubscriptions(b -> b.addRelevantSubnet(1).addSubscriber(1, node1))
+                .syncCommitteeSubnetSubscriptions(b -> b.addRelevantSubnet(1))
+                .nodeIdToDataColumnSidecarSubnetsCalculator(
+                    NodeIdToDataColumnSidecarSubnetsCalculator.NOOP)
+                .build());
+
+    final DiscoveryPeer candidate =
+        createDiscoveryPeer(
+            schemaDefinitions.getAttnetsENRFieldSchema().ofBits(IntList.of(1)),
+            schemaDefinitions.getSyncnetsENRFieldSchema().getDefault());
+
+    // Score without subnet changes (1 existing subscriber on subnet 1)
+    final int scoreWithoutChanges =
+        scorer.scoreCandidatePeer(
+            candidate, new SubnetScorer.SelectedCandidateSubnetCountChanges());
+
+    // Score with subnet changes (simulate 2 additional subscribers on subnet 1)
+    final SubnetScorer.SelectedCandidateSubnetCountChanges changes =
+        new SubnetScorer.SelectedCandidateSubnetCountChanges();
+    changes.increment(SubnetScorer.SubnetType.ATTESTATION, 1);
+    changes.increment(SubnetScorer.SubnetType.ATTESTATION, 1);
+    final int scoreWithChanges = scorer.scoreCandidatePeer(candidate, changes);
+
+    // Score should be lower with more subscribers (less valuable)
+    assertThat(scoreWithChanges).isLessThan(scoreWithoutChanges);
+    assertThat(scoreWithoutChanges).isEqualTo(125); // MAX_SUBNET_SCORE / (2^3)
+    assertThat(scoreWithChanges).isEqualTo(15); // MAX_SUBNET_SCORE / (4^3) = 1000 / 64 = 15
+  }
+
+  @Test
+  void scoreCandidatePeer_shouldScoreAttestationAndSyncCommitteeSubnetsCombined() {
+    final PeerId node1 = PeerId.fromExistingId(new MockNodeId(0));
+    final SubnetScorer scorer =
+        SubnetScorer.create(
+            PeerSubnetSubscriptions.builder(
+                    () -> schemaDefinitions,
+                    SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT))
+                .attestationSubnetSubscriptions(b -> b.addRelevantSubnet(1).addSubscriber(1, node1))
+                .syncCommitteeSubnetSubscriptions(
+                    b -> b.addRelevantSubnet(2).addSubscriber(2, node1))
+                .nodeIdToDataColumnSidecarSubnetsCalculator(
+                    NodeIdToDataColumnSidecarSubnetsCalculator.NOOP)
+                .build());
+
+    final DiscoveryPeer candidateWithBoth =
+        createDiscoveryPeer(
+            schemaDefinitions.getAttnetsENRFieldSchema().ofBits(IntList.of(1)),
+            schemaDefinitions.getSyncnetsENRFieldSchema().ofBits(IntList.of(2)));
+
+    final DiscoveryPeer candidateWithAttestationOnly =
+        createDiscoveryPeer(
+            schemaDefinitions.getAttnetsENRFieldSchema().ofBits(IntList.of(1)),
+            schemaDefinitions.getSyncnetsENRFieldSchema().getDefault());
+
+    final DiscoveryPeer candidateWithSyncCommitteeOnly =
+        createDiscoveryPeer(
+            schemaDefinitions.getAttnetsENRFieldSchema().getDefault(),
+            schemaDefinitions.getSyncnetsENRFieldSchema().ofBits(IntList.of(2)));
+
+    final int scoreBoth =
+        scorer.scoreCandidatePeer(
+            candidateWithBoth, new SubnetScorer.SelectedCandidateSubnetCountChanges());
+    final int scoreAttestationOnly =
+        scorer.scoreCandidatePeer(
+            candidateWithAttestationOnly, new SubnetScorer.SelectedCandidateSubnetCountChanges());
+    final int scoreSyncCommitteeOnly =
+        scorer.scoreCandidatePeer(
+            candidateWithSyncCommitteeOnly, new SubnetScorer.SelectedCandidateSubnetCountChanges());
+
+    // Combined score should equal sum of individual scores
+    assertThat(scoreBoth).isEqualTo(scoreAttestationOnly + scoreSyncCommitteeOnly);
+    assertThat(scoreBoth).isEqualTo(250); // 125 + 125
+  }
+
+  @Test
+  void scoreCandidatePeer_shouldUseOverloadedMethodWithSszBitvectors() {
+    final SubnetScorer scorer =
+        SubnetScorer.create(
+            PeerSubnetSubscriptions.builder(
+                    () -> schemaDefinitions,
+                    SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT))
+                .attestationSubnetSubscriptions(b -> b.addRelevantSubnet(1).addRelevantSubnet(2))
+                .syncCommitteeSubnetSubscriptions(b -> b.addRelevantSubnet(1))
+                .nodeIdToDataColumnSidecarSubnetsCalculator(
+                    NodeIdToDataColumnSidecarSubnetsCalculator.NOOP)
+                .build());
+
+    final SszBitvector attSubnets =
+        schemaDefinitions.getAttnetsENRFieldSchema().ofBits(IntList.of(1, 2));
+    final SszBitvector syncSubnets =
+        schemaDefinitions.getSyncnetsENRFieldSchema().ofBits(IntList.of(1));
+    final SszBitvector dataColumnSubnets =
+        SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT).getDefault();
+
+    final int score =
+        scorer.scoreCandidatePeer(
+            attSubnets,
+            syncSubnets,
+            dataColumnSubnets,
+            new SubnetScorer.SelectedCandidateSubnetCountChanges());
+
+    // Expected score: 2 attestation subnets (1000 each) + 1 sync committee subnet (1000)
+    assertThat(score).isEqualTo(3000);
+  }
+
+  @Test
+  void scoreCandidatePeer_shouldScoreLowerWithMoreExistingSubscribers() {
+    final PeerId node1 = PeerId.fromExistingId(new MockNodeId(0));
+    final PeerId node2 = PeerId.fromExistingId(new MockNodeId(1));
+    final PeerId node3 = PeerId.fromExistingId(new MockNodeId(2));
+    final SubnetScorer scorer =
+        SubnetScorer.create(
+            PeerSubnetSubscriptions.builder(
+                    () -> schemaDefinitions,
+                    SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT))
+                .attestationSubnetSubscriptions(
+                    b ->
+                        b.addRelevantSubnet(1)
+                            .addRelevantSubnet(2)
+                            .addSubscriber(2, node1)
+                            .addSubscriber(2, node2)
+                            .addSubscriber(2, node3))
+                .syncCommitteeSubnetSubscriptions(b -> {})
+                .nodeIdToDataColumnSidecarSubnetsCalculator(
+                    NodeIdToDataColumnSidecarSubnetsCalculator.NOOP)
+                .build());
+
+    final DiscoveryPeer candidateForSubnet1 =
+        createDiscoveryPeer(
+            schemaDefinitions.getAttnetsENRFieldSchema().ofBits(IntList.of(1)),
+            schemaDefinitions.getSyncnetsENRFieldSchema().getDefault());
+
+    final DiscoveryPeer candidateForSubnet2 =
+        createDiscoveryPeer(
+            schemaDefinitions.getAttnetsENRFieldSchema().ofBits(IntList.of(2)),
+            schemaDefinitions.getSyncnetsENRFieldSchema().getDefault());
+
+    final int scoreForSubnet1WithNoSubscribers =
+        scorer.scoreCandidatePeer(
+            candidateForSubnet1, new SubnetScorer.SelectedCandidateSubnetCountChanges());
+    final int scoreForSubnet2WithThreeSubscribers =
+        scorer.scoreCandidatePeer(
+            candidateForSubnet2, new SubnetScorer.SelectedCandidateSubnetCountChanges());
+
+    // Subnet 1 (no existing subscribers): 1000 / (1^3) = 1000
+    // Subnet 2 (3 existing subscribers): 1000 / (4^3) = 15
+    assertThat(scoreForSubnet1WithNoSubscribers).isEqualTo(1000);
+    assertThat(scoreForSubnet2WithThreeSubscribers).isEqualTo(15);
+    assertThat(scoreForSubnet1WithNoSubscribers).isGreaterThan(scoreForSubnet2WithThreeSubscribers);
+  }
+
+  @Test
+  void shouldScoreDataColumnSidecarSubnets() {
+    final PeerId existingPeer = PeerId.fromExistingId(new MockNodeId(0));
+    final SubnetScorer scorer =
+        SubnetScorer.create(
+            PeerSubnetSubscriptions.builder(
+                    () -> schemaDefinitions,
+                    SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT))
+                .dataColumnSidecarSubnetSubscriptions(
+                    b -> b.addRelevantSubnet(0).addRelevantSubnet(1).addSubscriber(1, existingPeer))
+                .nodeIdToDataColumnSidecarSubnetsCalculator(
+                    (peerId, custodySubnetCount) ->
+                        Optional.of(
+                            SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT)
+                                .ofBits(IntList.of(0))))
+                .build());
+
+    final DiscoveryPeer candidate =
+        createDiscoveryPeer(
+            schemaDefinitions.getAttnetsENRFieldSchema().getDefault(),
+            schemaDefinitions.getSyncnetsENRFieldSchema().getDefault());
+
+    final int score =
+        scorer.scoreCandidatePeer(
+            candidate, new SubnetScorer.SelectedCandidateSubnetCountChanges());
+
+    // Should score for data column subnet 0 (no existing subscribers): 1000
+    assertThat(score).isEqualTo(1000);
+  }
+
+  @Test
+  void selectCandidatePeers_shouldSelectHighestScoringPeers() {
+    final SubnetScorer scorer =
+        SubnetScorer.create(
+            PeerSubnetSubscriptions.builder(
+                    () -> schemaDefinitions,
+                    SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT))
+                .attestationSubnetSubscriptions(b -> b.addRelevantSubnet(1))
+                .nodeIdToDataColumnSidecarSubnetsCalculator(
+                    NodeIdToDataColumnSidecarSubnetsCalculator.NOOP)
+                .build());
+
+    final List<DiscoveryPeer> candidates =
+        List.of(
+            createDiscoveryPeer(
+                schemaDefinitions
+                    .getAttnetsENRFieldSchema()
+                    .getDefault(), // No relevant subnets - low score
+                schemaDefinitions.getSyncnetsENRFieldSchema().getDefault()),
+            createDiscoveryPeer(
+                schemaDefinitions
+                    .getAttnetsENRFieldSchema()
+                    .ofBits(IntList.of(1)), // Has relevant subnet - high score
+                schemaDefinitions.getSyncnetsENRFieldSchema().getDefault()));
+
+    final List<DiscoveryPeer> selected = scorer.selectCandidatePeers(candidates, 1);
+
+    assertThat(selected).hasSize(1);
+    assertThat(selected.getFirst())
+        .isEqualTo(candidates.get(1)); // Should select the higher-scoring peer
+  }
+
+  @Test
+  void selectCandidatePeers_shouldRespectMaxToSelectLimit() {
+    final SubnetScorer scorer =
+        SubnetScorer.create(
+            PeerSubnetSubscriptions.createEmpty(
+                () -> schemaDefinitions,
+                SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT)));
+
+    final List<DiscoveryPeer> candidates =
+        List.of(
+            createDiscoveryPeer(
+                schemaDefinitions.getAttnetsENRFieldSchema().getDefault(),
+                schemaDefinitions.getSyncnetsENRFieldSchema().getDefault()),
+            createDiscoveryPeer(
+                schemaDefinitions.getAttnetsENRFieldSchema().getDefault(),
+                schemaDefinitions.getSyncnetsENRFieldSchema().getDefault()));
+
+    final List<DiscoveryPeer> selected = scorer.selectCandidatePeers(candidates, 1);
+    assertThat(selected).hasSize(1);
+  }
+
+  @Test
+  void scoreCandidatePeer_shouldHandleEmptySubnets() {
+    final SubnetScorer scorer =
+        SubnetScorer.create(
+            PeerSubnetSubscriptions.createEmpty(
+                () -> schemaDefinitions,
+                SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT)));
+
+    final SszBitvector emptyAttSubnets = schemaDefinitions.getAttnetsENRFieldSchema().getDefault();
+    final SszBitvector emptySyncSubnets =
+        schemaDefinitions.getSyncnetsENRFieldSchema().getDefault();
+    final SszBitvector emptyDataColumnSubnets =
+        SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT).getDefault();
+
+    assertThat(
+            scorer.scoreCandidatePeer(
+                emptyAttSubnets,
+                emptySyncSubnets,
+                emptyDataColumnSubnets,
+                new SubnetScorer.SelectedCandidateSubnetCountChanges()))
+        .isZero();
+  }
+
+  @Test
+  void selectCandidatePeers_shouldHandleEmptyList() {
+    final SubnetScorer scorer =
+        SubnetScorer.create(
+            PeerSubnetSubscriptions.createEmpty(
+                () -> schemaDefinitions,
+                SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT)));
+
+    final List<DiscoveryPeer> selected = scorer.selectCandidatePeers(List.of(), 5);
+    assertThat(selected).isEmpty();
+  }
+
+  @Test
+  void shouldCacheDataColumnSubnetCalculations() {
+    final NodeIdToDataColumnSidecarSubnetsCalculator calculator =
+        mock(NodeIdToDataColumnSidecarSubnetsCalculator.class);
+
+    final SszBitvector expectedSubnets =
+        SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT).ofBits(IntList.of(1));
+
+    when(calculator.calculateSubnets(any(), any())).thenReturn(Optional.of(expectedSubnets));
+
+    final SubnetScorer scorer =
+        SubnetScorer.create(
+            PeerSubnetSubscriptions.builder(
+                    () -> schemaDefinitions,
+                    SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT))
+                .nodeIdToDataColumnSidecarSubnetsCalculator(calculator)
+                .build());
+
+    final DiscoveryPeer candidate =
+        createDiscoveryPeer(
+            schemaDefinitions.getAttnetsENRFieldSchema().getDefault(),
+            schemaDefinitions.getSyncnetsENRFieldSchema().getDefault());
+
+    // Score multiple times - should only calculate subnets for a peer once due to caching
+    scorer.scoreCandidatePeer(candidate, new SubnetScorer.SelectedCandidateSubnetCountChanges());
+    scorer.scoreCandidatePeer(candidate, new SubnetScorer.SelectedCandidateSubnetCountChanges());
+
+    verify(calculator, times(1)).calculateSubnets(any(), any());
+  }
+
+  @Test
+  void subnetCounts_shouldTrackCorrectly() {
+    final SubnetScorer.SubnetCounts counts = new SubnetScorer.SubnetCounts();
+
+    assertThat(counts.get(1)).isZero();
+    counts.increment(1);
+    assertThat(counts.get(1)).isEqualTo(1);
+    counts.increment(1);
+    assertThat(counts.get(1)).isEqualTo(2);
+  }
+
+  @Test
+  void selectedCandidateSubnetCountChanges_shouldTrackAllSubnetTypes() {
+    final SubnetScorer.SelectedCandidateSubnetCountChanges changes =
+        new SubnetScorer.SelectedCandidateSubnetCountChanges();
+
+    changes.increment(SubnetScorer.SubnetType.ATTESTATION, 1);
+    changes.increment(SubnetScorer.SubnetType.SYNC_COMMITTEE, 2);
+    changes.increment(SubnetScorer.SubnetType.DATA_COLUMN_SIDECAR, 3);
+
+    assertThat(changes.get(SubnetScorer.SubnetType.ATTESTATION, 1)).isEqualTo(1);
+    assertThat(changes.get(SubnetScorer.SubnetType.SYNC_COMMITTEE, 2)).isEqualTo(1);
+    assertThat(changes.get(SubnetScorer.SubnetType.DATA_COLUMN_SIDECAR, 3)).isEqualTo(1);
+  }
+
+  @Test
+  void shouldScoreWithAllSubnetTypesAndChanges() {
+    final PeerId existingPeer = PeerId.fromExistingId(new MockNodeId(0));
+    final SubnetScorer scorer =
+        SubnetScorer.create(
+            PeerSubnetSubscriptions.builder(
+                    () -> schemaDefinitions,
+                    SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT))
+                .attestationSubnetSubscriptions(
+                    b -> b.addRelevantSubnet(1).addSubscriber(1, existingPeer))
+                .syncCommitteeSubnetSubscriptions(
+                    b -> b.addRelevantSubnet(1).addSubscriber(1, existingPeer))
+                .dataColumnSidecarSubnetSubscriptions(
+                    b -> b.addRelevantSubnet(1).addSubscriber(1, existingPeer))
+                .build());
+
+    final SubnetScorer.SelectedCandidateSubnetCountChanges changes =
+        new SubnetScorer.SelectedCandidateSubnetCountChanges();
+    changes.increment(SubnetScorer.SubnetType.ATTESTATION, 1);
+    changes.increment(SubnetScorer.SubnetType.SYNC_COMMITTEE, 1);
+    changes.increment(SubnetScorer.SubnetType.DATA_COLUMN_SIDECAR, 1);
+
+    final int score =
+        scorer.scoreCandidatePeer(
+            schemaDefinitions.getAttnetsENRFieldSchema().ofBits(IntList.of(1)),
+            schemaDefinitions.getSyncnetsENRFieldSchema().ofBits(IntList.of(1)),
+            SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT).ofBits(IntList.of(1)),
+            changes);
+
+    // With 1 existing + 1 change = 2 total subscribers per subnet per type
+    // Score should be 3 * (1000 / (3^3)) = 3 * 37 = 111
+    assertThat(score).isEqualTo(111);
+  }
+
+  @Test
+  void selectCandidatePeers_shouldUpdateSubnetChangesCorrectly() {
+    final SubnetScorer scorer =
+        SubnetScorer.create(
+            PeerSubnetSubscriptions.builder(
+                    () -> schemaDefinitions,
+                    SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT))
+                .attestationSubnetSubscriptions(b -> b.addRelevantSubnet(1).addRelevantSubnet(2))
+                .syncCommitteeSubnetSubscriptions(b -> b.addRelevantSubnet(1))
+                .nodeIdToDataColumnSidecarSubnetsCalculator(
+                    NodeIdToDataColumnSidecarSubnetsCalculator.NOOP)
+                .build());
+
+    // First peer has attestation subnet 1, sync committee subnet 1
+    // Second peer has attestation subnet 2 only
+    final List<DiscoveryPeer> candidates =
+        List.of(
+            createDiscoveryPeer(
+                schemaDefinitions.getAttnetsENRFieldSchema().ofBits(IntList.of(1)),
+                schemaDefinitions.getSyncnetsENRFieldSchema().ofBits(IntList.of(1))),
+            createDiscoveryPeer(
+                schemaDefinitions.getAttnetsENRFieldSchema().ofBits(IntList.of(2)),
+                schemaDefinitions.getSyncnetsENRFieldSchema().getDefault()));
+
+    final List<DiscoveryPeer> selected = scorer.selectCandidatePeers(candidates, 2);
+
+    // Should select both peers
+    assertThat(selected).hasSize(2);
+    // First peer should be selected first (higher score due to multiple subnets)
+    assertThat(selected.get(0)).isEqualTo(candidates.get(0));
+    assertThat(selected.get(1)).isEqualTo(candidates.get(1));
+  }
+
+  @Test
+  void selectCandidatePeers_shouldStopWhenNoMoreCandidatesAvailable() {
+    final SubnetScorer scorer =
+        SubnetScorer.create(
+            PeerSubnetSubscriptions.createEmpty(
+                () -> schemaDefinitions,
+                SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT)));
+
+    final List<DiscoveryPeer> candidates =
+        List.of(
+            createDiscoveryPeer(
+                schemaDefinitions.getAttnetsENRFieldSchema().getDefault(),
+                schemaDefinitions.getSyncnetsENRFieldSchema().getDefault()));
+
+    // Ask for more peers than available
+    final List<DiscoveryPeer> selected = scorer.selectCandidatePeers(candidates, 5);
+
+    // Should only return available candidates
+    assertThat(selected).hasSize(1);
+    assertThat(selected.getFirst()).isEqualTo(candidates.getFirst());
+  }
+
   @SafeVarargs
   private void assertExistingPeerScores(
-      final PeerScorer scorer, final Map.Entry<NodeId, Integer>... expected) {
-    final Map<NodeId, Integer> actual =
+      final PeerScorer scorer, final Map.Entry<PeerId, Integer>... expected) {
+    final Map<PeerId, Integer> actual =
         Stream.of(expected)
             .map(Map.Entry::getKey)
             .collect(Collectors.toMap(Function.identity(), scorer::scoreExistingPeer));
@@ -188,7 +679,7 @@ class SubnetScorerTest {
 
   @SafeVarargs
   private void assertCandidatePeerScores(
-      final PeerScorer scorer,
+      final SubnetScorer scorer,
       final Map.Entry<Pair<SszBitvector, SszBitvector>, Integer>... expected) {
     final Map<Pair<SszBitvector, SszBitvector>, Integer> actual =
         Stream.of(expected)
@@ -198,8 +689,8 @@ class SubnetScorerTest {
                     Function.identity(),
                     (subscriptions) ->
                         scorer.scoreCandidatePeer(
-                            createDiscoveryPeer(
-                                subscriptions.getLeft(), subscriptions.getRight()))));
+                            createDiscoveryPeer(subscriptions.getLeft(), subscriptions.getRight()),
+                            new SubnetScorer.SelectedCandidateSubnetCountChanges())));
     assertThat(actual).contains(expected);
   }
 
