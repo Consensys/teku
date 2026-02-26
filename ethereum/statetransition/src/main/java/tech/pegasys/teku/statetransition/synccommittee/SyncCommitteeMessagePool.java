@@ -25,6 +25,8 @@ import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -44,6 +46,8 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 public class SyncCommitteeMessagePool implements SlotEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
+
+  private final Lock lock = new ReentrantLock();
 
   private final Subscribers<OperationAddedSubscriber<ValidatableSyncCommitteeMessage>> subscribers =
       Subscribers.create(true);
@@ -92,40 +96,51 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel {
             });
   }
 
-  private synchronized void doAdd(final ValidatableSyncCommitteeMessage message) {
-    final SyncSubcommitteeAssignments assignments =
-        message.getSubcommitteeAssignments().orElseThrow();
-    final Map<BlockRootAndCommitteeIndex, ContributionData> blockRootAndCommitteeIndexToMessages =
-        committeeContributionData.computeIfAbsent(message.getSlot(), __ -> new HashMap<>());
-    final IntSet applicableSubnets;
-    if (message.getReceivedSubnetId().isEmpty()) {
-      applicableSubnets = assignments.getAssignedSubcommittees();
-    } else {
-      applicableSubnets = IntSet.of(message.getReceivedSubnetId().getAsInt());
+  private void doAdd(final ValidatableSyncCommitteeMessage message) {
+    lock.lock();
+    try {
+      final SyncSubcommitteeAssignments assignments =
+          message.getSubcommitteeAssignments().orElseThrow();
+      final Map<BlockRootAndCommitteeIndex, ContributionData> blockRootAndCommitteeIndexToMessages =
+          committeeContributionData.computeIfAbsent(message.getSlot(), __ -> new HashMap<>());
+      final IntSet applicableSubnets;
+      if (message.getReceivedSubnetId().isEmpty()) {
+        applicableSubnets = assignments.getAssignedSubcommittees();
+      } else {
+        applicableSubnets = IntSet.of(message.getReceivedSubnetId().getAsInt());
+      }
+      applicableSubnets.forEach(
+          subcommitteeIndex ->
+              blockRootAndCommitteeIndexToMessages
+                  .computeIfAbsent(
+                      new BlockRootAndCommitteeIndex(
+                          message.getBeaconBlockRoot(), subcommitteeIndex),
+                      __ -> new ContributionData())
+                  .add(
+                      assignments.getParticipationBitIndices(subcommitteeIndex),
+                      message.getMessage().getSignature()));
+    } finally {
+      lock.unlock();
     }
-    applicableSubnets.forEach(
-        subcommitteeIndex ->
-            blockRootAndCommitteeIndexToMessages
-                .computeIfAbsent(
-                    new BlockRootAndCommitteeIndex(message.getBeaconBlockRoot(), subcommitteeIndex),
-                    __ -> new ContributionData())
-                .add(
-                    assignments.getParticipationBitIndices(subcommitteeIndex),
-                    message.getMessage().getSignature()));
   }
 
-  public synchronized Optional<SyncCommitteeContribution> createContribution(
+  public Optional<SyncCommitteeContribution> createContribution(
       final UInt64 slot, final Bytes32 blockRoot, final int subcommitteeIndex) {
-    return getContributionData(slot, blockRoot, subcommitteeIndex)
-        .map(
-            contributionData ->
-                spec.getSyncCommitteeUtilRequired(slot)
-                    .createSyncCommitteeContribution(
-                        slot,
-                        blockRoot,
-                        UInt64.valueOf(subcommitteeIndex),
-                        contributionData.getParticipationIndices(),
-                        contributionData.getAggregatedSignature()));
+    lock.lock();
+    try {
+      return getContributionData(slot, blockRoot, subcommitteeIndex)
+          .map(
+              contributionData ->
+                  spec.getSyncCommitteeUtilRequired(slot)
+                      .createSyncCommitteeContribution(
+                          slot,
+                          blockRoot,
+                          UInt64.valueOf(subcommitteeIndex),
+                          contributionData.getParticipationIndices(),
+                          contributionData.getAggregatedSignature()));
+    } finally {
+      lock.unlock();
+    }
   }
 
   /**
@@ -135,8 +150,13 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel {
    * @param slot the current node slot
    */
   @Override
-  public synchronized void onSlot(final UInt64 slot) {
-    committeeContributionData.headMap(slot.minusMinZero(1), false).clear();
+  public void onSlot(final UInt64 slot) {
+    lock.lock();
+    try {
+      committeeContributionData.headMap(slot.minusMinZero(1), false).clear();
+    } finally {
+      lock.unlock();
+    }
   }
 
   private Optional<ContributionData> getContributionData(

@@ -30,6 +30,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
@@ -53,6 +55,7 @@ public class EventSourceBeaconChainEventAdapter
 
   private static final Duration MAX_RECONNECT_TIME = Duration.ofSeconds(12);
 
+  private final Lock lock = new ReentrantLock();
   private final CountDownLatch runningLatch = new CountDownLatch(1);
 
   private volatile BackgroundEventSource eventSource;
@@ -176,16 +179,20 @@ public class EventSourceBeaconChainEventAdapter
     return Preconditions.checkNotNull(eventSourceUrl);
   }
 
-  // synchronized because of the ConnectionErrorHandler and the BeaconNodeReadinessChannel callbacks
-  private synchronized boolean switchToFailoverEventStreamIfAvailable() {
-    if (failoverBeaconNodeApis.isEmpty()) {
-      return false;
+  private boolean switchToFailoverEventStreamIfAvailable() {
+    lock.lock();
+    try {
+      if (failoverBeaconNodeApis.isEmpty()) {
+        return false;
+      }
+      // No need to change anything if current node is READY
+      if (beaconNodeReadinessManager.isReady(currentBeaconNodeUsedForEventStreaming)) {
+        return false;
+      }
+      return findReadyFailoverAndSwitch();
+    } finally {
+      lock.unlock();
     }
-    // No need to change anything if current node is READY
-    if (beaconNodeReadinessManager.isReady(currentBeaconNodeUsedForEventStreaming)) {
-      return false;
-    }
-    return findReadyFailoverAndSwitch();
   }
 
   private boolean findReadyFailoverAndSwitch() {

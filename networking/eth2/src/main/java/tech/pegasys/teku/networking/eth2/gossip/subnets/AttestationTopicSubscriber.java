@@ -22,6 +22,8 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -35,6 +37,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
   static final String GAUGE_AGGREGATION_SUBNETS_LABEL = "aggregation_subnet_%02d";
   static final String GAUGE_PERSISTENT_SUBNETS_LABEL = "persistent_subnet_%02d";
+  private final Lock lock = new ReentrantLock();
   private final Int2ObjectMap<UInt64> subnetIdToUnsubscribeSlot = new Int2ObjectOpenHashMap<>();
   private final IntSet persistentSubnetIdSet = new IntOpenHashSet();
   private final Eth2P2PNetwork eth2P2PNetwork;
@@ -51,41 +54,47 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
     this.subnetSubscriptionsGauge = subnetSubscriptionsGauge;
   }
 
-  public synchronized void subscribeToCommitteeForAggregation(
+  public void subscribeToCommitteeForAggregation(
       final int committeeIndex, final UInt64 committeesAtSlot, final UInt64 aggregationSlot) {
-    final int subnetId =
-        spec.computeSubnetForCommittee(
-            aggregationSlot, UInt64.valueOf(committeeIndex), committeesAtSlot);
-    final UInt64 currentUnsubscriptionSlot = subnetIdToUnsubscribeSlot.getOrDefault(subnetId, ZERO);
-    final UInt64 unsubscribeSlot = currentUnsubscriptionSlot.max(aggregationSlot);
-    final UInt64 maybeCurrentSlot = currentSlot.get();
-    if (maybeCurrentSlot != null && unsubscribeSlot.isLessThan(maybeCurrentSlot)) {
-      LOG.trace(
-          "Skipping outdated aggregation subnet {} with unsubscribe due at slot {}",
-          subnetId,
-          unsubscribeSlot);
-      return;
-    }
-
-    if (currentUnsubscriptionSlot.equals(ZERO)) {
-      eth2P2PNetwork.subscribeToAttestationSubnetId(subnetId);
-      toggleAggregateSubscriptionMetric(subnetId, false);
-      LOG.trace(
-          "Subscribing to aggregation subnet {} with unsubscribe due at slot {}",
-          subnetId,
-          unsubscribeSlot);
-    } else {
-      if (aggregationSlot.isGreaterThan(currentUnsubscriptionSlot)
-          && persistentSubnetIdSet.contains(subnetId)) {
-        toggleAggregateSubscriptionMetric(subnetId, true);
-        persistentSubnetIdSet.remove(subnetId);
+    lock.lock();
+    try {
+      final int subnetId =
+          spec.computeSubnetForCommittee(
+              aggregationSlot, UInt64.valueOf(committeeIndex), committeesAtSlot);
+      final UInt64 currentUnsubscriptionSlot =
+          subnetIdToUnsubscribeSlot.getOrDefault(subnetId, ZERO);
+      final UInt64 unsubscribeSlot = currentUnsubscriptionSlot.max(aggregationSlot);
+      final UInt64 maybeCurrentSlot = currentSlot.get();
+      if (maybeCurrentSlot != null && unsubscribeSlot.isLessThan(maybeCurrentSlot)) {
+        LOG.trace(
+            "Skipping outdated aggregation subnet {} with unsubscribe due at slot {}",
+            subnetId,
+            unsubscribeSlot);
+        return;
       }
-      LOG.trace(
-          "Already subscribed to aggregation subnet {}, updating unsubscription slot to {}",
-          subnetId,
-          unsubscribeSlot);
+
+      if (currentUnsubscriptionSlot.equals(ZERO)) {
+        eth2P2PNetwork.subscribeToAttestationSubnetId(subnetId);
+        toggleAggregateSubscriptionMetric(subnetId, false);
+        LOG.trace(
+            "Subscribing to aggregation subnet {} with unsubscribe due at slot {}",
+            subnetId,
+            unsubscribeSlot);
+      } else {
+        if (aggregationSlot.isGreaterThan(currentUnsubscriptionSlot)
+            && persistentSubnetIdSet.contains(subnetId)) {
+          toggleAggregateSubscriptionMetric(subnetId, true);
+          persistentSubnetIdSet.remove(subnetId);
+        }
+        LOG.trace(
+            "Already subscribed to aggregation subnet {}, updating unsubscription slot to {}",
+            subnetId,
+            unsubscribeSlot);
+      }
+      subnetIdToUnsubscribeSlot.put(subnetId, unsubscribeSlot);
+    } finally {
+      lock.unlock();
     }
-    subnetIdToUnsubscribeSlot.put(subnetId, unsubscribeSlot);
   }
 
   private void togglePersistentSubscriptionMetric(final int subnetId, final boolean reset) {
@@ -102,77 +111,88 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
     }
   }
 
-  public synchronized void subscribeToPersistentSubnets(
-      final Set<SubnetSubscription> newSubscriptions) {
-    boolean shouldUpdateENR = false;
+  public void subscribeToPersistentSubnets(final Set<SubnetSubscription> newSubscriptions) {
+    lock.lock();
+    try {
+      boolean shouldUpdateENR = false;
 
-    for (SubnetSubscription subnetSubscription : newSubscriptions) {
-      final int subnetId = subnetSubscription.subnetId();
-      final UInt64 maybeCurrentSlot = currentSlot.get();
-      if (maybeCurrentSlot != null
-          && subnetSubscription.unsubscriptionSlot().isLessThan(maybeCurrentSlot)) {
+      for (SubnetSubscription subnetSubscription : newSubscriptions) {
+        final int subnetId = subnetSubscription.subnetId();
+        final UInt64 maybeCurrentSlot = currentSlot.get();
+        if (maybeCurrentSlot != null
+            && subnetSubscription.unsubscriptionSlot().isLessThan(maybeCurrentSlot)) {
+          LOG.trace(
+              "Skipping outdated persistent subnet {} with unsubscribe due at slot {}",
+              subnetId,
+              subnetSubscription.unsubscriptionSlot());
+          continue;
+        }
+
+        shouldUpdateENR = persistentSubnetIdSet.add(subnetId) || shouldUpdateENR;
         LOG.trace(
-            "Skipping outdated persistent subnet {} with unsubscribe due at slot {}",
+            "Subscribing to persistent subnet {} with unsubscribe due at slot {}",
             subnetId,
             subnetSubscription.unsubscriptionSlot());
-        continue;
+        if (subnetIdToUnsubscribeSlot.containsKey(subnetId)) {
+          final UInt64 existingUnsubscriptionSlot = subnetIdToUnsubscribeSlot.get(subnetId);
+          final UInt64 unsubscriptionSlot =
+              existingUnsubscriptionSlot.max(subnetSubscription.unsubscriptionSlot());
+          LOG.trace(
+              "Already subscribed to subnet {}, updating unsubscription slot to {}",
+              subnetId,
+              unsubscriptionSlot);
+          togglePersistentSubscriptionMetric(subnetId, true);
+          subnetIdToUnsubscribeSlot.put(subnetId, unsubscriptionSlot);
+        } else {
+          eth2P2PNetwork.subscribeToAttestationSubnetId(subnetId);
+          togglePersistentSubscriptionMetric(subnetId, false);
+          LOG.trace("Subscribed to new persistent subnet {}", subnetId);
+          subnetIdToUnsubscribeSlot.put(subnetId, subnetSubscription.unsubscriptionSlot());
+        }
       }
 
-      shouldUpdateENR = persistentSubnetIdSet.add(subnetId) || shouldUpdateENR;
-      LOG.trace(
-          "Subscribing to persistent subnet {} with unsubscribe due at slot {}",
-          subnetId,
-          subnetSubscription.unsubscriptionSlot());
-      if (subnetIdToUnsubscribeSlot.containsKey(subnetId)) {
-        final UInt64 existingUnsubscriptionSlot = subnetIdToUnsubscribeSlot.get(subnetId);
-        final UInt64 unsubscriptionSlot =
-            existingUnsubscriptionSlot.max(subnetSubscription.unsubscriptionSlot());
-        LOG.trace(
-            "Already subscribed to subnet {}, updating unsubscription slot to {}",
-            subnetId,
-            unsubscriptionSlot);
-        togglePersistentSubscriptionMetric(subnetId, true);
-        subnetIdToUnsubscribeSlot.put(subnetId, unsubscriptionSlot);
-      } else {
-        eth2P2PNetwork.subscribeToAttestationSubnetId(subnetId);
-        togglePersistentSubscriptionMetric(subnetId, false);
-        LOG.trace("Subscribed to new persistent subnet {}", subnetId);
-        subnetIdToUnsubscribeSlot.put(subnetId, subnetSubscription.unsubscriptionSlot());
+      if (shouldUpdateENR) {
+        eth2P2PNetwork.setLongTermAttestationSubnetSubscriptions(persistentSubnetIdSet);
       }
-    }
-
-    if (shouldUpdateENR) {
-      eth2P2PNetwork.setLongTermAttestationSubnetSubscriptions(persistentSubnetIdSet);
+    } finally {
+      lock.unlock();
     }
   }
 
   @Override
-  public synchronized void onSlot(final UInt64 slot) {
-    currentSlot.set(slot);
-    boolean shouldUpdateENR = false;
+  public void onSlot(final UInt64 slot) {
+    lock.lock();
+    try {
+      currentSlot.set(slot);
+      boolean shouldUpdateENR = false;
 
-    final Iterator<Int2ObjectMap.Entry<UInt64>> iterator =
-        subnetIdToUnsubscribeSlot.int2ObjectEntrySet().iterator();
-    while (iterator.hasNext()) {
-      final Int2ObjectMap.Entry<UInt64> entry = iterator.next();
-      if (entry.getValue().compareTo(slot) < 0) {
-        final int subnetId = entry.getIntKey();
-        LOG.trace("Unsubscribing from subnet {}", subnetId);
-        eth2P2PNetwork.unsubscribeFromAttestationSubnetId(subnetId);
-        if (persistentSubnetIdSet.contains(subnetId)) {
-          persistentSubnetIdSet.remove(subnetId);
-          subnetSubscriptionsGauge.set(0, String.format(GAUGE_PERSISTENT_SUBNETS_LABEL, subnetId));
-          shouldUpdateENR = true;
-        } else {
-          subnetSubscriptionsGauge.set(0, String.format(GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
+      final Iterator<Int2ObjectMap.Entry<UInt64>> iterator =
+          subnetIdToUnsubscribeSlot.int2ObjectEntrySet().iterator();
+      while (iterator.hasNext()) {
+        final Int2ObjectMap.Entry<UInt64> entry = iterator.next();
+        if (entry.getValue().compareTo(slot) < 0) {
+          final int subnetId = entry.getIntKey();
+          LOG.trace("Unsubscribing from subnet {}", subnetId);
+          eth2P2PNetwork.unsubscribeFromAttestationSubnetId(subnetId);
+          if (persistentSubnetIdSet.contains(subnetId)) {
+            persistentSubnetIdSet.remove(subnetId);
+            subnetSubscriptionsGauge.set(
+                0, String.format(GAUGE_PERSISTENT_SUBNETS_LABEL, subnetId));
+            shouldUpdateENR = true;
+          } else {
+            subnetSubscriptionsGauge.set(
+                0, String.format(GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
+          }
+
+          iterator.remove();
         }
-
-        iterator.remove();
       }
-    }
 
-    if (shouldUpdateENR) {
-      eth2P2PNetwork.setLongTermAttestationSubnetSubscriptions(persistentSubnetIdSet);
+      if (shouldUpdateENR) {
+        eth2P2PNetwork.setLongTermAttestationSubnetSubscriptions(persistentSubnetIdSet);
+      }
+    } finally {
+      lock.unlock();
     }
   }
 }

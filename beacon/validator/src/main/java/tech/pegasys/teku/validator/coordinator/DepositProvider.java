@@ -22,6 +22,8 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -65,6 +67,7 @@ public class DepositProvider
   private final Eth1DepositStorageChannel eth1DepositStorageChannel;
   private DepositTree depositMerkleTree;
 
+  private final Lock lock = new ReentrantLock();
   private final NavigableMap<UInt64, DepositWithIndex> depositNavigableMap = new TreeMap<>();
   private final Counter depositCounter;
   private final Spec spec;
@@ -99,26 +102,31 @@ public class DepositProvider
   }
 
   @Override
-  public synchronized void onDepositsFromBlock(final DepositsFromBlockEvent event) {
-    event.getDeposits().stream()
-        .map(depositUtil::convertDepositEventToOperationDeposit)
-        .forEach(
-            depositWithIndex -> {
-              if (!recentChainData.isPreGenesis()) {
-                LOG.debug("About to process deposit: {}", depositWithIndex.index());
-              }
+  public void onDepositsFromBlock(final DepositsFromBlockEvent event) {
+    lock.lock();
+    try {
+      event.getDeposits().stream()
+          .map(depositUtil::convertDepositEventToOperationDeposit)
+          .forEach(
+              depositWithIndex -> {
+                if (!recentChainData.isPreGenesis()) {
+                  LOG.debug("About to process deposit: {}", depositWithIndex.index());
+                }
 
-              depositNavigableMap.put(depositWithIndex.index(), depositWithIndex);
-              depositMerkleTree.pushLeaf(depositWithIndex.deposit().getData().hashTreeRoot());
-            });
-    depositCounter.inc(event.getDeposits().size());
-    eth1DataCache.onBlockWithDeposit(
-        event.getBlockNumber(),
-        new Eth1Data(
-            depositMerkleTree.getRoot(),
-            UInt64.valueOf(depositMerkleTree.getDepositCount()),
-            event.getBlockHash()),
-        event.getBlockTimestamp());
+                depositNavigableMap.put(depositWithIndex.index(), depositWithIndex);
+                depositMerkleTree.pushLeaf(depositWithIndex.deposit().getData().hashTreeRoot());
+              });
+      depositCounter.inc(event.getDeposits().size());
+      eth1DataCache.onBlockWithDeposit(
+          event.getBlockNumber(),
+          new Eth1Data(
+              depositMerkleTree.getRoot(),
+              UInt64.valueOf(depositMerkleTree.getDepositCount()),
+              event.getBlockHash()),
+          event.getBlockTimestamp());
+    } finally {
+      lock.unlock();
+    }
   }
 
   @Override
@@ -127,7 +135,8 @@ public class DepositProvider
     final BeaconState finalizedState = recentChainData.getStore().getLatestFinalized().getState();
     final UInt64 depositIndex = finalizedState.getEth1DepositIndex();
     pruneDeposits(depositIndex);
-    synchronized (this) {
+    lock.lock();
+    try {
       if (depositIndex.isGreaterThanOrEqualTo(finalizedState.getEth1Data().getDepositCount())
           && depositMerkleTree.getDepositCount()
               >= finalizedState.getEth1Data().getDepositCount().longValue()
@@ -157,11 +166,18 @@ public class DepositProvider
                                   throwable));
                 });
       }
+    } finally {
+      lock.unlock();
     }
   }
 
-  private synchronized void pruneDeposits(final UInt64 toIndex) {
-    depositNavigableMap.headMap(toIndex, false).clear();
+  private void pruneDeposits(final UInt64 toIndex) {
+    lock.lock();
+    try {
+      depositNavigableMap.headMap(toIndex, false).clear();
+    } finally {
+      lock.unlock();
+    }
   }
 
   @Override
@@ -207,66 +223,85 @@ public class DepositProvider
     this.inSync = inSync;
   }
 
-  public synchronized SszList<Deposit> getDeposits(
+  public SszList<Deposit> getDeposits(final BeaconState state, final Eth1Data eth1Data) {
+    lock.lock();
+    try {
+      final long maxDeposits = spec.getMaxDeposits(state);
+      final SszListSchema<Deposit, ?> depositsSchema = depositsSchemaCache.get(maxDeposits);
+      return getDepositsWithIndex(state, eth1Data).stream()
+          .map(DepositWithIndex::deposit)
+          .collect(depositsSchema.collector());
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  public List<DepositWithIndex> getDepositsWithIndex(
       final BeaconState state, final Eth1Data eth1Data) {
-    final long maxDeposits = spec.getMaxDeposits(state);
-    final SszListSchema<Deposit, ?> depositsSchema = depositsSchemaCache.get(maxDeposits);
-    return getDepositsWithIndex(state, eth1Data).stream()
-        .map(DepositWithIndex::deposit)
-        .collect(depositsSchema.collector());
+    lock.lock();
+    try {
+      final long maxDeposits = spec.getMaxDeposits(state);
+      // no Eth1 deposits needed if already transitioned to the EIP-6110 mechanism
+      if (spec.isFormerDepositMechanismDisabled(state)) {
+        return emptyList();
+      }
+      final UInt64 eth1DepositCount;
+      if (spec.isEnoughVotesToUpdateEth1Data(state, eth1Data, 1)) {
+        eth1DepositCount = eth1Data.getDepositCount();
+      } else {
+        eth1DepositCount = state.getEth1Data().getDepositCount();
+      }
+      final UInt64 eth1DepositIndex = state.getEth1DepositIndex();
+
+      final UInt64 eth1PendingDepositCount =
+          state
+              .toVersionElectra()
+              .map(
+                  stateElectra -> {
+                    // EIP-6110
+                    final UInt64 eth1DepositIndexLimit =
+                        eth1DepositCount.min(stateElectra.getDepositRequestsStartIndex());
+                    return eth1DepositIndexLimit.minusMinZero(eth1DepositIndex).min(maxDeposits);
+                  })
+              .orElseGet(
+                  () -> {
+                    // Phase0
+                    return eth1DepositCount.minusMinZero(eth1DepositIndex).min(maxDeposits);
+                  });
+
+      // No deposits to include
+      if (eth1PendingDepositCount.isZero()) {
+        return emptyList();
+      }
+
+      // We need to have all the deposits that can be included in the state available to ensure
+      // the generated proofs are valid
+      checkRequiredDepositsAvailable(eth1DepositCount, eth1DepositIndex);
+
+      final UInt64 toDepositIndex = eth1DepositIndex.plus(eth1PendingDepositCount);
+
+      return getDepositsWithProof(eth1DepositIndex, toDepositIndex, eth1DepositCount);
+    } finally {
+      lock.unlock();
+    }
   }
 
-  public synchronized List<DepositWithIndex> getDepositsWithIndex(
-      final BeaconState state, final Eth1Data eth1Data) {
-    final long maxDeposits = spec.getMaxDeposits(state);
-    // no Eth1 deposits needed if already transitioned to the EIP-6110 mechanism
-    if (spec.isFormerDepositMechanismDisabled(state)) {
-      return emptyList();
+  protected List<DepositWithIndex> getAvailableDeposits() {
+    lock.lock();
+    try {
+      return new ArrayList<>(depositNavigableMap.values());
+    } finally {
+      lock.unlock();
     }
-    final UInt64 eth1DepositCount;
-    if (spec.isEnoughVotesToUpdateEth1Data(state, eth1Data, 1)) {
-      eth1DepositCount = eth1Data.getDepositCount();
-    } else {
-      eth1DepositCount = state.getEth1Data().getDepositCount();
-    }
-    final UInt64 eth1DepositIndex = state.getEth1DepositIndex();
-
-    final UInt64 eth1PendingDepositCount =
-        state
-            .toVersionElectra()
-            .map(
-                stateElectra -> {
-                  // EIP-6110
-                  final UInt64 eth1DepositIndexLimit =
-                      eth1DepositCount.min(stateElectra.getDepositRequestsStartIndex());
-                  return eth1DepositIndexLimit.minusMinZero(eth1DepositIndex).min(maxDeposits);
-                })
-            .orElseGet(
-                () -> {
-                  // Phase0
-                  return eth1DepositCount.minusMinZero(eth1DepositIndex).min(maxDeposits);
-                });
-
-    // No deposits to include
-    if (eth1PendingDepositCount.isZero()) {
-      return emptyList();
-    }
-
-    // We need to have all the deposits that can be included in the state available to ensure
-    // the generated proofs are valid
-    checkRequiredDepositsAvailable(eth1DepositCount, eth1DepositIndex);
-
-    final UInt64 toDepositIndex = eth1DepositIndex.plus(eth1PendingDepositCount);
-
-    return getDepositsWithProof(eth1DepositIndex, toDepositIndex, eth1DepositCount);
   }
 
-  protected synchronized List<DepositWithIndex> getAvailableDeposits() {
-    return new ArrayList<>(depositNavigableMap.values());
-  }
-
-  protected synchronized Optional<DepositTreeSnapshot> getFinalizedDepositTreeSnapshot() {
-    return depositMerkleTree.getSnapshot();
+  protected Optional<DepositTreeSnapshot> getFinalizedDepositTreeSnapshot() {
+    lock.lock();
+    try {
+      return depositMerkleTree.getSnapshot();
+    } finally {
+      lock.unlock();
+    }
   }
 
   private void checkRequiredDepositsAvailable(
@@ -282,8 +317,13 @@ public class DepositProvider
     }
   }
 
-  public synchronized int getDepositMapSize() {
-    return depositNavigableMap.size();
+  public int getDepositMapSize() {
+    lock.lock();
+    try {
+      return depositNavigableMap.size();
+    } finally {
+      lock.unlock();
+    }
   }
 
   /**
@@ -322,9 +362,13 @@ public class DepositProvider
   }
 
   @Override
-  public synchronized void onInitialDepositTreeSnapshot(
-      final DepositTreeSnapshot depositTreeSnapshot) {
-    this.depositMerkleTree = DepositTree.fromSnapshot(depositTreeSnapshot);
+  public void onInitialDepositTreeSnapshot(final DepositTreeSnapshot depositTreeSnapshot) {
+    lock.lock();
+    try {
+      this.depositMerkleTree = DepositTree.fromSnapshot(depositTreeSnapshot);
+    } finally {
+      lock.unlock();
+    }
   }
 
   private static class DepositsSchemaCache {
