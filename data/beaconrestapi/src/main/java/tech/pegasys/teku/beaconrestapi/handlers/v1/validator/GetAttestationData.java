@@ -36,11 +36,13 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 
 public class GetAttestationData extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/attestation_data";
   private final ValidatorDataProvider provider;
+  private final Spec spec;
 
   private static final ParameterMetadata<UInt64> SLOT_PARAM =
       SLOT_PARAMETER.withDescription(
@@ -91,22 +93,20 @@ public class GetAttestationData extends RestApiEndpoint {
             .withChainDataResponses()
             .build());
     this.provider = provider;
+    this.spec = spec;
   }
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final UInt64 slot = request.getQueryParameter(SLOT_PARAM);
-    // TODO gloas #10413 committeeIndex will become not required
-    final UInt64 committeeIndex = request.getQueryParameter(COMMITTEE_INDEX_PARAMETER);
-    if (committeeIndex.isLessThan(0)) {
-      request.respondError(
-          SC_BAD_REQUEST,
-          String.format("'%s' needs to be greater than or equal to 0.", COMMITTEE_INDEX));
+    final Optional<UInt64> committeeIndex =
+        request.getOptionalQueryParameter(COMMITTEE_INDEX_PARAMETER);
+    if (!validate(request, spec.atSlot(slot).getMilestone(), committeeIndex)) {
       return;
     }
 
     final SafeFuture<Optional<AttestationData>> future =
-        provider.createAttestationDataAtSlot(slot, committeeIndex.intValue());
+        provider.createAttestationDataAtSlot(slot, committeeIndex.orElse(UInt64.ZERO).intValue());
 
     request.respondAsync(
         future.thenApply(
@@ -114,5 +114,36 @@ public class GetAttestationData extends RestApiEndpoint {
                 maybeAttestationData
                     .map(AsyncApiResponse::respondOk)
                     .orElseGet(AsyncApiResponse::respondNotFound)));
+  }
+
+  static boolean validate(
+      final RestApiRequest request,
+      final SpecMilestone milestone,
+      final Optional<UInt64> committeeIndex)
+      throws JsonProcessingException {
+    if (committeeIndex.isEmpty() && milestone.isLessThan(SpecMilestone.GLOAS)) {
+      // prior to gloas, committeeIndex is a required field
+      request.respondError(
+          SC_BAD_REQUEST,
+          String.format("'%s' parameter must be set before gloas.", COMMITTEE_INDEX));
+      return false;
+    } else if ((milestone.equals(SpecMilestone.ELECTRA) || milestone.equals(SpecMilestone.FULU))
+        && committeeIndex.isPresent()
+        && !committeeIndex.get().isZero()) {
+      // if the milestone is electra or fulu, committee index is required, and must be 0
+      request.respondError(
+          SC_BAD_REQUEST,
+          String.format("'%s' parameter must be 0 in electra and fulu forks.", COMMITTEE_INDEX));
+      return false;
+    } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)
+        && committeeIndex.isPresent()
+        && committeeIndex.get().isGreaterThan(1)) {
+      // post gloas, the committee index is optional. If set, it must be 0 or 1.
+      request.respondError(
+          SC_BAD_REQUEST,
+          String.format("'%s' parameter must be less than 2 in gloas.", COMMITTEE_INDEX));
+      return false;
+    }
+    return true;
   }
 }

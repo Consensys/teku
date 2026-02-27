@@ -210,6 +210,9 @@ public class StubRestApiRequest implements RestApiRequest {
 
   @Override
   public <T> Optional<T> getOptionalQueryParameter(final ParameterMetadata<T> parameterMetadata) {
+    if (!optionalQueryParameters.containsKey(parameterMetadata.getName())) {
+      return Optional.empty();
+    }
     final Optional<String> param =
         Optional.ofNullable(optionalQueryParameters.get(parameterMetadata.getName()));
     return param.map(p -> parameterMetadata.getType().deserializeFromString(p));
