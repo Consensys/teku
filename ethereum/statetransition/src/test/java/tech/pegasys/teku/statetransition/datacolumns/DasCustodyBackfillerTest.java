@@ -127,7 +127,8 @@ class DasCustodyBackfillerTest {
             asyncRunner,
             earliestAvailableColumnSlotProvider,
             earliestAvailableColumnSlotWriter,
-            BATCH_SIZE);
+            BATCH_SIZE,
+            spec);
 
     backfiller.setFirstRoundAfterStartup(false);
     backfiller.onNodeSyncStateChanged(true);
@@ -418,7 +419,8 @@ class DasCustodyBackfillerTest {
             asyncRunner,
             earliestAvailableColumnSlotProvider,
             earliestAvailableColumnSlotWriter,
-            BATCH_SIZE);
+            BATCH_SIZE,
+            spec);
 
     backfiller.setFirstRoundAfterStartup(false);
     backfiller.onNodeSyncStateChanged(true);

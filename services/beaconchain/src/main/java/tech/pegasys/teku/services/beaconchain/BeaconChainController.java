@@ -1053,7 +1053,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
               dasAsyncRunner,
               sidecarDB::getEarliestAvailableDataColumnSlot,
               sidecarDB::setEarliestAvailableDataColumnSlot,
-              beaconConfig.p2pConfig().getReworkedSidecarSyncBatchSize());
+              beaconConfig.p2pConfig().getReworkedSidecarSyncBatchSize(),
+              spec);
       eventChannels.subscribe(CustodyGroupCountChannel.class, custodyBackfiller);
       eventChannels.subscribe(FinalizedCheckpointChannel.class, custodyBackfiller);
       dasCustodyBackfiller = Optional.of(custodyBackfiller);

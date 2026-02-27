@@ -39,11 +39,13 @@ import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
@@ -63,6 +65,7 @@ public class DasCustodyBackfiller extends Service
   private final CustodyGroupCountManager custodyGroupCountManager;
   private final DataColumnSidecarRetriever retriever;
   private final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator;
+  private final Spec spec;
 
   private Optional<Cancellable> scheduledBackfiller = Optional.empty();
   private boolean cancelled = false;
@@ -94,7 +97,8 @@ public class DasCustodyBackfiller extends Service
       final AsyncRunner asyncRunner,
       final Supplier<SafeFuture<Optional<UInt64>>> earliestAvailableCustodySlotProvider,
       final Function<UInt64, SafeFuture<Void>> earliestAvailableCustodySlotWriter,
-      final int batchSizeInSlots) {
+      final int batchSizeInSlots,
+      final Spec spec) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.asyncRunner = asyncRunner;
     this.backfillCheckInterval = backfillCheckInterval;
@@ -106,6 +110,7 @@ public class DasCustodyBackfiller extends Service
     this.minCustodyPeriodSlotCalculator = minCustodyPeriodSlotCalculator;
     this.earliestAvailableCustodySlotProvider = earliestAvailableCustodySlotProvider;
     this.earliestAvailableCustodySlotWriter = earliestAvailableCustodySlotWriter;
+    this.spec = spec;
   }
 
   @Override
@@ -523,7 +528,12 @@ public class DasCustodyBackfiller extends Service
               final List<UInt64> requiredIndices =
                   custodyGroupCountManager.getCustodyColumnIndices();
 
-              return (int) requiredIndices.stream().filter(availableIndices::contains).count();
+              final int syncedColumnCount =
+                  (int) requiredIndices.stream().filter(availableIndices::contains).count();
+              final MiscHelpersFulu miscHelpersFulu =
+                  MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
+
+              return syncedColumnCount / miscHelpersFulu.getCustodyColumnsPerGroup();
             });
   }
 
