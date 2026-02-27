@@ -14,14 +14,23 @@
 package tech.pegasys.teku.spec.schemas;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INCLUSION_LIST_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_INCLUSION_LIST_SCHEMA;
 
 import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionListSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsHeze extends SchemaDefinitionsGloas {
 
+  private final InclusionListSchema inclusionListSchema;
+  private final SignedInclusionListSchema signedInclusionListSchema;
+
   public SchemaDefinitionsHeze(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
+    this.inclusionListSchema = schemaRegistry.get(INCLUSION_LIST_SCHEMA);
+    this.signedInclusionListSchema = schemaRegistry.get(SIGNED_INCLUSION_LIST_SCHEMA);
   }
 
   public static SchemaDefinitionsHeze required(final SchemaDefinitions schemaDefinitions) {
@@ -31,6 +40,14 @@ public class SchemaDefinitionsHeze extends SchemaDefinitionsGloas {
         SchemaDefinitionsHeze.class,
         schemaDefinitions.getClass());
     return (SchemaDefinitionsHeze) schemaDefinitions;
+  }
+
+  public InclusionListSchema getInclusionListSchema() {
+    return inclusionListSchema;
+  }
+
+  public SignedInclusionListSchema getSignedInclusionListSchema() {
+    return signedInclusionListSchema;
   }
 
   @Override
