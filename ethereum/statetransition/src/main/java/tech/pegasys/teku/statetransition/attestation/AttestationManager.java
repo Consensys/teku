@@ -223,9 +223,11 @@ public class AttestationManager extends Service
         .forEach(
             attestation -> {
               pendingAttestations.remove(attestation);
-              System.out.println(
-                  "onAttestation on pending attestation: "
-                      + PROCESSED_PENDING_ATTESTATIONS.incrementAndGet());
+              var count = PROCESSED_PENDING_ATTESTATIONS.incrementAndGet();
+              if (count % 100 == 0) {
+                LOG.info("onAttestation on pending attestation counter: {}", count);
+              }
+
               onAttestation(attestation)
                   .finish(
                       err ->
