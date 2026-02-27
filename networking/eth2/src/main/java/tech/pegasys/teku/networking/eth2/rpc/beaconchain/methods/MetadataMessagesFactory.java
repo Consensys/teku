@@ -16,8 +16,6 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -29,41 +27,27 @@ import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 public class MetadataMessagesFactory implements CustodyGroupCountChannel {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Lock lock = new ReentrantLock();
   private final AtomicLong seqNumberGenerator = new AtomicLong(0L);
   private Iterable<Integer> attestationSubnetIds = Collections.emptyList();
   private Iterable<Integer> syncCommitteeSubnetIds = Collections.emptyList();
   private Optional<UInt64> custodyGroupCount = Optional.empty();
 
-  public void updateAttestationSubnetIds(final Iterable<Integer> attestationSubnetIds) {
-    lock.lock();
-    try {
-      this.attestationSubnetIds = attestationSubnetIds;
-      handleUpdate();
-    } finally {
-      lock.unlock();
-    }
+  public synchronized void updateAttestationSubnetIds(
+      final Iterable<Integer> attestationSubnetIds) {
+    this.attestationSubnetIds = attestationSubnetIds;
+    handleUpdate();
   }
 
-  public void updateSyncCommitteeSubnetIds(final Iterable<Integer> syncCommitteeSubnetIds) {
-    lock.lock();
-    try {
-      this.syncCommitteeSubnetIds = syncCommitteeSubnetIds;
-      handleUpdate();
-    } finally {
-      lock.unlock();
-    }
+  public synchronized void updateSyncCommitteeSubnetIds(
+      final Iterable<Integer> syncCommitteeSubnetIds) {
+    this.syncCommitteeSubnetIds = syncCommitteeSubnetIds;
+    handleUpdate();
   }
 
-  public void updateCustodyGroupCount(final UInt64 custodyGroupCount) {
-    lock.lock();
-    try {
-      this.custodyGroupCount = Optional.of(custodyGroupCount);
-      LOG.info("Updating custody group count {}", custodyGroupCount);
-      handleUpdate();
-    } finally {
-      lock.unlock();
-    }
+  public synchronized void updateCustodyGroupCount(final UInt64 custodyGroupCount) {
+    this.custodyGroupCount = Optional.of(custodyGroupCount);
+    LOG.info("Updating custody group count {}", custodyGroupCount);
+    handleUpdate();
   }
 
   @Override
@@ -80,20 +64,12 @@ public class MetadataMessagesFactory implements CustodyGroupCountChannel {
     seqNumberGenerator.incrementAndGet();
   }
 
-  public MetadataMessage createMetadataMessage(final MetadataMessageSchema<?> schema) {
-    lock.lock();
-    try {
-      final MetadataMessage metadataMessage =
-          schema.create(
-              getCurrentSeqNumber(),
-              attestationSubnetIds,
-              syncCommitteeSubnetIds,
-              custodyGroupCount);
-      LOG.debug("Created metadata message {}", metadataMessage);
-      return metadataMessage;
-    } finally {
-      lock.unlock();
-    }
+  public synchronized MetadataMessage createMetadataMessage(final MetadataMessageSchema<?> schema) {
+    final MetadataMessage metadataMessage =
+        schema.create(
+            getCurrentSeqNumber(), attestationSubnetIds, syncCommitteeSubnetIds, custodyGroupCount);
+    LOG.debug("Created metadata message {}", metadataMessage);
+    return metadataMessage;
   }
 
   public PingMessage createPingMessage() {

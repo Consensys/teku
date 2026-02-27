@@ -22,8 +22,6 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -37,7 +35,6 @@ import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class SyncCommitteeContributionPool implements SlotEventsChannel {
-  private final Lock lock = new ReentrantLock();
   private final Spec spec;
   private final SignedContributionAndProofValidator validator;
   private final Subscribers<OperationAddedSubscriber<SignedContributionAndProof>> subscribers =
@@ -85,20 +82,15 @@ public class SyncCommitteeContributionPool implements SlotEventsChannel {
             });
   }
 
-  private void doAdd(final SyncCommitteeContribution contribution) {
-    lock.lock();
-    try {
-      final int subcommitteeIndex = contribution.getSubcommitteeIndex().intValue();
-      contributionsBySlotAndBlockRoot
-          .computeIfAbsent(contribution.getSlot(), __ -> new HashMap<>())
-          .computeIfAbsent(contribution.getBeaconBlockRoot(), __ -> new Int2ObjectOpenHashMap<>())
-          .compute(
-              subcommitteeIndex,
-              (subcommittee, existingContribution) ->
-                  betterContribution(existingContribution, contribution));
-    } finally {
-      lock.unlock();
-    }
+  private synchronized void doAdd(final SyncCommitteeContribution contribution) {
+    final int subcommitteeIndex = contribution.getSubcommitteeIndex().intValue();
+    contributionsBySlotAndBlockRoot
+        .computeIfAbsent(contribution.getSlot(), __ -> new HashMap<>())
+        .computeIfAbsent(contribution.getBeaconBlockRoot(), __ -> new Int2ObjectOpenHashMap<>())
+        .compute(
+            subcommitteeIndex,
+            (subcommittee, existingContribution) ->
+                betterContribution(existingContribution, contribution));
   }
 
   private SyncCommitteeContribution betterContribution(
@@ -123,20 +115,15 @@ public class SyncCommitteeContributionPool implements SlotEventsChannel {
    * @param parentRoot the parentRoot of the block being created.
    * @return the SyncAggregate to be included in the block.
    */
-  public SyncAggregate createSyncAggregateForBlock(
+  public synchronized SyncAggregate createSyncAggregateForBlock(
       final UInt64 blockSlot, final Bytes32 parentRoot) {
-    lock.lock();
-    try {
-      final UInt64 slot = blockSlot.minusMinZero(1);
-      final Collection<SyncCommitteeContribution> contributions =
-          contributionsBySlotAndBlockRoot
-              .getOrDefault(slot, emptyMap())
-              .getOrDefault(parentRoot, emptyMap())
-              .values();
-      return spec.getSyncCommitteeUtilRequired(blockSlot).createSyncAggregate(contributions);
-    } finally {
-      lock.unlock();
-    }
+    final UInt64 slot = blockSlot.minusMinZero(1);
+    final Collection<SyncCommitteeContribution> contributions =
+        contributionsBySlotAndBlockRoot
+            .getOrDefault(slot, emptyMap())
+            .getOrDefault(parentRoot, emptyMap())
+            .values();
+    return spec.getSyncCommitteeUtilRequired(blockSlot).createSyncAggregate(contributions);
   }
 
   /**
@@ -148,12 +135,7 @@ public class SyncCommitteeContributionPool implements SlotEventsChannel {
    * @param slot the node's current slot
    */
   @Override
-  public void onSlot(final UInt64 slot) {
-    lock.lock();
-    try {
-      contributionsBySlotAndBlockRoot.headMap(slot.minusMinZero(2), false).clear();
-    } finally {
-      lock.unlock();
-    }
+  public synchronized void onSlot(final UInt64 slot) {
+    contributionsBySlotAndBlockRoot.headMap(slot.minusMinZero(2), false).clear();
   }
 }

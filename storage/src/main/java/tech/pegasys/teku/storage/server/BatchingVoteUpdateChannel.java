@@ -16,8 +16,6 @@ package tech.pegasys.teku.storage.server;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -25,7 +23,6 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 
 public class BatchingVoteUpdateChannel implements VoteUpdateChannel {
-  private final Lock lock = new ReentrantLock();
   private final VoteUpdateChannel delegate;
   private final EventThread eventThread;
 
@@ -40,28 +37,22 @@ public class BatchingVoteUpdateChannel implements VoteUpdateChannel {
 
   @Override
   public void onVotesUpdated(final Map<UInt64, VoteTracker> votes) {
-    lock.lock();
-    try {
+    synchronized (this) {
       nextBatch.putAll(votes);
       if (!nextExecutionScheduled) {
         nextExecutionScheduled = true;
         eventThread.execute(this::processBatch);
       }
-    } finally {
-      lock.unlock();
     }
   }
 
   private void processBatch() {
     final Map<UInt64, VoteTracker> batch;
     eventThread.checkOnEventThread();
-    lock.lock();
-    try {
+    synchronized (this) {
       batch = nextBatch;
       nextBatch = new HashMap<>();
       nextExecutionScheduled = false;
-    } finally {
-      lock.unlock();
     }
     delegate.onVotesUpdated(batch);
   }

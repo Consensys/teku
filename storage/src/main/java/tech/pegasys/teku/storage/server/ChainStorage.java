@@ -18,8 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -65,7 +63,6 @@ public class ChainStorage
         ChainStorageFacade {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Lock lock = new ReentrantLock();
   private final Database database;
   private final FinalizedStateCache finalizedStateCache;
   private final StateStorageMode dataStorageMode;
@@ -99,27 +96,17 @@ public class ChainStorage
         blobSidecarsArchiver);
   }
 
-  private Optional<OnDiskStoreData> getStore() {
-    lock.lock();
-    try {
-      if (cachedStoreData.isEmpty()) {
-        // Create store from database
-        cachedStoreData = database.createMemoryStore();
-      }
-
-      return cachedStoreData;
-    } finally {
-      lock.unlock();
+  private synchronized Optional<OnDiskStoreData> getStore() {
+    if (cachedStoreData.isEmpty()) {
+      // Create store from database
+      cachedStoreData = database.createMemoryStore();
     }
+
+    return cachedStoreData;
   }
 
-  private void handleStoreUpdate() {
-    lock.lock();
-    try {
-      cachedStoreData = Optional.empty();
-    } finally {
-      lock.unlock();
-    }
+  private synchronized void handleStoreUpdate() {
+    cachedStoreData = Optional.empty();
   }
 
   @Override

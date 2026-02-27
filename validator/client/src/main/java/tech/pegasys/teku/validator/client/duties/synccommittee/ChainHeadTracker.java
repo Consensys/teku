@@ -15,8 +15,6 @@ package tech.pegasys.teku.validator.client.duties.synccommittee;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -28,40 +26,29 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 public class ChainHeadTracker implements ValidatorTimingChannel {
   public static final int HEAD_TOO_OLD_THRESHOLD = 32;
 
-  private final Lock lock = new ReentrantLock();
   private UInt64 headBlockSlot = UInt64.ZERO;
   private Optional<Bytes32> headBlockRoot = Optional.empty();
 
-  public Optional<Bytes32> getCurrentChainHead(final UInt64 atSlot) {
-    lock.lock();
-    try {
-      if (headBlockSlot.isGreaterThan(atSlot)) {
-        // We've moved on and no longer have a reference to what the head block was at that slot
-        throw new ChainHeadBeyondSlotException(atSlot);
-      }
-      if (headBlockRoot.isPresent()
-          && atSlot.minusMinZero(headBlockSlot).isGreaterThan(HEAD_TOO_OLD_THRESHOLD)) {
-        throw new ChainHeadTooOldException(headBlockSlot, atSlot);
-      }
-      return headBlockRoot;
-    } finally {
-      lock.unlock();
+  public synchronized Optional<Bytes32> getCurrentChainHead(final UInt64 atSlot) {
+    if (headBlockSlot.isGreaterThan(atSlot)) {
+      // We've moved on and no longer have a reference to what the head block was at that slot
+      throw new ChainHeadBeyondSlotException(atSlot);
     }
+    if (headBlockRoot.isPresent()
+        && atSlot.minusMinZero(headBlockSlot).isGreaterThan(HEAD_TOO_OLD_THRESHOLD)) {
+      throw new ChainHeadTooOldException(headBlockSlot, atSlot);
+    }
+    return headBlockRoot;
   }
 
   @Override
-  public void onHeadUpdate(
+  public synchronized void onHeadUpdate(
       final UInt64 slot,
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot,
       final Bytes32 headBlockRoot) {
-    lock.lock();
-    try {
-      this.headBlockSlot = slot;
-      this.headBlockRoot = Optional.of(headBlockRoot);
-    } finally {
-      lock.unlock();
-    }
+    this.headBlockSlot = slot;
+    this.headBlockRoot = Optional.of(headBlockRoot);
   }
 
   @Override

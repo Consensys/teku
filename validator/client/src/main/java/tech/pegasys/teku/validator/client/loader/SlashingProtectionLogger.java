@@ -23,8 +23,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
@@ -47,7 +45,6 @@ import tech.pegasys.teku.validator.client.Validator;
 public class SlashingProtectionLogger implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
   private static final UInt64 SAFE_PROTECTION_EPOCHS_DELTA = UInt64.valueOf(200);
-  private final Lock lock = new ReentrantLock();
   private Optional<UInt64> currentSlot = Optional.empty();
   private Optional<List<Validator>> activeValidators = Optional.empty();
 
@@ -67,14 +64,9 @@ public class SlashingProtectionLogger implements ValidatorTimingChannel {
     this.spec = spec;
   }
 
-  public void protectionSummary(final List<Validator> validators) {
-    lock.lock();
-    try {
-      this.activeValidators = Optional.of(validators);
-      tryToLog();
-    } finally {
-      lock.unlock();
-    }
+  public synchronized void protectionSummary(final List<Validator> validators) {
+    this.activeValidators = Optional.of(validators);
+    tryToLog();
   }
 
   private void tryToLog() {
@@ -172,14 +164,9 @@ public class SlashingProtectionLogger implements ValidatorTimingChannel {
   }
 
   @Override
-  public void onSlot(final UInt64 slot) {
-    lock.lock();
-    try {
-      this.currentSlot = Optional.of(slot);
-      tryToLog();
-    } finally {
-      lock.unlock();
-    }
+  public synchronized void onSlot(final UInt64 slot) {
+    this.currentSlot = Optional.of(slot);
+    tryToLog();
   }
 
   @Override

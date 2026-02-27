@@ -18,8 +18,6 @@ import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
@@ -36,7 +34,6 @@ public class ExecutionClientVersionProvider implements ExecutionClientEventsChan
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Lock lock = new ReentrantLock();
   private final AtomicBoolean lastExecutionClientAvailability = new AtomicBoolean(true);
 
   private final AtomicReference<ClientVersion> executionClientVersion = new AtomicReference<>();
@@ -83,18 +80,13 @@ public class ExecutionClientVersionProvider implements ExecutionClientEventsChan
             });
   }
 
-  private void updateVersionIfNeeded(final ClientVersion executionClientVersion) {
-    lock.lock();
-    try {
-      if (Objects.equals(this.executionClientVersion.get(), executionClientVersion)) {
-        return;
-      }
-      EVENT_LOG.logExecutionClientVersion(
-          executionClientVersion.name(), executionClientVersion.version());
-      this.executionClientVersion.set(executionClientVersion);
-      executionClientVersionChannel.onExecutionClientVersion(executionClientVersion);
-    } finally {
-      lock.unlock();
+  private synchronized void updateVersionIfNeeded(final ClientVersion executionClientVersion) {
+    if (Objects.equals(this.executionClientVersion.get(), executionClientVersion)) {
+      return;
     }
+    EVENT_LOG.logExecutionClientVersion(
+        executionClientVersion.name(), executionClientVersion.version());
+    this.executionClientVersion.set(executionClientVersion);
+    executionClientVersionChannel.onExecutionClientVersion(executionClientVersion);
   }
 }

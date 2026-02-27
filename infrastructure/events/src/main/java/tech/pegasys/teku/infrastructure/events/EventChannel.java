@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.events;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.stream.Collectors.joining;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
@@ -64,8 +65,11 @@ class EventChannel<T> {
       final MetricsSystem metricsSystem) {
     return createAsync(
         channelInterface,
-        Executors.newThreadPerTaskExecutor(
-            Thread.ofVirtual().name(channelInterface.getSimpleName() + "-", 0).factory()),
+        Executors.newCachedThreadPool(
+            new ThreadFactoryBuilder()
+                .setDaemon(true)
+                .setNameFormat(channelInterface.getSimpleName() + "-%d")
+                .build()),
         exceptionHandler,
         metricsSystem);
   }

@@ -14,8 +14,6 @@
 package tech.pegasys.teku.beacon.sync.events;
 
 import java.util.Optional;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync.SyncSubscriber;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
@@ -25,7 +23,6 @@ import tech.pegasys.teku.storage.api.ReorgContext;
 
 public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscriber {
 
-  private final Lock lock = new ReentrantLock();
   private final ChainHeadChannel delegate;
   private boolean syncing = false;
 
@@ -39,7 +36,7 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
   }
 
   @Override
-  public void chainHeadUpdated(
+  public synchronized void chainHeadUpdated(
       final UInt64 slot,
       final Bytes32 stateRoot,
       final Bytes32 bestBlockRoot,
@@ -48,70 +45,60 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot,
       final Optional<ReorgContext> optionalReorgContext) {
-    lock.lock();
-    try {
-      if (!syncing) {
-        optionalReorgContext.ifPresent(
-            reorg ->
-                eventLogger.reorgEvent(
-                    reorg.getOldBestBlockRoot(),
-                    reorg.getOldBestBlockSlot(),
-                    bestBlockRoot,
-                    slot,
-                    reorg.getCommonAncestorRoot(),
-                    reorg.getCommonAncestorSlot()));
-        delegate.chainHeadUpdated(
-            slot,
-            stateRoot,
-            bestBlockRoot,
-            epochTransition,
-            executionOptimistic,
-            previousDutyDependentRoot,
-            currentDutyDependentRoot,
-            optionalReorgContext);
-      } else {
-        pendingEvent =
-            pendingEvent
-                .map(
-                    current ->
-                        current.update(
-                            slot,
-                            stateRoot,
-                            bestBlockRoot,
-                            epochTransition,
-                            executionOptimistic,
-                            previousDutyDependentRoot,
-                            currentDutyDependentRoot,
-                            optionalReorgContext))
-                .or(
-                    () ->
-                        Optional.of(
-                            new PendingEvent(
-                                slot,
-                                stateRoot,
-                                bestBlockRoot,
-                                epochTransition,
-                                executionOptimistic,
-                                previousDutyDependentRoot,
-                                currentDutyDependentRoot,
-                                optionalReorgContext)));
-      }
-    } finally {
-      lock.unlock();
+    if (!syncing) {
+      optionalReorgContext.ifPresent(
+          reorg ->
+              eventLogger.reorgEvent(
+                  reorg.getOldBestBlockRoot(),
+                  reorg.getOldBestBlockSlot(),
+                  bestBlockRoot,
+                  slot,
+                  reorg.getCommonAncestorRoot(),
+                  reorg.getCommonAncestorSlot()));
+      delegate.chainHeadUpdated(
+          slot,
+          stateRoot,
+          bestBlockRoot,
+          epochTransition,
+          executionOptimistic,
+          previousDutyDependentRoot,
+          currentDutyDependentRoot,
+          optionalReorgContext);
+    } else {
+      pendingEvent =
+          pendingEvent
+              .map(
+                  current ->
+                      current.update(
+                          slot,
+                          stateRoot,
+                          bestBlockRoot,
+                          epochTransition,
+                          executionOptimistic,
+                          previousDutyDependentRoot,
+                          currentDutyDependentRoot,
+                          optionalReorgContext))
+              .or(
+                  () ->
+                      Optional.of(
+                          new PendingEvent(
+                              slot,
+                              stateRoot,
+                              bestBlockRoot,
+                              epochTransition,
+                              executionOptimistic,
+                              previousDutyDependentRoot,
+                              currentDutyDependentRoot,
+                              optionalReorgContext)));
     }
   }
 
   @Override
-  public void onSyncingChange(final boolean isSyncing) {
-    lock.lock();
-    try {
-      syncing = isSyncing;
-      if (!syncing) {
-        pendingEvent.ifPresent(PendingEvent::send);
-        pendingEvent = Optional.empty();
-      }
-    } finally {
-      lock.unlock();
+  public synchronized void onSyncingChange(final boolean isSyncing) {
+    syncing = isSyncing;
+    if (!syncing) {
+      pendingEvent.ifPresent(PendingEvent::send);
+      pendingEvent = Optional.empty();
     }
   }
 

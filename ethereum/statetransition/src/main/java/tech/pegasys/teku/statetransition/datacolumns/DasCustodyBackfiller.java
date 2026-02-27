@@ -26,8 +26,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -66,7 +64,6 @@ public class DasCustodyBackfiller extends Service
   private final DataColumnSidecarRetriever retriever;
   private final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator;
 
-  private final Lock lock = new ReentrantLock();
   private Optional<Cancellable> scheduledBackfiller = Optional.empty();
 
   private final Supplier<SafeFuture<Optional<UInt64>>> earliestAvailableCustodySlotProvider;
@@ -111,44 +108,29 @@ public class DasCustodyBackfiller extends Service
   }
 
   @Override
-  protected SafeFuture<?> doStart() {
-    lock.lock();
-    try {
-      if (scheduledBackfiller.map(Cancellable::isCancelled).orElse(true)) {
-        scheduledBackfiller =
-            Optional.of(
-                asyncRunner.runWithFixedDelay(
-                    this::runBackfillCycle,
-                    Duration.ZERO,
-                    backfillCheckInterval,
-                    error -> LOG.error("Failed to run data column backfill", error)));
-      }
-      return SafeFuture.COMPLETE;
-    } finally {
-      lock.unlock();
+  protected synchronized SafeFuture<?> doStart() {
+    if (scheduledBackfiller.map(Cancellable::isCancelled).orElse(true)) {
+      scheduledBackfiller =
+          Optional.of(
+              asyncRunner.runWithFixedDelay(
+                  this::runBackfillCycle,
+                  Duration.ZERO,
+                  backfillCheckInterval,
+                  error -> LOG.error("Failed to run data column backfill", error)));
     }
+    return SafeFuture.COMPLETE;
   }
 
   @Override
-  protected SafeFuture<?> doStop() {
-    lock.lock();
-    try {
-      scheduledBackfiller.ifPresent(Cancellable::cancel);
-      pendingRequests.values().forEach(f -> f.cancel(true));
-      pendingRequests.clear();
-      return SafeFuture.COMPLETE;
-    } finally {
-      lock.unlock();
-    }
+  protected synchronized SafeFuture<?> doStop() {
+    scheduledBackfiller.ifPresent(Cancellable::cancel);
+    pendingRequests.values().forEach(f -> f.cancel(true));
+    pendingRequests.clear();
+    return SafeFuture.COMPLETE;
   }
 
-  public void onNodeSyncStateChanged(final boolean inSync) {
-    lock.lock();
-    try {
-      this.inSync = inSync;
-    } finally {
-      lock.unlock();
-    }
+  public synchronized void onNodeSyncStateChanged(final boolean inSync) {
+    this.inSync = inSync;
   }
 
   @VisibleForTesting
