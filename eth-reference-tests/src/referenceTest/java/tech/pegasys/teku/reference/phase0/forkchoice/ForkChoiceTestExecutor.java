@@ -191,7 +191,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             true,
             DebugDataDumper.NOOP,
             storageSystem.getMetricsSystem(),
-            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
+            AsyncBLSSignatureVerifier.wrap(
+                blsDisabled ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE));
     final ExecutionLayerChannelStub executionLayer = new ExecutionLayerChannelStub(spec, false);
 
     try {
