@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -257,77 +258,9 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     return miscHelpersFulu.verifyDataColumnSidecar(dataColumnSidecar);
   }
 
-  /**
-   * Verify inclusion proof if applicable. Gossip rule: [REJECT] The sidecar's kzg_commitments field
-   * inclusion proof is valid as verified by verify_data_column_sidecar_inclusion_proof(sidecar)
-   *
-   * @param dataColumnSidecar the data column sidecar
-   * @param validInclusionProofInfoSet cache of previously validated inclusion proofs for
-   *     optimization
-   * @return true if inclusion proof is valid or not applicable
-   */
   @Override
-  public boolean verifyInclusionProof(
-      final DataColumnSidecar dataColumnSidecar,
-      final Set<InclusionProofInfo> validInclusionProofInfoSet) {
-    final DataColumnSidecarFulu dataColumnSidecarFulu =
-        DataColumnSidecarFulu.required(dataColumnSidecar);
-
-    // Check cache first for optimization
-    final InclusionProofInfo proofInfo =
-        new InclusionProofInfo(
-            dataColumnSidecarFulu.getKzgCommitments().hashTreeRoot(),
-            dataColumnSidecarFulu.getKzgCommitmentsInclusionProof().hashTreeRoot(),
-            dataColumnSidecarFulu.getBlockBodyRoot());
-
-    if (validInclusionProofInfoSet.contains(proofInfo)) {
-      return true;
-    }
-
-    // Verify inclusion proof
-    try {
-      return miscHelpersFulu.verifyDataColumnSidecarInclusionProof(dataColumnSidecar);
-    } catch (final Throwable t) {
-      return false;
-    }
-  }
-
-  /**
-   * Verify KZG proofs for the data column sidecar. Gossip rule: [REJECT] The sidecar's column data
-   * is valid as verified by verify_data_column_sidecar_kzg_proofs(sidecar)
-   *
-   * @param dataColumnSidecar the data column sidecar
-   * @return true if KZG proofs are valid
-   */
-  @Override
-  public boolean verifyDataColumnSidecarKzgProofs(final DataColumnSidecar dataColumnSidecar) {
-    return miscHelpersFulu.verifyDataColumnSidecarKzgProofs(dataColumnSidecar);
-  }
-
-  /**
-   * Cache validated header/proof info for optimization if applicable.
-   *
-   * @param dataColumnSidecar the validated data column dataColumnSidecar
-   * @param validSignedBlockHeaders cache of validated signed block header hashes
-   * @param validInclusionProofInfoSet cache of validated inclusion proof info
-   */
-  @Override
-  public void cacheValidatedInfo(
-      final DataColumnSidecar dataColumnSidecar,
-      final Set<Bytes32> validSignedBlockHeaders,
-      final Set<InclusionProofInfo> validInclusionProofInfoSet) {
-    final DataColumnSidecarFulu dataColumnSidecarFulu =
-        DataColumnSidecarFulu.required(dataColumnSidecar);
-
-    // Cache signed block header hash for known valid header optimization
-    validSignedBlockHeaders.add(dataColumnSidecarFulu.getSignedBlockHeader().hashTreeRoot());
-
-    // Cache inclusion proof info for future validations
-    validInclusionProofInfoSet.add(
-        new InclusionProofInfo(
-            dataColumnSidecarFulu.getKzgCommitments().hashTreeRoot(),
-            dataColumnSidecarFulu.getKzgCommitmentsInclusionProof().hashTreeRoot(),
-            dataColumnSidecarFulu.getBlockBodyRoot()));
+  public boolean verifyInclusionProof(final DataColumnSidecar dataColumnSidecar) {
+    return miscHelpersFulu.verifyDataColumnSidecarInclusionProof(dataColumnSidecar);
   }
 
   @Override
@@ -365,10 +298,34 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   }
 
   @Override
-  public SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithBlock(
+  public List<DataColumnSidecar> reconstructAllDataColumnSidecars(
+      final List<DataColumnSidecar> dataColumnSidecars) {
+    return miscHelpersFulu.reconstructAllDataColumnSidecars(dataColumnSidecars);
+  }
+
+  @Override
+  public Optional<InclusionProofInfo> getInclusionProofCacheKey(
+      final DataColumnSidecar dataColumnSidecar) {
+    final DataColumnSidecarFulu dataColumnSidecarFulu =
+        DataColumnSidecarFulu.required(dataColumnSidecar);
+    final InclusionProofInfo proofInfo =
+        new InclusionProofInfo(
+            dataColumnSidecarFulu.getKzgCommitments().hashTreeRoot(),
+            dataColumnSidecarFulu.getKzgCommitmentsInclusionProof().hashTreeRoot(),
+            dataColumnSidecarFulu.getBlockBodyRoot());
+    return Optional.of(proofInfo);
+  }
+
+  @Override
+  public SafeFuture<Optional<DataColumnSidecarValidationError>> validateAndVerifyKzgProofsWithBlock(
       final DataColumnSidecar dataColumnSidecar,
-      final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
-    // Fulu sidecars already contain the header, no block validation needed
+      final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot) {
+    if (!miscHelpersFulu.verifyDataColumnSidecarKzgProofs(dataColumnSidecar)) {
+      return SafeFuture.completedFuture(
+          Optional.of(
+              DataColumnSidecarValidationError.Critical.format(
+                  "Invalid DataColumnSidecar KZG Proofs")));
+    }
     return SafeFuture.completedFuture(Optional.empty());
   }
 
@@ -498,9 +455,28 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
         signingRoot, header.getProposerIndex(), signedBlockHeader.getSignature(), state);
   }
 
-  @Override
-  public List<DataColumnSidecar> reconstructAllDataColumnSidecars(
-      final List<DataColumnSidecar> dataColumnSidecars) {
-    return miscHelpersFulu.reconstructAllDataColumnSidecars(dataColumnSidecars);
+  /**
+   * Cache validated header/proof info for optimization if applicable.
+   *
+   * @param dataColumnSidecar the validated data column dataColumnSidecar
+   * @param validSignedBlockHeaders cache of validated signed block header hashes
+   * @param validInclusionProofInfoSet cache of validated inclusion proof info
+   */
+  private void cacheValidatedInfo(
+      final DataColumnSidecar dataColumnSidecar,
+      final Set<Bytes32> validSignedBlockHeaders,
+      final Set<InclusionProofInfo> validInclusionProofInfoSet) {
+    final DataColumnSidecarFulu dataColumnSidecarFulu =
+        DataColumnSidecarFulu.required(dataColumnSidecar);
+
+    // Cache signed block header hash for known valid header optimization
+    validSignedBlockHeaders.add(dataColumnSidecarFulu.getSignedBlockHeader().hashTreeRoot());
+
+    // Cache inclusion proof info for future validations
+    validInclusionProofInfoSet.add(
+        new InclusionProofInfo(
+            dataColumnSidecarFulu.getKzgCommitments().hashTreeRoot(),
+            dataColumnSidecarFulu.getKzgCommitmentsInclusionProof().hashTreeRoot(),
+            dataColumnSidecarFulu.getBlockBodyRoot()));
   }
 }

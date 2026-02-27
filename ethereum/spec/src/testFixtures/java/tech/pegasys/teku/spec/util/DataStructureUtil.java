@@ -227,9 +227,9 @@ import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -2813,18 +2813,21 @@ public final class DataStructureUtil {
     }
 
     public DataColumnSidecar build() {
+      final UInt64 sidecarSlot = slot.orElse(randomSlot());
+      final SchemaDefinitionsFulu schemaDefinitions =
+          SchemaDefinitionsFulu.required(spec.atSlot(sidecarSlot).getSchemaDefinitions());
       final SignedBeaconBlockHeader signedBlockHeader =
           signedBeaconBlockHeader.orElseGet(
               () ->
                   slot.map(DataStructureUtil.this::randomSignedBeaconBlockHeader)
                       .orElseGet(DataStructureUtil.this::randomSignedBeaconBlockHeader));
-      SchemaDefinitionsFulu schemaDefinitions =
-          getFuluSchemaDefinitions(signedBlockHeader.getMessage().getSlot());
+
       final int numberOfProofs =
           kzgProofs
               .map(List::size)
               .or(() -> kzgCommitments.map(List::size))
               .orElseGet(DataStructureUtil.this::randomNumberOfBlobsPerBlock);
+      // works for both Fulu and Gloas
       final SszList<SszKZGCommitment> sszKzgCommitments =
           schemaDefinitions
               .getBlobKzgCommitmentsSchema()
@@ -2854,6 +2857,7 @@ public final class DataStructureUtil {
                       .map(SszKZGProof::new)
                       .toList());
 
+      // Use create and let the builder handle fork-specific fields
       return schemaDefinitions
           .getDataColumnSidecarSchema()
           .create(
@@ -2861,10 +2865,7 @@ public final class DataStructureUtil {
                   builder
                       .index(index.orElseGet(DataStructureUtil.this::randomDataColumnSidecarIndex))
                       .column(
-                          dataColumn.orElseGet(
-                              () ->
-                                  randomDataColumn(
-                                      signedBlockHeader.getMessage().getSlot(), numberOfProofs)))
+                          dataColumn.orElseGet(() -> randomDataColumn(sidecarSlot, numberOfProofs)))
                       .kzgCommitments(sszKzgCommitments)
                       .kzgProofs(sszKzgProofs)
                       .signedBlockHeader(signedBlockHeader)
@@ -2876,7 +2877,7 @@ public final class DataStructureUtil {
                                       .toList()))
                       .beaconBlockRoot(
                           beaconBlockRoot.orElseGet(() -> signedBlockHeader.getMessage().getRoot()))
-                      .slot(slot.orElseGet(() -> signedBlockHeader.getMessage().getSlot())));
+                      .slot(sidecarSlot));
     }
   }
 
@@ -2945,29 +2946,30 @@ public final class DataStructureUtil {
         .build();
   }
 
-  public DataColumnSidecar randomDataColumnSidecarWithInclusionProof(
+  public DataColumnSidecar randomDataColumnSidecar(
       final SignedBeaconBlock signedBeaconBlock, final UInt64 index) {
-    final MiscHelpersFulu miscHelpersFulu =
-        MiscHelpersFulu.required(spec.atSlot(signedBeaconBlock.getSlot()).miscHelpers());
+    final UInt64 slot = signedBeaconBlock.getSlot();
+    final DataColumnSidecarUtil dataColumnSidecarUtil = spec.getDataColumnSidecarUtil(slot);
+
     final List<KZGCommitment> kzgCommitments =
-        signedBeaconBlock
-            .getMessage()
-            .getBody()
-            .getOptionalBlobKzgCommitments()
-            .orElseThrow()
-            .asList()
-            .stream()
+        dataColumnSidecarUtil.getKzgCommitments(signedBeaconBlock.getMessage()).asList().stream()
             .map(SszKZGCommitment::getKZGCommitment)
             .toList();
-    final List<Bytes32> inclusionProof =
-        miscHelpersFulu.computeDataColumnKzgCommitmentsInclusionProof(
-            signedBeaconBlock.getBeaconBlock().orElseThrow().getBody());
-    return new RandomDataColumnSidecarBuilder()
-        .signedBeaconBlockHeader(signedBeaconBlock.asHeader())
-        .kzgCommitments(kzgCommitments)
-        .kzgCommitmentsInclusionProof(inclusionProof)
-        .index(index)
-        .build();
+
+    final RandomDataColumnSidecarBuilder builder =
+        new RandomDataColumnSidecarBuilder()
+            .signedBeaconBlockHeader(signedBeaconBlock.asHeader()) // Gloas NO-OP
+            .beaconBlockRoot(signedBeaconBlock.getRoot()) // Fulu NO-OP
+            .slot(slot) // Fulu NO-OP
+            .index(index)
+            .kzgCommitments(kzgCommitments); // Gloas NO-OP
+
+    // Fulu: sets the inclusion proof, Gloas: returns empty, nothing set
+    dataColumnSidecarUtil
+        .computeDataColumnKzgCommitmentsInclusionProof(signedBeaconBlock.getMessage().getBody())
+        .ifPresent(builder::kzgCommitmentsInclusionProof);
+
+    return builder.build();
   }
 
   public List<DataColumnSidecar> randomDataColumnSidecars() {

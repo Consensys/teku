@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.RpcRequestBodySelector;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.SingleRpcRequestBodySelector;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 class Eth2PeerTest {
 
@@ -73,6 +74,8 @@ class Eth2PeerTest {
   private final TimeProvider timeProvider = mock(TimeProvider.class);
   private final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator =
       mock(DataColumnSidecarSignatureValidator.class);
+  private final CombinedChainDataClient combinedChainDataClient =
+      mock(CombinedChainDataClient.class);
 
   private final PeerStatus randomPeerStatus = randomPeerStatus();
 
@@ -92,7 +95,8 @@ class Eth2PeerTest {
           executionPayloadEnvelopesRateTracker,
           rateTracker,
           metricsSystem,
-          timeProvider);
+          timeProvider,
+          combinedChainDataClient);
 
   @Test
   void updateStatus_shouldNotUpdateUntilValidationPasses() {

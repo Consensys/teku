@@ -25,6 +25,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,9 +41,10 @@ import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil.InclusionProofInfo;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationError;
 import tech.pegasys.teku.spec.logic.common.util.FuluTrackingKey;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -52,7 +54,6 @@ public class DataColumnSidecarGossipValidatorFuluTest
   private final GossipValidationHelper gossipValidationHelper = mock(GossipValidationHelper.class);
 
   private UInt64 parentSlot;
-  private BeaconState postState;
   private Bytes32 blockParentRoot;
   private SignedBeaconBlock signedBeaconBlock;
 
@@ -79,10 +80,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
     signedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlock(slot.longValue(), blockParentRoot);
 
-    dataColumnSidecar =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(signedBeaconBlock, index);
-
-    postState = dataStructureUtil.randomBeaconState();
+    dataColumnSidecar = dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock, index);
 
     // Default mocks for ACCEPT
     when(gossipValidationHelper.isSlotFromFuture(slot)).thenReturn(false);
@@ -92,7 +90,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
     when(gossipValidationHelper.getSlotForBlockRoot(any(Bytes32.class)))
         .thenReturn(Optional.of(parentSlot));
     when(gossipValidationHelper.getParentStateInBlockEpoch(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(postState)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomBeaconState())));
     when(gossipValidationHelper.isProposerTheExpectedProposer(any())).thenReturn(true);
     when(gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(any(), any()))
         .thenReturn(true);
@@ -330,7 +328,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
 
     // Other DataColumnSidecar from the same block (with valid inclusion proof)
     final DataColumnSidecar dataColumnSidecar0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(signedBeaconBlock, UInt64.ZERO);
+        dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock, UInt64.ZERO);
 
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar0))
@@ -345,7 +343,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
     // DataColumnSidecar from the new block (with valid inclusion proof)
     final SignedBeaconBlock newSignedBlock = dataStructureUtil.randomSignedBeaconBlock();
     final DataColumnSidecar dataColumnSidecarNew =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(newSignedBlock, UInt64.ZERO);
+        dataStructureUtil.randomDataColumnSidecar(newSignedBlock, UInt64.ZERO);
     final Bytes32 parentRoot =
         DataColumnSidecarFulu.required(dataColumnSidecarNew)
             .getSignedBlockHeader()
@@ -391,8 +389,10 @@ public class DataColumnSidecarGossipValidatorFuluTest
 
     when(mockDataColumnSidecarUtil.verifyDataColumnSidecarStructure(any(DataColumnSidecar.class)))
         .thenReturn(true);
+    when(mockDataColumnSidecarUtil.getInclusionProofCacheKey(any(DataColumnSidecar.class)))
+        .thenReturn(Optional.empty());
     // Inclusion proof verification fails
-    when(mockDataColumnSidecarUtil.verifyInclusionProof(any(DataColumnSidecar.class), any()))
+    when(mockDataColumnSidecarUtil.verifyInclusionProof(any(DataColumnSidecar.class)))
         .thenReturn(false);
     when(mockDataColumnSidecarUtil.performSlotTimingValidation(any(), any()))
         .thenReturn(Optional.empty());
@@ -406,7 +406,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
     when(mockDataColumnSidecarUtil.validateWithState(
             any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    when(mockDataColumnSidecarUtil.validateWithBlock(any(), any()))
+    when(mockDataColumnSidecarUtil.validateAndVerifyKzgProofsWithBlock(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     when(mockDataColumnSidecarUtil.extractTrackingKey(any()))
         .thenReturn(new FuluTrackingKey(slot, UInt64.ZERO, index));
@@ -434,11 +434,10 @@ public class DataColumnSidecarGossipValidatorFuluTest
         .thenReturn(mockDataColumnSidecarUtil);
     when(mockDataColumnSidecarUtil.verifyDataColumnSidecarStructure(any(DataColumnSidecar.class)))
         .thenReturn(true);
-    when(mockDataColumnSidecarUtil.verifyInclusionProof(any(DataColumnSidecar.class), any()))
+    when(mockDataColumnSidecarUtil.getInclusionProofCacheKey(any(DataColumnSidecar.class)))
+        .thenReturn(Optional.empty());
+    when(mockDataColumnSidecarUtil.verifyInclusionProof(any(DataColumnSidecar.class)))
         .thenReturn(true);
-    // KZG proof validation fails
-    when(mockDataColumnSidecarUtil.verifyDataColumnSidecarKzgProofs(any(DataColumnSidecar.class)))
-        .thenReturn(false);
     when(mockDataColumnSidecarUtil.performSlotTimingValidation(any(), any()))
         .thenReturn(Optional.empty());
     when(mockDataColumnSidecarUtil.performSlotFinalizationValidation(any(), any()))
@@ -451,8 +450,13 @@ public class DataColumnSidecarGossipValidatorFuluTest
     when(mockDataColumnSidecarUtil.validateWithState(
             any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    when(mockDataColumnSidecarUtil.validateWithBlock(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    // KZG proof validation fails
+    when(mockDataColumnSidecarUtil.validateAndVerifyKzgProofsWithBlock(any(), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    DataColumnSidecarValidationError.Critical.format(
+                        "Invalid DataColumnSidecar KZG Proofs"))));
     when(mockDataColumnSidecarUtil.extractTrackingKey(any()))
         .thenReturn(new FuluTrackingKey(slot, UInt64.ZERO, index));
 
@@ -461,6 +465,71 @@ public class DataColumnSidecarGossipValidatorFuluTest
             mockSpec, invalidBlocks, gossipValidationHelper, metricsSystemStub, stubTimeProvider);
 
     SafeFutureAssert.assertThatSafeFuture(validatorWithMockedSpec.validate(dataColumnSidecar))
-        .isCompletedWithValue(reject("DataColumnSidecar does not pass kzg validation"));
+        .isCompletedWithValue(reject("Invalid DataColumnSidecar KZG Proofs"));
+  }
+
+  @Test
+  void shouldSkipInclusionProofVerificationForKnownValidInclusionProof() {
+    final Spec mockSpec = mock(Spec.class);
+    final SpecVersion mockGenesisSpec = mock(SpecVersion.class);
+    final DataColumnSidecarUtil mockDataColumnSidecarUtil = mock(DataColumnSidecarUtil.class);
+
+    when(mockSpec.getGenesisSpec()).thenReturn(mockGenesisSpec);
+    when(mockGenesisSpec.getSlotsPerEpoch()).thenReturn(32);
+    when(mockSpec.getNumberOfDataColumns()).thenReturn(Optional.of(128));
+    when(mockSpec.getDataColumnSidecarUtil(any(UInt64.class)))
+        .thenReturn(mockDataColumnSidecarUtil);
+
+    final InclusionProofInfo inclusionProofInfo =
+        new InclusionProofInfo(
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomBytes32());
+
+    when(mockDataColumnSidecarUtil.verifyDataColumnSidecarStructure(any())).thenReturn(true);
+    when(mockDataColumnSidecarUtil.getInclusionProofCacheKey(any()))
+        .thenReturn(Optional.of(inclusionProofInfo));
+    when(mockDataColumnSidecarUtil.verifyInclusionProof(any())).thenReturn(true);
+    when(mockDataColumnSidecarUtil.performSlotTimingValidation(any(), any()))
+        .thenReturn(Optional.empty());
+    when(mockDataColumnSidecarUtil.performSlotFinalizationValidation(any(), any()))
+        .thenReturn(Optional.empty());
+    when(mockDataColumnSidecarUtil.isBlockParentSeen(any(), any())).thenReturn(true);
+    when(mockDataColumnSidecarUtil.isBlockSeen(any(), any())).thenReturn(true);
+    when(mockDataColumnSidecarUtil.validateBlockSlot(any(), any())).thenReturn(Optional.empty());
+    when(mockDataColumnSidecarUtil.validateParentBlock(any(), any(), any(), any()))
+        .thenReturn(Optional.empty());
+    when(mockDataColumnSidecarUtil.validateWithState(
+            any(), any(), any(), any(), any(), any(), any(), any()))
+        .thenAnswer(
+            invocation -> {
+              final Set<InclusionProofInfo> proofInfoSet = invocation.getArgument(2);
+              proofInfoSet.add(inclusionProofInfo);
+              return SafeFuture.completedFuture(Optional.empty());
+            });
+    when(mockDataColumnSidecarUtil.validateAndVerifyKzgProofsWithBlock(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(mockDataColumnSidecarUtil.extractTrackingKey(any()))
+        .thenReturn(new FuluTrackingKey(slot, UInt64.ZERO, index));
+
+    final DataColumnSidecarGossipValidator validatorWithMockedSpec =
+        DataColumnSidecarGossipValidator.create(
+            mockSpec, invalidBlocks, gossipValidationHelper, metricsSystemStub, stubTimeProvider);
+
+    // First validation, inclusion proof is verified and cached
+    SafeFutureAssert.assertThatSafeFuture(validatorWithMockedSpec.validate(dataColumnSidecar))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+    verify(mockDataColumnSidecarUtil).verifyInclusionProof(any());
+    clearInvocations(mockDataColumnSidecarUtil);
+
+    // Second sidecar from same block but different index. Inclusion proof is already cached
+    when(mockDataColumnSidecarUtil.extractTrackingKey(any()))
+        .thenReturn(new FuluTrackingKey(slot, UInt64.ZERO, UInt64.valueOf(2)));
+
+    SafeFutureAssert.assertThatSafeFuture(validatorWithMockedSpec.validate(dataColumnSidecar))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+
+    // verifyInclusionProof should not be called
+    verify(mockDataColumnSidecarUtil, never()).verifyInclusionProof(any());
   }
 }

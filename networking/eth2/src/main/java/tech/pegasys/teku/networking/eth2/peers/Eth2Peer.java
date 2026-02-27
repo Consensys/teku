@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.SingleRpcRequestBodySelector;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public interface Eth2Peer extends Peer, SyncSource {
   static Eth2Peer create(
@@ -60,7 +61,8 @@ public interface Eth2Peer extends Peer, SyncSource {
       final RateTracker executionPayloadEnvelopesRequestTracker,
       final RateTracker requestTracker,
       final MetricsSystem metricsSystem,
-      final TimeProvider timeProvider) {
+      final TimeProvider timeProvider,
+      final CombinedChainDataClient combinedChainDataClient) {
     return new DefaultEth2Peer(
         spec,
         peer,
@@ -76,7 +78,8 @@ public interface Eth2Peer extends Peer, SyncSource {
         executionPayloadEnvelopesRequestTracker,
         requestTracker,
         metricsSystem,
-        timeProvider);
+        timeProvider,
+        combinedChainDataClient);
   }
 
   void updateStatus(PeerStatus status);

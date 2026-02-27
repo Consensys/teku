@@ -116,7 +116,7 @@ public class DataColumnSidecarELManagerImplFuluTest
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     final DataColumnSidecar dataColumnSidecar =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block, UInt64.ZERO);
+        dataStructureUtil.randomDataColumnSidecar(block, UInt64.ZERO);
     dataColumnSidecarELManager.onSlot(currentSlot);
 
     LOCAL_OR_RECOVERED_ORIGINS.forEach(
@@ -132,7 +132,7 @@ public class DataColumnSidecarELManagerImplFuluTest
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     final DataColumnSidecar dataColumnSidecar =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block, UInt64.ZERO);
+        dataStructureUtil.randomDataColumnSidecar(block, UInt64.ZERO);
     dataColumnSidecarELManager.onSlot(currentSlot);
     dataColumnSidecarELManager.onNewDataColumnSidecar(dataColumnSidecar, RemoteOrigin.GOSSIP);
     verify(executionLayer).engineGetBlobAndCellProofsList(any(), any());

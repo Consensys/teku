@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.util.GloasTrackingKey;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -82,13 +83,14 @@ public class DataColumnSidecarGossipValidatorGloasTest
     when(gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(any(), any()))
         .thenReturn(true);
     // for the default setup, return a block with matching KZG commitments
-    final BeaconBlock defaultBlock =
+    final BeaconBlock beaconBlock =
         dataStructureUtil.randomBeaconBlock(
-            slot,
+            UInt64.ZERO,
             dataStructureUtil.randomBeaconBlockBodyWithCommitments(
                 dataColumnSidecar.getColumn().size()));
-    when(gossipValidationHelper.retrieveBlockByRoot(any(Bytes32.class)))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(defaultBlock)));
+    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.signedBlock(beaconBlock);
+    when(gossipValidationHelper.retrieveSignedBlockByRoot(any(Bytes32.class)))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(signedBeaconBlock)));
   }
 
   @Test
@@ -107,8 +109,10 @@ public class DataColumnSidecarGossipValidatorGloasTest
             slot,
             dataStructureUtil.randomBeaconBlockBodyWithCommitments(insufficientCommitmentCount));
 
-    when(gossipValidationHelper.retrieveBlockByRoot(beaconBlockRoot))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(blockWithInsufficientCommitments)));
+    when(gossipValidationHelper.retrieveSignedBlockByRoot(beaconBlockRoot))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(dataStructureUtil.signedBlock(blockWithInsufficientCommitments))));
 
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))
@@ -190,8 +194,10 @@ public class DataColumnSidecarGossipValidatorGloasTest
             slot,
             dataStructureUtil.randomBeaconBlockBodyWithCommitments(
                 sidecarDifferentIndex.getColumn().size()));
-    when(gossipValidationHelper.retrieveBlockByRoot(beaconBlockRoot))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(secondBeaconblock)));
+    when(gossipValidationHelper.retrieveSignedBlockByRoot(beaconBlockRoot))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(dataStructureUtil.signedBlock(secondBeaconblock))));
 
     // Different column index, should accept
     SafeFutureAssert.assertThatSafeFuture(
@@ -226,8 +232,10 @@ public class DataColumnSidecarGossipValidatorGloasTest
             slot,
             dataStructureUtil.randomBeaconBlockBodyWithCommitments(
                 sidecarDifferentBlock.getColumn().size()));
-    when(gossipValidationHelper.retrieveBlockByRoot(differentBlockRoot))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(thirdBeaconblock)));
+    when(gossipValidationHelper.retrieveSignedBlockByRoot(differentBlockRoot))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(dataStructureUtil.signedBlock(thirdBeaconblock))));
 
     // Should accept - different block root means different tracking key
     SafeFutureAssert.assertThatSafeFuture(
@@ -242,7 +250,7 @@ public class DataColumnSidecarGossipValidatorGloasTest
 
   @Test
   void shouldRejectWhenBeaconBlockRootNotKnown() {
-    when(gossipValidationHelper.retrieveBlockByRoot(beaconBlockRoot))
+    when(gossipValidationHelper.retrieveSignedBlockByRoot(beaconBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     SafeFutureAssert.assertThatSafeFuture(
@@ -276,7 +284,7 @@ public class DataColumnSidecarGossipValidatorGloasTest
   @Test
   void shouldBeSavedForFutureWhenBlockUnavailable() {
     when(gossipValidationHelper.getSlotForBlockRoot(beaconBlockRoot)).thenReturn(Optional.of(slot));
-    when(gossipValidationHelper.retrieveBlockByRoot(beaconBlockRoot))
+    when(gossipValidationHelper.retrieveSignedBlockByRoot(beaconBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     SafeFutureAssert.assertThatSafeFuture(
@@ -293,8 +301,9 @@ public class DataColumnSidecarGossipValidatorGloasTest
             dataStructureUtil.randomBeaconBlockBodyWithCommitments(
                 dataColumnSidecar.getColumn().size() + 1));
 
-    when(gossipValidationHelper.retrieveBlockByRoot(beaconBlockRoot))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconBlock)));
+    when(gossipValidationHelper.retrieveSignedBlockByRoot(beaconBlockRoot))
+        .thenReturn(
+            SafeFuture.completedFuture(Optional.of(dataStructureUtil.signedBlock(beaconBlock))));
 
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar))

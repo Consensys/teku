@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -72,9 +73,9 @@ public interface DataColumnSidecarUtil {
       Function<Bytes32, Optional<UInt64>> getBlockSlot,
       BiPredicate<UInt64, Bytes32> currentFinalizedCheckpointIsAncestorOfBlock);
 
-  SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithBlock(
+  SafeFuture<Optional<DataColumnSidecarValidationError>> validateAndVerifyKzgProofsWithBlock(
       DataColumnSidecar dataColumnSidecar,
-      Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot);
+      Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot);
 
   SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithState(
       DataColumnSidecar dataColumnSidecar,
@@ -93,15 +94,7 @@ public interface DataColumnSidecarUtil {
 
   boolean verifyDataColumnSidecarStructure(DataColumnSidecar dataColumnSidecar);
 
-  boolean verifyInclusionProof(
-      DataColumnSidecar dataColumnSidecar, Set<InclusionProofInfo> validInclusionProofInfoSet);
-
-  boolean verifyDataColumnSidecarKzgProofs(DataColumnSidecar dataColumnSidecar);
-
-  void cacheValidatedInfo(
-      DataColumnSidecar dataColumnSidecar,
-      Set<Bytes32> validSignedBlockHeaders,
-      Set<InclusionProofInfo> validInclusionProofInfoSet);
+  boolean verifyInclusionProof(DataColumnSidecar dataColumnSidecar);
 
   SszList<SszKZGCommitment> getKzgCommitments(BeaconBlock block);
 
@@ -120,6 +113,8 @@ public interface DataColumnSidecarUtil {
 
   List<DataColumnSidecar> reconstructAllDataColumnSidecars(
       List<DataColumnSidecar> dataColumnSidecars);
+
+  Optional<InclusionProofInfo> getInclusionProofCacheKey(DataColumnSidecar dataColumnSidecar);
 
   record InclusionProofInfo(
       Bytes32 commitmentsRoot, Bytes32 inclusionProofRoot, Bytes32 bodyRoot) {}
