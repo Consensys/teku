@@ -263,18 +263,6 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     return miscHelpersFulu.verifyDataColumnSidecarInclusionProof(dataColumnSidecar);
   }
 
-  /**
-   * Verify KZG proofs for the data column sidecar. Gossip rule: [REJECT] The sidecar's column data
-   * is valid as verified by verify_data_column_sidecar_kzg_proofs(sidecar)
-   *
-   * @param dataColumnSidecar the data column sidecar
-   * @return true if KZG proofs are valid
-   */
-  @Override
-  public boolean verifyDataColumnSidecarKzgProofs(final DataColumnSidecar dataColumnSidecar) {
-    return miscHelpersFulu.verifyDataColumnSidecarKzgProofs(dataColumnSidecar);
-  }
-
   @Override
   public SszList<SszKZGCommitment> getKzgCommitments(final BeaconBlock block) {
     return BeaconBlockBodyDeneb.required(block.getBody()).getBlobKzgCommitments();
@@ -329,10 +317,15 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   }
 
   @Override
-  public SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithBlock(
+  public SafeFuture<Optional<DataColumnSidecarValidationError>> validateAndVerifyKzgProofsWithBlock(
       final DataColumnSidecar dataColumnSidecar,
       final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot) {
-    // Fulu sidecars already contain the header, no block validation needed
+    if (!miscHelpersFulu.verifyDataColumnSidecarKzgProofs(dataColumnSidecar)) {
+      return SafeFuture.completedFuture(
+          Optional.of(
+              DataColumnSidecarValidationError.Critical.format(
+                  "Invalid DataColumnSidecar KZG Proofs")));
+    }
     return SafeFuture.completedFuture(Optional.empty());
   }
 

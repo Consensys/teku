@@ -83,62 +83,60 @@ public class DataColumnSidecarsByRangeListenerValidatingProxy
             throw new DataColumnSidecarsResponseInvalidResponseException(
                 peer, DATA_COLUMN_SIDECAR_UNEXPECTED_IDENTIFIER);
           }
+          if (!verifyValidity(dataColumnSidecar)) {
+            throw new DataColumnSidecarsResponseInvalidResponseException(
+                peer,
+                DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
+                    .DATA_COLUMN_SIDECAR_VALIDITY_CHECK_FAILED);
+          }
 
-          return verifyValidity(dataColumnSidecar)
-              .thenCompose(
-                  validationResult -> {
-                    if (validationResult.isPresent()) {
-                      throw new DataColumnSidecarsResponseInvalidResponseException(
-                          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_VALIDITY_CHECK_FAILED);
-                    }
+          final boolean inclusionProofValid;
+          try (MetricsHistogram.Timer ignored =
+              dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer()) {
+            inclusionProofValid = verifyInclusionProof(dataColumnSidecar);
+          } catch (final IOException ioException) {
+            throw new DataColumnSidecarsResponseInvalidResponseException(
+                peer,
+                DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
+                    .DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
+          }
+          if (!inclusionProofValid) {
+            throw new DataColumnSidecarsResponseInvalidResponseException(
+                peer,
+                DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
+                    .DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
+          }
 
-                    final boolean inclusionProofValid;
-                    try (MetricsHistogram.Timer ignored =
-                        dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer()) {
-                      inclusionProofValid = verifyInclusionProof(dataColumnSidecar);
-                    } catch (final IOException ioException) {
-                      throw new DataColumnSidecarsResponseInvalidResponseException(
-                          peer,
-                          DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
-                              .DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
-                    }
-                    if (!inclusionProofValid) {
-                      throw new DataColumnSidecarsResponseInvalidResponseException(
-                          peer,
-                          DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
-                              .DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
-                    }
+          try (MetricsHistogram.Timer kzgVerificationTimer =
+              dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
+            return verifyKzgProofs(dataColumnSidecar)
+                .whenComplete((result, error) -> kzgVerificationTimer.closeUnchecked().run())
+                .thenCompose(
+                    maybeKzgProofsVerificationResult -> {
+                      if (maybeKzgProofsVerificationResult.isPresent()) {
+                        throw new DataColumnSidecarsResponseInvalidResponseException(
+                            peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
+                      }
+                      return verifySignature(dataColumnSidecar);
+                    })
+                .thenCompose(
+                    signatureIsValid -> {
+                      if (signatureIsValid) {
+                        return SafeFuture.COMPLETE;
+                      }
+                      return SafeFuture.failedFuture(
+                          new DataColumnSidecarsResponseInvalidResponseException(
+                              peer,
+                              InvalidResponseType.DATA_COLUMN_SIDECAR_HEADER_INVALID_SIGNATURE));
+                    })
+                .thenCompose(__ -> dataColumnSidecarResponseListener.onResponse(dataColumnSidecar));
 
-                    final boolean kzgProofValid;
-                    try (MetricsHistogram.Timer ignored =
-                        dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-                      kzgProofValid = verifyKzgProof(dataColumnSidecar);
-                    } catch (final IOException ioException) {
-                      throw new DataColumnSidecarsResponseInvalidResponseException(
-                          peer,
-                          DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
-                              .DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
-                    }
-                    if (!kzgProofValid) {
-                      throw new DataColumnSidecarsResponseInvalidResponseException(
-                          peer,
-                          DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
-                              .DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
-                    }
-
-                    return verifySignature(dataColumnSidecar);
-                  })
-              .thenCompose(
-                  signatureIsValid -> {
-                    if (signatureIsValid) {
-                      return SafeFuture.COMPLETE;
-                    }
-                    return SafeFuture.failedFuture(
-                        new DataColumnSidecarsResponseInvalidResponseException(
-                            peer,
-                            InvalidResponseType.DATA_COLUMN_SIDECAR_HEADER_INVALID_SIGNATURE));
-                  })
-              .thenCompose(__ -> dataColumnSidecarResponseListener.onResponse(dataColumnSidecar));
+          } catch (final IOException ioException) {
+            throw new DataColumnSidecarsResponseInvalidResponseException(
+                peer,
+                DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
+                    .DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
+          }
         });
   }
 

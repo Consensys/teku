@@ -29,9 +29,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.gloas.DataColumnSidecarSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 @SuppressWarnings("JavaCase")
 public class DataColumnSidecarsByRootValidatorGloasTest
@@ -71,17 +73,15 @@ public class DataColumnSidecarsByRootValidatorGloasTest
   protected DataColumnSidecar createSidecarWithBrokenValidity(final DataColumnSidecar sidecar) {
     final DataColumnSidecarSchemaGloas sidecarSchema =
         (DataColumnSidecarSchemaGloas) sidecar.getSchema();
-    // Wrong number of proofs (skip first) causes verifyDataColumnSidecarStructure to fail
+    final DataColumnSchema dataColumnSchema =
+        SchemaDefinitionsGloas.required(spec.atSlot(sidecar.getSlot()).getSchemaDefinitions())
+            .getDataColumnSchema();
     return sidecarSchema.create(
         builder ->
             builder
                 .index(sidecar.getIndex())
-                .column(sidecar.getColumn())
-                .kzgProofs(
-                    sidecar
-                        .getKzgProofs()
-                        .getSchema()
-                        .createFromElements(sidecar.getKzgProofs().stream().skip(1).toList()))
+                .column(dataColumnSchema.create(List.of()))
+                .kzgProofs(sidecar.getKzgProofs().getSchema().createFromElements(List.of()))
                 .slot(sidecar.getSlot())
                 .beaconBlockRoot(sidecar.getBeaconBlockRoot()));
   }
@@ -111,7 +111,7 @@ public class DataColumnSidecarsByRootValidatorGloasTest
         .isCompletedExceptionallyWith(DataColumnSidecarsResponseInvalidResponseException.class)
         .hasMessageContaining(
             DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
-                .DATA_COLUMN_SIDECAR_VALIDITY_CHECK_FAILED
+                .DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED
                 .describe());
   }
 }

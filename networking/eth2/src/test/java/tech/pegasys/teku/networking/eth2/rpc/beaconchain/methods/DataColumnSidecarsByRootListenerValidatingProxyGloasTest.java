@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.gloas.DataColumnSidecarSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
@@ -94,17 +95,15 @@ public class DataColumnSidecarsByRootListenerValidatingProxyGloasTest
       final DataColumnSidecar validSidecar) {
     final DataColumnSidecarSchemaGloas sidecarSchema =
         (DataColumnSidecarSchemaGloas) validSidecar.getSchema();
-    // invalid sidecar with wrong number of proofs (skip first proof)
+    final DataColumnSchema dataColumnSchema =
+        SchemaDefinitionsGloas.required(spec.atSlot(validSidecar.getSlot()).getSchemaDefinitions())
+            .getDataColumnSchema();
     return sidecarSchema.create(
         builder ->
             builder
                 .index(validSidecar.getIndex())
-                .column(validSidecar.getColumn())
-                .kzgProofs(
-                    validSidecar
-                        .getKzgProofs()
-                        .getSchema()
-                        .createFromElements(validSidecar.getKzgProofs().stream().skip(1).toList()))
+                .column(dataColumnSchema.create(List.of()))
+                .kzgProofs(validSidecar.getKzgProofs().getSchema().createFromElements(List.of()))
                 .slot(validSidecar.getSlot())
                 .beaconBlockRoot(validSidecar.getBeaconBlockRoot()));
   }
@@ -138,7 +137,7 @@ public class DataColumnSidecarsByRootListenerValidatingProxyGloasTest
     assertThatThrownBy(result::get)
         .hasMessageContaining(
             DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
-                .DATA_COLUMN_SIDECAR_VALIDITY_CHECK_FAILED
+                .DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED
                 .describe());
   }
 }

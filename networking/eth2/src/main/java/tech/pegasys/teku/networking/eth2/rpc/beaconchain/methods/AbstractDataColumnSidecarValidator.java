@@ -45,35 +45,18 @@ public abstract class AbstractDataColumnSidecarValidator {
     this.combinedChainDataClient = combinedChainDataClient;
   }
 
-  SafeFuture<Optional<DataColumnSidecarValidationError>> verifyValidity(
-      final DataColumnSidecar dataColumnSidecar) {
-    try {
-      final DataColumnSidecarUtil dataColumnSidecarUtil =
-          spec.getDataColumnSidecarUtil(dataColumnSidecar.getSlot());
-      if (!dataColumnSidecarUtil.verifyDataColumnSidecarStructure(dataColumnSidecar)) {
-        return SafeFuture.completedFuture(
-            Optional.of(
-                DataColumnSidecarValidationError.Critical.format("Invalid DataColumnSidecar")));
-      }
-      return dataColumnSidecarUtil.validateWithBlock(
-          dataColumnSidecar, combinedChainDataClient::getBlockByBlockRoot);
-    } catch (final Exception ex) {
-      LOG.debug("Validity check failed for DataColumnSidecar {}", dataColumnSidecar.toLogString());
-      return SafeFuture.completedFuture(
-          Optional.of(
-              DataColumnSidecarValidationError.Critical.format("Invalid DataColumnSidecar")));
-    }
+  boolean verifyValidity(final DataColumnSidecar dataColumnSidecar) {
+    final DataColumnSidecarUtil dataColumnSidecarUtil =
+        spec.getDataColumnSidecarUtil(dataColumnSidecar.getSlot());
+    return dataColumnSidecarUtil.verifyDataColumnSidecarStructure(dataColumnSidecar);
   }
 
-  boolean verifyKzgProof(final DataColumnSidecar dataColumnSidecar) {
-    try {
-      return spec.getDataColumnSidecarUtil(dataColumnSidecar.getSlot())
-          .verifyDataColumnSidecarKzgProofs(dataColumnSidecar);
-    } catch (final Exception ex) {
-      LOG.debug(
-          "KZG verification failed for DataColumnSidecar {}", dataColumnSidecar.toLogString(), ex);
-      return false;
-    }
+  SafeFuture<Optional<DataColumnSidecarValidationError>> verifyKzgProofs(
+      final DataColumnSidecar dataColumnSidecar) {
+    final DataColumnSidecarUtil dataColumnSidecarUtil =
+        spec.getDataColumnSidecarUtil(dataColumnSidecar.getSlot());
+    return dataColumnSidecarUtil.validateAndVerifyKzgProofsWithBlock(
+        dataColumnSidecar, combinedChainDataClient::getBlockByBlockRoot);
   }
 
   boolean verifyInclusionProof(final DataColumnSidecar dataColumnSidecar) {

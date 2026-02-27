@@ -128,8 +128,6 @@ public abstract class AbstractDataColumnSidecarsByRootValidatorTest {
 
   @Test
   void dataColumnSidecarFailsKzgVerification() {
-    // Default: Fulu standalone KZG check. Gloas overrides because its KZG check runs
-    // inside validateWithBlock using commitments from the block's execution payload bid
     when(kzg.verifyCellProofBatch(any(), any(), any())).thenReturn(false);
     final SignedBeaconBlock block1 = createBlock(currentForkFirstSlot);
     final DataColumnSidecar dataColumnSidecar1_0 =

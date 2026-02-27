@@ -73,7 +73,7 @@ public interface DataColumnSidecarUtil {
       Function<Bytes32, Optional<UInt64>> getBlockSlot,
       BiPredicate<UInt64, Bytes32> currentFinalizedCheckpointIsAncestorOfBlock);
 
-  SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithBlock(
+  SafeFuture<Optional<DataColumnSidecarValidationError>> validateAndVerifyKzgProofsWithBlock(
       DataColumnSidecar dataColumnSidecar,
       Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot);
 
@@ -95,8 +95,6 @@ public interface DataColumnSidecarUtil {
   boolean verifyDataColumnSidecarStructure(DataColumnSidecar dataColumnSidecar);
 
   boolean verifyInclusionProof(DataColumnSidecar dataColumnSidecar);
-
-  boolean verifyDataColumnSidecarKzgProofs(DataColumnSidecar dataColumnSidecar);
 
   SszList<SszKZGCommitment> getKzgCommitments(BeaconBlock block);
 

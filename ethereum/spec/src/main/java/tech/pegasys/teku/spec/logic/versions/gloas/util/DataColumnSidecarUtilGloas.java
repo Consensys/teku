@@ -184,23 +184,6 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
     return true;
   }
 
-  /**
-   * Verify KZG proofs for the data column sidecar. Gossip rule: [REJECT] The sidecar's column data
-   * is valid as verified by verify_data_column_sidecar_kzg_proofs(sidecar,
-   * bid.blob_kzg_commitments)
-   *
-   * <p>In Gloas, we cannot verify KZG proofs at this stage because we need the commitments from the
-   * block's execution payload bid. The actual validation happens in validateWithBlock.
-   *
-   * @param dataColumnSidecar the data column sidecar
-   * @return true (deferred validation)
-   */
-  @Override
-  public boolean verifyDataColumnSidecarKzgProofs(final DataColumnSidecar dataColumnSidecar) {
-    // Cannot verify without commitments from the bid - validation happens in validateWithBlock
-    return true;
-  }
-
   @Override
   public SszList<SszKZGCommitment> getKzgCommitments(final BeaconBlock block) {
     return BeaconBlockBodyGloas.required(block.getBody())
@@ -257,7 +240,7 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
    *     means validation found an issue (invalid/save for future).
    */
   @Override
-  public SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithBlock(
+  public SafeFuture<Optional<DataColumnSidecarValidationError>> validateAndVerifyKzgProofsWithBlock(
       final DataColumnSidecar dataColumnSidecar,
       final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot) {
 

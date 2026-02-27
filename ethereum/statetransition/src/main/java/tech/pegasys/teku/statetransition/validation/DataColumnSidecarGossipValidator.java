@@ -314,15 +314,6 @@ public class DataColumnSidecarGossipValidator {
     }
 
     /*
-     * [REJECT] The sidecar's column data is valid as verified by verify_data_column_sidecar_kzg_proofs(sidecar).
-     */
-    final Optional<InternalValidationResult> kzgProofResult =
-        verifyKzgProofsWithMetrics(dataColumnSidecarUtil, dataColumnSidecar);
-    if (kzgProofResult.isPresent()) {
-      return completedFuture(kzgProofResult.get());
-    }
-
-    /*
      * [REJECT] The sidecar is proposed by the expected proposer_index for the block's slot
      * in the context of the current shuffling (defined by block_header.parent_root/block_header.slot).
      * If the proposer_index cannot immediately be verified against the expected shuffling,
@@ -348,27 +339,36 @@ public class DataColumnSidecarGossipValidator {
      * [REJECT] The sidecar is valid as verified by verify_data_column_sidecar(sidecar, bid.blob_kzg_commitments).
      * [REJECT] The sidecar's column data is valid as verified by verify_data_column_sidecar_kzg_proofs(sidecar, bid.blob_kzg_commitments).
      */
-    final SafeFuture<Optional<DataColumnSidecarValidationError>> maybeBlockValidationErrorFuture =
-        dataColumnSidecarUtil.validateWithBlock(
-            dataColumnSidecar, gossipValidationHelper::retrieveSignedBlockByRoot);
+    final SafeFuture<Optional<DataColumnSidecarValidationError>>
+        maybeKzgProofValidationResultFuture =
+            dataColumnSidecarUtil.validateAndVerifyKzgProofsWithBlock(
+                dataColumnSidecar, gossipValidationHelper::retrieveSignedBlockByRoot);
 
-    return maybeStateValidationErrorFuture.thenCombine(
-        maybeBlockValidationErrorFuture,
-        (maybeStateValidationResult, maybeBlockValidationResult) -> {
-          if (maybeStateValidationResult.isPresent()) {
-            return toInternalValidationResult(maybeStateValidationResult.get());
-          } else if (maybeBlockValidationResult.isPresent()) {
-            return toInternalValidationResult(maybeBlockValidationResult.get());
-          }
-          // Final equivocation check
-          final DataColumnSidecarTrackingKey key =
-              dataColumnSidecarUtil.extractTrackingKey(dataColumnSidecar);
-          if (!receivedValidDataColumnSidecarInfoSet.add(key)) {
-            return ignore(
-                "DataColumnSidecar is not the first valid for its tracking key. It will be dropped.");
-          }
-          return accept();
-        });
+    try (MetricsHistogram.Timer kzgVerficationTimer =
+        dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
+      return maybeKzgProofValidationResultFuture
+          .whenComplete((result, error) -> kzgVerficationTimer.closeUnchecked().run())
+          .thenCombine(
+              maybeStateValidationErrorFuture,
+              (maybeStateValidationResult, maybeKzgProofValidationResult) -> {
+                if (maybeKzgProofValidationResult.isPresent()) {
+                  return toInternalValidationResult(maybeKzgProofValidationResult.get());
+                }
+                if (maybeStateValidationResult.isPresent()) {
+                  return toInternalValidationResult(maybeStateValidationResult.get());
+                }
+                // Final equivocation check
+                final DataColumnSidecarTrackingKey key =
+                    dataColumnSidecarUtil.extractTrackingKey(dataColumnSidecar);
+                if (!receivedValidDataColumnSidecarInfoSet.add(key)) {
+                  return ignore(
+                      "DataColumnSidecar is not the first valid for its tracking key. It will be dropped.");
+                }
+                return accept();
+              });
+    } catch (final Throwable t) {
+      return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
+    }
   }
 
   private InternalValidationResult toInternalValidationResult(
@@ -405,21 +405,6 @@ public class DataColumnSidecarGossipValidator {
       }
     } catch (final Throwable t) {
       return Optional.of(reject("DataColumnSidecar inclusion proof validation failed"));
-    }
-
-    return Optional.empty();
-  }
-
-  private Optional<InternalValidationResult> verifyKzgProofsWithMetrics(
-      final DataColumnSidecarUtil dataColumnSidecarUtil,
-      final DataColumnSidecar dataColumnSidecar) {
-    try (MetricsHistogram.Timer ignored =
-        dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-      if (!dataColumnSidecarUtil.verifyDataColumnSidecarKzgProofs(dataColumnSidecar)) {
-        return Optional.of(reject("DataColumnSidecar does not pass kzg validation"));
-      }
-    } catch (final Throwable t) {
-      return Optional.of(reject("DataColumnSidecar does not pass kzg validation"));
     }
 
     return Optional.empty();

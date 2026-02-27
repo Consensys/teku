@@ -66,43 +66,42 @@ public class DataColumnSidecarsByRootValidator extends AbstractDataColumnSidecar
               peer, InvalidResponseType.DATA_COLUMN_SIDECAR_UNEXPECTED_IDENTIFIER));
     }
 
-    return verifyValidity(dataColumnSidecar)
-        .thenApply(
-            validationResult -> {
-              if (validationResult.isPresent()) {
-                throw new DataColumnSidecarsResponseInvalidResponseException(
-                    peer, InvalidResponseType.DATA_COLUMN_SIDECAR_VALIDITY_CHECK_FAILED);
-              }
+    if (!verifyValidity(dataColumnSidecar)) {
+      return SafeFuture.failedFuture(
+          new DataColumnSidecarsResponseInvalidResponseException(
+              peer,
+              DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
+                  .DATA_COLUMN_SIDECAR_VALIDITY_CHECK_FAILED));
+    }
 
-              final boolean inclusionProofValid;
-              try (MetricsHistogram.Timer ignored =
-                  dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer()) {
-                inclusionProofValid = verifyInclusionProof(dataColumnSidecar);
-              } catch (final Exception e) {
-                throw new DataColumnSidecarsResponseInvalidResponseException(
-                    peer,
-                    InvalidResponseType.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
-              }
-              if (!inclusionProofValid) {
-                throw new DataColumnSidecarsResponseInvalidResponseException(
-                    peer,
-                    InvalidResponseType.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
-              }
+    final boolean inclusionProofValid;
+    try (MetricsHistogram.Timer ignored =
+        dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer()) {
+      inclusionProofValid = verifyInclusionProof(dataColumnSidecar);
+    } catch (final Exception e) {
+      throw new DataColumnSidecarsResponseInvalidResponseException(
+          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
+    }
+    if (!inclusionProofValid) {
+      return SafeFuture.failedFuture(
+          new DataColumnSidecarsResponseInvalidResponseException(
+              peer, InvalidResponseType.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED));
+    }
 
-              final boolean kzgProofValid;
-              try (MetricsHistogram.Timer ignored =
-                  dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-                kzgProofValid = verifyKzgProof(dataColumnSidecar);
-              } catch (final Exception e) {
-                throw new DataColumnSidecarsResponseInvalidResponseException(
-                    peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
-              }
-              if (!kzgProofValid) {
-                throw new DataColumnSidecarsResponseInvalidResponseException(
-                    peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
-              }
-
-              return Optional.empty();
-            });
+    try (MetricsHistogram.Timer ignored =
+        dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
+      return verifyKzgProofs(dataColumnSidecar)
+          .thenApply(
+              validationResult -> {
+                if (validationResult.isPresent()) {
+                  throw new DataColumnSidecarsResponseInvalidResponseException(
+                      peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
+                }
+                return Optional.empty();
+              });
+    } catch (final Exception e) {
+      throw new DataColumnSidecarsResponseInvalidResponseException(
+          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
+    }
   }
 }

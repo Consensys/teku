@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil.InclusionProofInfo;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationError;
 import tech.pegasys.teku.spec.logic.common.util.FuluTrackingKey;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -406,7 +407,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
     when(mockDataColumnSidecarUtil.validateWithState(
             any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    when(mockDataColumnSidecarUtil.validateWithBlock(any(), any()))
+    when(mockDataColumnSidecarUtil.validateAndVerifyKzgProofsWithBlock(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     when(mockDataColumnSidecarUtil.extractTrackingKey(any()))
         .thenReturn(new FuluTrackingKey(slot, UInt64.ZERO, index));
@@ -438,9 +439,6 @@ public class DataColumnSidecarGossipValidatorFuluTest
         .thenReturn(Optional.empty());
     when(mockDataColumnSidecarUtil.verifyInclusionProof(any(DataColumnSidecar.class)))
         .thenReturn(true);
-    // KZG proof validation fails
-    when(mockDataColumnSidecarUtil.verifyDataColumnSidecarKzgProofs(any(DataColumnSidecar.class)))
-        .thenReturn(false);
     when(mockDataColumnSidecarUtil.performSlotTimingValidation(any(), any()))
         .thenReturn(Optional.empty());
     when(mockDataColumnSidecarUtil.performSlotFinalizationValidation(any(), any()))
@@ -453,8 +451,13 @@ public class DataColumnSidecarGossipValidatorFuluTest
     when(mockDataColumnSidecarUtil.validateWithState(
             any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    when(mockDataColumnSidecarUtil.validateWithBlock(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    // KZG proof validation fails
+    when(mockDataColumnSidecarUtil.validateAndVerifyKzgProofsWithBlock(any(), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    DataColumnSidecarValidationError.Critical.format(
+                        "Invalid DataColumnSidecar KZG Proofs"))));
     when(mockDataColumnSidecarUtil.extractTrackingKey(any()))
         .thenReturn(new FuluTrackingKey(slot, UInt64.ZERO, index));
 
@@ -463,7 +466,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
             mockSpec, invalidBlocks, gossipValidationHelper, metricsSystemStub, stubTimeProvider);
 
     SafeFutureAssert.assertThatSafeFuture(validatorWithMockedSpec.validate(dataColumnSidecar))
-        .isCompletedWithValue(reject("DataColumnSidecar does not pass kzg validation"));
+        .isCompletedWithValue(reject("Invalid DataColumnSidecar KZG Proofs"));
   }
 
   @Test
@@ -488,7 +491,6 @@ public class DataColumnSidecarGossipValidatorFuluTest
     when(mockDataColumnSidecarUtil.getInclusionProofCacheKey(any()))
         .thenReturn(Optional.of(inclusionProofInfo));
     when(mockDataColumnSidecarUtil.verifyInclusionProof(any())).thenReturn(true);
-    when(mockDataColumnSidecarUtil.verifyDataColumnSidecarKzgProofs(any())).thenReturn(true);
     when(mockDataColumnSidecarUtil.performSlotTimingValidation(any(), any()))
         .thenReturn(Optional.empty());
     when(mockDataColumnSidecarUtil.performSlotFinalizationValidation(any(), any()))
@@ -506,7 +508,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
               proofInfoSet.add(inclusionProofInfo);
               return SafeFuture.completedFuture(Optional.empty());
             });
-    when(mockDataColumnSidecarUtil.validateWithBlock(any(), any()))
+    when(mockDataColumnSidecarUtil.validateAndVerifyKzgProofsWithBlock(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     when(mockDataColumnSidecarUtil.extractTrackingKey(any()))
         .thenReturn(new FuluTrackingKey(slot, UInt64.ZERO, index));
