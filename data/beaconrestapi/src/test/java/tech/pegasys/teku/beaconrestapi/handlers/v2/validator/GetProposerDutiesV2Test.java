@@ -105,7 +105,8 @@ public class GetProposerDutiesV2Test extends AbstractMigratedBeaconHandlerTest {
     final String data = getResponseStringFromMetadata(handler, SC_OK, duties);
     final String expected =
         Resources.toString(
-            Resources.getResource(GetProposerDutiesV2Test.class, "getProposerDutiesV2.json"), UTF_8);
+            Resources.getResource(GetProposerDutiesV2Test.class, "getProposerDutiesV2.json"),
+            UTF_8);
     AssertionsForClassTypes.assertThat(data).isEqualTo(expected);
   }
 
