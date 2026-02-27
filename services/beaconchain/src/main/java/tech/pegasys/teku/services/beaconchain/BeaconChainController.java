@@ -2008,13 +2008,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     eventChannels.subscribe(
         CustodyGroupCountChannel.class,
-        CustodyGroupCountChannel.createCustodyGroupCountSyncedSubscriber(
-            cgcSynced ->
+        CustodyGroupCountChannel.createCustodyGroupCountSubscriber(
+            cgc ->
                 p2pNetwork
                     .getDiscoveryNetwork()
                     .ifPresent(
-                        discoveryNetwork ->
-                            discoveryNetwork.setDASTotalCustodyGroupCount(cgcSynced))));
+                        discoveryNetwork -> discoveryNetwork.setDASTotalCustodyGroupCount(cgc))));
 
     this.nodeId =
         p2pNetwork

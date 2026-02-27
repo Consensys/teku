@@ -20,10 +20,10 @@ public interface CustodyGroupCountChannel extends VoidReturningChannelInterface 
 
   CustodyGroupCountChannel NOOP = (custodyGroupCount, samplingGroupCount) -> {};
 
-  static CustodyGroupCountChannel createCustodyGroupCountSyncedSubscriber(
-      final Consumer<Integer> custodyGroupCountSyncedSubscriber) {
+  static CustodyGroupCountChannel createCustodyGroupCountSubscriber(
+      final Consumer<Integer> custodyGroupCountSubscriber) {
     return (custodyGroupCount, samplingGroupCount) -> {
-      custodyGroupCountSyncedSubscriber.accept(custodyGroupCount);
+      custodyGroupCountSubscriber.accept(custodyGroupCount);
     };
   }
 

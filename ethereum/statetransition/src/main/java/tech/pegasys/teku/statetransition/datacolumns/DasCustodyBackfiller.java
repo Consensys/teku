@@ -68,7 +68,6 @@ public class DasCustodyBackfiller extends Service
   private final Spec spec;
 
   private Optional<Cancellable> scheduledBackfiller = Optional.empty();
-  private boolean cancelled = false;
 
   private final Supplier<SafeFuture<Optional<UInt64>>> earliestAvailableCustodySlotProvider;
   private final Function<UInt64, SafeFuture<Void>> earliestAvailableCustodySlotWriter;
@@ -82,6 +81,7 @@ public class DasCustodyBackfiller extends Service
   private volatile boolean requiresResyncDueToCustodyGroupCountChange;
   private volatile boolean isFirstRoundAfterStartup = true;
 
+  private volatile boolean cancelled = false;
   private volatile boolean inSync = false;
 
   private final Map<DataColumnSlotAndIdentifier, SafeFuture<DataColumnSidecar>> pendingRequests =
@@ -121,6 +121,11 @@ public class DasCustodyBackfiller extends Service
               syncedCount -> {
                 requiresResyncDueToCustodyGroupCountChange =
                     syncedCount < currentSyncCustodyGroupCount;
+                LOG.info(
+                    "DasCustodyBackfiller: DB custody check reveals insufficient custody data. "
+                        + "We have {}, required {}",
+                    syncedCount,
+                    currentSyncCustodyGroupCount);
               })
           .always(this::scheduleBackfiller);
     }
@@ -142,7 +147,7 @@ public class DasCustodyBackfiller extends Service
 
   @Override
   protected synchronized SafeFuture<?> doStop() {
-    this.cancelled = true;
+    cancelled = true;
     scheduledBackfiller.ifPresent(Cancellable::cancel);
     pendingRequests.values().forEach(f -> f.cancel(true));
     pendingRequests.clear();
@@ -161,9 +166,12 @@ public class DasCustodyBackfiller extends Service
   @Override
   public void onGroupCountUpdate(final int custodyGroupCount, final int samplingGroupCount) {
     if (custodyGroupCount > currentSyncCustodyGroupCount) {
+      LOG.info(
+          "DasCustodyBackfiller: custody increase detected, was {}, now {}",
+          currentSyncCustodyGroupCount,
+          custodyGroupCount);
       currentSyncCustodyGroupCount = custodyGroupCount;
       requiresResyncDueToCustodyGroupCountChange = true;
-      LOG.debug("DasCustodyBackfiller: custody increase detected");
     }
   }
 
