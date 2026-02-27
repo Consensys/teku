@@ -121,11 +121,13 @@ public class DasCustodyBackfiller extends Service
               syncedCount -> {
                 requiresResyncDueToCustodyGroupCountChange =
                     syncedCount < currentSyncCustodyGroupCount;
-                LOG.info(
-                    "DasCustodyBackfiller: DB custody check reveals insufficient custody data. "
-                        + "We have {}, required {}",
-                    syncedCount,
-                    currentSyncCustodyGroupCount);
+                if (requiresResyncDueToCustodyGroupCountChange) {
+                  LOG.info(
+                      "Custody resync required: synced {} groups from DB, but {} required. "
+                          + "Backfill will restart from current slot.",
+                      syncedCount,
+                      currentSyncCustodyGroupCount);
+                }
               })
           .always(this::scheduleBackfiller);
     }
@@ -167,7 +169,8 @@ public class DasCustodyBackfiller extends Service
   public void onGroupCountUpdate(final int custodyGroupCount, final int samplingGroupCount) {
     if (custodyGroupCount > currentSyncCustodyGroupCount) {
       LOG.info(
-          "DasCustodyBackfiller: custody increase detected, was {}, now {}",
+          "Custody group count increased from {} to {}, "
+              + "backfill will restart from current slot.",
           currentSyncCustodyGroupCount,
           custodyGroupCount);
       currentSyncCustodyGroupCount = custodyGroupCount;
