@@ -522,12 +522,8 @@ public class DasCustodyBackfiller extends Service
                       .collect(Collectors.toSet());
               final List<UInt64> requiredIndices =
                   custodyGroupCountManager.getCustodyColumnIndices();
-              final Set<UInt64> missingIndices =
-                  requiredIndices.stream()
-                      .filter(index -> !availableIndices.contains(index))
-                      .collect(Collectors.toSet());
 
-              return requiredIndices.size() - missingIndices.size();
+              return (int) requiredIndices.stream().filter(availableIndices::contains).count();
             });
   }
 
