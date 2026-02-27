@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -213,7 +212,7 @@ public class AttestationManager extends Service
     // No-op
   }
 
-  static private final AtomicLong PROCESSED_PENDING_ATTESTATIONS = new AtomicLong(0);
+  private static final AtomicLong PROCESSED_PENDING_ATTESTATIONS = new AtomicLong(0);
 
   @Override
   public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
@@ -224,7 +223,9 @@ public class AttestationManager extends Service
         .forEach(
             attestation -> {
               pendingAttestations.remove(attestation);
-              System.out.println("onAttestation on pending attestation: " + PROCESSED_PENDING_ATTESTATIONS.incrementAndGet());
+              System.out.println(
+                  "onAttestation on pending attestation: "
+                      + PROCESSED_PENDING_ATTESTATIONS.incrementAndGet());
               onAttestation(attestation)
                   .finish(
                       err ->
