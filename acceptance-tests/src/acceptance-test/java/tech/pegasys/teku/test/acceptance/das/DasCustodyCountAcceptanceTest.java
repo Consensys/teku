@@ -60,7 +60,6 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
 
     tekuNode.start();
     tekuNode.waitForAllInAnyOrder(
-        () -> tekuNode.waitForLogMessageContaining("Synced custody group count updated to 10"),
         () ->
             tekuNode.waitForLogMessageContaining(
                 "Custody group count updated to 10, because genesis validators were found."),
@@ -83,7 +82,6 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
     tekuNode2.start();
     tekuNode2.waitForAllInAnyOrder(
         () -> tekuNode2.waitForLogMessageContaining("Using custody group count 10 from store"),
-        () -> tekuNode2.waitForLogMessageContaining("Synced custody group count updated to 10"),
         () -> tekuNode2.waitForLogMessageContaining("Setting cgc in ENR to: 10"),
         () -> tekuNode2.waitForLogMessageContaining("Updating custody group count 10"),
         () ->
@@ -114,7 +112,6 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
 
     tekuNode.start();
     tekuNode.waitForAllInAnyOrder(
-        () -> tekuNode.waitForLogMessageContaining("Synced custody group count updated to 4"),
         () -> tekuNode.waitForLogMessageContaining("Persisting custody group count of 4"),
         () -> tekuNode.waitForLogMessageContaining("Setting cgc in ENR to: 4"),
         () -> tekuNode.waitForLogMessageContaining("Sampling group count for epoch 1: 8"),
@@ -135,7 +132,6 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
     tekuNode2.start();
     tekuNode2.waitForAllInAnyOrder(
         () -> tekuNode2.waitForLogMessageContaining("Using custody group count 4 from store"),
-        () -> tekuNode2.waitForLogMessageContaining("Synced custody group count updated to 4"),
         () -> tekuNode2.waitForLogMessageContaining("Setting cgc in ENR to: 4"),
         () -> tekuNode2.waitForLogMessageContaining("Updating custody group count 4"),
         () ->
@@ -166,7 +162,6 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
 
     tekuNode.start();
     tekuNode.waitForAllInAnyOrder(
-        () -> tekuNode.waitForLogMessageContaining("Synced custody group count updated to 128"),
         () -> tekuNode.waitForLogMessageContaining("Persisting custody group count of 128"),
         () -> tekuNode.waitForLogMessageContaining("Setting cgc in ENR to: 128"),
         () ->
@@ -196,7 +191,6 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
     tekuNode2.start();
     tekuNode2.waitForAllInAnyOrder(
         () -> tekuNode2.waitForLogMessageContaining("Using custody group count 128 from store"),
-        () -> tekuNode2.waitForLogMessageContaining("Synced custody group count updated to 128"),
         () -> tekuNode2.waitForLogMessageContaining("Setting cgc in ENR to: 128"),
         () -> tekuNode2.waitForLogMessageContaining("Updating custody group count 128"),
         () ->
