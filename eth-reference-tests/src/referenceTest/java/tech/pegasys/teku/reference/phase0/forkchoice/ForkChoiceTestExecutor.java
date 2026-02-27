@@ -39,6 +39,7 @@ import org.apache.tuweni.ssz.SSZ;
 import org.assertj.core.api.Condition;
 import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
@@ -75,6 +76,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.statetransition.datacolumns.CurrentSlotProvider;
 import tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
@@ -188,7 +190,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             transitionBlockValidator,
             true,
             DebugDataDumper.NOOP,
-            storageSystem.getMetricsSystem());
+            storageSystem.getMetricsSystem(),
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
     final ExecutionLayerChannelStub executionLayer = new ExecutionLayerChannelStub(spec, false);
 
     try {
