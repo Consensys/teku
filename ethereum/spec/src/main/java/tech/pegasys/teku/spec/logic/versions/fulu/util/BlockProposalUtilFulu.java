@@ -70,10 +70,7 @@ public class BlockProposalUtilFulu extends BlockProposalUtilPhase0 {
         dutyEpoch,
         stateEpoch);
     if (stateEpoch.equals(dutyEpoch)) {
-      LOG.debug("headEpoch {} - returning previousDutyDependentRoot", () -> stateEpoch);
-      return previousTargetRoot;
-    } else if (stateEpoch.increment().equals(dutyEpoch)) {
-      LOG.debug("dutyEpoch (next epoch) {} - returning currentDutyDependentRoot", () -> dutyEpoch);
+      LOG.debug("headEpoch {} - returning currentDutyDependentRoot", () -> stateEpoch);
       return currentTargetRoot;
     } else {
       LOG.debug(
