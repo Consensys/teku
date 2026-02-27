@@ -80,8 +80,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
     signedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlock(slot.longValue(), blockParentRoot);
 
-    dataColumnSidecar =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(signedBeaconBlock, index);
+    dataColumnSidecar = dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock, index);
 
     // Default mocks for ACCEPT
     when(gossipValidationHelper.isSlotFromFuture(slot)).thenReturn(false);
@@ -329,7 +328,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
 
     // Other DataColumnSidecar from the same block (with valid inclusion proof)
     final DataColumnSidecar dataColumnSidecar0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(signedBeaconBlock, UInt64.ZERO);
+        dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock, UInt64.ZERO);
 
     SafeFutureAssert.assertThatSafeFuture(
             dataColumnSidecarGossipValidator.validate(dataColumnSidecar0))
@@ -344,7 +343,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
     // DataColumnSidecar from the new block (with valid inclusion proof)
     final SignedBeaconBlock newSignedBlock = dataStructureUtil.randomSignedBeaconBlock();
     final DataColumnSidecar dataColumnSidecarNew =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(newSignedBlock, UInt64.ZERO);
+        dataStructureUtil.randomDataColumnSidecar(newSignedBlock, UInt64.ZERO);
     final Bytes32 parentRoot =
         DataColumnSidecarFulu.required(dataColumnSidecarNew)
             .getSignedBlockHeader()

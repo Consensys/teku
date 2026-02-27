@@ -108,7 +108,7 @@ public class DataColumnSidecarsByRangeListenerValidatingProxyGloasTest
             combinedChainDataClient);
 
     final DataColumnSidecar dataColumnSidecar =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ZERO);
+        dataStructureUtil.randomDataColumnSidecar(block1, ZERO);
 
     final SafeFuture<?> result = listenerWrapper.onResponse(dataColumnSidecar);
     assertThat(result).isCompletedExceptionally();

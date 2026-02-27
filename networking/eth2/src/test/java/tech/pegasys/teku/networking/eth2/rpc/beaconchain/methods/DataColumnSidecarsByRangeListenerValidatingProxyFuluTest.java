@@ -89,7 +89,7 @@ public class DataColumnSidecarsByRangeListenerValidatingProxyFuluTest
             combinedChainDataClient);
 
     final DataColumnSidecar dataColumnSidecar =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ZERO);
+        dataStructureUtil.randomDataColumnSidecar(block1, ZERO);
     final DataColumnSidecar dataColumnSidecarModified =
         sidecarSchema.create(
             builder ->

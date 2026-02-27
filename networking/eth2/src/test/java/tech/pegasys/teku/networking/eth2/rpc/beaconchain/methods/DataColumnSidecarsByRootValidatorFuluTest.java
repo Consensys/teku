@@ -46,7 +46,7 @@ public class DataColumnSidecarsByRootValidatorFuluTest
   void dataColumnSidecarFailsInclusionProofVerification() {
     final SignedBeaconBlock block1 = createBlock(currentForkFirstSlot);
     final DataColumnSidecar dataColumnSidecar1_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, UInt64.ZERO);
+        dataStructureUtil.randomDataColumnSidecar(block1, UInt64.ZERO);
     final DataColumnSidecar dataColumnSidecar1_0_modified =
         breakInclusionProof(dataColumnSidecar1_0);
     final DataColumnIdentifier sidecarIdentifier1_0 =

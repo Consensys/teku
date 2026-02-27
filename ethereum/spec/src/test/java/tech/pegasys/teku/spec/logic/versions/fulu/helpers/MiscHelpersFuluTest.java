@@ -153,7 +153,7 @@ public class MiscHelpersFuluTest {
   @Test
   void shouldRejectIfDataColumnSidecarHasNoKzgCommitments() {
     final DataColumnSidecar emptyKzgCommitments =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
+        dataStructureUtil.randomDataColumnSidecar(
             dataStructureUtil.randomSignedBeaconBlockWithCommitments(0), UInt64.ONE);
     assertThat(miscHelpersFulu.verifyDataColumnSidecar(emptyKzgCommitments)).isFalse();
   }

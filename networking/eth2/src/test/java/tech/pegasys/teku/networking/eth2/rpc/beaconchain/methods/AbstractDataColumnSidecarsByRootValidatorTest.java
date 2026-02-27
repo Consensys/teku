@@ -83,7 +83,7 @@ public abstract class AbstractDataColumnSidecarsByRootValidatorTest {
   void dataColumnSidecarIsCorrect() {
     final SignedBeaconBlock block1 = createBlock(currentForkFirstSlot);
     final DataColumnSidecar dataColumnSidecar1_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, UInt64.ZERO);
+        dataStructureUtil.randomDataColumnSidecar(block1, UInt64.ZERO);
     final DataColumnIdentifier sidecarIdentifier1_0 =
         DataColumnIdentifier.createFromSidecar(dataColumnSidecar1_0);
     validator =
@@ -103,7 +103,7 @@ public abstract class AbstractDataColumnSidecarsByRootValidatorTest {
   void dataColumnSidecarIdentifierNotRequested() {
     final SignedBeaconBlock block1 = createBlock(currentForkFirstSlot);
     final DataColumnSidecar dataColumnSidecar2_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
+        dataStructureUtil.randomDataColumnSidecar(
             dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot.increment()),
             UInt64.ZERO);
     final DataColumnIdentifier sidecarIdentifier1_0 =
@@ -131,7 +131,7 @@ public abstract class AbstractDataColumnSidecarsByRootValidatorTest {
     when(kzg.verifyCellProofBatch(any(), any(), any())).thenReturn(false);
     final SignedBeaconBlock block1 = createBlock(currentForkFirstSlot);
     final DataColumnSidecar dataColumnSidecar1_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, UInt64.ZERO);
+        dataStructureUtil.randomDataColumnSidecar(block1, UInt64.ZERO);
     final DataColumnIdentifier sidecarIdentifier1_0 =
         DataColumnIdentifier.createFromSidecar(dataColumnSidecar1_0);
     validator =
@@ -156,7 +156,7 @@ public abstract class AbstractDataColumnSidecarsByRootValidatorTest {
   void dataColumnSidecarResponseWithDuplicateSidecar() {
     final SignedBeaconBlock block1 = createBlock(currentForkFirstSlot);
     final DataColumnSidecar dataColumnSidecar1_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, UInt64.ZERO);
+        dataStructureUtil.randomDataColumnSidecar(block1, UInt64.ZERO);
     final DataColumnIdentifier sidecarIdentifier1_0 =
         DataColumnIdentifier.createFromSidecar(dataColumnSidecar1_0);
     validator =
@@ -184,7 +184,7 @@ public abstract class AbstractDataColumnSidecarsByRootValidatorTest {
         .thenReturn(SafeFuture.completedFuture(false));
     final SignedBeaconBlock block1 = createBlock(currentForkFirstSlot);
     final DataColumnSidecar dataColumnSidecar1_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, UInt64.ZERO);
+        dataStructureUtil.randomDataColumnSidecar(block1, UInt64.ZERO);
     final DataColumnIdentifier sidecarIdentifier1_0 =
         DataColumnIdentifier.createFromSidecar(dataColumnSidecar1_0);
     validator =
@@ -205,7 +205,7 @@ public abstract class AbstractDataColumnSidecarsByRootValidatorTest {
   void dataColumnSidecarFailsValidityCheck() {
     final SignedBeaconBlock block1 = createBlock(currentForkFirstSlot);
     final DataColumnSidecar dataColumnSidecar1_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, UInt64.ZERO);
+        dataStructureUtil.randomDataColumnSidecar(block1, UInt64.ZERO);
     final DataColumnSidecar dataColumnSidecar1_0_modified =
         createSidecarWithBrokenValidity(dataColumnSidecar1_0);
     final DataColumnIdentifier sidecarIdentifier1_0 =

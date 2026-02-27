@@ -94,7 +94,7 @@ public class DataColumnSidecarsByRootValidatorGloasTest
 
     final SignedBeaconBlock block1 = createBlock(currentForkFirstSlot);
     final DataColumnSidecar dataColumnSidecar1_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, UInt64.ZERO);
+        dataStructureUtil.randomDataColumnSidecar(block1, UInt64.ZERO);
     final DataColumnIdentifier sidecarIdentifier1_0 =
         DataColumnIdentifier.createFromSidecar(dataColumnSidecar1_0);
     validator =

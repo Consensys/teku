@@ -118,15 +118,15 @@ public abstract class AbstractDataColumnSidecarsByRootListenerValidatingProxyTes
             combinedChainDataClient);
 
     final DataColumnSidecar dataColumnSidecar1_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ZERO);
+        dataStructureUtil.randomDataColumnSidecar(block1, ZERO);
     final DataColumnSidecar dataColumnSidecar1_1 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ONE);
+        dataStructureUtil.randomDataColumnSidecar(block1, ONE);
     final DataColumnSidecar dataColumnSidecar2_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block2, ZERO);
+        dataStructureUtil.randomDataColumnSidecar(block2, ZERO);
     final DataColumnSidecar dataColumnSidecar3_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block3, ZERO);
+        dataStructureUtil.randomDataColumnSidecar(block3, ZERO);
     final DataColumnSidecar dataColumnSidecar4_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block4, ZERO);
+        dataStructureUtil.randomDataColumnSidecar(block4, ZERO);
 
     assertDoesNotThrow(() -> listenerWrapper.onResponse(dataColumnSidecar1_0).join());
     assertDoesNotThrow(() -> listenerWrapper.onResponse(dataColumnSidecar1_1).join());
@@ -155,11 +155,11 @@ public abstract class AbstractDataColumnSidecarsByRootListenerValidatingProxyTes
             combinedChainDataClient);
 
     final DataColumnSidecar datColumnSidecar1_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ZERO);
+        dataStructureUtil.randomDataColumnSidecar(block1, ZERO);
     final DataColumnSidecar datColumnSidecar1_1 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ONE);
+        dataStructureUtil.randomDataColumnSidecar(block1, ONE);
     final DataColumnSidecar datColumnSidecar2_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block2, ZERO);
+        dataStructureUtil.randomDataColumnSidecar(block2, ZERO);
 
     assertDoesNotThrow(() -> listenerWrapper.onResponse(datColumnSidecar1_0).join());
     assertDoesNotThrow(() -> listenerWrapper.onResponse(datColumnSidecar1_1).join());
@@ -191,7 +191,7 @@ public abstract class AbstractDataColumnSidecarsByRootListenerValidatingProxyTes
             combinedChainDataClient);
 
     final DataColumnSidecar dataColumnSidecar =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ZERO);
+        dataStructureUtil.randomDataColumnSidecar(block1, ZERO);
     final DataColumnSidecar dataColumnSidecarModified =
         createSidecarWithInvalidStructure(dataColumnSidecar);
 
@@ -225,7 +225,7 @@ public abstract class AbstractDataColumnSidecarsByRootListenerValidatingProxyTes
             combinedChainDataClient);
 
     final DataColumnSidecar dataColumnSidecar =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ZERO);
+        dataStructureUtil.randomDataColumnSidecar(block1, ZERO);
 
     final SafeFuture<?> result = listenerWrapper.onResponse(dataColumnSidecar);
     assertThat(result).isCompletedExceptionally();
@@ -255,7 +255,7 @@ public abstract class AbstractDataColumnSidecarsByRootListenerValidatingProxyTes
             combinedChainDataClient);
 
     final DataColumnSidecar dataColumnSidecar1_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ZERO);
+        dataStructureUtil.randomDataColumnSidecar(block1, ZERO);
 
     when(signatureValidator.validateSignature(dataColumnSidecar1_0))
         .thenReturn(SafeFuture.completedFuture(false));
