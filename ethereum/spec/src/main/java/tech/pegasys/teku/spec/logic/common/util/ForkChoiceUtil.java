@@ -263,15 +263,17 @@ public class ForkChoiceUtil {
       final ValidatableAttestation validatableAttestation,
       final Optional<BeaconState> maybeState,
       final AsyncBLSSignatureVerifier asyncSignatureVerifier) {
-    if (maybeState.isEmpty()) {
-      return SafeFuture.completedFuture(AttestationProcessingResult.UNKNOWN_BLOCK);
-    }
     Attestation attestation = validatableAttestation.getAttestation();
     return validateOnAttestation(store, attestation.getData())
         .ifSuccessfulAsync(
-            () ->
-                attestationUtil.isValidIndexedAttestationAsync(
-                    fork, maybeState.get(), validatableAttestation, asyncSignatureVerifier))
+            () -> {
+              if (maybeState.isEmpty()) {
+                return SafeFuture.completedFuture(AttestationProcessingResult.UNKNOWN_BLOCK);
+              } else {
+                return attestationUtil.isValidIndexedAttestationAsync(
+                    fork, maybeState.get(), validatableAttestation, asyncSignatureVerifier);
+              }
+            })
         .thenApply(
             result ->
                 result.ifSuccessful(
