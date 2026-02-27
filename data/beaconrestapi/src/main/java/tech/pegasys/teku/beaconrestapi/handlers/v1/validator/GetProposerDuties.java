@@ -64,6 +64,7 @@ public class GetProposerDuties extends RestApiEndpoint {
             .pathParam(EPOCH_PARAMETER)
             .response(SC_OK, "Request successful", PROPOSER_DUTIES_TYPE)
             .withChainDataResponses()
+            .deprecated(true)
             .build());
     this.validatorDataProvider = validatorDataProvider;
     this.syncDataProvider = syncDataProvider;
