@@ -17,7 +17,6 @@ import com.google.common.base.Throwables;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.atomic.AtomicLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -212,8 +211,6 @@ public class AttestationManager extends Service
     // No-op
   }
 
-  private static final AtomicLong PROCESSED_PENDING_ATTESTATIONS = new AtomicLong(0);
-
   @Override
   public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
     final Bytes32 blockRoot = block.getMessage().hashTreeRoot();
@@ -223,11 +220,6 @@ public class AttestationManager extends Service
         .forEach(
             attestation -> {
               pendingAttestations.remove(attestation);
-              var count = PROCESSED_PENDING_ATTESTATIONS.incrementAndGet();
-              if (count % 100 == 0) {
-                LOG.info("onAttestation on pending attestation counter: {}", count);
-              }
-
               onAttestation(attestation)
                   .finish(
                       err ->
