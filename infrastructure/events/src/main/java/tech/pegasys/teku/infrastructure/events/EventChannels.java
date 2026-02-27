@@ -27,10 +27,16 @@ public class EventChannels {
   private final Function<Class<?>, EventChannel<?>> eventChannelFactory;
 
   public EventChannels(
-      final ChannelExceptionHandler exceptionHandler, final MetricsSystem metricsSystem) {
+      final ChannelExceptionHandler exceptionHandler,
+      final MetricsSystem metricsSystem,
+      final boolean eventChannelVirtualThreadsEnabled) {
     this(
         channelInterface ->
-            EventChannel.createAsync(channelInterface, exceptionHandler, metricsSystem));
+            EventChannel.createAsync(
+                channelInterface,
+                exceptionHandler,
+                metricsSystem,
+                eventChannelVirtualThreadsEnabled));
   }
 
   public static EventChannels createSyncChannels(

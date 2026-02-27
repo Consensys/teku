@@ -58,6 +58,7 @@ public class TekuConfiguration {
   private final NatConfiguration natConfiguration;
   private final ValidatorRestApiConfig validatorRestApiConfig;
   private final ZkChainConfiguration zkChainConfiguration;
+  private final BeaconNodeConfig beaconNodeConfig;
 
   private TekuConfiguration(
       final Eth2NetworkConfiguration eth2NetworkConfiguration,
@@ -78,7 +79,8 @@ public class TekuConfiguration {
       final ValidatorRestApiConfig validatorRestApiConfig,
       final BeaconChainControllerFactory beaconChainControllerFactory,
       final ZkChainConfiguration zkChainConfiguration,
-      final int minBidIncrementPercentage) {
+      final int minBidIncrementPercentage,
+      final BeaconNodeConfig beaconNodeConfig) {
     this.eth2NetworkConfiguration = eth2NetworkConfiguration;
     this.storageConfiguration = storageConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
@@ -108,6 +110,7 @@ public class TekuConfiguration {
     this.natConfiguration = natConfiguration;
     this.validatorRestApiConfig = validatorRestApiConfig;
     this.zkChainConfiguration = zkChainConfiguration;
+    this.beaconNodeConfig = beaconNodeConfig;
   }
 
   public static Builder builder() {
@@ -178,6 +181,10 @@ public class TekuConfiguration {
     return zkChainConfiguration;
   }
 
+  public BeaconNodeConfig beaconNodeConfig() {
+    return beaconNodeConfig;
+  }
+
   public static class Builder {
     private final Eth2NetworkConfiguration.Builder eth2NetworkConfigurationBuilder =
         Eth2NetworkConfiguration.builder().applyMainnetNetworkDefaults();
@@ -203,6 +210,8 @@ public class TekuConfiguration {
     private final MetricsConfig.MetricsConfigBuilder metricsConfigBuilder = MetricsConfig.builder();
     private final NatConfiguration.Builder natConfigBuilder = NatConfiguration.builder();
     private final StoreConfig.Builder storeConfigBuilder = StoreConfig.builder();
+
+    private final BeaconNodeConfig.Builder beaconNodeConfigBuilder = BeaconNodeConfig.builder();
 
     private BeaconChainControllerFactory beaconChainControllerFactory =
         BeaconChainControllerFactory.DEFAULT;
@@ -334,7 +343,8 @@ public class TekuConfiguration {
           validatorRestApiConfigBuilder.build(),
           beaconChainControllerFactory,
           zkChainConfiguration,
-          minBidIncrementPercentage);
+          minBidIncrementPercentage,
+          beaconNodeConfigBuilder.build());
     }
 
     public Builder eth2NetworkConfig(final Consumer<Eth2NetworkConfiguration.Builder> consumer) {
@@ -444,6 +454,11 @@ public class TekuConfiguration {
 
     public Builder minBidIncrementPercentage(final int minBidIncrementPercentage) {
       this.minBidIncrementPercentage = minBidIncrementPercentage;
+      return this;
+    }
+
+    public Builder beaconNode(final Consumer<BeaconNodeConfig.Builder> consumer) {
+      consumer.accept(beaconNodeConfigBuilder);
       return this;
     }
   }
