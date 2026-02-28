@@ -2095,6 +2095,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         dataProvider.getExecutionClientDataProvider();
 
     eventChannels.subscribe(ExecutionClientEventsChannel.class, executionClientDataProvider);
+    eventChannels.subscribe(ExecutionClientVersionChannel.class, executionClientDataProvider);
 
     beaconRestAPI =
         Optional.of(
