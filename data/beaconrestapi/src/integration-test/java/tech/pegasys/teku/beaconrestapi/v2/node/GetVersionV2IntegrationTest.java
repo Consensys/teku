@@ -31,12 +31,19 @@ public class GetVersionV2IntegrationTest extends AbstractDataBackedRestAPIIntegr
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);
     final JsonNode data = getResponseData(response);
-    assertThat(data.get("version").asText()).startsWith("teku/");
+    final JsonNode beaconNode = data.get("beacon_node");
+    assertThat(beaconNode).isNotNull();
+    assertThat(beaconNode.get("code").asText()).isEqualTo("TK");
+    assertThat(beaconNode.get("name").asText()).isEqualTo("teku");
+    assertThat(beaconNode.get("version").asText()).isNotEmpty();
+    assertThat(beaconNode.get("commit").asText()).isNotEmpty();
     // execution_client is optional and may be null if not connected to execution layer
     final JsonNode executionClient = data.get("execution_client");
     if (executionClient != null && !executionClient.isNull()) {
-      assertThat(executionClient.has("name")).isTrue();
-      assertThat(executionClient.has("version")).isTrue();
+      assertThat(executionClient.get("code").asText()).isNotEmpty();
+      assertThat(executionClient.get("name").asText()).isNotEmpty();
+      assertThat(executionClient.get("version").asText()).isNotEmpty();
+      assertThat(executionClient.get("commit").asText()).isNotEmpty();
     }
   }
 

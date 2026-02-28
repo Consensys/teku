@@ -21,7 +21,6 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Header;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
@@ -37,19 +36,28 @@ import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 public class GetVersionV2 extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v2/node/version";
 
-  private static final SerializableTypeDefinition<ExecutionClientInfo> EXECUTION_CLIENT_TYPE =
-      SerializableTypeDefinition.object(ExecutionClientInfo.class)
-          .withOptionalField("code", STRING_TYPE, ExecutionClientInfo::getCode)
-          .withOptionalField("name", STRING_TYPE, ExecutionClientInfo::getName)
-          .withOptionalField("version", STRING_TYPE, ExecutionClientInfo::getVersion)
-          .withOptionalField("commit", BYTES4_TYPE, ExecutionClientInfo::getCommit)
+  private static final ClientVersion TEKU_CLIENT_VERSION =
+      new ClientVersion(
+          ClientVersion.TEKU_CLIENT_CODE,
+          VersionProvider.CLIENT_IDENTITY,
+          VersionProvider.IMPLEMENTATION_VERSION,
+          VersionProvider.COMMIT_HASH
+              .map(commitHash -> Bytes4.fromHexString(commitHash.substring(0, 8)))
+              .orElse(Bytes4.ZERO));
+
+  private static final SerializableTypeDefinition<ClientVersion> CLIENT_VERSION_TYPE =
+      SerializableTypeDefinition.object(ClientVersion.class)
+          .withField("code", STRING_TYPE, ClientVersion::code)
+          .withField("name", STRING_TYPE, ClientVersion::name)
+          .withField("version", STRING_TYPE, ClientVersion::version)
+          .withField("commit", BYTES4_TYPE, ClientVersion::commit)
           .build();
 
   private static final SerializableTypeDefinition<VersionDataV2> DATA_TYPE =
       SerializableTypeDefinition.object(VersionDataV2.class)
-          .withField("version", STRING_TYPE, VersionDataV2::getVersion)
+          .withField("beacon_node", CLIENT_VERSION_TYPE, VersionDataV2::beaconNode)
           .withOptionalField(
-              "execution_client", EXECUTION_CLIENT_TYPE, VersionDataV2::getExecutionClient)
+              "execution_client", CLIENT_VERSION_TYPE, VersionDataV2::executionClient)
           .build();
 
   private static final SerializableTypeDefinition<VersionDataV2> RESPONSE_TYPE =
@@ -68,10 +76,9 @@ public class GetVersionV2 extends RestApiEndpoint {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getNodeVersionV2")
-            .summary("Get version string of the running beacon node.")
+            .summary("Get version information for the beacon node and execution client.")
             .description(
-                "Returns the version information of the beacon node and the execution client. "
-                    + "Similar to [HTTP User-Agent](https://tools.ietf.org/html/rfc7231#section-5.5.3).")
+                "Retrieves structured information about the version of the beacon node and its attached execution client in the same format as used on the Engine API. Version information about the execution client may not be available at all times and is therefore optional. If the beacon node receives multiple values from `engine_getClientVersionV1`, the first value should be returned on this endpoint.")
             .tags(TAG_NODE)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .build());
@@ -81,106 +88,10 @@ public class GetVersionV2 extends RestApiEndpoint {
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
-    final Optional<ClientVersion> executionClientVersion =
+    final Optional<ClientVersion> executionClient =
         executionClientDataProvider.getExecutionClientVersion();
-    final Optional<ExecutionClientInfo> executionClient =
-        executionClientVersion.map(ExecutionClientInfo::fromClientVersion);
-    request.respondOk(new VersionDataV2(VersionProvider.VERSION, executionClient));
+    request.respondOk(new VersionDataV2(TEKU_CLIENT_VERSION, executionClient));
   }
 
-  public static class ExecutionClientInfo {
-    private final String code;
-    private final String name;
-    private final String version;
-    private final Bytes4 commit;
-
-    public ExecutionClientInfo(
-        final String code, final String name, final String version, final Bytes4 commit) {
-      this.code = code;
-      this.name = name;
-      this.version = version;
-      this.commit = commit;
-    }
-
-    public static ExecutionClientInfo fromClientVersion(final ClientVersion clientVersion) {
-      return new ExecutionClientInfo(
-          clientVersion.code(),
-          clientVersion.name(),
-          clientVersion.version(),
-          clientVersion.commit());
-    }
-
-    public Optional<String> getCode() {
-      return Optional.ofNullable(code);
-    }
-
-    public Optional<String> getName() {
-      return Optional.ofNullable(name);
-    }
-
-    public Optional<String> getVersion() {
-      return Optional.ofNullable(version);
-    }
-
-    public Optional<Bytes4> getCommit() {
-      return Optional.ofNullable(commit);
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      final ExecutionClientInfo that = (ExecutionClientInfo) o;
-      return Objects.equals(code, that.code)
-          && Objects.equals(name, that.name)
-          && Objects.equals(version, that.version)
-          && Objects.equals(commit, that.commit);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(code, name, version, commit);
-    }
-  }
-
-  public static class VersionDataV2 {
-    private final String version;
-    private final Optional<ExecutionClientInfo> executionClient;
-
-    public VersionDataV2(
-        final String version, final Optional<ExecutionClientInfo> executionClient) {
-      this.version = version;
-      this.executionClient = executionClient;
-    }
-
-    public String getVersion() {
-      return version;
-    }
-
-    public Optional<ExecutionClientInfo> getExecutionClient() {
-      return executionClient;
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      final VersionDataV2 that = (VersionDataV2) o;
-      return Objects.equals(version, that.version)
-          && Objects.equals(executionClient, that.executionClient);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(version, executionClient);
-    }
-  }
+  public record VersionDataV2(ClientVersion beaconNode, Optional<ClientVersion> executionClient) {}
 }
