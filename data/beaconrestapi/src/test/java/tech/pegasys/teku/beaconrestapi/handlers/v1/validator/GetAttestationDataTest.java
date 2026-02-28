@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -25,18 +26,25 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 
 class GetAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
@@ -50,15 +58,59 @@ class GetAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
   @Test
   void shouldReturnAttestationDataInformation() throws Exception {
     request.setQueryParameter(SLOT, "1");
-    request.setQueryParameter(COMMITTEE_INDEX, "1");
-
-    when(validatorDataProvider.createAttestationDataAtSlot(UInt64.ONE, 1))
+    request.setOptionalQueryParameter(COMMITTEE_INDEX, "1");
+    when(validatorDataProvider.createAttestationDataAtSlot(ONE, 1))
         .thenReturn(SafeFuture.completedFuture(Optional.of(attestationData)));
 
     handler.handleRequest(request);
+    final Object responseBody = request.getResponseBody();
 
+    assertThat(responseBody).isEqualTo(attestationData);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(attestationData);
+  }
+
+  @Test
+  void shouldFail_whenCommitteeIndexIsMissingPreGloas() throws JsonProcessingException {
+    request.setQueryParameter(SLOT, "1");
+    when(validatorDataProvider.createAttestationDataAtSlot(ONE, 1))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(attestationData)));
+    handler.handleRequest(request);
+    assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
+  }
+
+  public static Stream<Arguments> validateParameters() {
+    return Stream.of(
+        // valid to have a committee index inside bounds
+        Arguments.of(SpecMilestone.DENEB, Optional.of(ONE), Optional.empty()),
+        Arguments.of(SpecMilestone.ELECTRA, Optional.of(ZERO), Optional.empty()),
+        Arguments.of(SpecMilestone.FULU, Optional.of(ZERO), Optional.empty()),
+        Arguments.of(SpecMilestone.GLOAS, Optional.of(ZERO), Optional.empty()),
+        Arguments.of(SpecMilestone.GLOAS, Optional.of(ONE), Optional.empty()),
+        Arguments.of(SpecMilestone.GLOAS, Optional.empty(), Optional.empty()),
+        // must be set before gloas
+        Arguments.of(SpecMilestone.ELECTRA, Optional.empty(), Optional.of("must be set")),
+        Arguments.of(SpecMilestone.FULU, Optional.empty(), Optional.of("must be set")),
+        // in gloas must be 0 or 1 if set
+        Arguments.of(
+            SpecMilestone.GLOAS, Optional.of(UInt64.valueOf(2)), Optional.of("less than 2")),
+        // parameter must be 0 in electra and fulu
+        Arguments.of(SpecMilestone.ELECTRA, Optional.of(ONE), Optional.of("parameter must be 0")),
+        Arguments.of(SpecMilestone.FULU, Optional.of(ONE), Optional.of("parameter must be 0")));
+  }
+
+  @ParameterizedTest(name = "spec={0}, committee={1} - failure={2}")
+  @MethodSource("validateParameters")
+  void validateInputs(
+      final SpecMilestone milestone,
+      final Optional<UInt64> committeeIndex,
+      final Optional<String> messageFragment)
+      throws JsonProcessingException {
+    final boolean validation = GetAttestationData.validate(request, milestone, committeeIndex);
+    if (messageFragment.isEmpty()) {
+      assertThat(validation).isTrue();
+    } else {
+      assertThat(request.getResponseBody().toString()).contains(messageFragment.get());
+    }
   }
 
   @Test
