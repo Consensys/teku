@@ -174,14 +174,15 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
               custodyGroup, specConfigFulu.getNumberOfCustodyGroups()));
     }
 
-    final int columnsPerGroup =
-        specConfigFulu.getNumberOfColumns() / specConfigFulu.getNumberOfCustodyGroups();
-
-    return IntStream.range(0, columnsPerGroup)
+    return IntStream.range(0, getCustodyColumnsPerGroup())
         .mapToLong(
             i -> (long) specConfigFulu.getNumberOfCustodyGroups() * i + custodyGroup.intValue())
         .mapToObj(UInt64::valueOf)
         .toList();
+  }
+
+  public int getCustodyColumnsPerGroup() {
+    return specConfigFulu.getNumberOfColumns() / specConfigFulu.getNumberOfCustodyGroups();
   }
 
   private UInt64 computeCustodyGroupIndex(final UInt256 nodeId) {

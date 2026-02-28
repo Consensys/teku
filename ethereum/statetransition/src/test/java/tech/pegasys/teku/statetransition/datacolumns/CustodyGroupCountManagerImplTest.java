@@ -163,7 +163,6 @@ public class CustodyGroupCountManagerImplTest {
     custodyGroupCountManager.onSlot(UInt64.ZERO);
 
     assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(4);
-    assertThat(custodyGroupCountManager.getCustodyGroupSyncedCount()).isEqualTo(4);
 
     // prepare a validator
     when(proposersDataManager.getPreparedProposerInfo())
@@ -181,7 +180,6 @@ public class CustodyGroupCountManagerImplTest {
         .thenReturn(Optional.of(UInt64.valueOf(10)));
 
     assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(10);
-    assertThat(custodyGroupCountManager.getCustodyGroupSyncedCount()).isEqualTo(10);
 
     final List<UInt64> samplingColumnIndices = custodyGroupCountManager.getSamplingColumnIndices();
 

@@ -52,12 +52,8 @@ public class MetadataMessagesFactory implements CustodyGroupCountChannel {
 
   @Override
   public void onGroupCountUpdate(final int custodyGroupCount, final int samplingGroupCount) {
-    // we don't care until it's synced
-  }
-
-  @Override
-  public void onCustodyGroupCountSynced(final int groupCount) {
-    updateCustodyGroupCount(UInt64.valueOf(groupCount));
+    // cgc + earliest available slot completely reflects the current synced status
+    updateCustodyGroupCount(UInt64.valueOf(custodyGroupCount));
   }
 
   private void handleUpdate() {
