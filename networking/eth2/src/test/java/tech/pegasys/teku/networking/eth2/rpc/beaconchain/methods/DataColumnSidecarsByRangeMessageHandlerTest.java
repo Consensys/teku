@@ -106,6 +106,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
               throw new IllegalArgumentException("Milestone is not supported");
           case FULU -> TestSpecFactory.createMinimalWithFuluForkEpoch(currentForkEpoch);
           case GLOAS -> TestSpecFactory.createMinimalWithGloasForkEpoch(currentForkEpoch);
+          case HEZE -> TestSpecFactory.createMinimalWithHezeForkEpoch(currentForkEpoch);
         };
     dataStructureUtil = new DataStructureUtil(spec);
     final SpecVersion specVersionFulu = spec.atEpoch(currentForkEpoch);

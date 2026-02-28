@@ -113,6 +113,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
               throw new IllegalArgumentException("Milestone is not supported");
           case FULU -> TestSpecFactory.createMinimalWithFuluForkEpoch(currentForkEpoch);
           case GLOAS -> TestSpecFactory.createMinimalWithGloasForkEpoch(currentForkEpoch);
+          case HEZE -> TestSpecFactory.createMinimalWithHezeForkEpoch(currentForkEpoch);
         };
     dataStructureUtil = new DataStructureUtil(spec);
     final SchemaDefinitionsFulu schemaDefinitionsFulu =

@@ -100,9 +100,12 @@ public class VoluntaryExitValidatorTest {
     assertValidationResult(exit, ACCEPT);
   }
 
-  // TODO-gloas: #10340
+  // TODO-GLOAS: https://github.com/Consensys/teku/pull/10398
   @ParameterizedTest
-  @EnumSource(value = SpecMilestone.class, names = "GLOAS", mode = EnumSource.Mode.EXCLUDE)
+  @EnumSource(
+      value = SpecMilestone.class,
+      names = {"GLOAS", "HEZE"},
+      mode = EnumSource.Mode.EXCLUDE)
   public void shouldAcceptOwnSignedVoluntaryExitNoMocks(final SpecMilestone specMilestone)
       throws Exception {
     final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);

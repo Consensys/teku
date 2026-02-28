@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
+import tech.pegasys.teku.spec.config.SpecConfigHeze;
 import tech.pegasys.teku.spec.logic.DelegatingSpecLogic;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.versions.altair.SpecLogicAltair;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.SpecLogicDeneb;
 import tech.pegasys.teku.spec.logic.versions.electra.SpecLogicElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.SpecLogicFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.SpecLogicGloas;
+import tech.pegasys.teku.spec.logic.versions.heze.SpecLogicHeze;
 import tech.pegasys.teku.spec.logic.versions.phase0.SpecLogicPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
@@ -42,6 +44,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsHeze;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsPhase0;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
@@ -85,6 +88,8 @@ public class SpecVersion extends DelegatingSpecLogic {
           specConfig.toVersionFulu().map(config -> createFulu(config, schemaRegistryBuilder));
       case GLOAS ->
           specConfig.toVersionGloas().map(config -> createGloas(config, schemaRegistryBuilder));
+      case HEZE ->
+          specConfig.toVersionHeze().map(config -> createHeze(config, schemaRegistryBuilder));
     };
   }
 
@@ -167,6 +172,16 @@ public class SpecVersion extends DelegatingSpecLogic {
     final SpecLogicGloas specLogic =
         SpecLogicGloas.create(specConfig, schemaDefinitions, SYSTEM_TIME_PROVIDER);
     return new SpecVersion(SpecMilestone.GLOAS, specConfig, schemaDefinitions, specLogic);
+  }
+
+  static SpecVersion createHeze(
+      final SpecConfigHeze specConfig, final SchemaRegistryBuilder schemaRegistryBuilder) {
+    final SchemaRegistry schemaRegistry =
+        schemaRegistryBuilder.build(SpecMilestone.HEZE, specConfig);
+    final SchemaDefinitionsHeze schemaDefinitions = new SchemaDefinitionsHeze(schemaRegistry);
+    final SpecLogicHeze specLogic =
+        SpecLogicHeze.create(specConfig, schemaDefinitions, SYSTEM_TIME_PROVIDER);
+    return new SpecVersion(SpecMilestone.HEZE, specConfig, schemaDefinitions, specLogic);
   }
 
   public SpecMilestone getMilestone() {

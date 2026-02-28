@@ -277,8 +277,13 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
   @Test
   void getsCapabilities() {
     final Spec spec =
-        TestSpecFactory.createMinimalWithCapellaDenebElectraFuluAndGloasForkEpoch(
-            UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3), UInt64.valueOf(4), UInt64.valueOf(5));
+        TestSpecFactory.createMinimalWithCapellaDenebElectraFuluGloasAndHezeForkEpoch(
+            UInt64.ONE,
+            UInt64.valueOf(2),
+            UInt64.valueOf(3),
+            UInt64.valueOf(4),
+            UInt64.valueOf(5),
+            UInt64.valueOf(6));
 
     final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
         new MilestoneBasedEngineJsonRpcMethodsResolver(spec, executionEngineClient);
