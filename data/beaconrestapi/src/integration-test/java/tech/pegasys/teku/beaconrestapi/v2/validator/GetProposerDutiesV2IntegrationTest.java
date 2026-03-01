@@ -134,7 +134,8 @@ public class GetProposerDutiesV2IntegrationTest extends AbstractDataBackedRestAP
   // query          |                     |                        |  ^
   // dep          D |
   // EXPECT - expect epoch 1 duties with dependent root = genesis
-  //          (previousDutyDependentRoot: compute_start_slot_at_epoch(1-1) - 1 = underflow -> genesis)
+  //          (previousDutyDependentRoot: compute_start_slot_at_epoch(1-1) - 1 = underflow ->
+  // genesis)
   @Test
   void shouldReturnCorrectDependentRootPostFuluExtraSlots() throws IOException {
     startRestApiAtGenesisWithValidatorApiHandler(SpecMilestone.FULU);
