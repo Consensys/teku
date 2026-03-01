@@ -484,6 +484,10 @@ public class MiscHelpers {
     return UInt64.valueOf(specConfig.getNetworkingConfig().getMaxRequestBlocks());
   }
 
+  public int getMaxRequestDataColumnSidecars() {
+    throw new UnsupportedOperationException("No Data Column Sidecars before Fulu");
+  }
+
   public int getBlobKzgCommitmentsCount(final SignedBeaconBlock signedBeaconBlock) {
     throw new UnsupportedOperationException("No Blob KZG Commitments before Deneb");
   }

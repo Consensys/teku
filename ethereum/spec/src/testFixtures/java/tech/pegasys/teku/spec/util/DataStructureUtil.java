@@ -2815,13 +2815,20 @@ public final class DataStructureUtil {
     }
 
     public DataColumnSidecar build() {
+      final UInt64 sidecarSlot =
+          slot.orElseGet(
+              () ->
+                  signedBeaconBlockHeader
+                      .map(blockHeader -> blockHeader.getMessage().getSlot())
+                      .orElseGet(DataStructureUtil.this::randomSlot));
+      final SchemaDefinitionsFulu schemaDefinitions =
+          SchemaDefinitionsFulu.required(spec.atSlot(sidecarSlot).getSchemaDefinitions());
       final SignedBeaconBlockHeader signedBlockHeader =
           signedBeaconBlockHeader.orElseGet(
               () ->
                   slot.map(DataStructureUtil.this::randomSignedBeaconBlockHeader)
                       .orElseGet(DataStructureUtil.this::randomSignedBeaconBlockHeader));
-      SchemaDefinitionsFulu schemaDefinitions =
-          getFuluSchemaDefinitions(signedBlockHeader.getMessage().getSlot());
+
       final int numberOfProofs =
           kzgProofs
               .map(List::size)
@@ -2856,6 +2863,7 @@ public final class DataStructureUtil {
                       .map(SszKZGProof::new)
                       .toList());
 
+      // Use create and let the builder handle fork-specific fields
       return schemaDefinitions
           .getDataColumnSidecarSchema()
           .create(

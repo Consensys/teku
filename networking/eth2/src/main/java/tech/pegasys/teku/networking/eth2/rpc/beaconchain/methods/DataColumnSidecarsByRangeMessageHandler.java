@@ -35,7 +35,7 @@ import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
@@ -53,18 +53,18 @@ public class DataColumnSidecarsByRangeMessageHandler
     extends PeerRequiredLocalMessageHandler<
         DataColumnSidecarsByRangeRequestMessage, DataColumnSidecar> {
 
-  private final SpecConfigFulu specConfigFulu;
+  private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalDataColumnSidecarsRequestedCounter;
   private final DasReqRespLogger dasLogger;
 
   public DataColumnSidecarsByRangeMessageHandler(
-      final SpecConfigFulu specConfigFulu,
+      final Spec spec,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient combinedChainDataClient,
       final DasReqRespLogger dasLogger) {
-    this.specConfigFulu = specConfigFulu;
+    this.spec = spec;
     this.combinedChainDataClient = combinedChainDataClient;
     requestCounter =
         metricsSystem.createLabelledCounter(
@@ -83,9 +83,17 @@ public class DataColumnSidecarsByRangeMessageHandler
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final DataColumnSidecarsByRangeRequestMessage request) {
-    final int maxRequestDataColumnSidecars = specConfigFulu.getMaxRequestDataColumnSidecars();
     final int requestedCount = calculateRequestedCount(request);
-
+    final int maxRequestDataColumnSidecars;
+    try {
+      maxRequestDataColumnSidecars =
+          spec.atSlot(request.getMaxSlot()).miscHelpers().getMaxRequestDataColumnSidecars();
+    } catch (final UnsupportedOperationException __) {
+      return Optional.of(
+          new RpcException(
+              INVALID_REQUEST_CODE,
+              "Data column sidecars not supported for the requested slot range"));
+    }
     if (requestedCount == -1 || requestedCount > maxRequestDataColumnSidecars) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
@@ -146,10 +154,13 @@ public class DataColumnSidecarsByRangeMessageHandler
       canonicalHotRoots = ImmutableSortedMap.of();
     }
 
+    final int maxRequestDataColumnSidecars =
+        spec.atSlot(endSlot).miscHelpers().getMaxRequestDataColumnSidecars();
+
     final RequestState initialState =
         new RequestState(
             callbackWithLogging,
-            specConfigFulu.getMaxRequestDataColumnSidecars(),
+            maxRequestDataColumnSidecars,
             startSlot,
             endSlot,
             columns,
