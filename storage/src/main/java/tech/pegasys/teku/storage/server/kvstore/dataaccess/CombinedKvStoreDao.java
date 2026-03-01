@@ -617,9 +617,22 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     return db.get(schema.getVariableFirstCustodyIncompleteSlot());
   }
 
+
+  final private static Bytes32 MAGIC_VAL = Bytes32.fromHexString("4B6ACA65FEEDD4A06795468C4D37D95C");
+
   @Override
   public Optional<Bytes> getSidecar(final DataColumnSlotAndIdentifier identifier) {
-    return db.get(schema.getColumnSidecarByColumnSlotAndIdentifier(), identifier);
+    return db.get(schema.getColumnSidecarByColumnSlotAndIdentifier(), identifier).map(b -> {
+      if(b.size() <= MAGIC_VAL.size()) {
+        return b;
+      }
+      var magicValStartIdxAndSize = b.size() - MAGIC_VAL.size();
+      if(b.slice(magicValStartIdxAndSize).equals(MAGIC_VAL)) {
+        System.out.println("reading a third");
+        return b.slice(0, magicValStartIdxAndSize / 3);
+      }
+      return b;
+    });
   }
 
   @Override
@@ -981,11 +994,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
     @Override
     public void addSidecar(final DataColumnSidecar sidecar) {
+      var data = sidecar.sszSerialize();
       transaction.put(
           schema.getColumnSidecarByColumnSlotAndIdentifier(),
           new DataColumnSlotAndIdentifier(
               sidecar.getSlot(), sidecar.getBeaconBlockRoot(), sidecar.getIndex()),
-          sidecar.sszSerialize());
+          Bytes.concatenate(data,data,data, MAGIC_VAL));
     }
 
     @Override
