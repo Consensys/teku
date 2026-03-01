@@ -36,6 +36,7 @@ import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.phase0.ssz_generic.containers.BitsStructSchema;
 import tech.pegasys.teku.reference.phase0.ssz_generic.containers.ComplexTestStructSchema;
 import tech.pegasys.teku.reference.phase0.ssz_generic.containers.FixedTestStructSchema;
+import tech.pegasys.teku.reference.phase0.ssz_generic.containers.ProgressiveTestStructSchema;
 import tech.pegasys.teku.reference.phase0.ssz_generic.containers.SingleFieldTestStructSchema;
 import tech.pegasys.teku.reference.phase0.ssz_generic.containers.SmallTestStructSchema;
 import tech.pegasys.teku.reference.phase0.ssz_generic.containers.VarTestStructSchema;
@@ -72,9 +73,7 @@ public class SszGenericContainerTestExecutor extends AbstractSszGenericTestExecu
       case "FixedTestStruct" -> new FixedTestStructSchema();
       case "ComplexTestStruct" -> // Not implemented yet
           new ComplexTestStructSchema();
-      case "ProgressiveTestStruct" ->
-          throw new TestAbortedException(
-              "ProgressiveTestStruct type not supported: " + testDefinition.getTestName());
+      case "ProgressiveTestStruct" -> new ProgressiveTestStructSchema();
       case "ProgressiveBitsStruct" ->
           throw new TestAbortedException(
               "ProgressiveBitsStruct type not supported: " + testDefinition.getTestName());
