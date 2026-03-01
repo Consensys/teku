@@ -38,7 +38,7 @@ dependencyManagement {
 
     dependency 'io.libp2p:jvm-libp2p:1.2.2-RELEASE'
     dependency 'tech.pegasys:jblst:0.3.15'
-    dependency 'io.consensys.protocols:jc-kzg-4844:2.1.5'
+    dependency 'io.consensys.protocols:jc-kzg-4844:2.1.6'
     dependency 'io.github.crate-crypto:java-eth-kzg:0.8.0'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.2.2'

@@ -49,6 +49,7 @@ public class TestSpecFactory {
       case ELECTRA -> createMinimalElectra();
       case FULU -> createMinimalFulu();
       case GLOAS -> createMinimalGloas();
+      case HEZE -> createMinimalHeze();
     };
   }
 
@@ -62,6 +63,7 @@ public class TestSpecFactory {
       case ELECTRA -> createMainnetElectra();
       case FULU -> createMainnetFulu();
       case GLOAS -> createMainnetGloas();
+      case HEZE -> createMainnetHeze();
     };
   }
 
@@ -147,6 +149,18 @@ public class TestSpecFactory {
     final SpecConfigAndParent<? extends SpecConfig> specConfig =
         getGloasSpecConfig(Eth2Network.MINIMAL, configAdapter);
     return create(specConfig, SpecMilestone.GLOAS);
+  }
+
+  public static Spec createMinimalHeze() {
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
+        getHezeSpecConfig(Eth2Network.MINIMAL);
+    return create(specConfig, SpecMilestone.HEZE);
+  }
+
+  public static Spec createMinimalHeze(final Consumer<SpecConfigBuilder> configAdapter) {
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
+        getHezeSpecConfig(Eth2Network.MINIMAL, configAdapter);
+    return create(specConfig, SpecMilestone.HEZE);
   }
 
   /**
@@ -248,6 +262,25 @@ public class TestSpecFactory {
     return create(config, SpecMilestone.GLOAS);
   }
 
+  /**
+   * Create a spec that forks to Heze at the provided epoch
+   *
+   * @param hezeForkEpoch The Heze fork epoch
+   * @return A spec with Heze enabled, forking to Heze at the given epoch
+   */
+  public static Spec createMinimalWithHezeForkEpoch(final UInt64 hezeForkEpoch) {
+    final SpecConfigAndParent<? extends SpecConfig> config =
+        getHezeSpecConfig(
+            Eth2Network.MINIMAL,
+            UInt64.ZERO,
+            UInt64.ZERO,
+            UInt64.ZERO,
+            UInt64.ZERO,
+            UInt64.ZERO,
+            hezeForkEpoch);
+    return create(config, SpecMilestone.HEZE);
+  }
+
   public static Spec createMinimalPhase0(final Consumer<SpecConfigBuilder> configAdapter) {
     return create(SpecMilestone.PHASE0, Eth2Network.MINIMAL, configAdapter);
   }
@@ -314,6 +347,12 @@ public class TestSpecFactory {
     return create(specConfig, SpecMilestone.GLOAS);
   }
 
+  public static Spec createMainnetHeze() {
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
+        getHezeSpecConfig(Eth2Network.MAINNET);
+    return create(specConfig, SpecMilestone.HEZE);
+  }
+
   public static Spec createPhase0(final SpecConfigAndParent<? extends SpecConfig> config) {
     return create(config, SpecMilestone.PHASE0);
   }
@@ -356,6 +395,9 @@ public class TestSpecFactory {
     }
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
       defaultModifier = defaultModifier.andThen(builder -> builder.gloasForkEpoch(UInt64.ZERO));
+    }
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.HEZE)) {
+      defaultModifier = defaultModifier.andThen(builder -> builder.hezeForkEpoch(UInt64.ZERO));
     }
 
     return create(
@@ -595,6 +637,53 @@ public class TestSpecFactory {
             }));
   }
 
+  private static SpecConfigAndParent<? extends SpecConfig> getHezeSpecConfig(
+      final Eth2Network network) {
+    return getHezeSpecConfig(
+        network, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO);
+  }
+
+  private static SpecConfigAndParent<? extends SpecConfig> getHezeSpecConfig(
+      final Eth2Network network,
+      final UInt64 capellaForkEpoch,
+      final UInt64 denebForkEpoch,
+      final UInt64 electraForkEpoch,
+      final UInt64 fuluForkEpoch,
+      final UInt64 gloasForkEpoch,
+      final UInt64 hezeForkEpoch) {
+    return getHezeSpecConfig(
+        network,
+        builder ->
+            builder
+                .altairForkEpoch(ZERO)
+                .bellatrixForkEpoch(UInt64.ZERO)
+                .capellaForkEpoch(capellaForkEpoch)
+                .denebForkEpoch(denebForkEpoch)
+                .electraForkEpoch(electraForkEpoch)
+                .fuluForkEpoch(fuluForkEpoch)
+                .gloasForkEpoch(gloasForkEpoch)
+                .hezeForkEpoch(hezeForkEpoch));
+  }
+
+  private static SpecConfigAndParent<? extends SpecConfig> getHezeSpecConfig(
+      final Eth2Network network, final Consumer<SpecConfigBuilder> configAdapter) {
+    return requireHeze(
+        SpecConfigLoader.loadConfig(
+            network.configName(),
+            builder -> {
+              builder
+                  .altairForkEpoch(ZERO)
+                  .bellatrixForkEpoch(UInt64.ZERO)
+                  .capellaForkEpoch(UInt64.ZERO)
+                  .denebForkEpoch(UInt64.ZERO)
+                  .electraForkEpoch(UInt64.ZERO)
+                  .fuluForkEpoch(UInt64.ZERO)
+                  .gloasForkEpoch(UInt64.ZERO)
+                  .hezeForkEpoch(ZERO);
+              configAdapter.accept(builder);
+            }));
+  }
+
   public static Spec createMinimalWithCapellaDenebElectraAndFuluForkEpoch(
       final UInt64 capellaForkEpoch,
       final UInt64 denebForkEpoch,
@@ -606,21 +695,23 @@ public class TestSpecFactory {
     return create(config, SpecMilestone.FULU);
   }
 
-  public static Spec createMinimalWithCapellaDenebElectraFuluAndGloasForkEpoch(
+  public static Spec createMinimalWithCapellaDenebElectraFuluGloasAndHezeForkEpoch(
       final UInt64 capellaForkEpoch,
       final UInt64 denebForkEpoch,
       final UInt64 electraForkEpoch,
       final UInt64 fuluForkEpoch,
-      final UInt64 gloasForkEpoch) {
+      final UInt64 gloasForkEpoch,
+      final UInt64 hezeForkEpoch) {
     final SpecConfigAndParent<? extends SpecConfig> config =
-        getGloasSpecConfig(
+        getHezeSpecConfig(
             Eth2Network.MINIMAL,
             capellaForkEpoch,
             denebForkEpoch,
             electraForkEpoch,
             fuluForkEpoch,
-            gloasForkEpoch);
-    return create(config, SpecMilestone.GLOAS);
+            gloasForkEpoch,
+            hezeForkEpoch);
+    return create(config, SpecMilestone.HEZE);
   }
 
   // Our current config files contain Fulu params.
@@ -667,6 +758,12 @@ public class TestSpecFactory {
   private static SpecConfigAndParent<? extends SpecConfig> requireGloas(
       final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
     checkArgument(specConfigAndParent.specConfig().toVersionGloas().isPresent());
+    return specConfigAndParent;
+  }
+
+  private static SpecConfigAndParent<? extends SpecConfig> requireHeze(
+      final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
+    checkArgument(specConfigAndParent.specConfig().toVersionHeze().isPresent());
     return specConfigAndParent;
   }
 }
