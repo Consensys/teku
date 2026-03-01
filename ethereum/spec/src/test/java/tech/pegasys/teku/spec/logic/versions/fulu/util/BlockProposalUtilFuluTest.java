@@ -83,8 +83,8 @@ class BlockProposalUtilFuluTest {
   public static Stream<Arguments> blockProposalDependentRootTestCases() {
     return Stream.of(
         Arguments.of(1, 3, ExpectedResult.HEAD),
-        Arguments.of(1, 2, ExpectedResult.HEAD),
-        Arguments.of(1, 1, ExpectedResult.CURRENT),
+        Arguments.of(1, 2, ExpectedResult.CURRENT),
+        Arguments.of(1, 1, ExpectedResult.PREVIOUS),
         Arguments.of(1, 0, ExpectedResult.FAILURE));
   }
 
