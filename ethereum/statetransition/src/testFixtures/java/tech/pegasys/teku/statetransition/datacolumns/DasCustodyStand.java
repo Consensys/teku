@@ -272,14 +272,6 @@ public class DasCustodyStand {
       public List<UInt64> getSamplingColumnIndices() {
         return IntStream.range(0, sampleGroupCount).mapToObj(UInt64::valueOf).toList();
       }
-
-      @Override
-      public int getCustodyGroupSyncedCount() {
-        return 0;
-      }
-
-      @Override
-      public void setCustodyGroupSyncedCount(final int custodyGroupSyncedCount) {}
     };
   }
 }

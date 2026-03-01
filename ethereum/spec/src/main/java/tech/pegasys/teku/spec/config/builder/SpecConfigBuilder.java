@@ -34,7 +34,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
-import tech.pegasys.teku.spec.config.SpecConfigGloas;
+import tech.pegasys.teku.spec.config.SpecConfigHeze;
 import tech.pegasys.teku.spec.config.SpecConfigPhase0;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifierImpl;
@@ -146,6 +146,7 @@ public class SpecConfigBuilder {
   private final ElectraBuilder electraBuilder = new ElectraBuilder();
   private final FuluBuilder fuluBuilder = new FuluBuilder();
   private final GloasBuilder gloasBuilder = new GloasBuilder();
+  private final HezeBuilder hezeBuilder = new HezeBuilder();
 
   // Forks
   private Bytes4 altairForkVersion;
@@ -155,6 +156,7 @@ public class SpecConfigBuilder {
   private Bytes4 electraForkVersion;
   private Bytes4 fuluForkVersion;
   private Bytes4 gloasForkVersion;
+  private Bytes4 hezeForkVersion;
   private UInt64 altairForkEpoch = FAR_FUTURE_EPOCH;
   private UInt64 bellatrixForkEpoch = FAR_FUTURE_EPOCH;
   private UInt64 capellaForkEpoch = FAR_FUTURE_EPOCH;
@@ -162,22 +164,24 @@ public class SpecConfigBuilder {
   private UInt64 electraForkEpoch = FAR_FUTURE_EPOCH;
   private UInt64 fuluForkEpoch = FAR_FUTURE_EPOCH;
   private UInt64 gloasForkEpoch = FAR_FUTURE_EPOCH;
+  private UInt64 hezeForkEpoch = FAR_FUTURE_EPOCH;
 
   private BLSSignatureVerifier blsSignatureVerifier = BLSSignatureVerifier.SIMPLE;
   private Supplier<BatchSignatureVerifier> batchSignatureVerifierSupplier =
       BatchSignatureVerifierImpl::new;
 
   private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.valueOf(256000000000L);
-  private final BuilderChain<SpecConfig, SpecConfigGloas> builderChain =
+  private final BuilderChain<SpecConfig, SpecConfigHeze> builderChain =
       BuilderChain.create(altairBuilder)
           .appendBuilder(bellatrixBuilder)
           .appendBuilder(capellaBuilder)
           .appendBuilder(denebBuilder)
           .appendBuilder(electraBuilder)
           .appendBuilder(fuluBuilder)
-          .appendBuilder(gloasBuilder);
+          .appendBuilder(gloasBuilder)
+          .appendBuilder(hezeBuilder);
 
-  public SpecConfigAndParent<SpecConfigGloas> build() {
+  public SpecConfigAndParent<SpecConfigHeze> build() {
     builderChain.addOverridableItemsToRawConfig(
         (key, value) -> {
           if (value != null) {
@@ -318,7 +322,9 @@ public class SpecConfigBuilder {
                 fuluForkVersion,
                 fuluForkEpoch,
                 gloasForkVersion,
-                gloasForkEpoch));
+                gloasForkEpoch,
+                hezeForkVersion,
+                hezeForkEpoch));
 
     return builderChain.build(config);
   }
@@ -406,6 +412,8 @@ public class SpecConfigBuilder {
     constants.put("fuluForkEpoch", fuluForkEpoch);
     constants.put("gloasForkVersion", gloasForkVersion);
     constants.put("gloasForkEpoch", gloasForkEpoch);
+    constants.put("hezeForkVersion", hezeForkVersion);
+    constants.put("hezeForkEpoch", hezeForkEpoch);
     return constants;
   }
 
@@ -433,6 +441,9 @@ public class SpecConfigBuilder {
     if (gloasForkEpoch.equals(FAR_FUTURE_EPOCH) && gloasForkVersion == null) {
       gloasForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
     }
+    if (hezeForkEpoch.equals(FAR_FUTURE_EPOCH) && hezeForkVersion == null) {
+      hezeForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
+    }
 
     // ensure raw config is accurate
     rawConfig.put("ALTAIR_FORK_EPOCH", altairForkEpoch);
@@ -442,6 +453,7 @@ public class SpecConfigBuilder {
     rawConfig.put("ELECTRA_FORK_EPOCH", electraForkEpoch);
     rawConfig.put("FULU_FORK_EPOCH", fuluForkEpoch);
     rawConfig.put("GLOAS_FORK_EPOCH", gloasForkEpoch);
+    rawConfig.put("HEZE_FORK_EPOCH", hezeForkEpoch);
 
     rawConfig.put("ALTAIR_FORK_VERSION", altairForkVersion);
     rawConfig.put("BELLATRIX_FORK_VERSION", bellatrixForkVersion);
@@ -450,6 +462,7 @@ public class SpecConfigBuilder {
     rawConfig.put("ELECTRA_FORK_VERSION", electraForkVersion);
     rawConfig.put("FULU_FORK_VERSION", fuluForkVersion);
     rawConfig.put("GLOAS_FORK_VERSION", gloasForkVersion);
+    rawConfig.put("HEZE_FORK_VERSION", hezeForkVersion);
 
     // tell the fork builders their fork epoch
     altairBuilder.setForkEpoch(altairForkEpoch);
@@ -459,6 +472,7 @@ public class SpecConfigBuilder {
     electraBuilder.setForkEpoch(electraForkEpoch);
     fuluBuilder.setForkEpoch(fuluForkEpoch);
     gloasBuilder.setForkEpoch(gloasForkEpoch);
+    hezeBuilder.setForkEpoch(hezeForkEpoch);
   }
 
   private void validate() {
@@ -677,6 +691,18 @@ public class SpecConfigBuilder {
   public SpecConfigBuilder gloasForkEpoch(final UInt64 gloasForkEpoch) {
     checkNotNull(gloasForkEpoch);
     this.gloasForkEpoch = gloasForkEpoch;
+    return this;
+  }
+
+  public SpecConfigBuilder hezeForkVersion(final Bytes4 hezeForkVersion) {
+    checkNotNull(hezeForkVersion);
+    this.hezeForkVersion = hezeForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder hezeForkEpoch(final UInt64 hezeForkEpoch) {
+    checkNotNull(hezeForkEpoch);
+    this.hezeForkEpoch = hezeForkEpoch;
     return this;
   }
 
@@ -1013,6 +1039,11 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder gloasBuilder(final Consumer<GloasBuilder> consumer) {
     builderChain.withBuilder(GloasBuilder.class, consumer);
+    return this;
+  }
+
+  public SpecConfigBuilder hezeBuilder(final Consumer<HezeBuilder> consumer) {
+    builderChain.withBuilder(HezeBuilder.class, consumer);
     return this;
   }
 }
