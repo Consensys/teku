@@ -73,8 +73,9 @@ public class GetProposerDutiesV2IntegrationTest extends AbstractDataBackedRestAP
   // epoch  GENESIS | 0                   |<1>
   // slot         0 | 1  2  3  4  5  6  7 |
   // query          |                   ^ |
-  // dep            |                   D |
-  // EXPECT epoch 1 duties with dependent root slot 7 (head)
+  // dep          D |
+  // EXPECT epoch 1 duties with dependent root = genesis
+  //        (previousDutyDependentRoot: compute_start_slot_at_epoch(1-1) - 1 = underflow -> genesis)
   @Test
   void shouldReturnNextEpochDutiesFutureEpochPostFulu() throws IOException {
     startRestApiAtGenesisWithValidatorApiHandler(SpecMilestone.FULU);
@@ -85,14 +86,15 @@ public class GetProposerDutiesV2IntegrationTest extends AbstractDataBackedRestAP
     final Response response = getProposerDuties("1");
     final String responseBody = response.body().string();
     assertThat(response.code()).isEqualTo(200);
-    assertThat(dependentRoot(responseBody)).isEqualTo(chain.getLast().getRoot());
+    assertThat(dependentRoot(responseBody)).isEqualTo(chain.get(0).getParentRoot());
   }
 
   // epoch  GENESIS | 0                   |<1>
   // slot         0 | 1  2  3  4  5  6  7 | 8
   // query          |                     | ^
-  // dep          D |                   D |
-  // EXPECT epoch 1 duties with dependent root slot 7 (currentDutyDependentRoot)
+  // dep          D |
+  // EXPECT epoch 1 duties with dependent root = genesis
+  //        (previousDutyDependentRoot: compute_start_slot_at_epoch(1-1) - 1 = underflow -> genesis)
   @Test
   void shouldReturnCorrectDependentRootPostFulu() throws IOException {
     startRestApiAtGenesisWithValidatorApiHandler(SpecMilestone.FULU);
@@ -103,7 +105,7 @@ public class GetProposerDutiesV2IntegrationTest extends AbstractDataBackedRestAP
     final Response response = getProposerDuties("1");
     final String responseBody = response.body().string();
     assertThat(response.code()).isEqualTo(200);
-    assertThat(dependentRoot(responseBody)).isEqualTo(chain.getLast().getParentRoot());
+    assertThat(dependentRoot(responseBody)).isEqualTo(chain.get(0).getParentRoot());
   }
 
   // epoch | 0                   | 1                      | <2>
@@ -130,9 +132,9 @@ public class GetProposerDutiesV2IntegrationTest extends AbstractDataBackedRestAP
   // epoch  GENESIS | 0                   |<1>                     |  2
   // slot         0 | 1  2  3  4  5  6  7 | 8  9 10 11 12 13 14 15 | 16
   // query          |                     |                        |  ^
-  // dep            |                   D |                        |
-  // EXPECT - expect epoch 1 duties with dependent root slot 7
-  //          (previousDependentRoot of epoch 1 state)
+  // dep          D |
+  // EXPECT - expect epoch 1 duties with dependent root = genesis
+  //          (previousDutyDependentRoot: compute_start_slot_at_epoch(1-1) - 1 = underflow -> genesis)
   @Test
   void shouldReturnCorrectDependentRootPostFuluExtraSlots() throws IOException {
     startRestApiAtGenesisWithValidatorApiHandler(SpecMilestone.FULU);
@@ -145,15 +147,15 @@ public class GetProposerDutiesV2IntegrationTest extends AbstractDataBackedRestAP
     final String responseBody = response.body().string();
     LOG.debug(responseBody);
     assertThat(response.code()).isEqualTo(200);
-    assertThat(dependentRoot(responseBody)).isEqualTo(chain.get(6).getRoot());
+    assertThat(dependentRoot(responseBody)).isEqualTo(chain.get(0).getParentRoot());
   }
 
-  // epoch | 0                   | 1                      | <2>
-  // slot  | 1  2  3  4  5  6  7 | 8  9 10 11 12 13 14 15 |
-  // query |                     |                      ^ |
-  // dep   |                     |                      D |
-  // EXPECT - expect epoch 2 duties with dependent root slot 15
-  //          (head state)
+  // epoch  GENESIS | 0                   | 1                      | <2>
+  // slot         0 | 1  2  3  4  5  6  7 | 8  9 10 11 12 13 14 15 |
+  // query          |                     |                      ^ |
+  // dep            |                   D |
+  // EXPECT - expect epoch 2 duties with dependent root slot 7
+  //          (previousDutyDependentRoot: compute_start_slot_at_epoch(2-1) - 1 = slot 7)
   @Test
   void shouldReturnCorrectDependentRootPostFuluExtraSlotsFutureEpoch() throws IOException {
     startRestApiAtGenesisWithValidatorApiHandler(SpecMilestone.FULU);
@@ -166,15 +168,15 @@ public class GetProposerDutiesV2IntegrationTest extends AbstractDataBackedRestAP
     final Response response = getProposerDuties("2");
     final String responseBody = response.body().string();
     assertThat(response.code()).isEqualTo(200);
-    assertThat(dependentRoot(responseBody)).isEqualTo(chain.getLast().getRoot());
+    assertThat(dependentRoot(responseBody)).isEqualTo(chain.get(6).getRoot());
   }
 
-  // epoch | 0                   | 1                      | <2>
-  // slot  | 1  2  3  4  5  6  7 | 8  9 10 11 12 13 14 15 | 16
-  // query |                     |                        |  ^
-  // dep   |                     |                      D |
-  // EXPECT - expect epoch 2 duties with dependent root slot 15
-  //          (currentDependentRoot of epoch 2 state)
+  // epoch  GENESIS | 0                   | 1                      | <2>
+  // slot         0 | 1  2  3  4  5  6  7 | 8  9 10 11 12 13 14 15 | 16
+  // query          |                     |                        |  ^
+  // dep            |                   D |
+  // EXPECT - expect epoch 2 duties with dependent root slot 7
+  //          (previousDutyDependentRoot: compute_start_slot_at_epoch(2-1) - 1 = slot 7)
   @Test
   void shouldReturnCorrectDependentRootSecondEpoch() throws IOException {
     startRestApiAtGenesisWithValidatorApiHandler(SpecMilestone.FULU);
@@ -186,7 +188,7 @@ public class GetProposerDutiesV2IntegrationTest extends AbstractDataBackedRestAP
     final Response response = getProposerDuties("2");
     final String responseBody = response.body().string();
     assertThat(response.code()).isEqualTo(200);
-    assertThat(dependentRoot(responseBody)).isEqualTo(chain.getLast().getParentRoot());
+    assertThat(dependentRoot(responseBody)).isEqualTo(chain.get(6).getRoot());
   }
 
   final Bytes32 dependentRoot(final String responseBody) {
