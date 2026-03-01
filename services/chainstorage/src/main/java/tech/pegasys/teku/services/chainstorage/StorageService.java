@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
+import tech.pegasys.teku.storage.api.SidecarQueryChannel;
 import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
@@ -47,6 +48,7 @@ import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.RetryingStorageUpdateChannel;
+import tech.pegasys.teku.storage.server.SidecarStorageChannelSplitter;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.storage.server.network.EphemeryException;
@@ -245,11 +247,18 @@ public class StorageService extends Service implements StorageServiceFacade {
                           chainStorage, serviceConfig.getTimeProvider()),
                       chainStorage));
 
+              final SidecarStorageChannelSplitter sidecarStorageChannelSplitter =
+                  new SidecarStorageChannelSplitter(
+                      serviceConfig.createAsyncRunner("sidecar_storage_query", 1),
+                      chainStorage,
+                      chainStorage);
+
               eventChannels
                   .subscribe(Eth1DepositStorageChannel.class, depositStorage)
                   .subscribe(Eth1EventsChannel.class, depositStorage)
                   .subscribe(VoteUpdateChannel.class, batchingVoteUpdateChannel)
-                  .subscribe(SidecarUpdateChannel.class, chainStorage);
+                  .subscribe(SidecarUpdateChannel.class, sidecarStorageChannelSplitter)
+                  .subscribe(SidecarQueryChannel.class, sidecarStorageChannelSplitter);
             })
         .thenCompose(
             __ ->

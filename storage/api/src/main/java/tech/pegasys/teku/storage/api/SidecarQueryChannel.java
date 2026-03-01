@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2026
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,43 +11,37 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.datacolumns.db;
+package tech.pegasys.teku.storage.api;
 
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
-import tech.pegasys.teku.storage.api.SidecarQueryChannel;
-import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 
-public interface DataColumnSidecarDB extends DataColumnSidecarCoreDB {
-
-  static DataColumnSidecarDB create(
-      final SidecarQueryChannel sidecarQueryChannel,
-      final SidecarUpdateChannel sidecarUpdateChannel) {
-    return new DataColumnSidecarDBImpl(sidecarQueryChannel, sidecarUpdateChannel);
-  }
-
-  // read
+/** Query channel for data column sidecar storage operations. */
+public interface SidecarQueryChannel extends ChannelInterface {
 
   SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot();
 
   SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot();
 
-  @Override
   SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnSlotAndIdentifier identifier);
 
-  @Override
-  SafeFuture<List<DataColumnSlotAndIdentifier>> getColumnIdentifiers(UInt64 slot);
+  SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalSidecar(
+      DataColumnSlotAndIdentifier identifier);
 
-  // update
+  SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(UInt64 slot);
 
-  SafeFuture<Void> setFirstCustodyIncompleteSlot(UInt64 slot);
+  SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalDataColumnIdentifiers(UInt64 slot);
 
-  SafeFuture<Void> setEarliestAvailableDataColumnSlot(UInt64 slot);
+  SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(
+      UInt64 startSlot, UInt64 endSlot, UInt64 limit);
 
-  @Override
-  SafeFuture<Void> addSidecar(DataColumnSidecar sidecar);
+  SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot();
+
+  SafeFuture<Optional<List<List<KZGProof>>>> getDataColumnSidecarsProofs(UInt64 slot);
 }

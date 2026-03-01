@@ -256,6 +256,7 @@ import tech.pegasys.teku.storage.api.DataColumnSidecarNetworkRetriever;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
+import tech.pegasys.teku.storage.api.SidecarQueryChannel;
 import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -931,7 +932,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     final DataColumnSidecarDB sidecarDB =
         DataColumnSidecarDB.create(
-            combinedChainDataClient,
+            eventChannels.getPublisher(SidecarQueryChannel.class, beaconAsyncRunner),
             eventChannels.getPublisher(SidecarUpdateChannel.class, beaconAsyncRunner));
     this.sidecarDB = Optional.of(sidecarDB);
     final DataColumnSidecarDbAccessor dbAccessor =
