@@ -100,7 +100,11 @@ public abstract class AbstractNode implements Node {
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
     final TekuDefaultExceptionHandler subscriberExceptionHandler =
         new TekuDefaultExceptionHandler();
-    this.eventChannels = new EventChannels(subscriberExceptionHandler, metricsSystem);
+    this.eventChannels =
+        new EventChannels(
+            subscriberExceptionHandler,
+            metricsSystem,
+            tekuConfig.beaconNodeConfig().eventChannelVirtualThreadsEnabled());
 
     asyncRunnerFactory =
         AsyncRunnerFactory.createDefault(

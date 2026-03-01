@@ -62,16 +62,22 @@ class EventChannel<T> {
   static <T> EventChannel<T> createAsync(
       final Class<T> channelInterface,
       final ChannelExceptionHandler exceptionHandler,
-      final MetricsSystem metricsSystem) {
-    return createAsync(
-        channelInterface,
-        Executors.newCachedThreadPool(
-            new ThreadFactoryBuilder()
-                .setDaemon(true)
-                .setNameFormat(channelInterface.getSimpleName() + "-%d")
-                .build()),
-        exceptionHandler,
-        metricsSystem);
+      final MetricsSystem metricsSystem,
+      final boolean eventChannelVirtualThreadsEnabled) {
+    final ExecutorService executor;
+    if (eventChannelVirtualThreadsEnabled) {
+      executor =
+          Executors.newThreadPerTaskExecutor(
+              Thread.ofVirtual().name(channelInterface.getSimpleName() + "-", 0).factory());
+    } else {
+      executor =
+          Executors.newCachedThreadPool(
+              new ThreadFactoryBuilder()
+                  .setDaemon(true)
+                  .setNameFormat(channelInterface.getSimpleName() + "-%d")
+                  .build());
+    }
+    return createAsync(channelInterface, executor, exceptionHandler, metricsSystem);
   }
 
   static <T> EventChannel<T> createAsync(

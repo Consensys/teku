@@ -38,6 +38,7 @@ import picocli.CommandLine.Unmatched;
 import tech.pegasys.teku.cli.converter.MetricCategoryConverter;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
+import tech.pegasys.teku.cli.options.BeaconNodeOptions;
 import tech.pegasys.teku.cli.options.BeaconRestApiOptions;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.cli.options.ExecutionLayerOptions;
@@ -176,6 +177,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   @Mixin(name = "ZK-Chain")
   private final ZkChainOptions zkChainOptions = new ZkChainOptions();
+
+  @Mixin(name = "Beacon Node")
+  private final BeaconNodeOptions beaconNodeOptions = new BeaconNodeOptions();
 
   @CommandLine.Spec private CommandLine.Model.CommandSpec spec;
 
@@ -424,6 +428,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       metricsOptions.configure(builder);
       storeOptions.configure(builder);
       zkChainOptions.configure(builder);
+      beaconNodeOptions.configure(builder);
 
       return builder.build();
     } catch (IllegalArgumentException | NullPointerException e) {
