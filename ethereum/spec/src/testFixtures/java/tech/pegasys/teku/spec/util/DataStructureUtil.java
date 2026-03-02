@@ -2825,9 +2825,7 @@ public final class DataStructureUtil {
           SchemaDefinitionsFulu.required(spec.atSlot(sidecarSlot).getSchemaDefinitions());
       final SignedBeaconBlockHeader signedBlockHeader =
           signedBeaconBlockHeader.orElseGet(
-              () ->
-                  slot.map(DataStructureUtil.this::randomSignedBeaconBlockHeader)
-                      .orElseGet(DataStructureUtil.this::randomSignedBeaconBlockHeader));
+              () -> DataStructureUtil.this.randomSignedBeaconBlockHeader(sidecarSlot));
 
       final int numberOfProofs =
           kzgProofs
