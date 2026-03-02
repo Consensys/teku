@@ -318,61 +318,55 @@ public class DataColumnSidecarGossipValidator {
      * [REJECT] The sidecar is valid as verified by verify_data_column_sidecar(sidecar, bid.blob_kzg_commitments).
      * [REJECT] The sidecar's column data is valid as verified by verify_data_column_sidecar_kzg_proofs(sidecar, bid.blob_kzg_commitments).
      */
-    final SafeFuture<Optional<DataColumnSidecarValidationError>>
-        maybeKzgProofValidationErrorFuture =
-            dataColumnSidecarUtil.validateAndVerifyKzgProofsWithBlock(
-                dataColumnSidecar, gossipValidationHelper::retrieveSignedBlockByRoot);
+    final MetricsHistogram.Timer kzgVerificationTimer =
+        dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer();
+    return dataColumnSidecarUtil
+        .validateAndVerifyKzgProofsWithBlock(
+            dataColumnSidecar, gossipValidationHelper::retrieveSignedBlockByRoot)
+        .whenComplete((result, error) -> kzgVerificationTimer.closeUnchecked().run())
+        .thenCompose(
+            maybeKzgProofValidationResult -> {
+              if (maybeKzgProofValidationResult.isPresent()) {
+                return SafeFuture.completedFuture(
+                    toInternalValidationResult(maybeKzgProofValidationResult.get()));
+              }
+              /*
+               * [REJECT] The sidecar is proposed by the expected proposer_index for the block's slot
+               * in the context of the current shuffling (defined by block_header.parent_root/block_header.slot).
+               * If the proposer_index cannot immediately be verified against the expected shuffling,
+               * the sidecar MAY be queued for later processing while proposers for the block's branch
+               * are calculated -- in such a case do not REJECT, instead IGNORE this message.
+               *
+               * [REJECT] The proposer signature of sidecar.signed_block_header,
+               * is valid with respect to the block_header.proposer_index pubkey.
+               */
 
-    try (MetricsHistogram.Timer kzgVerficationTimer =
-        dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-      return maybeKzgProofValidationErrorFuture
-          .whenComplete((result, error) -> kzgVerficationTimer.closeUnchecked().run())
-          .thenCompose(
-              maybeKzgProofValidationResult -> {
-                if (maybeKzgProofValidationResult.isPresent()) {
-                  return SafeFuture.completedFuture(
-                      toInternalValidationResult(maybeKzgProofValidationResult.get()));
-                }
-                /*
-                 * [REJECT] The sidecar is proposed by the expected proposer_index for the block's slot
-                 * in the context of the current shuffling (defined by block_header.parent_root/block_header.slot).
-                 * If the proposer_index cannot immediately be verified against the expected shuffling,
-                 * the sidecar MAY be queued for later processing while proposers for the block's branch
-                 * are calculated -- in such a case do not REJECT, instead IGNORE this message.
-                 *
-                 * [REJECT] The proposer signature of sidecar.signed_block_header,
-                 * is valid with respect to the block_header.proposer_index pubkey.
-                 */
-
-                final SafeFuture<Optional<DataColumnSidecarValidationError>>
-                    maybeStateValidationErrorFuture =
-                        dataColumnSidecarUtil.validateWithState(
-                            dataColumnSidecar,
-                            spec,
-                            validInclusionProofInfoSet,
-                            validSignedBlockHeaders,
-                            gossipValidationHelper::getSlotForBlockRoot,
-                            gossipValidationHelper::getParentStateInBlockEpoch,
-                            gossipValidationHelper::isProposerTheExpectedProposer,
-                            gossipValidationHelper::isSignatureValidWithRespectToProposerIndex);
-                return maybeStateValidationErrorFuture.thenApply(
-                    maybeStateValidationError -> {
-                      if (maybeStateValidationError.isPresent()) {
-                        return toInternalValidationResult(maybeStateValidationError.get());
-                      }
-                      // Final equivocation check
-                      final DataColumnSidecarTrackingKey key =
-                          dataColumnSidecarUtil.extractTrackingKey(dataColumnSidecar);
-                      if (!receivedValidDataColumnSidecarInfoSet.add(key)) {
-                        return ignore(
-                            "DataColumnSidecar is not the first valid for its tracking key. It will be dropped.");
-                      }
-                      return accept();
-                    });
-              });
-    } catch (final Throwable t) {
-      return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
-    }
+              final SafeFuture<Optional<DataColumnSidecarValidationError>>
+                  maybeStateValidationErrorFuture =
+                      dataColumnSidecarUtil.validateWithState(
+                          dataColumnSidecar,
+                          spec,
+                          validInclusionProofInfoSet,
+                          validSignedBlockHeaders,
+                          gossipValidationHelper::getSlotForBlockRoot,
+                          gossipValidationHelper::getParentStateInBlockEpoch,
+                          gossipValidationHelper::isProposerTheExpectedProposer,
+                          gossipValidationHelper::isSignatureValidWithRespectToProposerIndex);
+              return maybeStateValidationErrorFuture.thenApply(
+                  maybeStateValidationError -> {
+                    if (maybeStateValidationError.isPresent()) {
+                      return toInternalValidationResult(maybeStateValidationError.get());
+                    }
+                    // Final equivocation check
+                    final DataColumnSidecarTrackingKey key =
+                        dataColumnSidecarUtil.extractTrackingKey(dataColumnSidecar);
+                    if (!receivedValidDataColumnSidecarInfoSet.add(key)) {
+                      return ignore(
+                          "DataColumnSidecar is not the first valid for its tracking key. It will be dropped.");
+                    }
+                    return accept();
+                  });
+            });
   }
 
   private InternalValidationResult toInternalValidationResult(

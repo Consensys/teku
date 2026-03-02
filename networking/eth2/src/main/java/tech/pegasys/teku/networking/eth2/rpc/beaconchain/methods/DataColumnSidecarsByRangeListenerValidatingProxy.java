@@ -107,36 +107,29 @@ public class DataColumnSidecarsByRangeListenerValidatingProxy
                     .DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
           }
 
-          try (MetricsHistogram.Timer kzgVerificationTimer =
-              dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-            return verifyKzgProofs(dataColumnSidecar)
-                .whenComplete((result, error) -> kzgVerificationTimer.closeUnchecked().run())
-                .thenCompose(
-                    maybeKzgProofsVerificationResult -> {
-                      if (maybeKzgProofsVerificationResult.isPresent()) {
-                        throw new DataColumnSidecarsResponseInvalidResponseException(
-                            peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
-                      }
-                      return verifySignature(dataColumnSidecar);
-                    })
-                .thenCompose(
-                    signatureIsValid -> {
-                      if (signatureIsValid) {
-                        return SafeFuture.COMPLETE;
-                      }
-                      return SafeFuture.failedFuture(
-                          new DataColumnSidecarsResponseInvalidResponseException(
-                              peer,
-                              InvalidResponseType.DATA_COLUMN_SIDECAR_HEADER_INVALID_SIGNATURE));
-                    })
-                .thenCompose(__ -> dataColumnSidecarResponseListener.onResponse(dataColumnSidecar));
-
-          } catch (final IOException ioException) {
-            throw new DataColumnSidecarsResponseInvalidResponseException(
-                peer,
-                DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
-                    .DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
-          }
+          final MetricsHistogram.Timer kzgVerificationTimer =
+              dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer();
+          return verifyKzgProofs(dataColumnSidecar)
+              .whenComplete((result, error) -> kzgVerificationTimer.closeUnchecked().run())
+              .thenCompose(
+                  maybeKzgProofsVerificationResult -> {
+                    if (maybeKzgProofsVerificationResult.isPresent()) {
+                      throw new DataColumnSidecarsResponseInvalidResponseException(
+                          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
+                    }
+                    return verifySignature(dataColumnSidecar);
+                  })
+              .thenCompose(
+                  signatureIsValid -> {
+                    if (signatureIsValid) {
+                      return SafeFuture.COMPLETE;
+                    }
+                    return SafeFuture.failedFuture(
+                        new DataColumnSidecarsResponseInvalidResponseException(
+                            peer,
+                            InvalidResponseType.DATA_COLUMN_SIDECAR_HEADER_INVALID_SIGNATURE));
+                  })
+              .thenCompose(__ -> dataColumnSidecarResponseListener.onResponse(dataColumnSidecar));
         });
   }
 
