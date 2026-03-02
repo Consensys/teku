@@ -156,7 +156,6 @@ public class DefaultExecutionPayloadManager
         .map(
             bid ->
                 new BlockRootAndBuilderIndex(block.getRoot(), bid.getMessage().getBuilderIndex()))
-        .filter(executionPayloadsSavedForFutureProcessing::containsKey)
         .map(executionPayloadsSavedForFutureProcessing::remove)
         .ifPresent(
             executionPayloadToProcess -> {
