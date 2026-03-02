@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.execution;
 
 import static tech.pegasys.teku.spec.config.Constants.RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
@@ -22,21 +23,33 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
+import tech.pegasys.teku.spec.datastructures.epbs.BlockRootAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public class DefaultExecutionPayloadManager implements ExecutionPayloadManager {
+public class DefaultExecutionPayloadManager
+    implements ExecutionPayloadManager, ReceivedBlockEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
   private final Set<Bytes32> recentSeenExecutionPayloads =
       LimitedSet.createSynchronized(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
+
+  // keeping a cache of execution payloads that have been received earlier than the block
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 fine-tune the maxSize (not required
+  // for devnet-0)
+  private final Map<BlockRootAndBuilderIndex, SignedExecutionPayloadEnvelope>
+      executionPayloadsSavedForFutureProcessing = LimitedMap.createSynchronizedLRU(32);
 
   private final AsyncRunner asyncRunner;
   private final ExecutionPayloadGossipValidator executionPayloadGossipValidator;
@@ -78,11 +91,20 @@ public class DefaultExecutionPayloadManager implements ExecutionPayloadManager {
               // cache the seen `beacon_block_root`
               recentSeenExecutionPayloads.add(signedExecutionPayload.getBeaconBlockRoot());
               importExecutionPayload(signedExecutionPayload)
-                  .finish(err -> LOG.error("Failed to process received execution payload.", err));
+                  .finish(
+                      err ->
+                          LOG.error(
+                              "Failed to process received execution payload for slot {} and block root {}",
+                              signedExecutionPayload.getSlot(),
+                              signedExecutionPayload.getBeaconBlockRoot(),
+                              err));
             }
-            // TODO-GLOAS: what do we do in these cases??
-            // https://github.com/Consensys/teku/issues/9878
-            case REJECT, SAVE_FOR_FUTURE, IGNORE -> {}
+            case SAVE_FOR_FUTURE ->
+                executionPayloadsSavedForFutureProcessing.put(
+                    signedExecutionPayload.getBlockRootAndBuilderIndex(), signedExecutionPayload);
+            // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 what should we do in these
+            // cases?? (not required for devnet-0)
+            case REJECT, IGNORE -> {}
           }
         });
     return validationResult;
@@ -117,6 +139,32 @@ public class DefaultExecutionPayloadManager implements ExecutionPayloadManager {
                       signedExecutionPayload.sszSerialize().toHexString());
               LOG.error(internalErrorMessage, ex);
               return ExecutionPayloadImportResult.internalError(ex);
+            });
+  }
+
+  @Override
+  public void onBlockValidated(final SignedBeaconBlock block) {}
+
+  @Override
+  public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
+    // Processing execution payloads which have been received before the block has been imported
+    block
+        .getMessage()
+        .getBody()
+        .toVersionGloas()
+        .map(BeaconBlockBodyGloas::getSignedExecutionPayloadBid)
+        .map(
+            bid ->
+                new BlockRootAndBuilderIndex(block.getRoot(), bid.getMessage().getBuilderIndex()))
+        .filter(executionPayloadsSavedForFutureProcessing::containsKey)
+        .map(executionPayloadsSavedForFutureProcessing::remove)
+        .ifPresent(
+            executionPayloadToProcess -> {
+              LOG.debug(
+                  "Processing execution payload for slot {} and block root {} which has been received before the block",
+                  executionPayloadToProcess.getSlot(),
+                  executionPayloadToProcess.getBeaconBlockRoot());
+              validateAndImportExecutionPayload(executionPayloadToProcess).finishError(LOG);
             });
   }
 }
