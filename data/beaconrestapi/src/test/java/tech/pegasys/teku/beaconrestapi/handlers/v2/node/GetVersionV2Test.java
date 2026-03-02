@@ -21,6 +21,10 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRespo
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.io.Resources;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,48 +70,46 @@ public class GetVersionV2Test extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  void metadata_shouldHandle200() throws JsonProcessingException {
+  void metadata_shouldHandle200() throws Exception {
     final GetVersionV2.VersionDataV2 responseData =
         new GetVersionV2.VersionDataV2(BEACON_NODE_VERSION, Optional.of(GETH_VERSION));
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
 
+    final JsonNode resultNode = new ObjectMapper().readTree(data);
+    final String referenceJson =
+        Resources.toString(
+            Resources.getResource(GetVersionV2Test.class, "GetVersionV2Response.json"),
+            StandardCharsets.UTF_8);
+
     final String expectedJson =
-        "{\"data\":{"
-            + "\"beacon_node\":{"
-            + "\"code\":\""
-            + BEACON_NODE_VERSION.code()
-            + "\",\"name\":\""
-            + BEACON_NODE_VERSION.name()
-            + "\",\"version\":\""
-            + BEACON_NODE_VERSION.version()
-            + "\",\"commit\":\""
-            + BEACON_NODE_VERSION.commit().toHexString()
-            + "\"},"
-            + "\"execution_client\":{"
-            + "\"code\":\"geth\",\"name\":\"Geth\",\"version\":\"1.13.0\",\"commit\":\"0x01020304\""
-            + "}}}";
-    assertThat(data).isEqualTo(expectedJson);
+        referenceJson
+            .replace("<BEACON_NODE_VERSION>", BEACON_NODE_VERSION.version())
+            .replace("<BEACON_NODE_COMMIT>", BEACON_NODE_VERSION.commit().toHexString());
+
+    final JsonNode expectedNode = new ObjectMapper().readTree(expectedJson);
+    assertThat(resultNode).isEqualTo(expectedNode);
   }
 
   @Test
-  void metadata_shouldHandle200_withoutExecutionClient() throws JsonProcessingException {
+  void metadata_shouldHandle200_withoutExecutionClient() throws Exception {
     final GetVersionV2.VersionDataV2 responseData =
         new GetVersionV2.VersionDataV2(BEACON_NODE_VERSION, Optional.empty());
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
 
+    final JsonNode resultNode = new ObjectMapper().readTree(data);
+    final String referenceJson =
+        Resources.toString(
+            Resources.getResource(
+                GetVersionV2Test.class, "GetVersionV2ResponseNoExecutionClient.json"),
+            StandardCharsets.UTF_8);
+
     final String expectedJson =
-        "{\"data\":{"
-            + "\"beacon_node\":{"
-            + "\"code\":\""
-            + BEACON_NODE_VERSION.code()
-            + "\",\"name\":\""
-            + BEACON_NODE_VERSION.name()
-            + "\",\"version\":\""
-            + BEACON_NODE_VERSION.version()
-            + "\",\"commit\":\""
-            + BEACON_NODE_VERSION.commit().toHexString()
-            + "\"}}}";
-    assertThat(data).isEqualTo(expectedJson);
+        referenceJson
+            .replace("<BEACON_NODE_VERSION>", BEACON_NODE_VERSION.version())
+            .replace("<BEACON_NODE_COMMIT>", BEACON_NODE_VERSION.commit().toHexString());
+
+    final JsonNode expectedNode = new ObjectMapper().readTree(expectedJson);
+    assertThat(resultNode).isEqualTo(expectedNode);
   }
 
   @Test
