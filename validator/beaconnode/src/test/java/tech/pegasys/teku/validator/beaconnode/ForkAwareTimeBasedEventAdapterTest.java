@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
-class ForkAwareBasedEventAdapterTest {
+class ForkAwareTimeBasedEventAdapterTest {
 
   private final GenesisDataProvider genesisDataProvider = mock(GenesisDataProvider.class);
   private final ValidatorTimingChannel validatorTimingChannel = mock(ValidatorTimingChannel.class);

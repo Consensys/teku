@@ -675,10 +675,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initForkChoiceStateProvider();
     initForkChoiceNotifier();
     initMergeMonitors();
+    initSignatureVerificationService();
     initForkChoice();
     initBlockImporter();
     initCombinedChainDataClient();
-    initSignatureVerificationService();
     initAttestationPool();
     initAttesterSlashingPool();
     initProposerSlashingPool();
@@ -1530,7 +1530,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             new MergeTransitionBlockValidator(spec, recentChainData),
             beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
             debugDataDumper,
-            metricsSystem);
+            metricsSystem,
+            signatureVerificationService);
     forkChoiceTrigger =
         new ForkChoiceTrigger(
             forkChoice,
