@@ -1,0 +1,20 @@
+{
+  "title" : "ProduceBlockV4Response",
+  "type" : "object",
+  "required" : [ "version", "execution_payload_included", "consensus_block_value" ],
+  "properties" : {
+    "version" : {
+      "type" : "string",
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu", "gloas", "heze" ]
+    },
+    "execution_payload_included" : {
+      "type" : "boolean"
+    },
+    "consensus_block_value" : {
+      "type" : "string",
+      "description" : "unsigned 256 bit integer",
+      "example" : "1",
+      "format" : "uint256"
+    }
+  }
+}

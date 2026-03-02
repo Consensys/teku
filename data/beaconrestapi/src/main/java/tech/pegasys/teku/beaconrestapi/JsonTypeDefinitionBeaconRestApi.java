@@ -123,6 +123,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetAggregateAttestationV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.PostAggregateAndProofsV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v3.validator.GetNewBlockV3;
+import tech.pegasys.teku.beaconrestapi.handlers.v4.validator.GetNewBlockV4;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -292,6 +293,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new PostAttesterDuties(dataProvider))
             .endpoint(new GetProposerDuties(dataProvider))
             .endpoint(new GetNewBlockV3(dataProvider, schemaCache))
+            .endpoint(new GetNewBlockV4(dataProvider, schemaCache))
             .endpoint(new GetAttestationData(dataProvider, spec))
             .endpoint(new GetAggregateAttestation(dataProvider, spec))
             .endpoint(new GetAggregateAttestationV2(dataProvider, schemaCache))
