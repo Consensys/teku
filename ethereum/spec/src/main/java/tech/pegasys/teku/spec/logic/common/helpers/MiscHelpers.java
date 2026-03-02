@@ -73,7 +73,9 @@ public class MiscHelpers {
 
   // compute_fork_version
   public Bytes4 computeForkVersion(final UInt64 epoch) {
-    if (epoch.isGreaterThanOrEqualTo(specConfig.getGloasForkEpoch())) {
+    if (epoch.isGreaterThanOrEqualTo(specConfig.getHezeForkEpoch())) {
+      return specConfig.getHezeForkVersion();
+    } else if (epoch.isGreaterThanOrEqualTo(specConfig.getGloasForkEpoch())) {
       return specConfig.getGloasForkVersion();
     } else if (epoch.isGreaterThanOrEqualTo(specConfig.getFuluForkEpoch())) {
       return specConfig.getFuluForkVersion();
@@ -480,6 +482,10 @@ public class MiscHelpers {
 
   public UInt64 getMaxRequestBlocks() {
     return UInt64.valueOf(specConfig.getNetworkingConfig().getMaxRequestBlocks());
+  }
+
+  public int getMaxRequestDataColumnSidecars() {
+    throw new UnsupportedOperationException("No Data Column Sidecars before Fulu");
   }
 
   public int getBlobKzgCommitmentsCount(final SignedBeaconBlock signedBeaconBlock) {

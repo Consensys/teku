@@ -675,10 +675,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initForkChoiceStateProvider();
     initForkChoiceNotifier();
     initMergeMonitors();
+    initSignatureVerificationService();
     initForkChoice();
     initBlockImporter();
     initCombinedChainDataClient();
-    initSignatureVerificationService();
     initAttestationPool();
     initAttesterSlashingPool();
     initProposerSlashingPool();
@@ -886,7 +886,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
       final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator =
           new ExecutionPayloadBidGossipValidator(
-              spec, gossipValidationHelper, beaconConfig.getMinBidIncrementPercentage());
+              spec,
+              gossipValidationHelper,
+              beaconConfig.p2pConfig().getMinBidIncrementPercentage());
       final ReceivedExecutionPayloadBidEventsChannel
           receivedExecutionPayloadBidEventsChannelPublisher =
               eventChannels.getPublisher(ReceivedExecutionPayloadBidEventsChannel.class);
@@ -1528,7 +1530,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             new MergeTransitionBlockValidator(spec, recentChainData),
             beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
             debugDataDumper,
-            metricsSystem);
+            metricsSystem,
+            signatureVerificationService);
     forkChoiceTrigger =
         new ForkChoiceTrigger(
             forkChoice,

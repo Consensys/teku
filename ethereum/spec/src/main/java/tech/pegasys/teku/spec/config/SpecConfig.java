@@ -73,6 +73,10 @@ public interface SpecConfig extends NetworkingSpecConfig {
 
   UInt64 getGloasForkEpoch();
 
+  Bytes4 getHezeForkVersion();
+
+  UInt64 getHezeForkEpoch();
+
   // Config: Time parameters
   int getSecondsPerSlot();
 
@@ -227,6 +231,10 @@ public interface SpecConfig extends NetworkingSpecConfig {
   }
 
   default Optional<SpecConfigGloas> toVersionGloas() {
+    return Optional.empty();
+  }
+
+  default Optional<SpecConfigHeze> toVersionHeze() {
     return Optional.empty();
   }
 

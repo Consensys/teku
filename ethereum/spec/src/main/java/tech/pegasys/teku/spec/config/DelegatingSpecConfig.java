@@ -225,6 +225,16 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
+  public Bytes4 getHezeForkVersion() {
+    return specConfig.getHezeForkVersion();
+  }
+
+  @Override
+  public UInt64 getHezeForkEpoch() {
+    return specConfig.getHezeForkEpoch();
+  }
+
+  @Override
   public int getSecondsPerSlot() {
     return specConfig.getSecondsPerSlot();
   }

@@ -79,7 +79,6 @@ public class TekuConfiguration {
       final ValidatorRestApiConfig validatorRestApiConfig,
       final BeaconChainControllerFactory beaconChainControllerFactory,
       final ZkChainConfiguration zkChainConfiguration,
-      final int minBidIncrementPercentage,
       final BeaconNodeConfig beaconNodeConfig) {
     this.eth2NetworkConfiguration = eth2NetworkConfiguration;
     this.storageConfiguration = storageConfiguration;
@@ -102,8 +101,7 @@ public class TekuConfiguration {
             spec,
             beaconChainControllerFactory,
             metricsConfig,
-            zkChainConfiguration,
-            minBidIncrementPercentage);
+            zkChainConfiguration);
     this.validatorClientConfig =
         new ValidatorClientConfiguration(
             validatorConfig, interopConfig, validatorRestApiConfig, spec);
@@ -215,7 +213,6 @@ public class TekuConfiguration {
 
     private BeaconChainControllerFactory beaconChainControllerFactory =
         BeaconChainControllerFactory.DEFAULT;
-    private int minBidIncrementPercentage = 1;
 
     private Builder() {}
 
@@ -343,7 +340,6 @@ public class TekuConfiguration {
           validatorRestApiConfigBuilder.build(),
           beaconChainControllerFactory,
           zkChainConfiguration,
-          minBidIncrementPercentage,
           beaconNodeConfigBuilder.build());
     }
 
@@ -449,11 +445,6 @@ public class TekuConfiguration {
     public Builder beaconChainControllerFactory(
         final BeaconChainControllerFactory beaconChainControllerFactory) {
       this.beaconChainControllerFactory = beaconChainControllerFactory;
-      return this;
-    }
-
-    public Builder minBidIncrementPercentage(final int minBidIncrementPercentage) {
-      this.minBidIncrementPercentage = minBidIncrementPercentage;
       return this;
     }
 
