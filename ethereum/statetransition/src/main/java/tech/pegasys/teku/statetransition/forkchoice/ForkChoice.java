@@ -30,6 +30,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
@@ -71,6 +72,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
@@ -110,6 +112,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final LabelledMetric<Counter> getProposerHeadSelectedCounter;
 
   private final DebugDataDumper debugDataDumper;
+  private final AsyncBLSSignatureVerifier signatureVerifier;
 
   public ForkChoice(
       final Spec spec,
@@ -121,7 +124,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final MergeTransitionBlockValidator transitionBlockValidator,
       final boolean forkChoiceLateBlockReorgEnabled,
       final DebugDataDumper debugDataDumper,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final AsyncBLSSignatureVerifier signatureVerifier) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.forkChoiceStateProvider = forkChoiceStateProvider;
@@ -135,6 +139,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.lastProcessHeadSlot.set(UInt64.ZERO);
     LOG.debug("forkChoiceLateBlockReorgEnabled is set to {}", forkChoiceLateBlockReorgEnabled);
     this.debugDataDumper = debugDataDumper;
+    this.signatureVerifier = signatureVerifier;
     getProposerHeadSelectedCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
@@ -163,7 +168,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         transitionBlockValidator,
         false,
         DebugDataDumper.NOOP,
-        metricsSystem);
+        metricsSystem,
+        AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
   }
 
   @Override
@@ -243,23 +249,26 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .thenCompose(
             maybeState -> {
               final UpdatableStore store = recentChainData.getStore();
-              final AttestationProcessingResult validationResult =
-                  spec.validateAttestation(store, attestation, maybeState);
-
-              if (!validationResult.isSuccessful()) {
-                if (validationResult.getStatus() == Status.DEFER_FORK_CHOICE_PROCESSING) {
-                  deferredAttestations.addAttestation(getIndexedAttestation(attestation));
-                }
-                return SafeFuture.completedFuture(validationResult);
-              }
-              return onForkChoiceThread(
-                      () -> {
-                        final VoteUpdater transaction = recentChainData.startVoteUpdate();
-                        getForkChoiceStrategy()
-                            .onAttestation(transaction, getIndexedAttestation(attestation));
-                        transaction.commit();
-                      })
-                  .thenApply(__ -> validationResult);
+              return spec.validateAttestationAsync(
+                      store, attestation, maybeState, signatureVerifier)
+                  .thenCompose(
+                      validationResult -> {
+                        if (!validationResult.isSuccessful()) {
+                          if (validationResult.getStatus() == Status.DEFER_FORK_CHOICE_PROCESSING) {
+                            deferredAttestations.addAttestation(getIndexedAttestation(attestation));
+                          }
+                          return SafeFuture.completedFuture(validationResult);
+                        }
+                        return onForkChoiceThread(
+                                () -> {
+                                  final VoteUpdater transaction = recentChainData.startVoteUpdate();
+                                  getForkChoiceStrategy()
+                                      .onAttestation(
+                                          transaction, getIndexedAttestation(attestation));
+                                  transaction.commit();
+                                })
+                            .thenApply(__ -> validationResult);
+                      });
             })
         .exceptionallyCompose(
             error -> {

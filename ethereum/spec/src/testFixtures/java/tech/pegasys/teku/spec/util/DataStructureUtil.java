@@ -164,6 +164,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.fulu.BlobsBundleFulu;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
@@ -238,6 +239,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsHeze;
 
 public final class DataStructureUtil {
 
@@ -2112,7 +2114,7 @@ public final class DataStructureUtil {
       case DENEB -> stateBuilderDeneb(validatorCount, numItemsInSszLists);
       case ELECTRA -> stateBuilderElectra(validatorCount, numItemsInSszLists);
       case FULU -> stateBuilderFulu(validatorCount, numItemsInSszLists);
-      case GLOAS -> stateBuilderGloas(validatorCount, builderCount, numItemsInSszLists);
+      case GLOAS, HEZE -> stateBuilderGloas(validatorCount, builderCount, numItemsInSszLists);
     };
   }
 
@@ -2813,21 +2815,23 @@ public final class DataStructureUtil {
     }
 
     public DataColumnSidecar build() {
-      final UInt64 sidecarSlot = slot.orElse(randomSlot());
+      final UInt64 sidecarSlot =
+          slot.orElseGet(
+              () ->
+                  signedBeaconBlockHeader
+                      .map(blockHeader -> blockHeader.getMessage().getSlot())
+                      .orElseGet(DataStructureUtil.this::randomSlot));
       final SchemaDefinitionsFulu schemaDefinitions =
           SchemaDefinitionsFulu.required(spec.atSlot(sidecarSlot).getSchemaDefinitions());
       final SignedBeaconBlockHeader signedBlockHeader =
           signedBeaconBlockHeader.orElseGet(
-              () ->
-                  slot.map(DataStructureUtil.this::randomSignedBeaconBlockHeader)
-                      .orElseGet(DataStructureUtil.this::randomSignedBeaconBlockHeader));
+              () -> DataStructureUtil.this.randomSignedBeaconBlockHeader(sidecarSlot));
 
       final int numberOfProofs =
           kzgProofs
               .map(List::size)
               .or(() -> kzgCommitments.map(List::size))
               .orElseGet(DataStructureUtil.this::randomNumberOfBlobsPerBlock);
-      // works for both Fulu and Gloas
       final SszList<SszKZGCommitment> sszKzgCommitments =
           schemaDefinitions
               .getBlobKzgCommitmentsSchema()
@@ -2857,7 +2861,6 @@ public final class DataStructureUtil {
                       .map(SszKZGProof::new)
                       .toList());
 
-      // Use create and let the builder handle fork-specific fields
       return schemaDefinitions
           .getDataColumnSidecarSchema()
           .create(
@@ -3337,6 +3340,19 @@ public final class DataStructureUtil {
         SszUInt64.of(randomUInt64()),
         SszUInt64.of(randomUInt64()),
         executionProofSchema.getProofDataSchema().fromBytes(randomBytes(5)));
+  }
+
+  public InclusionList randomInclusionList() {
+    final SchemaDefinitionsHeze schemaDefinitionsHeze =
+        SchemaDefinitionsHeze.required(
+            spec.forMilestone(SpecMilestone.HEZE).getSchemaDefinitions());
+    return schemaDefinitionsHeze
+        .getInclusionListSchema()
+        .create(
+            randomSlot(),
+            randomValidatorIndex(),
+            randomBytes32(),
+            randomExecutionPayloadTransactions());
   }
 
   private int randomInt(final int origin, final int bound) {

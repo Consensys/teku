@@ -95,7 +95,11 @@ public abstract class AbstractRpcMethodIntegrationTest {
         checkState(nextSpecMilestone.equals(SpecMilestone.GLOAS), "next spec should be gloas");
         nextSpec = Optional.of(TestSpecFactory.createMinimalWithGloasForkEpoch(nextSpecEpoch));
       }
-      case GLOAS -> throw new RuntimeException("Base spec is already latest supported milestone");
+      case GLOAS -> {
+        checkState(nextSpecMilestone.equals(SpecMilestone.HEZE), "next spec should be heze");
+        nextSpec = Optional.of(TestSpecFactory.createMinimalWithHezeForkEpoch(nextSpecEpoch));
+      }
+      case HEZE -> throw new RuntimeException("Base spec is already latest supported milestone");
     }
     nextSpecSlot = nextSpec.orElseThrow().computeStartSlotAtEpoch(nextSpecEpoch);
   }
@@ -305,7 +309,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
       case CAPELLA -> BeaconBlockBodyCapella.class;
       case DENEB -> BeaconBlockBodyDeneb.class;
       case ELECTRA, FULU -> BeaconBlockBodyElectra.class;
-      case GLOAS -> BeaconBlockBodyGloas.class;
+      case GLOAS, HEZE -> BeaconBlockBodyGloas.class;
     };
   }
 }
