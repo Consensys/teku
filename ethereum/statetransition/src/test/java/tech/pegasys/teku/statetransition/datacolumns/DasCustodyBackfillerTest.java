@@ -82,7 +82,6 @@ class DasCustodyBackfillerTest {
   private DasCustodyBackfiller backfiller;
 
   private static final int BATCH_SIZE = 10;
-  private static final int SYNCED_CUSTODY_GROUP_COUNT = 1;
   private static final int CUSTODY_GROUP_COUNT = 2;
   private static final List<UInt64> CUSTODY_INDICES = List.of(UInt64.ZERO, UInt64.ONE);
 
@@ -90,8 +89,6 @@ class DasCustodyBackfillerTest {
   void setUp() {
     when(combinedChainDataClient.getRecentChainData()).thenReturn(recentChainData);
     when(recentChainData.getSpec()).thenReturn(spec);
-    when(custodyGroupCountManager.getCustodyGroupSyncedCount())
-        .thenReturn(SYNCED_CUSTODY_GROUP_COUNT);
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(CUSTODY_GROUP_COUNT);
     when(custodyGroupCountManager.getCustodyColumnIndices()).thenReturn(CUSTODY_INDICES);
 
@@ -102,6 +99,22 @@ class DasCustodyBackfillerTest {
     // Default min custody slot is very old
     when(minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(any()))
         .thenReturn(Optional.of(UInt64.ZERO));
+
+    // Synced count logic
+    when(combinedChainDataClient.getEarliestAvailableDataColumnSlot())
+        .thenReturn(SafeFuture.completedFuture(Optional.of(UInt64.ZERO)));
+    when(combinedChainDataClient.getDataColumnIdentifiers(any(), any(), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                List.of(
+                    new DataColumnSlotAndIdentifier(
+                        UInt64.ZERO, Bytes32.ZERO, CUSTODY_INDICES.getFirst()))));
+    when(combinedChainDataClient.getDataColumnIdentifiers(any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                CUSTODY_INDICES.stream()
+                    .map(index -> new DataColumnSlotAndIdentifier(UInt64.ZERO, Bytes32.ZERO, index))
+                    .toList()));
 
     backfiller =
         new DasCustodyBackfiller(
@@ -114,7 +127,8 @@ class DasCustodyBackfillerTest {
             asyncRunner,
             earliestAvailableColumnSlotProvider,
             earliestAvailableColumnSlotWriter,
-            BATCH_SIZE);
+            BATCH_SIZE,
+            spec);
 
     backfiller.setFirstRoundAfterStartup(false);
     backfiller.onNodeSyncStateChanged(true);
@@ -144,7 +158,7 @@ class DasCustodyBackfillerTest {
     safeJoin(backfiller.start());
 
     // Increase custody count
-    backfiller.onGroupCountUpdate(CUSTODY_GROUP_COUNT, 32);
+    backfiller.onGroupCountUpdate(CUSTODY_GROUP_COUNT + 1, 32);
 
     // Run the triggered task
     asyncRunner.executeQueuedActions();
@@ -160,11 +174,8 @@ class DasCustodyBackfillerTest {
 
     safeJoin(backfiller.start());
 
-    backfiller.onGroupCountUpdate(SYNCED_CUSTODY_GROUP_COUNT, 32); // Same custody count
+    backfiller.onGroupCountUpdate(CUSTODY_GROUP_COUNT, 32); // Same custody count
 
-    // stub requests
-    when(combinedChainDataClient.getDataColumnIdentifiers(any(), any(), any()))
-        .thenReturn(completedFuture(List.of()));
     when(combinedChainDataClient.getBlockInEffectAtSlot(any()))
         .thenReturn(completedFuture(Optional.empty()));
 
@@ -202,15 +213,14 @@ class DasCustodyBackfillerTest {
     when(recentChainData.retrieveSignedBlockByRoot(block2.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block2)));
 
-    when(combinedChainDataClient.getDataColumnIdentifiers(any(), any(), any()))
-        .thenReturn(completedFuture(List.of()));
-
     when(retriever.retrieve(any())).thenReturn(completedFuture(mock(DataColumnSidecar.class)));
     when(dataColumnSidecarCustody.onNewValidatedDataColumnSidecar(any(), any()))
         .thenReturn(SafeFuture.COMPLETE);
 
     safeJoin(backfiller.start());
     asyncRunner.executeQueuedActions();
+    verify(combinedChainDataClient)
+        .getDataColumnIdentifiers(eq(UInt64.valueOf(90)), eq(UInt64.MAX_VALUE), eq(UInt64.ONE));
 
     // We expect a batch to be created from most recent head
     verify(combinedChainDataClient)
@@ -236,8 +246,8 @@ class DasCustodyBackfillerTest {
     safeJoin(backfiller.start());
     asyncRunner.executeQueuedActions();
 
-    // Cursor should be head + 1 => 201
-    assertThat(earliestAvailableColumnSlotStore.get()).isPresent().hasValue(UInt64.valueOf(201));
+    // Cursor should be currentSlot
+    assertThat(earliestAvailableColumnSlotStore.get()).isPresent().hasValue(UInt64.valueOf(1000));
   }
 
   @Test
@@ -353,10 +363,6 @@ class DasCustodyBackfillerTest {
     when(combinedChainDataClient.getFinalizedBlockAtSlotExact(blockSlot))
         .thenReturn(completedFuture(Optional.of(block)));
 
-    // DB has no columns
-    when(combinedChainDataClient.getDataColumnIdentifiers(any(), any(), any()))
-        .thenReturn(completedFuture(List.of()));
-
     safeJoin(backfiller.start());
     asyncRunner.executeQueuedActions();
 
@@ -374,9 +380,6 @@ class DasCustodyBackfillerTest {
     earliestAvailableColumnSlotStore.set(Optional.of(UInt64.valueOf(101)));
 
     when(combinedChainDataClient.getFinalizedBlockSlot()).thenReturn(Optional.of(UInt64.MAX_VALUE));
-    when(combinedChainDataClient.getDataColumnIdentifiers(any(), any(), any()))
-        .thenReturn(completedFuture(List.of()));
-
     // Return empty for block lookups
     when(combinedChainDataClient.getFinalizedBlockAtSlotExact(any()))
         .thenReturn(completedFuture(Optional.empty()));
@@ -404,6 +407,23 @@ class DasCustodyBackfillerTest {
     // Override custody settings for this test to only require 1 column (Index 0).
     // This ensures 'retrieve' is called exactly ONCE per block, matching the verify expectation.
     when(custodyGroupCountManager.getCustodyColumnIndices()).thenReturn(List.of(UInt64.ZERO));
+    when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(1);
+    backfiller =
+        new DasCustodyBackfiller(
+            combinedChainDataClient,
+            Duration.ofSeconds(1),
+            dataColumnSidecarCustody,
+            custodyGroupCountManager,
+            retriever,
+            minCustodyPeriodSlotCalculator,
+            asyncRunner,
+            earliestAvailableColumnSlotProvider,
+            earliestAvailableColumnSlotWriter,
+            BATCH_SIZE,
+            spec);
+
+    backfiller.setFirstRoundAfterStartup(false);
+    backfiller.onNodeSyncStateChanged(true);
 
     final UInt64 blockSlot = UInt64.valueOf(95);
     final SignedBeaconBlock canonicalBlock =
@@ -425,9 +445,6 @@ class DasCustodyBackfillerTest {
         .thenReturn(completedFuture(Optional.of(canonicalBlock)));
     when(recentChainData.retrieveSignedBlockByRoot(forkBlock.getRoot()))
         .thenReturn(completedFuture(Optional.of(forkBlock)));
-
-    when(combinedChainDataClient.getDataColumnIdentifiers(any(), any(), any()))
-        .thenReturn(completedFuture(List.of()));
 
     // Stub retrieval to hang so requests stay pending
     final SafeFuture<DataColumnSidecar> pendingFutureCanonical = new SafeFuture<>();
@@ -485,9 +502,6 @@ class DasCustodyBackfillerTest {
     when(combinedChainDataClient.getFinalizedBlockAtSlotExact(minCustodySlot))
         .thenReturn(completedFuture(Optional.of(block)));
 
-    when(combinedChainDataClient.getDataColumnIdentifiers(any(), any(), any()))
-        .thenReturn(completedFuture(List.of()));
-
     when(retriever.retrieve(any())).thenReturn(completedFuture(mock(DataColumnSidecar.class)));
     when(dataColumnSidecarCustody.onNewValidatedDataColumnSidecar(any(), any()))
         .thenReturn(SafeFuture.COMPLETE);
@@ -496,7 +510,6 @@ class DasCustodyBackfillerTest {
     asyncRunner.executeQueuedActions();
 
     assertThat(earliestAvailableColumnSlotStore.get()).isPresent().hasValue(minCustodySlot);
-    verify(custodyGroupCountManager).setCustodyGroupSyncedCount(CUSTODY_GROUP_COUNT);
   }
 
   @Test
@@ -511,7 +524,6 @@ class DasCustodyBackfillerTest {
     asyncRunner.executeQueuedActions();
 
     // Should return false immediately, triggering no DB lookups
-    verify(combinedChainDataClient, never()).getDataColumnIdentifiers(any(), any(), any());
     verify(combinedChainDataClient, never()).getFinalizedBlockAtSlotExact(any());
 
     // Cursor remains unchanged
@@ -535,11 +547,45 @@ class DasCustodyBackfillerTest {
     asyncRunner.executeQueuedActions();
 
     // Backfill is already complete, no DB lookups needed
-    verify(combinedChainDataClient, never()).getDataColumnIdentifiers(any(), any(), any());
     verify(combinedChainDataClient, never()).getFinalizedBlockAtSlotExact(any());
 
     // Cursor should be updated to minCustodySlot
     assertThat(earliestAvailableColumnSlotStore.get()).isPresent().hasValue(minCustodySlot);
+  }
+
+  @Test
+  void onNodeIdChange_shouldTriggerResync() {
+    // Setup initial state
+    earliestAvailableColumnSlotStore.set(Optional.of(UInt64.valueOf(500)));
+    // same 2 indices but they are different to what is synced
+    when(custodyGroupCountManager.getCustodyColumnIndices())
+        .thenReturn(List.of(UInt64.valueOf(3), UInt64.valueOf(4)));
+    safeJoin(backfiller.start());
+
+    // Run the triggered task
+    asyncRunner.executeQueuedActions();
+
+    // Should have reset the cursor to current slot (1000)
+    assertThat(earliestAvailableColumnSlotStore.get()).isPresent().hasValue(UInt64.valueOf(1000));
+  }
+
+  @Test
+  void onSmallerCustodyCountSynced_shouldTriggerResync() {
+    // Setup initial state
+    earliestAvailableColumnSlotStore.set(Optional.of(UInt64.valueOf(500)));
+    // Only (0)-index is synced, missing (1)
+    when(combinedChainDataClient.getDataColumnIdentifiers(any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                List.of(new DataColumnSlotAndIdentifier(UInt64.ZERO, Bytes32.ZERO, UInt64.ZERO))));
+
+    safeJoin(backfiller.start());
+
+    // Run the triggered task
+    asyncRunner.executeQueuedActions();
+
+    // Should have reset the cursor to current slot (1000)
+    assertThat(earliestAvailableColumnSlotStore.get()).isPresent().hasValue(UInt64.valueOf(1000));
   }
 
   // --- Helper Methods ---
