@@ -13,56 +13,82 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BUILDER_INDEX;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_IMPLEMENTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+
+import tech.pegasys.teku.spec.Spec;
+
 import java.util.function.Function;
+import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class GetExecutionPayloadBid extends RestApiEndpoint {
-  public static final String ROUTE = "/eth/v1/validator/execution_payload_bid/{slot}/{builder_index}";
+  public static final String ROUTE = "/eth/v1/validator/execution_payload_bid";
 
-  public GetExecutionPayloadBid(final SchemaDefinitionCache schemaDefinitionCache) {
+  private static final ParameterMetadata<UInt64> SLOT_PARAM = SLOT_PARAMETER.withDescription(
+      "`uint64` Slot for which the execution payload bid is requested. Must be current slot or next slot.");
+
+  private static final ParameterMetadata<UInt64> BUILDER_INDEX_PARAM = PARAMETER_BUILDER_INDEX.withDescription(
+      "`uint64` Index of the builder from which the execution payload bid is requested.");
+
+  private final ValidatorDataProvider provider;
+
+  public GetExecutionPayloadBid(
+      final DataProvider provider,
+      final Spec spec,
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    this(provider.getValidatorDataProvider(), spec, schemaDefinitionCache);
+  }
+
+  public GetExecutionPayloadBid(
+      final ValidatorDataProvider provider,
+      final Spec spec,
+      final SchemaDefinitionCache schemaDefinitionCache) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getExecutionPayloadBid")
             .summary("Get execution payload bid")
-            .description("Retrieves execution payload bid for a given slot and builder.")
+            .description(
+                "Retrieves execution payload bid for a given slot and builder. Depending on `Accept` header, it can be returned either as json or as bytes serialized by SSZ.")
             .tags(TAG_VALIDATOR)
-            .pathParam(
-                SLOT_PARAMETER.withDescription(
-                    "Slot for which the execution payload bid is requested. Must be current slot or next slot."))
-            .pathParam(
-                PARAMETER_BUILDER_INDEX.withDescription(
-                    "Index of the builder from which the execution payload bid is requested."))
-            .response(
-                SC_OK,
-                "Request successful",
-                SerializableTypeDefinition.object(ExecutionPayloadBid.class)
-                    .name("GetExecutionPayloadBidResponse")
-                    .withField(
-                        "data",
-                        SchemaDefinitionsGloas.required(
-                                schemaDefinitionCache.getSchemaDefinition(SpecMilestone.GLOAS))
-                            .getExecutionPayloadBidSchema()
-                            .getJsonTypeDefinition(),
-                        Function.identity())
-                    .build())
+            .pathParam(SLOT_PARAM)
+            .pathParam(BUILDER_INDEX_PARAM)
+            .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
             .withNotFoundResponse()
             .withNotAcceptedResponse()
             .withChainDataResponses()
             .build());
+    this.provider = provider;
+  }
+
+  private static SerializableTypeDefinition<ExecutionPayloadBid> getResponseType(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    return SerializableTypeDefinition.object(ExecutionPayloadBid.class)
+        .name("ProduceExecutionPayloadBidResponse")
+        .withField(
+            "data",
+            schemaDefinitionCache
+                .getSchemaDefinition(SpecMilestone.GLOAS)
+                .toVersionGloas()
+                .orElseThrow()
+                .getExecutionPayloadBidSchema()
+                .getJsonTypeDefinition(),
+            Function.identity())
+        .build();
   }
 
   @Override
