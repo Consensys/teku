@@ -316,6 +316,27 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
     return Optional.of(proofInfo);
   }
 
+  /**
+   * Perform async KZG proof validation for Fulu data column sidecars.
+   *
+   * <p>Gossip rule:
+   *
+   * <ul>
+   *   <li>[REJECT] The sidecar's column data is valid as verified by
+   *       verify_data_column_sidecar_kzg_proofs(sidecar).
+   * </ul>
+   *
+   * <p>Note: In Fulu, the KZG commitments are embedded directly in the sidecar (via the inclusion
+   * proof), so block retrieval is not required. Structural verification of the sidecar (commitments
+   * count, cells count, etc.) is performed separately in {@link
+   * #verifyDataColumnSidecarStructure(DataColumnSidecar)}, which must be called before this method.
+   *
+   * @param dataColumnSidecar the data column sidecar to validate
+   * @param retrieveSignedBlockByRoot unused in Fulu — block retrieval is not needed since KZG
+   *     commitments are available directly from the sidecar
+   * @return SafeFuture with optional validation error. Empty means validation passed, present means
+   *     validation found an issue.
+   */
   @Override
   public SafeFuture<Optional<DataColumnSidecarValidationError>> validateAndVerifyKzgProofsWithBlock(
       final DataColumnSidecar dataColumnSidecar,
