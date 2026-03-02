@@ -606,6 +606,19 @@ public class P2POptions {
       arity = "1")
   private int historicalDataMaxQueryQueueSize = P2PConfig.DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE;
 
+  @Option(
+      names = {"--Xmin-bid-increment-percentage"},
+      hidden = true,
+      paramLabel = "<INTEGER>",
+      description =
+          "Minimum bid increment percentage for execution payload bid gossip validation. "
+              + "New bids must exceed the current highest bid by at least this percentage. "
+              + "Used for DoS protection against bid spamming. Default: 1 (1%)",
+      arity = "1",
+      defaultValue = "1",
+      showDefaultValue = Visibility.ALWAYS)
+  private int minBidIncrementPercentage = P2PConfig.DEFAULT_MIN_BID_INCREMENT_PERCENTAGE;
+
   private OptionalInt getP2pLowerBound() {
     if (p2pUpperBound.isPresent() && p2pLowerBound.isPresent()) {
       return p2pLowerBound.getAsInt() < p2pUpperBound.getAsInt() ? p2pLowerBound : p2pUpperBound;
@@ -702,7 +715,8 @@ public class P2POptions {
                   .reworkedSidecarSyncPollPeriod(reworkedSidecarCustodySyncPollPeriodSeconds)
                   .reworkedSidecarSyncBatchSize(reworkedSidecarCustodySyncBatchSize)
                   .reworkedSidecarSyncEnabled(reworkedSidecarCustodySyncEnabled)
-                  .columnsDataAvailabilityHalfCheckEnabled(columnsDataAvailabilityHalfCheckEnabled);
+                  .columnsDataAvailabilityHalfCheckEnabled(columnsDataAvailabilityHalfCheckEnabled)
+                  .minBidIncrementPercentage(minBidIncrementPercentage);
               batchVerifyQueueCapacity.ifPresent(b::batchVerifyQueueCapacity);
             })
         .discovery(
