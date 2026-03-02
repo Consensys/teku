@@ -675,10 +675,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initForkChoiceStateProvider();
     initForkChoiceNotifier();
     initMergeMonitors();
+    initSignatureVerificationService();
     initForkChoice();
     initBlockImporter();
     initCombinedChainDataClient();
-    initSignatureVerificationService();
     initAttestationPool();
     initAttesterSlashingPool();
     initProposerSlashingPool();
@@ -1053,7 +1053,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
               dasAsyncRunner,
               sidecarDB::getEarliestAvailableDataColumnSlot,
               sidecarDB::setEarliestAvailableDataColumnSlot,
-              beaconConfig.p2pConfig().getReworkedSidecarSyncBatchSize());
+              beaconConfig.p2pConfig().getReworkedSidecarSyncBatchSize(),
+              spec);
       eventChannels.subscribe(CustodyGroupCountChannel.class, custodyBackfiller);
       eventChannels.subscribe(FinalizedCheckpointChannel.class, custodyBackfiller);
       dasCustodyBackfiller = Optional.of(custodyBackfiller);
@@ -1527,7 +1528,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             new MergeTransitionBlockValidator(spec, recentChainData),
             beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
             debugDataDumper,
-            metricsSystem);
+            metricsSystem,
+            signatureVerificationService);
     forkChoiceTrigger =
         new ForkChoiceTrigger(
             forkChoice,
@@ -2007,13 +2009,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     eventChannels.subscribe(
         CustodyGroupCountChannel.class,
-        CustodyGroupCountChannel.createCustodyGroupCountSyncedSubscriber(
-            cgcSynced ->
+        CustodyGroupCountChannel.createCustodyGroupCountSubscriber(
+            cgc ->
                 p2pNetwork
                     .getDiscoveryNetwork()
                     .ifPresent(
-                        discoveryNetwork ->
-                            discoveryNetwork.setDASTotalCustodyGroupCount(cgcSynced))));
+                        discoveryNetwork -> discoveryNetwork.setDASTotalCustodyGroupCount(cgc))));
 
     this.nodeId =
         p2pNetwork

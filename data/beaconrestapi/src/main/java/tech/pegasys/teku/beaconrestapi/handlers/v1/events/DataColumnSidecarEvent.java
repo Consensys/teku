@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -35,20 +36,20 @@ public class DataColumnSidecarEvent extends Event<DataColumnSidecarEvent.DataCol
               .withField("block_root", BYTES32_TYPE, DataColumnSidecarData::getBlockRoot)
               .withField("index", UINT64_TYPE, DataColumnSidecarData::getIndex)
               .withField("slot", UINT64_TYPE, DataColumnSidecarData::getSlot)
-              .withField(
+              .withOptionalField(
                   "kzg_commitments",
                   DeserializableTypeDefinition.listOf(KZG_COMMITMENT_TYPE),
-                  DataColumnSidecarData::getKzgCommitments)
+                  DataColumnSidecarData::getMaybeKzgCommitments)
               .build();
 
   private DataColumnSidecarEvent(
       final Bytes32 blockRoot,
       final UInt64 index,
       final UInt64 slot,
-      final List<KZGCommitment> kzgCommitments) {
+      final Optional<List<KZGCommitment>> maybeKzgCommitments) {
     super(
         DATA_COLUMN_SIDECAR_EVENT_TYPE,
-        new DataColumnSidecarData(blockRoot, index, slot, kzgCommitments));
+        new DataColumnSidecarData(blockRoot, index, slot, maybeKzgCommitments));
   }
 
   public static DataColumnSidecarEvent create(final DataColumnSidecar dataColumnSidecar) {
@@ -62,25 +63,24 @@ public class DataColumnSidecarEvent extends Event<DataColumnSidecarEvent.DataCol
                 kzgCommitments ->
                     kzgCommitments.asList().stream()
                         .map(SszKZGCommitment::getKZGCommitment)
-                        .toList())
-            .orElse(List.of()));
+                        .toList()));
   }
 
   public static class DataColumnSidecarData {
     private final Bytes32 blockRoot;
     private final UInt64 index;
     private final UInt64 slot;
-    private final List<KZGCommitment> kzgCommitments;
+    private final Optional<List<KZGCommitment>> maybeKzgCommitments;
 
     DataColumnSidecarData(
         final Bytes32 blockRoot,
         final UInt64 index,
         final UInt64 slot,
-        final List<KZGCommitment> kzgCommitments) {
+        final Optional<List<KZGCommitment>> maybeKzgCommitments) {
       this.blockRoot = blockRoot;
       this.index = index;
       this.slot = slot;
-      this.kzgCommitments = kzgCommitments;
+      this.maybeKzgCommitments = maybeKzgCommitments;
     }
 
     public Bytes32 getBlockRoot() {
@@ -95,8 +95,8 @@ public class DataColumnSidecarEvent extends Event<DataColumnSidecarEvent.DataCol
       return slot;
     }
 
-    public List<KZGCommitment> getKzgCommitments() {
-      return kzgCommitments;
+    public Optional<List<KZGCommitment>> getMaybeKzgCommitments() {
+      return maybeKzgCommitments;
     }
   }
 }
