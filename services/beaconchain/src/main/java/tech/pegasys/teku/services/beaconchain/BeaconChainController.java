@@ -886,7 +886,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
       final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator =
           new ExecutionPayloadBidGossipValidator(
-              spec, gossipValidationHelper, beaconConfig.getMinBidIncrementPercentage());
+              spec,
+              gossipValidationHelper,
+              beaconConfig.p2pConfig().getMinBidIncrementPercentage());
       final ReceivedExecutionPayloadBidEventsChannel
           receivedExecutionPayloadBidEventsChannelPublisher =
               eventChannels.getPublisher(ReceivedExecutionPayloadBidEventsChannel.class);
