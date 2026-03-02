@@ -341,13 +341,17 @@ public class DataColumnSidecarUtilFulu implements DataColumnSidecarUtil {
   public SafeFuture<Optional<DataColumnSidecarValidationError>> validateAndVerifyKzgProofsWithBlock(
       final DataColumnSidecar dataColumnSidecar,
       final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot) {
-    if (!miscHelpersFulu.verifyDataColumnSidecarKzgProofs(dataColumnSidecar)) {
-      return SafeFuture.completedFuture(
-          Optional.of(
-              DataColumnSidecarValidationError.Critical.format(
-                  "Invalid DataColumnSidecar KZG Proofs")));
+    try {
+      if (!miscHelpersFulu.verifyDataColumnSidecarKzgProofs(dataColumnSidecar)) {
+        return SafeFuture.completedFuture(
+            Optional.of(
+                DataColumnSidecarValidationError.Critical.format(
+                    "Invalid DataColumnSidecar KZG Proofs")));
+      }
+      return SafeFuture.completedFuture(Optional.empty());
+    } catch (final Throwable t) {
+      return SafeFuture.failedFuture(t);
     }
-    return SafeFuture.completedFuture(Optional.empty());
   }
 
   /**

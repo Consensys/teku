@@ -17,6 +17,7 @@ import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.DataColu
 import static tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_HISTOGRAM;
 import static tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator.DATA_COLUMN_SIDECAR_KZG_BATCH_VERIFICATION_HISTOGRAM;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -74,8 +75,15 @@ public class DataColumnSidecarsByRootValidator extends AbstractDataColumnSidecar
                   .DATA_COLUMN_SIDECAR_VALIDITY_CHECK_FAILED));
     }
 
-    dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer();
-    if (!verifyInclusionProof(dataColumnSidecar)) {
+    final boolean inclusionProofValid;
+    try (MetricsHistogram.Timer ignored =
+        dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer()) {
+      inclusionProofValid = verifyInclusionProof(dataColumnSidecar);
+    } catch (final IOException e) {
+      throw new DataColumnSidecarsResponseInvalidResponseException(
+          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
+    }
+    if (!inclusionProofValid) {
       return SafeFuture.failedFuture(
           new DataColumnSidecarsResponseInvalidResponseException(
               peer, InvalidResponseType.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED));
