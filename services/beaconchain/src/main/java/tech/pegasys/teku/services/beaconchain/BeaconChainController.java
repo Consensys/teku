@@ -908,13 +908,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new ExecutionPayloadGossipValidator(spec, gossipValidationHelper, invalidBlockRoots);
       final ReceivedExecutionPayloadEventsChannel receivedExecutionPayloadEventsChannelPublisher =
           eventChannels.getPublisher(ReceivedExecutionPayloadEventsChannel.class);
-      executionPayloadManager =
+      final DefaultExecutionPayloadManager executionPayloadManager =
           new DefaultExecutionPayloadManager(
               beaconAsyncRunner,
               executionPayloadGossipValidator,
               forkChoice,
               executionLayer,
               receivedExecutionPayloadEventsChannelPublisher);
+      eventChannels.subscribe(ReceivedBlockEventsChannel.class, executionPayloadManager);
+      this.executionPayloadManager = executionPayloadManager;
     } else {
       executionPayloadManager = ExecutionPayloadManager.NOOP;
     }
