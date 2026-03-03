@@ -77,8 +77,9 @@ public class DataColumnSidecarsByRootValidator extends AbstractDataColumnSidecar
         dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer()) {
       inclusionProofValid = verifyInclusionProof(dataColumnSidecar);
     } catch (final IOException e) {
-      throw new DataColumnSidecarsResponseInvalidResponseException(
-          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
+      return SafeFuture.failedFuture(
+          new DataColumnSidecarsResponseInvalidResponseException(
+              peer, InvalidResponseType.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED));
     }
     if (!inclusionProofValid) {
       return SafeFuture.failedFuture(
