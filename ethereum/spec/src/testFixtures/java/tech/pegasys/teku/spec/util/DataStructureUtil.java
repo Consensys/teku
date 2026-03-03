@@ -164,6 +164,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.fulu.BlobsBundleFulu;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionList;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
@@ -227,9 +228,9 @@ import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -238,6 +239,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsHeze;
 
 public final class DataStructureUtil {
 
@@ -2112,7 +2114,7 @@ public final class DataStructureUtil {
       case DENEB -> stateBuilderDeneb(validatorCount, numItemsInSszLists);
       case ELECTRA -> stateBuilderElectra(validatorCount, numItemsInSszLists);
       case FULU -> stateBuilderFulu(validatorCount, numItemsInSszLists);
-      case GLOAS -> stateBuilderGloas(validatorCount, builderCount, numItemsInSszLists);
+      case GLOAS, HEZE -> stateBuilderGloas(validatorCount, builderCount, numItemsInSszLists);
     };
   }
 
@@ -2813,13 +2815,18 @@ public final class DataStructureUtil {
     }
 
     public DataColumnSidecar build() {
+      final UInt64 sidecarSlot =
+          slot.orElseGet(
+              () ->
+                  signedBeaconBlockHeader
+                      .map(blockHeader -> blockHeader.getMessage().getSlot())
+                      .orElseGet(DataStructureUtil.this::randomSlot));
+      final SchemaDefinitionsFulu schemaDefinitions =
+          SchemaDefinitionsFulu.required(spec.atSlot(sidecarSlot).getSchemaDefinitions());
       final SignedBeaconBlockHeader signedBlockHeader =
           signedBeaconBlockHeader.orElseGet(
-              () ->
-                  slot.map(DataStructureUtil.this::randomSignedBeaconBlockHeader)
-                      .orElseGet(DataStructureUtil.this::randomSignedBeaconBlockHeader));
-      SchemaDefinitionsFulu schemaDefinitions =
-          getFuluSchemaDefinitions(signedBlockHeader.getMessage().getSlot());
+              () -> DataStructureUtil.this.randomSignedBeaconBlockHeader(sidecarSlot));
+
       final int numberOfProofs =
           kzgProofs
               .map(List::size)
@@ -2861,10 +2868,7 @@ public final class DataStructureUtil {
                   builder
                       .index(index.orElseGet(DataStructureUtil.this::randomDataColumnSidecarIndex))
                       .column(
-                          dataColumn.orElseGet(
-                              () ->
-                                  randomDataColumn(
-                                      signedBlockHeader.getMessage().getSlot(), numberOfProofs)))
+                          dataColumn.orElseGet(() -> randomDataColumn(sidecarSlot, numberOfProofs)))
                       .kzgCommitments(sszKzgCommitments)
                       .kzgProofs(sszKzgProofs)
                       .signedBlockHeader(signedBlockHeader)
@@ -2876,7 +2880,7 @@ public final class DataStructureUtil {
                                       .toList()))
                       .beaconBlockRoot(
                           beaconBlockRoot.orElseGet(() -> signedBlockHeader.getMessage().getRoot()))
-                      .slot(slot.orElseGet(() -> signedBlockHeader.getMessage().getSlot())));
+                      .slot(sidecarSlot));
     }
   }
 
@@ -2945,29 +2949,30 @@ public final class DataStructureUtil {
         .build();
   }
 
-  public DataColumnSidecar randomDataColumnSidecarWithInclusionProof(
+  public DataColumnSidecar randomDataColumnSidecar(
       final SignedBeaconBlock signedBeaconBlock, final UInt64 index) {
-    final MiscHelpersFulu miscHelpersFulu =
-        MiscHelpersFulu.required(spec.atSlot(signedBeaconBlock.getSlot()).miscHelpers());
+    final UInt64 slot = signedBeaconBlock.getSlot();
+    final DataColumnSidecarUtil dataColumnSidecarUtil = spec.getDataColumnSidecarUtil(slot);
+
     final List<KZGCommitment> kzgCommitments =
-        signedBeaconBlock
-            .getMessage()
-            .getBody()
-            .getOptionalBlobKzgCommitments()
-            .orElseThrow()
-            .asList()
-            .stream()
+        dataColumnSidecarUtil.getKzgCommitments(signedBeaconBlock.getMessage()).asList().stream()
             .map(SszKZGCommitment::getKZGCommitment)
             .toList();
-    final List<Bytes32> inclusionProof =
-        miscHelpersFulu.computeDataColumnKzgCommitmentsInclusionProof(
-            signedBeaconBlock.getBeaconBlock().orElseThrow().getBody());
-    return new RandomDataColumnSidecarBuilder()
-        .signedBeaconBlockHeader(signedBeaconBlock.asHeader())
-        .kzgCommitments(kzgCommitments)
-        .kzgCommitmentsInclusionProof(inclusionProof)
-        .index(index)
-        .build();
+
+    final RandomDataColumnSidecarBuilder builder =
+        new RandomDataColumnSidecarBuilder()
+            .signedBeaconBlockHeader(signedBeaconBlock.asHeader()) // Gloas NO-OP
+            .beaconBlockRoot(signedBeaconBlock.getRoot()) // Fulu NO-OP
+            .slot(slot) // Fulu NO-OP
+            .index(index)
+            .kzgCommitments(kzgCommitments); // Gloas NO-OP
+
+    // Fulu: sets the inclusion proof, Gloas: returns empty, nothing set
+    dataColumnSidecarUtil
+        .computeDataColumnKzgCommitmentsInclusionProof(signedBeaconBlock.getMessage().getBody())
+        .ifPresent(builder::kzgCommitmentsInclusionProof);
+
+    return builder.build();
   }
 
   public List<DataColumnSidecar> randomDataColumnSidecars() {
@@ -3285,6 +3290,19 @@ public final class DataStructureUtil {
     return randomExecutionPayloadEnvelope(randomSlot());
   }
 
+  public ExecutionPayloadEnvelope randomExecutionPayloadEnvelopeForBlock(
+      final SignedBeaconBlock block) {
+    return getGloasSchemaDefinitions()
+        .getExecutionPayloadEnvelopeSchema()
+        .create(
+            randomExecutionPayload(),
+            randomExecutionRequests(),
+            randomBuilderIndex(),
+            block.getRoot(),
+            block.getSlot(),
+            randomBytes32());
+  }
+
   public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope(final UInt64 slot) {
     return getGloasSchemaDefinitions()
         .getExecutionPayloadEnvelopeSchema()
@@ -3303,6 +3321,13 @@ public final class DataStructureUtil {
         .create(randomExecutionPayloadEnvelope(UInt64.valueOf(slot)), randomSignature());
   }
 
+  public SignedExecutionPayloadEnvelope randomSignedExecutionPayloadEnvelopeForBlock(
+      final SignedBeaconBlock block) {
+    return getGloasSchemaDefinitions()
+        .getSignedExecutionPayloadEnvelopeSchema()
+        .create(randomExecutionPayloadEnvelopeForBlock(block), randomSignature());
+  }
+
   public ExecutionProof randomExecutionProof() {
     final SchemaDefinitionsElectra schemaDefinitionsElectra =
         SchemaDefinitionsElectra.required(
@@ -3315,6 +3340,19 @@ public final class DataStructureUtil {
         SszUInt64.of(randomUInt64()),
         SszUInt64.of(randomUInt64()),
         executionProofSchema.getProofDataSchema().fromBytes(randomBytes(5)));
+  }
+
+  public InclusionList randomInclusionList() {
+    final SchemaDefinitionsHeze schemaDefinitionsHeze =
+        SchemaDefinitionsHeze.required(
+            spec.forMilestone(SpecMilestone.HEZE).getSchemaDefinitions());
+    return schemaDefinitionsHeze
+        .getInclusionListSchema()
+        .create(
+            randomSlot(),
+            randomValidatorIndex(),
+            randomBytes32(),
+            randomExecutionPayloadTransactions());
   }
 
   private int randomInt(final int origin, final int bound) {

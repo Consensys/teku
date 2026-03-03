@@ -161,8 +161,7 @@ public class CombinedChainDataClient {
             () -> {
               // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 query for an execution
               // payload for a finalized slot from the  historical chain data
-              return SafeFuture.failedFuture(
-                  new UnsupportedOperationException("Not yet implemented"));
+              return SafeFuture.completedFuture(Optional.empty());
             });
   }
 
@@ -591,8 +590,7 @@ public class CombinedChainDataClient {
               }
               // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 query for an execution
               // payload by block root from the historical chain data
-              return SafeFuture.failedFuture(
-                  new UnsupportedOperationException("Not yet implemented"));
+              return SafeFuture.completedFuture(Optional.empty());
             });
   }
 

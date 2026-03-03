@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class AbstractFetchTaskTest {
 
   protected final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createMinimalDeneb());
+      new DataStructureUtil(TestSpecFactory.createMinimalGloas());
   protected final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
   protected final List<Eth2Peer> peers = new ArrayList<>();
 

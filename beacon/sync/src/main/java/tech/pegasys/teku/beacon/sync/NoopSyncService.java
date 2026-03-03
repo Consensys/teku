@@ -25,8 +25,11 @@ import tech.pegasys.teku.beacon.sync.gossip.blobs.BlobSidecarSubscriber;
 import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarsFetcher;
 import tech.pegasys.teku.beacon.sync.gossip.blocks.BlockSubscriber;
 import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetcher;
+import tech.pegasys.teku.beacon.sync.gossip.executionpayloads.ExecutionPayloadSubscriber;
+import tech.pegasys.teku.beacon.sync.gossip.executionpayloads.RecentExecutionPayloadsFetcher;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 
@@ -34,6 +37,7 @@ public class NoopSyncService
     implements ForwardSync,
         RecentBlocksFetcher,
         RecentBlobSidecarsFetcher,
+        RecentExecutionPayloadsFetcher,
         SyncService,
         OptimisticHeadSubscriber {
 
@@ -59,6 +63,11 @@ public class NoopSyncService
 
   @Override
   public RecentBlobSidecarsFetcher getRecentBlobSidecarsFetcher() {
+    return this;
+  }
+
+  @Override
+  public RecentExecutionPayloadsFetcher getRecentExecutionPayloadsFetcher() {
     return this;
   }
 
@@ -93,9 +102,7 @@ public class NoopSyncService
   public void unsubscribeFromSyncChanges(final long subscriberId) {}
 
   @Override
-  public void subscribeBlockFetched(final BlockSubscriber subscriber) {
-    // No-op
-  }
+  public void subscribeBlockFetched(final BlockSubscriber subscriber) {}
 
   @Override
   public void requestRecentBlock(final Bytes32 blockRoot) {
@@ -119,6 +126,21 @@ public class NoopSyncService
 
   @Override
   public void cancelRecentBlobSidecarRequest(final BlobIdentifier blobIdentifier) {
+    // No-op
+  }
+
+  @Override
+  public void subscribeExecutionPayloadFetched(final ExecutionPayloadSubscriber subscriber) {
+    // No-op
+  }
+
+  @Override
+  public void requestRecentExecutionPayload(final Bytes32 beaconBlockRoot) {
+    // No-op
+  }
+
+  @Override
+  public void cancelRecentExecutionPayloadRequest(final Bytes32 beaconBlockRoot) {
     // No-op
   }
 
@@ -159,6 +181,11 @@ public class NoopSyncService
 
   @Override
   public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
+    // No-op
+  }
+
+  @Override
+  public void onExecutionPayloadImported(final SignedExecutionPayloadEnvelope executionPayload) {
     // No-op
   }
 }

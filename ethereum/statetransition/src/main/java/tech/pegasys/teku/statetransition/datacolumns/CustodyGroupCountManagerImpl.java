@@ -39,7 +39,6 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   private static final Logger LOG = LogManager.getLogger();
   private static final int INITIAL_VALUE = -1;
   private final AtomicInteger custodyGroupCount = new AtomicInteger(INITIAL_VALUE);
-  private final AtomicInteger custodyGroupSyncedCount;
   private final Spec spec;
   private final MiscHelpersFulu miscHelpersFulu;
   private final ProposersDataManager proposersDataManager;
@@ -47,7 +46,6 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   private final CombinedChainDataClient combinedChainDataClient;
   private final UInt256 nodeId;
   private final SettableGauge custodyGroupCountGauge;
-  private final SettableGauge custodyGroupSyncedCountGauge;
   private boolean isMaxCustodyGroups = false;
 
   private volatile boolean genesisInitialized = false;
@@ -89,16 +87,9 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
             TekuMetricCategory.BEACON,
             "custody_groups",
             "Total number of custody groups within a node");
-    this.custodyGroupSyncedCountGauge =
-        SettableGauge.create(
-            metricsSystem,
-            TekuMetricCategory.BEACON,
-            "custody_groups_backfilled",
-            "Total number of custody groups backfilled by a node");
     this.proposersDataManager = proposersDataManager;
     this.combinedChainDataClient = combinedChainDataClient;
     this.custodyGroupCountChannel = custodyGroupCountChannel;
-    this.custodyGroupSyncedCount = new AtomicInteger(0);
     final Optional<Integer> maybeCustodyCount =
         combinedChainDataClient.getCustodyGroupCount().map(UInt64::intValue);
     if (maybeCustodyCount.isEmpty() || maybeCustodyCount.get() < initCustodyGroupCount) {
@@ -157,14 +148,12 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     LOG.debug("Validators at genesis epoch detected, initializing custody group count.");
     computeAndUpdateCustodyGroupCount(preparedValidators)
         .thenAccept(
-            maybeCustodyGroupCountUpdated -> {
-              if (maybeCustodyGroupCountUpdated.isPresent()) {
-                setCustodyGroupSyncedCount(maybeCustodyGroupCountUpdated.get());
-                LOG.info(
-                    "Custody group count updated to {}, because genesis validators were found.",
-                    maybeCustodyGroupCountUpdated.get());
-              }
-            })
+            maybeCustodyGroupCountUpdated ->
+                maybeCustodyGroupCountUpdated.ifPresent(
+                    integer ->
+                        LOG.info(
+                            "Custody group count updated to {}, because genesis validators were found.",
+                            integer)))
         .finish(
             error ->
                 LOG.error(
@@ -219,23 +208,6 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     return miscHelpersFulu.computeCustodyColumnIndices(nodeId, getSamplingGroupCount());
   }
 
-  @Override
-  public int getCustodyGroupSyncedCount() {
-    return custodyGroupSyncedCount.get();
-  }
-
-  @Override
-  public void setCustodyGroupSyncedCount(final int custodyGroupSyncedCount) {
-    final int oldCustodyGroupSyncedCount =
-        this.custodyGroupSyncedCount.getAndSet(custodyGroupSyncedCount);
-    if (oldCustodyGroupSyncedCount == custodyGroupSyncedCount) {
-      return;
-    }
-    LOG.debug("Synced custody group count updated to {}.", custodyGroupSyncedCount);
-    custodyGroupCountChannel.onCustodyGroupCountSynced(custodyGroupSyncedCount);
-    custodyGroupSyncedCountGauge.set(custodyGroupSyncedCount);
-  }
-
   private void updateCustodyGroupCount(
       final int newCustodyGroupCount, final Optional<Integer> maybeCustodyGroupCount) {
     if (maybeCustodyGroupCount.isEmpty() || maybeCustodyGroupCount.get() < newCustodyGroupCount) {
@@ -245,12 +217,12 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
           maybeCustodyGroupCount.map(Object::toString).orElse("<not set>"));
       combinedChainDataClient.updateCustodyGroupCount(newCustodyGroupCount);
     }
-    final int oldValue = custodyGroupCount.getAndSet(newCustodyGroupCount);
-    if (oldValue == INITIAL_VALUE) {
-      setCustodyGroupSyncedCount(newCustodyGroupCount);
+
+    final int oldCustodyGroupCount = custodyGroupCount.getAndSet(newCustodyGroupCount);
+    if (oldCustodyGroupCount != newCustodyGroupCount) {
+      isMaxCustodyGroups = miscHelpersFulu.isSuperNode(newCustodyGroupCount);
+      custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, getSamplingGroupCount());
+      custodyGroupCountGauge.set(newCustodyGroupCount);
     }
-    custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, getSamplingGroupCount());
-    custodyGroupCountGauge.set(newCustodyGroupCount);
-    isMaxCustodyGroups = miscHelpersFulu.isSuperNode(newCustodyGroupCount);
   }
 }

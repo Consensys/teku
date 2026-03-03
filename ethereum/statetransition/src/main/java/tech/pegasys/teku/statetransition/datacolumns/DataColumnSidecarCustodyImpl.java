@@ -206,6 +206,8 @@ public class DataColumnSidecarCustodyImpl
         .flatMap(SlotCustody::streamIncompleteColumns);
   }
 
+  // TODO: remove this code, issue #
+  // https://github.com/ConsenSys/teku/issues/10105?issue=Consensys%7Cteku%7C10229
   @VisibleForTesting
   SafeFuture<Void> advanceFirstIncompleteSlot(final UInt64 finalizedEpoch) {
     final UInt64 firstNonFinalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch).increment();
@@ -220,8 +222,6 @@ public class DataColumnSidecarCustodyImpl
                           if (firstIncompleteOrLastComplete.slot().equals(firstNonFinalizedSlot)) {
                             LOG.trace(
                                 "Custody group count synced to {}", totalCustodyGroupCount.get());
-                            custodyGroupCountManager.setCustodyGroupSyncedCount(
-                                totalCustodyGroupCount.get());
                           }
                           return db.setFirstCustodyIncompleteSlot(
                               firstIncompleteOrLastComplete.slot());

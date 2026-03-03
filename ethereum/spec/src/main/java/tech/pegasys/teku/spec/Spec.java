@@ -862,15 +862,16 @@ public class Spec {
         .onTick(store, timeMillis);
   }
 
-  public AttestationProcessingResult validateAttestation(
+  public SafeFuture<AttestationProcessingResult> validateAttestationAsync(
       final ReadOnlyStore store,
       final ValidatableAttestation validatableAttestation,
-      final Optional<BeaconState> maybeState) {
+      final Optional<BeaconState> maybeState,
+      final AsyncBLSSignatureVerifier asyncSignatureVerifier) {
     final UInt64 slot = validatableAttestation.getAttestation().getData().getSlot();
     final Fork fork = forkSchedule.getFork(computeEpochAtSlot(slot));
     return atSlot(slot)
         .getForkChoiceUtil()
-        .validate(fork, store, validatableAttestation, maybeState);
+        .validateAsync(fork, store, validatableAttestation, maybeState, asyncSignatureVerifier);
   }
 
   public Optional<OperationInvalidReason> validateAttesterSlashing(
@@ -1310,6 +1311,10 @@ public class Spec {
     return getSpecConfigFulu().map(SpecConfigFulu::getDataColumnSidecarSubnetCount);
   }
 
+  public int getNumberOfCustodyGroups(final UInt64 slot) {
+    return SpecConfigFulu.required(atSlot(slot).getConfig()).getNumberOfCustodyGroups();
+  }
+
   public boolean isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
       final ReadOnlyStore store, final UInt64 epoch) {
     if (getSpecConfigFulu().isEmpty()) {
@@ -1402,7 +1407,7 @@ public class Spec {
       case PHASE0, ALTAIR, BELLATRIX, CAPELLA -> Optional.empty();
       case DENEB, ELECTRA ->
           Optional.of(SpecConfigDeneb.required(specVersion.getConfig()).getMaxBlobsPerBlock());
-      case FULU, GLOAS -> {
+      case FULU, GLOAS, HEZE -> {
         final UInt64 epoch = specVersion.miscHelpers().computeEpochAtSlot(slot);
         yield Optional.of(
             MiscHelpersFulu.required(specVersion.miscHelpers())

@@ -83,8 +83,8 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
         withdrawals,
         blobGasUsed,
         excessBlobGas);
-    this.blockAccessList = blockAccessList;
     checkNotNull(slotNumber, "slotNumber");
+    this.blockAccessList = blockAccessList;
     this.slotNumber = slotNumber;
   }
 

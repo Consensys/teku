@@ -257,23 +257,27 @@ public class ForkChoiceUtil {
   }
 
   @CheckReturnValue
-  public AttestationProcessingResult validate(
+  public SafeFuture<AttestationProcessingResult> validateAsync(
       final Fork fork,
       final ReadOnlyStore store,
       final ValidatableAttestation validatableAttestation,
-      final Optional<BeaconState> maybeState) {
+      final Optional<BeaconState> maybeState,
+      final AsyncBLSSignatureVerifier asyncSignatureVerifier) {
     Attestation attestation = validatableAttestation.getAttestation();
     return validateOnAttestation(store, attestation.getData())
-        .ifSuccessful(
+        .ifSuccessfulAsync(
             () -> {
               if (maybeState.isEmpty()) {
-                return AttestationProcessingResult.UNKNOWN_BLOCK;
+                return SafeFuture.completedFuture(AttestationProcessingResult.UNKNOWN_BLOCK);
               } else {
-                return attestationUtil.isValidIndexedAttestation(
-                    fork, maybeState.get(), validatableAttestation);
+                return attestationUtil.isValidIndexedAttestationAsync(
+                    fork, maybeState.get(), validatableAttestation, asyncSignatureVerifier);
               }
             })
-        .ifSuccessful(() -> checkIfAttestationShouldBeSavedForFuture(store, attestation));
+        .thenApply(
+            result ->
+                result.ifSuccessful(
+                    () -> checkIfAttestationShouldBeSavedForFuture(store, attestation)));
   }
 
   private AttestationProcessingResult validateOnAttestation(

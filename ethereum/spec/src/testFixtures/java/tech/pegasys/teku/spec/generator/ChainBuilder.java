@@ -194,20 +194,6 @@ public class ChainBuilder {
         .map(SignedExecutionPayloadAndState::executionPayload);
   }
 
-  public List<SignedExecutionPayloadEnvelope> getExecutionPayloads(
-      final UInt64 startSlot, final UInt64 count) {
-    return executionPayloads.values().stream()
-        .filter(
-            signedExecutionPayloadAndState -> {
-              final UInt64 slot =
-                  signedExecutionPayloadAndState.executionPayload().getMessage().getSlot();
-              return slot.isGreaterThanOrEqualTo(startSlot)
-                  && slot.isLessThan(startSlot.plus(count));
-            })
-        .map(SignedExecutionPayloadAndState::executionPayload)
-        .toList();
-  }
-
   public List<BlobSidecar> getBlobSidecars(final Bytes32 blockRoot) {
     return Optional.ofNullable(blobSidecarsByHash.get(blockRoot)).orElse(Collections.emptyList());
   }
@@ -377,6 +363,12 @@ public class ChainBuilder {
 
   public BeaconState getStateAtSlot(final UInt64 slot) {
     return resultToState(getBlockAndStateAtSlot(slot));
+  }
+
+  public SignedExecutionPayloadEnvelope getExecutionPayloadAtSlot(final long slot) {
+    return Optional.ofNullable(executionPayloads.get(UInt64.valueOf(slot)))
+        .map(SignedExecutionPayloadAndState::executionPayload)
+        .orElse(null);
   }
 
   public Optional<SignedExecutionPayloadAndState> getExecutionPayloadAndStateAtSlot(

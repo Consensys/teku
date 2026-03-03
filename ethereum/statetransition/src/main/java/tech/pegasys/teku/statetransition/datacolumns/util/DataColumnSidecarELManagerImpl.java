@@ -28,9 +28,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,26 +42,23 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszPrimitiveCollection;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
-import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELManager;
@@ -102,7 +99,6 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
   private final Counter getBlobsV2ResponsesCounter;
   private final MetricsHistogram getBlobsV2RuntimeSeconds;
 
-  private final Supplier<MiscHelpersFulu> miscHelpersFuluSupplier;
   private final Duration localElBlobsFetchingRetryDelay;
   private final int localElBlobsFetchingMaxRetries;
   private final DataColumnSidecarGossipValidator dataColumnSidecarGossipValidator;
@@ -167,8 +163,6 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
             "engine_getBlobsV2_request_duration_seconds",
             "Duration of engine_getBlobsV2 requests",
             new double[] {0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1.0, 2.0, 5.0, 10.0});
-    this.miscHelpersFuluSupplier =
-        () -> MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
   }
 
   @Override
@@ -207,76 +201,148 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
 
     final SlotAndBlockRoot slotAndBlockRoot = dataColumnSidecar.getSlotAndBlockRoot();
 
-    if (createRecoveryTaskFromDataColumnSidecar(dataColumnSidecar)) {
-      onFirstSeen(slotAndBlockRoot);
+    final Optional<RecoveryTask> recoveryTaskFromDataColumnSidecar =
+        createRecoveryTaskFromDataColumnSidecar(dataColumnSidecar);
+    if (shouldStartRecovery(recoveryTaskFromDataColumnSidecar)) {
+      startRecovery(slotAndBlockRoot);
     }
   }
 
-  private boolean createRecoveryTaskFromDataColumnSidecar(
+  @Override
+  public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
+    final SpecMilestone milestone = spec.atSlot(block.getSlot()).getMilestone();
+    if (milestone.isLessThan(SpecMilestone.FULU)) {
+      LOG.debug("Received block {} before Fulu. Ignoring.", block.getSlotAndBlockRoot());
+      return;
+    }
+    if (isLocalBlockProductionOrRecovered(remoteOrigin)) {
+      LOG.debug(
+          "Block {} from {} is not subject to recovery",
+          block::getSlotAndBlockRoot,
+          () -> remoteOrigin);
+      return;
+    }
+
+    LOG.debug("Received block {} from {}", block::getSlotAndBlockRoot, () -> remoteOrigin);
+
+    if (recentChainData.containsBlock(block.getRoot())) {
+      LOG.debug("Block {} is already imported. Ignoring.", block::getSlotAndBlockRoot);
+      return;
+    }
+    if (shouldIgnoreItemAtSlot(block.getSlot())) {
+      LOG.debug("Block {} is too old or from the future. Ignoring.", block::getSlotAndBlockRoot);
+      return;
+    }
+    final Optional<RecoveryTask> recoveryTaskFromBlock = createRecoveryTaskFromBlock(block);
+    if (shouldStartRecovery(recoveryTaskFromBlock)) {
+      startRecovery(block.getSlotAndBlockRoot());
+    }
+  }
+
+  private boolean shouldStartRecovery(final Optional<RecoveryTask> recoveryTask) {
+    return recoveryTask.isPresent()
+        && recoveryTask.get().canStart()
+        && recoveryTask.get().recoveryStarted().compareAndSet(false, true);
+  }
+
+  private Optional<RecoveryTask> createRecoveryTaskFromDataColumnSidecar(
       final DataColumnSidecar dataColumnSidecar) {
-    final RecoveryTask existingTask = recoveryTasks.get(dataColumnSidecar.getSlotAndBlockRoot());
+    final SlotAndBlockRoot slotAndBlockRoot = dataColumnSidecar.getSlotAndBlockRoot();
+    final RecoveryTask existingTask = recoveryTasks.get(slotAndBlockRoot);
     if (existingTask != null) {
       existingTask.recoveredColumnIndices().add(dataColumnSidecar.getIndex());
-      return false;
+      return Optional.of(existingTask);
     }
     if (!dataColumnSidecar.getSlot().equals(getCurrentSlot())) {
-      return false;
+      return Optional.empty();
     }
     makeRoomForNewTracker();
-    return recoveryTasks.putIfAbsent(
-            dataColumnSidecar.getSlotAndBlockRoot(),
-            new RecoveryTask(
-                DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader(),
-                dataColumnSidecar.getKzgCommitments(),
-                DataColumnSidecarFulu.required(dataColumnSidecar)
-                    .getKzgCommitmentsInclusionProof()
-                    .asListUnboxed(),
-                Collections.newSetFromMap(new ConcurrentHashMap<>())))
-        == null;
+    final RecoveryTask task =
+        recoveryTasks.computeIfAbsent(
+            dataColumnSidecar.getSlotAndBlockRoot(), __ -> createRecoveryTask(dataColumnSidecar));
+    task.recoveredColumnIndices().add(dataColumnSidecar.getIndex());
+    return Optional.of(task);
   }
 
-  private boolean createRecoveryTaskFromBlock(final SignedBeaconBlock block) {
+  private RecoveryTask createRecoveryTask(final DataColumnSidecar dataColumnSidecar) {
+    if (dataColumnSidecar.getMaybeKzgCommitments().isPresent()) {
+      final DataColumnSidecarUtil dataColumnSidecarUtil =
+          spec.getDataColumnSidecarUtil(dataColumnSidecar.getSlot());
+      final RecoveryTask recoveryTask =
+          new RecoveryTask(
+              dataColumnSidecar.getMaybeSignedBlockHeader(),
+              SafeFuture.completedFuture(dataColumnSidecar.getMaybeKzgCommitments().get()),
+              dataColumnSidecarUtil
+                  .getMaybeKzgCommitmentsInclusionProof(dataColumnSidecar)
+                  .map(SszPrimitiveCollection::asListUnboxed),
+              Collections.newSetFromMap(new ConcurrentHashMap<>()),
+              new AtomicBoolean(false));
+      recoveryTask.recoveredColumnIndices.add(dataColumnSidecar.getIndex());
+      return recoveryTask;
+    }
+    final RecoveryTask recoveryTask =
+        new RecoveryTask(
+            Optional.empty(),
+            new SafeFuture<>(),
+            Optional.empty(),
+            Collections.newSetFromMap(new ConcurrentHashMap<>()),
+            new AtomicBoolean(false));
+    recoveryTask.recoveredColumnIndices.add(dataColumnSidecar.getIndex());
+    return recoveryTask;
+  }
+
+  private Optional<RecoveryTask> createRecoveryTaskFromBlock(final SignedBeaconBlock block) {
     final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
-    if (recoveryTasks.containsKey(slotAndBlockRoot)) {
-      return false;
+    final DataColumnSidecarUtil dataColumnSidecarUtil =
+        spec.getDataColumnSidecarUtil(block.getSlot());
+    final RecoveryTask existingTask = recoveryTasks.get(slotAndBlockRoot);
+    if (existingTask != null) {
+      existingTask
+          .sszKzgCommitmentsFuture()
+          .complete(dataColumnSidecarUtil.getKzgCommitments(block.getMessage()));
+      return Optional.of(existingTask);
     }
     if (!block.getSlot().equals(getCurrentSlot())) {
-      return false;
+      return Optional.empty();
     }
     makeRoomForNewTracker();
-    final BeaconBlockBodyDeneb blockBodyDeneb =
-        BeaconBlockBodyDeneb.required(block.getMessage().getBody());
-    return recoveryTasks.putIfAbsent(
-            block.getSlotAndBlockRoot(),
-            new RecoveryTask(
-                block.asHeader(),
-                blockBodyDeneb.getBlobKzgCommitments(),
-                miscHelpersFuluSupplier
-                    .get()
-                    .computeDataColumnKzgCommitmentsInclusionProof(blockBodyDeneb),
-                Collections.newSetFromMap(new ConcurrentHashMap<>())))
-        == null;
+    final RecoveryTask task =
+        recoveryTasks.computeIfAbsent(
+            slotAndBlockRoot,
+            __ ->
+                new RecoveryTask(
+                    Optional.of(block.asHeader()),
+                    SafeFuture.completedFuture(
+                        dataColumnSidecarUtil.getKzgCommitments(block.getMessage())),
+                    dataColumnSidecarUtil.computeDataColumnKzgCommitmentsInclusionProof(
+                        block.getMessage().getBody()),
+                    Collections.newSetFromMap(new ConcurrentHashMap<>()),
+                    new AtomicBoolean(false)));
+    task.sszKzgCommitmentsFuture()
+        .complete(dataColumnSidecarUtil.getKzgCommitments(block.getMessage()));
+    return Optional.of(task);
   }
 
   private void publishRecoveredDataColumnSidecars(
-      final RecoveryTask recoveryTask, final List<BlobAndCellProofs> blobAndCellProofs) {
+      final RecoveryTask recoveryTask,
+      final Optional<SszList<SszKZGCommitment>> maybeSszKzgCommitments,
+      final List<BlobAndCellProofs> blobAndCellProofs,
+      final SlotAndBlockRoot slotAndBlockRoot,
+      final DataColumnSidecarUtil dataColumnSidecarUtil) {
     final List<DataColumnSidecar> dataColumnSidecars;
     try (MetricsHistogram.Timer ignored = dataColumnSidecarComputationTimeSeconds.startTimer()) {
       dataColumnSidecars =
-          miscHelpersFuluSupplier
-              .get()
-              .constructDataColumnSidecars(
-                  recoveryTask.signedBeaconBlockHeader(),
-                  recoveryTask.sszKZGCommitments(),
-                  recoveryTask.kzgCommitmentsInclusionProof(),
-                  blobAndCellProofs);
+          dataColumnSidecarUtil.constructDataColumnSidecars(
+              recoveryTask.maybeSignedBeaconBlockHeader(),
+              slotAndBlockRoot,
+              maybeSszKzgCommitments,
+              recoveryTask.maybeKzgCommitmentsInclusionProof(),
+              blobAndCellProofs);
     } catch (final Throwable t) {
       throw new RuntimeException(t);
     }
     final int samplingGroupCount = custodyGroupCountManager.getSamplingGroupCount();
-    final int maxCustodyGroups =
-        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
-            .getNumberOfCustodyGroups();
+    final int maxCustodyGroups = spec.getNumberOfCustodyGroups(slotAndBlockRoot.getSlot());
     final List<DataColumnSidecar> localCustodySidecars;
     if (samplingGroupCount == maxCustodyGroups) {
       localCustodySidecars = dataColumnSidecars;
@@ -293,12 +359,12 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
         .addAll(localCustodySidecars.stream().map(DataColumnSidecar::getIndex).toList());
 
     LOG.debug(
-        "Publishing {} data column sidecars for {}",
-        localCustodySidecars::size,
-        recoveryTask::getSlotAndBlockRoot);
+        "Publishing {} data column sidecars for {}", localCustodySidecars.size(), slotAndBlockRoot);
 
     dataColumnSidecarGossipValidator.markForEquivocation(
-        recoveryTask.signedBeaconBlockHeader().getMessage(), localCustodySidecars);
+        recoveryTask.maybeSignedBeaconBlockHeader().map(SignedBeaconBlockHeader::getMessage),
+        localCustodySidecars,
+        slotAndBlockRoot);
     if (inSync) {
       dataColumnSidecarPublisher.accept(localCustodySidecars, LOCAL_EL);
     }
@@ -307,43 +373,6 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
           recoveredColumnSidecarSubscribers.forEach(
               subscriber -> subscriber.onNewValidSidecar(sidecar, LOCAL_EL));
         });
-  }
-
-  @Override
-  public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
-    if (isLocalBlockProductionOrRecovered(remoteOrigin)) {
-      LOG.debug(
-          "Block {} from {} is not subject to recovery",
-          block::getSlotAndBlockRoot,
-          () -> remoteOrigin);
-      return;
-    }
-    final SpecMilestone milestone = spec.atSlot(block.getSlot()).getMilestone();
-    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10311 this could still be useful, but
-    // ignoring it for the moment since the recovery
-    // task relies on blob kzg commitments
-    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)
-        || milestone.isLessThan(SpecMilestone.FULU)) {
-      LOG.debug(
-          "Received block {} for {} fork. Ignoring.",
-          block::getSlotAndBlockRoot,
-          milestone::lowerCaseName);
-      return;
-    }
-
-    LOG.debug("Received block {} from {}", block::getSlotAndBlockRoot, () -> remoteOrigin);
-
-    if (recentChainData.containsBlock(block.getRoot())) {
-      LOG.debug("Block {} is already imported. Ignoring.", block::getSlotAndBlockRoot);
-      return;
-    }
-    if (shouldIgnoreItemAtSlot(block.getSlot())) {
-      LOG.debug("Block {} is too old or from the future. Ignoring.", block::getSlotAndBlockRoot);
-      return;
-    }
-    if (createRecoveryTaskFromBlock(block)) {
-      onFirstSeen(block.getSlotAndBlockRoot());
-    }
   }
 
   private void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {
@@ -392,9 +421,8 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
     }
   }
 
-  private void onFirstSeen(final SlotAndBlockRoot slotAndBlockRoot) {
+  private void startRecovery(final SlotAndBlockRoot slotAndBlockRoot) {
     LOG.debug("Data from {} is first seen, checking if recovery is needed", slotAndBlockRoot);
-
     asyncRunner
         .runWithRetry(
             () -> fetchMissingBlobsFromLocalEL(slotAndBlockRoot),
@@ -416,35 +444,31 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
         .containsAll(custodyGroupCountManager.getSamplingColumnIndices())) {
       return SafeFuture.COMPLETE;
     }
+    final SszList<SszKZGCommitment> sszKzgCommitments =
+        recoveryTask.sszKzgCommitmentsFuture().getImmediately();
 
-    if (recoveryTask.sszKZGCommitments().isEmpty()) {
+    if (sszKzgCommitments.isEmpty()) {
       return SafeFuture.COMPLETE;
     }
 
     final List<BlobIdentifier> missingBlobsIdentifiers =
-        IntStream.range(0, recoveryTask.sszKZGCommitments().size())
+        IntStream.range(0, sszKzgCommitments.size())
             .mapToObj(
                 index -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), UInt64.valueOf(index)))
             .toList();
 
-    final SpecVersion specVersion = spec.atSlot(slotAndBlockRoot.getSlot());
-    final MiscHelpersDeneb miscHelpersDeneb =
-        specVersion.miscHelpers().toVersionDeneb().orElseThrow();
-    final SszList<SszKZGCommitment> sszKZGCommitments = recoveryTask.sszKZGCommitments();
-
+    final MiscHelpers miscHelpers = spec.atSlot(slotAndBlockRoot.getSlot()).miscHelpers();
     final List<VersionedHash> versionedHashes =
         missingBlobsIdentifiers.stream()
             .map(
                 blobIdentifier ->
-                    miscHelpersDeneb.kzgCommitmentToVersionedHash(
-                        sszKZGCommitments
+                    miscHelpers.kzgCommitmentToVersionedHash(
+                        sszKzgCommitments
                             .get(blobIdentifier.getIndex().intValue())
                             .getKZGCommitment()))
             .toList();
-
     getBlobsV2RequestsCounter.inc();
     final MetricsHistogram.Timer timer = getBlobsV2RuntimeSeconds.startTimer();
-
     return executionLayer
         .engineGetBlobAndCellProofsList(versionedHashes, slotAndBlockRoot.getSlot())
         .whenComplete((result, error) -> timer.closeUnchecked().run())
@@ -467,7 +491,12 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
               LOG.debug(
                   "Collected all blobSidecars from EL for slot {}, recovering data column sidecars",
                   slotAndBlockRoot::getSlot);
-              publishRecoveredDataColumnSidecars(recoveryTask, blobAndCellProofsList);
+              publishRecoveredDataColumnSidecars(
+                  recoveryTask,
+                  Optional.of(sszKzgCommitments),
+                  blobAndCellProofsList,
+                  slotAndBlockRoot,
+                  spec.getDataColumnSidecarUtil(slotAndBlockRoot.getSlot()));
             });
   }
 
@@ -476,12 +505,13 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
   }
 
   public record RecoveryTask(
-      SignedBeaconBlockHeader signedBeaconBlockHeader,
-      SszList<SszKZGCommitment> sszKZGCommitments,
-      List<Bytes32> kzgCommitmentsInclusionProof,
-      Set<UInt64> recoveredColumnIndices) {
-    public SlotAndBlockRoot getSlotAndBlockRoot() {
-      return signedBeaconBlockHeader.getMessage().getSlotAndBlockRoot();
+      Optional<SignedBeaconBlockHeader> maybeSignedBeaconBlockHeader,
+      SafeFuture<SszList<SszKZGCommitment>> sszKzgCommitmentsFuture,
+      Optional<List<Bytes32>> maybeKzgCommitmentsInclusionProof,
+      Set<UInt64> recoveredColumnIndices,
+      AtomicBoolean recoveryStarted) {
+    public boolean canStart() {
+      return sszKzgCommitmentsFuture.isDone();
     }
   }
 }
