@@ -282,6 +282,14 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
       return false;
     }
 
+    if (dataColumnSidecar.getColumn().size() != dataColumnSidecar.getKzgProofs().size()) {
+      LOG.trace(
+          "DataColumnSidecar has unequal data column ({}) and kzg proofs ({}) sizes",
+          dataColumnSidecar.getColumn().size(),
+          dataColumnSidecar.getKzgProofs().size());
+      return false;
+    }
+
     // A sidecar for zero blobs is invalid
     if (dataColumnSidecar.getColumn().isEmpty()) {
       LOG.trace("DataColumnSidecar has empty column");
