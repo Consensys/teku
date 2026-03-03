@@ -62,14 +62,7 @@ public class DataColumnSidecarsByRootListenerValidatingProxy
   @Override
   public SafeFuture<?> onResponse(final DataColumnSidecar dataColumnSidecar) {
     return validate(dataColumnSidecar)
-        .thenCompose(
-            validationResult -> {
-              if (validationResult.isPresent()) {
-                throw new DataColumnSidecarsResponseInvalidResponseException(
-                    peer, InvalidResponseType.DATA_COLUMN_SIDECAR_VALIDITY_CHECK_FAILED);
-              }
-              return verifySignature(dataColumnSidecar);
-            })
+        .thenCompose(__ -> verifySignature(dataColumnSidecar))
         .thenCompose(
             signatureValidation -> {
               if (signatureValidation) {

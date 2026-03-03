@@ -19,7 +19,6 @@ import static tech.pegasys.teku.statetransition.validation.DataColumnSidecarGoss
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -31,7 +30,6 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
-import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarValidationError;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class DataColumnSidecarsByRootValidator extends AbstractDataColumnSidecarValidator {
@@ -57,8 +55,7 @@ public class DataColumnSidecarsByRootValidator extends AbstractDataColumnSidecar
         DATA_COLUMN_SIDECAR_KZG_BATCH_VERIFICATION_HISTOGRAM.apply(metricsSystem, timeProvider);
   }
 
-  public SafeFuture<Optional<DataColumnSidecarValidationError>> validate(
-      final DataColumnSidecar dataColumnSidecar) {
+  public SafeFuture<Void> validate(final DataColumnSidecar dataColumnSidecar) {
     final DataColumnIdentifier dataColumnIdentifier =
         DataColumnIdentifier.createFromSidecar(dataColumnSidecar);
     if (!expectedDataColumnIdentifiers.remove(dataColumnIdentifier)) {
@@ -93,13 +90,14 @@ public class DataColumnSidecarsByRootValidator extends AbstractDataColumnSidecar
         dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer();
     return verifyKzgProofs(dataColumnSidecar)
         .whenComplete((result, error) -> kzgVerificationTimer.closeUnchecked().run())
-        .thenApply(
+        .thenCompose(
             maybeKzgProofsValidationResult -> {
               if (maybeKzgProofsValidationResult.isPresent()) {
-                throw new DataColumnSidecarsResponseInvalidResponseException(
-                    peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
+                return SafeFuture.failedFuture(
+                    new DataColumnSidecarsResponseInvalidResponseException(
+                        peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED));
               }
-              return Optional.empty();
+              return SafeFuture.COMPLETE;
             });
   }
 }
