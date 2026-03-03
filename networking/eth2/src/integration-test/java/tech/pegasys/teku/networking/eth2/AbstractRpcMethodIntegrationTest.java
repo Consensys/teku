@@ -13,12 +13,17 @@
 
 package tech.pegasys.teku.networking.eth2;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Preconditions.checkState;
+import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.provider.Arguments;
@@ -27,6 +32,7 @@ import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -40,11 +46,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Bea
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyPhase0;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public abstract class AbstractRpcMethodIntegrationTest {
   protected StorageSystem peerStorage;
+  protected StorageSystem localPeerStorage;
 
   private Spec baseSpec;
   private Optional<Spec> nextSpec;
@@ -107,6 +115,9 @@ public abstract class AbstractRpcMethodIntegrationTest {
   @AfterEach
   public void tearDown() throws Exception {
     networkFactory.stopAll();
+    if (localPeerStorage != null) {
+      localPeerStorage.close();
+    }
   }
 
   protected Eth2Peer createPeer() {
@@ -185,11 +196,11 @@ public abstract class AbstractRpcMethodIntegrationTest {
       peerStorage.chainUpdater().initializeGenesis();
     }
 
-    // Set up local storage
-    try (final StorageSystem localStorage =
-        InMemoryStorageSystemBuilder.create().specProvider(localSpec).build()) {
-      localStorage.chainUpdater().initializeGenesis();
+    // Set up local storage. Kept alive for the test duration so validators can query blocks
+    localPeerStorage = InMemoryStorageSystemBuilder.create().specProvider(localSpec).build();
+    localPeerStorage.chainUpdater().initializeGenesis();
 
+    try {
       final Eth2P2PNetwork remotePeerNetwork =
           networkFactory
               .builder()
@@ -208,8 +219,8 @@ public abstract class AbstractRpcMethodIntegrationTest {
                   RpcEncoding.createSszSnappyEncoding(
                       localSpec.getNetworkingConfig().getMaxPayloadSize()))
               .peer(remotePeerNetwork)
-              .recentChainData(localStorage.recentChainData())
-              .historicalChainData(localStorage.chainStorage())
+              .recentChainData(localPeerStorage.recentChainData())
+              .historicalChainData(localPeerStorage.chainStorage())
               .spec(localSpec)
               .startNetwork();
 
@@ -299,6 +310,17 @@ public abstract class AbstractRpcMethodIntegrationTest {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+  }
+
+  protected List<DataColumnSidecar> requestDataColumnSidecarsByRoot(
+      final Eth2Peer peer, final List<DataColumnsByRootIdentifier> dataColumnIdentifiers)
+      throws InterruptedException, ExecutionException, TimeoutException {
+    final List<DataColumnSidecar> dataColumnSidecars = new ArrayList<>();
+    waitFor(
+        peer.requestDataColumnSidecarsByRoot(
+            dataColumnIdentifiers, RpcResponseListener.from(dataColumnSidecars::add)));
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    return dataColumnSidecars;
   }
 
   protected static Class<?> milestoneToBeaconBlockBodyClass(final SpecMilestone milestone) {

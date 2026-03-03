@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
+import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +42,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 
-@TestSpecContext(milestone = {ELECTRA, FULU})
+@TestSpecContext(milestone = {ELECTRA, FULU, GLOAS})
 public class DataColumnSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegrationTest {
 
   private Eth2Peer peer;
@@ -131,6 +132,13 @@ public class DataColumnSidecarsByRangeIntegrationTest extends AbstractRpcMethodI
 
     // make sure canonical head is the canonical head
     peerStorage.chainUpdater().updateBestBlock(canonicalHead);
+
+    // save canonical blocks to local storage, simulating local node having received the canonical
+    // beacon blocks via gossip/sync before requesting data column sidecars
+    peerStorage
+        .chainBuilder()
+        .streamBlocksAndStates()
+        .forEach(blockAndState -> localPeerStorage.chainUpdater().saveBlock(blockAndState));
 
     // make sure we have 2 heads
     assertThat(peerStorage.recentChainData().getChainHeads().size()).isEqualTo(2);
