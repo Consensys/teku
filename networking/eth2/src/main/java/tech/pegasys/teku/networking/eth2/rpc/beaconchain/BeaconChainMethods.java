@@ -75,7 +75,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -163,7 +162,6 @@ public class BeaconChainMethods {
       final AsyncRunner asyncRunner,
       final PeerLookup peerLookup,
       final CombinedChainDataClient combinedChainDataClient,
-      final Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier,
       final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final RecentChainData recentChainData,
       final MetricsSystem metricsSystem,
@@ -205,7 +203,6 @@ public class BeaconChainMethods {
             metricsSystem,
             asyncRunner,
             combinedChainDataClient,
-            dataColumnSidecarCustodySupplier,
             custodyGroupCountManagerSupplier,
             peerLookup,
             rpcEncoding,
@@ -462,7 +459,6 @@ public class BeaconChainMethods {
           final MetricsSystem metricsSystem,
           final AsyncRunner asyncRunner,
           final CombinedChainDataClient combinedChainDataClient,
-          final Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier,
           final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
           final PeerLookup peerLookup,
           final RpcEncoding rpcEncoding,
@@ -481,7 +477,6 @@ public class BeaconChainMethods {
             spec,
             metricsSystem,
             combinedChainDataClient,
-            dataColumnSidecarCustodySupplier,
             custodyGroupCountManagerSupplier,
             dasLogger);
     final DataColumnSidecarsByRootRequestMessageSchema

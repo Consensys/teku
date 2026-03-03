@@ -19,8 +19,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -36,10 +37,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessage;
-import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.LoggingPeerId;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.ReqRespResponseLogger;
@@ -55,7 +54,6 @@ public class DataColumnSidecarsByRootMessageHandler
 
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
-  private final Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier;
   private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
 
   private final LabelledMetric<Counter> requestCounter;
@@ -66,13 +64,11 @@ public class DataColumnSidecarsByRootMessageHandler
       final Spec spec,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient combinedChainDataClient,
-      final Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier,
       final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final DasReqRespLogger dasLogger) {
     this.spec = spec;
     this.combinedChainDataClient = combinedChainDataClient;
     this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
-    this.dataColumnSidecarCustodySupplier = dataColumnSidecarCustodySupplier;
     this.dasLogger = dasLogger;
     this.requestCounter =
         metricsSystem.createLabelledCounter(
@@ -86,18 +82,6 @@ public class DataColumnSidecarsByRootMessageHandler
             "rpc_data_column_sidecars_by_root_requested_sidecars_total",
             "Total number of data column sidecars requested in accepted data column sidecars by root requests from "
                 + "peers");
-  }
-
-  private SafeFuture<Boolean> validateAndMaybeRespond(
-      final DataColumnIdentifier identifier,
-      final Optional<DataColumnSidecar> maybeSidecar,
-      final ResponseCallback<DataColumnSidecar> callback) {
-    return validateMinimumRequestEpoch(identifier, maybeSidecar)
-        .thenCompose(
-            __ ->
-                maybeSidecar
-                    .map(sideCar -> callback.respond(sideCar).thenApply(___ -> true))
-                    .orElse(SafeFuture.completedFuture(false)));
   }
 
   @Override
@@ -133,56 +117,32 @@ public class DataColumnSidecarsByRootMessageHandler
 
     final Set<UInt64> myCustodyColumns =
         new HashSet<>(custodyGroupCountManagerSupplier.get().getCustodyColumnIndices());
-    final Stream<SafeFuture<Boolean>> responseStream =
-        message.stream()
-            .flatMap(
-                byRootIdentifier ->
-                    byRootIdentifier.getColumns().stream()
-                        .filter(myCustodyColumns::contains)
-                        .map(
-                            column ->
-                                new DataColumnIdentifier(byRootIdentifier.getBlockRoot(), column)))
-            .map(
-                dataColumnIdentifier ->
-                    retrieveDataColumnSidecar(dataColumnIdentifier)
-                        .thenCompose(
-                            maybeSidecar ->
-                                validateAndMaybeRespond(
-                                    dataColumnIdentifier,
-                                    maybeSidecar,
-                                    responseCallbackWithLogging)));
+    final AtomicLong sentCount = new AtomicLong(0);
 
-    final SafeFuture<List<Boolean>> listOfResponses = SafeFuture.collectAll(responseStream);
-
-    listOfResponses
-        .thenApply(list -> list.stream().filter(isSent -> isSent).count())
+    SafeFuture.collectAll(
+            message.stream()
+                .map(
+                    byRootIdentifier ->
+                        resolveBlockRootSlot(byRootIdentifier.getBlockRoot())
+                            .thenCompose(
+                                maybeSlot ->
+                                    retrieveAndRespondForBlockRoot(
+                                        byRootIdentifier.getBlockRoot(),
+                                        maybeSlot,
+                                        byRootIdentifier.getColumns(),
+                                        myCustodyColumns,
+                                        responseCallbackWithLogging,
+                                        sentCount))))
         .thenAccept(
-            sentDataColumnSidecarsCount -> {
-              if (sentDataColumnSidecarsCount != requestedDataColumnSidecarsCount) {
-                peer.adjustDataColumnSidecarsRequest(
-                    maybeRequestKey.get(), sentDataColumnSidecarsCount);
+            __ -> {
+              final long sent = sentCount.get();
+              if (sent != requestedDataColumnSidecarsCount) {
+                peer.adjustDataColumnSidecarsRequest(maybeRequestKey.get(), sent);
               }
               responseCallbackWithLogging.completeSuccessfully();
             })
         .finish(
             err -> handleError(err, responseCallbackWithLogging, "data column sidecars by root"));
-  }
-
-  private SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalDataColumnSidecar(
-      final DataColumnIdentifier identifier) {
-    return combinedChainDataClient
-        .getBlockByBlockRoot(identifier.blockRoot())
-        .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot))
-        .thenCompose(
-            maybeSlot -> {
-              if (maybeSlot.isPresent()) {
-                return combinedChainDataClient.getNonCanonicalSidecar(
-                    new DataColumnSlotAndIdentifier(
-                        maybeSlot.get(), identifier.blockRoot(), identifier.columnIndex()));
-              } else {
-                return SafeFuture.completedFuture(Optional.empty());
-              }
-            });
   }
 
   /**
@@ -193,43 +153,75 @@ public class DataColumnSidecarsByRootMessageHandler
    * </ul>
    */
   private SafeFuture<Void> validateMinimumRequestEpoch(
-      final DataColumnIdentifier identifier, final Optional<DataColumnSidecar> maybeSidecar) {
-    return maybeSidecar
-        .map(sidecar -> SafeFuture.completedFuture(Optional.of(sidecar.getSlot())))
-        .orElseGet(
-            () ->
-                combinedChainDataClient
-                    .getBlockByBlockRoot(identifier.blockRoot())
-                    .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot)))
-        .thenAcceptChecked(
-            maybeSlot -> {
+      final Bytes32 blockRoot, final Optional<UInt64> maybeSlot) {
+    if (maybeSlot.isEmpty()) {
+      return SafeFuture.COMPLETE;
+    }
+    final UInt64 requestedEpoch = spec.computeEpochAtSlot(maybeSlot.get());
+    if (!spec.isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
+        combinedChainDataClient.getStore(), requestedEpoch)) {
+      return SafeFuture.failedFuture(
+          new RpcException(
+              INVALID_REQUEST_CODE,
+              String.format(
+                  "Block root (%s) references a block earlier than the minimum_request_epoch",
+                  blockRoot)));
+    }
+    return SafeFuture.COMPLETE;
+  }
+
+  private SafeFuture<Optional<UInt64>> resolveBlockRootSlot(final Bytes32 blockRoot) {
+    return combinedChainDataClient
+        .getBlockByBlockRoot(blockRoot)
+        .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot));
+  }
+
+  private SafeFuture<Void> retrieveAndRespondForBlockRoot(
+      final Bytes32 blockRoot,
+      final Optional<UInt64> maybeSlot,
+      final List<UInt64> columns,
+      final Set<UInt64> myCustodyColumns,
+      final ResponseCallback<DataColumnSidecar> callback,
+      final AtomicLong sentCount) {
+    return validateMinimumRequestEpoch(blockRoot, maybeSlot)
+        .thenCompose(
+            __ -> {
               if (maybeSlot.isEmpty()) {
-                return;
+                return SafeFuture.COMPLETE;
               }
-              final UInt64 requestedEpoch = spec.computeEpochAtSlot(maybeSlot.get());
-              if (!spec.isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
-                  combinedChainDataClient.getStore(), requestedEpoch)) {
-                throw new RpcException(
-                    INVALID_REQUEST_CODE,
-                    String.format(
-                        "Block root (%s) references a block earlier than the minimum_request_epoch",
-                        identifier.blockRoot()));
-              }
+              final UInt64 slot = maybeSlot.get();
+              return SafeFuture.collectAll(
+                      columns.stream()
+                          .filter(myCustodyColumns::contains)
+                          .map(
+                              column ->
+                                  retrieveDataColumnSidecar(blockRoot, slot, column)
+                                      .thenCompose(
+                                          maybeSidecar ->
+                                              maybeSidecar
+                                                  .map(
+                                                      sidecar ->
+                                                          callback
+                                                              .respond(sidecar)
+                                                              .thenRun(sentCount::incrementAndGet))
+                                                  .orElse(SafeFuture.COMPLETE))))
+                  .thenCompose(___ -> SafeFuture.COMPLETE);
             });
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> retrieveDataColumnSidecar(
-      final DataColumnIdentifier identifier) {
-    return dataColumnSidecarCustodySupplier
-        .get()
-        .getCustodyDataColumnSidecarByRoot(identifier)
+      final Bytes32 blockRoot, final UInt64 slot, final UInt64 column) {
+    final DataColumnSlotAndIdentifier slotAndIdentifier =
+        new DataColumnSlotAndIdentifier(slot, blockRoot, column);
+    return combinedChainDataClient
+        .getSidecar(slotAndIdentifier)
         .thenCompose(
             maybeSidecar -> {
               if (maybeSidecar.isPresent()) {
                 return SafeFuture.completedFuture(maybeSidecar);
               }
               // Fallback to non-canonical sidecar if the canonical one is not found
-              return getNonCanonicalDataColumnSidecar(identifier);
+              return combinedChainDataClient.getNonCanonicalSidecar(slotAndIdentifier);
             });
   }
 }
