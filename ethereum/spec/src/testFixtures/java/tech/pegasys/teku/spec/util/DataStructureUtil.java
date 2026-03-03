@@ -126,6 +126,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
@@ -3297,7 +3298,10 @@ public final class DataStructureUtil {
         .create(
             randomExecutionPayload(),
             randomExecutionRequests(),
-            randomBuilderIndex(),
+            BeaconBlockBodyGloas.required(block.getMessage().getBody())
+                .getSignedExecutionPayloadBid()
+                .getMessage()
+                .getBuilderIndex(),
             block.getRoot(),
             block.getSlot(),
             randomBytes32());
