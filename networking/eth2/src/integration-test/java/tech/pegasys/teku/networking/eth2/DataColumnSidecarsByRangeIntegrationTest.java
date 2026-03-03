@@ -95,7 +95,7 @@ public class DataColumnSidecarsByRangeIntegrationTest extends AbstractRpcMethodI
   }
 
   @TestTemplate
-  public void requestDataColumnSidecars_shouldReturnCanonicalDataColumnSidecarsOnFuluMilestone()
+  public void requestDataColumnSidecars_shouldReturnOnlyCanonicalDataColumnSidecars()
       throws ExecutionException, InterruptedException, TimeoutException {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(FULU);
 

@@ -67,6 +67,13 @@ public abstract class DataColumnSidecarsByRootIntegrationTest
     final UInt64 targetSlot = UInt64.valueOf(3);
     peerStorage.chainUpdater().advanceChainUntil(targetSlot);
 
+    // save canonical blocks to local storage, simulating local node having received the canonical
+    // beacon blocks via gossip/sync before requesting data column sidecars
+    peerStorage
+        .chainBuilder()
+        .streamBlocksAndStates()
+        .forEach(blockAndState -> localPeerStorage.chainUpdater().saveBlock(blockAndState));
+
     final List<UInt64> columns = List.of(UInt64.ZERO, UInt64.ONE);
 
     // grab expected data column sidecars from storage
