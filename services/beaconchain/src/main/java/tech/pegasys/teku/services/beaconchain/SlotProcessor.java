@@ -146,18 +146,18 @@ public class SlotProcessor {
       performanceRecord.ifPresent(TickProcessingPerformance::startSlotComplete);
     }
 
+    if (isSlotAttestationDue(calculatedSlot, currentTimeMillis, nodeSlotStartTimeMillis)) {
+      processSlotAttestation(performanceRecord);
+      nodeSlot.inc();
+      performanceRecord.ifPresent(TickProcessingPerformance::attestationsDueComplete);
+    }
+
     if (isSlotPayloadAttestationDue(calculatedSlot, currentTimeMillis, nodeSlotStartTimeMillis)) {
       // nodeSlot has already been incremented when the attestations were due, so have to decrement
       // by 1
       onTickSlotPayloadAttestation = nodeSlot.getValue().minusMinZero(1);
       forkChoiceNotifier.onPayloadAttestationsDue(onTickSlotPayloadAttestation);
       performanceRecord.ifPresent(TickProcessingPerformance::payloadAttestationsDueComplete);
-    }
-
-    if (isSlotAttestationDue(calculatedSlot, currentTimeMillis, nodeSlotStartTimeMillis)) {
-      processSlotAttestation(performanceRecord);
-      nodeSlot.inc();
-      performanceRecord.ifPresent(TickProcessingPerformance::attestationsDueComplete);
     }
 
     if (isEpochPrecalculationDue(epoch, currentTimeMillis, genesisTimeMillis)) {
