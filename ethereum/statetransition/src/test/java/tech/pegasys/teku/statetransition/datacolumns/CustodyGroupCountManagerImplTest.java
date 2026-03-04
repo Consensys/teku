@@ -25,8 +25,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -60,7 +60,8 @@ public class CustodyGroupCountManagerImplTest {
 
     setUpManager(4, 8, 8);
 
-    final List<UInt64> samplingColumnIndices = custodyGroupCountManager.getSamplingColumnIndices();
+    final NavigableSet<UInt64> samplingColumnIndices =
+        custodyGroupCountManager.getSamplingColumnIndices();
     // Sampling column groups should always include all custody columns at the minimum.
     assertThat(samplingColumnIndices)
         .containsAll(custodyGroupCountManager.getCustodyColumnIndices());
@@ -181,7 +182,8 @@ public class CustodyGroupCountManagerImplTest {
 
     assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(10);
 
-    final List<UInt64> samplingColumnIndices = custodyGroupCountManager.getSamplingColumnIndices();
+    final NavigableSet<UInt64> samplingColumnIndices =
+        custodyGroupCountManager.getSamplingColumnIndices();
 
     assertThat(samplingColumnIndices)
         .containsAll(custodyGroupCountManager.getCustodyColumnIndices());

@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint256ToB
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.primitives.Bytes;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -155,15 +157,16 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
 
   public List<UInt64> computeDataColumnSidecarBackboneSubnets(
       final UInt256 nodeId, final int groupCount) {
-    final List<UInt64> columns = computeCustodyColumnIndices(nodeId, groupCount);
+    final NavigableSet<UInt64> columns = computeCustodyColumnIndices(nodeId, groupCount);
     return columns.stream().map(this::computeSubnetForDataColumnSidecar).toList();
   }
 
-  public List<UInt64> computeCustodyColumnIndices(final UInt256 nodeId, final int groupCount) {
+  public NavigableSet<UInt64> computeCustodyColumnIndices(
+      final UInt256 nodeId, final int groupCount) {
     final List<UInt64> custodyGroups = getCustodyGroups(nodeId, groupCount);
     return custodyGroups.stream()
         .flatMap(group -> computeColumnsForCustodyGroup(group).stream())
-        .toList();
+        .collect(ImmutableSortedSet.toImmutableSortedSet(Comparator.naturalOrder()));
   }
 
   public List<UInt64> computeColumnsForCustodyGroup(final UInt64 custodyGroup) {

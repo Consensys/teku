@@ -32,6 +32,8 @@ import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import com.google.common.base.Supplier;
+import com.google.common.collect.ImmutableSortedSet;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -156,7 +158,10 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
 
     // custodying everything by default
     when(custodyGroupCountManager.getCustodyColumnIndices())
-        .thenReturn(IntStream.of(0, 128).mapToObj(UInt64::valueOf).toList());
+        .thenReturn(
+            IntStream.of(0, 128)
+                .mapToObj(UInt64::valueOf)
+                .collect(ImmutableSortedSet.toImmutableSortedSet(Comparator.naturalOrder())));
   }
 
   @TestTemplate
@@ -297,7 +302,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     final List<DataColumnSidecar> generatedSidecars =
         IntStream.range(0, 4).mapToObj(__ -> dataStructureUtil.randomDataColumnSidecar()).toList();
     when(custodyGroupCountManager.getCustodyColumnIndices())
-        .thenReturn(List.of(dataColumnsByRootIdentifiers[0].getColumns().getFirst()));
+        .thenReturn(ImmutableSortedSet.of(dataColumnsByRootIdentifiers[0].getColumns().getFirst()));
 
     when(combinedChainDataClient.getSidecar(any()))
         .thenAnswer(

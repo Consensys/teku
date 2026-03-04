@@ -66,7 +66,7 @@ public class GetCustodyOverview extends RestApiEndpoint {
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
-    request.respondOk(new CustodyOverview(provider.getCustodyColumnIndices()));
+    request.respondOk(new CustodyOverview(provider.getCustodyColumnIndices().stream().toList()));
   }
 
   record CustodyOverview(List<UInt64> columns) {}

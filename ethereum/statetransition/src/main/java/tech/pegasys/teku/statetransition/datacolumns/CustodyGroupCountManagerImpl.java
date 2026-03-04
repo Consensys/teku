@@ -14,8 +14,8 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.List;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
@@ -49,6 +49,8 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   private boolean isMaxCustodyGroups = false;
 
   private volatile boolean genesisInitialized = false;
+  private volatile NavigableSet<UInt64> custodyColumnIndices;
+  private volatile NavigableSet<UInt64> samplingColumnIndices;
 
   public CustodyGroupCountManagerImpl(
       final Spec spec,
@@ -194,8 +196,8 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   }
 
   @Override
-  public List<UInt64> getCustodyColumnIndices() {
-    return miscHelpersFulu.computeCustodyColumnIndices(nodeId, getCustodyGroupCount());
+  public NavigableSet<UInt64> getCustodyColumnIndices() {
+    return custodyColumnIndices;
   }
 
   @Override
@@ -204,8 +206,8 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   }
 
   @Override
-  public List<UInt64> getSamplingColumnIndices() {
-    return miscHelpersFulu.computeCustodyColumnIndices(nodeId, getSamplingGroupCount());
+  public NavigableSet<UInt64> getSamplingColumnIndices() {
+    return samplingColumnIndices;
   }
 
   private void updateCustodyGroupCount(
@@ -220,8 +222,13 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
 
     final int oldCustodyGroupCount = custodyGroupCount.getAndSet(newCustodyGroupCount);
     if (oldCustodyGroupCount != newCustodyGroupCount) {
+      int samplingGroupCount = getSamplingGroupCount();
+      custodyColumnIndices =
+          miscHelpersFulu.computeCustodyColumnIndices(nodeId, samplingGroupCount);
+      samplingColumnIndices =
+          miscHelpersFulu.computeCustodyColumnIndices(nodeId, samplingGroupCount);
       isMaxCustodyGroups = miscHelpersFulu.isSuperNode(newCustodyGroupCount);
-      custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, getSamplingGroupCount());
+      custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, samplingGroupCount);
       custodyGroupCountGauge.set(newCustodyGroupCount);
     }
   }

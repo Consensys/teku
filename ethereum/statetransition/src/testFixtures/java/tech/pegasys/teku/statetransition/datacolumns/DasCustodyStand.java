@@ -15,10 +15,13 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.collect.ImmutableSortedSet;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.IntStream;
@@ -259,8 +262,10 @@ public class DasCustodyStand {
       }
 
       @Override
-      public List<UInt64> getCustodyColumnIndices() {
-        return IntStream.range(0, custodyGroupCount).mapToObj(UInt64::valueOf).toList();
+      public NavigableSet<UInt64> getCustodyColumnIndices() {
+        return IntStream.range(0, custodyGroupCount)
+            .mapToObj(UInt64::valueOf)
+            .collect(ImmutableSortedSet.toImmutableSortedSet(Comparator.naturalOrder()));
       }
 
       @Override
@@ -269,8 +274,10 @@ public class DasCustodyStand {
       }
 
       @Override
-      public List<UInt64> getSamplingColumnIndices() {
-        return IntStream.range(0, sampleGroupCount).mapToObj(UInt64::valueOf).toList();
+      public NavigableSet<UInt64> getSamplingColumnIndices() {
+        return IntStream.range(0, sampleGroupCount)
+            .mapToObj(UInt64::valueOf)
+            .collect(ImmutableSortedSet.toImmutableSortedSet(Comparator.naturalOrder()));
       }
     };
   }

@@ -19,7 +19,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.common.collect.ImmutableSortedSet;
 import java.util.List;
+import java.util.NavigableSet;
 import java.util.OptionalInt;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
@@ -107,7 +109,8 @@ class BlockPublisherFuluTest {
     }
 
     // when trying to publish in any slot, non-custodied columns will be withheld
-    final List<UInt64> custodiedColumns = List.of(UInt64.valueOf(1), UInt64.valueOf(3));
+    final NavigableSet<UInt64> custodiedColumns =
+        ImmutableSortedSet.of(UInt64.valueOf(1), UInt64.valueOf(3));
     when(custodyGroupCountManager.getCustodyColumnIndices()).thenReturn(custodiedColumns);
     blockPublisherFuluTest.publishDataColumnSidecars(
         dataColumnSidecars, BlockPublishingPerformance.NOOP);
@@ -124,7 +127,8 @@ class BlockPublisherFuluTest {
   void mustPublishAll_isResetAfterPublish() {
     assertThat(blockPublisherFuluTest.mustPublishAll(UInt64.ZERO)).isFalse();
 
-    final List<UInt64> custodiedColumns = List.of(UInt64.valueOf(1), UInt64.valueOf(3));
+    final NavigableSet<UInt64> custodiedColumns =
+        ImmutableSortedSet.of(UInt64.valueOf(1), UInt64.valueOf(3));
     when(custodyGroupCountManager.getCustodyColumnIndices()).thenReturn(custodiedColumns);
     blockPublisherFuluTest.publishDataColumnSidecars(
         dataColumnSidecars, BlockPublishingPerformance.NOOP);

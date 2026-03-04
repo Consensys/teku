@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import com.google.common.collect.ImmutableSortedSet;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -97,7 +98,8 @@ public class DataColumnSidecarCustodyImplTest {
             custodyGroupCountManager);
     when(custodyGroupCountManager.getCustodyColumnIndices())
         .thenReturn(
-            List.of(UInt64.valueOf(0), UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3)));
+            ImmutableSortedSet.of(
+                UInt64.valueOf(0), UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3)));
     verify(custodyGroupCountManager).getCustodyGroupCount();
     Mockito.clearInvocations(custodyGroupCountManager);
   }
@@ -243,7 +245,8 @@ public class DataColumnSidecarCustodyImplTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 List.of(new DataColumnSlotAndIdentifier(fuluSlot, dataColumnIdentifier))));
-    when(custodyGroupCountManager.getCustodyColumnIndices()).thenReturn(List.of(ZERO, ONE));
+    when(custodyGroupCountManager.getCustodyColumnIndices())
+        .thenReturn(ImmutableSortedSet.of(ZERO, ONE));
     custody =
         new DataColumnSidecarCustodyImpl(
             spec, resolver, sidecarDb, minCustodyPeriodSlotCalculator, custodyGroupCountManager);

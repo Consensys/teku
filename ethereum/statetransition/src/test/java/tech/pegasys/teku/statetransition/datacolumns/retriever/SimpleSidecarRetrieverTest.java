@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
@@ -101,7 +102,7 @@ public class SimpleSidecarRetrieverTest {
         block.getSlot(), block.getRoot(), UInt64.valueOf(colIdx));
   }
 
-  List<UInt64> nodeCustodyColumns(final UInt256 nodeId) {
+  NavigableSet<UInt64> nodeCustodyColumns(final UInt256 nodeId) {
     return miscHelpers.computeCustodyColumnIndices(
         nodeId, custodyCountSupplier.getCustodyGroupCountForPeer(nodeId));
   }

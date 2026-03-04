@@ -26,8 +26,10 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
+import com.google.common.collect.ImmutableSortedSet;
 import java.time.Duration;
 import java.util.List;
+import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -83,7 +85,8 @@ class DasCustodyBackfillerTest {
 
   private static final int BATCH_SIZE = 10;
   private static final int CUSTODY_GROUP_COUNT = 2;
-  private static final List<UInt64> CUSTODY_INDICES = List.of(UInt64.ZERO, UInt64.ONE);
+  private static final NavigableSet<UInt64> CUSTODY_INDICES =
+      ImmutableSortedSet.of(UInt64.ZERO, UInt64.ONE);
 
   @BeforeEach
   void setUp() {
@@ -406,7 +409,8 @@ class DasCustodyBackfillerTest {
 
     // Override custody settings for this test to only require 1 column (Index 0).
     // This ensures 'retrieve' is called exactly ONCE per block, matching the verify expectation.
-    when(custodyGroupCountManager.getCustodyColumnIndices()).thenReturn(List.of(UInt64.ZERO));
+    when(custodyGroupCountManager.getCustodyColumnIndices())
+        .thenReturn(ImmutableSortedSet.of(UInt64.ZERO));
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(1);
     backfiller =
         new DasCustodyBackfiller(
@@ -559,7 +563,7 @@ class DasCustodyBackfillerTest {
     earliestAvailableColumnSlotStore.set(Optional.of(UInt64.valueOf(500)));
     // same 2 indices but they are different to what is synced
     when(custodyGroupCountManager.getCustodyColumnIndices())
-        .thenReturn(List.of(UInt64.valueOf(3), UInt64.valueOf(4)));
+        .thenReturn(ImmutableSortedSet.of(UInt64.valueOf(3), UInt64.valueOf(4)));
     safeJoin(backfiller.start());
 
     // Run the triggered task

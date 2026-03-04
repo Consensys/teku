@@ -26,9 +26,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import com.google.common.collect.ImmutableSortedSet;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -56,8 +58,8 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DasSamplerBasicTest {
   private static final Spec SPEC = TestSpecFactory.createMinimalFulu();
-  private static final List<UInt64> SAMPLING_INDICES =
-      List.of(UInt64.valueOf(5), UInt64.ZERO, UInt64.valueOf(2));
+  private static final NavigableSet<UInt64> SAMPLING_INDICES =
+      ImmutableSortedSet.of(UInt64.valueOf(5), UInt64.ZERO, UInt64.valueOf(2));
 
   private final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(0);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(stubTimeProvider);
@@ -105,7 +107,8 @@ public class DasSamplerBasicTest {
         dataStructureUtil.randomDataColumnSidecar(
             dataStructureUtil.randomSignedBeaconBlockHeader(), SAMPLING_INDICES.getFirst());
 
-    final List<UInt64> remainingColumns = SAMPLING_INDICES.subList(1, SAMPLING_INDICES.size());
+    final NavigableSet<UInt64> remainingColumns =
+        SAMPLING_INDICES.tailSet(SAMPLING_INDICES.getFirst(), false);
 
     sampler.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC);
 
@@ -118,7 +121,8 @@ public class DasSamplerBasicTest {
         dataStructureUtil.randomDataColumnSidecar(
             dataStructureUtil.randomSignedBeaconBlockHeader(), SAMPLING_INDICES.getFirst());
 
-    final List<UInt64> remainingColumns = SAMPLING_INDICES.subList(1, SAMPLING_INDICES.size());
+    final NavigableSet<UInt64> remainingColumns =
+        SAMPLING_INDICES.tailSet(SAMPLING_INDICES.getFirst(), false);
 
     when(rpcFetchDelayProvider.calculate(sidecar.getSlot())).thenReturn(Duration.ofSeconds(1));
 
@@ -187,8 +191,8 @@ public class DasSamplerBasicTest {
 
     final DataColumnSidecar lateArrivedSidecar =
         missingColumnSidecars.get(SAMPLING_INDICES.getFirst());
-    final List<UInt64> remainingColumnsIndices =
-        SAMPLING_INDICES.subList(1, SAMPLING_INDICES.size());
+    final NavigableSet<UInt64> remainingColumnsIndices =
+        SAMPLING_INDICES.tailSet(SAMPLING_INDICES.getFirst(), false);
 
     // prepare retriever mock to return futures when called
     doAnswer(
@@ -514,7 +518,7 @@ public class DasSamplerBasicTest {
   }
 
   private void assertSamplerTracker(
-      final Bytes32 blockRoot, final UInt64 slot, final List<UInt64> missingColumns) {
+      final Bytes32 blockRoot, final UInt64 slot, final NavigableSet<UInt64> missingColumns) {
     assertThat(sampler.getRecentlySampledColumnsByRoot())
         .hasEntrySatisfying(
             blockRoot,
@@ -543,7 +547,7 @@ public class DasSamplerBasicTest {
   private void assertRPCFetchInMillis(
       final UInt64 slot,
       final Bytes32 blockRoot,
-      final List<UInt64> missingColumns,
+      final NavigableSet<UInt64> missingColumns,
       final int millisFromNow) {
 
     if (millisFromNow > 0) {

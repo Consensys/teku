@@ -17,7 +17,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.google.common.collect.ImmutableSortedSet;
+import java.util.Comparator;
 import java.util.List;
+import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
@@ -33,8 +36,8 @@ class DataColumnSamplingTrackerTest {
   private static final Bytes32 BLOCK_ROOT =
       Bytes32.fromHexString("0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20");
   private static final RemoteOrigin MOCK_ORIGIN = mock(RemoteOrigin.class);
-  private static final List<UInt64> SAMPLING_REQUIREMENT =
-      List.of(UInt64.valueOf(5), UInt64.valueOf(10), UInt64.valueOf(15));
+  private static final NavigableSet<UInt64> SAMPLING_REQUIREMENT =
+      ImmutableSortedSet.of(UInt64.valueOf(5), UInt64.valueOf(10), UInt64.valueOf(15));
   private static final int HALF_COLUMN_COUNT = 64;
 
   private final CustodyGroupCountManager custodyGroupCountManager =
@@ -64,9 +67,9 @@ class DataColumnSamplingTrackerTest {
 
   @Test
   void add_shouldReturnTrueAndRemoveColumnWhenItIsMissing() {
-    final UInt64 columnIndexToAdd = SAMPLING_REQUIREMENT.get(0); // Index 5
-    final List<UInt64> remainingColumns =
-        SAMPLING_REQUIREMENT.subList(1, SAMPLING_REQUIREMENT.size());
+    final UInt64 columnIndexToAdd = SAMPLING_REQUIREMENT.first(); // Index 5
+    final NavigableSet<UInt64> remainingColumns =
+        SAMPLING_REQUIREMENT.tailSet(SAMPLING_REQUIREMENT.first(), false);
     final DataColumnSlotAndIdentifier columnIdentifier =
         new DataColumnSlotAndIdentifier(SLOT, BLOCK_ROOT, columnIndexToAdd);
 
@@ -80,14 +83,15 @@ class DataColumnSamplingTrackerTest {
   @Test
   void add_shouldCompleteFetchFutureWhenLastColumnIsAdded()
       throws ExecutionException, InterruptedException {
-    for (int i = 0; i < SAMPLING_REQUIREMENT.size() - 1; i++) {
-      final UInt64 index = SAMPLING_REQUIREMENT.get(i);
-      tracker.add(new DataColumnSlotAndIdentifier(SLOT, BLOCK_ROOT, index), MOCK_ORIGIN);
-    }
+    SAMPLING_REQUIREMENT
+        .headSet(SAMPLING_REQUIREMENT.last(), false)
+        .forEach(
+            index ->
+                tracker.add(new DataColumnSlotAndIdentifier(SLOT, BLOCK_ROOT, index), MOCK_ORIGIN));
     assertThat(tracker.missingColumns()).hasSize(1);
     assertThat(tracker.completionFuture()).isNotDone();
 
-    final UInt64 lastColumnIndex = SAMPLING_REQUIREMENT.get(SAMPLING_REQUIREMENT.size() - 1);
+    final UInt64 lastColumnIndex = SAMPLING_REQUIREMENT.last();
     final DataColumnSlotAndIdentifier lastColumnIdentifier =
         new DataColumnSlotAndIdentifier(SLOT, BLOCK_ROOT, lastColumnIndex);
     final boolean result = tracker.add(lastColumnIdentifier, MOCK_ORIGIN);
@@ -95,14 +99,17 @@ class DataColumnSamplingTrackerTest {
     assertThat(result).isTrue();
     assertThat(tracker.missingColumns()).isEmpty();
     assertThat(tracker.completionFuture()).isCompleted();
-    assertThat(tracker.completionFuture().get()).isEqualTo(SAMPLING_REQUIREMENT);
+    assertThat(tracker.completionFuture().get())
+        .containsExactlyInAnyOrderElementsOf(SAMPLING_REQUIREMENT);
     assertThat(tracker.fullySampled()).isTrue();
   }
 
   @Test
   void add_shouldCompleteEarly_whenHalfColumnsSamplingCompletionIsSet() {
-    final List<UInt64> samplingRequirement =
-        Stream.iterate(UInt64.ZERO, UInt64::increment).limit(128).toList();
+    final NavigableSet<UInt64> samplingRequirement =
+        Stream.iterate(UInt64.ZERO, UInt64::increment)
+            .limit(128)
+            .collect(ImmutableSortedSet.toImmutableSortedSet(Comparator.naturalOrder()));
     when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(samplingRequirement);
     tracker =
         DataColumnSamplingTracker.create(
@@ -133,8 +140,10 @@ class DataColumnSamplingTrackerTest {
 
   @Test
   void add_shouldNotCompleteEarly_whenHalfColumnsSamplingCompletionDisabled() {
-    final List<UInt64> samplingRequirement =
-        Stream.iterate(UInt64.ZERO, UInt64::increment).limit(128).toList();
+    final NavigableSet<UInt64> samplingRequirement =
+        Stream.iterate(UInt64.ZERO, UInt64::increment)
+            .limit(128)
+            .collect(ImmutableSortedSet.toImmutableSortedSet(Comparator.naturalOrder()));
     when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(samplingRequirement);
     tracker =
         DataColumnSamplingTracker.create(
@@ -161,7 +170,7 @@ class DataColumnSamplingTrackerTest {
   void add_shouldReturnFalseForMismatchedSlot() {
     final UInt64 mismatchedSlot = SLOT.plus(1);
     final DataColumnSlotAndIdentifier columnIdentifier =
-        new DataColumnSlotAndIdentifier(mismatchedSlot, BLOCK_ROOT, SAMPLING_REQUIREMENT.get(0));
+        new DataColumnSlotAndIdentifier(mismatchedSlot, BLOCK_ROOT, SAMPLING_REQUIREMENT.first());
 
     final boolean result = tracker.add(columnIdentifier, MOCK_ORIGIN);
 
@@ -174,7 +183,7 @@ class DataColumnSamplingTrackerTest {
   void add_shouldReturnFalseForMismatchedBlockRoot() {
     final Bytes32 mismatchedRoot = Bytes32.fromHexString("0xff");
     final DataColumnSlotAndIdentifier columnIdentifier =
-        new DataColumnSlotAndIdentifier(SLOT, mismatchedRoot, SAMPLING_REQUIREMENT.get(0));
+        new DataColumnSlotAndIdentifier(SLOT, mismatchedRoot, SAMPLING_REQUIREMENT.first());
 
     final boolean result = tracker.add(columnIdentifier, MOCK_ORIGIN);
 
@@ -185,7 +194,7 @@ class DataColumnSamplingTrackerTest {
 
   @Test
   void add_shouldReturnFalseWhenAddingSameColumnTwice() {
-    final UInt64 columnIndexToAdd = SAMPLING_REQUIREMENT.get(0);
+    final UInt64 columnIndexToAdd = SAMPLING_REQUIREMENT.first();
     final DataColumnSlotAndIdentifier columnIdentifier =
         new DataColumnSlotAndIdentifier(SLOT, BLOCK_ROOT, columnIndexToAdd);
 
@@ -226,7 +235,7 @@ class DataColumnSamplingTrackerTest {
 
   @Test
   void getMissingColumnIdentifiers_shouldReturnPartialListAfterAddingOne() {
-    final UInt64 addedIndex = SAMPLING_REQUIREMENT.get(1); // index 10
+    final UInt64 addedIndex = UInt64.valueOf(10); // middle element
     tracker.add(new DataColumnSlotAndIdentifier(SLOT, BLOCK_ROOT, addedIndex), MOCK_ORIGIN);
 
     final List<DataColumnSlotAndIdentifier> missing = tracker.getMissingColumnIdentifiers();
@@ -234,7 +243,7 @@ class DataColumnSamplingTrackerTest {
     assertThat(missing)
         .hasSize(SAMPLING_REQUIREMENT.size() - 1)
         .extracting(DataColumnSlotAndIdentifier::columnIndex)
-        .containsExactly(SAMPLING_REQUIREMENT.get(0), SAMPLING_REQUIREMENT.get(2));
+        .containsExactly(UInt64.valueOf(5), UInt64.valueOf(15));
   }
 
   @Test
