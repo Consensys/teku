@@ -152,12 +152,8 @@ public class DataColumnSidecarsByRootMessageHandler
    *   <li>The block root references a block greater than or equal to the minimum_request_epoch
    * </ul>
    */
-  private SafeFuture<Void> validateMinimumRequestEpoch(
-      final Bytes32 blockRoot, final Optional<UInt64> maybeSlot) {
-    if (maybeSlot.isEmpty()) {
-      return SafeFuture.COMPLETE;
-    }
-    final UInt64 requestedEpoch = spec.computeEpochAtSlot(maybeSlot.get());
+  private SafeFuture<Void> validateMinimumRequestEpoch(final Bytes32 blockRoot, final UInt64 slot) {
+    final UInt64 requestedEpoch = spec.computeEpochAtSlot(slot);
     if (!spec.isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
         combinedChainDataClient.getStore(), requestedEpoch)) {
       return SafeFuture.failedFuture(
@@ -183,30 +179,30 @@ public class DataColumnSidecarsByRootMessageHandler
       final Set<UInt64> myCustodyColumns,
       final ResponseCallback<DataColumnSidecar> callback,
       final AtomicLong sentCount) {
-    return validateMinimumRequestEpoch(blockRoot, maybeSlot)
+    if (maybeSlot.isEmpty()) {
+      return SafeFuture.COMPLETE;
+    }
+    final UInt64 slot = maybeSlot.get();
+    return validateMinimumRequestEpoch(blockRoot, slot)
         .thenCompose(
-            __ -> {
-              if (maybeSlot.isEmpty()) {
-                return SafeFuture.COMPLETE;
-              }
-              final UInt64 slot = maybeSlot.get();
-              return SafeFuture.collectAll(
-                      columns.stream()
-                          .filter(myCustodyColumns::contains)
-                          .map(
-                              column ->
-                                  retrieveDataColumnSidecar(blockRoot, slot, column)
-                                      .thenCompose(
-                                          maybeSidecar ->
-                                              maybeSidecar
-                                                  .map(
-                                                      sidecar ->
-                                                          callback
-                                                              .respond(sidecar)
-                                                              .thenRun(sentCount::incrementAndGet))
-                                                  .orElse(SafeFuture.COMPLETE))))
-                  .thenCompose(___ -> SafeFuture.COMPLETE);
-            });
+            __ ->
+                SafeFuture.collectAll(
+                        columns.stream()
+                            .filter(myCustodyColumns::contains)
+                            .map(
+                                column ->
+                                    retrieveDataColumnSidecar(blockRoot, slot, column)
+                                        .thenCompose(
+                                            maybeSidecar ->
+                                                maybeSidecar
+                                                    .map(
+                                                        sidecar ->
+                                                            callback
+                                                                .respond(sidecar)
+                                                                .thenRun(
+                                                                    sentCount::incrementAndGet))
+                                                    .orElse(SafeFuture.COMPLETE))))
+                    .thenCompose(___ -> SafeFuture.COMPLETE));
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> retrieveDataColumnSidecar(
