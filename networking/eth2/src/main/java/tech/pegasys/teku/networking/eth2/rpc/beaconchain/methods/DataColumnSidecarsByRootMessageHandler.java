@@ -191,18 +191,23 @@ public class DataColumnSidecarsByRootMessageHandler
                             .filter(myCustodyColumns::contains)
                             .map(
                                 column ->
-                                    retrieveDataColumnSidecar(blockRoot, slot, column)
-                                        .thenCompose(
-                                            maybeSidecar ->
-                                                maybeSidecar
-                                                    .map(
-                                                        sidecar ->
-                                                            callback
-                                                                .respond(sidecar)
-                                                                .thenRun(
-                                                                    sentCount::incrementAndGet))
-                                                    .orElse(SafeFuture.COMPLETE))))
+                                    retrieveAndRespondForColumn(
+                                        blockRoot, slot, column, callback, sentCount)))
                     .thenCompose(___ -> SafeFuture.COMPLETE));
+  }
+
+  private SafeFuture<Void> retrieveAndRespondForColumn(
+      final Bytes32 blockRoot,
+      final UInt64 slot,
+      final UInt64 column,
+      final ResponseCallback<DataColumnSidecar> callback,
+      final AtomicLong sentCount) {
+    return retrieveDataColumnSidecar(blockRoot, slot, column)
+        .thenCompose(
+            maybeSidecar ->
+                maybeSidecar
+                    .map(sidecar -> callback.respond(sidecar).thenRun(sentCount::incrementAndGet))
+                    .orElse(SafeFuture.COMPLETE));
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> retrieveDataColumnSidecar(
