@@ -204,18 +204,15 @@ public class DataColumnSidecarsByRootMessageHandler
                 SafeFuture.collectAll(
                         columns.stream()
                             .filter(myCustodyColumns::contains)
-                            .map(
-                                column ->
-                                    retrieveAndRespondForColumn(blockRoot, slot, column, callback)))
+                            .map(column -> new DataColumnSlotAndIdentifier(slot, blockRoot, column))
+                            .map(identifier -> retrieveAndRespondForColumn(identifier, callback)))
                     .thenApply(counts -> counts.stream().mapToLong(Long::longValue).sum()));
   }
 
   private SafeFuture<Long> retrieveAndRespondForColumn(
-      final Bytes32 blockRoot,
-      final UInt64 slot,
-      final UInt64 column,
+      final DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier,
       final ResponseCallback<DataColumnSidecar> callback) {
-    return retrieveDataColumnSidecar(blockRoot, slot, column)
+    return retrieveDataColumnSidecar(dataColumnSlotAndIdentifier)
         .thenCompose(
             maybeSidecar ->
                 maybeSidecar
@@ -224,18 +221,16 @@ public class DataColumnSidecarsByRootMessageHandler
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> retrieveDataColumnSidecar(
-      final Bytes32 blockRoot, final UInt64 slot, final UInt64 column) {
-    final DataColumnSlotAndIdentifier slotAndIdentifier =
-        new DataColumnSlotAndIdentifier(slot, blockRoot, column);
+      final DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier) {
     return combinedChainDataClient
-        .getSidecar(slotAndIdentifier)
+        .getSidecar(dataColumnSlotAndIdentifier)
         .thenCompose(
             maybeSidecar -> {
               if (maybeSidecar.isPresent()) {
                 return SafeFuture.completedFuture(maybeSidecar);
               }
               // Fallback to non-canonical sidecar if the canonical one is not found
-              return combinedChainDataClient.getNonCanonicalSidecar(slotAndIdentifier);
+              return combinedChainDataClient.getNonCanonicalSidecar(dataColumnSlotAndIdentifier);
             });
   }
 }
