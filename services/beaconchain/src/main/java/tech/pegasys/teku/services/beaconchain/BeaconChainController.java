@@ -969,7 +969,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     final DataColumnSidecarRecoveringCustody dataColumnSidecarRecoveringCustody =
         new DataColumnSidecarRecoveringCustodyImpl(
-                dataColumnSidecarCustodyImpl,
+            dataColumnSidecarCustodyImpl,
             dasAsyncRunner,
             spec,
             miscHelpersFulu,
