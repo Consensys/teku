@@ -172,4 +172,24 @@ public class CompletionAwareResponseCallbackTest {
         .hasMessage("delegate failed");
     assertThat(counter.get()).isEqualTo(1);
   }
+
+  @Test
+  void completionActionsRunOnlyOnceWhenDelegateThrowsAndErrorHandlerCompletesAgain() {
+    final AtomicInteger counter = new AtomicInteger(0);
+    callback.onCompletion(counter::incrementAndGet);
+
+    doThrow(new RuntimeException("delegate failed")).when(delegate).completeSuccessfully();
+
+    // Simulate the thenAccept().finish(errorHandler) pattern:
+    // 1. completeSuccessfully() throws → finally runs completion actions
+    // 2. Error handler calls completeWithUnexpectedError() on the same callback
+    try {
+      callback.completeSuccessfully();
+    } catch (final RuntimeException e) {
+      // error propagates to finish error handler which calls another complete method
+      callback.completeWithUnexpectedError(e);
+    }
+
+    assertThat(counter.get()).isEqualTo(1);
+  }
 }

@@ -26,6 +26,7 @@ public class CompletionAwareResponseCallback<T> implements ResponseCallback<T> {
 
   private final ResponseCallback<T> delegate;
   private final List<Runnable> completionActions = new ArrayList<>();
+  private volatile boolean completionActionsRan = false;
 
   public CompletionAwareResponseCallback(final ResponseCallback<T> delegate) {
     this.delegate = delegate;
@@ -77,6 +78,10 @@ public class CompletionAwareResponseCallback<T> implements ResponseCallback<T> {
   }
 
   private void runCompletionActions() {
+    if (completionActionsRan) {
+      return;
+    }
+    completionActionsRan = true;
     for (final Runnable action : completionActions) {
       try {
         action.run();
