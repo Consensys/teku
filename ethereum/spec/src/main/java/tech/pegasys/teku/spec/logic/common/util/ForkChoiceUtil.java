@@ -566,6 +566,10 @@ public class ForkChoiceUtil {
     return AvailabilityChecker.NOOP;
   }
 
+  public boolean shouldNotifyForkChoiceUpdatedAndOptimisticSyncingChangedOnBlock() {
+    return true;
+  }
+
   public Optional<ForkChoiceUtilDeneb> toVersionDeneb() {
     return Optional.empty();
   }
