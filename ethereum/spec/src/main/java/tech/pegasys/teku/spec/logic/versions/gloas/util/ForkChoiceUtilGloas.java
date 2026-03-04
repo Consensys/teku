@@ -121,12 +121,17 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
   }
 
   @Override
-  public Optional<ForkChoiceUtilGloas> toVersionGloas() {
-    return Optional.of(this);
+  public boolean shouldNotifyForkChoiceUpdatedAndOptimisticSyncingChangedOnBlock() {
+    return false;
   }
 
   public boolean isBlockStatusFull(final ReadOnlyStore store, final BeaconBlock block) {
     return store.getExecutionPayloadIfAvailable(block.getRoot()).isPresent();
+  }
+
+  @Override
+  public Optional<ForkChoiceUtilGloas> toVersionGloas() {
+    return Optional.of(this);
   }
 
   /**

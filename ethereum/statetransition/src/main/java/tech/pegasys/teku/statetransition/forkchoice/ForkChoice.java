@@ -705,7 +705,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
     updateForkChoiceForImportedBlock(
         block, shouldUpdateProposerBoostRoot, result, forkChoiceStrategy);
-    notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
+    if (forkChoiceUtil.shouldNotifyForkChoiceUpdatedAndOptimisticSyncingChangedOnBlock()) {
+      notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
+    }
     return result;
   }
 
