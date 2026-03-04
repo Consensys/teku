@@ -14,7 +14,9 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -108,6 +110,66 @@ public class CompletionAwareResponseCallbackTest {
     callback.completeSuccessfully();
 
     verify(delegate).completeSuccessfully();
+    assertThat(counter.get()).isEqualTo(1);
+  }
+
+  @Test
+  void completionActionRunsWhenCompleteSuccessfullyThrows() {
+    final AtomicInteger counter = new AtomicInteger(0);
+    callback.onCompletion(counter::incrementAndGet);
+
+    doThrow(new RuntimeException("delegate failed")).when(delegate).completeSuccessfully();
+
+    assertThatThrownBy(callback::completeSuccessfully)
+        .isInstanceOf(RuntimeException.class)
+        .hasMessage("delegate failed");
+    assertThat(counter.get()).isEqualTo(1);
+  }
+
+  @Test
+  void completionActionRunsWhenRespondAndCompleteSuccessfullyThrows() {
+    final AtomicInteger counter = new AtomicInteger(0);
+    callback.onCompletion(counter::incrementAndGet);
+
+    doThrow(new RuntimeException("delegate failed"))
+        .when(delegate)
+        .respondAndCompleteSuccessfully("data");
+
+    assertThatThrownBy(() -> callback.respondAndCompleteSuccessfully("data"))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessage("delegate failed");
+    assertThat(counter.get()).isEqualTo(1);
+  }
+
+  @Test
+  void completionActionRunsWhenCompleteWithErrorResponseThrows() {
+    final AtomicInteger counter = new AtomicInteger(0);
+    callback.onCompletion(counter::incrementAndGet);
+
+    final RpcException error = new RpcException((byte) 1, "error");
+    doThrow(new RuntimeException("delegate failed"))
+        .when(delegate)
+        .completeWithErrorResponse(error);
+
+    assertThatThrownBy(() -> callback.completeWithErrorResponse(error))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessage("delegate failed");
+    assertThat(counter.get()).isEqualTo(1);
+  }
+
+  @Test
+  void completionActionRunsWhenCompleteWithUnexpectedErrorThrows() {
+    final AtomicInteger counter = new AtomicInteger(0);
+    callback.onCompletion(counter::incrementAndGet);
+
+    final RuntimeException originalError = new RuntimeException("unexpected");
+    doThrow(new RuntimeException("delegate failed"))
+        .when(delegate)
+        .completeWithUnexpectedError(originalError);
+
+    assertThatThrownBy(() -> callback.completeWithUnexpectedError(originalError))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessage("delegate failed");
     assertThat(counter.get()).isEqualTo(1);
   }
 }
