@@ -17,8 +17,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
- * An attestation validation helper that represents the result of an attestation validation check,
- * encapsulating whether the check passed or failed.
+ * An attestation gossip validation helper that represents the result of an attestation validation
+ * check, encapsulating whether the check passed or failed.
  *
  * <p>This class is designed to be immutable and efficient.
  *

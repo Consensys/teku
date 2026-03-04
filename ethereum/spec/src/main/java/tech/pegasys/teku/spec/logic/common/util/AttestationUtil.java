@@ -309,13 +309,12 @@ public abstract class AttestationUtil {
           Attestation attestation, UInt64 genesisTime, UInt64 currentTimeMillis);
 
   public abstract Attestation convertSingleAttestationToAggregated(
-      final BeaconState state, final SingleAttestation singleAttestation);
+      BeaconState state, SingleAttestation singleAttestation);
 
-  public abstract AttestationValidationResult validateCommitteeIndexValue(
-      final UInt64 committeeIndex);
+  public abstract AttestationValidationResult validateCommitteeIndexValue(UInt64 committeeIndex);
 
   public abstract AttestationValidationResult validatePayloadStatus(
-      final AttestationData attestationData, final Optional<UInt64> maybeBlockSlot);
+      AttestationData attestationData, Optional<UInt64> maybeBlockSlot);
 
   public enum SlotInclusionGossipValidationResult {
     IGNORE,

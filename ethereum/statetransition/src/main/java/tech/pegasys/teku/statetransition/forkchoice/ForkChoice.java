@@ -42,7 +42,6 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -706,10 +705,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
     updateForkChoiceForImportedBlock(
         block, shouldUpdateProposerBoostRoot, result, forkChoiceStrategy);
-    // TODO-GLOAS: remove this dirty hack
-    if (spec.atSlot(block.getSlot()).getMilestone().isLessThan(SpecMilestone.GLOAS)) {
-      notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
-    }
     return result;
   }
 
