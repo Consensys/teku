@@ -197,10 +197,12 @@ public abstract class AbstractRpcMethodIntegrationTest {
     }
 
     // Set up local storage. Kept alive for the test duration so validators can query blocks
-    localPeerStorage = InMemoryStorageSystemBuilder.create().specProvider(localSpec).build();
-    localPeerStorage.chainUpdater().initializeGenesis();
-
     try {
+      if (localPeerStorage != null) {
+        localPeerStorage.close();
+      }
+      localPeerStorage = InMemoryStorageSystemBuilder.create().specProvider(localSpec).build();
+      localPeerStorage.chainUpdater().initializeGenesis();
       final Eth2P2PNetwork remotePeerNetwork =
           networkFactory
               .builder()
