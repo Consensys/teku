@@ -155,15 +155,15 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
 
   public List<UInt64> computeDataColumnSidecarBackboneSubnets(
       final UInt256 nodeId, final int groupCount) {
-    final List<UInt64> columns = computeCustodyColumnIndices(nodeId, groupCount);
+    final Set<UInt64> columns = computeCustodyColumnIndices(nodeId, groupCount);
     return columns.stream().map(this::computeSubnetForDataColumnSidecar).toList();
   }
 
-  public List<UInt64> computeCustodyColumnIndices(final UInt256 nodeId, final int groupCount) {
+  public Set<UInt64> computeCustodyColumnIndices(final UInt256 nodeId, final int groupCount) {
     final List<UInt64> custodyGroups = getCustodyGroups(nodeId, groupCount);
     return custodyGroups.stream()
         .flatMap(group -> computeColumnsForCustodyGroup(group).stream())
-        .toList();
+        .collect(Collectors.toUnmodifiableSet());
   }
 
   public List<UInt64> computeColumnsForCustodyGroup(final UInt64 custodyGroup) {
@@ -624,6 +624,11 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
       }
     }
     return ret;
+  }
+
+  @Override
+  public int getMaxRequestDataColumnSidecars() {
+    return specConfigFulu.getMaxRequestDataColumnSidecars();
   }
 
   @Override

@@ -243,19 +243,6 @@ public class Eth2NetworkOptions {
   private UInt64 hezeForkEpoch;
 
   @Option(
-      names = {"--Xmin-bid-increment-percentage"},
-      hidden = true,
-      paramLabel = "<INTEGER>",
-      description =
-          "Minimum bid increment percentage for execution payload bid gossip validation. "
-              + "New bids must exceed the current highest bid by at least this percentage. "
-              + "Used for DoS protection against bid spamming. Default: 1 (1%)",
-      arity = "1",
-      defaultValue = "1",
-      showDefaultValue = Visibility.ALWAYS)
-  private int minBidIncrementPercentage = 1;
-
-  @Option(
       names = {"--Xnetwork-total-terminal-difficulty-override"},
       hidden = true,
       paramLabel = "<uint256>",
@@ -424,7 +411,6 @@ public class Eth2NetworkOptions {
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.eth2NetworkConfig(this::configureEth2Network);
-    builder.minBidIncrementPercentage(minBidIncrementPercentage);
   }
 
   private Eth2NetworkConfiguration createEth2NetworkConfig(
