@@ -165,6 +165,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     return true;
   }
 
+  @VisibleForTesting
   SafeFuture<Optional<Integer>> computeAndUpdateCustodyGroupCount(
       final Map<UInt64, PreparedProposerInfo> preparedProposerInfo) {
     final Optional<Integer> maybeCustodyGroupCount =

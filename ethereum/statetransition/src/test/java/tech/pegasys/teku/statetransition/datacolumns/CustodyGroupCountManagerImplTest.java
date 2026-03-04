@@ -16,8 +16,10 @@ package tech.pegasys.teku.statetransition.datacolumns;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -189,6 +191,91 @@ public class CustodyGroupCountManagerImplTest {
         .containsAll(custodyGroupCountManager.getCustodyColumnIndices());
     assertThat(metricsSystem.getGauge(TekuMetricCategory.BEACON, "custody_groups").getValue())
         .isEqualTo(10);
+  }
+
+  @Test
+  public void onSlot_shouldStopRecomputingWhenSuperNode() {
+    // custodyGroupCount = numberOfCustodyGroups = 128, so isSuperNode returns true
+    setUpManager(128, 8, 8);
+    assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(128);
+
+    custodyGroupCountManager.onSlot(UInt64.ZERO);
+
+    // onSlot should exit immediately before calling getPreparedProposerInfo
+    verifyNoMoreInteractions(proposersDataManager);
+  }
+
+  @Test
+  public void onSlot_shouldDeferGenesisInitUntilValidatorsAppear() {
+    setUpManager(4, 8, 8);
+
+    // First call at genesis with no validators
+    when(proposersDataManager.getPreparedProposerInfo()).thenReturn(Map.of());
+    custodyGroupCountManager.onSlot(UInt64.ZERO);
+
+    // No genesis init — getBestFinalizedState not called
+    verify(combinedChainDataClient, never()).getBestFinalizedState();
+
+    // Validators appear, still epoch 0 (slot 1, minimal config has 8 slots/epoch)
+    when(proposersDataManager.getPreparedProposerInfo())
+        .thenReturn(Map.of(UInt64.ZERO, mock(PreparedProposerInfo.class)));
+    custodyGroupCountManager.onSlot(UInt64.ONE);
+
+    // Genesis initialization now fires
+    verify(combinedChainDataClient, times(1)).getBestFinalizedState();
+  }
+
+  @Test
+  public void snapshotShouldBeConsistentAfterUpdate() {
+    setUpManager(4, 8, 8);
+    assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(4);
+
+    // Trigger update to custody=10
+    when(miscHelpersFulu.getValidatorsCustodyRequirement(any(), anySet()))
+        .thenReturn(UInt64.valueOf(10));
+
+    final SafeFuture<Optional<Integer>> result =
+        custodyGroupCountManager.computeAndUpdateCustodyGroupCount(
+            Map.of(UInt64.ZERO, mock(PreparedProposerInfo.class)));
+
+    assertThat(result).isCompletedWithValue(Optional.of(10));
+
+    // All getters must reflect values computed from the same custody count
+    assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(10);
+
+    final int expectedSamplingGroupCount = miscHelpersFulu.getSamplingGroupCount(10);
+    assertThat(custodyGroupCountManager.getSamplingGroupCount())
+        .isEqualTo(expectedSamplingGroupCount);
+
+    final NavigableSet<UInt64> custodyColumns = custodyGroupCountManager.getCustodyColumnIndices();
+    final NavigableSet<UInt64> samplingColumns =
+        custodyGroupCountManager.getSamplingColumnIndices();
+
+    assertThat(custodyColumns).isNotEmpty();
+    assertThat(samplingColumns).isNotEmpty();
+    // Sampling columns must be a superset of custody columns
+    assertThat(samplingColumns).containsAll(custodyColumns);
+  }
+
+  @Test
+  public void shouldNotFireChannelNotificationWhenCustodyCountUnchanged() {
+    setUpManager(4, 8, 8);
+
+    // Initial construction fires the channel notification
+    verify(custodyGroupCountChannel, times(1)).onGroupCountUpdate(anyInt(), anyInt());
+    reset(custodyGroupCountChannel);
+
+    // Compute again with same result (custody stays at 4)
+    when(miscHelpersFulu.getValidatorsCustodyRequirement(any(), anySet()))
+        .thenReturn(UInt64.valueOf(4));
+
+    assertThat(
+            custodyGroupCountManager.computeAndUpdateCustodyGroupCount(
+                Map.of(UInt64.ZERO, mock(PreparedProposerInfo.class))))
+        .isCompleted();
+
+    // Channel should NOT be notified since count didn't change
+    verifyNoMoreInteractions(custodyGroupCountChannel);
   }
 
   private void setUpManager(
