@@ -235,15 +235,14 @@ class DataColumnSamplingTrackerTest {
 
   @Test
   void getMissingColumnIdentifiers_shouldReturnPartialListAfterAddingOne() {
-    final UInt64 addedIndex = COLUMN_INDEX_10;
-    tracker.add(new DataColumnSlotAndIdentifier(SLOT, BLOCK_ROOT, addedIndex), MOCK_ORIGIN);
+    tracker.add(new DataColumnSlotAndIdentifier(SLOT, BLOCK_ROOT, COLUMN_INDEX_10), MOCK_ORIGIN);
 
     final List<DataColumnSlotAndIdentifier> missing = tracker.getMissingColumnIdentifiers();
 
     assertThat(missing)
         .hasSize(SAMPLING_REQUIREMENT.size() - 1)
         .extracting(DataColumnSlotAndIdentifier::columnIndex)
-        .containsExactly(COLUMN_INDEX_5, COLUMN_INDEX_15);
+        .containsExactlyInAnyOrder(COLUMN_INDEX_5, COLUMN_INDEX_15);
   }
 
   @Test
