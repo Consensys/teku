@@ -125,16 +125,22 @@ public class DataColumnSidecarsByRootMessageHandler
     SafeFuture.collectAll(
             message.stream()
                 .map(
-                    byRootIdentifier ->
-                        resolveBlockRootSlot(byRootIdentifier.getBlockRoot())
-                            .thenCompose(
-                                maybeSlot ->
-                                    retrieveAndRespondForBlockRoot(
-                                        byRootIdentifier.getBlockRoot(),
-                                        maybeSlot,
-                                        byRootIdentifier.getColumns(),
-                                        myCustodyColumns,
-                                        responseCallbackWithLogging))))
+                    byRootIdentifier -> {
+                      if (byRootIdentifier.getColumns().stream()
+                          .noneMatch(myCustodyColumns::contains)) {
+                        // we don't custody any of the requested columns
+                        return SafeFuture.completedFuture(0L);
+                      }
+                      return resolveBlockRootSlot(byRootIdentifier.getBlockRoot())
+                          .thenCompose(
+                              maybeSlot ->
+                                  retrieveAndRespondForBlockRoot(
+                                      byRootIdentifier.getBlockRoot(),
+                                      maybeSlot,
+                                      byRootIdentifier.getColumns(),
+                                      myCustodyColumns,
+                                      responseCallbackWithLogging));
+                    }))
         .thenAccept(
             counts -> {
               final long sent = counts.stream().mapToLong(Long::longValue).sum();
