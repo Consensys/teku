@@ -129,7 +129,9 @@ public class ValidatorLogger {
             "%sFailed to produce %s  Slot: %s Validator: %s",
             PREFIX, producedType, slot, formatValidators(maybeKey));
     final String consoleMessage = ColorConsolePrinter.print(errorString, Color.RED);
-    if (log.isTraceEnabled() || producedType.equals("block")) {
+    if (log.isTraceEnabled()
+        || producedType.equals("block")
+        || producedType.equals("attestation")) {
       log.error(consoleMessage, error);
     } else {
       log.error(consoleMessage);
