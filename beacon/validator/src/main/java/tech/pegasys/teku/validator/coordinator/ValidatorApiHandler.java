@@ -88,7 +88,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -104,7 +103,6 @@ import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
-import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -622,17 +620,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     return result;
   }
 
-  int computeCommitteeIndex(
+  protected int computeCommitteeIndex(
       final UInt64 dutySlot, final BeaconBlock block, final int committeeIndex) {
-    if (spec.atSlot(dutySlot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
-      if (dutySlot.equals(block.getSlot())) {
-        return 0;
-      }
-      final ReadOnlyStore store = combinedChainDataClient.getStore();
-      final ForkChoiceUtilGloas utilGloas =
-          ForkChoiceUtilGloas.required(spec.atSlot(dutySlot).getForkChoiceUtil());
-      return utilGloas.isBlockStatusFull(store, block) ? 1 : 0;
-    }
     return committeeIndex;
   }
 

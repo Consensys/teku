@@ -25,7 +25,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
@@ -128,5 +131,17 @@ public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
                     // after the Gloas fork)
                     .getExecutionPayloadStateIfAvailable(blockRoot)
                     .flatMap(state -> combinedChainDataClient.regenerateBeaconState(state, slot)));
+  }
+
+  @Override
+  protected int computeCommitteeIndex(
+      final UInt64 dutySlot, final BeaconBlock block, final int committeeIndex) {
+    if (dutySlot.equals(block.getSlot())) {
+      return 0;
+    }
+    final ReadOnlyStore store = combinedChainDataClient.getStore();
+    final ForkChoiceUtilGloas utilGloas =
+        ForkChoiceUtilGloas.required(spec.atSlot(dutySlot).getForkChoiceUtil());
+    return utilGloas.isBlockStatusFull(store, block) ? 1 : 0;
   }
 }
