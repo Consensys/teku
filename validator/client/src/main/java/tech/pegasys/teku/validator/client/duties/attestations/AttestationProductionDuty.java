@@ -255,7 +255,13 @@ public class AttestationProductionDuty implements Duty {
         attestationData.getSlot(),
         slot);
 
-    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      checkArgument(
+          attestationData.getIndex().equals(UInt64.ZERO)
+              || attestationData.getIndex().equals(UInt64.ONE),
+          "Unsigned attestation slot (%s) must have index 0 or 1",
+          slot);
+    } else if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
       checkArgument(
           attestationData.getIndex().equals(UInt64.ZERO),
           "Unsigned attestation slot (%s) must have index 0",
