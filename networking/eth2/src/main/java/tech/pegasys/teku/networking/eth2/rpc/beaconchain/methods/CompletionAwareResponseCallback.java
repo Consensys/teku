@@ -42,26 +42,38 @@ public class CompletionAwareResponseCallback<T> implements ResponseCallback<T> {
 
   @Override
   public void respondAndCompleteSuccessfully(final T data) {
-    delegate.respondAndCompleteSuccessfully(data);
-    runCompletionActions();
+    try {
+      delegate.respondAndCompleteSuccessfully(data);
+    } finally {
+      runCompletionActions();
+    }
   }
 
   @Override
   public void completeSuccessfully() {
-    delegate.completeSuccessfully();
-    runCompletionActions();
+    try {
+      delegate.completeSuccessfully();
+    } finally {
+      runCompletionActions();
+    }
   }
 
   @Override
   public void completeWithErrorResponse(final RpcException error) {
-    delegate.completeWithErrorResponse(error);
-    runCompletionActions();
+    try {
+      delegate.completeWithErrorResponse(error);
+    } finally {
+      runCompletionActions();
+    }
   }
 
   @Override
   public void completeWithUnexpectedError(final Throwable error) {
-    delegate.completeWithUnexpectedError(error);
-    runCompletionActions();
+    try {
+      delegate.completeWithUnexpectedError(error);
+    } finally {
+      runCompletionActions();
+    }
   }
 
   private void runCompletionActions() {
