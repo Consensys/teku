@@ -25,10 +25,9 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler.SamplingEligibilityStatus.NOT_REQUIRED_OLD_EPOCH;
 import static tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler.SamplingEligibilityStatus.REQUIRED;
 
-import com.google.common.collect.ImmutableSortedSet;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NavigableSet;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -83,7 +82,7 @@ public class DasPreSamplerTest {
         .thenReturn(NOT_REQUIRED_OLD_EPOCH);
 
     // Setup for the block that will be sampled
-    when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(ImmutableSortedSet.of());
+    when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(Set.of());
     when(sampler.checkDataAvailability(blockToSample.getSlot(), blockToSample.getRoot()))
         .thenReturn(SafeFuture.completedFuture(null));
 
@@ -105,8 +104,7 @@ public class DasPreSamplerTest {
   @Test
   void shouldPreSampleBlockWhenRequiredAndNoColumnsInCustody() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
-    final NavigableSet<UInt64> columnIndices =
-        ImmutableSortedSet.of(UInt64.valueOf(1), UInt64.valueOf(5));
+    final Set<UInt64> columnIndices = Set.of(UInt64.valueOf(1), UInt64.valueOf(5));
     final DataColumnSlotAndIdentifier col1 =
         new DataColumnSlotAndIdentifier(block.getSlot(), block.getRoot(), UInt64.valueOf(1));
     final DataColumnSlotAndIdentifier col5 =
@@ -131,8 +129,7 @@ public class DasPreSamplerTest {
   @Test
   void shouldNotifySamplerOfColumnsAlreadyInCustody() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
-    final NavigableSet<UInt64> columnIndices =
-        ImmutableSortedSet.of(UInt64.valueOf(2), UInt64.valueOf(4));
+    final Set<UInt64> columnIndices = Set.of(UInt64.valueOf(2), UInt64.valueOf(4));
     final DataColumnSlotAndIdentifier col2 =
         new DataColumnSlotAndIdentifier(block.getSlot(), block.getRoot(), UInt64.valueOf(2));
     final DataColumnSlotAndIdentifier col4 =

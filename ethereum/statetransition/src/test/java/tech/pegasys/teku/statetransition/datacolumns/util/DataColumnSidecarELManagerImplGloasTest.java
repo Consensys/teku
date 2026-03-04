@@ -109,7 +109,7 @@ public class DataColumnSidecarELManagerImplGloasTest
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.new RandomDataColumnSidecarBuilder()
             .slot(currentSlot)
-            .index(custodyGroupCountManager.getSamplingColumnIndices().getFirst())
+            .index(custodyGroupCountManager.getSamplingColumnIndices().iterator().next())
             .build();
 
     dataColumnSidecarELManager.onSlot(currentSlot);

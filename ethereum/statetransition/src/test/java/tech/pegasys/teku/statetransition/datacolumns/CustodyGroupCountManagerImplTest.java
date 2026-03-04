@@ -28,8 +28,8 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.Map;
-import java.util.NavigableSet;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -62,8 +62,7 @@ public class CustodyGroupCountManagerImplTest {
 
     setUpManager(4, 8, 8);
 
-    final NavigableSet<UInt64> samplingColumnIndices =
-        custodyGroupCountManager.getSamplingColumnIndices();
+    final Set<UInt64> samplingColumnIndices = custodyGroupCountManager.getSamplingColumnIndices();
     // Sampling column groups should always include all custody columns at the minimum.
     assertThat(samplingColumnIndices)
         .containsAll(custodyGroupCountManager.getCustodyColumnIndices());
@@ -184,8 +183,7 @@ public class CustodyGroupCountManagerImplTest {
 
     assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(10);
 
-    final NavigableSet<UInt64> samplingColumnIndices =
-        custodyGroupCountManager.getSamplingColumnIndices();
+    final Set<UInt64> samplingColumnIndices = custodyGroupCountManager.getSamplingColumnIndices();
 
     assertThat(samplingColumnIndices)
         .containsAll(custodyGroupCountManager.getCustodyColumnIndices());
@@ -247,9 +245,8 @@ public class CustodyGroupCountManagerImplTest {
     assertThat(custodyGroupCountManager.getSamplingGroupCount())
         .isEqualTo(expectedSamplingGroupCount);
 
-    final NavigableSet<UInt64> custodyColumns = custodyGroupCountManager.getCustodyColumnIndices();
-    final NavigableSet<UInt64> samplingColumns =
-        custodyGroupCountManager.getSamplingColumnIndices();
+    final Set<UInt64> custodyColumns = custodyGroupCountManager.getCustodyColumnIndices();
+    final Set<UInt64> samplingColumns = custodyGroupCountManager.getSamplingColumnIndices();
 
     assertThat(custodyColumns).isNotEmpty();
     assertThat(samplingColumns).isNotEmpty();

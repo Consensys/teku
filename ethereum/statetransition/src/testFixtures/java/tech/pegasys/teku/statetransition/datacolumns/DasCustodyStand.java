@@ -15,15 +15,14 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.collect.ImmutableSortedSet;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.NavigableSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -262,10 +261,10 @@ public class DasCustodyStand {
       }
 
       @Override
-      public NavigableSet<UInt64> getCustodyColumnIndices() {
+      public Set<UInt64> getCustodyColumnIndices() {
         return IntStream.range(0, custodyGroupCount)
             .mapToObj(UInt64::valueOf)
-            .collect(ImmutableSortedSet.toImmutableSortedSet(Comparator.naturalOrder()));
+            .collect(Collectors.toUnmodifiableSet());
       }
 
       @Override
@@ -274,10 +273,10 @@ public class DasCustodyStand {
       }
 
       @Override
-      public NavigableSet<UInt64> getSamplingColumnIndices() {
+      public Set<UInt64> getSamplingColumnIndices() {
         return IntStream.range(0, sampleGroupCount)
             .mapToObj(UInt64::valueOf)
-            .collect(ImmutableSortedSet.toImmutableSortedSet(Comparator.naturalOrder()));
+            .collect(Collectors.toUnmodifiableSet());
       }
     };
   }

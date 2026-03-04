@@ -13,8 +13,7 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
-import com.google.common.collect.ImmutableSortedSet;
-import java.util.NavigableSet;
+import java.util.Set;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface CustodyGroupCountManager {
@@ -26,8 +25,8 @@ public interface CustodyGroupCountManager {
         }
 
         @Override
-        public NavigableSet<UInt64> getCustodyColumnIndices() {
-          return ImmutableSortedSet.of();
+        public Set<UInt64> getCustodyColumnIndices() {
+          return Set.of();
         }
 
         @Override
@@ -36,16 +35,16 @@ public interface CustodyGroupCountManager {
         }
 
         @Override
-        public NavigableSet<UInt64> getSamplingColumnIndices() {
-          return ImmutableSortedSet.of();
+        public Set<UInt64> getSamplingColumnIndices() {
+          return Set.of();
         }
       };
 
   int getCustodyGroupCount();
 
-  NavigableSet<UInt64> getCustodyColumnIndices();
+  Set<UInt64> getCustodyColumnIndices();
 
   int getSamplingGroupCount();
 
-  NavigableSet<UInt64> getSamplingColumnIndices();
+  Set<UInt64> getSamplingColumnIndices();
 }

@@ -15,8 +15,8 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Map;
-import java.util.NavigableSet;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -40,8 +40,8 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   private record CustodySnapshot(
       int custodyGroupCount,
       int samplingGroupCount,
-      NavigableSet<UInt64> custodyColumnIndices,
-      NavigableSet<UInt64> samplingColumnIndices,
+      Set<UInt64> custodyColumnIndices,
+      Set<UInt64> samplingColumnIndices,
       boolean isMaxCustodyGroups) {}
 
   private final Spec spec;
@@ -199,7 +199,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   }
 
   @Override
-  public NavigableSet<UInt64> getCustodyColumnIndices() {
+  public Set<UInt64> getCustodyColumnIndices() {
     return snapshot.custodyColumnIndices();
   }
 
@@ -209,7 +209,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   }
 
   @Override
-  public NavigableSet<UInt64> getSamplingColumnIndices() {
+  public Set<UInt64> getSamplingColumnIndices() {
     return snapshot.samplingColumnIndices();
   }
 
