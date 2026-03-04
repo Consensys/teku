@@ -24,17 +24,11 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
 public interface DataColumnSidecarRecoveringCustody
-    extends DataColumnSidecarByRootCustody, DataColumnSidecarCustody, SlotEventsChannel {
+    extends DataColumnSidecarCustody, SlotEventsChannel {
   DataColumnSidecarRecoveringCustody NOOP =
       new DataColumnSidecarRecoveringCustody() {
         @Override
         public void onSlot(UInt64 slot) {}
-
-        @Override
-        public SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecarByRoot(
-            DataColumnIdentifier columnId) {
-          return SafeFuture.completedFuture(Optional.empty());
-        }
 
         @Override
         public SafeFuture<Void> onNewValidatedDataColumnSidecar(

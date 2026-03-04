@@ -56,7 +56,7 @@ import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecarRecoveringCustody {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final DataColumnSidecarByRootCustody delegate;
+  private final DataColumnSidecarCustody delegate;
   private final AsyncRunner asyncRunner;
   private final MiscHelpersFulu miscHelpers;
   private final Spec spec;
@@ -85,7 +85,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
 
   @VisibleForTesting
   protected DataColumnSidecarRecoveringCustodyImpl(
-      final DataColumnSidecarByRootCustody delegate,
+      final DataColumnSidecarCustody delegate,
       final AsyncRunner asyncRunner,
       final Spec spec,
       final MiscHelpersFulu miscHelpers,
@@ -129,7 +129,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   }
 
   public DataColumnSidecarRecoveringCustodyImpl(
-      final DataColumnSidecarByRootCustody delegate,
+      final DataColumnSidecarCustody delegate,
       final AsyncRunner asyncRunner,
       final Spec spec,
       final MiscHelpersFulu miscHelpers,
@@ -329,12 +329,6 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     recoveryTask.existingSidecars.clear();
     LOG.debug(
         "Data column sidecars recovery finished for block: {}", recoveryTask.slotAndBlockRoot);
-  }
-
-  @Override
-  public SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecarByRoot(
-      final DataColumnIdentifier columnId) {
-    return delegate.getCustodyDataColumnSidecarByRoot(columnId);
   }
 
   @Override
