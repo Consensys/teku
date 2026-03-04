@@ -31,6 +31,7 @@ import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.BlockRootAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
@@ -152,9 +153,7 @@ public class ExecutionPayloadGossipValidator {
     /*
      * [IGNORE] The node has not seen another valid SignedExecutionPayloadEnvelope for this block root from this builder.
      */
-    final BlockRootAndBuilderIndex key =
-        new BlockRootAndBuilderIndex(envelope.getBeaconBlockRoot(), envelope.getBuilderIndex());
-    if (seenPayloads.contains(key)) {
+    if (seenPayloads.contains(envelope.getBlockRootAndBuilderIndex())) {
       return Optional.of(ignoreExecutionPayloadAlreadySeen(envelope));
     }
 
@@ -252,9 +251,7 @@ public class ExecutionPayloadGossipValidator {
   private InternalValidationResult markAsSeen(
       final InternalValidationResult result, final ExecutionPayloadEnvelope envelope) {
     if (result.isAccept()) {
-      final BlockRootAndBuilderIndex key =
-          new BlockRootAndBuilderIndex(envelope.getBeaconBlockRoot(), envelope.getBuilderIndex());
-      if (!seenPayloads.add(key)) {
+      if (!seenPayloads.add(envelope.getBlockRootAndBuilderIndex())) {
         return ignoreExecutionPayloadAlreadySeen(envelope);
       }
     }
@@ -271,6 +268,4 @@ public class ExecutionPayloadGossipValidator {
         "Already received execution payload envelope with block root %s from builder with index %s",
         envelope.getBeaconBlockRoot(), envelope.getBuilderIndex());
   }
-
-  private record BlockRootAndBuilderIndex(Bytes32 blockRoot, UInt64 builderIndex) {}
 }

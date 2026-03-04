@@ -22,9 +22,11 @@ import static org.mockito.Mockito.when;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
@@ -135,5 +137,32 @@ class DefaultExecutionPayloadManagerTest {
             executionPayloadManager.isExecutionPayloadRecentlySeen(
                 signedExecutionPayload.getBeaconBlockRoot()))
         .isTrue();
+  }
+
+  @Test
+  public void shouldProcessExecutionPayloadWhichHaveBeenReceivedBeforeTheBlock() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(42);
+    final SignedExecutionPayloadEnvelope signedExecutionPayload =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelopeForBlock(block);
+    when(executionPayloadGossipValidator.validate(signedExecutionPayload))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
+    when(forkChoice.onExecutionPayload(signedExecutionPayload, executionLayer))
+        .thenReturn(SafeFuture.completedFuture(successfulImportResult));
+
+    // should just cache the payload for future processing
+    SafeFutureAssert.safeJoin(
+        executionPayloadManager.validateAndImportExecutionPayload(signedExecutionPayload));
+
+    asyncRunner.executeDueActions();
+    verifyNoInteractions(forkChoice, receivedExecutionPayloadEventsChannelPublisher);
+
+    when(executionPayloadGossipValidator.validate(signedExecutionPayload))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+    executionPayloadManager.onBlockImported(block, false);
+
+    asyncRunner.executeDueActions();
+    // verify the payload has been processed
+    verify(receivedExecutionPayloadEventsChannelPublisher)
+        .onExecutionPayloadImported(signedExecutionPayload);
   }
 }

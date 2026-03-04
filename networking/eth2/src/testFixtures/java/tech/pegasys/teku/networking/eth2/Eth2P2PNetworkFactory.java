@@ -115,7 +115,6 @@ import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
@@ -256,7 +255,6 @@ public class Eth2P2PNetworkFactory {
             Eth2PeerManager.create(
                 asyncRunner,
                 combinedChainDataClient,
-                () -> DataColumnSidecarByRootCustody.NOOP,
                 () -> CustodyGroupCountManager.NOOP,
                 metadataMessagesFactory,
                 METRICS_SYSTEM,

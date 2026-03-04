@@ -171,8 +171,6 @@ import tech.pegasys.teku.statetransition.datacolumns.DasPreSampler;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustodyImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustodyImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
@@ -675,10 +673,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initForkChoiceStateProvider();
     initForkChoiceNotifier();
     initMergeMonitors();
+    initSignatureVerificationService();
     initForkChoice();
     initBlockImporter();
     initCombinedChainDataClient();
-    initSignatureVerificationService();
     initAttestationPool();
     initAttesterSlashingPool();
     initProposerSlashingPool();
@@ -886,7 +884,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
       final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator =
           new ExecutionPayloadBidGossipValidator(
-              spec, gossipValidationHelper, beaconConfig.getMinBidIncrementPercentage());
+              spec,
+              gossipValidationHelper,
+              beaconConfig.p2pConfig().getMinBidIncrementPercentage());
       final ReceivedExecutionPayloadBidEventsChannel
           receivedExecutionPayloadBidEventsChannelPublisher =
               eventChannels.getPublisher(ReceivedExecutionPayloadBidEventsChannel.class);
@@ -906,13 +906,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new ExecutionPayloadGossipValidator(spec, gossipValidationHelper, invalidBlockRoots);
       final ReceivedExecutionPayloadEventsChannel receivedExecutionPayloadEventsChannelPublisher =
           eventChannels.getPublisher(ReceivedExecutionPayloadEventsChannel.class);
-      executionPayloadManager =
+      final DefaultExecutionPayloadManager executionPayloadManager =
           new DefaultExecutionPayloadManager(
               beaconAsyncRunner,
               executionPayloadGossipValidator,
               forkChoice,
               executionLayer,
               receivedExecutionPayloadEventsChannelPublisher);
+      eventChannels.subscribe(ReceivedBlockEventsChannel.class, executionPayloadManager);
+      this.executionPayloadManager = executionPayloadManager;
     } else {
       executionPayloadManager = ExecutionPayloadManager.NOOP;
     }
@@ -927,7 +929,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final SpecConfigFulu specConfigFulu = SpecConfigFulu.required(specVersionFulu.getConfig());
     final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator =
         MinCustodyPeriodSlotCalculator.createFromSpec(spec);
-    final int slotsPerEpoch = spec.getGenesisSpec().getSlotsPerEpoch();
 
     final DataColumnSidecarDB sidecarDB =
         DataColumnSidecarDB.create(
@@ -963,19 +964,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
       eventChannels.subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarCustodyImpl);
     }
 
-    final DataColumnSidecarByRootCustody dataColumnSidecarByRootCustody =
-        new DataColumnSidecarByRootCustodyImpl(
-            dataColumnSidecarCustodyImpl,
-            combinedChainDataClient,
-            UInt64.valueOf(slotsPerEpoch)
-                .times(DataColumnSidecarByRootCustodyImpl.DEFAULT_MAX_CACHE_SIZE_EPOCHS));
-
     final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel =
         eventChannels.getPublisher(DataColumnSidecarGossipChannel.class);
 
     final DataColumnSidecarRecoveringCustody dataColumnSidecarRecoveringCustody =
         new DataColumnSidecarRecoveringCustodyImpl(
-            dataColumnSidecarByRootCustody,
+            dataColumnSidecarCustodyImpl,
             dasAsyncRunner,
             spec,
             miscHelpersFulu,
@@ -1528,7 +1522,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             new MergeTransitionBlockValidator(spec, recentChainData),
             beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
             debugDataDumper,
-            metricsSystem);
+            metricsSystem,
+            signatureVerificationService);
     forkChoiceTrigger =
         new ForkChoiceTrigger(
             forkChoice,
@@ -1954,7 +1949,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .eventChannels(eventChannels)
             .combinedChainDataClient(
                 throttlingCombinedChainDataClient.orElse(combinedChainDataClient))
-            .dataColumnSidecarCustody(this::getDataColumnSidecarCustody)
             .custodyGroupCountManagerSupplier(() -> custodyGroupCountManager)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
             .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)
@@ -2301,10 +2295,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
 
     return defaultFeeRecipient;
-  }
-
-  private DataColumnSidecarRecoveringCustody getDataColumnSidecarCustody() {
-    return dataColumnSidecarCustodyRef.get();
   }
 
   protected void setupInitialState(final RecentChainData client) {

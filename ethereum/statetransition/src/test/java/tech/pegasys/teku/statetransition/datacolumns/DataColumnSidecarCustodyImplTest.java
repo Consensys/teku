@@ -27,6 +27,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -97,7 +98,7 @@ public class DataColumnSidecarCustodyImplTest {
             custodyGroupCountManager);
     when(custodyGroupCountManager.getCustodyColumnIndices())
         .thenReturn(
-            List.of(UInt64.valueOf(0), UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3)));
+            Set.of(UInt64.valueOf(0), UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3)));
     verify(custodyGroupCountManager).getCustodyGroupCount();
     Mockito.clearInvocations(custodyGroupCountManager);
   }
@@ -243,7 +244,7 @@ public class DataColumnSidecarCustodyImplTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 List.of(new DataColumnSlotAndIdentifier(fuluSlot, dataColumnIdentifier))));
-    when(custodyGroupCountManager.getCustodyColumnIndices()).thenReturn(List.of(ZERO, ONE));
+    when(custodyGroupCountManager.getCustodyColumnIndices()).thenReturn(Set.of(ZERO, ONE));
     custody =
         new DataColumnSidecarCustodyImpl(
             spec, resolver, sidecarDb, minCustodyPeriodSlotCalculator, custodyGroupCountManager);
@@ -258,7 +259,7 @@ public class DataColumnSidecarCustodyImplTest {
         future.get(100, TimeUnit.MILLISECONDS);
 
     assertThat(slotCustody.slot()).isEqualTo(fuluSlot);
-    assertThat(slotCustody.requiredColumnIndices()).isEqualTo(List.of(ZERO, ONE));
+    assertThat(slotCustody.requiredColumnIndices()).containsExactlyInAnyOrder(ZERO, ONE);
     assertThat(slotCustody.getIncompleteColumns())
         .containsExactly(
             new DataColumnSlotAndIdentifier(fuluSlot, beaconBlock.getRoot(), UInt64.valueOf(1)));
