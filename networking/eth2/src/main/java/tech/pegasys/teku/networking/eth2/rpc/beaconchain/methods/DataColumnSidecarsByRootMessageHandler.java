@@ -19,7 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
+
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -121,7 +121,6 @@ public class DataColumnSidecarsByRootMessageHandler
 
     final Set<UInt64> myCustodyColumns =
         new HashSet<>(custodyGroupCountManagerSupplier.get().getCustodyColumnIndices());
-    final AtomicLong sentCount = new AtomicLong(0);
 
     SafeFuture.collectAll(
             message.stream()
@@ -135,11 +134,10 @@ public class DataColumnSidecarsByRootMessageHandler
                                         maybeSlot,
                                         byRootIdentifier.getColumns(),
                                         myCustodyColumns,
-                                        responseCallbackWithLogging,
-                                        sentCount))))
+                                        responseCallbackWithLogging))))
         .thenAccept(
-            __ -> {
-              final long sent = sentCount.get();
+            counts -> {
+              final long sent = counts.stream().mapToLong(Long::longValue).sum();
               if (sent != requestedDataColumnSidecarsCount) {
                 peer.adjustDataColumnSidecarsRequest(maybeRequestKey.get(), sent);
               }
@@ -184,41 +182,41 @@ public class DataColumnSidecarsByRootMessageHandler
                     slot -> blockRootSlotCache.invalidateWithNewValue(blockRoot, slot)));
   }
 
-  private SafeFuture<Void> retrieveAndRespondForBlockRoot(
+  private SafeFuture<Long> retrieveAndRespondForBlockRoot(
       final Bytes32 blockRoot,
       final Optional<UInt64> maybeSlot,
       final List<UInt64> columns,
       final Set<UInt64> myCustodyColumns,
-      final ResponseCallback<DataColumnSidecar> callback,
-      final AtomicLong sentCount) {
+      final ResponseCallback<DataColumnSidecar> callback) {
     if (maybeSlot.isEmpty()) {
-      return SafeFuture.COMPLETE;
+      return SafeFuture.completedFuture(0L);
     }
     final UInt64 slot = maybeSlot.get();
     return validateMinimumRequestEpoch(blockRoot, slot)
         .thenCompose(
             __ ->
-                SafeFuture.allOf(
+                SafeFuture.collectAll(
                         columns.stream()
                             .filter(myCustodyColumns::contains)
                             .map(
                                 column ->
                                     retrieveAndRespondForColumn(
-                                        blockRoot, slot, column, callback, sentCount))));
+                                        blockRoot, slot, column, callback)))
+                    .thenApply(
+                        counts -> counts.stream().mapToLong(Long::longValue).sum()));
   }
 
-  private SafeFuture<Void> retrieveAndRespondForColumn(
+  private SafeFuture<Long> retrieveAndRespondForColumn(
       final Bytes32 blockRoot,
       final UInt64 slot,
       final UInt64 column,
-      final ResponseCallback<DataColumnSidecar> callback,
-      final AtomicLong sentCount) {
+      final ResponseCallback<DataColumnSidecar> callback) {
     return retrieveDataColumnSidecar(blockRoot, slot, column)
         .thenCompose(
             maybeSidecar ->
                 maybeSidecar
-                    .map(sidecar -> callback.respond(sidecar).thenRun(sentCount::incrementAndGet))
-                    .orElse(SafeFuture.COMPLETE));
+                    .map(sidecar -> callback.respond(sidecar).thenApply(__ -> 1L))
+                    .orElse(SafeFuture.completedFuture(0L)));
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> retrieveDataColumnSidecar(
