@@ -101,7 +101,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
-import tech.pegasys.teku.spec.logic.common.util.AttestationValidationResult;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -633,12 +632,15 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final UInt64 slot,
       final int committeeIndex) {
     final UInt64 committeeIndexUnsigned = UInt64.valueOf(committeeIndex);
-    final AttestationValidationResult committeeIndexValidation =
-        spec.atSlot(slot).getAttestationUtil().validateCommitteeIndexValue(committeeIndexUnsigned);
-    if (!committeeIndexValidation.isValid()) {
-      throw new IllegalArgumentException(
-          committeeIndexValidation.getReason().orElse("Invalid committee index"));
-    }
+    // attestation validation
+    spec.atSlot(slot)
+        .getAttestationUtil()
+        .validateCommitteeIndexValue(committeeIndexUnsigned)
+        .getReason()
+        .ifPresent(
+            reason -> {
+              throw new IllegalArgumentException(reason);
+            });
     return spec.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);
   }
 
