@@ -100,6 +100,12 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     store.putExecutionPayloadAndState(signedEnvelope, postState);
   }
 
+  @Override
+  public Optional<Integer> getPayloadAttestationDueMillis() {
+    final SpecConfigGloas configGloas = SpecConfigGloas.required(specConfig);
+    return Optional.of(getSlotComponentDurationMillis(configGloas.getPayloadAttestationDueBps()));
+  }
+
   // Checking of blob data availability is delayed until the processing of the execution payload
   @Override
   public AvailabilityChecker<?> createAvailabilityChecker(final SignedBeaconBlock block) {
@@ -112,6 +118,15 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
   public AvailabilityChecker<?> createAvailabilityChecker(
       final SignedExecutionPayloadEnvelope executionPayload) {
     return AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR;
+  }
+
+  @Override
+  public Optional<ForkChoiceUtilGloas> toVersionGloas() {
+    return Optional.of(this);
+  }
+
+  public boolean isBlockStatusFull(final ReadOnlyStore store, final BeaconBlock block) {
+    return store.getExecutionPayloadIfAvailable(block.getRoot()).isPresent();
   }
 
   /**

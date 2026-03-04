@@ -144,12 +144,6 @@ public abstract class AttestationUtil {
   }
 
   public AttestationProcessingResult isValidIndexedAttestation(
-      final Fork fork, final BeaconState state, final ValidatableAttestation attestation) {
-    return isValidIndexedAttestation(
-        fork, state, attestation, specConfig.getBLSSignatureVerifier());
-  }
-
-  public AttestationProcessingResult isValidIndexedAttestation(
       final Fork fork,
       final BeaconState state,
       final ValidatableAttestation attestation,

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.fulu.util;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -51,5 +52,10 @@ public class ForkChoiceUtilFulu extends ForkChoiceUtilDeneb {
           "DataColumnSidecarAvailabilityCheckerFactory not initialized");
     }
     return factory.createAvailabilityChecker(block);
+  }
+
+  @Override
+  public Optional<ForkChoiceUtilFulu> toVersionFulu() {
+    return Optional.of(this);
   }
 }
