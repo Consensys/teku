@@ -55,6 +55,7 @@ public class SlotProcessor {
 
   private volatile UInt64 onTickSlotStart;
   private volatile UInt64 onTickSlotAttestation;
+  private volatile UInt64 onTickSlotPayloadAttestation;
   private volatile UInt64 onTickEpochPrecompute;
   private volatile UInt64 onTickFutureBlockProductionPreparation;
 
@@ -143,6 +144,14 @@ public class SlotProcessor {
     if (isSlotStartDue(calculatedSlot)) {
       processSlotStart(epoch);
       performanceRecord.ifPresent(TickProcessingPerformance::startSlotComplete);
+    }
+
+    if (isSlotPayloadAttestationDue(calculatedSlot, currentTimeMillis, nodeSlotStartTimeMillis)) {
+      // nodeSlot has already been incremented when the attestations were due, so have to decrement
+      // by 1
+      onTickSlotPayloadAttestation = nodeSlot.getValue().minusMinZero(1);
+      forkChoiceNotifier.onPayloadAttestationsDue(onTickSlotPayloadAttestation);
+      performanceRecord.ifPresent(TickProcessingPerformance::payloadAttestationsDueComplete);
     }
 
     if (isSlotAttestationDue(calculatedSlot, currentTimeMillis, nodeSlotStartTimeMillis)) {
@@ -244,6 +253,18 @@ public class SlotProcessor {
         nodeSlotStartTimeMillis.plus(spec.getAttestationDueMillis(calculatedSlot));
 
     return isTimeReached(currentTimeMillis, earliestTimeInMillis);
+  }
+
+  // Attestations are due 3/4 of the way through the slots time period
+  boolean isSlotPayloadAttestationDue(
+      final UInt64 calculatedSlot,
+      final UInt64 currentTimeMillis,
+      final UInt64 nodeSlotStartTimeMillis) {
+    return spec.getPayloadAttestationDueMillis(calculatedSlot)
+        .filter(__ -> isProcessingDueForSlot(calculatedSlot, onTickSlotPayloadAttestation))
+        .map(nodeSlotStartTimeMillis::plus)
+        .map(earliestTimeMillis -> isTimeReached(currentTimeMillis, earliestTimeMillis))
+        .orElse(false);
   }
 
   // Precalculate epoch transition 2/3 of the way through the last slot of the epoch

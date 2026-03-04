@@ -42,6 +42,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -705,7 +706,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
     updateForkChoiceForImportedBlock(
         block, shouldUpdateProposerBoostRoot, result, forkChoiceStrategy);
-    notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
+    // TODO-GLOAS: remove this dirty hack
+    if (spec.atSlot(block.getSlot()).getMilestone().isLessThan(SpecMilestone.GLOAS)) {
+      notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
+    }
     return result;
   }
 
@@ -756,6 +760,14 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();
+
+    final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+
+    // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 this is just a workaround for
+    // devnet-0, we need a proper fork choice implementation
+    forkChoiceStrategy.processExecutionPayload(signedEnvelope);
+
+    notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
 
     return ExecutionPayloadImportResult.successful(signedEnvelope);
   }
