@@ -19,7 +19,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -58,7 +57,8 @@ public class DataColumnSidecarsByRootMessageHandler
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
   private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
-  private final LRUCache<Bytes32, UInt64> blockRootSlotCache = LRUCache.create(ROOT_SLOT_CACHE_SIZE);
+  private final LRUCache<Bytes32, UInt64> blockRootSlotCache =
+      LRUCache.create(ROOT_SLOT_CACHE_SIZE);
 
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalDataColumnSidecarsRequestedCounter;
@@ -200,10 +200,8 @@ public class DataColumnSidecarsByRootMessageHandler
                             .filter(myCustodyColumns::contains)
                             .map(
                                 column ->
-                                    retrieveAndRespondForColumn(
-                                        blockRoot, slot, column, callback)))
-                    .thenApply(
-                        counts -> counts.stream().mapToLong(Long::longValue).sum()));
+                                    retrieveAndRespondForColumn(blockRoot, slot, column, callback)))
+                    .thenApply(counts -> counts.stream().mapToLong(Long::longValue).sum()));
   }
 
   private SafeFuture<Long> retrieveAndRespondForColumn(
