@@ -143,18 +143,6 @@ public abstract class AttestationUtil {
         .map(committee::getInt);
   }
 
-  public AttestationProcessingResult isValidIndexedAttestation(
-      final Fork fork,
-      final BeaconState state,
-      final ValidatableAttestation attestation,
-      final BLSSignatureVerifier blsSignatureVerifier) {
-    final SafeFuture<AttestationProcessingResult> result =
-        isValidIndexedAttestationAsync(
-            fork, state, attestation, AsyncBLSSignatureVerifier.wrap(blsSignatureVerifier));
-
-    return result.getImmediately();
-  }
-
   public SafeFuture<AttestationProcessingResult> isValidIndexedAttestationAsync(
       final Fork fork,
       final BeaconState state,
@@ -323,7 +311,8 @@ public abstract class AttestationUtil {
   public abstract Attestation convertSingleAttestationToAggregated(
       final BeaconState state, final SingleAttestation singleAttestation);
 
-  public abstract AttestationValidationResult validateIndexValue(final UInt64 index);
+  public abstract AttestationValidationResult validateCommitteeIndexValue(
+      final UInt64 committeeIndex);
 
   public abstract AttestationValidationResult validatePayloadStatus(
       final AttestationData attestationData, final Optional<UInt64> maybeBlockSlot);
