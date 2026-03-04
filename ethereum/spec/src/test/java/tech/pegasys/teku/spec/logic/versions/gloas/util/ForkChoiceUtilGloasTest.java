@@ -199,6 +199,25 @@ class ForkChoiceUtilGloasTest {
         .withMessageContaining("Parent block not found");
   }
 
+  @Test
+  void isBlockStatusFull_shouldReturnTrue_whenBlockIsFull() {
+    final SignedBeaconBlock currentBlock = dataStructureUtil.randomSignedBeaconBlock();
+    final ReadOnlyStore store = mock(ReadOnlyStore.class);
+    when(store.getExecutionPayloadIfAvailable(currentBlock.getRoot()))
+        .thenReturn(
+            Optional.of(
+                dataStructureUtil.randomSignedExecutionPayloadEnvelopeForBlock(currentBlock)));
+    assertThat(forkChoiceUtil.isBlockStatusFull(store, currentBlock.getMessage())).isTrue();
+  }
+
+  @Test
+  void isBlockStatusFull_shouldReturnFalse_whenBlockIsNotFull() {
+    final SignedBeaconBlock currentBlock = dataStructureUtil.randomSignedBeaconBlock();
+    final ReadOnlyStore store = mock(ReadOnlyStore.class);
+    when(store.getExecutionPayloadIfAvailable(currentBlock.getRoot())).thenReturn(Optional.empty());
+    assertThat(forkChoiceUtil.isBlockStatusFull(store, currentBlock.getMessage())).isFalse();
+  }
+
   // Helper methods to create blocks with specific properties
   private BeaconBlock createBlockWithBlockHash(final Bytes32 blockHash) {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(gloasSlot);

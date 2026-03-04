@@ -114,6 +114,10 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     return AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR;
   }
 
+  public boolean isBlockStatusFull(final ReadOnlyStore store, final BeaconBlock block) {
+    return store.getExecutionPayloadIfAvailable(block.getRoot()).isPresent();
+  }
+
   /**
    * Determines the payload status of the parent block.
    *

@@ -123,6 +123,7 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
@@ -715,11 +716,18 @@ class ValidatorApiHandlerTest {
   @Test
   public void createAttestationData_shouldCreateAttestation() {
     final UInt64 slot = spec.computeStartSlotAtEpoch(EPOCH).plus(ONE);
+    final UpdatableStore store = mock(UpdatableStore.class);
+    when(chainDataClient.getStore()).thenReturn(store);
     when(chainDataClient.getCurrentSlot()).thenReturn(slot);
 
     dataStructureUtil.randomBlockAndState(epochStartSlot);
     final SignedBlockAndState blockAndState =
         dataStructureUtil.randomSignedBlockAndState(epochStartSlot);
+    when(store.getExecutionPayloadIfAvailable(any()))
+        .thenReturn(
+            Optional.of(
+                dataStructureUtil.randomSignedExecutionPayloadEnvelopeForBlock(
+                    blockAndState.getBlock())));
 
     final SafeFuture<Optional<SignedBlockAndState>> blockAndStateResult =
         completedFuture(Optional.of(blockAndState));
@@ -766,6 +774,8 @@ class ValidatorApiHandlerTest {
   public void createAttestationData_shouldUseCorrectSourceWhenEpochTransitionRequired() {
     final UInt64 slot = spec.computeStartSlotAtEpoch(EPOCH);
     when(chainDataClient.getCurrentSlot()).thenReturn(slot);
+    final UpdatableStore store = mock(UpdatableStore.class);
+    when(chainDataClient.getStore()).thenReturn(store);
     // Slot is from before the current epoch, so we need to ensure we process the epoch transition
     final UInt64 blockSlot = slot.minus(1);
 
@@ -778,6 +788,11 @@ class ValidatorApiHandlerTest {
         completedFuture(Optional.of(blockAndState));
     when(chainDataClient.getSignedBlockAndStateInEffectAtSlot(slot))
         .thenReturn(blockAndStateResult);
+    when(store.getExecutionPayloadIfAvailable(any()))
+        .thenReturn(
+            Optional.of(
+                dataStructureUtil.randomSignedExecutionPayloadEnvelopeForBlock(
+                    blockAndState.getBlock())));
 
     when(chainDataClient.getCheckpointState(EPOCH, blockAndState))
         .thenReturn(
