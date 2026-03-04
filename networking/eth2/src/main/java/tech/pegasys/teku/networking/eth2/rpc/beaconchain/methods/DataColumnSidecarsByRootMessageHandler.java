@@ -26,6 +26,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
@@ -52,9 +53,12 @@ public class DataColumnSidecarsByRootMessageHandler
     extends PeerRequiredLocalMessageHandler<
         DataColumnSidecarsByRootRequestMessage, DataColumnSidecar> {
 
+  private static final int ROOT_SLOT_CACHE_SIZE = 256;
+
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
   private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
+  private final LRUCache<Bytes32, UInt64> blockRootSlotCache = LRUCache.create(ROOT_SLOT_CACHE_SIZE);
 
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalDataColumnSidecarsRequestedCounter;
@@ -167,9 +171,17 @@ public class DataColumnSidecarsByRootMessageHandler
   }
 
   private SafeFuture<Optional<UInt64>> resolveBlockRootSlot(final Bytes32 blockRoot) {
+    final Optional<UInt64> cached = blockRootSlotCache.getCached(blockRoot);
+    if (cached.isPresent()) {
+      return SafeFuture.completedFuture(cached);
+    }
     return combinedChainDataClient
         .getBlockByBlockRoot(blockRoot)
-        .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot));
+        .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot))
+        .thenPeek(
+            maybeSlot ->
+                maybeSlot.ifPresent(
+                    slot -> blockRootSlotCache.invalidateWithNewValue(blockRoot, slot)));
   }
 
   private SafeFuture<Void> retrieveAndRespondForBlockRoot(
@@ -186,14 +198,13 @@ public class DataColumnSidecarsByRootMessageHandler
     return validateMinimumRequestEpoch(blockRoot, slot)
         .thenCompose(
             __ ->
-                SafeFuture.collectAll(
+                SafeFuture.allOf(
                         columns.stream()
                             .filter(myCustodyColumns::contains)
                             .map(
                                 column ->
                                     retrieveAndRespondForColumn(
-                                        blockRoot, slot, column, callback, sentCount)))
-                    .thenCompose(___ -> SafeFuture.COMPLETE));
+                                        blockRoot, slot, column, callback, sentCount))));
   }
 
   private SafeFuture<Void> retrieveAndRespondForColumn(

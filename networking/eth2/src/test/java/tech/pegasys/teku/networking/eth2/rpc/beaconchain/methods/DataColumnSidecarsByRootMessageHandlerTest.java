@@ -411,6 +411,27 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     verify(peer, never()).adjustDataColumnSidecarsRequest(any(), anyLong());
   }
 
+  @TestTemplate
+  public void shouldCacheBlockRootSlotResolutionAcrossRequests() {
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    final DataColumnsByRootIdentifier[] identifiers = {
+      identifierSchema.create(blockRoot, List.of(UInt64.valueOf(0)))
+    };
+
+    when(combinedChainDataClient.getSidecar(any()))
+        .thenReturn(
+            SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomDataColumnSidecar())));
+
+    // First request
+    handler.onIncomingMessage(protocolId, peer, messageSchema.of(identifiers), callback);
+    verify(combinedChainDataClient, times(1)).getBlockByBlockRoot(blockRoot);
+
+    // Second request with the same block root
+    handler.onIncomingMessage(protocolId, peer, messageSchema.of(identifiers), callback);
+    // Still only one call - the second request used the cache
+    verify(combinedChainDataClient, times(1)).getBlockByBlockRoot(blockRoot);
+  }
+
   private DataColumnsByRootIdentifier[] generateDataColumnsByRootIdentifiers(
       final int numberOfBlocks, final int columnIndicesPerBlock) {
     return IntStream.range(0, numberOfBlocks)
