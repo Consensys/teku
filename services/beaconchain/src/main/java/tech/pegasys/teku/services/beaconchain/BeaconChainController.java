@@ -1959,7 +1959,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .eventChannels(eventChannels)
             .combinedChainDataClient(
                 throttlingCombinedChainDataClient.orElse(combinedChainDataClient))
-            .dataColumnSidecarCustody(this::getDataColumnSidecarCustody)
             .custodyGroupCountManagerSupplier(() -> custodyGroupCountManager)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
             .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)
@@ -2306,10 +2305,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
 
     return defaultFeeRecipient;
-  }
-
-  private DataColumnSidecarRecoveringCustody getDataColumnSidecarCustody() {
-    return dataColumnSidecarCustodyRef.get();
   }
 
   protected void setupInitialState(final RecentChainData client) {
