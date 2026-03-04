@@ -80,6 +80,7 @@ public abstract class DataColumnSidecarsByRootIntegrationTest
     final List<DataColumnSidecar> expectedDataColumnSidecars =
         retrieveCanonicalDataColumnSidecarsFromPeerStorage(
             Stream.of(UInt64.ONE, UInt64.valueOf(3)), columns);
+    assertThat(expectedDataColumnSidecars).isNotEmpty();
 
     // request all expected plus a non existing
     final List<DataColumnsByRootIdentifier> requestedDataColumnIds =

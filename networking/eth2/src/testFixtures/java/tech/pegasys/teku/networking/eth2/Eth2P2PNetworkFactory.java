@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
+import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -109,13 +111,17 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustodyImpl;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
@@ -252,12 +258,68 @@ public class Eth2P2PNetworkFactory {
               RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
         }
         final UInt256 discoveryNodeId = DISCOVERY_NODE_ID_GENERATOR.next();
+        final int numberOfColumns = spec.getNumberOfDataColumns().orElse(0);
+        final List<UInt64> allColumns =
+            IntStream.range(0, numberOfColumns).mapToObj(UInt64::valueOf).toList();
+        final CustodyGroupCountManager custodyGroupCountManager =
+            new CustodyGroupCountManager() {
+              @Override
+              public int getCustodyGroupCount() {
+                return numberOfColumns;
+              }
+
+              @Override
+              public List<UInt64> getCustodyColumnIndices() {
+                return allColumns;
+              }
+
+              @Override
+              public int getSamplingGroupCount() {
+                return 0;
+              }
+
+              @Override
+              public List<UInt64> getSamplingColumnIndices() {
+                return List.of();
+              }
+            };
+        final DataColumnSidecarCustody baseCustody =
+            new DataColumnSidecarCustody() {
+              @Override
+              public SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecar(
+                  final DataColumnSlotAndIdentifier columnId) {
+                return combinedChainDataClient.getSidecar(columnId);
+              }
+
+              @Override
+              public SafeFuture<Boolean> hasCustodyDataColumnSidecar(
+                  final DataColumnSlotAndIdentifier columnId) {
+                return SafeFuture.completedFuture(false);
+              }
+
+              @Override
+              public SafeFuture<Void> onNewValidatedDataColumnSidecar(
+                  final DataColumnSidecar sidecar, final RemoteOrigin remoteOrigin) {
+                return SafeFuture.COMPLETE;
+              }
+
+              @Override
+              public AsyncStream<DataColumnSlotAndIdentifier> retrieveMissingColumns() {
+                return AsyncStream.empty();
+              }
+            };
+        final DataColumnSidecarByRootCustody storageBackedCustody =
+            new DataColumnSidecarByRootCustodyImpl(
+                baseCustody,
+                combinedChainDataClient,
+                UInt64.valueOf(spec.getGenesisSpec().getConfig().getSlotsPerEpoch())
+                    .times(DataColumnSidecarByRootCustodyImpl.DEFAULT_MAX_CACHE_SIZE_EPOCHS));
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(
                 asyncRunner,
                 combinedChainDataClient,
-                () -> DataColumnSidecarByRootCustody.NOOP,
-                () -> CustodyGroupCountManager.NOOP,
+                () -> storageBackedCustody,
+                () -> custodyGroupCountManager,
                 metadataMessagesFactory,
                 METRICS_SYSTEM,
                 attestationSubnetService,
