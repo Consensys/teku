@@ -119,8 +119,6 @@ import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustodyImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
@@ -283,42 +281,11 @@ public class Eth2P2PNetworkFactory {
                 return List.of();
               }
             };
-        final DataColumnSidecarCustody baseCustody =
-            new DataColumnSidecarCustody() {
-              @Override
-              public SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecar(
-                  final DataColumnSlotAndIdentifier columnId) {
-                return combinedChainDataClient.getSidecar(columnId);
-              }
 
-              @Override
-              public SafeFuture<Boolean> hasCustodyDataColumnSidecar(
-                  final DataColumnSlotAndIdentifier columnId) {
-                return SafeFuture.completedFuture(false);
-              }
-
-              @Override
-              public SafeFuture<Void> onNewValidatedDataColumnSidecar(
-                  final DataColumnSidecar sidecar, final RemoteOrigin remoteOrigin) {
-                return SafeFuture.COMPLETE;
-              }
-
-              @Override
-              public AsyncStream<DataColumnSlotAndIdentifier> retrieveMissingColumns() {
-                return AsyncStream.empty();
-              }
-            };
-        final DataColumnSidecarByRootCustody storageBackedCustody =
-            new DataColumnSidecarByRootCustodyImpl(
-                baseCustody,
-                combinedChainDataClient,
-                UInt64.valueOf(spec.getGenesisSpec().getConfig().getSlotsPerEpoch())
-                    .times(DataColumnSidecarByRootCustodyImpl.DEFAULT_MAX_CACHE_SIZE_EPOCHS));
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(
                 asyncRunner,
                 combinedChainDataClient,
-                () -> storageBackedCustody,
                 () -> custodyGroupCountManager,
                 metadataMessagesFactory,
                 METRICS_SYSTEM,
