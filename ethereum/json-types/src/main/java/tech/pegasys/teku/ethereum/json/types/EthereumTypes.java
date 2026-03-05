@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.json.types;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_BLOCK_VALUE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_INCLUDED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_VALUE;
 
 import java.math.BigInteger;
@@ -123,6 +124,12 @@ public class EthereumTypes {
               .example("1")
               .required(true)
               .build();
+
+  public static final BooleanHeaderTypeDefinition ETH_HEADER_EXECUTION_PAYLOAD_INCLUDED_TYPE =
+      new BooleanHeaderTypeDefinition(
+          HEADER_EXECUTION_PAYLOAD_INCLUDED,
+          Optional.of(true),
+          "Required in response so client can determine whether execution payload is included inline.");
 
   public static final StringBasedHeaderTypeDefinition<UInt256>
       ETH_HEADER_CONSENSUS_BLOCK_VALUE_TYPE =

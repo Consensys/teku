@@ -26,6 +26,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.GRAFFITI;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.INCLUDE_PAYLOAD;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID_DESCRIPTION;
@@ -159,6 +160,15 @@ public class BeaconRestApiTypes {
       new ParameterMetadata<>(
           RestApiConstants.BUILDER_BOOST_FACTOR,
           UINT64_TYPE.withDescription(BUILDER_BOOST_FACTOR_DESCRIPTION));
+
+  public static final ParameterMetadata<Boolean> INCLUDE_PAYLOAD_PARAMETER =
+      new ParameterMetadata<>(
+          INCLUDE_PAYLOAD,
+          BOOLEAN_TYPE.withDescription(
+              "If true, returns the execution payload envelope and blobs inline in the response "
+                  + "(stateless mode, suitable for multi-BN setups). "
+                  + "If false, the beacon node caches the payload for separate retrieval. "
+                  + "Default: true."));
 
   public static final ParameterMetadata<Bytes32> GRAFFITI_PARAMETER =
       new ParameterMetadata<>(
