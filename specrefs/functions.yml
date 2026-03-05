@@ -3259,7 +3259,7 @@
 - name: get_custody_groups#fulu
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/MiscHelpersFulu.java
-      search: public List<UInt64> computeCustodyColumnIndices(
+      search: public Set<UInt64> computeCustodyColumnIndices(
   spec: |
     <spec fn="get_custody_groups" fork="fulu" hash="2e6b71d3">
     def get_custody_groups(node_id: NodeID, custody_group_count: uint64) -> Sequence[CustodyIndex]:

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.coordinator.publisher;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.HashSet;
 import java.util.List;
 import java.util.OptionalInt;
 import java.util.Set;
@@ -94,8 +93,7 @@ public class BlockPublisherFulu extends BlockPublisherPhase0 {
     if (mustPublishAll(dataColumnSidecars.getFirst().getSlot())) {
       dataColumnSidecarsToPublish = dataColumnSidecars;
     } else {
-      final Set<UInt64> custodyColumnIndices =
-          new HashSet<>(custodyGroupCountManager.getCustodyColumnIndices());
+      final Set<UInt64> custodyColumnIndices = custodyGroupCountManager.getCustodyColumnIndices();
       dataColumnSidecarsToPublish =
           dataColumnSidecars.stream()
               .filter(sidecar -> custodyColumnIndices.contains(sidecar.getIndex()))
