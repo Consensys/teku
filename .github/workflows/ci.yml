@@ -299,7 +299,7 @@ jobs:
       gradle_task: integrationTest
       src_pattern: "*/src/integration-test/java/*"
       src_root: "src/integration-test/java"
-      runner: "gha-runner-scale-set-ubuntu-22.04-amd64-xl"
+      runner: "gha-runner-scale-set-ubuntu-22.04-amd64-large"
 
   integrationTestsResult:
     runs-on: ubuntu-24.04
