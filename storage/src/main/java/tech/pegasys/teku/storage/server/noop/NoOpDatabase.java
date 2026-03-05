@@ -216,6 +216,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Optional<SignedBeaconBlock> getNonCanonicalBlockByRoot(final Bytes32 blockRoot) {
+    return Optional.empty();
+  }
+
+  @Override
   public List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
     return new ArrayList<>();
   }
