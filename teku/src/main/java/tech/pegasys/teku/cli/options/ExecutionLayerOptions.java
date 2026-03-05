@@ -40,6 +40,15 @@ public class ExecutionLayerOptions {
   private String executionEngineEndpoint = null;
 
   @Option(
+      names = {"--ee-ssz-rest-url"},
+      paramLabel = "<URL>",
+      description =
+          "URL for SSZ-REST Engine API transport (EIP-8161). When configured, Teku will use SSZ-REST "
+              + "as the primary Engine API transport and fall back to JSON-RPC on network errors.",
+      arity = "1")
+  private String eeSszRestUrl = null;
+
+  @Option(
       names = {"--ee-jwt-secret-file"},
       paramLabel = "<FILENAME>",
       description =
@@ -150,6 +159,7 @@ public class ExecutionLayerOptions {
     builder.executionLayer(
         b ->
             b.engineEndpoint(executionEngineEndpoint)
+                .engineSszRestUrl(eeSszRestUrl)
                 .engineJwtSecretFile(engineJwtSecretFile)
                 .engineJwtClaimId(engineJwtClaimId)
                 .builderEndpoint(builderEndpoint)

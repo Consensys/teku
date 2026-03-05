@@ -42,6 +42,7 @@ public class ExecutionLayerConfiguration {
 
   private final Spec spec;
   private final Optional<String> engineEndpoint;
+  private final Optional<String> engineSszRestUrl;
   private final Optional<String> engineJwtSecretFile;
   private final Optional<String> engineJwtClaimId;
   private final Optional<String> builderEndpoint;
@@ -57,6 +58,7 @@ public class ExecutionLayerConfiguration {
   private ExecutionLayerConfiguration(
       final Spec spec,
       final Optional<String> engineEndpoint,
+      final Optional<String> engineSszRestUrl,
       final Optional<String> engineJwtSecretFile,
       final Optional<String> engineJwtClaimId,
       final Optional<String> builderEndpoint,
@@ -70,6 +72,7 @@ public class ExecutionLayerConfiguration {
       final boolean exchangeCapabilitiesMonitoringEnabled) {
     this.spec = spec;
     this.engineEndpoint = engineEndpoint;
+    this.engineSszRestUrl = engineSszRestUrl;
     this.engineJwtSecretFile = engineJwtSecretFile;
     this.engineJwtClaimId = engineJwtClaimId;
     this.builderEndpoint = builderEndpoint;
@@ -101,6 +104,10 @@ public class ExecutionLayerConfiguration {
         () ->
             new InvalidConfigurationException(
                 "Invalid configuration. --ee-endpoint parameter is mandatory when Bellatrix milestone is enabled"));
+  }
+
+  public Optional<String> getEngineSszRestUrl() {
+    return engineSszRestUrl;
   }
 
   public Optional<String> getEngineJwtSecretFile() {
@@ -150,6 +157,7 @@ public class ExecutionLayerConfiguration {
   public static class Builder {
     private Spec spec;
     private Optional<String> engineEndpoint = Optional.empty();
+    private Optional<String> engineSszRestUrl = Optional.empty();
     private Optional<String> engineJwtSecretFile = Optional.empty();
     private Optional<String> engineJwtClaimId = Optional.empty();
     private Optional<String> builderEndpoint = Optional.empty();
@@ -190,6 +198,7 @@ public class ExecutionLayerConfiguration {
       return new ExecutionLayerConfiguration(
           spec,
           engineEndpoint,
+          engineSszRestUrl,
           engineJwtSecretFile,
           engineJwtClaimId,
           builderEndpoint,
@@ -205,6 +214,12 @@ public class ExecutionLayerConfiguration {
 
     public Builder engineEndpoint(final String engineEndpoint) {
       this.engineEndpoint = Optional.ofNullable(engineEndpoint);
+      return this;
+    }
+
+    public Builder engineSszRestUrl(final String engineSszRestUrl) {
+      this.engineSszRestUrl =
+          Optional.ofNullable(engineSszRestUrl).filter(s -> !s.isBlank());
       return this;
     }
 

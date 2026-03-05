@@ -25,11 +25,14 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import okhttp3.OkHttpClient;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionclient.OkHttpClientCreator;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClientProvider;
+import tech.pegasys.teku.ethereum.executionclient.sszrest.SszRestClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderBidValidatorImpl;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreaker;
@@ -164,9 +167,30 @@ public class ExecutionLayerService extends Service {
     final MetricsSystem metricsSystem = serviceConfig.getMetricsSystem();
     final TimeProvider timeProvider = serviceConfig.getTimeProvider();
 
+    // Create SSZ-REST client if configured
+    final Optional<SszRestClient> sszRestClient =
+        config
+            .getEngineSszRestUrl()
+            .map(
+                url -> {
+                  // Reuse the same OkHttpClient config (with JWT interceptor) as the JSON-RPC
+                  // client. The engineWeb3jClientProvider already has JWT configured.
+                  final OkHttpClient httpClient =
+                      OkHttpClientCreator.create(
+                          EL_ENGINE_BLOCK_EXECUTION_TIMEOUT,
+                          LOG,
+                          engineWeb3jClientProvider.getJwtConfig(),
+                          timeProvider);
+                  return new SszRestClient(httpClient, url);
+                });
+
     final ExecutionEngineClient executionEngineClient =
         ExecutionLayerManagerImpl.createEngineClient(
-            engineWeb3jClientProvider.getWeb3JClient(), timeProvider, metricsSystem);
+            engineWeb3jClientProvider.getWeb3JClient(),
+            sszRestClient,
+            config.getSpec(),
+            timeProvider,
+            metricsSystem);
 
     final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
         new MilestoneBasedEngineJsonRpcMethodsResolver(config.getSpec(), executionEngineClient);
