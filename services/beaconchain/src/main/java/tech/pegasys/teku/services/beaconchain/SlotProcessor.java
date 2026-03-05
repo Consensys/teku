@@ -31,6 +31,7 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
@@ -140,6 +141,7 @@ public class SlotProcessor {
     final UInt64 epoch = spec.computeEpochAtSlot(nodeSlot.getValue());
     final UInt64 nodeSlotStartTimeMillis =
         spec.computeTimeMillisAtSlot(nodeSlot.getValue(), genesisTimeMillis);
+    final MiscHelpers miscHelpers = spec.atSlot(nodeSlot.getValue()).miscHelpers();
 
     if (isSlotStartDue(calculatedSlot)) {
       processSlotStart(epoch);
@@ -148,15 +150,17 @@ public class SlotProcessor {
 
     if (isSlotAttestationDue(calculatedSlot, currentTimeMillis, nodeSlotStartTimeMillis)) {
       processSlotAttestation(performanceRecord);
-      nodeSlot.inc();
+      if (miscHelpers.shouldIncrementNodeSlotWhenAttestationsAreDue()) {
+        nodeSlot.inc();
+      }
       performanceRecord.ifPresent(TickProcessingPerformance::attestationsDueComplete);
     }
 
     if (isSlotPayloadAttestationDue(calculatedSlot, currentTimeMillis, nodeSlotStartTimeMillis)) {
-      // nodeSlot has already been incremented when the attestations were due, so have to decrement
-      // by 1
-      onTickSlotPayloadAttestation = nodeSlot.getValue().minusMinZero(1);
-      forkChoiceNotifier.onPayloadAttestationsDue(onTickSlotPayloadAttestation);
+      processSlotPayloadAttestation();
+      if (miscHelpers.shouldIncrementNodeSlotWhenPayloadAttestationsAreDue()) {
+        nodeSlot.inc();
+      }
       performanceRecord.ifPresent(TickProcessingPerformance::payloadAttestationsDueComplete);
     }
 
@@ -340,6 +344,13 @@ public class SlotProcessor {
                     recentChainData.getJustifiedCheckpoint().map(Checkpoint::getEpoch).orElse(ZERO),
                     recentChainData.getFinalizedCheckpoint().map(Checkpoint::getEpoch).orElse(ZERO),
                     p2pNetwork.getPeerCount()));
+  }
+
+  // TODO-GLOAS: make use of TickProcessingPerformance and forkChoiceTrigger similar to
+  // processSlotAttestation
+  private void processSlotPayloadAttestation() {
+    onTickSlotPayloadAttestation = nodeSlot.getValue();
+    forkChoiceNotifier.onPayloadAttestationsDue(onTickSlotPayloadAttestation);
   }
 
   @VisibleForTesting

@@ -327,6 +327,17 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
   }
 
   @Override
+  public boolean shouldIncrementNodeSlotWhenAttestationsAreDue() {
+    return false;
+  }
+
+  // in Gloas, increment the node slot when payload attestations are due
+  @Override
+  public boolean shouldIncrementNodeSlotWhenPayloadAttestationsAreDue() {
+    return true;
+  }
+
+  @Override
   public Optional<MiscHelpersGloas> toVersionGloas() {
     return Optional.of(this);
   }
