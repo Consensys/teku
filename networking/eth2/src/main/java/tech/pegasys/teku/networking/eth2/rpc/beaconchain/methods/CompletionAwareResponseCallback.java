@@ -16,7 +16,6 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -28,7 +27,7 @@ public class CompletionAwareResponseCallback<T> implements ResponseCallback<T> {
 
   private final ResponseCallback<T> delegate;
   private final List<Runnable> completionActions = new ArrayList<>();
-  private final AtomicBoolean completionActionsRan = new  AtomicBoolean(false);
+  private final AtomicBoolean completionActionsRan = new AtomicBoolean(false);
 
   public CompletionAwareResponseCallback(final ResponseCallback<T> delegate) {
     this.delegate = delegate;
