@@ -304,10 +304,13 @@ public class DataColumnSidecarsByRangeMessageHandler
           // Adding all requested, we expect we either have it
           // or can reconstruct from proof archives
           final DataColumnSlotAndIdentifier first = slotMap.get(slot).getFirst();
-          columns.forEach(
-              column ->
-                  matchingKeys.add(
-                      new DataColumnSlotAndIdentifier(first.slot(), first.blockRoot(), column)));
+          columns.stream()
+              .sorted()
+              .forEach(
+                  column ->
+                      matchingKeys.add(
+                          new DataColumnSlotAndIdentifier(
+                              first.slot(), first.blockRoot(), column)));
         } else {
           slotMap.get(slot).stream()
               .filter(key -> columns.contains(key.columnIndex()))
