@@ -305,8 +305,7 @@ jobs:
           path: ${{ github.workspace }}   
       - name: Integration Tests
         run: |
-          export JAVA_TOOL_OPTIONS="-Xmx12g"
-          ./gradlew --no-daemon --parallel integrationTest
+          ./gradlew integrationTest -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=4 -Xmx4096m -Dorg.gradle.jvmargs="-Xmx2g"
       - name: Upload JUnit XML + HTML for integration-tests
         if: always()
         uses: actions/upload-artifact@v6
