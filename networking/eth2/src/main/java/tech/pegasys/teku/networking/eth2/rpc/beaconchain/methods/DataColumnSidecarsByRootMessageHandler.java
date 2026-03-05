@@ -246,8 +246,7 @@ public class DataColumnSidecarsByRootMessageHandler
                             .map(column -> new DataColumnSlotAndIdentifier(slot, blockRoot, column))
                             .map(
                                 identifier ->
-                                    retrieveAndRespondForColumn(
-                                        identifier, messageId, callback)))
+                                    retrieveAndRespondForColumn(identifier, messageId, callback)))
                     .thenApply(counts -> counts.stream().mapToLong(Long::longValue).sum()));
   }
 
@@ -264,8 +263,7 @@ public class DataColumnSidecarsByRootMessageHandler
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> retrieveDataColumnSidecar(
-      final DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier,
-      final int messageId) {
+      final DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier, final int messageId) {
     return combinedChainDataClient
         .getSidecar(dataColumnSlotAndIdentifier)
         .thenCompose(

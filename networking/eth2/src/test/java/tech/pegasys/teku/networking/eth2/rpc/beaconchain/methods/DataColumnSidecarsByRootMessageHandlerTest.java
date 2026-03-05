@@ -406,7 +406,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     final DataColumnsByRootIdentifier[] dataColumnsByRootIdentifiers =
         generateDataColumnsByRootIdentifiers(4, 1);
 
-    when(custody.getCustodyDataColumnSidecarByRoot(any()))
+    when(combinedChainDataClient.getSidecar(any(DataColumnSlotAndIdentifier.class)))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     when(dataColumnSidecarArchiveReconstructor.isSidecarPruned(any(), any())).thenReturn(true);
     when(dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(any(), any(), anyInt()))
