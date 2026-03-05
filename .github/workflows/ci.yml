@@ -308,7 +308,7 @@ jobs:
           JAVA_OPTS: "-Xmx4g -XX:+UseG1GC"
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2g -Dorg.gradle.daemon=false"
         run: |
-          ./gradlew integrationTest -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=4 -Dorg.gradle.jvmargs="-Xmx2g"
+          ./gradlew integrationTest -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=4 -Dorg.gradle.jvmargs="-Xmx8g"
       - name: Upload JUnit XML + HTML for integration-tests
         if: always()
         uses: actions/upload-artifact@v6
