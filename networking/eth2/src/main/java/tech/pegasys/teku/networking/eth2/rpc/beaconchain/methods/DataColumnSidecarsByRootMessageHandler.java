@@ -179,7 +179,7 @@ public class DataColumnSidecarsByRootMessageHandler
                 return dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(
                     maybeBlock.get(), identifier.columnIndex(), messageId);
               }
-              return combinedChainDataClient.getNonCanonicalSidecar(identifier);
+              return SafeFuture.completedFuture(Optional.empty());
             });
   }
 
