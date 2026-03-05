@@ -305,7 +305,7 @@ jobs:
           path: ${{ github.workspace }}   
       - name: Integration Tests
         run: |
-          $Env:JAVA_TOOL_OPTIONS = "-Xmx8g"
+          export JAVA_TOOL_OPTIONS="-Xmx8g"
           ./gradlew integrationTest
       - name: Upload JUnit XML + HTML for integration-tests
         if: always()
