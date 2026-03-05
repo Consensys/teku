@@ -566,7 +566,7 @@ public class ForkChoiceUtil {
     return AvailabilityChecker.NOOP;
   }
 
-  public boolean shouldNotifyForkChoiceUpdatedAndOptimisticSyncingChangedOnBlock() {
+  public boolean shouldNotifyForkChoiceUpdatedOnBlock() {
     return true;
   }
 
