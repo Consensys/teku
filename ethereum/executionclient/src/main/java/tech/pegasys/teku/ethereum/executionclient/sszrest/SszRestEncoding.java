@@ -51,7 +51,7 @@ public class SszRestEncoding {
    * Encode ForkchoiceUpdated request.
    *
    * <p>Fixed part: forkchoiceState(96) + attributes_offset(4) = 100 bytes Variable part:
-   * Union[None, PayloadAttributes] where None = single 0x00 byte
+   * List[PayloadAttributes, 1]: empty = absent; offset(4) + element data = present
    */
   public static byte[] encodeForkchoiceUpdatedRequest(
       final Bytes32 headHash,
@@ -60,27 +60,31 @@ public class SszRestEncoding {
       final byte[] payloadAttributesSsz) {
     // Fixed part is 100 bytes (96 forkchoice state + 4 offset)
     final int fixedSize = 100;
-    final byte[] unionPayload;
+    final byte[] listPayload;
     if (payloadAttributesSsz == null) {
-      // Union selector 0 = None
-      unionPayload = new byte[] {0x00};
+      // Empty list = absent
+      listPayload = new byte[0];
     } else {
-      // Union selector 1 + payload attributes bytes
-      unionPayload = new byte[1 + payloadAttributesSsz.length];
-      unionPayload[0] = 0x01;
-      System.arraycopy(payloadAttributesSsz, 0, unionPayload, 1, payloadAttributesSsz.length);
+      // List[PayloadAttributes, 1] with 1 variable-size element: offset(4) + element data
+      listPayload = new byte[4 + payloadAttributesSsz.length];
+      // Item offset = 4 (pointing past the single offset to element data)
+      listPayload[0] = 0x04;
+      listPayload[1] = 0x00;
+      listPayload[2] = 0x00;
+      listPayload[3] = 0x00;
+      System.arraycopy(payloadAttributesSsz, 0, listPayload, 4, payloadAttributesSsz.length);
     }
 
-    final ByteBuffer buf = ByteBuffer.allocate(fixedSize + unionPayload.length);
+    final ByteBuffer buf = ByteBuffer.allocate(fixedSize + listPayload.length);
     buf.order(ByteOrder.LITTLE_ENDIAN);
     // ForkchoiceState (96 bytes)
     buf.put(headHash.toArrayUnsafe());
     buf.put(safeHash.toArrayUnsafe());
     buf.put(finalizedHash.toArrayUnsafe());
-    // Offset to variable part
+    // Offset to list data
     buf.putInt(fixedSize);
-    // Union payload
-    buf.put(unionPayload);
+    // List payload
+    buf.put(listPayload);
 
     return buf.array();
   }
@@ -257,8 +261,9 @@ public class SszRestEncoding {
   /**
    * Decode PayloadStatus response.
    *
-   * <p>Fixed: status(1) + hash_offset(4) + error_offset(4) = 9 bytes Variable: Union[None,
-   * Hash32] for latestValidHash Variable: List[uint8, 1024] for validationError
+   * <p>Fixed: status(1) + hash_offset(4) + error_offset(4) = 9 bytes Variable: List[Hash32, 1]
+   * for latestValidHash (0 bytes = absent, 32 bytes = present) Variable: List[uint8, 1024] for
+   * validationError
    */
   public static PayloadStatusResult decodePayloadStatus(final byte[] data) {
     final ByteBuffer buf = ByteBuffer.wrap(data);
@@ -270,15 +275,12 @@ public class SszRestEncoding {
     final int hashOffset = buf.getInt();
     final int errorOffset = buf.getInt();
 
-    // Decode latestValidHash (Union)
+    // Decode latestValidHash: List[Hash32, 1] — 0 bytes = absent, 32 bytes = present
     Bytes32 latestValidHash = null;
-    if (hashOffset < errorOffset) {
-      final byte unionSelector = data[hashOffset];
-      if (unionSelector == 0x01 && (errorOffset - hashOffset - 1) == 32) {
-        final byte[] hashBytes = new byte[32];
-        System.arraycopy(data, hashOffset + 1, hashBytes, 0, 32);
-        latestValidHash = Bytes32.wrap(hashBytes);
-      }
+    if ((errorOffset - hashOffset) == 32) {
+      final byte[] hashBytes = new byte[32];
+      System.arraycopy(data, hashOffset, hashBytes, 0, 32);
+      latestValidHash = Bytes32.wrap(hashBytes);
     }
 
     // Decode validationError (variable-length byte list -> UTF-8 string)
@@ -297,7 +299,7 @@ public class SszRestEncoding {
    * Decode ForkchoiceUpdated response.
    *
    * <p>Fixed: status_offset(4) + payloadId_offset(4) = 8 bytes Variable: PayloadStatus +
-   * Union[None, Bytes8]
+   * List[Bytes8, 1] (0 bytes = absent, 8 bytes = present)
    */
   public static ForkchoiceUpdatedResult decodeForkchoiceUpdatedResponse(final byte[] data) {
     final ByteBuffer buf = ByteBuffer.wrap(data);
@@ -312,15 +314,13 @@ public class SszRestEncoding {
     System.arraycopy(data, statusOffset, statusBytes, 0, statusLen);
     final PayloadStatusResult payloadStatus = decodePayloadStatus(statusBytes);
 
-    // Decode payloadId (Union)
+    // Decode payloadId: List[Bytes8, 1] — 0 bytes = absent, 8 bytes = present
     Bytes8 payloadId = null;
-    if (payloadIdOffset < data.length) {
-      final byte unionSelector = data[payloadIdOffset];
-      if (unionSelector == 0x01 && (data.length - payloadIdOffset - 1) >= 8) {
-        final byte[] idBytes = new byte[8];
-        System.arraycopy(data, payloadIdOffset + 1, idBytes, 0, 8);
-        payloadId = new Bytes8(Bytes.wrap(idBytes));
-      }
+    final int pidLen = data.length - payloadIdOffset;
+    if (pidLen == 8) {
+      final byte[] idBytes = new byte[8];
+      System.arraycopy(data, payloadIdOffset, idBytes, 0, 8);
+      payloadId = new Bytes8(Bytes.wrap(idBytes));
     }
 
     return new ForkchoiceUpdatedResult(payloadStatus, payloadId);
