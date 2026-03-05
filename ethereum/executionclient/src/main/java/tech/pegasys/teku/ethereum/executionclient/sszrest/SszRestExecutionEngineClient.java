@@ -238,8 +238,7 @@ public class SszRestExecutionEngineClient implements ExecutionEngineClient {
   @Override
   public SafeFuture<Response<GetPayloadV3Response>> getPayloadV3(final Bytes8 payloadId) {
     return sszRestClient
-        .doRequest(
-            "/engine/v3/get_payload", SszRestEncoding.encodeGetPayloadRequest(payloadId))
+        .doGetRequest("/engine/v3/payloads/" + payloadId.toHexString())
         .thenApply(
             data -> {
               final SszRestEncoding.GetPayloadResult result =
@@ -271,8 +270,7 @@ public class SszRestExecutionEngineClient implements ExecutionEngineClient {
   @Override
   public SafeFuture<Response<GetPayloadV4Response>> getPayloadV4(final Bytes8 payloadId) {
     return sszRestClient
-        .doRequest(
-            "/engine/v4/get_payload", SszRestEncoding.encodeGetPayloadRequest(payloadId))
+        .doGetRequest("/engine/v4/payloads/" + payloadId.toHexString())
         .thenApply(
             data -> {
               final SszRestEncoding.GetPayloadResult result =
@@ -308,8 +306,7 @@ public class SszRestExecutionEngineClient implements ExecutionEngineClient {
   @Override
   public SafeFuture<Response<GetPayloadV5Response>> getPayloadV5(final Bytes8 payloadId) {
     return sszRestClient
-        .doRequest(
-            "/engine/v5/get_payload", SszRestEncoding.encodeGetPayloadRequest(payloadId))
+        .doGetRequest("/engine/v5/payloads/" + payloadId.toHexString())
         .thenApply(
             data -> {
               final SszRestEncoding.GetPayloadResult result =
@@ -345,8 +342,7 @@ public class SszRestExecutionEngineClient implements ExecutionEngineClient {
   @Override
   public SafeFuture<Response<GetPayloadV6Response>> getPayloadV6(final Bytes8 payloadId) {
     return sszRestClient
-        .doRequest(
-            "/engine/v6/get_payload", SszRestEncoding.encodeGetPayloadRequest(payloadId))
+        .doGetRequest("/engine/v6/payloads/" + payloadId.toHexString())
         .thenApply(
             data -> {
               final SszRestEncoding.GetPayloadResult result =
@@ -427,7 +423,7 @@ public class SszRestExecutionEngineClient implements ExecutionEngineClient {
   public SafeFuture<Response<List<String>>> exchangeCapabilities(final List<String> capabilities) {
     return sszRestClient
         .doRequest(
-            "/engine/v1/exchange_capabilities",
+            "/engine/v1/capabilities",
             SszRestEncoding.encodeExchangeCapabilities(capabilities))
         .thenApply(SszRestEncoding::decodeExchangeCapabilities)
         .thenApply(Response::fromPayloadReceivedAsSsz)
@@ -508,7 +504,7 @@ public class SszRestExecutionEngineClient implements ExecutionEngineClient {
               executionPayloadSsz, hashes, parentBeaconBlockRoot);
     }
 
-    final String path = "/engine/v" + version + "/new_payload";
+    final String path = "/engine/v" + version + "/payloads";
     return sszRestClient
         .doRequest(path, requestBody)
         .thenApply(SszRestEncoding::decodePayloadStatus)
@@ -539,7 +535,7 @@ public class SszRestExecutionEngineClient implements ExecutionEngineClient {
             attrSsz);
 
     return sszRestClient
-        .doRequest("/engine/v3/forkchoice_updated", requestBody)
+        .doRequest("/engine/v3/forkchoice", requestBody)
         .thenApply(SszRestEncoding::decodeForkchoiceUpdatedResponse)
         .thenApply(this::toForkChoiceUpdatedResult)
         .thenApply(Response::fromPayloadReceivedAsSsz);

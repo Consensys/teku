@@ -48,7 +48,7 @@ public class SszRestClient {
   /**
    * Sends a POST request with SSZ-encoded body and returns the SSZ-encoded response bytes.
    *
-   * @param path the API path (e.g. "/eth/v1/engine/new_payload")
+   * @param path the API path (e.g. "/engine/v4/payloads")
    * @param body the SSZ-encoded request body
    * @return a SafeFuture resolving to the SSZ-encoded response bytes
    */
@@ -60,6 +60,28 @@ public class SszRestClient {
             .header("Accept", "application/octet-stream")
             .build();
 
+    return executeRequest(request);
+  }
+
+  /**
+   * Sends a GET request (no body) and returns the SSZ-encoded response bytes. Used for getPayload
+   * where the payload_id is in the URL path.
+   *
+   * @param path the API path (e.g. "/engine/v5/payloads/0x0102030405060708")
+   * @return a SafeFuture resolving to the SSZ-encoded response bytes
+   */
+  public SafeFuture<byte[]> doGetRequest(final String path) {
+    final Request request =
+        new Request.Builder()
+            .url(baseUrl + path)
+            .get()
+            .header("Accept", "application/octet-stream")
+            .build();
+
+    return executeRequest(request);
+  }
+
+  private SafeFuture<byte[]> executeRequest(final Request request) {
     return SafeFuture.of(
         () -> {
           LOG.trace("SSZ-REST request: {} {}", request.method(), request.url());
@@ -75,7 +97,7 @@ public class SszRestClient {
                   responseBody.length);
               return responseBody;
             }
-            throw SszRestException.fromJsonError(responseBody, response.code());
+            throw SszRestException.fromTextError(responseBody, response.code());
           } catch (final IOException e) {
             throw SszRestException.fromNetworkError(e);
           }

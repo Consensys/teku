@@ -13,15 +13,13 @@
 
 package tech.pegasys.teku.ethereum.executionclient.sszrest;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 
 public class SszRestException extends Exception {
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   private final int httpStatusCode;
   private final boolean networkError;
@@ -46,19 +44,13 @@ public class SszRestException extends Exception {
     return networkError;
   }
 
-  public static SszRestException fromJsonError(final byte[] body, final int httpStatusCode) {
-    try {
-      final JsonNode root = OBJECT_MAPPER.readTree(body);
-      final int code =
-          root.has("code") ? root.get("code").asInt() : httpStatusCode;
-      final String message =
-          root.has("message") ? root.get("message").asText() : "Unknown error";
-      return new SszRestException(code, message);
-    } catch (final IOException e) {
-      return new SszRestException(
-          httpStatusCode,
-          "HTTP " + httpStatusCode + ": unable to parse error body");
-    }
+  /** Parse a text/plain error response body per the execution-apis SSZ spec. */
+  public static SszRestException fromTextError(final byte[] body, final int httpStatusCode) {
+    final String message =
+        body.length > 0
+            ? new String(body, StandardCharsets.UTF_8)
+            : "HTTP " + httpStatusCode;
+    return new SszRestException(httpStatusCode, message);
   }
 
   public static SszRestException fromNetworkError(final Throwable cause) {
