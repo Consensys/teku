@@ -204,6 +204,8 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     final Bytes32 secondBlockRoot = dataColumnsByRootIdentifiers[1].getBlockRoot();
     when(combinedChainDataClient.getBlockByBlockRoot(secondBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(combinedChainDataClient.getNonCanonicalSidecar(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     when(combinedChainDataClient.getSidecar(any()))
         .thenAnswer(
@@ -230,7 +232,6 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     // Sending 3 data column sidecars
     verify(peer).adjustDataColumnSidecarsRequest(eq(allowedRequest.get()), eq(Long.valueOf(3)));
 
-    verify(combinedChainDataClient, never()).getNonCanonicalSidecar(any());
     verify(callback, times(3)).respond(datacolumnSidecarCaptor.capture());
     verify(callback).completeSuccessfully();
 
@@ -436,6 +437,36 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     verify(dataColumnSidecarArchiveReconstructor, times(4))
         .reconstructDataColumnSidecar(any(), any(), anyInt());
     verify(dataColumnSidecarArchiveReconstructor).onRequestCompleted(anyInt());
+  }
+
+  @TestTemplate
+  public void shouldFallbackToNonCanonicalSidecarWhenBlockIsPruned() {
+    final DataColumnsByRootIdentifier[] dataColumnsByRootIdentifiers =
+        generateDataColumnsByRootIdentifiers(1, 1);
+    final DataColumnSidecar nonCanonicalSidecar = dataStructureUtil.randomDataColumnSidecar();
+
+    // canonical sidecar not found
+    when(combinedChainDataClient.getSidecar(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    // first call resolves the slot, second call (in archive fallback) finds block pruned
+    final UInt64 currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
+    when(combinedChainDataClient.getBlockByBlockRoot(any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot))))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    // non-canonical sidecar is available
+    when(combinedChainDataClient.getNonCanonicalSidecar(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(nonCanonicalSidecar)));
+
+    handler.onIncomingMessage(
+        protocolId, peer, messageSchema.of(dataColumnsByRootIdentifiers), callback);
+
+    verify(combinedChainDataClient).getNonCanonicalSidecar(any());
+    verify(callback, times(1)).respond(datacolumnSidecarCaptor.capture());
+    verify(callback).completeSuccessfully();
+
+    assertThat(datacolumnSidecarCaptor.getValue()).isEqualTo(nonCanonicalSidecar);
   }
 
   @TestTemplate

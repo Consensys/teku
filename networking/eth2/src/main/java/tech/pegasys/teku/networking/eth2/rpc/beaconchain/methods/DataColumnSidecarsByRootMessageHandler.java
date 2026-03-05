@@ -168,27 +168,19 @@ public class DataColumnSidecarsByRootMessageHandler
         .getBlockByBlockRoot(identifier.blockRoot())
         .thenCompose(
             maybeBlock -> {
-              if (maybeBlock.isPresent()) {
-                final SignedBeaconBlock block = maybeBlock.get();
-                return getDataColumnSidecar(block, identifier, messageId);
-              } else {
-                return SafeFuture.completedFuture(Optional.empty());
+              if (maybeBlock.isEmpty()) {
+                return combinedChainDataClient.getNonCanonicalSidecar(identifier);
               }
-            });
-  }
 
-  private SafeFuture<Optional<DataColumnSidecar>> getDataColumnSidecar(
-      final SignedBeaconBlock block,
-      final DataColumnSlotAndIdentifier identifier,
-      final int messageId) {
-    final boolean isSuperNodePruned =
-        dataColumnSidecarArchiveReconstructor.isSidecarPruned(
-            block.getSlot(), identifier.columnIndex());
-    if (isSuperNodePruned) {
-      return dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(
-          block, identifier.columnIndex(), messageId);
-    }
-    return combinedChainDataClient.getNonCanonicalSidecar(identifier);
+              final boolean isSuperNodePruned =
+                  dataColumnSidecarArchiveReconstructor.isSidecarPruned(
+                      maybeBlock.get().getSlot(), identifier.columnIndex());
+              if (isSuperNodePruned) {
+                return dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(
+                    maybeBlock.get(), identifier.columnIndex(), messageId);
+              }
+              return combinedChainDataClient.getNonCanonicalSidecar(identifier);
+            });
   }
 
   /**
