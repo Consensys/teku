@@ -92,7 +92,7 @@ public abstract class AbstractCombinedChainDataClientTest {
   @ParameterizedTest(name = "{0}")
   @MethodSource("getQueryBySlotParameters")
   public <T> void queryBySlot_preForkChoice(
-      final String caseName, final QueryBySlotTestCase<T> testCase) throws Exception {
+      final String caseName, final QueryBySlotTestCase<T> testCase) {
     // Initialize genesis and build small chain with finalization
     chainUpdater.initializeGenesis();
     final UInt64 historicalSlot = chainUpdater.advanceChain().getSlot();
@@ -105,27 +105,26 @@ public abstract class AbstractCombinedChainDataClientTest {
     chainUpdater.advanceChain(recentSlot);
     chainUpdater.advanceChain();
 
-    // Restart
-    try (final StorageSystem restarted = storageSystem.restarted(getStorageMode())) {
-      final CombinedChainDataClient client = restarted.combinedChainDataClient();
-      // We should now have an initialized store, but no chosen chainhead
-      assertThat(restarted.recentChainData().getStore()).isNotNull();
-      assertThat(restarted.recentChainData().getBestBlockRoot()).isEmpty();
+    // Restart (restarted() closes the original database, so reassign for tearDown)
+    storageSystem = storageSystem.restarted(getStorageMode());
+    final CombinedChainDataClient client = storageSystem.combinedChainDataClient();
+    // We should now have an initialized store, but no chosen chainhead
+    assertThat(storageSystem.recentChainData().getStore()).isNotNull();
+    assertThat(storageSystem.recentChainData().getBestBlockRoot()).isEmpty();
 
-      // Check recent slot
-      final UInt64 querySlot = recentSlot;
-      final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
-      final Optional<T> expected =
-          testCase.mapEffectiveBlockAtSlotToExpectedResult(querySlot, Optional.empty());
-      assertThat(result).isCompletedWithValue(expected);
+    // Check recent slot
+    final UInt64 querySlot = recentSlot;
+    final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
+    final Optional<T> expected =
+        testCase.mapEffectiveBlockAtSlotToExpectedResult(querySlot, Optional.empty());
+    assertThat(result).isCompletedWithValue(expected);
 
-      // Check historical slot
-      final UInt64 querySlot2 = historicalSlot;
-      final SafeFuture<Optional<T>> result2 = testCase.executeQueryBySlot(client, querySlot2);
-      final Optional<T> expected2 =
-          testCase.mapEffectiveBlockAtSlotToExpectedResult(querySlot2, Optional.empty());
-      assertThat(result2).isCompletedWithValue(expected2);
-    }
+    // Check historical slot
+    final UInt64 querySlot2 = historicalSlot;
+    final SafeFuture<Optional<T>> result2 = testCase.executeQueryBySlot(client, querySlot2);
+    final Optional<T> expected2 =
+        testCase.mapEffectiveBlockAtSlotToExpectedResult(querySlot2, Optional.empty());
+    assertThat(result2).isCompletedWithValue(expected2);
   }
 
   @ParameterizedTest(name = "{0}")
