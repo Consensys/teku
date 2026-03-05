@@ -535,7 +535,5 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   @AfterEach
   public void tearDown() {
     assertThat(beaconRestApi.stop()).isCompleted();
-    client.dispatcher().executorService().shutdown();
-    client.connectionPool().evictAll();
   }
 }
