@@ -15,7 +15,6 @@ package tech.pegasys.teku.infrastructure.ssz.sos;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
 
 public class SszLengthBounds {
   public static final SszLengthBounds ZERO = new SszLengthBounds(0, 0);
@@ -31,11 +30,11 @@ public class SszLengthBounds {
   }
 
   public static SszLengthBounds ofBytes(final long fixedSize) {
-    return new SszLengthBounds(fixedSize * 8, fixedSize * 8);
+    return new SszLengthBounds(saturatingMul(fixedSize, 8), saturatingMul(fixedSize, 8));
   }
 
   public static SszLengthBounds ofBytes(final long min, final long max) {
-    return new SszLengthBounds(min * 8, max * 8);
+    return new SszLengthBounds(saturatingMul(min, 8), saturatingMul(max, 8));
   }
 
   private SszLengthBounds(final long min, final long max) {
@@ -52,11 +51,11 @@ public class SszLengthBounds {
   }
 
   public long getMinBytes() {
-    return TreeUtil.bitsCeilToBytes(min);
+    return saturatingBitsCeilToBytes(min);
   }
 
   public long getMaxBytes() {
-    return TreeUtil.bitsCeilToBytes(max);
+    return saturatingBitsCeilToBytes(max);
   }
 
   public SszLengthBounds ceilToBytes() {
@@ -64,7 +63,8 @@ public class SszLengthBounds {
   }
 
   public SszLengthBounds add(final SszLengthBounds other) {
-    return new SszLengthBounds(this.min + other.min, this.max + other.max);
+    return new SszLengthBounds(
+        saturatingAdd(this.min, other.min), saturatingAdd(this.max, other.max));
   }
 
   public SszLengthBounds addBytes(final int moreBytes) {
@@ -72,11 +72,12 @@ public class SszLengthBounds {
   }
 
   public SszLengthBounds addBits(final int moreBits) {
-    return new SszLengthBounds(this.min + moreBits, this.max + moreBits);
+    return new SszLengthBounds(
+        saturatingAdd(this.min, moreBits), saturatingAdd(this.max, moreBits));
   }
 
   public SszLengthBounds mul(final long factor) {
-    return new SszLengthBounds(this.min * factor, this.max * factor);
+    return new SszLengthBounds(saturatingMul(this.min, factor), saturatingMul(this.max, factor));
   }
 
   public SszLengthBounds or(final SszLengthBounds other) {
@@ -115,5 +116,32 @@ public class SszLengthBounds {
   private static String fromBits(final long bits) {
     long bytes = bits / 8;
     return "" + bytes + ((bits & 7) == 0 ? "" : "(+" + (bits - bytes * 8) + " bits)");
+  }
+
+  // Saturating arithmetic helpers — all assume non-negative arguments
+
+  private static long saturatingBitsCeilToBytes(final long bits) {
+    if (bits > Long.MAX_VALUE - 7) {
+      return Long.MAX_VALUE / 8 + 1;
+    }
+    return (bits + 7) / 8;
+  }
+
+  private static long saturatingAdd(final long a, final long b) {
+    final long sum = a + b;
+    // Since a, b >= 0, overflow has occurred if sum wraps to negative
+    if (sum < 0) {
+      return Long.MAX_VALUE;
+    }
+    return sum;
+  }
+
+  private static long saturatingMul(final long a, final long b) {
+    final long result = a * b;
+    // Check for overflow: if a != 0 and result / a != b, overflow occurred
+    if (a != 0 && result / a != b) {
+      return Long.MAX_VALUE;
+    }
+    return result;
   }
 }
