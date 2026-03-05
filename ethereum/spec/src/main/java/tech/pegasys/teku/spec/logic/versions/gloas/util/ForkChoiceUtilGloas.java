@@ -121,7 +121,7 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
   }
 
   @Override
-  public boolean shouldNotifyForkChoiceUpdatedAndOptimisticSyncingChangedOnBlock() {
+  public boolean shouldNotifyForkChoiceUpdatedOnBlock() {
     return false;
   }
 

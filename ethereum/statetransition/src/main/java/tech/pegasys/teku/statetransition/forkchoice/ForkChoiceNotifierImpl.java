@@ -86,7 +86,11 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
         () -> {
           eventThread.checkOnEventThread();
           LOG.debug("onAttestationsDue slot {}", slot);
-          prepareNextSlotProposal(slot);
+          // when we don't need to notify fCu when we have imported a beacon block (post-Gloas),
+          // there is no need to prepare next slot proposals when attestations are due
+          if (spec.atSlot(slot).getForkChoiceUtil().shouldNotifyForkChoiceUpdatedOnBlock()) {
+            prepareNextSlotProposal(slot);
+          }
         });
   }
 
