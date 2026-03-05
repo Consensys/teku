@@ -604,16 +604,25 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                                                     block,
                                                     checkpointState.getState(),
                                                     slot,
-                                                    committeeIndex)));
+                                                    computeCommitteeIndex(
+                                                        slot, block, committeeIndex))));
                               } else {
                                 final AttestationData attestationData =
                                     createAttestationData(
-                                        block, blockAndState.getState(), slot, committeeIndex);
+                                        block,
+                                        blockAndState.getState(),
+                                        slot,
+                                        computeCommitteeIndex(slot, block, committeeIndex));
                                 return SafeFuture.completedFuture(Optional.of(attestationData));
                               }
                             }));
     result.always(context::stopTimer);
     return result;
+  }
+
+  protected int computeCommitteeIndex(
+      final UInt64 dutySlot, final BeaconBlock block, final int committeeIndex) {
+    return committeeIndex;
   }
 
   private AttestationData createAttestationData(
@@ -624,12 +633,19 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
     final int committeeCount = spec.getCommitteeCountPerSlot(state, epoch).intValue();
 
-    if (committeeIndex < 0 || committeeIndex >= committeeCount) {
-      throw new IllegalArgumentException(
-          "Invalid committee index "
-              + committeeIndex
-              + " - expected between 0 and "
-              + (committeeCount - 1));
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      if (committeeIndex < 0 || committeeIndex > 1) {
+        throw new IllegalArgumentException(
+            "Invalid committee index " + committeeIndex + " - expected between 0 and 1");
+      }
+    } else {
+      if (committeeIndex < 0 || committeeIndex >= committeeCount) {
+        throw new IllegalArgumentException(
+            "Invalid committee index "
+                + committeeIndex
+                + " - expected between 0 and "
+                + (committeeCount - 1));
+      }
     }
     final UInt64 committeeIndexUnsigned = UInt64.valueOf(committeeIndex);
     return spec.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);

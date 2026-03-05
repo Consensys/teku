@@ -307,6 +307,14 @@ public abstract class AttestationUtil {
       final BeaconState state,
       final BeaconBlockSummary block,
       final UInt64 committeeIndex) {
+    return getGenericAttestationDataPhase0(slot, state, block, committeeIndex);
+  }
+
+  protected AttestationData getGenericAttestationDataPhase0(
+      final UInt64 slot,
+      final BeaconState state,
+      final BeaconBlockSummary block,
+      final UInt64 committeeIndex) {
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
     // Get variables necessary that can be shared among Attestations of all validators
     final Bytes32 beaconBlockRoot = block.getRoot();

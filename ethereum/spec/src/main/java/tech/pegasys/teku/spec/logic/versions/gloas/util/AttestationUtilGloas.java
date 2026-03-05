@@ -23,6 +23,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -78,6 +79,15 @@ public class AttestationUtilGloas extends AttestationUtilElectra {
               String.format("Attestation data index must be 0 or 1 for Gloas, but was %s.", index));
     }
     return AttestationValidationResult.VALID;
+  }
+
+  @Override
+  public AttestationData getGenericAttestationData(
+      final UInt64 slot,
+      final BeaconState state,
+      final BeaconBlockSummary block,
+      final UInt64 committeeIndex) {
+    return getGenericAttestationDataPhase0(slot, state, block, committeeIndex);
   }
 
   @Override
