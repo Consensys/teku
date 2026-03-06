@@ -19,6 +19,7 @@ dependencies {
 
   implementation 'io.consensys.tuweni:tuweni-bytes'
 
+  jmhImplementation project(':ethereum:executionclient')
   jmhImplementation project(':infrastructure:crypto')
   jmhImplementation 'io.consensys.tuweni:tuweni-ssz'
   jmhImplementation testFixtures(project(':ethereum:weaksubjectivity'))
