@@ -160,17 +160,17 @@ public abstract class SszUnionSchemaImpl<SszUnionT extends SszUnion>
   }
 
   @Override
-  public int getSszVariablePartSize(final TreeNode node) {
+  public long getSszVariablePartSize(final TreeNode node) {
     int selector = getSelector(node);
     return childrenSchemas.get(selector).getSszSize(getValueNode(node));
   }
 
   @Override
-  public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
+  public long sszSerializeTree(final TreeNode node, final SszWriter writer) {
     int selector = getSelector(node);
     writer.write(Bytes.of(selector));
     SszSchema<?> valueSchema = childrenSchemas.get(selector);
-    int valueSszLength = valueSchema.sszSerializeTree(getValueNode(node), writer);
+    long valueSszLength = valueSchema.sszSerializeTree(getValueNode(node), writer);
     return valueSszLength + SELECTOR_SIZE_BYTES;
   }
 

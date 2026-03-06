@@ -111,10 +111,10 @@ public abstract class AbstractSszCollectionSchema<
     SszSchema<SszElementT> elementSchema = getElementSchema();
     return elementSchema.isPrimitive()
         ? ((SszPrimitiveSchema<?, ?>) elementSchema).getBitsSize()
-        : elementSchema.getSszFixedPartSize() * 8;
+        : Math.toIntExact(elementSchema.getSszFixedPartSize()) * 8;
   }
 
-  protected int getVariablePartSize(final TreeNode vectorNode, final int length) {
+  protected long getVariablePartSize(final TreeNode vectorNode, final int length) {
     if (isFixedSize()) {
       return 0;
     } else {
@@ -122,7 +122,7 @@ public abstract class AbstractSszCollectionSchema<
       if (elementSchema.isFixedSize()) {
         return elementSchema.getSszFixedPartSize() * length;
       } else {
-        int size = 0;
+        long size = 0;
         for (int i = 0; i < length; i++) {
           size += elementSchema.getSszSize(vectorNode.get(getChildGeneralizedIndex(i)));
         }
@@ -137,7 +137,7 @@ public abstract class AbstractSszCollectionSchema<
    * @param vectorNode for a {@link SszVectorSchemaImpl} type - the node itself, for a {@link
    *     SszListSchemaImpl} - the left sibling node of list size node
    */
-  public int sszSerializeVector(
+  public long sszSerializeVector(
       final TreeNode vectorNode, final SszWriter writer, final int elementsCount) {
     if (getElementSchema().isFixedSize()) {
       return sszSerializeFixedVectorFast(vectorNode, writer, elementsCount);
@@ -146,13 +146,13 @@ public abstract class AbstractSszCollectionSchema<
     }
   }
 
-  private int sszSerializeFixedVectorFast(
+  private long sszSerializeFixedVectorFast(
       final TreeNode vectorNode, final SszWriter writer, final int elementsCount) {
     if (elementsCount == 0) {
       return 0;
     }
     int nodesCount = getChunks(elementsCount);
-    int[] bytesCnt = new int[1];
+    long[] bytesCnt = new long[1];
     TreeUtil.iterateLeavesData(
         vectorNode,
         getChildGeneralizedIndex(0),
@@ -164,14 +164,14 @@ public abstract class AbstractSszCollectionSchema<
     return bytesCnt[0];
   }
 
-  private int sszSerializeVariableVector(
+  private long sszSerializeVariableVector(
       final TreeNode vectorNode, final SszWriter writer, final int elementsCount) {
     SszSchema<?> elementType = getElementSchema();
-    int variableOffset = SSZ_LENGTH_SIZE * elementsCount;
+    long variableOffset = (long) SSZ_LENGTH_SIZE * elementsCount;
     for (int i = 0; i < elementsCount; i++) {
       TreeNode childSubtree = vectorNode.get(getChildGeneralizedIndex(i));
-      int childSize = elementType.getSszSize(childSubtree);
-      writer.write(SszType.sszLengthToBytes(variableOffset));
+      long childSize = elementType.getSszSize(childSubtree);
+      writer.write(SszType.sszLengthToBytes(Math.toIntExact(variableOffset)));
       variableOffset += childSize;
     }
     for (int i = 0; i < elementsCount; i++) {
@@ -220,8 +220,9 @@ public abstract class AbstractSszCollectionSchema<
 
   private DeserializedData sszDeserializeFixed(final SszReader reader) {
     int bytesSize = reader.getAvailableBytes();
+    long elementFixedPartSize = getElementSchema().getSszFixedPartSize();
     checkSsz(
-        bytesSize % getElementSchema().getSszFixedPartSize() == 0,
+        bytesSize % elementFixedPartSize == 0,
         "SSZ sequence length is not multiple of fixed element size");
     int elementBitSize = getSszElementBitSize();
     if (elementBitSize >= 8) {
@@ -255,10 +256,11 @@ public abstract class AbstractSszCollectionSchema<
       return new DeserializedData(
           TreeUtil.createTree(childNodes, treeDepth()), bytesSize * 8 / elementBitSize, lastByte);
     } else {
-      int elementsCount = bytesSize / getElementSchema().getSszFixedPartSize();
+      int elementsCount = (int) (bytesSize / elementFixedPartSize);
+      int elementFixedPartSizeInt = Math.toIntExact(elementFixedPartSize);
       List<TreeNode> childNodes = new ArrayList<>();
       for (int i = 0; i < elementsCount; i++) {
-        try (SszReader sszReader = reader.slice(getElementSchema().getSszFixedPartSize())) {
+        try (SszReader sszReader = reader.slice(elementFixedPartSizeInt)) {
           TreeNode childNode = getElementSchema().sszDeserializeTree(sszReader);
           childNodes.add(childNode);
         }

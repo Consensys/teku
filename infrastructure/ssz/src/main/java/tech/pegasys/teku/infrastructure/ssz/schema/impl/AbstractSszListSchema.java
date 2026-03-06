@@ -97,24 +97,24 @@ public abstract class AbstractSszListSchema<
   }
 
   @Override
-  public int getSszFixedPartSize() {
+  public long getSszFixedPartSize() {
     return 0;
   }
 
   @Override
-  public int getSszVariablePartSize(final TreeNode node) {
+  public long getSszVariablePartSize(final TreeNode node) {
     int length = getLength(node);
     SszSchema<?> elementSchema = getElementSchema();
     if (elementSchema.isFixedSize()) {
       if (getSszElementBitSize() == 1) {
         // BitlistImpl is handled specially
-        return length / 8 + 1;
+        return length / 8 + 1L;
       } else {
-        return Math.toIntExact(bitsCeilToBytes((long) length * getSszElementBitSize()));
+        return bitsCeilToBytes((long) length * getSszElementBitSize());
       }
     } else {
       return getCompatibleVectorSchema().getVariablePartSize(getVectorNode(node), length)
-          + length * SSZ_LENGTH_SIZE;
+          + (long) length * SSZ_LENGTH_SIZE;
     }
   }
 
@@ -124,7 +124,7 @@ public abstract class AbstractSszListSchema<
   }
 
   @Override
-  public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
+  public long sszSerializeTree(final TreeNode node, final SszWriter writer) {
     int elementsCount = getLength(node);
     if (getElementSchema().equals(SszPrimitiveSchemas.BIT_SCHEMA)) {
       throw new UnsupportedOperationException(

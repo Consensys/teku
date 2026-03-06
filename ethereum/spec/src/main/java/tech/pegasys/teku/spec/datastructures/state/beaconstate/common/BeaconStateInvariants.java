@@ -62,13 +62,13 @@ public class BeaconStateInvariants {
         "Expected genesisValidatorsRoot field to be a fixed size");
     checkState(SLOT_SCHEMA.isFixedSize(), "Expected slot field to be a fixed size");
 
-    final int offset =
+    final long offset =
         GENESIS_TIME_SCHEMA.getSszFixedPartSize()
             + GENESIS_VALIDATORS_ROOT_SCHEMA.getSszFixedPartSize();
-    final int size = SLOT_SCHEMA.getSszFixedPartSize();
+    final long size = SLOT_SCHEMA.getSszFixedPartSize();
 
     // Extract slot data
-    final Bytes slotData = bytes.slice(offset, size);
+    final Bytes slotData = bytes.slice((int) offset, (int) size);
     return SLOT_SCHEMA.sszDeserialize(slotData).get();
   }
 

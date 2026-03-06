@@ -72,7 +72,7 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
     return sszSerializeTree(view.getBackingNode());
   }
 
-  default int sszSerialize(final SszDataT view, final SszWriter writer) {
+  default long sszSerialize(final SszDataT view, final SszWriter writer) {
     return sszSerializeTree(view.getBackingNode(), writer);
   }
 

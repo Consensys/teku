@@ -85,17 +85,17 @@ public class SszCompositeListTest {
         }
 
         @Override
-        public int getSszFixedPartSize() {
+        public long getSszFixedPartSize() {
           return 0;
         }
 
         @Override
-        public int getSszVariablePartSize(final TreeNode node) {
+        public long getSszVariablePartSize(final TreeNode node) {
           return 0;
         }
 
         @Override
-        public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
+        public long sszSerializeTree(final TreeNode node, final SszWriter writer) {
           return 0;
         }
 

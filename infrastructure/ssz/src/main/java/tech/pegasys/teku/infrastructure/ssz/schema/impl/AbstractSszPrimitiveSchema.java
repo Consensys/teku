@@ -138,17 +138,17 @@ public abstract class AbstractSszPrimitiveSchema<DataT, SszDataT extends SszPrim
   }
 
   @Override
-  public int getSszFixedPartSize() {
+  public long getSszFixedPartSize() {
     return sszSize;
   }
 
   @Override
-  public int getSszVariablePartSize(final TreeNode node) {
+  public long getSszVariablePartSize(final TreeNode node) {
     return 0;
   }
 
   @Override
-  public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
+  public long sszSerializeTree(final TreeNode node, final SszWriter writer) {
     final Bytes nodeData;
     if (node instanceof final LeafDataNode leafDataNode) {
       // small perf optimization

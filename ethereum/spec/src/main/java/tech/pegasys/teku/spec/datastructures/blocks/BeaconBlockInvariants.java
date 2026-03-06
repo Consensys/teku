@@ -30,7 +30,7 @@ public class BeaconBlockInvariants {
    * length)
    */
   private static final int BEACON_BLOCK_OFFSET_IN_SIGNED_BEACON_BLOCK =
-      BYTES_PER_LENGTH_OFFSET + SszSignatureSchema.INSTANCE.getSszFixedPartSize();
+      (int) (BYTES_PER_LENGTH_OFFSET + SszSignatureSchema.INSTANCE.getSszFixedPartSize());
 
   /**
    * Extract the slot value from any {@link BeaconBlock}.
@@ -41,8 +41,8 @@ public class BeaconBlockInvariants {
    * @param bytes the SSZ bytes to extract a slot from
    */
   public static UInt64 extractBeaconBlockSlot(final Bytes bytes) {
-    final int size = UINT64_SCHEMA.getSszFixedPartSize();
-    final Bytes slotData = bytes.slice(0, size);
+    final long size = UINT64_SCHEMA.getSszFixedPartSize();
+    final Bytes slotData = bytes.slice(0, (int) size);
     return UINT64_SCHEMA.sszDeserialize(slotData).get();
   }
 

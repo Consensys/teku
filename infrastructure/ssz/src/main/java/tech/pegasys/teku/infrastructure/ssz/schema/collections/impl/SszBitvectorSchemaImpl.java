@@ -66,7 +66,7 @@ public class SszBitvectorSchemaImpl extends AbstractSszVectorSchema<SszBit, SszB
   }
 
   @Override
-  public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
+  public long sszSerializeTree(final TreeNode node, final SszWriter writer) {
     return sszSerializeVector(node, writer, getLength());
   }
 

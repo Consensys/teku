@@ -49,19 +49,19 @@ public interface SszType {
   boolean isFixedSize();
 
   /** Returns the size of the fixed SSZ part for this type */
-  int getSszFixedPartSize();
+  long getSszFixedPartSize();
 
   /** Returns the size of the variable SSZ part for this type and specified backing subtree */
-  int getSszVariablePartSize(TreeNode node);
+  long getSszVariablePartSize(TreeNode node);
 
   /** Calculates the full SSZ size in bytes for this type and specified backing subtree */
-  default int getSszSize(final TreeNode node) {
+  default long getSszSize(final TreeNode node) {
     return getSszFixedPartSize() + getSszVariablePartSize(node);
   }
 
   /** SSZ serializes the backing tree instance of this type */
   default Bytes sszSerializeTree(final TreeNode node) {
-    SszByteArrayWriter writer = new SszByteArrayWriter(getSszSize(node));
+    SszByteArrayWriter writer = new SszByteArrayWriter(Math.toIntExact(getSszSize(node)));
     sszSerializeTree(node, writer);
     return writer.toBytes();
   }
@@ -70,7 +70,7 @@ public interface SszType {
    * SSZ serializes the backing tree of this type and returns the data as bytes 'stream' via passed
    * {@code writer}
    */
-  int sszSerializeTree(TreeNode node, SszWriter writer);
+  long sszSerializeTree(TreeNode node, SszWriter writer);
 
   TreeNode sszDeserializeTree(SszReader reader) throws SszDeserializeException;
 

@@ -48,7 +48,7 @@ public abstract class AbstractSszVectorSchema<
     implements SszVectorSchema<SszElementT, SszVectorT> {
 
   private final boolean isListBacking;
-  private final int fixedPartSize;
+  private final long fixedPartSize;
   private final SszLengthBounds sszLengthBounds;
 
   private final Supplier<DeserializableTypeDefinition<SszVectorT>> jsonTypeDefinition =
@@ -143,26 +143,26 @@ public abstract class AbstractSszVectorSchema<
   }
 
   @Override
-  public int getSszVariablePartSize(final TreeNode node) {
+  public long getSszVariablePartSize(final TreeNode node) {
     return getVariablePartSize(node, getLength());
   }
 
   @Override
-  public final int getSszFixedPartSize() {
+  public final long getSszFixedPartSize() {
     return fixedPartSize;
   }
 
-  private int calcSszFixedPartSize() {
+  private long calcSszFixedPartSize() {
     if (isListBacking) {
       return 0;
     } else {
       int bitsPerChild = isFixedSize() ? getSszElementBitSize() : SSZ_LENGTH_SIZE * 8;
-      return bitsCeilToBytes(getLength() * bitsPerChild);
+      return bitsCeilToBytes((long) getLength() * bitsPerChild);
     }
   }
 
   @Override
-  public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
+  public long sszSerializeTree(final TreeNode node, final SszWriter writer) {
     return sszSerializeVector(node, writer, getLength());
   }
 

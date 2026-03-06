@@ -32,7 +32,7 @@ public interface SimpleOffsetSerializable {
    *
    * @return number of bytes written
    */
-  int sszSerialize(SszWriter writer);
+  long sszSerialize(SszWriter writer);
 
-  int sszSerialize(OutputStream out);
+  long sszSerialize(OutputStream out);
 }

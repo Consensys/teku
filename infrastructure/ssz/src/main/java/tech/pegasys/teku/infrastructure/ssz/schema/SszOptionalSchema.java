@@ -43,7 +43,7 @@ public interface SszOptionalSchema<
   }
 
   @Override
-  default int getSszFixedPartSize() {
+  default long getSszFixedPartSize() {
     return 0;
   }
 }
