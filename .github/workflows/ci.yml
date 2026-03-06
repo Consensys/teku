@@ -457,15 +457,16 @@ jobs:
         with:
           path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
           key: reftests-${{ hashFiles('build.gradle') }}
+      - name: Compress reftests
+        shell: bash
+        run: |
+          tar -cf reftests.tar ./eth-reference-tests/
       - name: Upload reftests
         uses: actions/upload-artifact@v6
         with:
           name: reftests
-          path: |
-            ./eth-reference-tests/
-            !./eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
+          path: reftests.tar
           retention-days: 1
-          include-hidden-files: 'true'
 
   referenceTests:
     needs: referenceTestsPrep
@@ -494,7 +495,7 @@ jobs:
       - uses: actions/cache/restore@v4
         with:
           path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
-          key: reftests-${{ hashFiles('build.gradle') }}          
+          key: reftests-${{ hashFiles('build.gradle') }}
       - name: Download reftests
         uses: actions/download-artifact@v7
         with:
@@ -502,8 +503,11 @@ jobs:
           repository: ${{ github.repository }}
           run-id: ${{ github.run_id }}
           name: reftests
-          merge-multiple: true
-          path: ./eth-reference-tests
+      - name: Extract reftests
+        shell: bash
+        run: |
+          tar -xf reftests.tar
+          rm reftests.tar
       - name: Compute shard ${{ matrix.shard }} of ${{ matrix.total }} for ReferenceTests
         id: shard
         shell: bash
