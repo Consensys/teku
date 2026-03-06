@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -120,7 +119,7 @@ public class DataColumnSidecarsByRootMessageHandler
     totalDataColumnSidecarsRequestedCounter.inc(requestedDataColumnSidecarsCount);
 
     final Set<UInt64> myCustodyColumns =
-        new HashSet<>(custodyGroupCountManagerSupplier.get().getCustodyColumnIndices());
+        custodyGroupCountManagerSupplier.get().getCustodyColumnIndices();
 
     SafeFuture.collectAll(
             message.stream()

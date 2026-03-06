@@ -26,10 +26,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -253,8 +255,10 @@ public class Eth2P2PNetworkFactory {
         }
         final UInt256 discoveryNodeId = DISCOVERY_NODE_ID_GENERATOR.next();
         final int numberOfColumns = spec.getNumberOfDataColumns().orElse(0);
-        final List<UInt64> allColumns =
-            IntStream.range(0, numberOfColumns).mapToObj(UInt64::valueOf).toList();
+        final Set<UInt64> allColumns =
+            IntStream.range(0, numberOfColumns)
+                .mapToObj(UInt64::valueOf)
+                .collect(Collectors.toSet());
         final CustodyGroupCountManager custodyGroupCountManager =
             new CustodyGroupCountManager() {
               @Override
@@ -263,7 +267,7 @@ public class Eth2P2PNetworkFactory {
               }
 
               @Override
-              public List<UInt64> getCustodyColumnIndices() {
+              public Set<UInt64> getCustodyColumnIndices() {
                 return allColumns;
               }
 
@@ -273,8 +277,8 @@ public class Eth2P2PNetworkFactory {
               }
 
               @Override
-              public List<UInt64> getSamplingColumnIndices() {
-                return List.of();
+              public Set<UInt64> getSamplingColumnIndices() {
+                return Set.of();
               }
             };
 
