@@ -1,0 +1,55 @@
+{
+  "title" : "GetVersionV2Response",
+  "type" : "object",
+  "required" : [ "data" ],
+  "properties" : {
+    "data" : {
+      "type" : "object",
+      "required" : [ "beacon_node" ],
+      "properties" : {
+        "beacon_node" : {
+          "type" : "object",
+          "required" : [ "code", "name", "version", "commit" ],
+          "properties" : {
+            "code" : {
+              "type" : "string"
+            },
+            "name" : {
+              "type" : "string"
+            },
+            "version" : {
+              "type" : "string"
+            },
+            "commit" : {
+              "type" : "string",
+              "description" : "Bytes4 hexadecimal",
+              "example" : "0xcf8e0d4e",
+              "format" : "byte"
+            }
+          }
+        },
+        "execution_client" : {
+          "type" : "object",
+          "required" : [ "code", "name", "version", "commit" ],
+          "properties" : {
+            "code" : {
+              "type" : "string"
+            },
+            "name" : {
+              "type" : "string"
+            },
+            "version" : {
+              "type" : "string"
+            },
+            "commit" : {
+              "type" : "string",
+              "description" : "Bytes4 hexadecimal",
+              "example" : "0xcf8e0d4e",
+              "format" : "byte"
+            }
+          }
+        }
+      }
+    }
+  }
+}

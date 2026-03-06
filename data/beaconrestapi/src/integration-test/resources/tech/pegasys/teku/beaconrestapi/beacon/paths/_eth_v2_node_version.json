@@ -1,17 +1,16 @@
 {
   "get" : {
     "tags" : [ "Node" ],
-    "operationId" : "getNodeVersion",
-    "summary" : "Get version string of the running beacon node.",
-    "description" : "similar to [HTTP User-Agent](https://tools.ietf.org/html/rfc7231#section-5.5.3).",
-    "deprecated" : true,
+    "operationId" : "getNodeVersionV2",
+    "summary" : "Get version information for the beacon node and execution client.",
+    "description" : "Retrieves structured information about the version of the beacon node and its attached execution client in the same format as used on the Engine API. Version information about the execution client may not be available at all times and is therefore optional. If the beacon node receives multiple values from `engine_getClientVersionV1`, the first value should be returned on this endpoint.",
     "responses" : {
       "200" : {
         "description" : "Request successful",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetVersionResponse"
+              "$ref" : "#/components/schemas/GetVersionV2Response"
             }
           }
         }
