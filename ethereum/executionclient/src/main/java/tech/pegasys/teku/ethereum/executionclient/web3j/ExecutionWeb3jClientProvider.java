@@ -77,6 +77,10 @@ public interface ExecutionWeb3jClientProvider {
 
   String getEndpoint();
 
+  default Optional<JwtConfig> getJwtConfig() {
+    return Optional.empty();
+  }
+
   default boolean isStub() {
     return false;
   }
