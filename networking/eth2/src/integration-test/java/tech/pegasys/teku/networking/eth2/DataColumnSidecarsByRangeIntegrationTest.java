@@ -152,6 +152,7 @@ public class DataColumnSidecarsByRangeIntegrationTest extends AbstractRpcMethodI
     final List<DataColumnSidecar> expectedCanonicalDataColumnSidecars =
         retrieveCanonicalDataColumnSidecarsFromPeerStorage(
             UInt64.rangeClosed(startSlot, targetSlot), columns);
+    assertThat(expectedCanonicalDataColumnSidecars).isNotEmpty();
 
     final UInt64 slotCount = targetSlot.minus(startSlot).increment();
 

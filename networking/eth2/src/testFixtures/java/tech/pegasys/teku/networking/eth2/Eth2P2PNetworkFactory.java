@@ -273,12 +273,12 @@ public class Eth2P2PNetworkFactory {
 
               @Override
               public int getSamplingGroupCount() {
-                return 0;
+                return numberOfColumns;
               }
 
               @Override
               public Set<UInt64> getSamplingColumnIndices() {
-                return Set.of();
+                return allColumns;
               }
             };
 
