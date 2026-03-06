@@ -83,6 +83,8 @@ class OkHttpRestClientTest {
   @AfterEach
   public void afterEach() throws Exception {
     mockWebServer.shutdown();
+    okHttpClient.dispatcher().executorService().shutdown();
+    okHttpClient.connectionPool().evictAll();
   }
 
   @Test
