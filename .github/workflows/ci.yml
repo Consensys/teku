@@ -104,7 +104,7 @@ jobs:
         if: always()
         with:
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 3
           path: |
             build/test-results/
 
@@ -140,7 +140,7 @@ jobs:
           name: distribution-tar
           path: |
             build/distributions/*.tar.gz
-          retention-days: 7
+          retention-days: 14
       - name: Upload distribution zip
         uses: actions/upload-artifact@v6
         with:
