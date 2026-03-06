@@ -467,7 +467,6 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     verify(callback).completeSuccessfully();
 
     assertThat(datacolumnSidecarCaptor.getValue()).isEqualTo(nonCanonicalSidecar);
-    verify(dataColumnSidecarArchiveReconstructor, never()).isSidecarPruned(any(), any());
     verify(dataColumnSidecarArchiveReconstructor, never())
         .reconstructDataColumnSidecar(any(), any(), anyInt());
   }

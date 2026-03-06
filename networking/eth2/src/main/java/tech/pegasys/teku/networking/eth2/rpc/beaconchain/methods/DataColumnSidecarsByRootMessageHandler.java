@@ -164,23 +164,18 @@ public class DataColumnSidecarsByRootMessageHandler
 
   private SafeFuture<Optional<DataColumnSidecar>> getArchiveOrNonCanonicalDataColumnSidecar(
       final DataColumnSlotAndIdentifier identifier, final int messageId) {
-    return combinedChainDataClient
-        .getBlockByBlockRoot(identifier.blockRoot())
-        .thenCompose(
-            maybeBlock -> {
-              if (maybeBlock.isEmpty()) {
-                return combinedChainDataClient.getNonCanonicalSidecar(identifier);
-              }
-
-              final boolean isSuperNodePruned =
-                  dataColumnSidecarArchiveReconstructor.isSidecarPruned(
-                      maybeBlock.get().getSlot(), identifier.columnIndex());
-              if (isSuperNodePruned) {
-                return dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(
-                    maybeBlock.get(), identifier.columnIndex(), messageId);
-              }
-              return combinedChainDataClient.getNonCanonicalSidecar(identifier);
-            });
+    final boolean isSuperNodePruned =
+        dataColumnSidecarArchiveReconstructor.isSidecarPruned(
+            identifier.slot(), identifier.columnIndex());
+    if (isSuperNodePruned) {
+      return combinedChainDataClient
+          .getBlockByBlockRoot(identifier.blockRoot())
+          .thenCompose(
+              maybeBlock ->
+                  dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(
+                      maybeBlock.orElseThrow(), identifier.columnIndex(), messageId));
+    }
+    return combinedChainDataClient.getNonCanonicalSidecar(identifier);
   }
 
   /**
