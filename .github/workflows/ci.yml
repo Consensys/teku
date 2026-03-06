@@ -39,7 +39,16 @@ on:
       include_hash_in_docker:
         description: 'include_hash_in_docker'
         required: false
-        default: 'false'  # string "false"
+        default: 'false'
+      gradle_log_level:
+        description: 'Gradle log level for test jobs'
+        required: false
+        type: choice
+        default: 'lifecycle'
+        options:
+          - lifecycle
+          - info
+          - debug
 
 # if a new commit is made, cancel this run
 concurrency:
@@ -262,6 +271,7 @@ jobs:
       src_pattern: "*/src/test/java/*"
       src_root: "src/test/java"
       runner: "gha-runner-scale-set-ubuntu-22.04-amd64-large"
+      gradle_args: ${{ (inputs.gradle_log_level == 'info' && '--info') || (inputs.gradle_log_level == 'debug' && '--debug') || '' }}
 
   unitTestsResult:
     runs-on: ubuntu-24.04
@@ -299,8 +309,8 @@ jobs:
       gradle_task: integrationTest
       src_pattern: "*/src/integration-test/java/*"
       src_root: "src/integration-test/java"
-      runner: "gha-runner-scale-set-ubuntu-22.04-amd64-xxl"
-      max_test_forks: "2"
+      runner: "gha-runner-scale-set-ubuntu-22.04-amd64-large"
+      gradle_args: ${{ (inputs.gradle_log_level == 'info' && '--info') || (inputs.gradle_log_level == 'debug' && '--debug') || '' }}
 
   integrationTestsResult:
     runs-on: ubuntu-24.04
@@ -339,6 +349,7 @@ jobs:
       src_pattern: "*/src/property-test/java/*"
       src_root: "src/property-test/java"
       runner: "gha-runner-scale-set-ubuntu-22.04-amd64-xl"
+      gradle_args: ${{ (inputs.gradle_log_level == 'info' && '--info') || (inputs.gradle_log_level == 'debug' && '--debug') || '' }}
 
   propertyTestsResult:
     runs-on: ubuntu-24.04
@@ -377,6 +388,7 @@ jobs:
       src_pattern: "*/src/acceptance-test/java/*"
       src_root: "src/acceptance-test/java"
       runner: "ubuntu-latest-128"
+      gradle_args: ${{ (inputs.gradle_log_level == 'info' && '--info') || (inputs.gradle_log_level == 'debug' && '--debug') || '' }}
 
   acceptanceTestsResult:
     runs-on: ubuntu-24.04

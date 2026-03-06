@@ -27,7 +27,7 @@ on:
         type: string
         required: false
         default: gha-runner-scale-set-ubuntu-22.04-amd64-xxl
-      max_test_forks:
+      gradle_args:
         type: string
         required: false
         default: ''
@@ -35,10 +35,6 @@ on:
 permissions:
   actions: read     # download the assemble output as an artifacts
   contents: read
-
-env:
-  JAVA_TOOL_OPTIONS: -Xmx4096m
-  GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=4 -Xmx4096m
 
 jobs:
   matrix-tests-template:
@@ -113,10 +109,8 @@ jobs:
 
       - name: Run ${{ inputs.stage_name }} (shard)
         if: steps.shard.outputs.args != ''
-        env:
-          GRADLE_MAX_TEST_FORKS: ${{ inputs.max_test_forks }}
         run: |
-          ./gradlew --no-daemon --parallel --info ${{ inputs.gradle_task }} ${{ steps.shard.outputs.args }}
+          ./gradlew --no-daemon --parallel ${{ inputs.gradle_args }} ${{ inputs.gradle_task }} ${{ steps.shard.outputs.args }}
 
       - name: Upload JUnit XML + HTML for ${{ inputs.stage_name }}
         if: always()
