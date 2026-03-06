@@ -300,6 +300,7 @@ jobs:
       src_pattern: "*/src/integration-test/java/*"
       src_root: "src/integration-test/java"
       runner: "gha-runner-scale-set-ubuntu-22.04-amd64-large"
+      max_test_forks: "2"
 
   integrationTestsResult:
     runs-on: ubuntu-24.04
