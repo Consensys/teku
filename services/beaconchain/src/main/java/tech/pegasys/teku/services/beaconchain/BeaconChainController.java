@@ -171,8 +171,6 @@ import tech.pegasys.teku.statetransition.datacolumns.DasPreSampler;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustodyImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustodyImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
@@ -931,7 +929,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final SpecConfigFulu specConfigFulu = SpecConfigFulu.required(specVersionFulu.getConfig());
     final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator =
         MinCustodyPeriodSlotCalculator.createFromSpec(spec);
-    final int slotsPerEpoch = spec.getGenesisSpec().getSlotsPerEpoch();
 
     final DataColumnSidecarDB sidecarDB =
         DataColumnSidecarDB.create(
@@ -967,19 +964,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
       eventChannels.subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarCustodyImpl);
     }
 
-    final DataColumnSidecarByRootCustody dataColumnSidecarByRootCustody =
-        new DataColumnSidecarByRootCustodyImpl(
-            dataColumnSidecarCustodyImpl,
-            combinedChainDataClient,
-            UInt64.valueOf(slotsPerEpoch)
-                .times(DataColumnSidecarByRootCustodyImpl.DEFAULT_MAX_CACHE_SIZE_EPOCHS));
-
     final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel =
         eventChannels.getPublisher(DataColumnSidecarGossipChannel.class);
 
     final DataColumnSidecarRecoveringCustody dataColumnSidecarRecoveringCustody =
         new DataColumnSidecarRecoveringCustodyImpl(
-            dataColumnSidecarByRootCustody,
+            dataColumnSidecarCustodyImpl,
             dasAsyncRunner,
             spec,
             miscHelpersFulu,

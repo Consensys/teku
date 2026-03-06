@@ -29,6 +29,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -83,7 +84,7 @@ class DasCustodyBackfillerTest {
 
   private static final int BATCH_SIZE = 10;
   private static final int CUSTODY_GROUP_COUNT = 2;
-  private static final List<UInt64> CUSTODY_INDICES = List.of(UInt64.ZERO, UInt64.ONE);
+  private static final Set<UInt64> CUSTODY_INDICES = Set.of(UInt64.ZERO, UInt64.ONE);
 
   @BeforeEach
   void setUp() {
@@ -106,9 +107,7 @@ class DasCustodyBackfillerTest {
     when(combinedChainDataClient.getDataColumnIdentifiers(any(), any(), any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                List.of(
-                    new DataColumnSlotAndIdentifier(
-                        UInt64.ZERO, Bytes32.ZERO, CUSTODY_INDICES.getFirst()))));
+                List.of(new DataColumnSlotAndIdentifier(UInt64.ZERO, Bytes32.ZERO, UInt64.ZERO))));
     when(combinedChainDataClient.getDataColumnIdentifiers(any()))
         .thenReturn(
             SafeFuture.completedFuture(
@@ -406,7 +405,7 @@ class DasCustodyBackfillerTest {
 
     // Override custody settings for this test to only require 1 column (Index 0).
     // This ensures 'retrieve' is called exactly ONCE per block, matching the verify expectation.
-    when(custodyGroupCountManager.getCustodyColumnIndices()).thenReturn(List.of(UInt64.ZERO));
+    when(custodyGroupCountManager.getCustodyColumnIndices()).thenReturn(Set.of(UInt64.ZERO));
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(1);
     backfiller =
         new DasCustodyBackfiller(
@@ -559,7 +558,7 @@ class DasCustodyBackfillerTest {
     earliestAvailableColumnSlotStore.set(Optional.of(UInt64.valueOf(500)));
     // same 2 indices but they are different to what is synced
     when(custodyGroupCountManager.getCustodyColumnIndices())
-        .thenReturn(List.of(UInt64.valueOf(3), UInt64.valueOf(4)));
+        .thenReturn(Set.of(UInt64.valueOf(3), UInt64.valueOf(4)));
     safeJoin(backfiller.start());
 
     // Run the triggered task

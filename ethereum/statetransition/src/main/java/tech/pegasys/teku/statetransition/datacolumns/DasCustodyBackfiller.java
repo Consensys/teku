@@ -536,7 +536,7 @@ public class DasCustodyBackfiller extends Service
                   identifiers.stream()
                       .map(DataColumnSlotAndIdentifier::columnIndex)
                       .collect(Collectors.toSet());
-              final List<UInt64> requiredIndices =
+              final Set<UInt64> requiredIndices =
                   custodyGroupCountManager.getCustodyColumnIndices();
 
               final int syncedColumnCount =
@@ -577,7 +577,7 @@ public class DasCustodyBackfiller extends Service
       UInt64 fromSlot,
       UInt64 toSlot,
       UInt64 minCustodyPeriodSlot,
-      List<UInt64> requiredColumnsInCustody,
+      Set<UInt64> requiredColumnsInCustody,
       int custodyGroupCount,
       Set<DataColumnSlotAndIdentifier> columnsInCustody,
       List<SlotAndBlockRootWithBlobsPresence> blocksInfo,

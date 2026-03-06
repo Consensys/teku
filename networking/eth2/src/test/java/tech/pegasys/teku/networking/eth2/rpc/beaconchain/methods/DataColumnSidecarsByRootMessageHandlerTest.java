@@ -34,6 +34,8 @@ import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 import com.google.common.base.Supplier;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -156,7 +158,8 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
 
     // custodying everything by default
     when(custodyGroupCountManager.getCustodyColumnIndices())
-        .thenReturn(IntStream.of(0, 128).mapToObj(UInt64::valueOf).toList());
+        .thenReturn(
+            IntStream.of(0, 128).mapToObj(UInt64::valueOf).collect(Collectors.toUnmodifiableSet()));
   }
 
   @TestTemplate
@@ -297,7 +300,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     final List<DataColumnSidecar> generatedSidecars =
         IntStream.range(0, 4).mapToObj(__ -> dataStructureUtil.randomDataColumnSidecar()).toList();
     when(custodyGroupCountManager.getCustodyColumnIndices())
-        .thenReturn(List.of(dataColumnsByRootIdentifiers[0].getColumns().getFirst()));
+        .thenReturn(Set.of(dataColumnsByRootIdentifiers[0].getColumns().getFirst()));
 
     when(combinedChainDataClient.getSidecar(any()))
         .thenAnswer(
