@@ -463,6 +463,7 @@ jobs:
           name: reftests
           path: |
             ./eth-reference-tests/
+            !./eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
           retention-days: 1
           include-hidden-files: 'true'
 
@@ -501,12 +502,8 @@ jobs:
           repository: ${{ github.repository }}
           run-id: ${{ github.run_id }}
           name: reftests
-          merge-multiple: true 
+          merge-multiple: true
           path: ./eth-reference-tests
-      - uses: actions/cache/restore@v4
-        with:
-          path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
-          key: reftests-${{ hashFiles('build.gradle') }}
       - name: Compute shard ${{ matrix.shard }} of ${{ matrix.total }} for ReferenceTests
         id: shard
         shell: bash
