@@ -107,6 +107,9 @@ public abstract class AbstractRpcMethodIntegrationTest {
   @AfterEach
   public void tearDown() throws Exception {
     networkFactory.stopAll();
+    if (peerStorage != null) {
+      peerStorage.close();
+    }
   }
 
   protected Eth2Peer createPeer() {

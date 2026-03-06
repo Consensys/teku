@@ -1,0 +1,10 @@
+{
+  "data" : {
+    "beacon_node" : {
+      "code" : "TK",
+      "name" : "teku",
+      "version" : "<BEACON_NODE_VERSION>",
+      "commit" : "<BEACON_NODE_COMMIT>"
+    }
+  }
+}
