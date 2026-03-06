@@ -29,10 +29,6 @@ public class SszByteArrayWriter implements SszWriter {
     this.size += length;
   }
 
-  public byte[] getBytesArray() {
-    return bytes;
-  }
-
   public int getLength() {
     return size;
   }

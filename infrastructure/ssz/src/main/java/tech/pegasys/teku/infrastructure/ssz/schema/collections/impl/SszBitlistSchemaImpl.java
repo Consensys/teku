@@ -80,7 +80,7 @@ public class SszBitlistSchemaImpl extends SszPrimitiveListSchemaImpl<Boolean, Ss
   }
 
   @Override
-  public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
+  public long sszSerializeTree(final TreeNode node, final SszWriter writer) {
     int elementsCount = getLength(node);
     BytesCollector bytesCollector = new BytesCollector();
     getCompatibleVectorSchema()
@@ -138,14 +138,14 @@ public class SszBitlistSchemaImpl extends SszPrimitiveListSchemaImpl<Boolean, Ss
       size += length;
     }
 
-    public int flushWithBoundaryBit(final SszWriter writer, final int boundaryBitOffset) {
+    public long flushWithBoundaryBit(final SszWriter writer, final int boundaryBitOffset) {
       int bitIdx = boundaryBitOffset % 8;
       checkArgument(
           TreeUtil.bitsCeilToBytes(boundaryBitOffset) == size, "Invalid boundary bit offset");
       if (bitIdx == 0) {
         bytesList.forEach(bb -> writer.write(bb.bytes, bb.offset, bb.length));
         writer.write(new byte[] {1});
-        return size + 1;
+        return size + 1L;
       } else {
         UnsafeBytes lastBytes = bytesList.getLast();
         byte lastByte = lastBytes.bytes[lastBytes.offset + lastBytes.length - 1];

@@ -54,7 +54,7 @@ public interface SszUnionSchema<SszUnionT extends SszUnion> extends SszSchema<Ss
   }
 
   @Override
-  default int getSszFixedPartSize() {
+  default long getSszFixedPartSize() {
     return SELECTOR_SIZE_BYTES;
   }
 }

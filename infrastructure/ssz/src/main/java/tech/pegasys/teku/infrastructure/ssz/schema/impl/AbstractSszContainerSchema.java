@@ -87,7 +87,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   private final List<? extends SszSchema<?>> childrenSchemas;
   private final TreeNode defaultTree;
   private final long treeWidth;
-  private final int fixedPartSize;
+  private final long fixedPartSize;
   private final DeserializableTypeDefinition<C> jsonTypeDefinition;
 
   protected AbstractSszContainerSchema(
@@ -214,12 +214,12 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   }
 
   @Override
-  public int getSszFixedPartSize() {
+  public long getSszFixedPartSize() {
     return fixedPartSize;
   }
 
-  protected int calcSszFixedPartSize() {
-    int size = 0;
+  protected long calcSszFixedPartSize() {
+    long size = 0;
     for (int i = 0; i < getFieldsCount(); i++) {
       SszSchema<?> childType = getChildSchema(i);
       size += childType.isFixedSize() ? childType.getSszFixedPartSize() : SSZ_LENGTH_SIZE;
@@ -228,11 +228,11 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   }
 
   @Override
-  public int getSszVariablePartSize(final TreeNode node) {
+  public long getSszVariablePartSize(final TreeNode node) {
     if (isFixedSize()) {
       return 0;
     } else {
-      int size = 0;
+      long size = 0;
       for (int i = 0; i < getFieldsCount(); i++) {
         SszSchema<?> childType = getChildSchema(i);
         if (!childType.isFixedSize()) {
@@ -249,18 +249,18 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   }
 
   @Override
-  public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
-    int variableChildOffset = getSszFixedPartSize();
-    int[] variableSizes = new int[getFieldsCount()];
+  public long sszSerializeTree(final TreeNode node, final SszWriter writer) {
+    long variableChildOffset = getSszFixedPartSize();
+    long[] variableSizes = new long[getFieldsCount()];
     for (int i = 0; i < getFieldsCount(); i++) {
       TreeNode childSubtree = node.get(getChildGeneralizedIndex(i));
       SszSchema<?> childType = getChildSchema(i);
       if (childType.isFixedSize()) {
-        int size = childType.sszSerializeTree(childSubtree, writer);
+        long size = childType.sszSerializeTree(childSubtree, writer);
         assert size == childType.getSszFixedPartSize();
       } else {
-        writer.write(SszType.sszLengthToBytes(variableChildOffset));
-        int childSize = childType.getSszSize(childSubtree);
+        writer.write(SszType.sszLengthToBytes(Math.toIntExact(variableChildOffset)));
+        long childSize = childType.getSszSize(childSubtree);
         variableSizes[i] = childSize;
         variableChildOffset += childSize;
       }
@@ -269,7 +269,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
       SszSchema<?> childType = getChildSchema(i);
       if (!childType.isFixedSize()) {
         TreeNode childSubtree = node.get(getChildGeneralizedIndex(i));
-        int size = childType.sszSerializeTree(childSubtree, writer);
+        long size = childType.sszSerializeTree(childSubtree, writer);
         assert size == variableSizes[i];
       }
     }
@@ -285,7 +285,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     for (int i = 0; i < childCount; i++) {
       SszSchema<?> childType = getChildSchema(i);
       if (childType.isFixedSize()) {
-        try (SszReader sszReader = reader.slice(childType.getSszFixedPartSize())) {
+        try (SszReader sszReader = reader.slice(Math.toIntExact(childType.getSszFixedPartSize()))) {
           TreeNode childNode = childType.sszDeserializeTree(sszReader);
           fixedChildrenSubtrees.add(childNode);
         }

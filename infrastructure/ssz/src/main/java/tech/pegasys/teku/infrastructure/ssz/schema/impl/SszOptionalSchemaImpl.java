@@ -139,19 +139,19 @@ public class SszOptionalSchemaImpl<ElementDataT extends SszData>
   }
 
   @Override
-  public int getSszVariablePartSize(final TreeNode node) {
+  public long getSszVariablePartSize(final TreeNode node) {
     return isPresent(node) ? childSchema.getSszSize(getValueNode(node)) + PREFIX_SIZE_BYTES : 0;
   }
 
   @Override
-  public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
+  public long sszSerializeTree(final TreeNode node, final SszWriter writer) {
     final TreeNode optionalNode = getOptionalNode(node);
     final boolean isPresent = getIsPresentFromOptionalNode(optionalNode);
     if (!isPresent) {
       return 0;
     }
     writer.write(Bytes.of(IS_PRESENT_PREFIX));
-    final int valueSszLength = childSchema.sszSerializeTree(getValueNode(node), writer);
+    final long valueSszLength = childSchema.sszSerializeTree(getValueNode(node), writer);
     return valueSszLength + PREFIX_SIZE_BYTES;
   }
 
