@@ -118,6 +118,9 @@ public abstract class AbstractRpcMethodIntegrationTest {
     if (localPeerStorage != null) {
       localPeerStorage.close();
     }
+    if (peerStorage != null) {
+      peerStorage.close();
+    }
   }
 
   protected Eth2Peer createPeer() {
