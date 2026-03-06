@@ -64,9 +64,3 @@ dependencies {
   testFixturesImplementation 'org.apache.commons:commons-lang3'
   testFixturesImplementation 'org.apache.logging.log4j:log4j-core'
 }
-
-// Networking integration tests create multiple libp2p instances per test,
-// so limit parallel forks to avoid port contention and connection timeouts
-integrationTest {
-  maxParallelForks = 1
-}
