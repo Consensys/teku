@@ -14,6 +14,7 @@ dependencies {
   implementation project(':infrastructure:serviceutils')
   implementation project(':validator:client')
 
+  implementation 'com.squareup.okhttp3:okhttp'
   implementation 'io.consensys.tuweni:tuweni-units'
 
   testImplementation testFixtures(project(':ethereum:spec'))
