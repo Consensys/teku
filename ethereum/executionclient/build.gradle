@@ -14,6 +14,8 @@ dependencies {
   implementation project(':ethereum:events')
 
   api 'org.web3j:core'
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
+  implementation 'com.squareup.okhttp3:okhttp'
   implementation 'io.consensys.tuweni:tuweni-units'
   implementation 'io.jsonwebtoken:jjwt-api'
   implementation 'com.fasterxml.jackson.module:jackson-module-blackbird'
