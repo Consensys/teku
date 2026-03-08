@@ -96,7 +96,10 @@ public class BeaconRestApiTypes {
           .build();
 
   public static final ParameterMetadata<UInt64> PARAMETER_BUILDER_INDEX =
-      new ParameterMetadata<>(BUILDER_INDEX, CoreTypes.UINT64_TYPE.withDescription("`uint64` value representing index of the builder from which the execution payload bid is requested."));
+      new ParameterMetadata<>(
+          BUILDER_INDEX,
+          CoreTypes.UINT64_TYPE.withDescription(
+              "`uint64` value representing index of the builder from which the execution payload bid is requested."));
 
   public static final ParameterMetadata<String> PARAMETER_STATE_ID =
       new ParameterMetadata<>(PARAM_STATE_ID, CoreTypes.string(PARAM_STATE_ID_DESCRIPTION, "head"));

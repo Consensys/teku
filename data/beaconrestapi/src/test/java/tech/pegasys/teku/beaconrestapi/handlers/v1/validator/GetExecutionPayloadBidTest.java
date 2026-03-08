@@ -21,19 +21,25 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.spec.TestSpecFactory;
 
 class GetExecutionPayloadBidTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   void setUp() {
+    setSpec(TestSpecFactory.createMinimalGloas());
     setHandler(new GetExecutionPayloadBid(validatorDataProvider, spec, schemaDefinitionCache));
+    request.setPathParameter("slot", "1");
+    request.setPathParameter("builder_index", "1");
   }
 
   @Test
   void shouldReturnNotImplemented() throws Exception {
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_NOT_IMPLEMENTED);
-    assertThat(request.getErrorBody().getMessage()).isEqualTo("Not implemented");
+    assertThat(((HttpErrorResponse) request.getResponseBody()).getMessage())
+        .isEqualTo("Not implemented");
   }
 
   @Test

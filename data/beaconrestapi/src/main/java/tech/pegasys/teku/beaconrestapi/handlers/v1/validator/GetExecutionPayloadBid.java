@@ -20,9 +20,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-
-import tech.pegasys.teku.spec.Spec;
-
 import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -32,20 +29,22 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 
 public class GetExecutionPayloadBid extends RestApiEndpoint {
-  public static final String ROUTE = "/eth/v1/validator/execution_payload_bid";
+  public static final String ROUTE =
+      "/eth/v1/validator/execution_payload_bid/{slot}/{builder_index}";
 
-  private static final ParameterMetadata<UInt64> SLOT_PARAM = SLOT_PARAMETER.withDescription(
-      "`uint64` Slot for which the execution payload bid is requested. Must be current slot or next slot.");
+  private static final ParameterMetadata<UInt64> SLOT_PARAM =
+      SLOT_PARAMETER.withDescription(
+          "`uint64` Slot for which the execution payload bid is requested. Must be current slot or next slot.");
 
-  private static final ParameterMetadata<UInt64> BUILDER_INDEX_PARAM = PARAMETER_BUILDER_INDEX.withDescription(
-      "`uint64` Index of the builder from which the execution payload bid is requested.");
-
-  private final ValidatorDataProvider provider;
+  private static final ParameterMetadata<UInt64> BUILDER_INDEX_PARAM =
+      PARAMETER_BUILDER_INDEX.withDescription(
+          "`uint64` Index of the builder from which the execution payload bid is requested.");
 
   public GetExecutionPayloadBid(
       final DataProvider provider,
@@ -70,9 +69,9 @@ public class GetExecutionPayloadBid extends RestApiEndpoint {
             .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
             .withNotFoundResponse()
             .withNotAcceptedResponse()
+            .withNotImplementedResponse()
             .withChainDataResponses()
             .build());
-    this.provider = provider;
   }
 
   private static SerializableTypeDefinition<ExecutionPayloadBid> getResponseType(
