@@ -70,6 +70,8 @@ public class P2PConfig {
   public static final int DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE = 500;
   public static final boolean DEFAULT_EXECUTION_PROOF_GOSSIP_ENABLED = false;
 
+  public static final int DEFAULT_MIN_BID_INCREMENT_PERCENTAGE = 1;
+
   private final Spec spec;
   private final NetworkConfig networkConfig;
   private final DiscoveryConfig discoveryConfig;
@@ -101,6 +103,7 @@ public class P2PConfig {
   private final boolean columnsDataAvailabilityHalfCheckEnabled;
   private final boolean executionProofTopicEnabled;
   private final boolean subscribeAllCustodySubnetsEnabled;
+  private final int minBidIncrementPercentage;
 
   private P2PConfig(
       final Spec spec,
@@ -131,7 +134,8 @@ public class P2PConfig {
       final Integer reworkedSidecarSyncPollPeriod,
       final boolean columnsDataAvailabilityHalfCheckEnabled,
       final boolean executionProofTopicEnabled,
-      final boolean subscribeAllCustodySubnetsEnabled) {
+      final boolean subscribeAllCustodySubnetsEnabled,
+      final int minBidIncrementPercentage) {
     this.spec = spec;
     this.networkConfig = networkConfig;
     this.discoveryConfig = discoveryConfig;
@@ -162,6 +166,7 @@ public class P2PConfig {
     this.columnsDataAvailabilityHalfCheckEnabled = columnsDataAvailabilityHalfCheckEnabled;
     this.executionProofTopicEnabled = executionProofTopicEnabled;
     this.subscribeAllCustodySubnetsEnabled = subscribeAllCustodySubnetsEnabled;
+    this.minBidIncrementPercentage = minBidIncrementPercentage;
   }
 
   public static Builder builder() {
@@ -292,6 +297,10 @@ public class P2PConfig {
     return subscribeAllCustodySubnetsEnabled;
   }
 
+  public int getMinBidIncrementPercentage() {
+    return minBidIncrementPercentage;
+  }
+
   public static class Builder {
     private final NetworkConfig.Builder networkConfig = NetworkConfig.builder();
     private final DiscoveryConfig.Builder discoveryConfig = DiscoveryConfig.builder();
@@ -330,6 +339,7 @@ public class P2PConfig {
     private Integer reworkedSidecarSyncBatchSize = DEFAULT_COLUMN_CUSTODY_BACKFILLER_BATCH_SIZE;
     private Integer reworkedSidecarSyncPollPeriod =
         DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS;
+    private Integer minBidIncrementPercentage = DEFAULT_MIN_BID_INCREMENT_PERCENTAGE;
 
     private Builder() {}
 
@@ -402,7 +412,8 @@ public class P2PConfig {
           reworkedSidecarSyncPollPeriod,
           columnsDataAvailabilityHalfCheckEnabled,
           executionProofTopicEnabled,
-          subscribeAllCustodySubnetsEnabled);
+          subscribeAllCustodySubnetsEnabled,
+          minBidIncrementPercentage);
     }
 
     private void validate() {
@@ -600,6 +611,11 @@ public class P2PConfig {
     public Builder columnsDataAvailabilityHalfCheckEnabled(
         final boolean columnsDataAvailabilityHalfCheckEnabled) {
       this.columnsDataAvailabilityHalfCheckEnabled = columnsDataAvailabilityHalfCheckEnabled;
+      return this;
+    }
+
+    public Builder minBidIncrementPercentage(final int minBidIncrementPercentage) {
+      this.minBidIncrementPercentage = minBidIncrementPercentage;
       return this;
     }
   }

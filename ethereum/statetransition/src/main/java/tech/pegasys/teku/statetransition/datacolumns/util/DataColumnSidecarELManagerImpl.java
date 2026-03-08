@@ -22,7 +22,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -347,8 +346,7 @@ public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistor
     if (samplingGroupCount == maxCustodyGroups) {
       localCustodySidecars = dataColumnSidecars;
     } else {
-      final Set<UInt64> localCustodyIndices =
-          new HashSet<>(custodyGroupCountManager.getSamplingColumnIndices());
+      final Set<UInt64> localCustodyIndices = custodyGroupCountManager.getSamplingColumnIndices();
       localCustodySidecars =
           dataColumnSidecars.stream()
               .filter(sidecar -> localCustodyIndices.contains(sidecar.getIndex()))

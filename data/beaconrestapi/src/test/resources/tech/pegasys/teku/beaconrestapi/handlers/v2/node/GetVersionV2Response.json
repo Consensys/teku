@@ -1,0 +1,16 @@
+{
+  "data" : {
+    "beacon_node" : {
+      "code" : "TK",
+      "name" : "teku",
+      "version" : "<BEACON_NODE_VERSION>",
+      "commit" : "<BEACON_NODE_COMMIT>"
+    },
+    "execution_client" : {
+      "code" : "geth",
+      "name" : "Geth",
+      "version" : "1.13.0",
+      "commit" : "0x01020304"
+    }
+  }
+}
