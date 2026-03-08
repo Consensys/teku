@@ -114,9 +114,9 @@ class SentryValidatorApiChannelTest {
 
   @Test
   void getProposerDutiesShouldUseDutiesProviderChannel() {
-    sentryValidatorApiChannel.getProposerDuties(UInt64.ZERO);
+    sentryValidatorApiChannel.getProposerDuties(UInt64.ZERO, false);
 
-    verify(dutiesProviderChannel).getProposerDuties(eq(UInt64.ZERO));
+    verify(dutiesProviderChannel).getProposerDuties(eq(UInt64.ZERO), eq(false));
     verifyNoInteractions(blockHandlerChannel);
     verifyNoInteractions(attestationPublisherChannel);
   }

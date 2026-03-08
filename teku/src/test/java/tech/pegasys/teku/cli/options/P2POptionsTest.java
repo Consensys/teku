@@ -100,6 +100,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(syncConfig.getForwardSyncMaxPendingBatches()).isEqualTo(8);
     assertThat(syncConfig.getForwardSyncMaxBlocksPerMinute()).isEqualTo(100);
     assertThat(syncConfig.getForwardSyncMaxBlobSidecarsPerMinute()).isEqualTo(400);
+
+    assertThat(p2pConfig.getMinBidIncrementPercentage()).isEqualTo(5);
   }
 
   @Test
@@ -828,5 +830,18 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
 
     assertThat(tekuConfiguration.p2p().getDasPublishWithholdColumnsEverySlots()).isEmpty();
+  }
+
+  @Test
+  public void minBidIncrementPercentage_shouldDefaultToOne() {
+    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+    assertThat(tekuConfiguration.p2p().getMinBidIncrementPercentage()).isEqualTo(1);
+  }
+
+  @Test
+  public void minBidIncrementPercentage_shouldAcceptValue() {
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xmin-bid-increment-percentage=3");
+    assertThat(tekuConfiguration.p2p().getMinBidIncrementPercentage()).isEqualTo(3);
   }
 }

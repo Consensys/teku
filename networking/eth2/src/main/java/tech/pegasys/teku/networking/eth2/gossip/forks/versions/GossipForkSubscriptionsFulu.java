@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
+import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -45,6 +46,7 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
   private final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor;
   private DataColumnSidecarGossipManager dataColumnSidecarGossipManager;
   public DasGossipLogger dasGossipLogger;
+  private final Supplier<Boolean> isSuperNodeSupplier;
 
   public GossipForkSubscriptionsFulu(
       final Fork fork,
@@ -71,7 +73,8 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
       final DebugDataDumper debugDataDumper,
       final DasGossipLogger dasGossipLogger,
       final OperationProcessor<ExecutionProof> executionProofOperationProcessor,
-      final boolean isExecutionProofTopicEnabled) {
+      final boolean isExecutionProofTopicEnabled,
+      final Supplier<Boolean> isSuperNodeSupplier) {
     super(
         fork,
         spec,
@@ -95,6 +98,7 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
         isExecutionProofTopicEnabled);
     this.dataColumnSidecarOperationProcessor = dataColumnSidecarOperationProcessor;
     this.dasGossipLogger = dasGossipLogger;
+    this.isSuperNodeSupplier = isSuperNodeSupplier;
   }
 
   @Override
@@ -117,7 +121,8 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
             forkDigest);
 
     this.dataColumnSidecarGossipManager =
-        new DataColumnSidecarGossipManager(dataColumnSidecarSubnetSubscriptions, dasGossipLogger);
+        new DataColumnSidecarGossipManager(
+            dataColumnSidecarSubnetSubscriptions, dasGossipLogger, isSuperNodeSupplier);
 
     addGossipManager(dataColumnSidecarGossipManager);
   }

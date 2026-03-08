@@ -231,7 +231,7 @@ public class SlotProcessor {
     return isProcessingDueForSlot(calculatedSlot, onTickSlotStart);
   }
 
-  // Attestations are due 1/3 of the way through the slots time period
+  // Attestations are due 1/3 (1/4 in Gloas) of the way through the slots time period
   boolean isSlotAttestationDue(
       final UInt64 calculatedSlot,
       final UInt64 currentTimeMillis,

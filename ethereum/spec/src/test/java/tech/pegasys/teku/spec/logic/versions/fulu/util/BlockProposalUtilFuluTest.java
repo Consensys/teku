@@ -44,7 +44,12 @@ class BlockProposalUtilFuluTest {
     // |   2   |      16    |    23    |
     // |   3   |      24    |    31    |
     return Stream.of(
-        Arguments.of(0, 0), Arguments.of(1, 0), Arguments.of(2, 8), Arguments.of(3, 16));
+        Arguments.of(1, 1, 8),
+        Arguments.of(2, 2, 16),
+        Arguments.of(2, 1, 8),
+        Arguments.of(3, 1, 16),
+        Arguments.of(3, 3, 24),
+        Arguments.of(4, 1, 24));
   }
 
   enum ExpectedResult {
@@ -56,12 +61,22 @@ class BlockProposalUtilFuluTest {
 
   @ParameterizedTest
   @MethodSource("getStateSlotForProposerDutiesTestCases")
-  public void getStateSlotForProposerDuties(final int requestedEpoch, final int expectedSlot) {
+  public void getStateSlotForProposerDuties(
+      final int requestedEpoch, final int headEpochIn, final int expectedSlot) {
+    final UInt64 expectedEpoch = spec.computeEpochAtSlot(UInt64.valueOf(expectedSlot));
+    final UInt64 headEpoch = UInt64.valueOf(headEpochIn);
     final UInt64 querySlot =
         spec.getGenesisSpec()
             .getBlockProposalUtil()
-            .getStateSlotForProposerDuties(spec, UInt64.valueOf(requestedEpoch));
+            .getStateSlotForProposerDuties(spec, headEpoch, UInt64.valueOf(requestedEpoch));
 
+    LOG.debug(
+        "headEpoch={}, dutiesEpoch={}, expectedSlot={} (epoch={})",
+        headEpoch,
+        requestedEpoch,
+        expectedSlot,
+        expectedEpoch);
+    LOG.debug("resultSlot={}. epoch={}", querySlot, spec.computeEpochAtSlot(querySlot));
     assertThat(querySlot.intValue()).isEqualTo(expectedSlot);
   }
 

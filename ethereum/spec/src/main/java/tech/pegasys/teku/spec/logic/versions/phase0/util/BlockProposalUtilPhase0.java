@@ -58,18 +58,19 @@ public class BlockProposalUtilPhase0 implements BlockProposalUtil {
       final Bytes32 headBlockRoot,
       final Bytes32 previousTargetRoot,
       final Bytes32 currentTargetRoot,
-      final UInt64 headEpoch,
+      final UInt64 stateEpoch,
       final UInt64 dutyEpoch) {
     checkArgument(
-        dutyEpoch.isGreaterThanOrEqualTo(headEpoch),
-        "Attempting to calculate dependent root for duty epoch %s that is before the updated head epoch %s",
+        dutyEpoch.isGreaterThanOrEqualTo(stateEpoch),
+        "Attempting to calculate dependent root for duty epoch %s that is before the updated state epoch %s",
         dutyEpoch,
-        headEpoch);
-    return headEpoch.equals(dutyEpoch) ? currentTargetRoot : headBlockRoot;
+        stateEpoch);
+    return stateEpoch.equals(dutyEpoch) ? currentTargetRoot : headBlockRoot;
   }
 
   @Override
-  public UInt64 getStateSlotForProposerDuties(final Spec spec, final UInt64 dutiesEpoch) {
+  public UInt64 getStateSlotForProposerDuties(
+      final Spec spec, final UInt64 stateEpoch, final UInt64 dutiesEpoch) {
     return spec.computeStartSlotAtEpoch(dutiesEpoch);
   }
 

@@ -64,6 +64,8 @@ public class CombinedChainDataClient {
       completedFuture(Optional.empty());
   private static final SafeFuture<Optional<SignedBeaconBlock>> BLOCK_NOT_AVAILABLE =
       completedFuture(Optional.empty());
+  private static final SafeFuture<Optional<SignedExecutionPayloadEnvelope>>
+      EXECUTION_PAYLOAD_NOT_AVAILABLE = completedFuture(Optional.empty());
 
   private final RecentChainData recentChainData;
   private final StorageQueryChannel historicalChainData;
@@ -129,6 +131,38 @@ public class CombinedChainDataClient {
                     .thenApply(
                         maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot))))
         .orElseGet(() -> historicalChainData.getFinalizedBlockAtSlot(slot));
+  }
+
+  /**
+   * Returns the execution payload envelope proposed for the requested slot on the chain identified
+   * by <code>headBlockRoot</code>. If the slot was empty or the payload was absent, no execution
+   * payload is returned.
+   *
+   * @param slot the slot to get the execution payload for
+   * @param headBlockRoot the block root of the head of the chain
+   * @return the execution payload at the requested slot or empty if the slot was empty or the
+   *     payload was absent
+   */
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> getExecutionPayloadAtSlotExact(
+      final UInt64 slot, final Bytes32 headBlockRoot) {
+    if (!isStoreAvailable()) {
+      return EXECUTION_PAYLOAD_NOT_AVAILABLE;
+    }
+
+    // Try to pull root from recent data
+    return recentChainData
+        .getBlockRootInEffectBySlot(slot, headBlockRoot)
+        .map(
+            blockRoot ->
+                getExecutionPayloadByBlockRoot(blockRoot)
+                    .thenApply(
+                        maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot))))
+        .orElseGet(
+            () -> {
+              // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 query for an execution
+              // payload for a finalized slot from the  historical chain data
+              return SafeFuture.completedFuture(Optional.empty());
+            });
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockInEffectAtSlot(final UInt64 slot) {
@@ -555,9 +589,8 @@ public class CombinedChainDataClient {
                 return SafeFuture.completedFuture(maybeExecutionPayload);
               }
               // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 query for an execution
-              // payload from the historical chain data
-              return SafeFuture.failedFuture(
-                  new UnsupportedOperationException("Not yet implemented"));
+              // payload by block root from the historical chain data
+              return SafeFuture.completedFuture(Optional.empty());
             });
   }
 
