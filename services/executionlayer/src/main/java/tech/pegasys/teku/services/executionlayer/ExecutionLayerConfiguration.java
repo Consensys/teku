@@ -53,6 +53,7 @@ public class ExecutionLayerConfiguration {
   private final boolean builderSetUserAgentHeader;
   private final boolean useShouldOverrideBuilderFlag;
   private final boolean exchangeCapabilitiesMonitoringEnabled;
+  private final boolean useNewEngineApiClient;
 
   private ExecutionLayerConfiguration(
       final Spec spec,
@@ -67,7 +68,8 @@ public class ExecutionLayerConfiguration {
       final UInt64 builderBidCompareFactor,
       final boolean builderSetUserAgentHeader,
       final boolean useShouldOverrideBuilderFlag,
-      final boolean exchangeCapabilitiesMonitoringEnabled) {
+      final boolean exchangeCapabilitiesMonitoringEnabled,
+      final boolean useNewEngineApiClient1) {
     this.spec = spec;
     this.engineEndpoint = engineEndpoint;
     this.engineJwtSecretFile = engineJwtSecretFile;
@@ -82,6 +84,7 @@ public class ExecutionLayerConfiguration {
     this.builderSetUserAgentHeader = builderSetUserAgentHeader;
     this.useShouldOverrideBuilderFlag = useShouldOverrideBuilderFlag;
     this.exchangeCapabilitiesMonitoringEnabled = exchangeCapabilitiesMonitoringEnabled;
+    this.useNewEngineApiClient = useNewEngineApiClient1;
   }
 
   public static Builder builder() {
@@ -147,6 +150,10 @@ public class ExecutionLayerConfiguration {
     return exchangeCapabilitiesMonitoringEnabled;
   }
 
+  public boolean isUseNewEngineApiClient() {
+    return useNewEngineApiClient;
+  }
+
   public static class Builder {
     private Spec spec;
     private Optional<String> engineEndpoint = Optional.empty();
@@ -163,6 +170,7 @@ public class ExecutionLayerConfiguration {
     private boolean useShouldOverrideBuilderFlag = DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
     private boolean exchangeCapabilitiesMonitoringEnabled =
         DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED;
+    private boolean useNewEngineApiClient = false;
 
     private Builder() {}
 
@@ -200,7 +208,8 @@ public class ExecutionLayerConfiguration {
           builderBidCompareFactor,
           builderSetUserAgentHeader,
           useShouldOverrideBuilderFlag,
-          exchangeCapabilitiesMonitoringEnabled);
+          exchangeCapabilitiesMonitoringEnabled,
+          useNewEngineApiClient);
     }
 
     public Builder engineEndpoint(final String engineEndpoint) {
@@ -269,6 +278,11 @@ public class ExecutionLayerConfiguration {
     public Builder exchangeCapabilitiesMonitoringEnabled(
         final boolean exchangeCapabilitiesMonitoringEnabled) {
       this.exchangeCapabilitiesMonitoringEnabled = exchangeCapabilitiesMonitoringEnabled;
+      return this;
+    }
+
+    public Builder useNewEngineApiClient(final boolean useNewEngineApiClient) {
+      this.useNewEngineApiClient = useNewEngineApiClient;
       return this;
     }
 
