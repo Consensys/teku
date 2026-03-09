@@ -20,6 +20,7 @@ import static tech.pegasys.teku.spec.config.Constants.EL_ENGINE_BLOCK_EXECUTION_
 
 import com.google.common.base.Splitter;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import okhttp3.OkHttpClient;
@@ -151,8 +152,7 @@ public class ExecutionLayerService extends Service {
                 config.getEngineJwtClaimId(),
                 beaconDataDirectory);
         final OkHttpClient okHttpClient =
-            OkHttpClientCreator.create(
-                EL_ENGINE_BLOCK_EXECUTION_TIMEOUT, LOG, jwtConfig, timeProvider);
+            OkHttpClientCreator.create(Duration.ofSeconds(12), LOG, jwtConfig, timeProvider);
         final ExecutionEngineClient newEngineApiClient =
             new OkHttpExecutionEngineClient(
                 okHttpClient,

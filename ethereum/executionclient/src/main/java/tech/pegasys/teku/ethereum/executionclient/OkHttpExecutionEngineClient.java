@@ -19,10 +19,14 @@ import static tech.pegasys.teku.spec.config.Constants.EL_ENGINE_NON_BLOCK_EXECUT
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.module.blackbird.BlackbirdModule;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.ConnectException;
@@ -122,7 +126,12 @@ public class OkHttpExecutionEngineClient implements ExecutionEngineClient {
     this.timeProvider = timeProvider;
     this.executionClientEventsPublisher = executionClientEventsPublisher;
     this.nonCriticalMethods = new HashSet<>(nonCriticalMethods);
-    this.objectMapper = new ObjectMapper();
+    this.objectMapper =
+        JsonMapper.builder()
+            .addModule(new BlackbirdModule())
+            .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .build();
   }
 
   @Override
