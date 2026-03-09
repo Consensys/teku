@@ -23,7 +23,7 @@ buildscript {
 plugins {
   id 'com.diffplug.spotless' version '7.2.1'
   id 'com.github.ben-manes.versions' version '0.53.0'
-  id 'com.github.jk1.dependency-license-report' version '3.0.1'
+  id 'com.github.jk1.dependency-license-report' version '3.1.1'
   id 'io.spring.dependency-management' version '1.1.7'
   id 'net.ltgt.errorprone' version '4.3.0' apply false
   id 'de.undercouch.download' version '5.6.0'
@@ -37,7 +37,7 @@ def isDevelopBuild = rootProject.version.contains('develop')
 apply plugin: 'application'
 apply plugin: DepCheckPlugin
 
-defaultTasks 'build','checkLicense'
+defaultTasks 'build','licenseCheck'
 
 def buildAliases = [
   'dev': [
@@ -49,7 +49,7 @@ def buildAliases = [
     'compilePropertyTestJava',
     'spotlessApply',
     'build',
-    'checkLicense',
+    'licenseCheck',
     'javadoc'],
   'mash': [
     'clean',
@@ -516,7 +516,23 @@ task cleanRefTests(dependsOn: [cleanRefTestsGeneral, cleanRefTestsMainnet, clean
 
 task deploy() {}
 
+// https://github.com/jk1/Gradle-License-Report/issues/337#issuecomment-3241442179
+// License report tasks resolve subproject configurations which requires exclusive project locks in Gradle 9.
+// The plugin doesn't support --parallel, so disable the original tasks and run them in a separate
+// Gradle process with --no-parallel.
+generateLicenseReport.enabled = false
+checkLicense.enabled = false
+tasks.register('licenseCheck', Exec) {
+  workingDir rootDir
+  commandLine './gradlew', 'generateLicenseReport', 'checkLicense', '--no-parallel', '-PenableLicenseReport=true'
+}
+if (project.hasProperty('enableLicenseReport')) {
+  generateLicenseReport.enabled = true
+  checkLicense.enabled = true
+}
+
 licenseReport {
+  projects = project.subprojects
   configurations = ['runtimeClasspath']
   outputDir = "${buildDir}/reports/licenses"
   // These jars don't have machine readable license information
@@ -533,9 +549,6 @@ licenseReport {
   filters = [new LicenseBundleNormalizer()]
   renderers = [new GroupedLicenseHtmlRenderer(includeTimestamp: false)]
 }
-
-// https://github.com/jk1/Gradle-License-Report/issues/337#issuecomment-3241442179
-generateLicenseReport.enabled = false
 
 task checkMavenCoordinateCollisions {
   doLast {
@@ -584,11 +597,11 @@ task autocomplete(type: JavaExec) {
 }
 
 installDist {
-  dependsOn checkLicense, startScripts, autocomplete
+  dependsOn licenseCheck, startScripts, autocomplete
 }
 
 distTar {
-  dependsOn checkLicense, startScripts, autocomplete
+  dependsOn licenseCheck, startScripts, autocomplete
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.tar.gz')
   }
@@ -601,7 +614,7 @@ distTar {
 }
 
 distZip {
-  dependsOn checkLicense, startScripts, autocomplete
+  dependsOn licenseCheck, startScripts, autocomplete
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.zip')
   }
