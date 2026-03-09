@@ -1,6 +1,6 @@
 publishing {
   publications {
-    mavenJava(MavenPublication) { artifactId 'infrastructure-restapi' }
+    mavenJava(MavenPublication) { artifactId = 'infrastructure-restapi' }
   }
 }
 

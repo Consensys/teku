@@ -6,6 +6,6 @@ dependencies {
 
 publishing {
   publications {
-    mavenJava(MavenPublication) { artifactId 'ethereum-events' }
+    mavenJava(MavenPublication) { artifactId = 'ethereum-events' }
   }
 }

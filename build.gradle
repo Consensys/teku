@@ -11,7 +11,7 @@ buildscript {
   repositories {
     mavenCentral()
     maven {
-      url "https://artifacts.consensys.net/public/maven/maven/"
+      url = "https://artifacts.consensys.net/public/maven/maven/"
       content { includeGroupByRegex('tech\\.pegasys\\..*')}
     }
   }
@@ -155,17 +155,17 @@ allprojects {
   repositories {
     mavenLocal()
     mavenCentral()
-    maven { url "https://jitpack.io" }
+    maven { url = "https://jitpack.io" }
     maven {
-      url "https://artifacts.consensys.net/public/maven/maven/"
+      url = "https://artifacts.consensys.net/public/maven/maven/"
       content { includeGroupByRegex('tech\\.pegasys($|\\..*)')}
     }
     maven {
-      url "https://dl.cloudsmith.io/public/libp2p/jvm-libp2p/maven/"
+      url = "https://dl.cloudsmith.io/public/libp2p/jvm-libp2p/maven/"
       content { includeGroupByRegex('io\\.libp2p($|\\..*)') }
     }
     maven {
-      url "https://hyperledger.jfrog.io/artifactory/besu-maven/"
+      url = "https://hyperledger.jfrog.io/artifactory/besu-maven/"
       content { includeGroupByRegex('org\\.hyperledger\\.besu($|\\..*)') }
     }
   }
@@ -923,8 +923,8 @@ subprojects {
       }
       publications {
         mavenJava(MavenPublication) {
-          groupId "tech.pegasys.teku.internal"
-          version "${project.version}"
+          groupId = "tech.pegasys.teku.internal"
+          version = "${project.version}"
           if (sourceSetIsPopulated("main")) {
             from components.java
             artifact sourcesJar
