@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -27,6 +27,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -97,7 +98,7 @@ public class DataColumnSidecarCustodyImplTest {
             custodyGroupCountManager);
     when(custodyGroupCountManager.getCustodyColumnIndices())
         .thenReturn(
-            List.of(UInt64.valueOf(0), UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3)));
+            Set.of(UInt64.valueOf(0), UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3)));
     verify(custodyGroupCountManager).getCustodyGroupCount();
     Mockito.clearInvocations(custodyGroupCountManager);
   }
@@ -163,9 +164,9 @@ public class DataColumnSidecarCustodyImplTest {
     custody.onSlot(UInt64.valueOf(FULU_ACTIVATION_SLOT));
     final SafeFuture<Void> future = custody.advanceFirstIncompleteSlot(UInt64.valueOf(2));
     assertThat(future).isCompleted();
-    // if epoch 2 is final, then slots 0-23 are 'final' and slot 24 is the first non final
+    // if epoch 2 is final, then slots 0-16 are 'final' and slot 17 is the first non final
     assertThat(dbAccessor.getFirstCustodyIncompleteSlot())
-        .isCompletedWithValue(Optional.of(UInt64.valueOf(24)));
+        .isCompletedWithValue(Optional.of(UInt64.valueOf(17)));
   }
 
   @Test
@@ -243,7 +244,7 @@ public class DataColumnSidecarCustodyImplTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 List.of(new DataColumnSlotAndIdentifier(fuluSlot, dataColumnIdentifier))));
-    when(custodyGroupCountManager.getCustodyColumnIndices()).thenReturn(List.of(ZERO, ONE));
+    when(custodyGroupCountManager.getCustodyColumnIndices()).thenReturn(Set.of(ZERO, ONE));
     custody =
         new DataColumnSidecarCustodyImpl(
             spec, resolver, sidecarDb, minCustodyPeriodSlotCalculator, custodyGroupCountManager);
@@ -258,7 +259,7 @@ public class DataColumnSidecarCustodyImplTest {
         future.get(100, TimeUnit.MILLISECONDS);
 
     assertThat(slotCustody.slot()).isEqualTo(fuluSlot);
-    assertThat(slotCustody.requiredColumnIndices()).isEqualTo(List.of(ZERO, ONE));
+    assertThat(slotCustody.requiredColumnIndices()).containsExactlyInAnyOrder(ZERO, ONE);
     assertThat(slotCustody.getIncompleteColumns())
         .containsExactly(
             new DataColumnSlotAndIdentifier(fuluSlot, beaconBlock.getRoot(), UInt64.valueOf(1)));

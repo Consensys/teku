@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -55,6 +55,7 @@ import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
@@ -92,6 +93,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndV
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
@@ -172,7 +174,8 @@ class ForkChoiceTest {
             transitionBlockValidator,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             debugDataDumper,
-            metricsSystem);
+            metricsSystem,
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
 
     // Starting and mocks
     when(transitionBlockValidator.verifyAncestorTransitionBlock(any()))
@@ -422,7 +425,8 @@ class ForkChoiceTest {
             transitionBlockValidator,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             DebugDataDumper.NOOP,
-            metricsSystem);
+            metricsSystem,
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE));
 
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
     final UInt64 lateBlockSlot = currentSlot.minus(1);
@@ -845,7 +849,7 @@ class ForkChoiceTest {
   }
 
   @Test
-  void onBlock_shouldApplyProposerBoostToFirstBlock() {
+  void onBlock_shouldUpdateProposerBoostRootToFirstBlock() {
     final ChainBuilder forkChain = chainBuilder.fork();
 
     final SignedBlockAndState block = chainBuilder.generateNextBlock();

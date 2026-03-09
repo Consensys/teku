@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -45,12 +45,16 @@ import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 
 public abstract class AbstractStoreTest {
-  protected final Spec spec = TestSpecFactory.createMinimalDeneb();
+  protected final Spec spec = getSpec();
   protected final StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
   protected final ChainBuilder chainBuilder = ChainBuilder.create(spec);
   protected final StoreConfig defaultStoreConfig = StoreConfig.createDefault();
 
   protected final ForkChoiceStrategy dummyForkChoiceStrategy = mock(ForkChoiceStrategy.class);
+
+  protected Spec getSpec() {
+    return TestSpecFactory.createMinimalDeneb();
+  }
 
   protected void processChainWithLimitedCache(
       final BiConsumer<UpdatableStore, SignedBlockAndState> chainProcessor) {

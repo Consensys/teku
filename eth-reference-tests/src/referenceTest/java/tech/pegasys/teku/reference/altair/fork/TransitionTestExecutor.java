@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -91,6 +91,16 @@ public class TransitionTestExecutor implements TestExecutor {
                         .electraForkEpoch(UInt64.ZERO)
                         .fuluForkEpoch(UInt64.ZERO)
                         .gloasForkEpoch(forkEpoch);
+                case HEZE ->
+                    builder
+                        .altairForkEpoch(UInt64.ZERO)
+                        .bellatrixForkEpoch(UInt64.ZERO)
+                        .capellaForkEpoch(UInt64.ZERO)
+                        .denebForkEpoch(UInt64.ZERO)
+                        .electraForkEpoch(UInt64.ZERO)
+                        .fuluForkEpoch(UInt64.ZERO)
+                        .gloasForkEpoch(UInt64.ZERO)
+                        .hezeForkEpoch(forkEpoch);
                 default ->
                     throw new IllegalStateException(
                         "Unhandled fork transition for test "

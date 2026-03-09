@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,10 +15,11 @@ package tech.pegasys.teku.spec.logic.versions.electra.withdrawals;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
+import com.google.common.base.Preconditions;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
@@ -58,11 +59,17 @@ public class WithdrawalsHelpersElectra extends WithdrawalsHelpersCapella {
     UInt64 withdrawalIndex = getNextWithdrawalIndex(state, withdrawals);
     int processedPartialWithdrawalsCount = 0;
 
-    final int bound = getBoundForPendingPartialWithdrawals(withdrawals);
+    final int withdrawalsLimit =
+        Math.min(
+            withdrawals.size() + specConfigElectra.getMaxPendingPartialsPerWithdrawalsSweep(),
+            specConfig.getMaxWithdrawalsPerPayload() - 1);
+
+    Preconditions.checkArgument(withdrawals.size() <= withdrawalsLimit);
 
     for (final PendingPartialWithdrawal withdrawal :
         BeaconStateElectra.required(state).getPendingPartialWithdrawals()) {
-      if (withdrawal.getWithdrawableEpoch().isGreaterThan(epoch) || withdrawals.size() == bound) {
+      if (withdrawal.getWithdrawableEpoch().isGreaterThan(epoch)
+          || withdrawals.size() >= withdrawalsLimit) {
         break;
       }
       final UInt64 validatorIndex = withdrawal.getValidatorIndex();
@@ -105,25 +112,18 @@ public class WithdrawalsHelpersElectra extends WithdrawalsHelpersCapella {
     return processedPartialWithdrawalsCount;
   }
 
-  protected int getBoundForPendingPartialWithdrawals(final List<Withdrawal> withdrawals) {
-    return specConfigElectra.getMaxPendingPartialsPerWithdrawalsSweep();
-  }
-
   @Override
   protected void updatePendingPartialWithdrawals(
       final MutableBeaconState state, final int processedPartialWithdrawalsCount) {
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
-    final SszListSchema<PendingPartialWithdrawal, ?> schema =
-        stateElectra.getPendingPartialWithdrawals().getSchema();
-    if (stateElectra.getPendingPartialWithdrawals().size() == processedPartialWithdrawalsCount) {
-      stateElectra.setPendingPartialWithdrawals(schema.createFromElements(List.of()));
-    } else {
-      final List<PendingPartialWithdrawal> pendingPartialWithdrawals =
-          stateElectra.getPendingPartialWithdrawals().asList();
-      stateElectra.setPendingPartialWithdrawals(
-          schema.createFromElements(
-              pendingPartialWithdrawals.subList(
-                  processedPartialWithdrawalsCount, pendingPartialWithdrawals.size())));
-    }
+    final SszList<PendingPartialWithdrawal> pendingPartialWithdrawals =
+        stateElectra.getPendingPartialWithdrawals();
+    stateElectra.setPendingPartialWithdrawals(
+        pendingPartialWithdrawals
+            .getSchema()
+            .createFromElements(
+                pendingPartialWithdrawals
+                    .asList()
+                    .subList(processedPartialWithdrawalsCount, pendingPartialWithdrawals.size())));
   }
 }

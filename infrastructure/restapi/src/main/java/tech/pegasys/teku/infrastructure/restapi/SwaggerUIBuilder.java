@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -30,7 +30,7 @@ import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiDocBuilder;
 
 public class SwaggerUIBuilder {
   // Version here MUST match `swagger-ui` library version
-  private static final String SWAGGER_UI_VERSION = "5.27.1";
+  private static final String SWAGGER_UI_VERSION = "5.31.0";
 
   private static final String SWAGGER_UI_PATH = "/swagger-ui";
   private static final String SWAGGER_HOSTED_PATH = "/webjars/swagger-ui/" + SWAGGER_UI_VERSION;

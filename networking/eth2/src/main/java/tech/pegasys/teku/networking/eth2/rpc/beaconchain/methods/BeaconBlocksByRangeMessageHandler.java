@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -192,6 +192,8 @@ public class BeaconBlocksByRangeMessageHandler
               final UInt64 headSlot = hotRoots.isEmpty() ? headBlockSlot : hotRoots.lastKey();
               final RequestState initialState =
                   new RequestState(startSlot, step, count, headSlot, hotRoots, callback);
+              // there is an edge case when startSlot == headSlot in which case we don't return
+              // anything
               if (initialState.isComplete()) {
                 return SafeFuture.completedFuture(initialState);
               }

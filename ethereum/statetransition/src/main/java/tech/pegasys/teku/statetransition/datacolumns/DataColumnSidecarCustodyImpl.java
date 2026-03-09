@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -206,9 +206,11 @@ public class DataColumnSidecarCustodyImpl
         .flatMap(SlotCustody::streamIncompleteColumns);
   }
 
+  // TODO: remove this code, issue #
+  // https://github.com/ConsenSys/teku/issues/10105?issue=Consensys%7Cteku%7C10229
   @VisibleForTesting
   SafeFuture<Void> advanceFirstIncompleteSlot(final UInt64 finalizedEpoch) {
-    final UInt64 firstNonFinalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch.increment());
+    final UInt64 firstNonFinalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch).increment();
     return retrievePotentiallyIncompleteSlotCustodies(firstNonFinalizedSlot)
         .takeUntil(SlotCustody::isIncomplete, true)
         .findLast()
@@ -220,8 +222,6 @@ public class DataColumnSidecarCustodyImpl
                           if (firstIncompleteOrLastComplete.slot().equals(firstNonFinalizedSlot)) {
                             LOG.trace(
                                 "Custody group count synced to {}", totalCustodyGroupCount.get());
-                            custodyGroupCountManager.setCustodyGroupSyncedCount(
-                                totalCustodyGroupCount.get());
                           }
                           return db.setFirstCustodyIncompleteSlot(
                               firstIncompleteOrLastComplete.slot());
@@ -267,7 +267,7 @@ public class DataColumnSidecarCustodyImpl
               slot, Optional.empty(), Collections.emptyList(), Collections.emptyList()));
     }
     final SafeFuture<Optional<Bytes32>> maybeCanonicalBlockRoot = getBlockRootWithBlobs(slot);
-    final List<UInt64> requiredColumns = custodyGroupCountManager.getCustodyColumnIndices();
+    final Set<UInt64> requiredColumns = custodyGroupCountManager.getCustodyColumnIndices();
     final SafeFuture<List<DataColumnSlotAndIdentifier>> existingColumns =
         db.getColumnIdentifiers(slot);
     return SafeFuture.allOf(maybeCanonicalBlockRoot, existingColumns)

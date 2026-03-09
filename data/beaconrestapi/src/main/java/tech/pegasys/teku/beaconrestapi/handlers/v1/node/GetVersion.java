@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -49,6 +49,7 @@ public class GetVersion extends RestApiEndpoint {
             .description(
                 "similar to [HTTP User-Agent](https://tools.ietf.org/html/rfc7231#section-5.5.3).")
             .tags(TAG_NODE)
+            .deprecated(true)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .build());
   }

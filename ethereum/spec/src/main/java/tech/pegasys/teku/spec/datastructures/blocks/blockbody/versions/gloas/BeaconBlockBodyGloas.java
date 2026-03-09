@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -52,11 +52,6 @@ public interface BeaconBlockBodyGloas extends BeaconBlockBodyElectra {
   }
 
   @Override
-  default Optional<SszList<SszKZGCommitment>> getOptionalBlobKzgCommitments() {
-    return Optional.empty();
-  }
-
-  @Override
   default Optional<SignedExecutionPayloadBid> getOptionalSignedExecutionPayloadBid() {
     return Optional.of(getSignedExecutionPayloadBid());
   }
@@ -68,17 +63,17 @@ public interface BeaconBlockBodyGloas extends BeaconBlockBodyElectra {
 
   @Override
   default ExecutionPayloadDeneb getExecutionPayload() {
-    throw new UnsupportedOperationException("ExecutionPayload was removed in Gloas");
+    throw new UnsupportedOperationException("execution_payload field was removed in Gloas");
   }
 
   @Override
   default SszList<SszKZGCommitment> getBlobKzgCommitments() {
-    throw new UnsupportedOperationException("BlobKzgCommitments was removed in Gloas");
+    return getSignedExecutionPayloadBid().getMessage().getBlobKzgCommitments();
   }
 
   @Override
   default ExecutionRequests getExecutionRequests() {
-    throw new UnsupportedOperationException("ExecutionRequests was removed in Gloas");
+    throw new UnsupportedOperationException("execution_requests field was removed in Gloas");
   }
 
   @Override

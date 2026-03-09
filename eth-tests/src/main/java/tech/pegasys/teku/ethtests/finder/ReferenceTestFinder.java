@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -62,30 +62,21 @@ public class ReferenceTestFinder {
                 return Stream.empty();
               }
 
-              // TODO-GLOAS: Short circuit to limit what tests we run for Gloas while it is under
-              // development. This is temporary and should be removed once we are up-to-date with
-              // Gloas specs (see https://github.com/Consensys/teku-internal/issues/221)
-              if (fork.equals(TestFork.GLOAS)) {
-                return Stream.of(
-                        new BlsTestFinder(),
-                        new KzgTestFinder(),
-                        // TODO-GLOAS: not running these reference tests until the upcoming specs
-                        // have been implemented
-                        // new SszTestFinder("ssz_generic"),
-                        // new SszTestFinder("ssz_static"),
-                        new ShufflingTestFinder(),
-                        // new PyspecTestFinder(List.of(), List.of("fork_choice/")),
-                        new MerkleProofTestFinder())
-                    .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
-              }
-
               return Stream.of(
                       new BlsTestFinder(),
                       new KzgTestFinder(),
                       new SszTestFinder("ssz_generic"),
                       new SszTestFinder("ssz_static"),
                       new ShufflingTestFinder(),
-                      new PyspecTestFinder(),
+                      new PyspecTestFinder(
+                          List.of(),
+                          List.of(
+                              // TODO-GLOAS: Limit what tests we run for Gloas while it is
+                              // under development. This is temporary and should be removed once we
+                              // are up-to-date with Gloas specs (see
+                              // https://github.com/Consensys/teku-internal/issues/221)
+                              "gloas - mainnet - fork_choice/on_block - proposer_boost",
+                              "gloas - minimal - fork_choice/reorg")),
                       new MerkleProofTestFinder())
                   .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
             });

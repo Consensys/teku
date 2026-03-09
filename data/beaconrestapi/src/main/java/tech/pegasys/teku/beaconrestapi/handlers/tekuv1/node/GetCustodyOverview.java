@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -66,7 +66,8 @@ public class GetCustodyOverview extends RestApiEndpoint {
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
-    request.respondOk(new CustodyOverview(provider.getCustodyColumnIndices()));
+    request.respondOk(
+        new CustodyOverview(provider.getCustodyColumnIndices().stream().sorted().toList()));
   }
 
   record CustodyOverview(List<UInt64> columns) {}

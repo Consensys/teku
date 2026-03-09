@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -135,7 +135,7 @@ public class BlobSidecarReconstructionProvider {
         SchemaDefinitionsDeneb.required(
             spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions());
 
-    return IntStream.range(0, dataColumnSidecars.getFirst().getKzgCommitments().size())
+    return IntStream.range(0, dataColumnSidecars.getFirst().getKzgProofs().size())
         .filter(index -> blobIndices.isEmpty() || blobIndices.contains(UInt64.valueOf(index)))
         .mapToObj(
             blobIndex ->

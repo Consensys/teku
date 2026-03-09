@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -149,6 +149,16 @@ public class ExecutionPayloadBuilderBellatrix implements ExecutionPayloadBuilder
 
   @Override
   public ExecutionPayloadBuilder excessBlobGas(final Supplier<UInt64> excessBlobGasSupplier) {
+    return this;
+  }
+
+  @Override
+  public ExecutionPayloadBuilder blockAccessList(final Supplier<Bytes> blockAccessListSupplier) {
+    return this;
+  }
+
+  @Override
+  public ExecutionPayloadBuilder slotNumber(final Supplier<UInt64> slotNumberSupplier) {
     return this;
   }
 

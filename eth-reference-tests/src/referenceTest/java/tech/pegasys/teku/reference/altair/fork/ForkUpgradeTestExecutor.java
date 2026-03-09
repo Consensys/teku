@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 
@@ -73,6 +74,10 @@ public class ForkUpgradeTestExecutor implements TestExecutor {
                   previousMilestoneSpecVersion.getSchemaDefinitions().getSchemaRegistry());
           case GLOAS ->
               BeaconStateSchemaFulu.create(
+                  previousMilestoneSpecVersion.getConfig(),
+                  previousMilestoneSpecVersion.getSchemaDefinitions().getSchemaRegistry());
+          case HEZE ->
+              BeaconStateSchemaGloas.create(
                   previousMilestoneSpecVersion.getConfig(),
                   previousMilestoneSpecVersion.getSchemaDefinitions().getSchemaRegistry());
           default ->

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -225,7 +225,7 @@ class LocalSignerTest {
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
-                "sl534h/uxZZgPxcpx51IqZwOdJ0p5Jqwr1EqpJMQXfal4Wyw9RV9AC617smQOYrkCniCiwHpaM+kehHXOXUI3VUOhony4zRJ7y7y9a4okW6qjhjjBeESQXDIfIvboxLk"));
+                "ivzppJTgsLoYr2byZQhMYq2YERVTauYhx38mzUe9qhHRZhvOLxprM0wi3JRT9y3+DK3rNc3Yj39d2TlHiZOlf0+ozeHBbg11aaoSZzH7ixzRP+23A4iw4cEmpyT0DMKG"));
 
     final SafeFuture<BLSSignature> result = signer.signExecutionPayloadBid(bid, fork);
     asyncRunner.executeQueuedActions();
@@ -245,7 +245,7 @@ class LocalSignerTest {
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
-                "rYQ+MMyhTXyzCx4e2GMAI56Fz9vy204+O6UzWa7xyXg149jpP/gNeOD4j5/tmodSEsKlYCQgvinEFQR6XDI7jnNC6we5meqlPcGUlXCrb1UHPz+EifQ0E+saZZsU5Ssf"));
+                "hu8ykyX9hSY5eBSnmwDrGsbb4kyzc2IZj0SzOmixZ3L/69McGy0akhT6hIn9W29zFLJO6E+KuS8x8giLtasgGXpjhaxq2cA0Scj4WNhMAWO4XsCzKMcQ3Oe7eF0WArYM"));
 
     final SafeFuture<BLSSignature> result = signer.signExecutionPayloadEnvelope(envelope, fork);
     asyncRunner.executeQueuedActions();

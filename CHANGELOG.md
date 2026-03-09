@@ -10,10 +10,6 @@
 
 ### Additions and Improvements
 
-- New CLI flag `--rest-api-getblobs-sidecars-download-enabled` allows the beacon node to serve `getBlobs` REST API responses by attempting to fetch missing blob sidecars from the p2p network. The new flag `--rest-api-getblobs-sidecars-download-timeout` controls the network fetch timeout (default: 5 seconds). 
-
+- Added `/eth/v2/node/version` endpoint to retrieve structured version information for both beacon node and execution client.
 
 ### Bug Fixes
-
-- added `DOMAIN_BLS_TO_EXECUTION_CHANGE` to spec api output.
-

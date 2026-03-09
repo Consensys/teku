@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -241,15 +241,8 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
   }
 
   @Test
-  void columnsDataAvailabilityHalfCheckEnabled_disabledByDefault() {
+  void columnsDataAvailabilityHalfCheckEnabled_enabledByDefault() {
     TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
-    assertThat(tekuConfiguration.p2p().isColumnsDataAvailabilityHalfCheckEnabled()).isFalse();
-  }
-
-  @Test
-  void columnsDataAvailabilityHalfCheckEnabled_toggles() {
-    TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--Xcolumns-data-availability-half-check-enabled");
     assertThat(tekuConfiguration.p2p().isColumnsDataAvailabilityHalfCheckEnabled()).isTrue();
   }
 }

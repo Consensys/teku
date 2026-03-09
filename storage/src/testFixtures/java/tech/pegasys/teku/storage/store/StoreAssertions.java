@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -34,6 +34,7 @@ public class StoreAssertions {
             "timeMillis",
             "stateCountGauge",
             "blockCountGauge",
+            "executionPayloadCountGauge",
             "checkpointCountGauge",
             "votesLock",
             "readVotesLock",
@@ -51,14 +52,16 @@ public class StoreAssertions {
             "checkpointStateRequestRegenerateCounter",
             "checkpointStateRequestMissCounter",
             "metricsSystem",
-            "states",
+            "blockStates",
             "stateProvider",
             "checkpointStates",
             "forkChoiceStrategy",
             "maybeEpochStates",
             "epochStatesCountGauge",
             "blobSidecars",
-            "blobSidecarsBlocksCountGauge")
+            "blobSidecarsBlocksCountGauge",
+            "executionPayloadStates",
+            "executionPayloads")
         .isEqualTo(expectedState);
     assertThat(actualState.getOrderedBlockRoots())
         .containsExactlyElementsOf(expectedState.getOrderedBlockRoots());

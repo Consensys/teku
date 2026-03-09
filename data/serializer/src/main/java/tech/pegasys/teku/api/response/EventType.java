@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -32,7 +32,10 @@ public enum EventType {
   payload_attributes,
   block_gossip,
   single_attestation,
-  data_column_sidecar;
+  data_column_sidecar,
+  execution_payload_available,
+  execution_payload_bid,
+  payload_attestation_message;
 
   public static List<EventType> getTopics(final List<String> topics) {
     return topics.stream().map(EventType::valueOf).toList();

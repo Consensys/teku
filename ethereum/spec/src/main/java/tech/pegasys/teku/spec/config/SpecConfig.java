@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -72,6 +72,10 @@ public interface SpecConfig extends NetworkingSpecConfig {
   Bytes4 getGloasForkVersion();
 
   UInt64 getGloasForkEpoch();
+
+  Bytes4 getHezeForkVersion();
+
+  UInt64 getHezeForkEpoch();
 
   // Config: Time parameters
   int getSecondsPerSlot();
@@ -227,6 +231,10 @@ public interface SpecConfig extends NetworkingSpecConfig {
   }
 
   default Optional<SpecConfigGloas> toVersionGloas() {
+    return Optional.empty();
+  }
+
+  default Optional<SpecConfigHeze> toVersionHeze() {
     return Optional.empty();
   }
 

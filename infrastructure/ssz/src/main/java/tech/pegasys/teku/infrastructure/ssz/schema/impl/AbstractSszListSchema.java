@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -110,7 +110,7 @@ public abstract class AbstractSszListSchema<
         // BitlistImpl is handled specially
         return length / 8 + 1;
       } else {
-        return bitsCeilToBytes(length * getSszElementBitSize());
+        return Math.toIntExact(bitsCeilToBytes((long) length * getSszElementBitSize()));
       }
     } else {
       return getCompatibleVectorSchema().getVariablePartSize(getVectorNode(node), length)

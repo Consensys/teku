@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,12 +13,24 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.datastructures.forkchoice.PayloadStatus.PAYLOAD_STATUS_EMPTY;
+
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
+import tech.pegasys.teku.spec.datastructures.forkchoice.PayloadStatus;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
+import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
@@ -33,6 +45,50 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
       final AttestationUtilGloas attestationUtil,
       final MiscHelpersGloas miscHelpers) {
     super(specConfig, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
+  }
+
+  public static ForkChoiceUtilGloas required(final ForkChoiceUtil forkChoiceUtil) {
+    checkArgument(
+        forkChoiceUtil instanceof ForkChoiceUtilGloas,
+        "Expected a ForkChoiceUtilGloas but was %s",
+        forkChoiceUtil.getClass());
+    return (ForkChoiceUtilGloas) forkChoiceUtil;
+  }
+
+  // From Gloas, there are 3 states available in a given slot
+  // pre-state: State at the slot before block applied
+  // block-state: State at slot after consensus block applied
+  // execution-state: State at slot after consensus and execution has been applied
+  // The state to build on for the next slot is the best available of this list
+  // (execution-state > block-state > pre-state)
+  @Override
+  public SafeFuture<Optional<BeaconState>> retrievePreStateRequiredOnBlock(
+      final ReadOnlyStore store, final SignedBeaconBlock block) {
+    final Bytes32 parentRoot = block.getParentRoot();
+    // if the parent root is not in the proto array, no state would be available
+    if (!store.containsBlock(parentRoot)) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(block.getSlot(), parentRoot);
+    return isParentNodeFull(store, block.getMessage().getBlock())
+        .thenCompose(
+            isParentNodeFull -> {
+              if (isParentNodeFull) {
+                return store
+                    .retrieveExecutionPayloadState(slotAndBlockRoot)
+                    .thenCompose(
+                        preState -> {
+                          if (preState.isEmpty()) {
+                            // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 not sure
+                            // about this fallback, but it's good enough for devnet-0 (handles edge
+                            // cases for reference tests where parent node is the AnchorState)
+                            return store.retrieveBlockState(slotAndBlockRoot);
+                          }
+                          return SafeFuture.completedFuture(preState);
+                        });
+              }
+              return store.retrieveBlockState(slotAndBlockRoot);
+            });
   }
 
   @Override
@@ -50,11 +106,71 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     return AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR;
   }
 
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 add a real data availability check
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/10311 add a real data availability check
   // (not required for devnet-0)
   @Override
   public AvailabilityChecker<?> createAvailabilityChecker(
       final SignedExecutionPayloadEnvelope executionPayload) {
     return AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR;
+  }
+
+  /**
+   * Determines the payload status of the parent block.
+   *
+   * <p>Spec reference:
+   * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-get_parent_payload_status
+   *
+   * @param store the fork choice store
+   * @param block the current block
+   * @return PAYLOAD_STATUS_FULL if parent has full payload, PAYLOAD_STATUS_EMPTY otherwise
+   */
+  // get_parent_payload_status
+  SafeFuture<PayloadStatus> getParentPayloadStatus(
+      final ReadOnlyStore store, final BeaconBlock block) {
+    return store
+        .retrieveBlock(block.getParentRoot())
+        .thenApply(
+            parentBlock -> {
+              if (parentBlock.isEmpty()) {
+                throw new IllegalStateException("Parent block not found: " + block.getParentRoot());
+              }
+              final Optional<Bytes32> messageBlockHash =
+                  parentBlock
+                      .get()
+                      .getBody()
+                      .toVersionGloas()
+                      .map(
+                          bodyGloas ->
+                              bodyGloas.getSignedExecutionPayloadBid().getMessage().getBlockHash());
+              // if the parent block is pre-Gloas, we'd use the block state, there would be no
+              // payload state
+              if (messageBlockHash.isEmpty()) {
+                return PAYLOAD_STATUS_EMPTY;
+              }
+              final Bytes32 parentBlockHash =
+                  BeaconBlockBodyGloas.required(block.getBody())
+                      .getSignedExecutionPayloadBid()
+                      .getMessage()
+                      .getParentBlockHash();
+              return parentBlockHash.equals(messageBlockHash.get())
+                  ? PayloadStatus.PAYLOAD_STATUS_FULL
+                  : PAYLOAD_STATUS_EMPTY;
+            });
+  }
+
+  /**
+   * Checks if the parent node has a full payload.
+   *
+   * <p>Spec reference:
+   * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-is_parent_node_full
+   *
+   * @param store the fork choice store
+   * @param block the current block
+   * @return true if parent has full payload status
+   */
+  // is_parent_node_full
+  SafeFuture<Boolean> isParentNodeFull(final ReadOnlyStore store, final BeaconBlock block) {
+    return getParentPayloadStatus(store, block)
+        .thenApply(parentPayloadStatus -> parentPayloadStatus == PayloadStatus.PAYLOAD_STATUS_FULL);
   }
 }

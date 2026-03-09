@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -17,11 +17,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarBuilder;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarBuilderFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public class DataColumnSidecarBuilderGloas extends DataColumnSidecarBuilderFulu {
 
@@ -32,6 +34,12 @@ public class DataColumnSidecarBuilderGloas extends DataColumnSidecarBuilderFulu 
 
   public DataColumnSidecarBuilderGloas schema(final DataColumnSidecarSchemaGloas schema) {
     this.schema = schema;
+    return this;
+  }
+
+  @Override
+  public DataColumnSidecarBuilder kzgCommitments(final SszList<SszKZGCommitment> kzgCommitments) {
+    // NO-OP for Gloas
     return this;
   }
 
@@ -64,8 +72,7 @@ public class DataColumnSidecarBuilderGloas extends DataColumnSidecarBuilderFulu 
   @Override
   public DataColumnSidecar build() {
     validate();
-    return new DataColumnSidecarGloas(
-        schema, index, column, kzgCommitments, kzgProofs, slot, beaconBlockRoot);
+    return new DataColumnSidecarGloas(schema, index, column, kzgProofs, slot, beaconBlockRoot);
   }
 
   @Override
@@ -73,7 +80,6 @@ public class DataColumnSidecarBuilderGloas extends DataColumnSidecarBuilderFulu 
     checkNotNull(schema, "schema must be specified");
     checkNotNull(index, "index must be specified");
     checkNotNull(column, "column must be specified");
-    checkNotNull(kzgCommitments, "kzgCommitments must be specified");
     checkNotNull(kzgProofs, "kzgProofs must be specified");
     checkNotNull(slot, "slot must be specified");
     checkNotNull(beaconBlockRoot, "beaconBlockRoot must be specified");

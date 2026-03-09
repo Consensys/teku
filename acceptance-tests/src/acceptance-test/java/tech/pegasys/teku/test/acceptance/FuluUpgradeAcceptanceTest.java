@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -75,7 +75,7 @@ public class FuluUpgradeAcceptanceTest extends AcceptanceTestBase {
 
   private BesuNode createBesuNode(final int genesisTime) {
     final int osakaTime =
-        genesisTime + 4 * 2; // 4 slots, 2 seconds each (swift) - activate Prague on first slot
+        genesisTime + 4 * 2; // 4 slots, 2 seconds each (swift) - activate Osaka on first slot
     final Map<String, String> genesisOverrides = Map.of("osakaTime", String.valueOf(osakaTime));
 
     return createBesuNode(

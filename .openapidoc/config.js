@@ -31,7 +31,7 @@ function getConfig() {
     ghPagesConfig: {
       add: true, // allows gh-pages module to keep remote files
       branch: branch,
-      repo: repo.href,
+      repo: gitUrl,
       user: {
         name: gitUserName,
         email: gitEmail,

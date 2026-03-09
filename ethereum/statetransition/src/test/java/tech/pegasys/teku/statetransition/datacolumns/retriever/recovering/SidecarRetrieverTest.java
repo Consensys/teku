@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -77,22 +77,23 @@ public class SidecarRetrieverTest {
   private final DataColumnSidecarRetrieverStub delegateRetriever =
       new DataColumnSidecarRetrieverStub();
 
-  private final SidecarRetriever retriever =
-      new SidecarRetriever(
-          delegateRetriever,
-          miscHelpers,
-          dbAccessor,
-          stubAsyncRunner,
-          RECOVERY_TIMEOUT,
-          RECOVERY_TIMEOUT.dividedBy(2),
-          CHECK_INTERVAL,
-          timeProvider,
-          columnCount,
-          custodyManager,
-          metricsSystem);
+  private SidecarRetriever retriever;
 
   @BeforeEach
   void setUp() {
+    this.retriever =
+        new SidecarRetriever(
+            delegateRetriever,
+            miscHelpers,
+            dbAccessor,
+            stubAsyncRunner,
+            RECOVERY_TIMEOUT,
+            RECOVERY_TIMEOUT.dividedBy(2),
+            CHECK_INTERVAL,
+            timeProvider,
+            columnCount,
+            custodyManager,
+            metricsSystem);
     retriever.start();
   }
 

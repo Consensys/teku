@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -39,6 +39,7 @@ import org.apache.tuweni.ssz.SSZ;
 import org.assertj.core.api.Condition;
 import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
@@ -75,6 +76,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.statetransition.datacolumns.CurrentSlotProvider;
 import tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
@@ -188,7 +190,9 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             transitionBlockValidator,
             true,
             DebugDataDumper.NOOP,
-            storageSystem.getMetricsSystem());
+            storageSystem.getMetricsSystem(),
+            AsyncBLSSignatureVerifier.wrap(
+                blsDisabled ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE));
     final ExecutionLayerChannelStub executionLayer = new ExecutionLayerChannelStub(spec, false);
 
     try {
@@ -445,7 +449,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     // a sync where the attestation weighting is almost certainly useless.
     final BeaconState preState =
         safeJoin(
-                recentChainData.retrieveStateAtSlot(
+                recentChainData.retrieveBlockState(
                     new SlotAndBlockRoot(block.getSlot(), block.getParentRoot())))
             .orElseThrow();
     final VoteUpdater voteUpdater = recentChainData.startVoteUpdate();

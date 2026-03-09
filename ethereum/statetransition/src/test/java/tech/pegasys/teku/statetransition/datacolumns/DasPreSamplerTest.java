@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -27,6 +27,7 @@ import static tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySamp
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -81,7 +82,7 @@ public class DasPreSamplerTest {
         .thenReturn(NOT_REQUIRED_OLD_EPOCH);
 
     // Setup for the block that will be sampled
-    when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(List.of());
+    when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(Set.of());
     when(sampler.checkDataAvailability(blockToSample.getSlot(), blockToSample.getRoot()))
         .thenReturn(SafeFuture.completedFuture(null));
 
@@ -103,11 +104,11 @@ public class DasPreSamplerTest {
   @Test
   void shouldPreSampleBlockWhenRequiredAndNoColumnsInCustody() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
-    final List<UInt64> columnIndices = List.of(UInt64.valueOf(1), UInt64.valueOf(5));
+    final Set<UInt64> columnIndices = Set.of(UInt64.valueOf(1), UInt64.valueOf(5));
     final DataColumnSlotAndIdentifier col1 =
-        new DataColumnSlotAndIdentifier(block.getSlot(), block.getRoot(), columnIndices.get(0));
+        new DataColumnSlotAndIdentifier(block.getSlot(), block.getRoot(), UInt64.valueOf(1));
     final DataColumnSlotAndIdentifier col5 =
-        new DataColumnSlotAndIdentifier(block.getSlot(), block.getRoot(), columnIndices.get(1));
+        new DataColumnSlotAndIdentifier(block.getSlot(), block.getRoot(), UInt64.valueOf(5));
 
     when(sampler.checkSamplingEligibility(block.getMessage())).thenReturn(REQUIRED);
     when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(columnIndices);
@@ -128,11 +129,11 @@ public class DasPreSamplerTest {
   @Test
   void shouldNotifySamplerOfColumnsAlreadyInCustody() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
-    final List<UInt64> columnIndices = List.of(UInt64.valueOf(2), UInt64.valueOf(4));
+    final Set<UInt64> columnIndices = Set.of(UInt64.valueOf(2), UInt64.valueOf(4));
     final DataColumnSlotAndIdentifier col2 =
-        new DataColumnSlotAndIdentifier(block.getSlot(), block.getRoot(), columnIndices.get(0));
+        new DataColumnSlotAndIdentifier(block.getSlot(), block.getRoot(), UInt64.valueOf(2));
     final DataColumnSlotAndIdentifier col4 =
-        new DataColumnSlotAndIdentifier(block.getSlot(), block.getRoot(), columnIndices.get(1));
+        new DataColumnSlotAndIdentifier(block.getSlot(), block.getRoot(), UInt64.valueOf(4));
 
     when(sampler.checkSamplingEligibility(block.getMessage())).thenReturn(REQUIRED);
     when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(columnIndices);

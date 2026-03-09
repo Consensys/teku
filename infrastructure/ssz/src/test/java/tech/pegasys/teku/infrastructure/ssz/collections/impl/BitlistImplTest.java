@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -159,6 +159,29 @@ class BitlistImplTest {
     assertThatThrownBy(() -> BitlistImpl.fromSszBytes(Bytes.of(0), BITLIST_MAX_SIZE))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("marker bit");
+  }
+
+  static Stream<Arguments> toByteArrayCases() {
+    return Stream.of(
+        // empty bitlist
+        Arguments.of(0, new int[] {}, new byte[] {}),
+        // all zeros - BitSet.toByteArray() omits trailing zero bytes
+        Arguments.of(16, new int[] {}, new byte[] {}),
+        // single bit set
+        Arguments.of(18, new int[] {0}, new byte[] {0x01}),
+        // multiple bits in single byte
+        Arguments.of(18, new int[] {1, 4, 5}, new byte[] {0x32}),
+        // bits across multiple bytes
+        Arguments.of(18, new int[] {0, 8}, new byte[] {0x01, 0x01}),
+        // typical bitlist
+        Arguments.of(18, new int[] {1, 4, 5, 6, 11, 12, 17}, new byte[] {0x72, 0x18, 0x02}));
+  }
+
+  @ParameterizedTest
+  @MethodSource("toByteArrayCases")
+  void toByteArray(final int size, final int[] setBits, final byte[] expectedBytes) {
+    final BitlistImpl bitlist = new BitlistImpl(size, BITLIST_MAX_SIZE, setBits);
+    assertThat(bitlist.toByteArray()).containsExactly(expectedBytes);
   }
 
   private static BitlistImpl create(final int... bits) {

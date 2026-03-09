@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -179,6 +179,10 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     return Optional.of(new SignedBlockAndState(block, state));
   }
 
+  private SignedExecutionPayloadEnvelope getSignedExecutionPayload(final Bytes32 blockRoot) {
+    return executionPayloads.get(blockRoot);
+  }
+
   @Override
   public boolean containsBlock(final Bytes32 blockRoot) {
     return blocks.containsKey(blockRoot);
@@ -200,6 +204,10 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     return Optional.ofNullable(checkpointStates.get(checkpoint));
   }
 
+  private BeaconState getExecutionPayloadState(final Bytes32 blockRoot) {
+    return executionPayloadStates.get(blockRoot);
+  }
+
   @Override
   public UInt64 getHighestVotedValidatorIndex() {
     return votes.keySet().stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
@@ -212,8 +220,19 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
+  public Optional<BeaconState> getExecutionPayloadStateIfAvailable(final Bytes32 blockRoot) {
+    return Optional.ofNullable(getExecutionPayloadState(blockRoot));
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getBlockIfAvailable(final Bytes32 blockRoot) {
     return Optional.ofNullable(getSignedBlock(blockRoot));
+  }
+
+  @Override
+  public Optional<SignedExecutionPayloadEnvelope> getExecutionPayloadIfAvailable(
+      final Bytes32 blockRoot) {
+    return Optional.ofNullable(getSignedExecutionPayload(blockRoot));
   }
 
   @Override
@@ -238,14 +257,26 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(final Checkpoint checkpoint) {
-    return SafeFuture.completedFuture(getCheckpointState(checkpoint));
+  public SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not implemented"));
   }
 
   @Override
-  public SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(
+  public SafeFuture<Optional<BeaconState>> retrieveBlockState(
       final SlotAndBlockRoot slotAndBlockRoot) {
-    throw new UnsupportedOperationException("Not implemented");
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not implemented"));
+  }
+
+  @Override
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveSignedExecutionPayload(
+      final Bytes32 blockRoot) {
+    return SafeFuture.completedFuture(getExecutionPayloadIfAvailable(blockRoot));
+  }
+
+  @Override
+  public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(final Checkpoint checkpoint) {
+    return SafeFuture.completedFuture(getCheckpointState(checkpoint));
   }
 
   @Override

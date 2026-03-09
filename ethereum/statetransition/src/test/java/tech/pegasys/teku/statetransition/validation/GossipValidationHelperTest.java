@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -30,10 +30,13 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
+import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableContainer;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -46,6 +49,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -89,6 +94,23 @@ public class GossipValidationHelperTest {
 
     assertThat(gossipValidationHelper.isSlotFinalized(finalizedSlot)).isTrue();
     assertThat(gossipValidationHelper.isSlotFinalized(finalizedSlot.plus(1))).isFalse();
+  }
+
+  @TestTemplate
+  void isBeforeFinalizedSlot_shouldComputeCorrectly() {
+
+    final UInt64 finalizedEpoch = UInt64.valueOf(2);
+    final UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch);
+
+    assertThat(gossipValidationHelper.isBeforeFinalizedSlot(finalizedSlot)).isFalse();
+    assertThat(gossipValidationHelper.isBeforeFinalizedSlot(finalizedSlot.minus(1))).isFalse();
+
+    storageSystem.chainUpdater().advanceChain(finalizedSlot);
+    storageSystem.chainUpdater().finalizeEpoch(finalizedEpoch);
+
+    assertThat(gossipValidationHelper.isBeforeFinalizedSlot(finalizedSlot.minus(1))).isTrue();
+    assertThat(gossipValidationHelper.isBeforeFinalizedSlot(finalizedSlot)).isFalse();
+    assertThat(gossipValidationHelper.isBeforeFinalizedSlot(finalizedSlot.plus(1))).isFalse();
   }
 
   @TestTemplate
@@ -146,6 +168,53 @@ public class GossipValidationHelperTest {
                 signedBlock.getProposerIndex().increment(),
                 signedBlock.getSignature(),
                 headState))
+        .isFalse();
+  }
+
+  @TestTemplate
+  void isSignatureValidWithRespectToBuilderIndex_shouldComputeCorrectly(
+      final SpecContext specContext) {
+    specContext.assumeGloasActive();
+
+    final BeaconState state = recentChainData.getBestState().orElseThrow().getImmediately();
+    final UInt64 builderIndex = UInt64.ZERO;
+
+    // Get the builder's public key to ensure builder exists
+    if (spec.getBuilderPubKey(state, builderIndex).isEmpty()) {
+      // Skip test if no builders in state
+      return;
+    }
+
+    // Create a builder with a known keypair
+    final BLSKeyPair builderKeyPair = BLSKeyGenerator.generateKeyPairs(1).get(0);
+    final Builder builder =
+        dataStructureUtil.builderBuilder().publicKey(builderKeyPair.getPublicKey()).build();
+
+    // Create a modified state with our builder at index 0
+    final BeaconState modifiedState =
+        state.updated(
+            mutableState -> {
+              MutableBeaconStateGloas gloasState = MutableBeaconStateGloas.required(mutableState);
+              final SszMutableList<Builder> builders = gloasState.getBuilders();
+              if (builders.size() > builderIndex.intValue()) {
+                builders.set(builderIndex.intValue(), builder);
+              }
+            });
+
+    // Create a message and sign it with the builder's keypair
+    final Bytes message = dataStructureUtil.randomBytes32();
+    final BLSSignature signature = BLS.sign(builderKeyPair.getSecretKey(), message);
+
+    // Verify signature is valid with correct builder index
+    assertThat(
+            gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
+                message, builderIndex, signature, modifiedState))
+        .isTrue();
+
+    // Verify signature is invalid with wrong builder index
+    assertThat(
+            gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
+                message, builderIndex.increment(), signature, modifiedState))
         .isFalse();
   }
 
@@ -345,8 +414,121 @@ public class GossipValidationHelperTest {
     assertIsSlotCurrent(slot, currentTime, false);
   }
 
+  @TestTemplate
+  void isCurrentOrNextSlot() {
+    final UInt64 currentSlot = UInt64.valueOf(10);
+    storageSystem.chainUpdater().setCurrentSlot(currentSlot);
+    assertThat(gossipValidationHelper.isSlotCurrentOrNext(currentSlot)).isTrue();
+    assertThat(gossipValidationHelper.isSlotCurrentOrNext(currentSlot.plus(ONE))).isTrue();
+    assertThat(gossipValidationHelper.isSlotCurrentOrNext(currentSlot.minus(ONE))).isFalse();
+    assertThat(gossipValidationHelper.isSlotCurrentOrNext(currentSlot.plus(2))).isFalse();
+  }
+
+  @TestTemplate
+  void isValidBuilder_shouldReturnTrueForActiveBuilder(final SpecContext specContext) {
+    specContext.assumeGloasActive();
+    final UInt64 finalizedEpoch = UInt64.valueOf(4);
+    final UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch);
+    storageSystem.chainUpdater().advanceChainUntil(finalizedSlot);
+    final SignedBlockAndState blockAndState = storageSystem.chainUpdater().finalizeCurrentChain();
+    final BeaconState originalState = blockAndState.getState();
+    final UInt64 slot = originalState.getSlot();
+    final UInt64 builderIndex = UInt64.valueOf(0);
+    final BeaconState modifiedState =
+        originalState.updated(
+            mutableState ->
+                MutableBeaconStateGloas.required(mutableState)
+                    .getBuilders()
+                    .append(dataStructureUtil.builderBuilder().depositEpoch(ZERO).build()));
+    assertThat(gossipValidationHelper.isActiveBuilder(builderIndex, modifiedState, slot)).isTrue();
+  }
+
+  @TestTemplate
+  void isActiveBuilder_shouldHandleOutOfBound(final SpecContext specContext) {
+    specContext.assumeGloasActive();
+    final BeaconState state = recentChainData.getBestState().orElseThrow().getImmediately();
+    final UInt64 slot = state.getSlot();
+    final UInt64 invalidIndex = UInt64.valueOf(state.getValidators().size());
+    assertThat(gossipValidationHelper.isActiveBuilder(invalidIndex, state, slot)).isFalse();
+  }
+
+  @TestTemplate
+  void isActiveBuilder_shouldReturnFalseForInactive(final SpecContext specContext) {
+    specContext.assumeGloasActive();
+    final UInt64 finalizedEpoch = UInt64.valueOf(4);
+    final UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch);
+    storageSystem.chainUpdater().advanceChainUntil(finalizedSlot);
+    final SignedBlockAndState blockAndState = storageSystem.chainUpdater().finalizeCurrentChain();
+    final BeaconState originalState = blockAndState.getState();
+    final UInt64 slot = originalState.getSlot();
+    final UInt64 builderIndex = UInt64.valueOf(0);
+    final BeaconState modifiedState =
+        originalState.updated(
+            mutableState ->
+                MutableBeaconStateGloas.required(mutableState)
+                    .getBuilders()
+                    .append(
+                        dataStructureUtil
+                            .builderBuilder()
+                            .depositEpoch(
+                                originalState.getFinalizedCheckpoint().getEpoch().increment())
+                            .build()));
+    assertThat(gossipValidationHelper.isActiveBuilder(builderIndex, modifiedState, slot)).isFalse();
+  }
+
   private UInt64 getSlotStartTimeMillis(final UInt64 slot) {
     return spec.computeTimeAtSlot(slot, recentChainData.getGenesisTime()).times(1000);
+  }
+
+  @TestTemplate
+  void builderHasEnoughBalanceForBid_shouldReturnFalseWhenBidExceedsExcessBalance(
+      final SpecContext specContext) {
+    specContext.assumeGloasActive();
+    final BeaconState originalState = recentChainData.getBestState().orElseThrow().getImmediately();
+    final UInt64 slot = originalState.getSlot();
+
+    // Set builder balance to a known value
+    final UInt64 builderBalance = UInt64.valueOf(50_000_000_000L); // 50 ETH in Gwei
+
+    final BeaconState modifiedState =
+        originalState.updated(
+            mutableState ->
+                MutableBeaconStateGloas.required(mutableState)
+                    .getBuilders()
+                    .append(dataStructureUtil.builderBuilder().balance(builderBalance).build()));
+
+    // Bid value that exceeds excess balance (minActivationBalance + bidValue > builderBalance)
+    final UInt64 excessiveBidValue = builderBalance.plus(1);
+
+    assertThat(
+            gossipValidationHelper.builderHasEnoughBalanceForBid(
+                excessiveBidValue, UInt64.ZERO, modifiedState, slot))
+        .isFalse();
+  }
+
+  @TestTemplate
+  void builderHasEnoughBalanceForBid_shouldReturnTrueWhenBuilderHasSufficientBalance(
+      final SpecContext specContext) {
+    specContext.assumeGloasActive();
+    final BeaconState originalState = recentChainData.getBestState().orElseThrow().getImmediately();
+    final UInt64 slot = originalState.getSlot();
+
+    // Set builder balance to a large value
+    final UInt64 builderBalance = UInt64.valueOf(100_000_000_000L); // 100 ETH in Gwei
+    final BeaconState modifiedState =
+        originalState.updated(
+            mutableState ->
+                MutableBeaconStateGloas.required(mutableState)
+                    .getBuilders()
+                    .append(dataStructureUtil.builderBuilder().balance(builderBalance).build()));
+
+    // Reasonable bid value
+    final UInt64 bidValue = UInt64.valueOf(1_000_000_000L); // 1 ETH in Gwei
+
+    assertThat(
+            gossipValidationHelper.builderHasEnoughBalanceForBid(
+                bidValue, UInt64.ZERO, modifiedState, slot))
+        .isTrue();
   }
 
   private void assertIsSlotCurrent(

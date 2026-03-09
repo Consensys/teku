@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.statetransition.execution;
 
+import static tech.pegasys.teku.spec.config.Constants.RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE;
+
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
@@ -20,40 +23,53 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
+import tech.pegasys.teku.spec.datastructures.epbs.BlockRootAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public class DefaultExecutionPayloadManager implements ExecutionPayloadManager {
+public class DefaultExecutionPayloadManager
+    implements ExecutionPayloadManager, ReceivedBlockEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  // The cache is currently only used for the `payload_present` voting, so no need for a long term
-  // caching
-  private static final int RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE = 32;
-
   private final Set<Bytes32> recentSeenExecutionPayloads =
       LimitedSet.createSynchronized(RECENT_SEEN_EXECUTION_PAYLOADS_CACHE_SIZE);
+
+  // keeping a cache of execution payloads that have been received earlier than the block
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 fine-tune the maxSize (not required
+  // for devnet-0)
+  private final Map<BlockRootAndBuilderIndex, SignedExecutionPayloadEnvelope>
+      executionPayloadsSavedForFutureProcessing = LimitedMap.createSynchronizedLRU(32);
 
   private final AsyncRunner asyncRunner;
   private final ExecutionPayloadGossipValidator executionPayloadGossipValidator;
   private final ForkChoice forkChoice;
   private final ExecutionLayerChannel executionLayer;
+  private final ReceivedExecutionPayloadEventsChannel
+      receivedExecutionPayloadEventsChannelPublisher;
 
   public DefaultExecutionPayloadManager(
       final AsyncRunner asyncRunner,
       final ExecutionPayloadGossipValidator executionPayloadGossipValidator,
       final ForkChoice forkChoice,
-      final ExecutionLayerChannel executionLayer) {
+      final ExecutionLayerChannel executionLayer,
+      final ReceivedExecutionPayloadEventsChannel receivedExecutionPayloadEventsChannelPublisher) {
     this.asyncRunner = asyncRunner;
     this.executionPayloadGossipValidator = executionPayloadGossipValidator;
     this.forkChoice = forkChoice;
     this.executionLayer = executionLayer;
+    this.receivedExecutionPayloadEventsChannelPublisher =
+        receivedExecutionPayloadEventsChannelPublisher;
   }
 
   @Override
@@ -71,21 +87,32 @@ public class DefaultExecutionPayloadManager implements ExecutionPayloadManager {
     validationResult.thenAccept(
         result -> {
           switch (result.code()) {
-            case ACCEPT ->
-                doImportExecutionPayload(signedExecutionPayload)
-                    .finish(err -> LOG.error("Failed to process received execution payload.", err));
-            // TODO-GLOAS: what do we do in these cases??
-            // https://github.com/Consensys/teku/issues/9878
-            case REJECT, SAVE_FOR_FUTURE, IGNORE -> {}
+            case ACCEPT -> {
+              // cache the seen `beacon_block_root`
+              recentSeenExecutionPayloads.add(signedExecutionPayload.getBeaconBlockRoot());
+              importExecutionPayload(signedExecutionPayload)
+                  .finish(
+                      err ->
+                          LOG.error(
+                              "Failed to process received execution payload for slot {} and block root {}",
+                              signedExecutionPayload.getSlot(),
+                              signedExecutionPayload.getBeaconBlockRoot(),
+                              err));
+            }
+            case SAVE_FOR_FUTURE ->
+                executionPayloadsSavedForFutureProcessing.put(
+                    signedExecutionPayload.getBlockRootAndBuilderIndex(), signedExecutionPayload);
+            // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 what should we do in these
+            // cases?? (not required for devnet-0)
+            case REJECT, IGNORE -> {}
           }
         });
     return validationResult;
   }
 
-  private SafeFuture<ExecutionPayloadImportResult> doImportExecutionPayload(
+  @Override
+  public SafeFuture<ExecutionPayloadImportResult> importExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
-    // cache the seen `beacon_block_root`
-    recentSeenExecutionPayloads.add(signedExecutionPayload.getBeaconBlockRoot());
     return asyncRunner
         .runAsync(() -> forkChoice.onExecutionPayload(signedExecutionPayload, executionLayer))
         .thenPeek(
@@ -94,6 +121,8 @@ public class DefaultExecutionPayloadManager implements ExecutionPayloadManager {
                 LOG.debug(
                     "Successfully imported execution payload {}",
                     signedExecutionPayload::toLogString);
+                receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadImported(
+                    signedExecutionPayload);
               } else {
                 LOG.debug(
                     "Failed to import execution payload for reason {}: {}",
@@ -105,16 +134,36 @@ public class DefaultExecutionPayloadManager implements ExecutionPayloadManager {
             ex -> {
               final String internalErrorMessage =
                   String.format(
-                      "Internal error while importing execution payload: %s. Block content: %s",
+                      "Internal error while importing execution payload: %s. Execution payload content: %s",
                       signedExecutionPayload.toLogString(),
-                      getExecutionPayloadContent(signedExecutionPayload));
+                      signedExecutionPayload.sszSerialize().toHexString());
               LOG.error(internalErrorMessage, ex);
               return ExecutionPayloadImportResult.internalError(ex);
             });
   }
 
-  private String getExecutionPayloadContent(
-      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
-    return signedExecutionPayload.sszSerialize().toHexString();
+  @Override
+  public void onBlockValidated(final SignedBeaconBlock block) {}
+
+  @Override
+  public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
+    // Processing execution payloads which have been received before the block has been imported
+    block
+        .getMessage()
+        .getBody()
+        .toVersionGloas()
+        .map(BeaconBlockBodyGloas::getSignedExecutionPayloadBid)
+        .map(
+            bid ->
+                new BlockRootAndBuilderIndex(block.getRoot(), bid.getMessage().getBuilderIndex()))
+        .map(executionPayloadsSavedForFutureProcessing::remove)
+        .ifPresent(
+            executionPayloadToProcess -> {
+              LOG.debug(
+                  "Processing execution payload for slot {} and block root {} which has been received before the block",
+                  executionPayloadToProcess.getSlot(),
+                  executionPayloadToProcess.getBeaconBlockRoot());
+              validateAndImportExecutionPayload(executionPayloadToProcess).finishError(LOG);
+            });
   }
 }

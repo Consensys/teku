@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -37,5 +37,11 @@ public class DefaultFetchTaskFactory implements FetchTaskFactory {
   public FetchBlobSidecarTask createFetchBlobSidecarTask(
       final BlobIdentifier blobIdentifier, final Optional<Eth2Peer> preferredPeer) {
     return new FetchBlobSidecarTask(eth2Network, preferredPeer, blobIdentifier);
+  }
+
+  @Override
+  public FetchExecutionPayloadTask createFetchExecutionPayloadTask(
+      final Bytes32 beaconBlockRoot, final Optional<Eth2Peer> preferredPeer) {
+    return new FetchExecutionPayloadTask(eth2Network, preferredPeer, beaconBlockRoot);
   }
 }

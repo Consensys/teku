@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -65,12 +65,18 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
@@ -85,6 +91,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatri
 import tech.pegasys.teku.spec.generator.BlsToExecutionChangeGenerator;
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.signatures.SigningRootUtil;
 import tech.pegasys.teku.test.acceptance.dsl.Eth2EventHandler.PackedMessage;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
@@ -95,6 +102,7 @@ public class TekuBeaconNode extends TekuNode {
   public static final String LOCAL_VALIDATOR_LIVENESS_URL = "/eth/v1/validator/liveness/{epoch}";
   public static final String POST_PROPOSER_SLASHING_URL = "/eth/v1/beacon/pool/proposer_slashings";
   public static final String POST_ATTESTER_SLASHING_URL = "/eth/v1/beacon/pool/attester_slashings";
+  public static final String PUT_LOG_LEVEL_URL = "/teku/v1/admin/log_level";
   private final TekuNodeConfig config;
   private final Spec spec;
 
@@ -224,11 +232,18 @@ public class TekuBeaconNode extends TekuNode {
             "listOfLiveness", listOf(ValidatorLivenessAtEpoch.getJsonTypeDefinition()));
 
     final List<ValidatorLivenessAtEpoch> livenessResponse = JsonUtil.parse(response, type);
-    final Object2BooleanMap<UInt64> output = new Object2BooleanOpenHashMap<UInt64>();
+    final Object2BooleanMap<UInt64> output = new Object2BooleanOpenHashMap<>();
     for (ValidatorLivenessAtEpoch entry : livenessResponse) {
       output.put(entry.index(), entry.isLive());
     }
     return output;
+  }
+
+  public void setLogLevel(final String queryString, final String level) throws IOException {
+    httpClient.put(
+        getRestApiUrl(),
+        PUT_LOG_LEVEL_URL,
+        String.format("{\"level\":\"%s\", \"log_filter\":[\"%s\"]}", level, queryString));
   }
 
   public void postProposerSlashing(
@@ -448,6 +463,16 @@ public class TekuBeaconNode extends TekuNode {
     waitFor(() -> assertThat(fetchBeaconHeadRoot().orElseThrow()).isNotEqualTo(startingBlockRoot));
   }
 
+  public void waitForNewBlockAndNewExecutionPayload() {
+    final Bytes32 startingBlockRoot = waitForBeaconHead(null);
+    waitFor(
+        () -> {
+          final Bytes32 newBlockRoot = fetchBeaconHeadRoot().orElseThrow();
+          assertThat(newBlockRoot).isNotEqualTo(startingBlockRoot);
+          assertThat(fetchExecutionPayload(newBlockRoot.toHexString())).isPresent();
+        });
+  }
+
   public void waitForOptimisticBlock() {
     waitForBeaconHead(true);
   }
@@ -478,18 +503,26 @@ public class TekuBeaconNode extends TekuNode {
         () -> {
           final Optional<SignedBeaconBlock> block = fetchHeadBlock();
           assertThat(block).isPresent();
-          checkExecutionPayloadInBlock(block.get());
+          verifyExecutionPayloadIsNonDefault(block.get());
         },
         5,
         MINUTES);
   }
 
-  private void checkExecutionPayloadInBlock(final SignedBeaconBlock signedBlock) {
-    final BeaconBlock beaconBlock = signedBlock.getMessage();
-    final UInt64 slot = beaconBlock.getSlot();
-    final Optional<ExecutionPayload> maybeExecutionPayload =
-        beaconBlock.getBody().getOptionalExecutionPayload();
-
+  private void verifyExecutionPayloadIsNonDefault(final SignedBeaconBlock signedBlock)
+      throws IOException {
+    final BeaconBlock block = signedBlock.getMessage();
+    final UInt64 slot = block.getSlot();
+    final BeaconBlockBody blockBody = block.getBody();
+    final Optional<ExecutionPayload> maybeExecutionPayload;
+    if (blockBody.getOptionalSignedExecutionPayloadBid().isPresent()) {
+      maybeExecutionPayload =
+          fetchExecutionPayload(block.getRoot().toHexString())
+              .map(SignedExecutionPayloadEnvelope::getMessage)
+              .map(ExecutionPayloadEnvelope::getPayload);
+    } else {
+      maybeExecutionPayload = blockBody.getOptionalExecutionPayload();
+    }
     assertThat(maybeExecutionPayload).isPresent();
     assertThat(maybeExecutionPayload.get().isDefault()).describedAs("Is default payload").isFalse();
     LOG.debug("Non default execution payload found at slot " + slot);
@@ -613,28 +646,6 @@ public class TekuBeaconNode extends TekuNode {
     return fetchBeaconHeadRootData().map(Pair::getLeft);
   }
 
-  private Optional<Bytes32> fetchBlockRoot(final String blockId) throws IOException {
-    final String result =
-        httpClient.get(getRestApiUrl(), "/eth/v1/beacon/blocks/" + blockId + "/root");
-    if (result.isEmpty()) {
-      return Optional.empty();
-    }
-    final JsonNode jsonNode = OBJECT_MAPPER.readTree(result);
-    final Bytes32 root = Bytes32.fromHexString(jsonNode.get("data").get("root").asText());
-    return Optional.of(root);
-  }
-
-  public Bytes32 waitForBlockAtSlot(final UInt64 slot) {
-    final AtomicReference<Bytes32> block = new AtomicReference<>(null);
-    waitFor(
-        () -> {
-          final Optional<Bytes32> blockRoot = fetchBlockRoot(slot.toString());
-          assertThat(blockRoot).isPresent();
-          block.set(blockRoot.get());
-        });
-    return block.get();
-  }
-
   private Optional<UInt64> getFinalizedEpoch() {
     try {
       final String result =
@@ -693,6 +704,25 @@ public class TekuBeaconNode extends TekuNode {
     }
   }
 
+  private Optional<SignedExecutionPayloadEnvelope> fetchExecutionPayload(final String blockId)
+      throws IOException {
+    final String result =
+        httpClient.get(getRestApiUrl(), "/eth/v1/beacon/execution_payload_envelope/" + blockId);
+    if (result.isEmpty()) {
+      return Optional.empty();
+    } else {
+      JsonNode jsonNode = OBJECT_MAPPER.readTree(result);
+      final UInt64 slot = UInt64.valueOf(jsonNode.get("data").get("message").get("slot").asText());
+      final DeserializableTypeDefinition<SignedExecutionPayloadEnvelope> jsonTypeDefinition =
+          SharedApiTypes.withDataWrapper(
+              "execution_payload_envelope",
+              SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions())
+                  .getSignedExecutionPayloadEnvelopeSchema()
+                  .getJsonTypeDefinition());
+      return Optional.of(JsonUtil.parse(result, jsonTypeDefinition));
+    }
+  }
+
   public SignedBeaconBlock getFinalizedBlock() throws IOException {
     return fetchBlock("finalized").orElseThrow();
   }
@@ -739,6 +769,19 @@ public class TekuBeaconNode extends TekuNode {
     return jsonNode.get("data").size();
   }
 
+  public Optional<List<Blob>> getBlobsAtSlot(final UInt64 slot) throws IOException {
+    final Bytes result =
+        httpClient.getAsBytes(
+            getRestApiUrl(),
+            "/eth/v1/beacon/blobs/" + slot,
+            Map.of("Accept", "application/octet-stream"));
+    if (result.isEmpty()) {
+      return Optional.empty();
+    } else {
+      return Optional.of(spec.deserializeBlobsInBlock(result, slot).asList());
+    }
+  }
+
   public void waitForCustodyBackfill(final UInt64 slot, final int expectedCustodyCount) {
     waitFor(
         () -> {
@@ -749,16 +792,6 @@ public class TekuBeaconNode extends TekuNode {
         },
         3,
         MINUTES);
-  }
-
-  public void waitForValidators(final int numberOfValidators) {
-    waitFor(
-        () -> {
-          Optional<BeaconState> maybeState = fetchHeadState();
-          assertThat(maybeState).isPresent();
-          BeaconState state = maybeState.get();
-          assertThat(state.getValidators().size()).isEqualTo(numberOfValidators);
-        });
   }
 
   public void waitForValidatorWithCredentials(
@@ -870,5 +903,18 @@ public class TekuBeaconNode extends TekuNode {
 
   public void expectElOnline() throws IOException {
     assertThat(getStatusElOffline()).isFalse();
+  }
+
+  public MetadataMessage getMetadataMessage(final SpecMilestone specMilestone) throws IOException {
+    final JsonNode identityData = fetchIdentity();
+    final MetadataMessageSchema<?> metadataMessageSchema =
+        spec.forMilestone(specMilestone).getSchemaDefinitions().getMetadataMessageSchema();
+    return JsonUtil.parse(
+        identityData.get("metadata").toString(), metadataMessageSchema.getJsonTypeDefinition());
+  }
+
+  private JsonNode fetchIdentity() throws IOException {
+    final String identity = httpClient.get(getRestApiUrl(), "/eth/v1/node/identity");
+    return OBJECT_MAPPER.readTree(identity).get("data");
   }
 }

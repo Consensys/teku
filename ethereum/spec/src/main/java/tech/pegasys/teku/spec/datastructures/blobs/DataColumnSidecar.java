@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -27,11 +27,14 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
 public interface DataColumnSidecar extends SszContainer {
 
+  @Override
+  DataColumnSidecarSchema<? extends DataColumnSidecar> getSchema();
+
   UInt64 getIndex();
 
   DataColumn getColumn();
 
-  SszList<SszKZGCommitment> getKzgCommitments();
+  Optional<SszList<SszKZGCommitment>> getMaybeKzgCommitments();
 
   SszList<SszKZGProof> getKzgProofs();
 
@@ -51,7 +54,6 @@ public interface DataColumnSidecar extends SszContainer {
         getBeaconBlockRoot(),
         getIndex(),
         getColumn().toBriefString(),
-        getKzgCommitments().size(),
         getKzgProofs().size());
   }
 }

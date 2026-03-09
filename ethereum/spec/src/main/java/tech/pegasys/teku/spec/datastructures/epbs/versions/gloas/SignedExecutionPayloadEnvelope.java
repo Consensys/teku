@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.BlockRootAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class SignedExecutionPayloadEnvelope
@@ -60,6 +61,10 @@ public class SignedExecutionPayloadEnvelope
 
   public SlotAndBlockRoot getSlotAndBlockRoot() {
     return getMessage().getSlotAndBlockRoot();
+  }
+
+  public BlockRootAndBuilderIndex getBlockRootAndBuilderIndex() {
+    return getMessage().getBlockRootAndBuilderIndex();
   }
 
   public String toLogString() {

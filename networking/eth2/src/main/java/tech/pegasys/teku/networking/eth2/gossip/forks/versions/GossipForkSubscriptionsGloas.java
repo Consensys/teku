@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
+import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -83,7 +84,8 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
       final DebugDataDumper debugDataDumper,
       final DasGossipLogger dasGossipLogger,
       final OperationProcessor<ExecutionProof> executionProcessorOperationProcessor,
-      final boolean isExecutionProofTopicEnabled) {
+      final boolean isExecutionProofTopicEnabled,
+      final Supplier<Boolean> isSuperNodeSupplier) {
     super(
         fork,
         spec,
@@ -106,7 +108,8 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
         debugDataDumper,
         dasGossipLogger,
         executionProcessorOperationProcessor,
-        isExecutionProofTopicEnabled);
+        isExecutionProofTopicEnabled,
+        isSuperNodeSupplier);
     this.executionPayloadProcessor = executionPayloadOperationProcessor;
     this.payloadAttestationMessageProcessor = payloadAttestationMessageOperationProcessor;
     this.executionPayloadBidProcessor = executionPayloadBidOperationProcessor;

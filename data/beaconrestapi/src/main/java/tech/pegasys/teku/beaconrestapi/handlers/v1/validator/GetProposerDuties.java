@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -64,6 +64,7 @@ public class GetProposerDuties extends RestApiEndpoint {
             .pathParam(EPOCH_PARAMETER)
             .response(SC_OK, "Request successful", PROPOSER_DUTIES_TYPE)
             .withChainDataResponses()
+            .deprecated(true)
             .build());
     this.validatorDataProvider = validatorDataProvider;
     this.syncDataProvider = syncDataProvider;
@@ -77,7 +78,8 @@ public class GetProposerDuties extends RestApiEndpoint {
     }
 
     final UInt64 epoch = request.getPathParameter(EPOCH_PARAMETER);
-    SafeFuture<Optional<ProposerDuties>> future = validatorDataProvider.getProposerDuties(epoch);
+    SafeFuture<Optional<ProposerDuties>> future =
+        validatorDataProvider.getProposerDutiesElectraDependentRoot(epoch);
 
     request.respondAsync(
         future.thenApply(

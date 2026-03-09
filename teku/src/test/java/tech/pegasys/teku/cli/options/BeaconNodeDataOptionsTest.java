@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -225,5 +225,30 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration tekuConfig =
         getTekuConfigurationFromArguments("--Xdebug-data-dumping-enabled=true");
     assertThat(tekuConfig.dataConfig().isDebugDataDumpingEnabled()).isEqualTo(true);
+  }
+
+  @Test
+  void forceClearDb_shouldDefaultToFalse() {
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments();
+    assertThat(tekuConfig.storageConfiguration().isForceClearDb()).isEqualTo(false);
+  }
+
+  @Test
+  void forceClearDb_shouldAcceptTrue() {
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments("--force-clear-db=true");
+    assertThat(tekuConfig.storageConfiguration().isForceClearDb()).isEqualTo(true);
+  }
+
+  @Test
+  void forceClearDb_shouldAcceptFalse() {
+    final TekuConfiguration tekuConfig =
+        getTekuConfigurationFromArguments("--force-clear-db=false");
+    assertThat(tekuConfig.storageConfiguration().isForceClearDb()).isEqualTo(false);
+  }
+
+  @Test
+  void forceClearDb_shouldUseFallbackValue() {
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments("--force-clear-db");
+    assertThat(tekuConfig.storageConfiguration().isForceClearDb()).isEqualTo(true);
   }
 }

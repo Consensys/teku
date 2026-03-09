@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -170,13 +170,16 @@ public class PendingRecoveryRequestTest {
       final SafeFuture<DataColumnSidecar> downloadFuture) {
     final DataColumnSlotAndIdentifier id =
         maybeId.orElse(SidecarRetrieverTest.createId(dataStructureUtil.randomBeaconBlock(), 1));
-    return new PendingRecoveryRequest(
-        id,
-        downloadFuture,
-        timeProvider.getTimeInMillis(),
-        RECOVERY_TIMEOUT,
-        DOWNLOAD_TIMEOUT,
-        METRIC,
-        () -> {});
+    final PendingRecoveryRequest pendingRecoveryRequest =
+        new PendingRecoveryRequest(
+            id,
+            downloadFuture,
+            timeProvider.getTimeInMillis(),
+            RECOVERY_TIMEOUT,
+            DOWNLOAD_TIMEOUT,
+            METRIC,
+            () -> {});
+    pendingRecoveryRequest.start();
+    return pendingRecoveryRequest;
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -21,6 +21,7 @@ import it.unimi.dsi.fastutil.longs.LongList;
 import java.io.File;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.io.TempDir;
@@ -46,6 +47,14 @@ public class DatabaseCompatibilityTest {
     final StorageSystem expectedSystem = InMemoryStorageSystemBuilder.buildDefault();
     populateDatabaseWithTestData(expectedSystem);
     expectedData = expectedSystem;
+  }
+
+  @AfterAll
+  static void cleanUpExpected() throws Exception {
+    if (expectedData != null) {
+      expectedData.close();
+      expectedData = null;
+    }
   }
 
   @ParameterizedTest(name = "{0}")

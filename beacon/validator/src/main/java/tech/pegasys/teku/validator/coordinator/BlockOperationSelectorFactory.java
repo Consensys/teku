@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -458,7 +458,7 @@ public class BlockOperationSelectorFactory {
       final BlockProductionPerformance blockProductionPerformance) {
     checkState(
         executionPayloadContext.isPresent(),
-        "ExecutionPayloadContext is not provided for production of post-merge block at slot %s",
+        "ExecutionPayloadContext is not provided for production of block at slot %s",
         blockSlotState.getSlot());
     final ExecutionPayloadResult executionPayloadResult =
         executionLayerBlockProductionManager.initiateBlockProduction(

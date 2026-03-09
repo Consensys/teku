@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.SingleRpcRequestBodySelector;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public interface Eth2Peer extends Peer, SyncSource {
   static Eth2Peer create(
@@ -60,7 +61,8 @@ public interface Eth2Peer extends Peer, SyncSource {
       final RateTracker executionPayloadEnvelopesRequestTracker,
       final RateTracker requestTracker,
       final MetricsSystem metricsSystem,
-      final TimeProvider timeProvider) {
+      final TimeProvider timeProvider,
+      final CombinedChainDataClient combinedChainDataClient) {
     return new DefaultEth2Peer(
         spec,
         peer,
@@ -76,7 +78,8 @@ public interface Eth2Peer extends Peer, SyncSource {
         executionPayloadEnvelopesRequestTracker,
         requestTracker,
         metricsSystem,
-        timeProvider);
+        timeProvider,
+        combinedChainDataClient);
   }
 
   void updateStatus(PeerStatus status);
@@ -124,6 +127,9 @@ public interface Eth2Peer extends Peer, SyncSource {
   SafeFuture<Optional<SignedBeaconBlock>> requestBlockByRoot(Bytes32 blockRoot);
 
   SafeFuture<Optional<BlobSidecar>> requestBlobSidecarByRoot(BlobIdentifier blobIdentifier);
+
+  SafeFuture<Optional<SignedExecutionPayloadEnvelope>> requestExecutionPayloadEnvelopeByRoot(
+      Bytes32 beaconBlockRoot);
 
   SafeFuture<MetadataMessage> requestMetadata();
 

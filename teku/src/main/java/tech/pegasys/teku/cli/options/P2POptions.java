@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,6 +18,7 @@ import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_COLUMN_CUSTODY
 import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS;
 import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_DOWNLOAD_TIMEOUT_MS;
 import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_RECOVERY_TIMEOUT_MS;
+import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_REWORKED_COLUMN_CUSTODY_BACKFILLER;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND;
@@ -338,7 +339,7 @@ public class P2POptions {
       arity = "0..1",
       hidden = true,
       fallbackValue = "true")
-  private boolean reworkedSidecarCustodySyncEnabled = false;
+  private boolean reworkedSidecarCustodySyncEnabled = DEFAULT_REWORKED_COLUMN_CUSTODY_BACKFILLER;
 
   @Option(
       names = {"--Xp2p-reworked-sidecar-custody-sync-batch-size"},
@@ -361,17 +362,7 @@ public class P2POptions {
       DEFAULT_COLUMN_CUSTODY_BACKFILLER_POLL_PERIOD_SECONDS;
 
   @Option(
-      names = {"--Xp2p-reworked-sidecar-recovery-enabled"},
-      paramLabel = "<BOOLEAN>",
-      showDefaultValue = Visibility.ALWAYS,
-      description = "",
-      arity = "0..1",
-      hidden = true,
-      fallbackValue = "true")
-  private boolean reworkedSidecarRecoveryEnabled = true;
-
-  @Option(
-      names = {"--Xp2p-reworked-sidecar-cancel-timeout-ms"},
+      names = {"--Xp2p-sidecar-cancel-timeout-ms"},
       paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
       description = "",
@@ -380,7 +371,7 @@ public class P2POptions {
   private Integer sidecarCancelTimeoutMs = DEFAULT_RECOVERY_TIMEOUT_MS;
 
   @Option(
-      names = {"--Xp2p-reworked-sidecar-download-timeout-ms"},
+      names = {"--Xp2p-sidecar-download-timeout-ms"},
       paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
       description = "",
@@ -615,6 +606,19 @@ public class P2POptions {
       arity = "1")
   private int historicalDataMaxQueryQueueSize = P2PConfig.DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE;
 
+  @Option(
+      names = {"--Xmin-bid-increment-percentage"},
+      hidden = true,
+      paramLabel = "<INTEGER>",
+      description =
+          "Minimum bid increment percentage for execution payload bid gossip validation. "
+              + "New bids must exceed the current highest bid by at least this percentage. "
+              + "Used for DoS protection against bid spamming. Default: 1 (1%)",
+      arity = "1",
+      defaultValue = "1",
+      showDefaultValue = Visibility.ALWAYS)
+  private int minBidIncrementPercentage = P2PConfig.DEFAULT_MIN_BID_INCREMENT_PERCENTAGE;
+
   private OptionalInt getP2pLowerBound() {
     if (p2pUpperBound.isPresent() && p2pLowerBound.isPresent()) {
       return p2pLowerBound.getAsInt() < p2pUpperBound.getAsInt() ? p2pLowerBound : p2pUpperBound;
@@ -708,11 +712,11 @@ public class P2POptions {
                   .executionProofTopicEnabled(executionProofTopicEnabled)
                   .reworkedSidecarRecoveryTimeout(sidecarCancelTimeoutMs)
                   .reworkedSidecarDownloadTimeout(sidecarDownloadTimeoutMs)
-                  .reworkedSidecarRecoveryEnabled(reworkedSidecarRecoveryEnabled)
                   .reworkedSidecarSyncPollPeriod(reworkedSidecarCustodySyncPollPeriodSeconds)
                   .reworkedSidecarSyncBatchSize(reworkedSidecarCustodySyncBatchSize)
                   .reworkedSidecarSyncEnabled(reworkedSidecarCustodySyncEnabled)
-                  .columnsDataAvailabilityHalfCheckEnabled(columnsDataAvailabilityHalfCheckEnabled);
+                  .columnsDataAvailabilityHalfCheckEnabled(columnsDataAvailabilityHalfCheckEnabled)
+                  .minBidIncrementPercentage(minBidIncrementPercentage);
               batchVerifyQueueCapacity.ifPresent(b::batchVerifyQueueCapacity);
             })
         .discovery(

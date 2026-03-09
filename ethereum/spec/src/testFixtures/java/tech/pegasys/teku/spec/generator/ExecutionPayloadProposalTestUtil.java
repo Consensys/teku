@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -12,6 +12,8 @@
  */
 
 package tech.pegasys.teku.spec.generator;
+
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -35,7 +37,6 @@ public class ExecutionPayloadProposalTestUtil {
   public SafeFuture<SignedExecutionPayloadAndState> createExecutionPayload(
       final Signer signer,
       final UInt64 newSlot,
-      final UInt64 proposerIndex,
       final BeaconBlockAndState blockAndState,
       final ExecutionPayloadProposalData executionPayloadProposalData,
       final boolean skipStateTransition) {
@@ -48,10 +49,9 @@ public class ExecutionPayloadProposalTestUtil {
               .create(
                   executionPayloadProposalData.executionPayload(),
                   executionPayloadProposalData.executionRequests(),
-                  proposerIndex,
+                  BUILDER_INDEX_SELF_BUILD,
                   blockAndState.getRoot(),
                   newSlot,
-                  executionPayloadProposalData.kzgCommitments(),
                   blockAndState.getState().hashTreeRoot());
       // Sign execution payload and set signature
       return signer
@@ -68,7 +68,7 @@ public class ExecutionPayloadProposalTestUtil {
     }
     return spec.createNewUnsignedExecutionPayload(
             newSlot,
-            proposerIndex,
+            BUILDER_INDEX_SELF_BUILD,
             blockAndState,
             SafeFuture.completedFuture(executionPayloadProposalData))
         .thenCompose(

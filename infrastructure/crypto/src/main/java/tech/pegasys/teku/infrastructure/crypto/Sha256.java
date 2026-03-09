@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -26,6 +26,12 @@ public class Sha256 {
 
   Sha256(final MessageDigest messageDigest) {
     this.messageDigest = messageDigest;
+  }
+
+  public byte[] digest(final byte[] a, final byte[] b) {
+    messageDigest.update(a);
+    messageDigest.update(b);
+    return messageDigest.digest();
   }
 
   public byte[] digest(final Bytes a, final Bytes b) {

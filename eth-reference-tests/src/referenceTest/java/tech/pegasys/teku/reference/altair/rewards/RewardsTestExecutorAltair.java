@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -39,9 +39,14 @@ public class RewardsTestExecutorAltair implements TestExecutor {
 
   public static final ImmutableMap<String, TestExecutor> REWARDS_TEST_TYPES =
       ImmutableMap.of(
-          "rewards/basic", new RewardsTestExecutorAltair(),
-          "rewards/leak", new RewardsTestExecutorAltair(),
-          "rewards/random", new RewardsTestExecutorAltair());
+          "rewards/basic",
+          new RewardsTestExecutorAltair(),
+          "rewards/leak",
+          new RewardsTestExecutorAltair(),
+          "rewards/random",
+          new RewardsTestExecutorAltair(),
+          "rewards/inactivity_scores",
+          new RewardsTestExecutorAltair());
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {

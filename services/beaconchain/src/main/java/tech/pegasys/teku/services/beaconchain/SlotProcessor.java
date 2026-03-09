@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -231,7 +231,7 @@ public class SlotProcessor {
     return isProcessingDueForSlot(calculatedSlot, onTickSlotStart);
   }
 
-  // Attestations are due 1/3 of the way through the slots time period
+  // Attestations are due 1/3 (1/4 in Gloas) of the way through the slots time period
   boolean isSlotAttestationDue(
       final UInt64 calculatedSlot,
       final UInt64 currentTimeMillis,

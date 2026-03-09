@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_ASYNC_P2P_MAX_THREADS;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
@@ -234,6 +235,14 @@ public class Eth2NetworkOptions {
   private UInt64 gloasForkEpoch;
 
   @Option(
+      names = {"--Xnetwork-heze-fork-epoch"},
+      hidden = true,
+      paramLabel = "<epoch>",
+      description = "Override the Heze fork activation epoch.",
+      arity = "1")
+  private UInt64 hezeForkEpoch;
+
+  @Option(
       names = {"--Xnetwork-total-terminal-difficulty-override"},
       hidden = true,
       paramLabel = "<uint256>",
@@ -400,11 +409,6 @@ public class Eth2NetworkOptions {
     return createEth2NetworkConfig(builder -> {});
   }
 
-  public Eth2NetworkConfiguration getNetworkConfiguration(
-      final Consumer<Eth2NetworkConfiguration.Builder> modifier) {
-    return createEth2NetworkConfig(modifier);
-  }
-
   public void configure(final TekuConfiguration.Builder builder) {
     builder.eth2NetworkConfig(this::configureEth2Network);
   }
@@ -454,21 +458,66 @@ public class Eth2NetworkOptions {
     }
     if (bellatrixForkEpoch != null) {
       builder.bellatrixForkEpoch(bellatrixForkEpoch);
+      if (bellatrixForkEpoch.isZero()) {
+        implicitEpochDefault(altairForkEpoch, builder::altairForkEpoch);
+      }
     }
     if (capellaForkEpoch != null) {
       builder.capellaForkEpoch(capellaForkEpoch);
+      if (capellaForkEpoch.isZero()) {
+        implicitEpochDefault(altairForkEpoch, builder::altairForkEpoch);
+        implicitEpochDefault(bellatrixForkEpoch, builder::bellatrixForkEpoch);
+      }
     }
     if (denebForkEpoch != null) {
       builder.denebForkEpoch(denebForkEpoch);
+      if (denebForkEpoch.isZero()) {
+        implicitEpochDefault(altairForkEpoch, builder::altairForkEpoch);
+        implicitEpochDefault(bellatrixForkEpoch, builder::bellatrixForkEpoch);
+        implicitEpochDefault(capellaForkEpoch, builder::capellaForkEpoch);
+      }
     }
     if (electraForkEpoch != null) {
       builder.electraForkEpoch(electraForkEpoch);
+      if (electraForkEpoch.isZero()) {
+        implicitEpochDefault(altairForkEpoch, builder::altairForkEpoch);
+        implicitEpochDefault(bellatrixForkEpoch, builder::bellatrixForkEpoch);
+        implicitEpochDefault(capellaForkEpoch, builder::capellaForkEpoch);
+        implicitEpochDefault(denebForkEpoch, builder::denebForkEpoch);
+      }
     }
     if (fuluForkEpoch != null) {
       builder.fuluForkEpoch(fuluForkEpoch);
+      if (fuluForkEpoch.isZero()) {
+        implicitEpochDefault(altairForkEpoch, builder::altairForkEpoch);
+        implicitEpochDefault(bellatrixForkEpoch, builder::bellatrixForkEpoch);
+        implicitEpochDefault(capellaForkEpoch, builder::capellaForkEpoch);
+        implicitEpochDefault(denebForkEpoch, builder::denebForkEpoch);
+        implicitEpochDefault(electraForkEpoch, builder::electraForkEpoch);
+      }
     }
     if (gloasForkEpoch != null) {
       builder.gloasForkEpoch(gloasForkEpoch);
+      if (gloasForkEpoch.isZero()) {
+        implicitEpochDefault(altairForkEpoch, builder::altairForkEpoch);
+        implicitEpochDefault(bellatrixForkEpoch, builder::bellatrixForkEpoch);
+        implicitEpochDefault(capellaForkEpoch, builder::capellaForkEpoch);
+        implicitEpochDefault(denebForkEpoch, builder::denebForkEpoch);
+        implicitEpochDefault(electraForkEpoch, builder::electraForkEpoch);
+        implicitEpochDefault(fuluForkEpoch, builder::fuluForkEpoch);
+      }
+    }
+    if (hezeForkEpoch != null) {
+      builder.hezeForkEpoch(hezeForkEpoch);
+      if (hezeForkEpoch.isZero()) {
+        implicitEpochDefault(altairForkEpoch, builder::altairForkEpoch);
+        implicitEpochDefault(bellatrixForkEpoch, builder::bellatrixForkEpoch);
+        implicitEpochDefault(capellaForkEpoch, builder::capellaForkEpoch);
+        implicitEpochDefault(denebForkEpoch, builder::denebForkEpoch);
+        implicitEpochDefault(electraForkEpoch, builder::electraForkEpoch);
+        implicitEpochDefault(fuluForkEpoch, builder::fuluForkEpoch);
+        implicitEpochDefault(gloasForkEpoch, builder::gloasForkEpoch);
+      }
     }
     if (totalTerminalDifficultyOverride != null) {
       builder.totalTerminalDifficultyOverride(totalTerminalDifficultyOverride);
@@ -507,6 +556,13 @@ public class Eth2NetworkOptions {
     asyncP2pMaxQueue.ifPresent(builder::asyncP2pMaxQueue);
     pendingAttestationsMaxQueue.ifPresent(builder::pendingAttestationsMaxQueue);
     asyncBeaconChainMaxQueue.ifPresent(builder::asyncBeaconChainMaxQueue);
+  }
+
+  private void implicitEpochDefault(
+      final UInt64 forkEpoch, final Consumer<UInt64> forkDefaultConsumer) {
+    if (forkEpoch == null) {
+      forkDefaultConsumer.accept(ZERO);
+    }
   }
 
   public String getNetwork() {

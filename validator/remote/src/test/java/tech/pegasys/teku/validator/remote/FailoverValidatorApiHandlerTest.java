@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -731,7 +731,7 @@ class FailoverValidatorApiHandlerTest {
             Optional.of(mock(SyncCommitteeDuties.class))),
         getArguments(
             "getProposerDuties",
-            apiChannel -> apiChannel.getProposerDuties(epoch),
+            apiChannel -> apiChannel.getProposerDuties(epoch, true),
             BeaconNodeRequestLabels.GET_PROPOSER_DUTIES_REQUESTS_METHOD,
             Optional.of(mock(ProposerDuties.class))),
         getArguments(

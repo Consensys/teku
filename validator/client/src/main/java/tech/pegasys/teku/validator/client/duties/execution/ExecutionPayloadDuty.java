@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -135,8 +135,7 @@ public class ExecutionPayloadDuty implements ExecutionPayloadBidEventsChannel {
   private String getExecutionSummary(final ExecutionPayloadEnvelope executionPayload) {
     final ExecutionPayload payload = executionPayload.getPayload();
     return String.format(
-        "Blobs: %d, %s (%s%%) gas, EL block: %s (%s)",
-        executionPayload.getBlobKzgCommitments().size(),
+        "%s (%s%%) gas, EL block: %s (%s)",
         payload.getGasUsed(),
         payload.computeGasPercentage(LOG),
         payload.getBlockHash().toUnprefixedHexString(),

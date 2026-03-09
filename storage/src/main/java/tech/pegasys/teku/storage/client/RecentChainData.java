@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -653,8 +653,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
     if (store == null) {
       return EmptyStoreResults.EMPTY_SIGNED_EXECUTION_PAYLOAD_ENVELOPE_FUTURE;
     }
-    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+    return store.retrieveSignedExecutionPayload(beaconBlockRoot);
   }
 
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(final Bytes32 blockRoot) {
@@ -664,12 +663,12 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
     return store.retrieveBlockState(blockRoot);
   }
 
-  public SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(
+  public SafeFuture<Optional<BeaconState>> retrieveBlockState(
       final SlotAndBlockRoot slotAndBlockRoot) {
     if (store == null) {
       return EmptyStoreResults.EMPTY_STATE_FUTURE;
     }
-    return store.retrieveStateAtSlot(slotAndBlockRoot);
+    return store.retrieveBlockState(slotAndBlockRoot);
   }
 
   public SafeFuture<Optional<BeaconState>> retrieveStateInEffectAtSlot(final UInt64 slot) {
@@ -777,6 +776,10 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
 
   public void setBlockTimelinessIfEmpty(final SignedBeaconBlock block) {
     lateBlockReorgLogic.setBlockTimelinessFromArrivalTime(block, store.getTimeInMillis());
+  }
+
+  public boolean isBlockLate(final Bytes32 root) {
+    return lateBlockReorgLogic.isBlockLate(root);
   }
 
   public Optional<UInt64> getCustodyGroupCount() {

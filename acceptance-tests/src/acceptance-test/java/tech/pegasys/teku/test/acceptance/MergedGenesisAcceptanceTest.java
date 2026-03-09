@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.test.acceptance;
 
-import com.google.common.io.Resources;
-import java.net.URL;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
@@ -29,7 +27,6 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 public class MergedGenesisAcceptanceTest extends AcceptanceTestBase {
 
   private static final String NETWORK_NAME = "swift";
-  private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
   public static final Eth1Address WITHDRAWAL_ADDRESS =
       Eth1Address.fromHexString("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
 
