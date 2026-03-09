@@ -35,6 +35,7 @@ import tech.pegasys.teku.ethereum.executionclient.OkHttpExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClientProvider;
 import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
+import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderBidValidatorImpl;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreaker;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreakerImpl;
@@ -72,6 +73,9 @@ public class ExecutionLayerService extends Service {
     final ExecutionClientEventsChannel executionClientEventsPublisher =
         serviceConfig.getEventChannels().getPublisher(ExecutionClientEventsChannel.class);
 
+    // TODO-lucas This is eventually used on PowchainService. However this is likely legacy and can
+    // be removed as we
+    // don't care about fetching deposits from chain anymore.
     final ExecutionWeb3jClientProvider engineWeb3jClientProvider =
         ExecutionWeb3jClientProvider.create(
             config.getEngineEndpoint(),
@@ -125,31 +129,47 @@ public class ExecutionLayerService extends Service {
       executionLayerManager =
           createStubExecutionLayerManager(serviceConfig, config, builderCircuitBreaker);
     } else {
-      final Optional<JwtConfig> jwtConfig =
-          JwtConfig.createIfNeeded(
-              true,
-              config.getEngineJwtSecretFile(),
-              config.getEngineJwtClaimId(),
-              beaconDataDirectory);
-      final OkHttpClient okHttpClient =
-          OkHttpClientCreator.create(
-              EL_ENGINE_BLOCK_EXECUTION_TIMEOUT, LOG, jwtConfig, timeProvider);
-      final ExecutionEngineClient rawEngineClient =
-          new OkHttpExecutionEngineClient(
-              okHttpClient,
-              config.getEngineEndpoint(),
-              EVENT_LOG,
-              timeProvider,
-              executionClientEventsPublisher,
-              OkHttpExecutionEngineClient.NON_CRITICAL_METHODS);
-      executionLayerManager =
-          createRealExecutionLayerManager(
-              serviceConfig,
-              config,
-              spec,
-              rawEngineClient,
-              builderRestClientProvider,
-              builderCircuitBreaker);
+      if (!config.isUseNewEngineApiClient()) {
+
+        LOG.info("Using legacy Web3j Engine API client");
+
+        executionLayerManager =
+            createRealExecutionLayerManager(
+                serviceConfig,
+                config,
+                spec,
+                new Web3JExecutionEngineClient(engineWeb3jClientProvider.getWeb3JClient()),
+                builderRestClientProvider,
+                builderCircuitBreaker);
+      } else {
+        LOG.info("Using new Engine API client");
+
+        final Optional<JwtConfig> jwtConfig =
+            JwtConfig.createIfNeeded(
+                true,
+                config.getEngineJwtSecretFile(),
+                config.getEngineJwtClaimId(),
+                beaconDataDirectory);
+        final OkHttpClient okHttpClient =
+            OkHttpClientCreator.create(
+                EL_ENGINE_BLOCK_EXECUTION_TIMEOUT, LOG, jwtConfig, timeProvider);
+        final ExecutionEngineClient newEngineApiClient =
+            new OkHttpExecutionEngineClient(
+                okHttpClient,
+                config.getEngineEndpoint(),
+                EVENT_LOG,
+                timeProvider,
+                executionClientEventsPublisher,
+                OkHttpExecutionEngineClient.NON_CRITICAL_METHODS);
+        executionLayerManager =
+            createRealExecutionLayerManager(
+                serviceConfig,
+                config,
+                spec,
+                newEngineApiClient,
+                builderRestClientProvider,
+                builderCircuitBreaker);
+      }
     }
 
     return new ExecutionLayerService(
