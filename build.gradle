@@ -522,9 +522,10 @@ task deploy() {}
 // Gradle process with --no-parallel.
 generateLicenseReport.enabled = false
 checkLicense.enabled = false
+def gradlewCommand = System.getProperty('os.name').toLowerCase().contains('windows') ? 'gradlew.bat' : './gradlew'
 tasks.register('licenseCheck', Exec) {
   workingDir rootDir
-  commandLine './gradlew', 'generateLicenseReport', 'checkLicense', '--no-parallel', '-PenableLicenseReport=true'
+  commandLine gradlewCommand, 'generateLicenseReport', 'checkLicense', '--no-parallel', '-PenableLicenseReport=true'
 }
 if (project.hasProperty('enableLicenseReport')) {
   generateLicenseReport.enabled = true
