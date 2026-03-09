@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.payloadattestation;
 
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -50,6 +51,11 @@ public interface PayloadAttestationPool {
             final BeaconState blockSlotState, final Bytes32 parentRoot) {
           return null;
         }
+
+        @Override
+        public List<PayloadAttestationMessage> getPayloadAttestationMessages() {
+          return List.of();
+        }
       };
 
   void subscribeOperationAdded(OperationAddedSubscriber<PayloadAttestationMessage> subscriber);
@@ -62,4 +68,6 @@ public interface PayloadAttestationPool {
 
   SszList<PayloadAttestation> getPayloadAttestationsForBlock(
       BeaconState blockSlotState, Bytes32 parentRoot);
+
+  List<PayloadAttestationMessage> getPayloadAttestationMessages();
 }

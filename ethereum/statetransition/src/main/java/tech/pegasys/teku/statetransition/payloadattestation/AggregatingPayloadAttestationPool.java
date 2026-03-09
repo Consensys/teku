@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -185,5 +186,13 @@ public class AggregatingPayloadAttestationPool
             payloadAttestationGroup ->
                 payloadAttestationGroup.createAggregatedPayloadAttestation(ptc))
         .collect(payloadAttestationsSchema.collector());
+  }
+
+  @Override
+  public List<PayloadAttestationMessage> getPayloadAttestationMessages() {
+    return List.copyOf(
+        payloadAttestationGroupByDataHash.values().stream()
+            .flatMap(group -> group.getPayloadAttestationMessages().stream())
+            .toList());
   }
 }

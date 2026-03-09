@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -54,6 +55,10 @@ class MatchingDataPayloadAttestationGroup {
 
   int size() {
     return payloadAttestationMessages.size();
+  }
+
+  Collection<PayloadAttestationMessage> getPayloadAttestationMessages() {
+    return List.copyOf(payloadAttestationMessages.values());
   }
 
   /**

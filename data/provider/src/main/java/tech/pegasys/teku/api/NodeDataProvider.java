@@ -179,6 +179,10 @@ public class NodeDataProvider {
     return new ArrayList<>(voluntaryExitPool.getAll());
   }
 
+  public List<PayloadAttestationMessage> getPayloadAttestations() {
+    return payloadAttestationPool.getPayloadAttestationMessages();
+  }
+
   public SafeFuture<InternalValidationResult> postVoluntaryExit(final SignedVoluntaryExit exit) {
     final Optional<SafeFuture<BeaconState>> maybeFutureState = recentChainData.getBestState();
 
