@@ -632,6 +632,14 @@ startScripts {
   }
 }
 
+// Gradle 9 removed implicit exec/copy delegation from tasks to Project.
+// Use injected services instead.
+interface InjectedOps {
+  @Inject ExecOperations getExecutor()
+  @Inject FileSystemOperations getFs()
+}
+def system = objects.newInstance(InjectedOps)
+
 // rename the top level dir from teku-<version> to teku and this makes it really
 // simple for use in docker
 tasks.register("dockerDistUntar") {
@@ -644,7 +652,7 @@ tasks.register("dockerDistUntar") {
     def dockerBuildDir = new File(dockerBuildPath)
     dockerBuildDir.deleteDir()
     dockerBuildDir.mkdir()
-    copy {
+    system.fs.copy {
       from tarTree(distTarFile)
       into(dockerBuildPath)
     }
@@ -665,18 +673,18 @@ task localDocker {
   doLast {
     def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
     def commitHashTag = includeCommitHashInDockerTag ? '-' + grgit.head().getAbbreviatedId() : ''
-    copy {
+    system.fs.copy {
       from file("${projectDir}/docker/${dockerJdkVariants[0]}/Dockerfile")
       into(dockerBuildDir)
     }
-    exec {
+    system.executor.exec {
       def image = "${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag}"
       workingDir dockerBuildDir
       executable executableAndArg[0]
       args executableAndArg[1], "docker build --pull --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
     }
     // tag the "default" (which is the variant in the zero position)
-    exec {
+    system.executor.exec {
       executable executableAndArg[0]
       args executableAndArg[1], "docker tag ${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag} ${localDockerImage}:${dockerBuildVersion}${commitHashTag}"
     }
@@ -688,7 +696,7 @@ task localDockerClean {
   def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
   def commitHashTag = includeCommitHashInDockerTag ? '-' + grgit.head().getAbbreviatedId() : ''
   doLast {
-    exec {
+    system.executor.exec {
       executable executableAndArg[0]
       args executableAndArg[1], "docker rmi ${localDockerImage}:${dockerBuildVersion} ${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag}"
     }
@@ -704,11 +712,11 @@ task distDocker  {
     def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
     def commitHashTag = includeCommitHashInDockerTag ? '-' + grgit.head().getAbbreviatedId() : ''
     for (def variant in dockerJdkVariants) {
-      copy {
+      system.fs.copy {
         from file("${projectDir}/docker/${variant}/Dockerfile")
         into(dockerBuildDir)
       }
-      exec {
+      system.executor.exec {
         def image = "${dockerImage}:${dockerBuildVersion}-${variant}${commitHashTag}"
         workingDir dockerBuildDir
         executable executableAndArg[0]
@@ -716,7 +724,7 @@ task distDocker  {
       }
     }
     // tag the "default" (which is the variant in the zero position)
-    exec {
+    system.executor.exec {
       executable executableAndArg[0]
       args executableAndArg[1], "docker tag ${dockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag} ${dockerImage}:${dockerBuildVersion}${commitHashTag}"
     }
@@ -750,12 +758,12 @@ task uploadDocker {
         versionPrefixes.forEach { prefix -> tags += "-t ${dockerImage}:${prefix.trim()}-${architecture}${commitHashTag} "}
       }
 
-      copy {
+      system.fs.copy {
         from file("${projectDir}/docker/${variant}/Dockerfile")
         into(dockerBuildDir)
       }
 
-      exec {
+      system.executor.exec {
         workingDir dockerBuildDir
         executable executableAndArg[0]
         args executableAndArg[1], "docker build --pull --platform ${platform} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} ${tags} ."
@@ -764,7 +772,7 @@ task uploadDocker {
       //docker trust sign runs one image at a time, so we have to remove the '-t' in the string and split into a list we can use
       def trustTags = tags.replaceAll( '-t ', '' ).trim().split(' ')
       for (def t in trustTags) {
-        exec {
+        system.executor.exec {
           workingDir dockerBuildDir
           executable executableAndArg[0]
           args executableAndArg[1], "docker push ${t} "
@@ -802,7 +810,7 @@ task manifestDocker {
 
       for (def tag in tags) {
         platforms.forEach { platform -> cmd += "${tag}-${platform}${commitHashTag} " }
-        exec {
+        system.executor.exec {
           executable executableAndArg[0]
           args executableAndArg[1], "docker manifest create ${tag}${commitHashTag} ${cmd} && docker manifest push ${tag}${commitHashTag}"
         }
@@ -1194,7 +1202,7 @@ def getCheckedOutGitCommitHash() {
 task cloudsmithUpload {
   dependsOn([distTar, distZip])
   doLast {
-    exec {
+    system.executor.exec {
       executable project.file("scripts/cloudsmith-upload.sh")
       args rootProject.version, distTar.archiveFile.get(), distZip.archiveFile.get()
     }
