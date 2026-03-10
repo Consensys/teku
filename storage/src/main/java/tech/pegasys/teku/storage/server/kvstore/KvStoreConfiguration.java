@@ -100,7 +100,7 @@ public class KvStoreConfiguration {
   @JsonProperty(value = "optimizeForSmallDb")
   private boolean optimizeForSmallDb = DEFAULT_OPTIMISE_FOR_SMALL_DB;
 
-  @JsonProperty(value = "blobDbEnabled")
+  @JsonProperty(value = "blobDbEnabled", access = Access.WRITE_ONLY)
   private boolean blobDbEnabled = DEFAULT_BLOBDB_ENABLED;
 
   /* ---------------     Fixed Properties     ------------ */
@@ -133,6 +133,11 @@ public class KvStoreConfiguration {
 
   public KvStoreConfiguration withDatabaseDir(final Path databaseDir) {
     this.databaseDir = databaseDir;
+    return this;
+  }
+
+  public KvStoreConfiguration withBlobDbEnabled(final boolean blobDbEnabled) {
+    this.blobDbEnabled = blobDbEnabled;
     return this;
   }
 
