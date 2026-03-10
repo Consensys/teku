@@ -19,7 +19,7 @@ runs:
 
     - shell: bash
       run: |
-        tree reports/
+        ls -R reports/
 
     # # https://github.com/dorny/test-reporter
     - name: Junit Test Reporter

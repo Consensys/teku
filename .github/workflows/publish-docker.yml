@@ -35,6 +35,8 @@ jobs:
           submodules: 'recursive'
       - name: Prepare
         uses: ./.github/actions/prepare
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Download assemble-output
         uses: actions/download-artifact@v7
         with:
