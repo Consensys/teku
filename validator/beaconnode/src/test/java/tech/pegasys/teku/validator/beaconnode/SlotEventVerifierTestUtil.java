@@ -72,7 +72,7 @@ class SlotEventVerifierTestUtil {
     if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
       addExpected(
           expectedByOffset,
-          spec.getPayloadAttestationDueMillis(slot),
+          spec.getPayloadAttestationDueMillis(slot).orElseThrow(),
           () -> verify(validatorTimingChannel, times(1)).onPayloadAttestationCreationDue(slot));
     }
 

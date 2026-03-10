@@ -111,7 +111,7 @@ public class AttestationValidator {
     final AttestationUtil attestationUtil = spec.atSlot(data.getSlot()).getAttestationUtil();
 
     final AttestationValidationResult attestationIndexValidationResult =
-        attestationUtil.validateIndexValue(attestation.getData().getIndex());
+        attestationUtil.validateCommitteeIndexValue(attestation.getData().getIndex());
     if (!attestationIndexValidationResult.isValid()) {
       return SafeFuture.completedFuture(
           InternalValidationResultWithState.reject(

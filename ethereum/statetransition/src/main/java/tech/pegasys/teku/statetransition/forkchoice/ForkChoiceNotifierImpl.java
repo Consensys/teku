@@ -82,7 +82,26 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
 
   @Override
   public void onAttestationsDue(final UInt64 slot) {
-    eventThread.execute(() -> internalAttestationsDue(slot));
+    eventThread.execute(
+        () -> {
+          eventThread.checkOnEventThread();
+          LOG.debug("onAttestationsDue slot {}", slot);
+          // when we don't need to notify fCu when we have imported a beacon block (post-Gloas),
+          // there is no need to prepare next slot proposals when attestations are due
+          if (spec.atSlot(slot).getForkChoiceUtil().shouldNotifyForkChoiceUpdatedOnBlock()) {
+            prepareNextSlotProposal(slot);
+          }
+        });
+  }
+
+  @Override
+  public void onPayloadAttestationsDue(final UInt64 slot) {
+    eventThread.execute(
+        () -> {
+          eventThread.checkOnEventThread();
+          LOG.debug("onPayloadAttestationsDue slot {}", slot);
+          prepareNextSlotProposal(slot);
+        });
   }
 
   @Override
@@ -262,11 +281,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
     return currentSlot.map(UInt64::increment);
   }
 
-  private void internalAttestationsDue(final UInt64 slot) {
-    eventThread.checkOnEventThread();
-
-    LOG.debug("internalAttestationsDue slot {}", slot);
-
+  private void prepareNextSlotProposal(final UInt64 slot) {
     // Assume `slot` is empty and check if we need to prepare to propose in the next slot
     updatePayloadAttributes(slot.plus(1));
   }
