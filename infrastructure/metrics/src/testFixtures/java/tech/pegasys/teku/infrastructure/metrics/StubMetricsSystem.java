@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -285,7 +285,8 @@ public class StubMetricsSystem implements MetricsSystem {
       final String labelValuesString = String.join(",", labelValues);
       Preconditions.checkArgument(
           !labelValuesCache.contains(labelValuesString),
-          "Received label values that were already in use " + labelValuesString);
+          "Received label values that were already in use %s",
+          labelValuesString);
       Preconditions.checkArgument(
           labelValues.length == labelCount,
           "The count of labels used must match the count of labels expected.");

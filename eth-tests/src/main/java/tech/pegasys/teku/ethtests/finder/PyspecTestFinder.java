@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -28,26 +28,26 @@ public class PyspecTestFinder implements TestFinder {
 
   public static final String PYSPEC_TEST_DIRECTORY_NAME = "pyspec_tests";
 
-  private final List<String> onlyTestTypesToRun = new ArrayList<>();
-  private final List<String> testTypesToIgnore = new ArrayList<>();
+  private final List<String> onlyTestsToRun = new ArrayList<>();
+  private final List<String> testsToIgnore = new ArrayList<>();
 
   /** Used when we want to run ALL pyspec tests. */
   public PyspecTestFinder() {}
 
   /**
-   * Used when we want to limit the spec test for specific test types. This is particularly useful
-   * when we are implementing a new fork and can't support all test types yet.
+   * Allows restricting execution to a specific subset of spec tests. This is especially useful when
+   * introducing a new fork and full test coverage is not yet supported.
    *
-   * @param onlyTestTypesToRun Only tests matching these types are going to run. The match is a
-   *     partial match (if type starts with the filter value). If empty, all type of tests would be
-   *     run.
-   * @param testTypesToIgnore Tests matching these types will not be run. The match is a partial
-   *     match (if type starts with the filter value). If empty, all type of tests would be run.
+   * @param onlyTestsToRun Tests that should be executed. Only tests whose identifiers match these
+   *     filters—fully or partially—in the format `{fork} - {config} - {test-type} - {test-name}`
+   *     will run. If this list is empty, all tests are eligible to run.
+   * @param testsToIgnore Tests that should be skipped. Any test whose identifier matches these
+   *     filters—fully or partially—in the same format will not run. If this list is empty, no tests
+   *     are excluded.
    */
-  public PyspecTestFinder(
-      final List<String> onlyTestTypesToRun, final List<String> testTypesToIgnore) {
-    this.onlyTestTypesToRun.addAll(onlyTestTypesToRun);
-    this.testTypesToIgnore.addAll(testTypesToIgnore);
+  public PyspecTestFinder(final List<String> onlyTestsToRun, final List<String> testsToIgnore) {
+    this.onlyTestsToRun.addAll(onlyTestsToRun);
+    this.testsToIgnore.addAll(testsToIgnore);
   }
 
   @Override
@@ -77,12 +77,13 @@ public class PyspecTestFinder implements TestFinder {
             })
         .filter(
             testDefinition ->
-                onlyTestTypesToRun.isEmpty()
-                    || onlyTestTypesToRun.stream()
-                        .anyMatch(type -> testDefinition.getTestType().startsWith(type)))
+                onlyTestsToRun.isEmpty()
+                    || onlyTestsToRun.stream()
+                        .anyMatch(
+                            testFilter -> testDefinition.getDisplayName().contains(testFilter)))
         .filter(
             testDefinition ->
-                testTypesToIgnore.stream()
-                    .noneMatch(type -> testDefinition.getTestType().startsWith(type)));
+                testsToIgnore.stream()
+                    .noneMatch(testFilter -> testDefinition.getDisplayName().contains(testFilter)));
   }
 }

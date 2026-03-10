@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -19,7 +19,7 @@ import static tech.pegasys.teku.storage.server.StateStorageMode.ARCHIVE;
 import static tech.pegasys.teku.storage.server.StateStorageMode.MINIMAL;
 import static tech.pegasys.teku.storage.server.StateStorageMode.NOT_SET;
 import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
-import static tech.pegasys.teku.storage.server.VersionedDatabaseFactory.STORAGE_MODE_PATH;
+import static tech.pegasys.teku.storage.server.VersionedDatabaseFactory.STORAGE_MODE_FILENAME;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -154,7 +154,7 @@ public class StorageConfigurationTest {
 
   private static void createInvalidStorageModeFile(final Path dir) throws IOException {
     // An empty storage mode path is invalid
-    Files.createFile(dir.resolve(STORAGE_MODE_PATH));
+    Files.createFile(dir.resolve(STORAGE_MODE_FILENAME));
   }
 
   @Test

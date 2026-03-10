@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -29,18 +29,14 @@ public enum DatabaseVersion {
   LEVELDB_TREE("leveldb-tree");
 
   private static final Logger LOG = LogManager.getLogger();
-  public static final DatabaseVersion DEFAULT_VERSION;
+  public static final DatabaseVersion DEFAULT_VERSION = V6;
   private final String value;
 
   static {
-    if (isLevelDbSupported()) {
-      DEFAULT_VERSION = LEVELDB2;
-    } else {
-      DEFAULT_VERSION = V5;
-    }
+    tryLoadLeveldbNativeLibrary();
   }
 
-  public static boolean isLevelDbSupported() {
+  public static boolean tryLoadLeveldbNativeLibrary() {
     // Use JNI to load as the native library is loaded in a static block
     try {
       LevelDbJniLoader.loadNativeLibrary();
@@ -54,7 +50,7 @@ public enum DatabaseVersion {
     }
   }
 
-  public static boolean isRocksDbSupported() {
+  public static boolean tryLoadRocksdbLibrary() {
     try {
       RocksDB.loadLibrary();
       return true;

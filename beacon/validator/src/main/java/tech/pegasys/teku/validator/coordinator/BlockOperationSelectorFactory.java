@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -50,6 +50,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
@@ -93,7 +94,10 @@ public class BlockOperationSelectorFactory {
   private final OperationPool<SignedVoluntaryExit> voluntaryExitPool;
   private final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
   private final SyncCommitteeContributionPool contributionPool;
+
+  @SuppressWarnings("unused")
   private final PayloadAttestationPool payloadAttestationPool;
+
   private final DepositProvider depositProvider;
   private final Eth1DataCache eth1DataCache;
   private final GraffitiBuilder graffitiBuilder;
@@ -249,8 +253,11 @@ public class BlockOperationSelectorFactory {
 
       // Post-Gloas: Payload Attestations
       if (bodyBuilder.supportsPayloadAttestations()) {
+        // TODO-GLOAS: disable packing of payload attestations for devnet-0
         bodyBuilder.payloadAttestations(
-            payloadAttestationPool.getPayloadAttestationsForBlock(blockSlotState, parentRoot));
+            BeaconBlockBodySchemaGloas.required(schemaDefinitions.getBeaconBlockBodySchema())
+                .getPayloadAttestationsSchema()
+                .of());
       }
 
       return SafeFuture.allOfFailFast(setExecutionDataComplete, setExecutionPayloadBidComplete)
@@ -273,7 +280,7 @@ public class BlockOperationSelectorFactory {
             beaconStateElectra ->
                 beaconStateElectra.getPendingPartialWithdrawals().stream()
                     .map(PendingPartialWithdrawal::getValidatorIndex)
-                    .noneMatch(index -> index == validatorIndex.intValue()))
+                    .noneMatch(index -> index.equals(validatorIndex)))
         .orElse(true);
   }
 
@@ -458,8 +465,8 @@ public class BlockOperationSelectorFactory {
       final BlockProductionPerformance blockProductionPerformance) {
     checkState(
         executionPayloadContext.isPresent(),
-        "ExecutionPayloadContext is not provided for production of post-merge block at slot "
-            + blockSlotState.getSlot());
+        "ExecutionPayloadContext is not provided for production of block at slot %s",
+        blockSlotState.getSlot());
     final ExecutionPayloadResult executionPayloadResult =
         executionLayerBlockProductionManager.initiateBlockProduction(
             executionPayloadContext.get(),
@@ -478,8 +485,8 @@ public class BlockOperationSelectorFactory {
                 signedBid -> {
                   checkState(
                       signedBid.isPresent(),
-                      "No execution payload bid has been prepared for production of block at slot "
-                          + blockSlotState.getSlot());
+                      "No execution payload bid has been prepared for production of block at slot %s",
+                      blockSlotState.getSlot());
                   bodyBuilder.signedExecutionPayloadBid(signedBid.get());
                 });
     return SafeFuture.allOf(

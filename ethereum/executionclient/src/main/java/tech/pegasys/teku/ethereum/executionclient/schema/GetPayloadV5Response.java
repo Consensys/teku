@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionclient.schema;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -46,6 +47,7 @@ public class GetPayloadV5Response {
   @JsonDeserialize(contentUsing = BytesDeserializer.class)
   public final List<Bytes> executionRequests;
 
+  @JsonCreator
   public GetPayloadV5Response(
       final @JsonProperty("executionPayload") ExecutionPayloadV3 executionPayload,
       final @JsonProperty("blockValue") UInt256 blockValue,

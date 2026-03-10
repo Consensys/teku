@@ -17,3 +17,7 @@ runs:
 
     - name: set up docker buildx
       uses: docker/setup-buildx-action@v3
+
+    - name: Install tree command
+      shell: bash      
+      run: sudo apt-get install tree

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -73,7 +73,9 @@ public class MiscHelpers {
 
   // compute_fork_version
   public Bytes4 computeForkVersion(final UInt64 epoch) {
-    if (epoch.isGreaterThanOrEqualTo(specConfig.getGloasForkEpoch())) {
+    if (epoch.isGreaterThanOrEqualTo(specConfig.getHezeForkEpoch())) {
+      return specConfig.getHezeForkVersion();
+    } else if (epoch.isGreaterThanOrEqualTo(specConfig.getGloasForkEpoch())) {
       return specConfig.getGloasForkVersion();
     } else if (epoch.isGreaterThanOrEqualTo(specConfig.getFuluForkEpoch())) {
       return specConfig.getFuluForkVersion();
@@ -482,6 +484,10 @@ public class MiscHelpers {
     return UInt64.valueOf(specConfig.getNetworkingConfig().getMaxRequestBlocks());
   }
 
+  public int getMaxRequestDataColumnSidecars() {
+    throw new UnsupportedOperationException("No Data Column Sidecars before Fulu");
+  }
+
   public int getBlobKzgCommitmentsCount(final SignedBeaconBlock signedBeaconBlock) {
     throw new UnsupportedOperationException("No Blob KZG Commitments before Deneb");
   }
@@ -499,6 +505,15 @@ public class MiscHelpers {
   }
 
   public boolean isFormerDepositMechanismDisabled(final BeaconState state) {
+    return false;
+  }
+
+  // Methods used by the SlotProcessor to determine if it needs to increase the node slot
+  public boolean shouldIncrementNodeSlotWhenAttestationsAreDue() {
+    return true;
+  }
+
+  public boolean shouldIncrementNodeSlotWhenPayloadAttestationsAreDue() {
     return false;
   }
 

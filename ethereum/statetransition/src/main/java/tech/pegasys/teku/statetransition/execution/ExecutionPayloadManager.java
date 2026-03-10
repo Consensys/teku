@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,6 +18,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public interface ExecutionPayloadManager {
@@ -35,6 +36,13 @@ public interface ExecutionPayloadManager {
             final Optional<UInt64> arrivalTimestamp) {
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
         }
+
+        @Override
+        public SafeFuture<ExecutionPayloadImportResult> importExecutionPayload(
+            final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+          return SafeFuture.completedFuture(
+              ExecutionPayloadImportResult.successful(signedExecutionPayload));
+        }
       };
 
   /**
@@ -51,6 +59,14 @@ public interface ExecutionPayloadManager {
    */
   SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
       SignedExecutionPayloadEnvelope signedExecutionPayload, Optional<UInt64> arrivalTimestamp);
+
+  /**
+   * Imports execution payload via fork choice `on_execution_payload`
+   *
+   * @return the execution payload import result
+   */
+  SafeFuture<ExecutionPayloadImportResult> importExecutionPayload(
+      SignedExecutionPayloadEnvelope signedExecutionPayload);
 
   default SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {

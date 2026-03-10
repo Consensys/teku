@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlindBlockUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 
@@ -168,5 +169,10 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   @Override
   public OperationSignatureVerifier operationSignatureVerifier() {
     return operationSignatureVerifier;
+  }
+
+  @Override
+  public Optional<DataColumnSidecarUtil> getDataColumnSidecarUtil() {
+    return Optional.empty();
   }
 }

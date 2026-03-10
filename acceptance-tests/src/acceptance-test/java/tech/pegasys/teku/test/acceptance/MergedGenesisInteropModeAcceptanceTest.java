@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -28,7 +28,10 @@ public class MergedGenesisInteropModeAcceptanceTest extends AcceptanceTestBase {
 
   @ParameterizedTest
   // TODO-GLOAS Fix test https://github.com/Consensys/teku/issues/9833
-  @EnumSource(value = SpecMilestone.class, names = "GLOAS", mode = EnumSource.Mode.EXCLUDE)
+  @EnumSource(
+      value = SpecMilestone.class,
+      names = {"GLOAS", "HEZE"},
+      mode = EnumSource.Mode.EXCLUDE)
   public void startFromMergedStatePerMilestoneUsingTerminalBlockHash(
       final SpecMilestone specMilestone) throws Exception {
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
@@ -49,7 +52,10 @@ public class MergedGenesisInteropModeAcceptanceTest extends AcceptanceTestBase {
 
   @ParameterizedTest
   // TODO-GLOAS Fix test https://github.com/Consensys/teku/issues/9833
-  @EnumSource(value = SpecMilestone.class, names = "GLOAS", mode = EnumSource.Mode.EXCLUDE)
+  @EnumSource(
+      value = SpecMilestone.class,
+      names = {"GLOAS", "HEZE"},
+      mode = EnumSource.Mode.EXCLUDE)
   public void startFromMergedStatePerMilestoneUsingTotalDifficultySimulation(
       final SpecMilestone specMilestone) throws Exception {
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {

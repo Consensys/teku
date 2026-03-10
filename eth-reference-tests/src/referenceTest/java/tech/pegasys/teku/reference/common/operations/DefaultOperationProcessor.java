@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -151,9 +151,9 @@ public class DefaultOperationProcessor implements OperationProcessor {
 
   @Override
   public void processWithdrawals(
-      final MutableBeaconState state, final ExecutionPayloadSummary payloadSummary)
+      final MutableBeaconState state, final Optional<ExecutionPayloadSummary> payloadSummary)
       throws BlockProcessingException {
-    spec.getBlockProcessor(state.getSlot()).processWithdrawals(state, Optional.of(payloadSummary));
+    spec.getBlockProcessor(state.getSlot()).processWithdrawals(state, payloadSummary);
   }
 
   @Override

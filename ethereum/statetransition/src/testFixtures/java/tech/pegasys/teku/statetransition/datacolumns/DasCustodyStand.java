@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -20,7 +20,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -259,8 +261,10 @@ public class DasCustodyStand {
       }
 
       @Override
-      public List<UInt64> getCustodyColumnIndices() {
-        return IntStream.range(0, custodyGroupCount).mapToObj(UInt64::valueOf).toList();
+      public Set<UInt64> getCustodyColumnIndices() {
+        return IntStream.range(0, custodyGroupCount)
+            .mapToObj(UInt64::valueOf)
+            .collect(Collectors.toUnmodifiableSet());
       }
 
       @Override
@@ -269,17 +273,11 @@ public class DasCustodyStand {
       }
 
       @Override
-      public List<UInt64> getSamplingColumnIndices() {
-        return IntStream.range(0, sampleGroupCount).mapToObj(UInt64::valueOf).toList();
+      public Set<UInt64> getSamplingColumnIndices() {
+        return IntStream.range(0, sampleGroupCount)
+            .mapToObj(UInt64::valueOf)
+            .collect(Collectors.toUnmodifiableSet());
       }
-
-      @Override
-      public int getCustodyGroupSyncedCount() {
-        return 0;
-      }
-
-      @Override
-      public void setCustodyGroupSyncedCount(final int custodyGroupSyncedCount) {}
     };
   }
 }

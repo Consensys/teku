@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -290,12 +290,6 @@ public class BesuNode extends Node {
       configMap.put("host-allowlist", new String[] {"*"});
       configMap.put("discovery-enabled", false);
       configMap.put("genesis-file", "/genesis.json");
-    }
-
-    public BesuNode.Config withMiningEnabled(final boolean enabled) {
-      configMap.put("miner-enabled", enabled);
-      configMap.put("miner-coinbase", "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73");
-      return this;
     }
 
     public BesuNode.Config withGenesisFile(final String genesisFilePath) {

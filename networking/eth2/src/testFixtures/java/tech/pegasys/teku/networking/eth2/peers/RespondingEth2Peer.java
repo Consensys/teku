@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -370,6 +370,18 @@ public class RespondingEth2Peer implements Eth2Peer {
     return createPendingBlobSidecarRequest(handler);
   }
 
+  @Override
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> requestExecutionPayloadEnvelopeByRoot(
+      final Bytes32 beaconBlockRoot) {
+    final PendingRequestHandler<
+            Optional<SignedExecutionPayloadEnvelope>, SignedExecutionPayloadEnvelope>
+        handler =
+            PendingRequestHandler.createForSingleExecutionPayloadRequest(
+                () -> findExecutionPayloadByRoot(beaconBlockRoot));
+
+    return createPendingExecutionPayloadEnvelopeRequest(handler);
+  }
+
   private <T> SafeFuture<T> createPendingBlockRequest(
       final PendingRequestHandler<T, SignedBeaconBlock> handler) {
     final PendingRequestHandler<T, SignedBeaconBlock> filteredHandler =
@@ -642,6 +654,13 @@ public class RespondingEth2Peer implements Eth2Peer {
         createForSingleBlobSidecarRequest(
             final Supplier<Optional<BlobSidecar>> blobSidecarSupplier) {
       return createForSingleRequest(blobSidecarSupplier);
+    }
+
+    static PendingRequestHandler<
+            Optional<SignedExecutionPayloadEnvelope>, SignedExecutionPayloadEnvelope>
+        createForSingleExecutionPayloadRequest(
+            final Supplier<Optional<SignedExecutionPayloadEnvelope>> executionPayloadSupplier) {
+      return createForSingleRequest(executionPayloadSupplier);
     }
 
     static <T> PendingRequestHandler<Void, T> createForBatchRequest(

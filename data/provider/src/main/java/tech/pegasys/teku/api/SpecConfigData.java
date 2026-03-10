@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -34,7 +34,6 @@ public class SpecConfigData {
     this.specConfig = specConfig;
   }
 
-  @SuppressWarnings("unchecked")
   public Map<String, Object> getConfigMap() {
     final Map<String, Object> configAttributes = new HashMap<>();
     specConfig
@@ -52,6 +51,8 @@ public class SpecConfigData {
             });
 
     configAttributes.put("BLS_WITHDRAWAL_PREFIX", getBlsWithdrawalPrefix().toHexString());
+    configAttributes.put(
+        "DOMAIN_BLS_TO_EXECUTION_CHANGE", getDomainBlsToExecutionChange().toHexString());
     configAttributes.put("TARGET_AGGREGATORS_PER_COMMITTEE", getTargetAggregatorsPerCommittee());
     configAttributes.put("DOMAIN_BEACON_PROPOSER", getDomainBeaconProposer().toHexString());
     configAttributes.put("DOMAIN_BEACON_ATTESTER", getDomainBeaconAttester().toHexString());
@@ -122,6 +123,10 @@ public class SpecConfigData {
 
   public Bytes4 getDomainApplicationBuilder() {
     return Domain.APPLICATION_BUILDER;
+  }
+
+  public Bytes4 getDomainBlsToExecutionChange() {
+    return Domain.BLS_TO_EXECUTION_CHANGE;
   }
 
   private Optional<Bytes4> getDomainSyncCommittee() {

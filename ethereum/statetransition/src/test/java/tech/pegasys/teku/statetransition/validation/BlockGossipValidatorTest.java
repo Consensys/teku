@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -418,7 +418,7 @@ public class BlockGossipValidatorTest {
                         originalExecutionPayloadBid.getSlot(),
                         originalExecutionPayloadBid.getValue(),
                         originalExecutionPayloadBid.getExecutionPayment(),
-                        originalExecutionPayloadBid.getBlobKzgCommitmentsRoot()));
+                        originalExecutionPayloadBid.getBlobKzgCommitments()));
     final BeaconStateGloas parentState =
         BeaconStateGloas.required(storageSystem.chainBuilder().getStateAtSlot(nextSlot.minus(ONE)));
     final Bytes32 expectedParentBlockHash = parentState.getLatestBlockHash();
@@ -458,7 +458,7 @@ public class BlockGossipValidatorTest {
                         originalExecutionPayloadBid.getSlot(),
                         originalExecutionPayloadBid.getValue(),
                         originalExecutionPayloadBid.getExecutionPayment(),
-                        originalExecutionPayloadBid.getBlobKzgCommitmentsRoot()));
+                        originalExecutionPayloadBid.getBlobKzgCommitments()));
 
     assertThat(blockGossipValidator.validate(invalidBlock, true))
         .isCompletedWithValueMatching(

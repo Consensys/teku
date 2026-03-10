@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
 import static tech.pegasys.teku.spec.constants.EthConstants.GWEI_TO_WEI;
 
 import java.util.Collections;
@@ -225,7 +226,7 @@ public abstract class AbstractBlockFactoryTest {
     final Bytes32 bestBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final BeaconState blockSlotState =
         recentChainData
-            .retrieveStateAtSlot(new SlotAndBlockRoot(UInt64.valueOf(blockSlot), bestBlockRoot))
+            .retrieveBlockState(new SlotAndBlockRoot(UInt64.valueOf(blockSlot), bestBlockRoot))
             .join()
             .orElseThrow();
 
@@ -602,14 +603,13 @@ public abstract class AbstractBlockFactoryTest {
                           executionPayload.getFeeRecipient(),
                           executionPayload.getGasLimit(),
                           // self-built for simplification
-                          UInt64.valueOf(spec.getBeaconProposerIndex(state, slot)),
+                          BUILDER_INDEX_SELF_BUILD,
                           slot,
                           ZERO,
                           ZERO,
                           blobsBundle
                               .map(blobKzgCommitmentsSchema::createFromBlobsBundle)
-                              .orElse(blobKzgCommitmentsSchema.of())
-                              .hashTreeRoot());
+                              .orElse(blobKzgCommitmentsSchema.of()));
               return SafeFuture.completedFuture(
                   Optional.of(
                       schemaDefinitions

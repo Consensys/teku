@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -22,9 +22,10 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
-public interface BlockBlobSidecarsTrackersPool extends SlotEventsChannel {
+public interface BlockBlobSidecarsTrackersPool extends BlockEventsListener, SlotEventsChannel {
 
   BlockBlobSidecarsTrackersPool NOOP =
       new BlockBlobSidecarsTrackersPool() {
@@ -44,7 +45,7 @@ public interface BlockBlobSidecarsTrackersPool extends SlotEventsChannel {
             final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {}
 
         @Override
-        public void removeAllForBlock(final Bytes32 blockRoot) {}
+        public void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {}
 
         @Override
         public boolean containsBlobSidecar(final BlobIdentifier blobIdentifier) {
@@ -108,11 +109,7 @@ public interface BlockBlobSidecarsTrackersPool extends SlotEventsChannel {
 
   void onNewBlobSidecar(BlobSidecar blobSidecar, RemoteOrigin remoteOrigin);
 
-  void onNewBlock(SignedBeaconBlock block, Optional<RemoteOrigin> remoteOrigin);
-
   void onCompletedBlockAndBlobSidecars(SignedBeaconBlock block, List<BlobSidecar> blobSidecars);
-
-  void removeAllForBlock(Bytes32 blockRoot);
 
   boolean containsBlobSidecar(BlobIdentifier blobIdentifier);
 
@@ -127,8 +124,6 @@ public interface BlockBlobSidecarsTrackersPool extends SlotEventsChannel {
   BlockBlobSidecarsTracker getOrCreateBlockBlobSidecarsTracker(SignedBeaconBlock block);
 
   Optional<BlockBlobSidecarsTracker> getBlockBlobSidecarsTracker(SignedBeaconBlock block);
-
-  void enableBlockImportOnCompletion(SignedBeaconBlock block);
 
   void subscribeRequiredBlobSidecar(RequiredBlobSidecarSubscriber requiredBlobSidecarSubscriber);
 

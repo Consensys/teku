@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -41,6 +41,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.ExecutionPayloadAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
@@ -147,6 +148,13 @@ public class EthereumTypes {
     return new OctetStreamResponseContentTypeDefinition<>(
         (data, out) -> data.blockContainer().sszSerialize(out),
         value -> getSszHeaders(__ -> value.specMilestone(), value.blockContainer()));
+  }
+
+  public static ResponseContentTypeDefinition<ExecutionPayloadAndMetaData>
+      executionPayloadAndMetaDataSszResponseType() {
+    return new OctetStreamResponseContentTypeDefinition<>(
+        (value, out) -> value.data().sszSerialize(out),
+        value -> getSszHeaders(__ -> value.milestone(), value.data()));
   }
 
   public static <T extends SszData> ResponseContentTypeDefinition<T> sszResponseType(

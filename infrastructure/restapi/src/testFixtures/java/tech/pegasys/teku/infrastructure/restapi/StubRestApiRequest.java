@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -210,6 +210,9 @@ public class StubRestApiRequest implements RestApiRequest {
 
   @Override
   public <T> Optional<T> getOptionalQueryParameter(final ParameterMetadata<T> parameterMetadata) {
+    if (!optionalQueryParameters.containsKey(parameterMetadata.getName())) {
+      return Optional.empty();
+    }
     final Optional<String> param =
         Optional.ofNullable(optionalQueryParameters.get(parameterMetadata.getName()));
     return param.map(p -> parameterMetadata.getType().deserializeFromString(p));

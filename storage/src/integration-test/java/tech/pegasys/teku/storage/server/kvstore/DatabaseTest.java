@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -71,6 +71,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -2362,6 +2363,18 @@ public class DatabaseTest {
   }
 
   @TestTemplate
+  public void setEarliestAvailableDataColumnSlot_isOperative(final DatabaseContext context)
+      throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+    assertThat(database.getEarliestAvailableDataColumnSlot().isEmpty()).isTrue();
+
+    final UInt64 earliestSlot = UInt64.valueOf(123);
+    database.setEarliestAvailableDataColumnSlot(UInt64.valueOf(123));
+    assertThat(database.getEarliestAvailableDataColumnSlot()).contains(earliestSlot);
+  }
+
+  @TestTemplate
   public void streamDataColumnIdentifiers_isOperative(final DatabaseContext context)
       throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalFulu());
@@ -2534,12 +2547,14 @@ public class DatabaseTest {
         DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar0);
     final DataColumnSidecar block1Sidecar1 =
         dataStructureUtil.randomDataColumnSidecar(
-            blockHeader1, block1Sidecar0.getKzgCommitments(), ONE);
+            blockHeader1, DataColumnSidecarFulu.required(block1Sidecar0).getKzgCommitments(), ONE);
     final DataColumnSlotAndIdentifier block1Column1 =
         DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar1);
     final DataColumnSidecar block1Sidecar2 =
         dataStructureUtil.randomDataColumnSidecar(
-            blockHeader1, block1Sidecar0.getKzgCommitments(), UInt64.valueOf(2));
+            blockHeader1,
+            DataColumnSidecarFulu.required(block1Sidecar0).getKzgCommitments(),
+            UInt64.valueOf(2));
     final DataColumnSlotAndIdentifier block1Column2 =
         DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar2);
 

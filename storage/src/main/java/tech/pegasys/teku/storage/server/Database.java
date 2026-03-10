@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -283,9 +283,13 @@ public interface Database extends AutoCloseable {
 
   Optional<UInt64> getEarliestDataColumnSidecarSlot();
 
+  Optional<UInt64> getEarliestAvailableDataColumnSlot();
+
   Optional<UInt64> getLastDataColumnSidecarsProofsSlot();
 
-  Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(final UInt64 slot);
+  Optional<List<List<KZGProof>>> getDataColumnSidecarsProofs(UInt64 slot);
+
+  void setEarliestAvailableDataColumnSlot(UInt64 slot);
 
   void setFirstCustodyIncompleteSlot(UInt64 slot);
 

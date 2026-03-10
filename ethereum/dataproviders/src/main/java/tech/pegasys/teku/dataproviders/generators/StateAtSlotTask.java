@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -123,7 +124,7 @@ public class StateAtSlotTask implements CacheableTask<SlotAndBlockRoot, BeaconSt
   @FunctionalInterface
   public interface AsyncStateProvider {
     static AsyncStateProvider fromBlockAndState(final SignedBlockAndState blockAndState) {
-      return (Bytes32 root) -> {
+      return (root) -> {
         if (Objects.equals(root, blockAndState.getRoot())) {
           return SafeFuture.completedFuture(Optional.of(blockAndState.getState()));
         } else {
@@ -132,8 +133,19 @@ public class StateAtSlotTask implements CacheableTask<SlotAndBlockRoot, BeaconSt
       };
     }
 
+    static AsyncStateProvider fromExecutionPayloadAndState(
+        final SignedExecutionPayloadAndState executionPayloadAndState) {
+      return (root) -> {
+        if (Objects.equals(root, executionPayloadAndState.getBeaconBlockRoot())) {
+          return SafeFuture.completedFuture(Optional.of(executionPayloadAndState.state()));
+        } else {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+      };
+    }
+
     static AsyncStateProvider fromAnchor(final AnchorPoint anchor) {
-      return (Bytes32 root) -> {
+      return (root) -> {
         if (Objects.equals(root, anchor.getRoot())) {
           return SafeFuture.completedFuture(Optional.of(anchor.getState()));
         } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,23 +18,28 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBy
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -64,13 +69,44 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
     this.miscHelpersGloas = miscHelpers;
   }
 
+  public UInt64 getPendingBalanceToWithdrawForBuilder(
+      final BeaconState state, final UInt64 builderIndex) {
+    final BeaconStateGloas stateGloas = BeaconStateGloas.required(state);
+    final UInt64 pendingBuilderWithdrawalsBalance =
+        stateGloas.getBuilderPendingWithdrawals().stream()
+            .filter(withdrawal -> withdrawal.getBuilderIndex().equals(builderIndex))
+            .map(BuilderPendingWithdrawal::getAmount)
+            .reduce(UInt64.ZERO, UInt64::plus);
+    final UInt64 pendingBuilderPaymentsBalance =
+        stateGloas.getBuilderPendingPayments().stream()
+            .map(BuilderPendingPayment::getWithdrawal)
+            .filter(withdrawal -> withdrawal.getBuilderIndex().equals(builderIndex))
+            .map(BuilderPendingWithdrawal::getAmount)
+            .reduce(UInt64.ZERO, UInt64::plus);
+    return pendingBuilderWithdrawalsBalance.plus(pendingBuilderPaymentsBalance);
+  }
+
+  public boolean canBuilderCoverBid(
+      final BeaconState state, final UInt64 builderIndex, final UInt64 bidAmount) {
+    final UInt64 builderBalance =
+        BeaconStateGloas.required(state).getBuilders().get(builderIndex.intValue()).getBalance();
+    final UInt64 pendingWithdrawalsAmount =
+        getPendingBalanceToWithdrawForBuilder(state, builderIndex);
+    final UInt64 minBalance = config.getMinDepositAmount().plus(pendingWithdrawalsAmount);
+    if (builderBalance.isLessThan(minBalance)) {
+      return false;
+    }
+    return builderBalance.minusMinZero(minBalance).isGreaterThanOrEqualTo(bidAmount);
+  }
+
   /**
    * get_indexed_payload_attestation
    *
    * <p>Return the indexed payload attestation corresponding to ``payload_attestation``.
    */
   public IndexedPayloadAttestation getIndexedPayloadAttestation(
-      final BeaconState state, final UInt64 slot, final PayloadAttestation payloadAttestation) {
+      final BeaconState state, final PayloadAttestation payloadAttestation) {
+    final UInt64 slot = payloadAttestation.getData().getSlot();
     final IntList ptc = getPtc(state, slot);
     final SszBitvector aggregationBits = payloadAttestation.getAggregationBits();
     final IntList attestingIndices = new IntArrayList();
@@ -166,29 +202,6 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
     }
   }
 
-  /** get_pending_balance_to_withdraw is modified to account for pending builder payments. */
-  @Override
-  public UInt64 getPendingBalanceToWithdraw(
-      final BeaconStateElectra state, final int validatorIndex) {
-    final BeaconStateGloas stateGloas = BeaconStateGloas.required(state);
-    final UInt64 pendingPartialWithdrawalsBalance =
-        super.getPendingBalanceToWithdraw(state, validatorIndex);
-    final UInt64 pendingBuilderWithdrawalsBalance =
-        stateGloas.getBuilderPendingWithdrawals().stream()
-            .filter(withdrawal -> withdrawal.getBuilderIndex().intValue() == validatorIndex)
-            .map(BuilderPendingWithdrawal::getAmount)
-            .reduce(UInt64.ZERO, UInt64::plus);
-    final UInt64 pendingBuilderPaymentsBalance =
-        stateGloas.getBuilderPendingPayments().stream()
-            .map(BuilderPendingPayment::getWithdrawal)
-            .filter(withdrawal -> withdrawal.getBuilderIndex().intValue() == validatorIndex)
-            .map(BuilderPendingWithdrawal::getAmount)
-            .reduce(UInt64.ZERO, UInt64::plus);
-    return pendingPartialWithdrawalsBalance
-        .plus(pendingBuilderWithdrawalsBalance)
-        .plus(pendingBuilderPaymentsBalance);
-  }
-
   /**
    * get_next_sync_committee_indices is refactored to use compute_balance_weighted_selection as a
    * helper for the balance-weighted sampling process.
@@ -202,5 +215,64 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
     final Bytes32 seed = getSeed(state, epoch, Domain.SYNC_COMMITTEE);
     return miscHelpersGloas.computeBalanceWeightedSelection(
         state, activeValidatorIndices, seed, configElectra.getSyncCommitteeSize(), true);
+  }
+
+  public UInt64 getIndexForNewBuilder(final BeaconState state) {
+    final SszList<Builder> builders = BeaconStateGloas.required(state).getBuilders();
+    for (int index = 0; index < builders.size(); index++) {
+      final Builder builder = builders.get(index);
+      if (builder.getWithdrawableEpoch().isLessThanOrEqualTo(getCurrentEpoch(state))
+          && builder.getBalance().isZero()) {
+        return UInt64.valueOf(index);
+      }
+    }
+    return UInt64.valueOf(builders.size());
+  }
+
+  @Override
+  public Optional<BLSPublicKey> getBuilderPubKey(
+      final BeaconState state, final UInt64 builderIndex) {
+    final Optional<SszList<Builder>> maybeBuilders =
+        state.toVersionGloas().map(BeaconStateGloas::getBuilders);
+    if (maybeBuilders.isEmpty()) {
+      return Optional.empty();
+    }
+    final SszList<Builder> builders = maybeBuilders.get();
+    if (builderIndex.isGreaterThanOrEqualTo(builders.size()) || builderIndex.longValue() < 0) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        BeaconStateCache.getTransitionCaches(state)
+            .getBuildersPubKeys()
+            .get(
+                builderIndex,
+                i -> {
+                  final BLSPublicKey pubKey = builders.get(i.intValue()).getPublicKey();
+                  // eagerly pre-cache pubKey => builderIndex mapping
+                  BeaconStateCache.getTransitionCaches(state)
+                      .getBuilderIndexCache()
+                      .invalidateWithNewValue(pubKey, i.intValue());
+                  return pubKey;
+                }));
+  }
+
+  @Override
+  public Optional<Integer> getBuilderIndex(final BeaconState state, final BLSPublicKey publicKey) {
+    final SszList<Builder> builders = BeaconStateGloas.required(state).getBuilders();
+    final Cache<BLSPublicKey, Integer> builderIndexCache =
+        BeaconStateCache.getTransitionCaches(state).getBuilderIndexCache();
+    return builderIndexCache
+        .getCached(publicKey)
+        .or(
+            () -> {
+              for (int i = 0; i < builders.size(); i++) {
+                final BLSPublicKey builderPubKey = builders.get(i).getPublicKey();
+                if (builderPubKey.equals(publicKey)) {
+                  builderIndexCache.invalidateWithNewValue(builderPubKey, i);
+                  return Optional.of(i);
+                }
+              }
+              return Optional.empty();
+            });
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -19,6 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -60,7 +61,7 @@ class CombinedChainDataClientTest {
   private final UpdatableStore store = mock(UpdatableStore.class);
   private final CombinedChainDataClient client =
       new CombinedChainDataClient(
-          recentChainData, historicalChainData, spec, lateBlockReorgPreparationHandler);
+          recentChainData, historicalChainData, spec, lateBlockReorgPreparationHandler, false);
   private final ChainHead chainHead = mock(ChainHead.class);
 
   final List<SignedBeaconBlock> nonCanonicalBlocks = new ArrayList<>();
@@ -166,7 +167,7 @@ class CombinedChainDataClientTest {
     final Runnable onLateBlockReorgPreparationCompleted = mock(Runnable.class);
     when(recentChainData.getBlockRootInEffectBySlot(UInt64.ONE)).thenReturn(recentBlockRoot);
     when(recentChainData.getStore()).thenReturn(store);
-    when(store.retrieveStateAtSlot(slotAndBlockRoot))
+    when(store.retrieveBlockState(slotAndBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
     final SafeFuture<Optional<BeaconState>> future =
         client.getStateForBlockProduction(UInt64.ONE, false, onLateBlockReorgPreparationCompleted);
@@ -174,7 +175,7 @@ class CombinedChainDataClientTest {
     verify(onLateBlockReorgPreparationCompleted, never()).run();
     // getStateAtSlotExact
     verify(recentChainData).getBlockRootInEffectBySlot(UInt64.ONE);
-    verify(store).retrieveStateAtSlot(slotAndBlockRoot);
+    verify(store).retrieveBlockState(slotAndBlockRoot);
   }
 
   @Test
@@ -190,7 +191,7 @@ class CombinedChainDataClientTest {
 
     when(recentChainData.getBestBlockRoot()).thenReturn(Optional.empty());
     when(recentChainData.getBlockRootInEffectBySlot(UInt64.ONE)).thenReturn(recentBlockRoot);
-    when(store.retrieveStateAtSlot(slotAndBlockRoot))
+    when(store.retrieveBlockState(slotAndBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
 
     final SafeFuture<Optional<BeaconState>> future =
@@ -199,7 +200,7 @@ class CombinedChainDataClientTest {
     verify(onLateBlockReorgPreparationCompleted, never()).run();
     // getStateAtSlotExact
     verify(recentChainData).getBlockRootInEffectBySlot(UInt64.ONE);
-    verify(store).retrieveStateAtSlot(slotAndBlockRoot);
+    verify(store).retrieveBlockState(slotAndBlockRoot);
   }
 
   @Test
@@ -220,7 +221,7 @@ class CombinedChainDataClientTest {
     when(recentChainData.getProposerHead(any(), any())).thenReturn(recentBlockRoot);
     when(recentChainData.getBlockRootInEffectBySlot(UInt64.ONE))
         .thenReturn(Optional.of(recentBlockRoot));
-    when(store.retrieveStateAtSlot(slotAndBlockRoot))
+    when(store.retrieveBlockState(slotAndBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
 
     final SafeFuture<Optional<BeaconState>> future =
@@ -229,7 +230,7 @@ class CombinedChainDataClientTest {
     verify(onLateBlockReorgPreparationCompleted, never()).run();
     // getStateAtSlotExact
     verify(recentChainData).getBlockRootInEffectBySlot(UInt64.ONE);
-    verify(store).retrieveStateAtSlot(slotAndBlockRoot);
+    verify(store).retrieveBlockState(slotAndBlockRoot);
   }
 
   @Test
@@ -258,7 +259,7 @@ class CombinedChainDataClientTest {
     when(lateBlockReorgPreparationHandler.onLateBlockReorgPreparation(UInt64.ZERO, recentBlockRoot))
         .thenReturn(lateBlockReorgPreparationFuture);
 
-    when(store.retrieveStateAtSlot(slotAndBlockRoot))
+    when(store.retrieveBlockState(slotAndBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
 
     final SafeFuture<Optional<BeaconState>> future =
@@ -275,7 +276,7 @@ class CombinedChainDataClientTest {
 
     assertThat(future.get()).contains(proposerState);
 
-    verify(store, never()).retrieveStateAtSlot(slotAndBlockRoot);
+    verify(store, never()).retrieveBlockState(slotAndBlockRoot);
   }
 
   @Test
@@ -333,7 +334,7 @@ class CombinedChainDataClientTest {
     when(store.getFinalizedCheckpoint()).thenReturn(finalized);
     when(recentChainData.getBlockRootInEffectBySlot(any()))
         .thenReturn(Optional.of(state.getLatestBlockHeader().getBodyRoot()));
-    when(store.retrieveStateAtSlot(any()))
+    when(store.retrieveBlockState(any(SlotAndBlockRoot.class)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
 
     final SafeFuture<Optional<BeaconState>> maybeFinalizedState = client.getBestFinalizedState();
@@ -348,6 +349,24 @@ class CombinedChainDataClientTest {
     when(recentChainData.getStore()).thenReturn(null);
     final SafeFuture<Optional<BeaconState>> maybeFinalizedState = client.getBestFinalizedState();
     assertThat(maybeFinalizedState.get()).isEmpty();
+  }
+
+  @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
+  void getEarliestAvailableDataColumnSlot_WithFallback_shouldRespectConfig() {
+    client.getEarliestAvailableDataColumnSlotWithFallback();
+
+    verify(historicalChainData).getEarliestDataColumnSidecarSlot();
+
+    final CombinedChainDataClient clientWithEarliestAvailableDataColumnSlotSupport =
+        new CombinedChainDataClient(
+            recentChainData, historicalChainData, spec, lateBlockReorgPreparationHandler, true);
+
+    clientWithEarliestAvailableDataColumnSlotSupport
+        .getEarliestAvailableDataColumnSlotWithFallback();
+    verify(historicalChainData).getEarliestAvailableDataColumnSlot();
+
+    verifyNoMoreInteractions(historicalChainData);
   }
 
   private void setupGetBlobSidecar(

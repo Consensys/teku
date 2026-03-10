@@ -11,7 +11,7 @@ runs:
   using: "composite"
   steps:
     - name: Gather junit results
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         pattern: ${{inputs.stage_key}}-reports-*
         path: reports/${{inputs.stage_key}}
@@ -75,7 +75,7 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
                 
     - name: Upload CTRF artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: ctrf-${{inputs.stage_key}}-tests
         path: ./ctrf/${{inputs.stage_key}}/ctrf-report.json 

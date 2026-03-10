@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -104,9 +104,9 @@ public class LocalSlashingProtectorConcurrentAccessTest extends LocalSlashingPro
     assertThat(secondSigner).isNotCompleted();
 
     releaseLock.set(true);
-    firstSigner.get(50, TimeUnit.MILLISECONDS);
+    firstSigner.get(5, TimeUnit.SECONDS);
     assertThat(firstSigner).isCompleted();
-    secondSigner.get(50, TimeUnit.MILLISECONDS);
+    secondSigner.get(5, TimeUnit.SECONDS);
     assertThat(secondSigner).isCompleted();
 
     assertThat(snoopRecord.getLock().hasQueuedThreads()).isFalse();
@@ -156,12 +156,10 @@ public class LocalSlashingProtectorConcurrentAccessTest extends LocalSlashingPro
             });
     threadAcquired.await();
     assertThat(firstSigner).isNotCompleted();
-    // flaky on Windows
-    secondSigner.get(500, TimeUnit.MILLISECONDS);
+    secondSigner.get(5, TimeUnit.SECONDS);
     assertThat(secondSigner).isCompleted();
     releaseLock.set(true);
-    // flaky on Windows
-    firstSigner.get(500, TimeUnit.MILLISECONDS);
+    firstSigner.get(5, TimeUnit.SECONDS);
     assertThat(firstSigner).isCompleted();
   }
 }

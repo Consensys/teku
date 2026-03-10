@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -35,7 +35,8 @@ public class SpecConfigLoader {
   private static final Logger LOG = LogManager.getLogger();
   public static final String EPHEMERY_CONFIG_URL = "https://ephemery.dev/latest/config.yaml";
   private static final List<String> AVAILABLE_PRESETS =
-      List.of("phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu", "gloas");
+      List.of(
+          "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu", "gloas", "heze");
   private static final List<String> BUILTIN_NETWORKS =
       List.of(
           "chiado",

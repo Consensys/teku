@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
+import java.util.Optional;
+import java.util.function.Supplier;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface DataColumnPeerManager {
 
@@ -21,7 +24,7 @@ public interface DataColumnPeerManager {
 
   interface PeerListener {
 
-    void peerConnected(UInt256 nodeId);
+    void peerConnected(UInt256 nodeId, Supplier<Optional<UInt64>> maybeEarliestAvailableSlot);
 
     void peerDisconnected(UInt256 nodeId);
   }

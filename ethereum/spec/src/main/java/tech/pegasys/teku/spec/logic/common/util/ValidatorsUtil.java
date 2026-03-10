@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -177,8 +178,8 @@ public class ValidatorsUtil {
   }
 
   public UInt64 getPendingBalanceToWithdraw(final BeaconState state, final int validatorIndex) {
-    return state.toVersionElectra().orElseThrow().getPendingPartialWithdrawals().stream()
-        .filter(withdrawal -> withdrawal.getValidatorIndex() == validatorIndex)
+    return BeaconStateElectra.required(state).getPendingPartialWithdrawals().stream()
+        .filter(withdrawal -> withdrawal.getValidatorIndex().intValue() == validatorIndex)
         .map(PendingPartialWithdrawal::getAmount)
         .reduce(UInt64::plus)
         .orElse(UInt64.ZERO);

@@ -3,13 +3,13 @@
     "tags" : [ "Events", "Validator Required Api" ],
     "operationId" : "getEvents",
     "summary" : "Subscribe to node events",
-    "description" : "Provides endpoint to subscribe to beacon node Server-Sent-Events stream. Consumers should use [eventsource](https://html.spec.whatwg.org/multipage/server-sent-events.html#the-eventsource-interface) implementation to listen on those events.\n\nServers _may_ send SSE comments beginning with `:` for any purpose, including to keep the event stream connection alive in the presence of proxy servers.",
+    "description" : "Provides endpoint to subscribe to beacon node Server-Sent-Events stream. Consumers should use [eventsource](https://html.spec.whatwg.org/multipage/server-sent-events.html#the-eventsource-interface) implementation to listen on those events.\n\nServers _may_ send SSE comments beginning with `:` for any purpose, including to keep the event stream connection alive in the presence of proxy servers.\n\n__Note:__ blob_sidecar events will be removed at gloas hard fork",
     "parameters" : [ {
       "name" : "topics",
       "in" : "query",
       "schema" : {
         "type" : "string",
-        "description" : "Event types to subscribe to. Supported event types: [`attestation`, `attester_slashing`, `blob_sidecar`, `block_gossip`, `block`, `bls_to_execution_change`, `chain_reorg`, `contribution_and_proof`, `data_column_sidecar`, `finalized_checkpoint`, `head`, `payload_attributes`, `proposer_slashing`, `single_attestation`, `sync_state`, `voluntary_exit`]",
+        "description" : "Event types to subscribe to. Supported event types: [`attestation`, `attester_slashing`, `blob_sidecar`, `block_gossip`, `block`, `bls_to_execution_change`, `chain_reorg`, `contribution_and_proof`, `data_column_sidecar`, `execution_payload_available`, `execution_payload_bid`, `finalized_checkpoint`, `head`, `payload_attestation_message`, `payload_attributes`, `proposer_slashing`, `single_attestation`, `sync_state`, `voluntary_exit`]",
         "example" : "head"
       }
     } ],

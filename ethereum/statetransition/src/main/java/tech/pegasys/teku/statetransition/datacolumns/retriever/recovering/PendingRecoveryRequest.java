@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -21,6 +21,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import java.time.Duration;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -40,6 +41,8 @@ class PendingRecoveryRequest {
   private final UInt64 taskTimeoutMillis;
   private final SafeFuture<DataColumnSidecar> downloadFuture;
   private final LabelledMetric<Counter> sidecarRecoveryMetric;
+  private final Runnable alwaysAfter;
+  private final AtomicBoolean isStarted = new AtomicBoolean(false);
 
   PendingRecoveryRequest(
       final DataColumnSlotAndIdentifier columnId,
@@ -54,24 +57,29 @@ class PendingRecoveryRequest {
     this.columnnId = columnId;
     this.downloadFuture = downloadFuture;
     this.sidecarRecoveryMetric = sidecarRecoveryMetric;
+    this.alwaysAfter = alwaysAfter;
+  }
 
-    downloadFuture
-        .thenRun(this::downloadCompleted)
-        .exceptionally(this::failedDownload)
-        .finishError(LOG);
+  public void start() {
+    if (isStarted.compareAndSet(false, true)) {
+      downloadFuture
+          .thenRun(this::downloadCompleted)
+          .exceptionally(this::failedDownload)
+          .finishError(LOG);
 
-    future
-        .thenRun(this::onCompleted)
-        .exceptionally(
-            (err) -> {
-              final Throwable cause = Throwables.getRootCause(err);
-              if (!(cause instanceof CancellationException)) {
-                LOG.debug("Failed recovery task for column {}", columnnId, err);
-              }
-              sidecarRecoveryMetric.labels(CANCELLED).inc();
-              return null;
-            })
-        .always(alwaysAfter);
+      future
+          .thenRun(this::onCompleted)
+          .exceptionally(
+              (err) -> {
+                final Throwable cause = Throwables.getRootCause(err);
+                if (!(cause instanceof CancellationException)) {
+                  LOG.debug("Failed recovery task for column {}", columnnId, err);
+                }
+                sidecarRecoveryMetric.labels(CANCELLED).inc();
+                return null;
+              })
+          .always(alwaysAfter);
+    }
   }
 
   private Void failedDownload(final Throwable throwable) {

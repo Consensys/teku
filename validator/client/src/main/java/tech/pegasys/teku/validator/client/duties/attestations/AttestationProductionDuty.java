@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -255,12 +255,14 @@ public class AttestationProductionDuty implements Duty {
         attestationData.getSlot(),
         slot);
 
-    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
-      checkArgument(
-          attestationData.getIndex().equals(UInt64.ZERO),
-          "Unsigned attestation slot (%s) must have index 0",
-          slot);
-    }
+    spec.atSlot(slot)
+        .getAttestationUtil()
+        .validateCommitteeIndexValue(attestationData.getIndex())
+        .getReason()
+        .ifPresent(
+            reason -> {
+              throw new IllegalArgumentException(reason);
+            });
   }
 
   private SafeFuture<ProductionResult<Attestation>> signAttestationForValidator(

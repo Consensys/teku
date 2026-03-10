@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -99,9 +99,13 @@ public class PostBlockV2 extends AbstractPostBlockV2 {
             The beacon node is also expected to integrate the block into the state, but may broadcast it \
             before doing so, so as to aid timely delivery of the block. Should the block fail full \
             validation, a separate success response code (202) is used to indicate that the block was \
-            successfully broadcast but failed integration. After Deneb, this additionally instructs \
+            successfully broadcast but failed integration. \n\n \
+            After Deneb, this additionally instructs \
             the beacon node to broadcast all given signed blobs. The broadcast behaviour may be adjusted via the \
-            `broadcast_validation` query parameter.""")
+            `broadcast_validation` query parameter.\n\n \
+            For Gloas and later, blobs are broadcast as part of the \
+            ExecutionPayloadEnvelope and are not submitted with the block. The broadcast behaviour may be adjusted \
+            via the broadcast_validation query parameter.""")
         .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
         .queryParam(PARAMETER_BROADCAST_VALIDATION)
         .requestBodyType(

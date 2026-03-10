@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -48,6 +50,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool.NewBlobSidecarSubscriber;
+import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
 import tech.pegasys.teku.statetransition.datacolumns.ValidDataColumnSidecarsListener;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
@@ -55,6 +58,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubsc
 import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.RegisteredValidatorInfo;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
@@ -77,6 +81,8 @@ public class NodeDataProvider {
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final RecentChainData recentChainData;
   private final DataColumnSidecarManager dataColumnSidecarManager;
+  private final CustodyGroupCountManager custodyGroupCountManager;
+  private final PayloadAttestationPool payloadAttestationPool;
   private final Spec spec;
 
   public NodeDataProvider(
@@ -94,6 +100,8 @@ public class NodeDataProvider {
       final ForkChoiceNotifier forkChoiceNotifier,
       final RecentChainData recentChainData,
       final DataColumnSidecarManager dataColumnSidecarManager,
+      final CustodyGroupCountManager custodyGroupCountManager,
+      final PayloadAttestationPool payloadAttestationPool,
       final Spec spec) {
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingsPool;
@@ -109,6 +117,8 @@ public class NodeDataProvider {
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.recentChainData = recentChainData;
     this.dataColumnSidecarManager = dataColumnSidecarManager;
+    this.custodyGroupCountManager = custodyGroupCountManager;
+    this.payloadAttestationPool = payloadAttestationPool;
     this.spec = spec;
   }
 
@@ -121,6 +131,10 @@ public class NodeDataProvider {
       final Optional<UInt64> maybeSlot, final Optional<UInt64> maybeCommitteeIndex) {
     return lookupMetaData(
         attestationPool.getAttestations(maybeSlot, maybeCommitteeIndex), maybeSlot);
+  }
+
+  public Set<UInt64> getCustodyColumnIndices() {
+    return custodyGroupCountManager.getCustodyColumnIndices();
   }
 
   private ObjectAndMetaData<List<Attestation>> lookupMetaData(
@@ -300,6 +314,11 @@ public class NodeDataProvider {
 
   public void subscribeToForkChoiceUpdatedResult(final ForkChoiceUpdatedResultSubscriber listener) {
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(listener);
+  }
+
+  public void subscribeToPayloadAttestationMessages(
+      final OperationAddedSubscriber<PayloadAttestationMessage> listener) {
+    payloadAttestationPool.subscribeOperationAdded(listener);
   }
 
   public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorLiveness(

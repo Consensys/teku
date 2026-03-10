@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Optional;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,7 +46,7 @@ class StorageServiceTest {
 
   private final ServiceConfig serviceConfig = mock(ServiceConfig.class);
   private final StorageConfiguration storageConfiguration = mock(StorageConfiguration.class);
-  private final MetricsSystem metricsSystem = mock(MetricsSystem.class);
+  private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   private final DataDirLayout dataDirLayout = mock(DataDirLayout.class);
   private final Eth1Address eth1DepositContract = mock(Eth1Address.class);
   private final Spec spec = mock(Spec.class);
@@ -138,5 +139,16 @@ class StorageServiceTest {
     final StatePruner statePruner = maybeStatePruner.get();
     assertThat(statePruner.isRunning()).isTrue();
     assertThat(statePruner.getPruneInterval()).isEqualTo(customPruningInterval);
+  }
+
+  @Test
+  void shouldStartSuccessfullyWhenForceClearDbEnabled() {
+    // Set forceClearDb to true
+    when(storageConfiguration.isForceClearDb()).thenReturn(true);
+    when(storageConfiguration.getDataStorageMode()).thenReturn(StateStorageMode.PRUNE);
+
+    // Service should start successfully even with forceClearDb enabled
+    final SafeFuture<?> future = storageService.doStart();
+    assertThat(future).isCompleted();
   }
 }

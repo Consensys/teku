@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -34,6 +34,8 @@ public interface DataColumnSidecarDB extends DataColumnSidecarCoreDB {
 
   SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot();
 
+  SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot();
+
   @Override
   SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnSlotAndIdentifier identifier);
 
@@ -43,6 +45,8 @@ public interface DataColumnSidecarDB extends DataColumnSidecarCoreDB {
   // update
 
   SafeFuture<Void> setFirstCustodyIncompleteSlot(UInt64 slot);
+
+  SafeFuture<Void> setEarliestAvailableDataColumnSlot(UInt64 slot);
 
   @Override
   SafeFuture<Void> addSidecar(DataColumnSidecar sidecar);

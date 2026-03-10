@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -57,6 +57,7 @@ public class DataColumnSidecarManagerImpl implements DataColumnSidecarManager {
   @Override
   public SafeFuture<InternalValidationResult> onDataColumnSidecarGossip(
       final DataColumnSidecar dataColumnSidecar, final Optional<UInt64> arrivalTimestamp) {
+    LOG.trace("Received data column sidecar from GOSSIP: {}", dataColumnSidecar);
     final SafeFuture<InternalValidationResult> validation;
     try (Timer ignored = histogram.startTimer()) {
       validation = validator.validate(dataColumnSidecar);

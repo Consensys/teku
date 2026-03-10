@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -136,7 +136,7 @@ public class BeaconStateAccessorsFuluTest {
                 stateAccessorsFulu.getBeaconProposerIndex(
                     blockAndState.getState(), UInt64.valueOf(slot)))
         .hasMessageContaining(
-            "get_beacon_proposer_index is only used for requesting a slot in the current or next epoch");
+            "get_beacon_proposer_index is only used for requesting a slot in the current epoch (or next epoch in FULU)");
   }
 
   private List<Integer> getProposerLookaheadFromState(final BeaconStateFulu beaconStateFulu) {

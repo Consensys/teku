@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -111,9 +111,8 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
       final TreeNode replacement = unblindedData.get(i);
       checkState(
           expectedRoot.equals(replacement.hashTreeRoot()),
-          "Root at index "
-              + blindedNodeIndex
-              + " in blinded block does not match provided replacement root");
+          "Root at index %s in blinded block does not match provided replacement root",
+          blindedNodeIndex);
       updatesList.add(new TreeUpdates.Update(blindedNodeIndex, replacement));
     }
     return backingNode.updated(new TreeUpdates(updatesList));

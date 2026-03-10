@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -72,7 +72,7 @@ public class AttestationUtilPhase0 extends AttestationUtil {
   }
 
   @Override
-  public AttestationValidationResult validateIndexValue(final UInt64 index) {
+  public AttestationValidationResult validateCommitteeIndexValue(final UInt64 index) {
     // No index validation before Electra
     return AttestationValidationResult.VALID;
   }

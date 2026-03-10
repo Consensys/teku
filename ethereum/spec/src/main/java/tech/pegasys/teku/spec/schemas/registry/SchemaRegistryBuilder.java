@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -21,6 +21,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
+import static tech.pegasys.teku.spec.SpecMilestone.HEZE;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.schemas.registry.BaseSchemaProvider.providerBuilder;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.AGGREGATE_AND_PROOF_SCHEMA;
@@ -65,6 +66,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PROO
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQUESTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_BATCH_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_SUMMARIES_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INCLUSION_LIST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_PAYLOAD_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.LIGHT_CLIENT_BOOTSTRAP_SCHEMA;
@@ -77,6 +79,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_CONSOL
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_DEPOSITS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_PARTIAL_WITHDRAWALS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PROPOSER_LOOKAHEAD_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PROPOSER_PREFERENCES_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGATE_AND_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLINDED_BEACON_BLOCK_SCHEMA;
@@ -85,6 +88,8 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLS_TO_
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BUILDER_BID_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_INCLUSION_LIST_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_PROPOSER_PREFERENCES_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SINGLE_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.STATUS_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SYNCNETS_ENR_FIELD_SCHEMA;
@@ -107,6 +112,7 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
+import tech.pegasys.teku.spec.config.SpecConfigHeze;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
@@ -141,16 +147,16 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleS
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.builder.versions.electra.BuilderBidSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleSchemaFulu;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPaymentSchema;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessageSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferencesSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferencesSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
@@ -163,6 +169,8 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Consolid
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionListSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.versions.electra.LightClientBootstrapSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
@@ -198,6 +206,8 @@ import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSu
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation.PendingConsolidationSchema;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit.PendingDepositSchema;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal.PendingPartialWithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPaymentSchema;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingWithdrawalSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 
 public class SchemaRegistryBuilder {
@@ -283,12 +293,18 @@ public class SchemaRegistryBuilder {
         .addProvider(createIndexedPayloadAttestationSchemaProvider())
         .addProvider(createExecutionPayloadBidSchemaProvider())
         .addProvider(createSignedExecutionPayloadBidSchemaProvider())
+        .addProvider(createProposerPreferencesSchemaProvider())
+        .addProvider(createSignedProposerPreferencesSchemaProvider())
         .addProvider(createExecutionPayloadEnvelopeSchemaProvider())
         .addProvider(createSignedExecutionPayloadEnvelopeSchemaProvider())
         .addProvider(createExecutionPayloadAvailabilitySchemaProvider())
         .addProvider(createBuilderPendingPaymentsSchemaProvider())
         .addProvider(createBuilderPendingWithdrawalsSchemaProvider())
-        .addProvider(createExecutionPayloadEnvelopesByRootRequestMessageSchemaProvider());
+        .addProvider(createExecutionPayloadEnvelopesByRootRequestMessageSchemaProvider())
+
+        // HEZE
+        .addProvider(createInclusionListSchemaProvider())
+        .addProvider(createSignedInclusionListSchemaProvider());
   }
 
   private static SchemaProvider<?> createSingleAttestationSchemaProvider() {
@@ -969,7 +985,8 @@ public class SchemaRegistryBuilder {
 
   private static SchemaProvider<?> createExecutionPayloadBidSchemaProvider() {
     return providerBuilder(EXECUTION_PAYLOAD_BID_SCHEMA)
-        .withCreator(GLOAS, (registry, specConfig, schemaName) -> new ExecutionPayloadBidSchema())
+        .withCreator(
+            GLOAS, (registry, specConfig, schemaName) -> new ExecutionPayloadBidSchema(registry))
         .build();
   }
 
@@ -978,6 +995,20 @@ public class SchemaRegistryBuilder {
         .withCreator(
             GLOAS,
             (registry, specConfig, schemaName) -> new SignedExecutionPayloadBidSchema(registry))
+        .build();
+  }
+
+  private static SchemaProvider<?> createProposerPreferencesSchemaProvider() {
+    return providerBuilder(PROPOSER_PREFERENCES_SCHEMA)
+        .withCreator(GLOAS, (registry, specConfig, schemaName) -> new ProposerPreferencesSchema())
+        .build();
+  }
+
+  private static SchemaProvider<?> createSignedProposerPreferencesSchemaProvider() {
+    return providerBuilder(SIGNED_PROPOSER_PREFERENCES_SCHEMA)
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) -> new SignedProposerPreferencesSchema(registry))
         .build();
   }
 
@@ -1037,6 +1068,22 @@ public class SchemaRegistryBuilder {
             (registry, specConfig, schemaName) ->
                 new ExecutionPayloadEnvelopesByRootRequestMessageSchema(
                     SpecConfigGloas.required(specConfig)))
+        .build();
+  }
+
+  private static SchemaProvider<?> createInclusionListSchemaProvider() {
+    return providerBuilder(INCLUSION_LIST_SCHEMA)
+        .withCreator(
+            HEZE,
+            (registry, specConfig, schemaName) ->
+                new InclusionListSchema(SpecConfigHeze.required(specConfig)))
+        .build();
+  }
+
+  private static SchemaProvider<?> createSignedInclusionListSchemaProvider() {
+    return providerBuilder(SIGNED_INCLUSION_LIST_SCHEMA)
+        .withCreator(
+            HEZE, (registry, specConfig, schemaName) -> new SignedInclusionListSchema(registry))
         .build();
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class AbstractFetchTaskTest {
 
   protected final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createMinimalDeneb());
+      new DataStructureUtil(TestSpecFactory.createMinimalGloas());
   protected final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
   protected final List<Eth2Peer> peers = new ArrayList<>();
 

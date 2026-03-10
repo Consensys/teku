@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionclient.schema;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -41,6 +42,7 @@ public class BlobAndProofV2 {
   @JsonDeserialize(contentUsing = Bytes48Deserializer.class)
   private final List<Bytes48> proofs;
 
+  @JsonCreator
   public BlobAndProofV2(
       @JsonProperty("blob") final Bytes blob, @JsonProperty("proofs") final List<Bytes48> proofs) {
     checkNotNull(blob, "blob");

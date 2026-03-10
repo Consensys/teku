@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,6 +14,9 @@
 package tech.pegasys.teku.spec.logic.versions.capella.block;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -126,6 +129,74 @@ public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
   }
 
   @Test
+  public void shouldRejectInvalidBlsToExecutionChange() {
+    final int validatorIndex = 0;
+    final ChainBuilder chain = ChainBuilder.create(spec);
+    chain.generateGenesis();
+
+    final BeaconState state = chain.getGenesis().getState();
+    final BLSPublicKey anotherKey = chain.getValidatorKeys().get(validatorIndex + 1).getPublicKey();
+    final SignedBlsToExecutionChange signedBlsToExecutionChange =
+        createSignedBlsToExecutionChange(validatorIndex, anotherKey);
+    final SszList<SignedBlsToExecutionChange> blsToExecutionChangesListWithDuplicate =
+        createBlsToExecutionChangeList(signedBlsToExecutionChange);
+    final BlockProcessorCapella capellaBlockProcessor =
+        ((BlockProcessorCapella) spec.getGenesisSpec().getBlockProcessor());
+
+    final BlockValidationResult validationResult =
+        capellaBlockProcessor.verifyBlsToExecutionChangesPreProcessing(
+            state, blsToExecutionChangesListWithDuplicate, BLSSignatureVerifier.NO_OP);
+    assertThat(validationResult.isValid()).isFalse();
+    assertThat(validationResult.getFailureReason())
+        .contains("does not match withdrawal credentials");
+  }
+
+  @Test
+  public void shouldRejectBlsToExecutionChangeWithInvalidSignature() {
+    final int validatorIndex = 0;
+    final ChainBuilder chain = ChainBuilder.create(spec);
+    chain.generateGenesis();
+
+    final BeaconState state = chain.getGenesis().getState();
+    final BLSPublicKey anotherKey = chain.getValidatorKeys().get(validatorIndex).getPublicKey();
+    final SignedBlsToExecutionChange signedBlsToExecutionChange =
+        createSignedBlsToExecutionChange(validatorIndex, anotherKey);
+    final SszList<SignedBlsToExecutionChange> blsToExecutionChangesListWithDuplicate =
+        createBlsToExecutionChangeList(signedBlsToExecutionChange);
+    final BlockProcessorCapella capellaBlockProcessor =
+        ((BlockProcessorCapella) spec.getGenesisSpec().getBlockProcessor());
+    final BLSSignatureVerifier verifier = mock(BLSSignatureVerifier.class);
+    when(verifier.verify(any(BLSPublicKey.class), any(), any())).thenReturn(false);
+
+    final BlockValidationResult validationResult =
+        capellaBlockProcessor.verifyBlsToExecutionChangesPreProcessing(
+            state, blsToExecutionChangesListWithDuplicate, verifier);
+    assertThat(validationResult.isValid()).isFalse();
+    assertThat(validationResult.getFailureReason()).contains("signature is invalid");
+  }
+
+  @Test
+  public void shouldAcceptValidBlsToExecutionChange() {
+    final int validatorIndex = 0;
+    final ChainBuilder chain = ChainBuilder.create(spec);
+    chain.generateGenesis();
+
+    final BeaconState state = chain.getGenesis().getState();
+    final BLSPublicKey anotherKey = chain.getValidatorKeys().get(validatorIndex).getPublicKey();
+    final SignedBlsToExecutionChange signedBlsToExecutionChange =
+        createSignedBlsToExecutionChange(validatorIndex, anotherKey);
+    final SszList<SignedBlsToExecutionChange> blsToExecutionChangesListWithDuplicate =
+        createBlsToExecutionChangeList(signedBlsToExecutionChange);
+    final BlockProcessorCapella capellaBlockProcessor =
+        ((BlockProcessorCapella) spec.getGenesisSpec().getBlockProcessor());
+
+    final BlockValidationResult validationResult =
+        capellaBlockProcessor.verifyBlsToExecutionChangesPreProcessing(
+            state, blsToExecutionChangesListWithDuplicate, BLSSignatureVerifier.NO_OP);
+    assertThat(validationResult.isValid()).isTrue();
+  }
+
+  @Test
   public void shouldRejectBlockWithMoreThanOneBlsExecutionChangesForSameValidator() {
     final int validatorIndex = 0;
     final ChainBuilder chain = ChainBuilder.create(spec);
@@ -147,7 +218,7 @@ public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
 
     final BlockValidationResult validationResult =
         capellaBlockProcessor.verifyBlsToExecutionChangesPreProcessing(
-            state, blsToExecutionChangesListWithDuplicate, BLSSignatureVerifier.NO_OP, true);
+            state, blsToExecutionChangesListWithDuplicate, BLSSignatureVerifier.NO_OP);
 
     assertThat(validationResult.isValid()).isFalse();
     assertThat(validationResult.getFailureReason())

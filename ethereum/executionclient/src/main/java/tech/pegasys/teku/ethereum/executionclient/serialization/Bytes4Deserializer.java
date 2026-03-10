@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,17 +13,13 @@
 
 package tech.pegasys.teku.ethereum.executionclient.serialization;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import java.io.IOException;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 
-public class Bytes4Deserializer extends JsonDeserializer<Bytes4> {
+public class Bytes4Deserializer extends AbstractBytesDeserializer<Bytes4> {
 
   @Override
-  public Bytes4 deserialize(final JsonParser p, final DeserializationContext ctxt)
-      throws IOException {
-    return Bytes4.fromHexString(p.getValueAsString());
+  protected Bytes4 fromRawBytes(final byte[] bytes) {
+    return new Bytes4(Bytes.wrap(bytes));
   }
 }

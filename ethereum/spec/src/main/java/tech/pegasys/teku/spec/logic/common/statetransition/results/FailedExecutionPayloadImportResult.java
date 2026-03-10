@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -30,6 +30,17 @@ class FailedExecutionPayloadImportResult implements ExecutionPayloadImportResult
   @Override
   public boolean isSuccessful() {
     return false;
+  }
+
+  @Override
+  public boolean hasFailedExecution() {
+    return failureReason == FailureReason.FAILED_EXECUTION
+        || failureReason == FailureReason.FAILED_EXECUTION_SYNCING;
+  }
+
+  @Override
+  public boolean isDataNotAvailable() {
+    return failureReason == FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE;
   }
 
   @Override

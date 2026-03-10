@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -97,7 +97,7 @@ public class LibP2PGossipNetworkBuilder {
   }
 
   private void assertNotNull(final String fieldName, final Object fieldValue) {
-    checkState(fieldValue != null, "Field " + fieldName + " must be set.");
+    checkState(fieldValue != null, "Field %s must be set.", fieldName);
   }
 
   protected GossipRouter createGossipRouter(
@@ -132,7 +132,8 @@ public class LibP2PGossipNetworkBuilder {
         msg -> {
           Preconditions.checkArgument(
               msg.getTopicIDsCount() == 1,
-              "Unexpected number of topics for a single message: " + msg.getTopicIDsCount());
+              "Unexpected number of topics for a single message: %s",
+              msg.getTopicIDsCount());
           final Optional<UInt64> arrivalTimestamp;
           if (recordArrivalTime) {
             arrivalTimestamp = Optional.of(timeProvider.getTimeInMillis());

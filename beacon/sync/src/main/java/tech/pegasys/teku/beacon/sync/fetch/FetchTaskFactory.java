@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -32,4 +32,11 @@ public interface FetchTaskFactory {
 
   FetchBlobSidecarTask createFetchBlobSidecarTask(
       BlobIdentifier blobIdentifier, Optional<Eth2Peer> preferredPeer);
+
+  default FetchExecutionPayloadTask createFetchExecutionPayloadTask(final Bytes32 beaconBlockRoot) {
+    return createFetchExecutionPayloadTask(beaconBlockRoot, Optional.empty());
+  }
+
+  FetchExecutionPayloadTask createFetchExecutionPayloadTask(
+      Bytes32 beaconBlockRoot, Optional<Eth2Peer> preferredPeer);
 }

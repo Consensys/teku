@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 
 public class EventThreadOnlyBatch implements Batch {
   private final EventThread eventThread;
@@ -74,6 +75,12 @@ public class EventThreadOnlyBatch implements Batch {
   public Map<Bytes32, List<BlobSidecar>> getBlobSidecarsByBlockRoot() {
     eventThread.checkOnEventThread();
     return delegate.getBlobSidecarsByBlockRoot();
+  }
+
+  @Override
+  public Map<Bytes32, SignedExecutionPayloadEnvelope> getExecutionPayloadsByBlockRoot() {
+    eventThread.checkOnEventThread();
+    return delegate.getExecutionPayloadsByBlockRoot();
   }
 
   @Override

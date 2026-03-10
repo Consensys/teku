@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -43,6 +43,7 @@ public abstract class AbstractBeaconStateBuilder<
     TBuilder extends AbstractBeaconStateBuilder<TState, TStateMutable, TBuilder>> {
   protected final DataStructureUtil dataStructureUtil;
   protected final int defaultValidatorCount;
+  protected final int defaultBuilderCount;
   protected final int defaultItemsInSSZLists;
   protected final SpecVersion spec;
 
@@ -74,6 +75,21 @@ public abstract class AbstractBeaconStateBuilder<
     this.spec = spec;
     this.dataStructureUtil = dataStructureUtil;
     this.defaultValidatorCount = defaultValidatorCount;
+    this.defaultBuilderCount = 0;
+    this.defaultItemsInSSZLists = defaultItemsInSSZLists;
+    initDefaults();
+  }
+
+  protected AbstractBeaconStateBuilder(
+      final SpecVersion spec,
+      final DataStructureUtil dataStructureUtil,
+      final int defaultValidatorCount,
+      final int defaultBuilderCount,
+      final int defaultItemsInSSZLists) {
+    this.spec = spec;
+    this.dataStructureUtil = dataStructureUtil;
+    this.defaultValidatorCount = defaultValidatorCount;
+    this.defaultBuilderCount = defaultBuilderCount;
     this.defaultItemsInSSZLists = defaultItemsInSSZLists;
     initDefaults();
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -42,7 +42,6 @@ import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -82,10 +81,10 @@ import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil.ExecutionPayloadProposalData;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.signatures.LocalSigner;
@@ -365,12 +364,19 @@ public class ChainBuilder {
     return resultToState(getBlockAndStateAtSlot(slot));
   }
 
-  public SignedExecutionPayloadAndState getExecutionPayloadAndStateAtSlot(final UInt64 slot) {
-    return executionPayloads.get(slot);
+  public SignedExecutionPayloadEnvelope getExecutionPayloadAtSlot(final long slot) {
+    return Optional.ofNullable(executionPayloads.get(UInt64.valueOf(slot)))
+        .map(SignedExecutionPayloadAndState::executionPayload)
+        .orElse(null);
   }
 
-  public BeaconState getExecutionPayloadStateAtSlot(final UInt64 slot) {
-    return resultToState(getExecutionPayloadAndStateAtSlot(slot));
+  public Optional<SignedExecutionPayloadAndState> getExecutionPayloadAndStateAtSlot(
+      final UInt64 slot) {
+    return Optional.ofNullable(executionPayloads.get(slot));
+  }
+
+  public Optional<BeaconState> getExecutionPayloadStateAtSlot(final UInt64 slot) {
+    return getExecutionPayloadAndStateAtSlot(slot).map(SignedExecutionPayloadAndState::state);
   }
 
   public SignedBlockAndState getLatestBlockAndStateAtSlot(final long slot) {
@@ -682,7 +688,7 @@ public class ChainBuilder {
     final SignedBlockAndState latestBlockAndState = getLatestBlockAndState();
     final BeaconState preState =
         // build on top of the execution payload state if an execution payload has been processed
-        Optional.ofNullable(getExecutionPayloadStateAtSlot(latestBlockAndState.getSlot()))
+        getExecutionPayloadStateAtSlot(latestBlockAndState.getSlot())
             .orElse(latestBlockAndState.getState());
     final Bytes32 parentRoot = latestBlockAndState.getBlock().getMessage().hashTreeRoot();
 
@@ -751,7 +757,6 @@ public class ChainBuilder {
                 executionPayloadProposalTestUtil.createExecutionPayload(
                     signer,
                     slot,
-                    UInt64.valueOf(proposerIndex),
                     nextBlockAndState.toUnsigned(),
                     executionPayloadProposalData.get(),
                     options.isSkipStateTransitionEnabled()));
@@ -992,20 +997,21 @@ public class ChainBuilder {
     }
 
     if (options.isStoreDataColumnSidecarsEnabled()) {
-      final MiscHelpersFulu miscHelpersFulu =
-          MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
       final List<BlobAndCellProofs> blobAndCellProofsList =
           blobs.stream()
-              .map(
-                  blob -> {
-                    final List<KZGProof> cellProofs = blobsUtil.computeKzgCellProofs(blob);
-                    return new BlobAndCellProofs(blob, cellProofs);
-                  })
+              .map(blob -> new BlobAndCellProofs(blob, blobsUtil.computeKzgCellProofs(blob)))
               .toList();
+      final SignedBeaconBlock block = nextBlockAndState.getBlock();
+      final DataColumnSidecarUtil dataColumnSidecarUtil =
+          spec.getDataColumnSidecarUtil(nextBlockAndState.getSlot());
       final List<DataColumnSidecar> dataColumnSidecars =
-          miscHelpersFulu.constructDataColumnSidecars(
-              nextBlockAndState.getBlock(), blobAndCellProofsList);
-
+          dataColumnSidecarUtil.constructDataColumnSidecars(
+              Optional.of(block.asHeader()),
+              nextBlockAndState.getSlotAndBlockRoot(),
+              Optional.of(dataColumnSidecarUtil.getKzgCommitments(block.getMessage())),
+              dataColumnSidecarUtil.computeDataColumnKzgCommitmentsInclusionProof(
+                  block.getMessage().getBody()),
+              blobAndCellProofsList);
       trackDataColumnSidecars(nextBlockAndState.getSlotAndBlockRoot(), dataColumnSidecars);
     }
     return nextBlockAndState;
@@ -1017,10 +1023,6 @@ public class ChainBuilder {
 
   private SignedBeaconBlock resultToBlock(final SignedBlockAndState result) {
     return Optional.ofNullable(result).map(SignedBlockAndState::getBlock).orElse(null);
-  }
-
-  private BeaconState resultToState(final SignedExecutionPayloadAndState result) {
-    return Optional.ofNullable(result).map(SignedExecutionPayloadAndState::state).orElse(null);
   }
 
   public SignedContributionAndProofTestBuilder createValidSignedContributionAndProofBuilder() {

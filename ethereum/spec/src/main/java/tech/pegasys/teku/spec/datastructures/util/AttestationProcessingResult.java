@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,6 +18,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class AttestationProcessingResult {
 
@@ -45,6 +46,11 @@ public class AttestationProcessingResult {
   public AttestationProcessingResult ifSuccessful(
       final Supplier<AttestationProcessingResult> nextStep) {
     return isSuccessful() ? nextStep.get() : this;
+  }
+
+  public SafeFuture<AttestationProcessingResult> ifSuccessfulAsync(
+      final Supplier<SafeFuture<AttestationProcessingResult>> nextStep) {
+    return isSuccessful() ? nextStep.get() : SafeFuture.completedFuture(this);
   }
 
   public void ifUnsuccessful(final Consumer<String> handler) {

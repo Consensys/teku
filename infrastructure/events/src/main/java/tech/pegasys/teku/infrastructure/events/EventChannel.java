@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -105,9 +105,8 @@ class EventChannel<T> {
             .collect(joining(", "));
     checkArgument(
         illegalMethods.isEmpty(),
-        "All methods must have a return type that is void or compatible with SafeFuture and no exceptions but "
-            + illegalMethods
-            + " did not");
+        "All methods must have a return type that is void or compatible with SafeFuture and no exceptions but %s did not",
+        illegalMethods);
     final boolean hasReturnValues =
         Stream.of(channelInterface.getMethods())
             .anyMatch(method -> hasAllowedAsyncReturnValue(method.getReturnType()));

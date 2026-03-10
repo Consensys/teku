@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,29 +18,14 @@ import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 
 public interface CustodyGroupCountChannel extends VoidReturningChannelInterface {
 
-  CustodyGroupCountChannel NOOP =
-      new CustodyGroupCountChannel() {
-        @Override
-        public void onGroupCountUpdate(final int custodyGroupCount, final int samplingGroupCount) {}
+  CustodyGroupCountChannel NOOP = (custodyGroupCount, samplingGroupCount) -> {};
 
-        @Override
-        public void onCustodyGroupCountSynced(final int groupCount) {}
-      };
-
-  static CustodyGroupCountChannel createCustodyGroupCountSyncedSubscriber(
-      final Consumer<Integer> custodyGroupCountSyncedSubscriber) {
-    return new CustodyGroupCountChannel() {
-      @Override
-      public void onGroupCountUpdate(final int custodyGroupCount, final int samplingGroupCount) {}
-
-      @Override
-      public void onCustodyGroupCountSynced(final int groupCount) {
-        custodyGroupCountSyncedSubscriber.accept(groupCount);
-      }
+  static CustodyGroupCountChannel createCustodyGroupCountSubscriber(
+      final Consumer<Integer> custodyGroupCountSubscriber) {
+    return (custodyGroupCount, samplingGroupCount) -> {
+      custodyGroupCountSubscriber.accept(custodyGroupCount);
     };
   }
 
   void onGroupCountUpdate(int custodyGroupCount, int samplingGroupCount);
-
-  void onCustodyGroupCountSynced(int groupCount);
 }

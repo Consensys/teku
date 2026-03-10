@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -113,6 +113,15 @@ public class VoluntaryExitValidator
     public static OperationInvalidReason pendingWithdrawalsInQueue() {
       return () ->
           "Validator cannot be exited while there are pending withdrawals in the withdrawal queue";
+    }
+
+    public static OperationInvalidReason builderInactive() {
+      return () -> "Builder is not active";
+    }
+
+    public static OperationInvalidReason pendingWithdrawalsInQueueForBuilder() {
+      return () ->
+          "Builder cannot be exited while it has pending withdrawals in the withdrawal queue";
     }
   }
 }

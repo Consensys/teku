@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
-import java.util.List;
+import java.util.Set;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface CustodyGroupCountManager {
@@ -25,8 +25,8 @@ public interface CustodyGroupCountManager {
         }
 
         @Override
-        public List<UInt64> getCustodyColumnIndices() {
-          return List.of();
+        public Set<UInt64> getCustodyColumnIndices() {
+          return Set.of();
         }
 
         @Override
@@ -35,28 +35,16 @@ public interface CustodyGroupCountManager {
         }
 
         @Override
-        public List<UInt64> getSamplingColumnIndices() {
-          return List.of();
+        public Set<UInt64> getSamplingColumnIndices() {
+          return Set.of();
         }
-
-        @Override
-        public int getCustodyGroupSyncedCount() {
-          return 0;
-        }
-
-        @Override
-        public void setCustodyGroupSyncedCount(int custodyGroupSyncedCount) {}
       };
 
   int getCustodyGroupCount();
 
-  List<UInt64> getCustodyColumnIndices();
+  Set<UInt64> getCustodyColumnIndices();
 
   int getSamplingGroupCount();
 
-  List<UInt64> getSamplingColumnIndices();
-
-  int getCustodyGroupSyncedCount();
-
-  void setCustodyGroupSyncedCount(int custodyGroupSyncedCount);
+  Set<UInt64> getSamplingColumnIndices();
 }

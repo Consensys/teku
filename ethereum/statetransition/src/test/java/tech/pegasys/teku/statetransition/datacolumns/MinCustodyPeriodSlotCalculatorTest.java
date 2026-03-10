@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -75,6 +75,16 @@ class MinCustodyPeriodSlotCalculatorTest {
     final Optional<UInt64> resultSlot = calculator.getMinCustodyPeriodSlot(currentSlot);
 
     assertThat(resultSlot).contains(fuluActivationEpoch.times(slotsPerEpoch));
+  }
+
+  @Test
+  void shouldReturnEmptyWhenFuluNotInForkSchedule() {
+    final Spec nonFuluSpec = TestSpecFactory.createMinimalDeneb();
+    final MinCustodyPeriodSlotCalculator calculator =
+        MinCustodyPeriodSlotCalculator.createFromSpec(nonFuluSpec);
+
+    assertThat(calculator.getMinCustodyPeriodSlot(UInt64.ZERO)).isEmpty();
+    assertThat(calculator.getMinCustodyPeriodSlot(UInt64.valueOf(1000))).isEmpty();
   }
 
   @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.RpcRequestBodySelector;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.SingleRpcRequestBodySelector;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 class Eth2PeerTest {
 
@@ -73,6 +74,8 @@ class Eth2PeerTest {
   private final TimeProvider timeProvider = mock(TimeProvider.class);
   private final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator =
       mock(DataColumnSidecarSignatureValidator.class);
+  private final CombinedChainDataClient combinedChainDataClient =
+      mock(CombinedChainDataClient.class);
 
   private final PeerStatus randomPeerStatus = randomPeerStatus();
 
@@ -92,7 +95,8 @@ class Eth2PeerTest {
           executionPayloadEnvelopesRateTracker,
           rateTracker,
           metricsSystem,
-          timeProvider);
+          timeProvider,
+          combinedChainDataClient);
 
   @Test
   void updateStatus_shouldNotUpdateUntilValidationPasses() {

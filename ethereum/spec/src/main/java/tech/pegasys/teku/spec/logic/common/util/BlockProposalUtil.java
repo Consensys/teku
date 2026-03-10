@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -30,7 +30,7 @@ public interface BlockProposalUtil {
       Bytes32 headBlockRoot,
       Bytes32 previousTargetRoot,
       Bytes32 currentTargetRoot,
-      UInt64 headEpoch,
+      UInt64 stateEpoch,
       UInt64 dutyEpoch);
 
   SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
@@ -41,5 +41,5 @@ public interface BlockProposalUtil {
       Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder,
       BlockProductionPerformance blockProductionPerformance);
 
-  UInt64 getStateSlotForProposerDuties(Spec spec, UInt64 dutiesEpoch);
+  UInt64 getStateSlotForProposerDuties(Spec spec, UInt64 stateEpoch, UInt64 dutiesEpoch);
 }

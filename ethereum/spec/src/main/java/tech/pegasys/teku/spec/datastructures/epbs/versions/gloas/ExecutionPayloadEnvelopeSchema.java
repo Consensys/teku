@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,13 +13,11 @@
 
 package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_KZG_COMMITMENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQUESTS_SCHEMA;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema7;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema6;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
@@ -28,18 +26,16 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class ExecutionPayloadEnvelopeSchema
-    extends ContainerSchema7<
+    extends ContainerSchema6<
         ExecutionPayloadEnvelope,
         ExecutionPayload,
         ExecutionRequests,
         SszUInt64,
         SszBytes32,
         SszUInt64,
-        SszList<SszKZGCommitment>,
         SszBytes32> {
 
   public ExecutionPayloadEnvelopeSchema(final SchemaRegistry schemaRegistry) {
@@ -52,7 +48,6 @@ public class ExecutionPayloadEnvelopeSchema
         namedSchema("builder_index", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("beacon_block_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema("blob_kzg_commitments", schemaRegistry.get(BLOB_KZG_COMMITMENTS_SCHEMA)),
         namedSchema("state_root", SszPrimitiveSchemas.BYTES32_SCHEMA));
   }
 
@@ -62,17 +57,9 @@ public class ExecutionPayloadEnvelopeSchema
       final UInt64 builderIndex,
       final Bytes32 beaconBlockRoot,
       final UInt64 slot,
-      final SszList<SszKZGCommitment> blobKzgCommitments,
       final Bytes32 stateRoot) {
     return new ExecutionPayloadEnvelope(
-        this,
-        payload,
-        executionRequests,
-        builderIndex,
-        beaconBlockRoot,
-        slot,
-        blobKzgCommitments,
-        stateRoot);
+        this, payload, executionRequests, builderIndex, beaconBlockRoot, slot, stateRoot);
   }
 
   @Override

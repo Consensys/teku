@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -128,7 +128,7 @@ public class HashTree {
    */
   public void processHashesInChainWhile(
       final Bytes32 head, final HaltableNodeProcessor nodeProcessor) {
-    checkArgument(contains(head), "Unknown root supplied: " + head);
+    checkArgument(contains(head), "Unknown root supplied: %s", head);
 
     Optional<Bytes32> currentRoot = Optional.of(head);
     Optional<Bytes32> parentRoot = currentRoot.flatMap(this::getParent);

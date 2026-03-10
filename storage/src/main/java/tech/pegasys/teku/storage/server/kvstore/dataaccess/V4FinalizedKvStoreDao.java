@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -245,10 +245,14 @@ public class V4FinalizedKvStoreDao {
     }
   }
 
-  public Optional<UInt64> getEarliestAvailableDataColumnSlot() {
+  public Optional<UInt64> getEarliestDataSidecarColumnSlot() {
     return db.getFirstEntry(schema.getColumnSidecarByColumnSlotAndIdentifier())
         .map(ColumnEntry::getKey)
         .map(DataColumnSlotAndIdentifier::slot);
+  }
+
+  public Optional<UInt64> getEarliestAvailableDataColumnSlot() {
+    return db.get(schema.getVariableEarliestAvailableDataColumnSlot());
   }
 
   public Optional<UInt64> getLastDataColumnSidecarsProofsSlot() {
@@ -482,6 +486,11 @@ public class V4FinalizedKvStoreDao {
     @Override
     public void setEarliestBlobSidecarSlot(final UInt64 slot) {
       transaction.put(schema.getVariableEarliestBlobSidecarSlot(), slot);
+    }
+
+    @Override
+    public void setEarliestAvailableDataColumnSlot(final UInt64 slot) {
+      transaction.put(schema.getVariableEarliestAvailableDataColumnSlot(), slot);
     }
 
     @Override

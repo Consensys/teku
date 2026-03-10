@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -27,7 +27,7 @@ public class TestPeerManager implements DataColumnPeerManager, DataColumnReqResp
   private final Map<UInt256, TestPeer> connectedPeers = new HashMap<>();
 
   public void connectPeer(final TestPeer peer) {
-    dataColumnPeerManagerStub.addNode(peer.getNodeId());
+    dataColumnPeerManagerStub.addPeer(peer);
     connectedPeers.put(peer.getNodeId(), peer);
   }
 
@@ -51,7 +51,7 @@ public class TestPeerManager implements DataColumnPeerManager, DataColumnReqResp
     if (peer == null) {
       return 0;
     } else {
-      return peer.getCurrentRequestLimit();
+      return peer.getAvailableRequestCount();
     }
   }
 

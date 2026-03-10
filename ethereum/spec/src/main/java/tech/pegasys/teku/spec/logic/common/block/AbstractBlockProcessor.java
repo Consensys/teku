@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -165,7 +165,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       }
 
       // Process_block
-      BeaconState postState =
+      final BeaconState postState =
           processUnsignedBlock(
               blockSlotState,
               signedBlock.getMessage(),
@@ -173,7 +173,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
               signatureVerifier,
               payloadExecutor);
 
-      BlockValidationResult blockValidationResult =
+      final BlockValidationResult blockValidationResult =
           validateBlockPostProcessing(
               blockSlotState, signedBlock, postState, indexedAttestationCache, signatureVerifier);
 
@@ -229,8 +229,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final SignedBeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier) {
-    BeaconBlock blockMessage = block.getMessage();
-    BeaconBlockBody blockBody = blockMessage.getBody();
+    final BeaconBlock blockMessage = block.getMessage();
+    final BeaconBlockBody blockBody = blockMessage.getBody();
 
     return BlockValidationResult.allOf(
         () -> verifyBlockSignature(preState, block, signatureVerifier),
@@ -307,10 +307,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         beaconStateAccessors.getBeaconCommittee(state, data.getSlot(), data.getIndex());
     checkArgument(
         attestation.getAggregationBits().size() == committee.size(),
-        "process_attestations: Attestation aggregation bits and committee don't have the same length - committee "
-            + committee.size()
-            + ", aggregation bits "
-            + attestation.getAggregationBits().size());
+        "process_attestations: Attestation aggregation bits and committee don't have the same length - committee %s, aggregation bits %s",
+        committee.size(),
+        attestation.getAggregationBits().size());
   }
 
   @Override
@@ -820,14 +819,20 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
                 "process_voluntary_exits: %s",
                 invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
-            // - Run initiate_validator_exit(state, exit.validator_index)
-
-            beaconStateMutators.initiateValidatorExit(
-                state,
-                signedExit.getMessage().getValidatorIndex().intValue(),
-                validatorExitContextSupplier);
+            initiateExit(state, signedExit, validatorExitContextSupplier);
           }
         });
+  }
+
+  protected void initiateExit(
+      final MutableBeaconState state,
+      final SignedVoluntaryExit signedExit,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
+    // - Run initiate_validator_exit(state, exit.validator_index)
+    beaconStateMutators.initiateValidatorExit(
+        state,
+        signedExit.getMessage().getValidatorIndex().intValue(),
+        validatorExitContextSupplier);
   }
 
   protected BlockValidationResult verifyVoluntaryExits(

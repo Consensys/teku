@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -32,7 +32,8 @@ public enum SpecMilestone {
   DENEB,
   ELECTRA,
   FULU,
-  GLOAS;
+  GLOAS,
+  HEZE;
 
   /**
    * Returns true if this milestone is at or after the supplied milestone ({@code other})
@@ -141,6 +142,7 @@ public enum SpecMilestone {
       case ELECTRA -> specConfig.toVersionElectra().map(SpecConfig::getElectraForkVersion);
       case FULU -> specConfig.toVersionFulu().map(SpecConfig::getFuluForkVersion);
       case GLOAS -> specConfig.toVersionGloas().map(SpecConfig::getGloasForkVersion);
+      case HEZE -> specConfig.toVersionHeze().map(SpecConfig::getHezeForkVersion);
     };
   }
 
@@ -157,6 +159,7 @@ public enum SpecMilestone {
       case ELECTRA -> specConfig.toVersionElectra().map(SpecConfig::getElectraForkEpoch);
       case FULU -> specConfig.toVersionFulu().map(SpecConfig::getFuluForkEpoch);
       case GLOAS -> specConfig.toVersionGloas().map(SpecConfig::getGloasForkEpoch);
+      case HEZE -> specConfig.toVersionHeze().map(SpecConfig::getHezeForkEpoch);
     };
   }
 

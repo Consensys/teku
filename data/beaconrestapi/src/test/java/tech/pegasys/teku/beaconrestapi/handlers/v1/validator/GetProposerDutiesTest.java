@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -66,7 +66,7 @@ public class GetProposerDutiesTest extends AbstractMigratedBeaconHandlerTest {
 
     when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    when(validatorDataProvider.getProposerDuties(eq(UInt64.valueOf(100))))
+    when(validatorDataProvider.getProposerDutiesElectraDependentRoot(eq(UInt64.valueOf(100))))
         .thenReturn(SafeFuture.completedFuture(Optional.of(duties)));
 
     handler.handleRequest(request);

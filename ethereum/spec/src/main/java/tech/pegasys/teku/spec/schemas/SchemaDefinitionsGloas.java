@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -26,8 +26,10 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_PAYLOA
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_DATA_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PROPOSER_PREFERENCES_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_PROPOSER_PREFERENCES_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -42,19 +44,21 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyBuilderGloas;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPaymentSchema;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessageSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferencesSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferencesSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage.ExecutionPayloadEnvelopesByRootRequestMessageSchema;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPaymentSchema;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingWithdrawal;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingWithdrawalSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
@@ -67,6 +71,8 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
   private final IndexedPayloadAttestationSchema indexedPayloadAttestationSchema;
   private final ExecutionPayloadBidSchema executionPayloadBidSchema;
   private final SignedExecutionPayloadBidSchema signedExecutionPayloadBidSchema;
+  private final ProposerPreferencesSchema proposerPreferencesSchema;
+  private final SignedProposerPreferencesSchema signedProposerPreferencesSchema;
   private final ExecutionPayloadEnvelopeSchema executionPayloadEnvelopeSchema;
   private final SignedExecutionPayloadEnvelopeSchema signedExecutionPayloadEnvelopeSchema;
   private final SszBitvectorSchema<?> executionPayloadAvailabilitySchema;
@@ -85,6 +91,8 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
     this.indexedPayloadAttestationSchema = schemaRegistry.get(INDEXED_PAYLOAD_ATTESTATION_SCHEMA);
     this.executionPayloadBidSchema = schemaRegistry.get(EXECUTION_PAYLOAD_BID_SCHEMA);
     this.signedExecutionPayloadBidSchema = schemaRegistry.get(SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA);
+    this.proposerPreferencesSchema = schemaRegistry.get(PROPOSER_PREFERENCES_SCHEMA);
+    this.signedProposerPreferencesSchema = schemaRegistry.get(SIGNED_PROPOSER_PREFERENCES_SCHEMA);
     this.executionPayloadEnvelopeSchema = schemaRegistry.get(EXECUTION_PAYLOAD_ENVELOPE_SCHEMA);
     this.signedExecutionPayloadEnvelopeSchema =
         schemaRegistry.get(SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA);
@@ -166,6 +174,14 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
 
   public SignedExecutionPayloadBidSchema getSignedExecutionPayloadBidSchema() {
     return signedExecutionPayloadBidSchema;
+  }
+
+  public ProposerPreferencesSchema getProposerPreferencesSchema() {
+    return proposerPreferencesSchema;
+  }
+
+  public SignedProposerPreferencesSchema getSignedProposerPreferencesSchema() {
+    return signedProposerPreferencesSchema;
   }
 
   public ExecutionPayloadEnvelopeSchema getExecutionPayloadEnvelopeSchema() {

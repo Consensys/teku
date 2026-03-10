@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -19,6 +19,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
@@ -93,8 +94,8 @@ public class BlockAndCheckpoints implements BeaconBlockSummary {
   public Optional<Bytes32> getExecutionBlockHash() {
     return getExecutionPayload()
         .map(ExecutionPayload::getBlockHash)
-        // Gloas
-        .or(() -> getSignedExecutionPayloadBid().map(bid -> bid.getMessage().getBlockHash()));
+        // in Gloas, use the parent block hash from the bid, because the payload is processed later
+        .or(() -> getExecutionPayloadBid().map(ExecutionPayloadBid::getParentBlockHash));
   }
 
   @Override
@@ -127,7 +128,11 @@ public class BlockAndCheckpoints implements BeaconBlockSummary {
     return block.getMessage().getBody().getOptionalExecutionPayload();
   }
 
-  private Optional<SignedExecutionPayloadBid> getSignedExecutionPayloadBid() {
-    return block.getMessage().getBody().getOptionalSignedExecutionPayloadBid();
+  private Optional<ExecutionPayloadBid> getExecutionPayloadBid() {
+    return block
+        .getMessage()
+        .getBody()
+        .getOptionalSignedExecutionPayloadBid()
+        .map(SignedExecutionPayloadBid::getMessage);
   }
 }

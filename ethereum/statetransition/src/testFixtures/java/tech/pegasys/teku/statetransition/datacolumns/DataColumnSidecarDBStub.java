@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -29,6 +29,7 @@ import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 public class DataColumnSidecarDBStub implements DataColumnSidecarDB {
 
   private Optional<UInt64> firstCustodyIncompleteSlot = Optional.empty();
+  private Optional<UInt64> earliestAvailableDataSlot = Optional.empty();
   private final NavigableMap<DataColumnSlotAndIdentifier, DataColumnSidecar> db = new TreeMap<>();
   private final AtomicLong dbReadCounter = new AtomicLong();
   private final AtomicLong dbWriteCounter = new AtomicLong();
@@ -72,6 +73,19 @@ public class DataColumnSidecarDBStub implements DataColumnSidecarDB {
             .stream()
             .sorted()
             .toList());
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableDataColumnSlot() {
+    dbReadCounter.incrementAndGet();
+    return SafeFuture.completedFuture(earliestAvailableDataSlot);
+  }
+
+  @Override
+  public SafeFuture<Void> setEarliestAvailableDataColumnSlot(final UInt64 slot) {
+    dbWriteCounter.incrementAndGet();
+    this.earliestAvailableDataSlot = Optional.of(slot);
+    return SafeFuture.COMPLETE;
   }
 
   public AtomicLong getDbReadCounter() {

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -61,6 +61,30 @@ public class BitlistBenchmark {
   @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void countSetBits(Blackhole bh) {
     bh.consume(MANY_BITS_SET.getBitCount());
+  }
+
+  @Benchmark
+  @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  public void createBitlistAndSerialize(Blackhole bh) {
+    SszBitlist bitlist = BITLIST_SCHEMA.ofBits(BITLIST_SIZE, 42);
+    bh.consume(bitlist.sszSerialize());
+  }
+
+  @Benchmark
+  @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  public void createBitlistAndOr(Blackhole bh) {
+    SszBitlist single = BITLIST_SCHEMA.ofBits(BITLIST_SIZE, 42);
+    bh.consume(MANY_BITS_SET.or(single));
+  }
+
+  @Benchmark
+  @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  public void createBitlistAndHashTreeRoot(Blackhole bh) {
+    SszBitlist bitlist = BITLIST_SCHEMA.ofBits(BITLIST_SIZE, 42);
+    bh.consume(bitlist.hashTreeRoot());
   }
 
   private static SszBitlist createBitlist(final int... setBits) {

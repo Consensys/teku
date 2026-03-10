@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -306,7 +306,7 @@ class ForkChoiceUtilTest {
           verify(blobSidecarAvailabilityCheckerFactory).createAvailabilityChecker(block);
       case FULU ->
           verify(dataColumnSidecarAvailabilityCheckerFactory).createAvailabilityChecker(block);
-      case GLOAS ->
+      case GLOAS, HEZE ->
           assertThat(availabilityChecker).isSameAs(AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR);
       default -> throw new IllegalStateException("Unexpected milestone " + milestone);
     }
@@ -333,7 +333,7 @@ class ForkChoiceUtilTest {
     switch (milestone) {
       case PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA, FULU ->
           assertThat(availabilityChecker).isSameAs(AvailabilityChecker.NOOP);
-      case GLOAS ->
+      case GLOAS, HEZE ->
           assertThat(availabilityChecker).isSameAs(AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR);
       default -> throw new IllegalStateException("Unexpected milestone " + milestone);
     }

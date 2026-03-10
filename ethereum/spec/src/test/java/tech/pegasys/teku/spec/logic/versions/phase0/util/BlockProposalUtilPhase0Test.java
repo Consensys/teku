@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -38,12 +38,13 @@ class BlockProposalUtilPhase0Test {
   @ParameterizedTest
   @MethodSource("getStateSlotForProposerDutiesTestCases")
   public void getStateSlotForProposerDuties(final int requestedEpoch, final int expectedSlot) {
+    final UInt64 epoch = UInt64.valueOf(requestedEpoch);
     final Spec localSpec = TestSpecFactory.createMinimal(SpecMilestone.PHASE0);
     final UInt64 querySlot =
         localSpec
             .getGenesisSpec()
             .getBlockProposalUtil()
-            .getStateSlotForProposerDuties(localSpec, UInt64.valueOf(requestedEpoch));
+            .getStateSlotForProposerDuties(localSpec, epoch, epoch);
 
     assertThat(querySlot.intValue()).isEqualTo(expectedSlot);
   }
