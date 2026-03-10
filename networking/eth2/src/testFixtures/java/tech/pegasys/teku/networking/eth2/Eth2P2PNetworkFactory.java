@@ -26,10 +26,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -252,11 +255,39 @@ public class Eth2P2PNetworkFactory {
               RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
         }
         final UInt256 discoveryNodeId = DISCOVERY_NODE_ID_GENERATOR.next();
+        final int numberOfColumns = spec.getNumberOfDataColumns().orElse(0);
+        final Set<UInt64> allColumns =
+            IntStream.range(0, numberOfColumns)
+                .mapToObj(UInt64::valueOf)
+                .collect(Collectors.toSet());
+        final CustodyGroupCountManager custodyGroupCountManager =
+            new CustodyGroupCountManager() {
+              @Override
+              public int getCustodyGroupCount() {
+                return numberOfColumns;
+              }
+
+              @Override
+              public Set<UInt64> getCustodyColumnIndices() {
+                return allColumns;
+              }
+
+              @Override
+              public int getSamplingGroupCount() {
+                return numberOfColumns;
+              }
+
+              @Override
+              public Set<UInt64> getSamplingColumnIndices() {
+                return allColumns;
+              }
+            };
+
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(
                 asyncRunner,
                 combinedChainDataClient,
-                () -> CustodyGroupCountManager.NOOP,
+                () -> custodyGroupCountManager,
                 metadataMessagesFactory,
                 METRICS_SYSTEM,
                 attestationSubnetService,

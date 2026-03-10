@@ -76,8 +76,7 @@ public class MigrateDatabaseCommand implements Runnable {
   private String network = "mainnet";
 
   // Use Cases
-  // - I have a rocksdb database and want to update to the latest leveldb database version
-  // - I have leveldb 1 and want to have leveldb2
+  // - I have a leveldb2 database and want to update to the latest RocksDB database version
   // - I have updated to the latest db but I've decided i want to go back to an older database
   // format
   //   (eg. testing upgrades!)
@@ -87,9 +86,9 @@ public class MigrateDatabaseCommand implements Runnable {
       paramLabel = "<format>",
       hidden = true,
       description =
-          "The file to export the slashing protection database to. (rocksdb: 4,5,6), leveldb1, leveldb2",
+          "The target database version to migrate to. 4, 5, 6 (RocksDB), leveldb1, leveldb2",
       arity = "1")
-  private String toDbVersion = DatabaseVersion.LEVELDB2.getValue();
+  private String toDbVersion = DatabaseVersion.V6.getValue();
 
   // batch size param
   @CommandLine.Option(

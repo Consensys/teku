@@ -60,7 +60,7 @@ public class GloasTimeBasedEventAdapter extends TimeBasedEventAdapter {
             specVersion.getForkChoiceUtil().getContributionDueMillis(),
             this::onContributionCreationDue),
         new ScheduledEvent(
-            specVersion.getForkChoiceUtil().getPayloadAttestationDueMillis(),
+            specVersion.getForkChoiceUtil().getPayloadAttestationDueMillis().orElseThrow(),
             this::onPayloadTimelinessAttestationDue));
   }
 

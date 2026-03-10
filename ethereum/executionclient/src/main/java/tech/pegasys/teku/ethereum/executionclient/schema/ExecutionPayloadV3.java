@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionclient.schema;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -43,6 +44,7 @@ public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
   @JsonDeserialize(using = UInt64AsHexDeserializer.class)
   public final UInt64 excessBlobGas;
 
+  @JsonCreator
   public ExecutionPayloadV3(
       final @JsonProperty("parentHash") Bytes32 parentHash,
       final @JsonProperty("feeRecipient") Bytes20 feeRecipient,
