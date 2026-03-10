@@ -16,6 +16,7 @@ dependencies {
   api 'org.web3j:core'
   implementation 'io.consensys.tuweni:tuweni-units'
   implementation 'io.jsonwebtoken:jjwt-api'
+  implementation 'com.fasterxml.jackson.module:jackson-module-blackbird'
 
   runtimeOnly 'io.jsonwebtoken:jjwt-impl'
   implementation 'io.jsonwebtoken:jjwt-jackson'
