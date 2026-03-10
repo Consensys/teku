@@ -1000,8 +1000,7 @@ public class SchemaRegistryBuilder {
 
   private static SchemaProvider<?> createProposerPreferencesSchemaProvider() {
     return providerBuilder(PROPOSER_PREFERENCES_SCHEMA)
-        .withCreator(
-            GLOAS, (registry, specConfig, schemaName) -> new ProposerPreferencesSchema(registry))
+        .withCreator(GLOAS, (registry, specConfig, schemaName) -> new ProposerPreferencesSchema())
         .build();
   }
 

@@ -22,12 +22,11 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class ProposerPreferencesSchema
     extends ContainerSchema4<ProposerPreferences, SszUInt64, SszUInt64, SszByteVector, SszUInt64> {
 
-  public ProposerPreferencesSchema(final SchemaRegistry schemaRegistry) {
+  public ProposerPreferencesSchema() {
     super(
         "ProposerPreferences",
         namedSchema("proposal_slot", SszPrimitiveSchemas.UINT64_SCHEMA),
