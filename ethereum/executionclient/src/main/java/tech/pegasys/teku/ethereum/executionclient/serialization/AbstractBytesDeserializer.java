@@ -75,12 +75,16 @@ public abstract class AbstractBytesDeserializer<T> extends JsonDeserializer<T> {
     }
     final byte[] result = new byte[hexLen / 2];
     int pos = start;
-    for (int i = 0; i < result.length; i++, pos += 2) {
-      final int hi = hexValue(chars[pos]);
-      final int lo = hexValue(chars[pos + 1]);
-      if ((hi | lo) < 0) {
+    for (int i = 0; i < result.length; i++) {
+      final int hi = hexValue(chars[pos++]);
+      if (hi < 0) {
         throw new IllegalArgumentException(
-            "Invalid hex character at position " + pos + ": '" + chars[pos] + "'");
+            "Invalid hex character at position " + pos + ": '" + chars[pos - 1] + "'");
+      }
+      final int lo = hexValue(chars[pos++]);
+      if (lo < 0) {
+        throw new IllegalArgumentException(
+            "Invalid hex character at position " + pos + ": '" + chars[pos - 1] + "'");
       }
       result[i] = (byte) ((hi << 4) | lo);
     }
