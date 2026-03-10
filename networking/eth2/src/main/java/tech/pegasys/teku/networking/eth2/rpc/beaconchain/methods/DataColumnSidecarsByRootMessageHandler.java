@@ -171,9 +171,14 @@ public class DataColumnSidecarsByRootMessageHandler
       return combinedChainDataClient
           .getBlockByBlockRoot(identifier.blockRoot())
           .thenCompose(
-              maybeBlock ->
-                  dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(
-                      maybeBlock.orElseThrow(), identifier.columnIndex(), messageId));
+              maybeBlock -> {
+                if (maybeBlock.isEmpty()) {
+                  return SafeFuture.completedFuture(Optional.empty());
+                }
+
+                return dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(
+                    maybeBlock.get(), identifier.columnIndex(), messageId);
+              });
     }
     return combinedChainDataClient.getNonCanonicalSidecar(identifier);
   }
