@@ -67,8 +67,7 @@ public class DataColumnSidecarRecoveringCustodyTest {
       SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
 
-  private final DataColumnSidecarByRootCustody delegate =
-      mock(DataColumnSidecarByRootCustody.class);
+  private final DataColumnSidecarCustody delegate = mock(DataColumnSidecarCustody.class);
   private final MiscHelpersFulu miscHelpersFulu = mock(MiscHelpersFulu.class);
 
   private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();

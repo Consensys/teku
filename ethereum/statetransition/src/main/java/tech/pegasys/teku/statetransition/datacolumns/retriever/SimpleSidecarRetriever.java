@@ -16,7 +16,6 @@ package tech.pegasys.teku.statetransition.datacolumns.retriever;
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -341,8 +340,7 @@ public class SimpleSidecarRetriever
     }
 
     private Set<UInt64> calcNodeCustodyIndices(final CacheKey cacheKey) {
-      return new HashSet<>(
-          miscHelpersFulu.computeCustodyColumnIndices(nodeId, cacheKey.custodyCount()));
+      return miscHelpersFulu.computeCustodyColumnIndices(nodeId, cacheKey.custodyCount());
     }
 
     private Set<UInt64> getNodeCustodyIndices(final SpecVersion specVersion) {

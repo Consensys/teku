@@ -14,10 +14,9 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -37,8 +36,14 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyGroupCountManager {
   private static final Logger LOG = LogManager.getLogger();
-  private static final int INITIAL_VALUE = -1;
-  private final AtomicInteger custodyGroupCount = new AtomicInteger(INITIAL_VALUE);
+
+  private record CustodySnapshot(
+      int custodyGroupCount,
+      int samplingGroupCount,
+      Set<UInt64> custodyColumnIndices,
+      Set<UInt64> samplingColumnIndices,
+      boolean isMaxCustodyGroups) {}
+
   private final Spec spec;
   private final MiscHelpersFulu miscHelpersFulu;
   private final ProposersDataManager proposersDataManager;
@@ -46,9 +51,9 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   private final CombinedChainDataClient combinedChainDataClient;
   private final UInt256 nodeId;
   private final SettableGauge custodyGroupCountGauge;
-  private boolean isMaxCustodyGroups = false;
 
   private volatile boolean genesisInitialized = false;
+  private volatile CustodySnapshot snapshot;
 
   public CustodyGroupCountManagerImpl(
       final Spec spec,
@@ -90,6 +95,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     this.proposersDataManager = proposersDataManager;
     this.combinedChainDataClient = combinedChainDataClient;
     this.custodyGroupCountChannel = custodyGroupCountChannel;
+    this.nodeId = nodeId;
     final Optional<Integer> maybeCustodyCount =
         combinedChainDataClient.getCustodyGroupCount().map(UInt64::intValue);
     if (maybeCustodyCount.isEmpty() || maybeCustodyCount.get() < initCustodyGroupCount) {
@@ -98,13 +104,11 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
       LOG.info("Using custody group count {} from store", maybeCustodyCount.get());
       updateCustodyGroupCount(maybeCustodyCount.get(), maybeCustodyCount);
     }
-
-    this.nodeId = nodeId;
   }
 
   @Override
   public void onSlot(final UInt64 slot) {
-    if (isMaxCustodyGroups) {
+    if (snapshot.isMaxCustodyGroups()) {
       return;
     }
 
@@ -161,6 +165,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     return true;
   }
 
+  @VisibleForTesting
   SafeFuture<Optional<Integer>> computeAndUpdateCustodyGroupCount(
       final Map<UInt64, PreparedProposerInfo> preparedProposerInfo) {
     final Optional<Integer> maybeCustodyGroupCount =
@@ -190,22 +195,22 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
 
   @Override
   public int getCustodyGroupCount() {
-    return custodyGroupCount.get();
+    return snapshot.custodyGroupCount();
   }
 
   @Override
-  public List<UInt64> getCustodyColumnIndices() {
-    return miscHelpersFulu.computeCustodyColumnIndices(nodeId, getCustodyGroupCount());
+  public Set<UInt64> getCustodyColumnIndices() {
+    return snapshot.custodyColumnIndices();
   }
 
   @Override
   public int getSamplingGroupCount() {
-    return miscHelpersFulu.getSamplingGroupCount(custodyGroupCount.get());
+    return snapshot.samplingGroupCount();
   }
 
   @Override
-  public List<UInt64> getSamplingColumnIndices() {
-    return miscHelpersFulu.computeCustodyColumnIndices(nodeId, getSamplingGroupCount());
+  public Set<UInt64> getSamplingColumnIndices() {
+    return snapshot.samplingColumnIndices();
   }
 
   private void updateCustodyGroupCount(
@@ -218,10 +223,17 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
       combinedChainDataClient.updateCustodyGroupCount(newCustodyGroupCount);
     }
 
-    final int oldCustodyGroupCount = custodyGroupCount.getAndSet(newCustodyGroupCount);
-    if (oldCustodyGroupCount != newCustodyGroupCount) {
-      isMaxCustodyGroups = miscHelpersFulu.isSuperNode(newCustodyGroupCount);
-      custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, getSamplingGroupCount());
+    final CustodySnapshot current = this.snapshot;
+    if (current == null || current.custodyGroupCount() != newCustodyGroupCount) {
+      final int samplingGroupCount = miscHelpersFulu.getSamplingGroupCount(newCustodyGroupCount);
+      this.snapshot =
+          new CustodySnapshot(
+              newCustodyGroupCount,
+              samplingGroupCount,
+              miscHelpersFulu.computeCustodyColumnIndices(nodeId, newCustodyGroupCount),
+              miscHelpersFulu.computeCustodyColumnIndices(nodeId, samplingGroupCount),
+              miscHelpersFulu.isSuperNode(newCustodyGroupCount));
+      custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, samplingGroupCount);
       custodyGroupCountGauge.set(newCustodyGroupCount);
     }
   }

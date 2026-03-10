@@ -34,6 +34,8 @@ import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 import com.google.common.base.Supplier;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,11 +63,10 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSid
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
-import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -94,8 +95,6 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private final NodeId nodeId = new MockNodeId(1);
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
-  private final DataColumnSidecarByRootCustody custody = mock(DataColumnSidecarByRootCustody.class);
-  private final Supplier<? extends DataColumnSidecarByRootCustody> custodySupplier = () -> custody;
   private final CustodyGroupCountManager custodyGroupCountManager =
       mock(CustodyGroupCountManager.class);
   private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier =
@@ -129,7 +128,6 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
             spec,
             metricsSystem,
             combinedChainDataClient,
-            custodySupplier,
             custodyGroupCountManagerSupplier,
             DasReqRespLogger.NOOP);
 
@@ -160,7 +158,8 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
 
     // custodying everything by default
     when(custodyGroupCountManager.getCustodyColumnIndices())
-        .thenReturn(IntStream.of(0, 128).mapToObj(UInt64::valueOf).toList());
+        .thenReturn(
+            IntStream.of(0, 128).mapToObj(UInt64::valueOf).collect(Collectors.toUnmodifiableSet()));
   }
 
   @TestTemplate
@@ -201,17 +200,17 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     when(combinedChainDataClient.getBlockByBlockRoot(secondBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
-    when(custody.getCustodyDataColumnSidecarByRoot(any()))
+    when(combinedChainDataClient.getSidecar(any()))
         .thenAnswer(
             invocation -> {
-              final DataColumnIdentifier dataColumnIdentifier = invocation.getArgument(0);
-              if (dataColumnIdentifier.blockRoot().equals(secondBlockRoot)) {
+              final DataColumnSlotAndIdentifier slotAndIdentifier = invocation.getArgument(0);
+              if (slotAndIdentifier.blockRoot().equals(secondBlockRoot)) {
                 return SafeFuture.completedFuture(Optional.empty());
               }
               for (int i = 0; i < 4; ++i) {
                 if (dataColumnsByRootIdentifiers[i]
                     .getBlockRoot()
-                    .equals(dataColumnIdentifier.blockRoot())) {
+                    .equals(slotAndIdentifier.blockRoot())) {
                   return SafeFuture.completedFuture(Optional.of(generatedSidecars.get(i)));
                 }
               }
@@ -261,10 +260,9 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
         dataStructureUtil.randomSignedBeaconBlock(UInt64.valueOf(100));
     when(combinedChainDataClient.getBlockByBlockRoot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(signedBeaconBlock)));
-    when(combinedChainDataClient.getNonCanonicalSidecar(any()))
+    when(combinedChainDataClient.getSidecar(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-
-    when(custody.getCustodyDataColumnSidecarByRoot(any()))
+    when(combinedChainDataClient.getNonCanonicalSidecar(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     handler.onIncomingMessage(
@@ -302,19 +300,19 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     final List<DataColumnSidecar> generatedSidecars =
         IntStream.range(0, 4).mapToObj(__ -> dataStructureUtil.randomDataColumnSidecar()).toList();
     when(custodyGroupCountManager.getCustodyColumnIndices())
-        .thenReturn(List.of(dataColumnsByRootIdentifiers[0].getColumns().getFirst()));
+        .thenReturn(Set.of(dataColumnsByRootIdentifiers[0].getColumns().getFirst()));
 
-    when(custody.getCustodyDataColumnSidecarByRoot(any()))
+    when(combinedChainDataClient.getSidecar(any()))
         .thenAnswer(
             invocation -> {
-              final DataColumnIdentifier dataColumnIdentifier = invocation.getArgument(0);
+              final DataColumnSlotAndIdentifier slotAndIdentifier = invocation.getArgument(0);
               // it will not reach this step
-              assertThat(dataColumnIdentifier.blockRoot())
+              assertThat(slotAndIdentifier.blockRoot())
                   .isNotEqualTo(dataColumnsByRootIdentifiers[3].getBlockRoot());
               for (int i = 0; i < 3; ++i) {
                 if (dataColumnsByRootIdentifiers[i]
                     .getBlockRoot()
-                    .equals(dataColumnIdentifier.blockRoot())) {
+                    .equals(slotAndIdentifier.blockRoot())) {
                   return SafeFuture.completedFuture(Optional.of(generatedSidecars.get(i)));
                 }
               }
@@ -355,14 +353,14 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     final List<DataColumnSidecar> generatedSidecars =
         IntStream.range(0, 4).mapToObj(__ -> dataStructureUtil.randomDataColumnSidecar()).toList();
 
-    when(custody.getCustodyDataColumnSidecarByRoot(any()))
+    when(combinedChainDataClient.getSidecar(any()))
         .thenAnswer(
             invocation -> {
-              final DataColumnIdentifier dataColumnIdentifier = invocation.getArgument(0);
+              final DataColumnSlotAndIdentifier slotAndIdentifier = invocation.getArgument(0);
               for (int i = 0; i < 4; ++i) {
                 if (dataColumnsByRootIdentifiers[i]
                     .getBlockRoot()
-                    .equals(dataColumnIdentifier.blockRoot())) {
+                    .equals(slotAndIdentifier.blockRoot())) {
                   return SafeFuture.completedFuture(Optional.of(generatedSidecars.get(i)));
                 }
               }
@@ -406,8 +404,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
 
     final RuntimeException error = new RuntimeException("Fatal error");
 
-    when(custody.getCustodyDataColumnSidecarByRoot(any()))
-        .thenReturn(SafeFuture.failedFuture(error));
+    when(combinedChainDataClient.getSidecar(any())).thenReturn(SafeFuture.failedFuture(error));
 
     handler.onIncomingMessage(
         protocolId, peer, messageSchema.of(dataColumnsByRootIdentifiers), callback);
@@ -415,6 +412,27 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     verify(callback)
         .completeWithUnexpectedError(argThat(exception -> exception.getCause().equals(error)));
     verify(peer, never()).adjustDataColumnSidecarsRequest(any(), anyLong());
+  }
+
+  @TestTemplate
+  public void shouldCacheBlockRootSlotResolutionAcrossRequests() {
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    final DataColumnsByRootIdentifier[] identifiers = {
+      identifierSchema.create(blockRoot, List.of(UInt64.valueOf(0)))
+    };
+
+    when(combinedChainDataClient.getSidecar(any()))
+        .thenReturn(
+            SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomDataColumnSidecar())));
+
+    // First request
+    handler.onIncomingMessage(protocolId, peer, messageSchema.of(identifiers), callback);
+    verify(combinedChainDataClient, times(1)).getBlockByBlockRoot(blockRoot);
+
+    // Second request with the same block root
+    handler.onIncomingMessage(protocolId, peer, messageSchema.of(identifiers), callback);
+    // Still only one call - the second request used the cache
+    verify(combinedChainDataClient, times(1)).getBlockByBlockRoot(blockRoot);
   }
 
   private DataColumnsByRootIdentifier[] generateDataColumnsByRootIdentifiers(
