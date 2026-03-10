@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -111,6 +112,21 @@ public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
                     slot,
                     forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled(),
                     productionPerformance::lateBlockReorgPreparationCompleted));
+  }
+
+  @Override
+  protected int computeCommitteeIndexForAttestation(
+      final UInt64 slot, final BeaconBlock block, final int committeeIndex) {
+    if (slot.equals(block.getSlot())) {
+      return 0;
+    }
+    return spec.atSlot(slot)
+        .getForkChoiceUtil()
+        .toVersionGloas()
+        .map(
+            forkChoiceUtil ->
+                forkChoiceUtil.isBlockStatusFull(combinedChainDataClient.getStore(), block) ? 1 : 0)
+        .orElse(0);
   }
 
   private Optional<BeaconState> getExecutionPayloadStateForBlockProduction(final UInt64 slot) {

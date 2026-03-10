@@ -604,11 +604,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                                                     block,
                                                     checkpointState.getState(),
                                                     slot,
-                                                    committeeIndex)));
+                                                    computeCommitteeIndexForAttestation(
+                                                        slot, block, committeeIndex))));
                               } else {
                                 final AttestationData attestationData =
                                     createAttestationData(
-                                        block, blockAndState.getState(), slot, committeeIndex);
+                                        block,
+                                        blockAndState.getState(),
+                                        slot,
+                                        computeCommitteeIndexForAttestation(
+                                            slot, block, committeeIndex));
                                 return SafeFuture.completedFuture(Optional.of(attestationData));
                               }
                             }));
@@ -616,22 +621,26 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     return result;
   }
 
+  protected int computeCommitteeIndexForAttestation(
+      final UInt64 slot, final BeaconBlock block, final int committeeIndex) {
+    return committeeIndex;
+  }
+
   private AttestationData createAttestationData(
       final BeaconBlock block,
       final BeaconState state,
       final UInt64 slot,
       final int committeeIndex) {
-    final UInt64 epoch = spec.computeEpochAtSlot(slot);
-    final int committeeCount = spec.getCommitteeCountPerSlot(state, epoch).intValue();
-
-    if (committeeIndex < 0 || committeeIndex >= committeeCount) {
-      throw new IllegalArgumentException(
-          "Invalid committee index "
-              + committeeIndex
-              + " - expected between 0 and "
-              + (committeeCount - 1));
-    }
     final UInt64 committeeIndexUnsigned = UInt64.valueOf(committeeIndex);
+    // attestation validation
+    spec.atSlot(slot)
+        .getAttestationUtil()
+        .validateCommitteeIndexValue(committeeIndexUnsigned)
+        .getReason()
+        .ifPresent(
+            reason -> {
+              throw new IllegalArgumentException(reason);
+            });
     return spec.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);
   }
 
