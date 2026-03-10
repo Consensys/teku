@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -171,42 +172,16 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
    */
   @Override
   public boolean verifyDataColumnSidecarStructure(final DataColumnSidecar dataColumnSidecar) {
-    // Gloas needs the corresponding bid's kzg commitments to validate the Data Column Sidecar. Done
-    // in validateWithBlock
-    return true;
+    // Partially checking the structure (except kzg commitments). Gloas needs the corresponding
+    // bid's kzg commitments to fully validate the Data Column Sidecar which is done in
+    // validateWithBlock
+    return miscHelpersGloas.verifyDataColumnSidecar(dataColumnSidecar);
   }
 
   @Override
-  public boolean verifyInclusionProof(
-      final DataColumnSidecar dataColumnSidecar,
-      final Set<InclusionProofInfo> validInclusionProofInfoSet) {
+  public boolean verifyInclusionProof(final DataColumnSidecar dataColumnSidecar) {
     // Gloas doesn't have inclusion proof requirement (no header in Gloas sidecars)
     return true;
-  }
-
-  /**
-   * Verify KZG proofs for the data column sidecar. Gossip rule: [REJECT] The sidecar's column data
-   * is valid as verified by verify_data_column_sidecar_kzg_proofs(sidecar,
-   * bid.blob_kzg_commitments)
-   *
-   * <p>In Gloas, we cannot verify KZG proofs at this stage because we need the commitments from the
-   * block's execution payload bid. The actual validation happens in validateWithBlock.
-   *
-   * @param dataColumnSidecar the data column sidecar
-   * @return true (deferred validation)
-   */
-  @Override
-  public boolean verifyDataColumnSidecarKzgProofs(final DataColumnSidecar dataColumnSidecar) {
-    // Cannot verify without commitments from the bid - validation happens in validateWithBlock
-    return true;
-  }
-
-  @Override
-  public void cacheValidatedInfo(
-      final DataColumnSidecar dataColumnSidecar,
-      final Set<Bytes32> validSignedBlockHeaders,
-      final Set<InclusionProofInfo> validInclusionProofInfoSet) {
-    // Nothing to cache for Gloas (no header, no inclusion proof)
   }
 
   @Override
@@ -259,32 +234,33 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
    * </ul>
    *
    * @param dataColumnSidecar the data column sidecar to validate
-   * @param retrieveBlockByRoot function to retrieve full block by root (potentially expensive)
+   * @param retrieveSignedBlockByRoot function to retrieve full block by root (potentially
+   *     expensive)
    * @return SafeFuture with optional validation result. Empty means validation passed, Present
    *     means validation found an issue (invalid/save for future).
    */
   @Override
-  public SafeFuture<Optional<DataColumnSidecarValidationError>> validateWithBlock(
+  public SafeFuture<Optional<DataColumnSidecarValidationError>> validateAndVerifyKzgProofsWithBlock(
       final DataColumnSidecar dataColumnSidecar,
-      final Function<Bytes32, SafeFuture<Optional<BeaconBlock>>> retrieveBlockByRoot) {
+      final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> retrieveSignedBlockByRoot) {
 
     final Bytes32 beaconBlockRoot = dataColumnSidecar.getBeaconBlockRoot();
 
-    return retrieveBlockByRoot
+    return retrieveSignedBlockByRoot
         .apply(beaconBlockRoot)
         .thenApply(
-            maybeBeaconBlock -> {
-              if (maybeBeaconBlock.isEmpty()) {
+            maybeSignedBeaconBlock -> {
+              if (maybeSignedBeaconBlock.isEmpty()) {
                 return Optional.of(
                     DataColumnSidecarValidationError.BadTiming.format(
                         "DataColumnSidecar's beacon_block_root %s does not correspond to a known block",
                         beaconBlockRoot));
               }
-              final BeaconBlock beaconBlock = maybeBeaconBlock.get();
+              final SignedBeaconBlock signedBeaconBlock = maybeSignedBeaconBlock.get();
               final Optional<DataColumnSidecarValidationError> maybeVerifyDataColumnSidecarResult =
-                  verifyDataColumnSidecar(dataColumnSidecar, beaconBlock);
+                  verifyDataColumnSidecar(dataColumnSidecar, signedBeaconBlock);
               return maybeVerifyDataColumnSidecarResult.or(
-                  () -> verifyDataColumnSidecarKzgProofs(dataColumnSidecar, beaconBlock));
+                  () -> verifyDataColumnSidecarKzgProofs(dataColumnSidecar, signedBeaconBlock));
             });
   }
 
@@ -303,15 +279,27 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
     return SafeFuture.completedFuture(Optional.empty());
   }
 
+  @Override
+  public List<DataColumnSidecar> reconstructAllDataColumnSidecars(
+      final List<DataColumnSidecar> dataColumnSidecars) {
+    return miscHelpersGloas.reconstructAllDataColumnSidecars(dataColumnSidecars);
+  }
+
+  @Override
+  public Optional<InclusionProofInfo> getInclusionProofCacheKey(
+      final DataColumnSidecar dataColumnSidecar) {
+    // Gloas doesn't have inclusion proof requirement (no header in Gloas sidecars)
+    return Optional.empty();
+  }
+
   private Optional<DataColumnSidecarValidationError> verifyDataColumnSidecar(
-      final DataColumnSidecar dataColumnSidecar, final BeaconBlock beaconBlock) {
+      final DataColumnSidecar dataColumnSidecar, final SignedBeaconBlock signedBeaconBlock) {
     final SszList<SszKZGCommitment> bidKzgCommitments =
-        BeaconBlockBodyGloas.required(beaconBlock.getBody())
-            .getSignedExecutionPayloadBid()
-            .getMessage()
+        BeaconBlockBodyGloas.required(signedBeaconBlock.getMessage().getBody())
             .getBlobKzgCommitments();
     final boolean validDataColumnSidecar =
-        miscHelpersGloas.verifyDataColumnSidecar(dataColumnSidecar, bidKzgCommitments);
+        miscHelpersGloas.verifyDataColumnSidecarWithCommitments(
+            dataColumnSidecar, bidKzgCommitments);
     if (!validDataColumnSidecar) {
       return Optional.of(
           DataColumnSidecarValidationError.Critical.format("Invalid DataColumnSidecar"));
@@ -320,11 +308,9 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
   }
 
   private Optional<DataColumnSidecarValidationError> verifyDataColumnSidecarKzgProofs(
-      final DataColumnSidecar dataColumnSidecar, final BeaconBlock beaconBlock) {
+      final DataColumnSidecar dataColumnSidecar, final SignedBeaconBlock signedBeaconBlock) {
     final SszList<SszKZGCommitment> bidKzgCommitments =
-        BeaconBlockBodyGloas.required(beaconBlock.getBody())
-            .getSignedExecutionPayloadBid()
-            .getMessage()
+        BeaconBlockBodyGloas.required(signedBeaconBlock.getMessage().getBody())
             .getBlobKzgCommitments();
     final boolean validDataColumnSidecar =
         miscHelpersGloas.verifyDataColumnSidecarKzgProofs(dataColumnSidecar, bidKzgCommitments);
@@ -334,11 +320,5 @@ public class DataColumnSidecarUtilGloas implements DataColumnSidecarUtil {
               "DataColumnSidecar's KZG proofs do not match the bid's KZG proofs"));
     }
     return Optional.empty();
-  }
-
-  @Override
-  public List<DataColumnSidecar> reconstructAllDataColumnSidecars(
-      final List<DataColumnSidecar> dataColumnSidecars) {
-    return miscHelpersGloas.reconstructAllDataColumnSidecars(dataColumnSidecars);
   }
 }

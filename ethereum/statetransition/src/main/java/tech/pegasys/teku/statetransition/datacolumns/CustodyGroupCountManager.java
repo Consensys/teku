@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
-import java.util.List;
+import java.util.Set;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface CustodyGroupCountManager {
@@ -25,8 +25,8 @@ public interface CustodyGroupCountManager {
         }
 
         @Override
-        public List<UInt64> getCustodyColumnIndices() {
-          return List.of();
+        public Set<UInt64> getCustodyColumnIndices() {
+          return Set.of();
         }
 
         @Override
@@ -35,16 +35,16 @@ public interface CustodyGroupCountManager {
         }
 
         @Override
-        public List<UInt64> getSamplingColumnIndices() {
-          return List.of();
+        public Set<UInt64> getSamplingColumnIndices() {
+          return Set.of();
         }
       };
 
   int getCustodyGroupCount();
 
-  List<UInt64> getCustodyColumnIndices();
+  Set<UInt64> getCustodyColumnIndices();
 
   int getSamplingGroupCount();
 
-  List<UInt64> getSamplingColumnIndices();
+  Set<UInt64> getSamplingColumnIndices();
 }

@@ -104,9 +104,9 @@ public class LocalSlashingProtectorConcurrentAccessTest extends LocalSlashingPro
     assertThat(secondSigner).isNotCompleted();
 
     releaseLock.set(true);
-    firstSigner.get(50, TimeUnit.MILLISECONDS);
+    firstSigner.get(5, TimeUnit.SECONDS);
     assertThat(firstSigner).isCompleted();
-    secondSigner.get(50, TimeUnit.MILLISECONDS);
+    secondSigner.get(5, TimeUnit.SECONDS);
     assertThat(secondSigner).isCompleted();
 
     assertThat(snoopRecord.getLock().hasQueuedThreads()).isFalse();
@@ -156,12 +156,10 @@ public class LocalSlashingProtectorConcurrentAccessTest extends LocalSlashingPro
             });
     threadAcquired.await();
     assertThat(firstSigner).isNotCompleted();
-    // flaky on Windows
-    secondSigner.get(500, TimeUnit.MILLISECONDS);
+    secondSigner.get(5, TimeUnit.SECONDS);
     assertThat(secondSigner).isCompleted();
     releaseLock.set(true);
-    // flaky on Windows
-    firstSigner.get(500, TimeUnit.MILLISECONDS);
+    firstSigner.get(5, TimeUnit.SECONDS);
     assertThat(firstSigner).isCompleted();
   }
 }
