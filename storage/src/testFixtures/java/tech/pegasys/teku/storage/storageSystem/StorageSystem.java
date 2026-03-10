@@ -80,7 +80,8 @@ public class StorageSystem implements AutoCloseable {
 
     this.chainBuilder = chainBuilder;
     this.chainUpdater =
-        new ChainUpdater(this.recentChainData, this.chainBuilder, this.blobSidecarManager, spec);
+        new ChainUpdater(
+            this.recentChainData, this.chainBuilder, this.blobSidecarManager, spec, chainStorage);
   }
 
   static StorageSystem create(
