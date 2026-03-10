@@ -24,6 +24,7 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.Spec;
@@ -55,7 +56,7 @@ public class LargeSszStateBenchmark {
   @Benchmark
   @Warmup(iterations = 2, time = 100, timeUnit = TimeUnit.MICROSECONDS)
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MICROSECONDS)
-  public void BeaconStateSerialization() {
-    state.sszSerialize();
+  public void BeaconStateSerialization(final Blackhole blackhole) {
+    blackhole.consume(state.sszSerialize());
   }
 }

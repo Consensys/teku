@@ -91,7 +91,7 @@ public abstract class AbstractBytesDeserializer<T> extends JsonDeserializer<T> {
 
   private static void throwValidationException(final int pos, final char c) {
     throw new IllegalArgumentException(
-            "Invalid hex character at position " + pos + ": '" + c + "'");
+        "Invalid hex character at position " + pos + ": '" + c + "'");
   }
 
   private static int hexValue(final char c) {
