@@ -30,6 +30,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -56,8 +57,11 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DasSamplerBasicTest {
   private static final Spec SPEC = TestSpecFactory.createMinimalFulu();
-  private static final List<UInt64> SAMPLING_INDICES =
-      List.of(UInt64.valueOf(5), UInt64.ZERO, UInt64.valueOf(2));
+  private static final UInt64 SAMPLING_INDEX_0 = UInt64.ZERO;
+  private static final UInt64 SAMPLING_INDEX_2 = UInt64.valueOf(2);
+  private static final UInt64 SAMPLING_INDEX_5 = UInt64.valueOf(5);
+  private static final Set<UInt64> SAMPLING_INDICES =
+      Set.of(SAMPLING_INDEX_0, SAMPLING_INDEX_2, SAMPLING_INDEX_5);
 
   private final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(0);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(stubTimeProvider);
@@ -103,9 +107,9 @@ public class DasSamplerBasicTest {
   void onNewValidatedDataColumnSidecar_shouldAddToTracker() {
     final DataColumnSidecar sidecar =
         dataStructureUtil.randomDataColumnSidecar(
-            dataStructureUtil.randomSignedBeaconBlockHeader(), SAMPLING_INDICES.getFirst());
+            dataStructureUtil.randomSignedBeaconBlockHeader(), SAMPLING_INDEX_0);
 
-    final List<UInt64> remainingColumns = SAMPLING_INDICES.subList(1, SAMPLING_INDICES.size());
+    final Set<UInt64> remainingColumns = Set.of(SAMPLING_INDEX_2, SAMPLING_INDEX_5);
 
     sampler.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC);
 
@@ -116,9 +120,9 @@ public class DasSamplerBasicTest {
   void onNewValidatedDataColumnSidecar_shouldScheduleRPCFetchWhenDelayIsNonZero() {
     final DataColumnSidecar sidecar =
         dataStructureUtil.randomDataColumnSidecar(
-            dataStructureUtil.randomSignedBeaconBlockHeader(), SAMPLING_INDICES.getFirst());
+            dataStructureUtil.randomSignedBeaconBlockHeader(), SAMPLING_INDEX_0);
 
-    final List<UInt64> remainingColumns = SAMPLING_INDICES.subList(1, SAMPLING_INDICES.size());
+    final Set<UInt64> remainingColumns = Set.of(SAMPLING_INDEX_2, SAMPLING_INDEX_5);
 
     when(rpcFetchDelayProvider.calculate(sidecar.getSlot())).thenReturn(Duration.ofSeconds(1));
 
@@ -135,7 +139,7 @@ public class DasSamplerBasicTest {
   void onNewValidatedDataColumnSidecar_shouldScheduleRPCFetchWhenDelayIsZero() {
     final DataColumnSidecar sidecar =
         dataStructureUtil.randomDataColumnSidecar(
-            dataStructureUtil.randomSignedBeaconBlockHeader(), SAMPLING_INDICES.getFirst());
+            dataStructureUtil.randomSignedBeaconBlockHeader(), SAMPLING_INDEX_0);
 
     when(rpcFetchDelayProvider.calculate(sidecar.getSlot())).thenReturn(Duration.ZERO);
 
@@ -185,10 +189,8 @@ public class DasSamplerBasicTest {
             .map(index -> entry(index, new SafeFuture<DataColumnSidecar>()))
             .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
 
-    final DataColumnSidecar lateArrivedSidecar =
-        missingColumnSidecars.get(SAMPLING_INDICES.getFirst());
-    final List<UInt64> remainingColumnsIndices =
-        SAMPLING_INDICES.subList(1, SAMPLING_INDICES.size());
+    final DataColumnSidecar lateArrivedSidecar = missingColumnSidecars.get(SAMPLING_INDEX_0);
+    final Set<UInt64> remainingColumnsIndices = Set.of(SAMPLING_INDEX_2, SAMPLING_INDEX_5);
 
     // prepare retriever mock to return futures when called
     doAnswer(
@@ -514,7 +516,7 @@ public class DasSamplerBasicTest {
   }
 
   private void assertSamplerTracker(
-      final Bytes32 blockRoot, final UInt64 slot, final List<UInt64> missingColumns) {
+      final Bytes32 blockRoot, final UInt64 slot, final Set<UInt64> missingColumns) {
     assertThat(sampler.getRecentlySampledColumnsByRoot())
         .hasEntrySatisfying(
             blockRoot,
@@ -543,7 +545,7 @@ public class DasSamplerBasicTest {
   private void assertRPCFetchInMillis(
       final UInt64 slot,
       final Bytes32 blockRoot,
-      final List<UInt64> missingColumns,
+      final Set<UInt64> missingColumns,
       final int millisFromNow) {
 
     if (millisFromNow > 0) {
