@@ -66,7 +66,7 @@ public interface ExecutionPayloadManager {
    * @return the execution payload import result
    */
   SafeFuture<ExecutionPayloadImportResult> importExecutionPayload(
-      final SignedExecutionPayloadEnvelope signedExecutionPayload);
+      SignedExecutionPayloadEnvelope signedExecutionPayload);
 
   default SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {

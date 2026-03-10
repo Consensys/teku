@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -478,12 +479,23 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
           .forEach(
               block ->
                   processBlock(
-                      block.getBlock().getSlot(),
-                      block.getBlock().getRoot(),
-                      block.getBlock().getParentRoot(),
-                      block.getBlock().getStateRoot(),
+                      block.getSlot(),
+                      block.getRoot(),
+                      block.getParentRoot(),
+                      block.getStateRoot(),
                       block.getBlockCheckpoints(),
-                      block.getExecutionBlockNumber().orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
+                      block
+                          .getExecutionBlockNumber()
+                          .or(
+                              () ->
+                                  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 this
+                                  // is just a workaround for devnet-0, but it doesn't affect
+                                  // mainnet
+                                  // in Gloas, use the block number from the parent, because the
+                                  // payload is processed later
+                                  getProtoNode(block.getParentRoot())
+                                      .map(ProtoNode::getExecutionBlockNumber))
+                          .orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
                       block.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH)));
       removedBlockRoots.forEach((root, uInt64) -> protoArray.removeBlockRoot(root));
       pulledUpBlocks.forEach(protoArray::pullUpBlockCheckpoints);
@@ -543,6 +555,20 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
         executionBlockNumber,
         executionBlockHash,
         spec.isBlockProcessorOptimistic(blockSlot));
+  }
+
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 this is just a workaround for
+  // devnet-0, we need a proper fork choice implementation
+  public void processExecutionPayload(final SignedExecutionPayloadEnvelope executionPayload) {
+    protoArrayLock.writeLock().lock();
+    try {
+      protoArray.onExecutionPayload(
+          executionPayload.getBeaconBlockRoot(),
+          executionPayload.getMessage().getPayload().getBlockNumber(),
+          executionPayload.getMessage().getPayload().getBlockHash());
+    } finally {
+      protoArrayLock.writeLock().unlock();
+    }
   }
 
   private Optional<ProtoNode> getProtoNode(final Bytes32 blockRoot) {

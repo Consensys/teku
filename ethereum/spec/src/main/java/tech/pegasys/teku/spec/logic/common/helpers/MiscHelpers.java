@@ -508,6 +508,15 @@ public class MiscHelpers {
     return false;
   }
 
+  // Methods used by the SlotProcessor to determine if it needs to increase the node slot
+  public boolean shouldIncrementNodeSlotWhenAttestationsAreDue() {
+    return true;
+  }
+
+  public boolean shouldIncrementNodeSlotWhenPayloadAttestationsAreDue() {
+    return false;
+  }
+
   public Optional<MiscHelpersAltair> toVersionAltair() {
     return Optional.empty();
   }

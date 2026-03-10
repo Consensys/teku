@@ -302,9 +302,17 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                   schemas ->
                       SchemaDefinitionsGloas.required(schemas)
                           .getSignedExecutionPayloadEnvelopeSchema()))
-          // TODO-GLOAS: https://github.com/Consensys/teku/issues/10259
-          .put("ssz_static/ProposerPreferences", IGNORE_TESTS)
-          .put("ssz_static/SignedProposerPreferences", IGNORE_TESTS)
+          .put(
+              "ssz_static/ProposerPreferences",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas).getProposerPreferencesSchema()))
+          .put(
+              "ssz_static/SignedProposerPreferences",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas)
+                          .getSignedProposerPreferencesSchema()))
           .put("ssz_static/ForkChoiceNode", IGNORE_TESTS)
 
           // Legacy Schemas (Not yet migrated to SchemaDefinitions)

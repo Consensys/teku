@@ -86,4 +86,9 @@ public class ForkChoiceUtilDeneb extends ForkChoiceUtil {
     }
     return factory.createAvailabilityChecker(block);
   }
+
+  @Override
+  public Optional<ForkChoiceUtilDeneb> toVersionDeneb() {
+    return Optional.of(this);
+  }
 }
