@@ -692,27 +692,27 @@ def localDockerImage = "local/teku"
 def executableAndArg = System.getProperty('os.name').toLowerCase().contains('windows') ? ["cmd", "/c"] : ["sh", "-c"]
 
 tasks.register('localDocker') {
-    dependsOn dockerDistUntar
-    def dockerBuildVersion = 'develop'
-    doLast {
-        def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
-        def commitHashTag = includeCommitHashInDockerTag ? '-' + grgit.head().getAbbreviatedId() : ''
-        system.fs.copy {
-            from file("${projectDir}/docker/${dockerJdkVariants[0]}/Dockerfile")
-            into(dockerBuildDir)
-        }
-        system.executor.exec {
-            def image = "${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag}"
-            workingDir dockerBuildDir
-            executable executableAndArg[0]
-            args executableAndArg[1], "docker build --pull --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
-        }
-        // tag the "default" (which is the variant in the zero position)
-        system.executor.exec {
-            executable executableAndArg[0]
-            args executableAndArg[1], "docker tag ${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag} ${localDockerImage}:${dockerBuildVersion}${commitHashTag}"
-        }
+  dependsOn dockerDistUntar
+  def dockerBuildVersion = 'develop'
+  doLast {
+    def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
+    def commitHashTag = includeCommitHashInDockerTag ? '-' + grgit.head().getAbbreviatedId() : ''
+    system.fs.copy {
+        from file("${projectDir}/docker/${dockerJdkVariants[0]}/Dockerfile")
+        into(dockerBuildDir)
     }
+    system.executor.exec {
+        def image = "${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag}"
+        workingDir dockerBuildDir
+        executable executableAndArg[0]
+        args executableAndArg[1], "docker build --pull --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
+    }
+    // tag the "default" (which is the variant in the zero position)
+    system.executor.exec {
+        executable executableAndArg[0]
+        args executableAndArg[1], "docker tag ${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag} ${localDockerImage}:${dockerBuildVersion}${commitHashTag}"
+    }
+  }
 }
 
 tasks.register('localDockerClean') {
@@ -1211,16 +1211,16 @@ def calculateVersion() {
 }
 
 tasks.register('printVersion') {
-    doFirst {
-        print "Specific version: ${specificVersion}  Publish version: ${project.version}"
-    }
+  doFirst {
+    print "Specific version: ${specificVersion}  Publish version: ${project.version}"
+  }
 }
 
 tasks.register('buildPrintVersion') {
-    doFirst {
-        println "specific-version=${specificVersion}"
-        println "publish-version=${project.version}"
-    }
+  doFirst {
+    println "specific-version=${specificVersion}"
+    println "publish-version=${project.version}"
+  }
 }
 
 def getCheckedOutGitCommitHash() {
