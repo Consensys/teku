@@ -1,31 +1,31 @@
 dependencies {
-  implementation project(':ethereum:pow:api')
-  implementation project(':ethereum:pow:merkletree')
-  implementation project(':ethereum:spec')
-  implementation project(':infrastructure:async')
-  implementation project(':infrastructure:bls')
-  implementation project(':infrastructure:ssz')
-  implementation project(':infrastructure:events')
-  implementation project(':infrastructure:exceptions')
-  implementation project(':infrastructure:logging')
-  implementation project(':infrastructure:metrics')
-  implementation project(':infrastructure:subscribers')
-  implementation project(':infrastructure:time')
-  implementation project(':infrastructure:serviceutils')
-  implementation project(':infrastructure:http')
-  implementation project(':infrastructure:io')
-  implementation project(':storage:api')
+	implementation project(':ethereum:pow:api')
+	implementation project(':ethereum:pow:merkletree')
+	implementation project(':ethereum:spec')
+	implementation project(':infrastructure:async')
+	implementation project(':infrastructure:bls')
+	implementation project(':infrastructure:ssz')
+	implementation project(':infrastructure:events')
+	implementation project(':infrastructure:exceptions')
+	implementation project(':infrastructure:logging')
+	implementation project(':infrastructure:metrics')
+	implementation project(':infrastructure:subscribers')
+	implementation project(':infrastructure:time')
+	implementation project(':infrastructure:serviceutils')
+	implementation project(':infrastructure:http')
+	implementation project(':infrastructure:io')
+	implementation project(':storage:api')
 
-  api 'org.web3j:core'
+	api 'org.web3j:core'
 
-  implementation 'io.consensys.tuweni:tuweni-units'
+	implementation 'io.consensys.tuweni:tuweni-units'
 
-  testImplementation testFixtures(project(':infrastructure:async'))
-  testImplementation testFixtures(project(':infrastructure:time'))
-  testImplementation testFixtures(project(':infrastructure:metrics'))
-  testImplementation testFixtures(project(':ethereum:spec'))
-  testImplementation testFixtures(project(':infrastructure:logging'))
+	testImplementation testFixtures(project(':infrastructure:async'))
+	testImplementation testFixtures(project(':infrastructure:time'))
+	testImplementation testFixtures(project(':infrastructure:metrics'))
+	testImplementation testFixtures(project(':ethereum:spec'))
+	testImplementation testFixtures(project(':infrastructure:logging'))
 
-  testFixturesImplementation project(':ethereum:pow:api')
-  testFixturesImplementation project(':infrastructure:events')
+	testFixturesImplementation project(':ethereum:pow:api')
+	testFixturesImplementation project(':infrastructure:events')
 }
