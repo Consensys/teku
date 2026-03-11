@@ -94,7 +94,7 @@ public class RocksDbInstanceFactory {
             List.of(txOptions, dbOptions, columnFamilyOptions, rocksDbStats, blockCache));
 
     List<ColumnFamilyDescriptor> columnDescriptors =
-        createColumnFamilyDescriptors(configuration, columns, deletedColumns, columnFamilyOptions);
+        createColumnFamilyDescriptors(configuration, columns, deletedColumns, columnFamilyOptions, resources);
     Map<Bytes, KvStoreColumn<?, ?>> columnsById =
         columns.stream().collect(Collectors.toMap(KvStoreColumn::getId, Function.identity()));
 
@@ -187,9 +187,12 @@ public class RocksDbInstanceFactory {
       final KvStoreConfiguration configuration,
       final Collection<KvStoreColumn<?, ?>> columns,
       final Collection<Bytes> deletedColumns,
-      final ColumnFamilyOptions columnFamilyOptions) {
+      final ColumnFamilyOptions columnFamilyOptions,
+      final List<AutoCloseable> resources) {
 
-    final ColumnFamilyOptions columnFamilyOptionsWithBlobDb = columnFamilyOptions;
+    final ColumnFamilyOptions columnFamilyOptionsWithBlobDb =
+        new ColumnFamilyOptions(columnFamilyOptions);
+    resources.add(columnFamilyOptionsWithBlobDb);
     final List<ColumnFamilyDescriptor> columnDescriptors;
 
     if (configuration.blobDbEnabled()) {
