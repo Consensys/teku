@@ -87,7 +87,7 @@ public class MigrateDatabaseCommand implements Runnable {
       paramLabel = "<format>",
       hidden = true,
       description =
-              """
+          """
                       The target database version to migrate to.
                       Rocksdb database types supported are 4, 5, 6.
                       Leveldb types supported are leveldb1, leveldb2.""",
