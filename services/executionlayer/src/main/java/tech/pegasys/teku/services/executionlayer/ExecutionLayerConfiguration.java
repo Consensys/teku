@@ -103,6 +103,11 @@ public class ExecutionLayerConfiguration {
                 "Invalid configuration. --ee-endpoint parameter is mandatory when Bellatrix milestone is enabled"));
   }
 
+  /** EIP-8161: SSZ-REST URL derived from the engine endpoint (same host:port). */
+  public Optional<String> getEngineSszRestUrl() {
+    return engineEndpoint.map(url -> url.replaceAll("/+$", ""));
+  }
+
   public Optional<String> getEngineJwtSecretFile() {
     return engineJwtSecretFile;
   }

@@ -31,6 +31,8 @@ import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.ThrottlingBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ThrottlingExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionclient.sszrest.SszRestClient;
+import tech.pegasys.teku.ethereum.executionclient.sszrest.SszRestExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.metrics.MetricRecordingBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.metrics.MetricRecordingExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestBuilderClient;
@@ -119,7 +121,26 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final Web3JClient web3JClient,
       final TimeProvider timeProvider,
       final MetricsSystem metricsSystem) {
-    final ExecutionEngineClient engineClient = new Web3JExecutionEngineClient(web3JClient);
+    return createEngineClient(web3JClient, Optional.empty(), null, timeProvider, metricsSystem);
+  }
+
+  public static ExecutionEngineClient createEngineClient(
+      final Web3JClient web3JClient,
+      final Optional<SszRestClient> sszRestClient,
+      final Spec spec,
+      final TimeProvider timeProvider,
+      final MetricsSystem metricsSystem) {
+    final ExecutionEngineClient web3jClient = new Web3JExecutionEngineClient(web3JClient);
+    final ExecutionEngineClient engineClient =
+        sszRestClient
+            .<ExecutionEngineClient>map(
+                sszRest -> {
+                  LOG.info(
+                      "SSZ-REST Engine API transport enabled at {}",
+                      sszRest.getBaseUrl());
+                  return new SszRestExecutionEngineClient(sszRest, web3jClient, spec);
+                })
+            .orElse(web3jClient);
     final ExecutionEngineClient metricEngineClient =
         new MetricRecordingExecutionEngineClient(engineClient, timeProvider, metricsSystem);
     return new ThrottlingExecutionEngineClient(

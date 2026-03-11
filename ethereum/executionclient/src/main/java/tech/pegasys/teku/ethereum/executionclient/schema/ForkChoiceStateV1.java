@@ -77,6 +77,18 @@ public class ForkChoiceStateV1 {
     return Objects.hash(headBlockHash, safeBlockHash, finalizedBlockHash);
   }
 
+  public Bytes32 getHeadBlockHash() {
+    return headBlockHash;
+  }
+
+  public Bytes32 getSafeBlockHash() {
+    return safeBlockHash;
+  }
+
+  public Bytes32 getFinalizedBlockHash() {
+    return finalizedBlockHash;
+  }
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)

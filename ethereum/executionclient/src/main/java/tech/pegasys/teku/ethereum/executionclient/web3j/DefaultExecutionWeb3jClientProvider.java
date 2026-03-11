@@ -84,4 +84,9 @@ public class DefaultExecutionWeb3jClientProvider implements ExecutionWeb3jClient
   public String getEndpoint() {
     return eeEndpoint;
   }
+
+  @Override
+  public Optional<JwtConfig> getJwtConfig() {
+    return jwtConfig;
+  }
 }
