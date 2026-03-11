@@ -86,6 +86,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -133,6 +134,7 @@ public class Eth2P2PNetworkBuilder {
   protected OperationProcessor<SignedExecutionPayloadEnvelope> executionPayloadProcessor;
   protected OperationProcessor<PayloadAttestationMessage> payloadAttestationMessageProcessor;
   protected OperationProcessor<SignedExecutionPayloadBid> executionPayloadBidProcessor;
+  protected OperationProcessor<SignedProposerPreferences> proposerPreferencesProcessor;
   protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   protected MetricsSystem metricsSystem;
   protected final List<RpcMethod<?, ?, ?>> rpcMethods = new ArrayList<>();
@@ -428,6 +430,7 @@ public class Eth2P2PNetworkBuilder {
               executionPayloadProcessor,
               payloadAttestationMessageProcessor,
               executionPayloadBidProcessor,
+              proposerPreferencesProcessor,
               debugDataDumper,
               dasGossipLogger,
               executionProofOperationProcessor,
@@ -491,6 +494,7 @@ public class Eth2P2PNetworkBuilder {
               executionPayloadProcessor,
               payloadAttestationMessageProcessor,
               executionPayloadBidProcessor,
+              proposerPreferencesProcessor,
               executionProofOperationProcessor,
               debugDataDumper,
               dasGossipLogger,
@@ -632,6 +636,7 @@ public class Eth2P2PNetworkBuilder {
     assertNotNull("gossipedPayloadAttestationMessageProcessor", payloadAttestationMessageProcessor);
     assertNotNull("gossipedExecutionProofOperationProcessor", executionProofOperationProcessor);
     assertNotNull("gossipedExecutionPayloadBidProcessor", executionPayloadBidProcessor);
+    assertNotNull("gossipedProposerPreferencesProcessor", proposerPreferencesProcessor);
   }
 
   private void assertNotNull(final String fieldName, final Object fieldValue) {
@@ -790,6 +795,13 @@ public class Eth2P2PNetworkBuilder {
       final OperationProcessor<SignedExecutionPayloadBid> gossipedExecutionPayloadBidProcessor) {
     checkNotNull(gossipedExecutionPayloadBidProcessor);
     this.executionPayloadBidProcessor = gossipedExecutionPayloadBidProcessor;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder gossipedProposerPreferencesProcessor(
+      final OperationProcessor<SignedProposerPreferences> gossipedProposerPreferencesProcessor) {
+    checkNotNull(gossipedProposerPreferencesProcessor);
+    this.proposerPreferencesProcessor = gossipedProposerPreferencesProcessor;
     return this;
   }
 
