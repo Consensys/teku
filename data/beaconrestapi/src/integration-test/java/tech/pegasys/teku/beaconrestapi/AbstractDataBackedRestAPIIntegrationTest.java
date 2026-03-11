@@ -78,6 +78,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -177,6 +178,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
       mock(ExecutionPayloadFactory.class);
   protected final ExecutionPayloadPublisher executionPayloadPublisher =
       mock(ExecutionPayloadPublisher.class);
+  protected final ExecutionPayloadBidManager executionPayloadBidManager =
+      ExecutionPayloadBidManager.NOOP;
   protected final ExecutionProofManager executionProofManager = mock(ExecutionProofManager.class);
   protected RewardCalculator rewardCalculator = mock(RewardCalculator.class);
 
@@ -340,6 +343,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
+            executionPayloadBidManager,
             executionProofManager);
     validatorApiChannel = validatorApiHandler;
     chainUpdater.initializeGenesis();

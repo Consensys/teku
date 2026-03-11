@@ -106,6 +106,8 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager.RemoteBidOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
@@ -167,6 +169,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private final ExecutionPayloadManager executionPayloadManager;
   private final ExecutionPayloadFactory executionPayloadFactory;
   private final ExecutionPayloadPublisher executionPayloadPublisher;
+  private final ExecutionPayloadBidManager executionPayloadBidManager;
 
   private final AttesterDutiesGenerator attesterDutiesGenerator;
   private final ExecutionProofManager executionProofManager;
@@ -197,6 +200,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final ExecutionPayloadManager executionPayloadManager,
       final ExecutionPayloadFactory executionPayloadFactory,
       final ExecutionPayloadPublisher executionPayloadPublisher,
+      final ExecutionPayloadBidManager executionPayloadBidManager,
       final ExecutionProofManager executionProofManager) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
@@ -223,6 +227,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     this.executionPayloadManager = executionPayloadManager;
     this.executionPayloadFactory = executionPayloadFactory;
     this.executionPayloadPublisher = executionPayloadPublisher;
+    this.executionPayloadBidManager = executionPayloadBidManager;
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
     this.executionProofManager = executionProofManager;
   }
@@ -979,7 +984,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   @Override
   public SafeFuture<Void> publishSignedExecutionPayloadBid(
       final SignedExecutionPayloadBid signedExecutionPayloadBid) {
-    throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
+    return executionPayloadBidManager
+        .validateAndAddBid(signedExecutionPayloadBid, RemoteBidOrigin.BUILDER)
+        .thenAccept(
+            result -> {
+              if (!result.isAccept()) {
+                throw new IllegalArgumentException(
+                    "Invalid execution payload bid: "
+                        + result.getDescription().orElse("unknown reason"));
+              }
+            });
   }
 
   @Override

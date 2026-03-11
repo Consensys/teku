@@ -113,6 +113,7 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
@@ -162,6 +163,8 @@ class ValidatorApiHandlerTest {
       mock(ExecutionPayloadFactory.class);
   private final ExecutionPayloadPublisher executionPayloadPublisher =
       mock(ExecutionPayloadPublisher.class);
+  private final ExecutionPayloadBidManager executionPayloadBidManager =
+      ExecutionPayloadBidManager.NOOP;
 
   private final SyncCommitteeMessagePool syncCommitteeMessagePool =
       mock(SyncCommitteeMessagePool.class);
@@ -215,6 +218,7 @@ class ValidatorApiHandlerTest {
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
+            executionPayloadBidManager,
             executionProofManager);
 
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
@@ -502,6 +506,7 @@ class ValidatorApiHandlerTest {
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
+            executionPayloadBidManager,
             executionProofManager);
     dataStructureUtil = new DataStructureUtil(spec);
     // Best state is still in Phase0

@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
@@ -69,6 +70,7 @@ public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
       final ExecutionPayloadManager executionPayloadManager,
       final ExecutionPayloadFactory executionPayloadFactory,
       final ExecutionPayloadPublisher executionPayloadPublisher,
+      final ExecutionPayloadBidManager executionPayloadBidManager,
       final ExecutionProofManager executionProofManager) {
     super(
         chainDataProvider,
@@ -95,6 +97,7 @@ public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
         executionPayloadManager,
         executionPayloadFactory,
         executionPayloadPublisher,
+        executionPayloadBidManager,
         executionProofManager);
   }
 
