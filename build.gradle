@@ -11,7 +11,7 @@ buildscript {
   repositories {
     mavenCentral()
     maven {
-      url "https://artifacts.consensys.net/public/maven/maven/"
+      url = "https://artifacts.consensys.net/public/maven/maven/"
       content { includeGroupByRegex('tech\\.pegasys\\..*')}
     }
   }
@@ -23,7 +23,7 @@ buildscript {
 plugins {
   id 'com.diffplug.spotless' version '7.2.1'
   id 'com.github.ben-manes.versions' version '0.53.0'
-  id 'com.github.jk1.dependency-license-report' version '2.9'
+  id 'com.github.jk1.dependency-license-report' version '3.1.1'
   id 'io.spring.dependency-management' version '1.1.7'
   id 'net.ltgt.errorprone' version '4.3.0' apply false
   id 'de.undercouch.download' version '5.6.0'
@@ -37,7 +37,7 @@ def isDevelopBuild = rootProject.version.contains('develop')
 apply plugin: 'application'
 apply plugin: DepCheckPlugin
 
-defaultTasks 'build','checkLicense'
+defaultTasks 'build','licenseCheck'
 
 def buildAliases = [
   'dev': [
@@ -49,7 +49,7 @@ def buildAliases = [
     'compilePropertyTestJava',
     'spotlessApply',
     'build',
-    'checkLicense',
+    'licenseCheck',
     'javadoc'],
   'mash': [
     'clean',
@@ -137,7 +137,8 @@ allprojects {
 
   version = rootProject.version
 
-  task sourcesJar(type: Jar, dependsOn: classes) {
+  tasks.register('sourcesJar', Jar) {
+    dependsOn classes
     archiveClassifier = 'sources'
     from sourceSets.main.allSource
     jar.reproducibleFileOrder = true
@@ -155,17 +156,17 @@ allprojects {
   repositories {
     mavenLocal()
     mavenCentral()
-    maven { url "https://jitpack.io" }
+    maven { url = "https://jitpack.io" }
     maven {
-      url "https://artifacts.consensys.net/public/maven/maven/"
+      url = "https://artifacts.consensys.net/public/maven/maven/"
       content { includeGroupByRegex('tech\\.pegasys($|\\..*)')}
     }
     maven {
-      url "https://dl.cloudsmith.io/public/libp2p/jvm-libp2p/maven/"
+      url = "https://dl.cloudsmith.io/public/libp2p/jvm-libp2p/maven/"
       content { includeGroupByRegex('io\\.libp2p($|\\..*)') }
     }
     maven {
-      url "https://hyperledger.jfrog.io/artifactory/besu-maven/"
+      url = "https://hyperledger.jfrog.io/artifactory/besu-maven/"
       content { includeGroupByRegex('org\\.hyperledger\\.besu($|\\..*)') }
     }
   }
@@ -391,7 +392,7 @@ static def getLatestRunId(String repo, String workflow, String branch, String to
   return null
 }
 
-task downloadEthRefTestsNightly {
+tasks.register('downloadEthRefTestsNightly') {
   doLast {
     def repo = "ethereum/consensus-specs"
     def workflowFileName = "generate_vectors.yml"
@@ -422,7 +423,7 @@ task downloadEthRefTestsNightly {
   }
 }
 
-task downloadEthRefTestsStable(type: Download) {
+tasks.register('downloadEthRefTestsStable', Download) {
   src([
       "${refTestBaseUrl}/${refTestVersion}/general.tar.gz",
       "${refTestBaseUrl}/${refTestVersion}/minimal.tar.gz",
@@ -432,7 +433,7 @@ task downloadEthRefTestsStable(type: Download) {
   overwrite false
 }
 
-task downloadEthRefTests {
+tasks.register('downloadEthRefTests') {
   if (nightly) {
     dependsOn tasks.findByName("downloadEthRefTestsNightly")
   } else {
@@ -440,7 +441,7 @@ task downloadEthRefTests {
   }
 }
 
-task downloadBlsRefTests(type: Download) {
+tasks.register('downloadBlsRefTests', Download) {
   src([
       "${blsRefTestBaseUrl}/${blsRefTestVersion}/bls_tests_yaml.tar.gz"
   ])
@@ -448,7 +449,7 @@ task downloadBlsRefTests(type: Download) {
   overwrite false
 }
 
-task downloadSlashingProtectionInterchangeRefTests(type: Download) {
+tasks.register('downloadSlashingProtectionInterchangeRefTests', Download) {
   src([
       "${slashingProtectionInterchangeRefTestBaseUrl}/${slashingProtectionInterchangeRefTestVersion}.tar.gz"
   ])
@@ -456,49 +457,56 @@ task downloadSlashingProtectionInterchangeRefTests(type: Download) {
   overwrite false
 }
 
-task downloadRefTests(dependsOn: [downloadEthRefTests, downloadBlsRefTests, downloadSlashingProtectionInterchangeRefTests])
+tasks.register('downloadRefTests') {
+  dependsOn downloadEthRefTests, downloadBlsRefTests, downloadSlashingProtectionInterchangeRefTests
+}
 
-task cleanRefTestsGeneral(type: Delete) {
+tasks.register('cleanRefTestsGeneral', Delete) {
   delete "${refTestExpandDir}/tests/general"
 }
 
-task expandRefTestsGeneral(type: Copy, dependsOn: [cleanRefTestsGeneral, downloadEthRefTests]) {
+tasks.register('expandRefTestsGeneral', Copy) {
+  dependsOn cleanRefTestsGeneral, downloadEthRefTests
   from tarTree("${refTestDownloadDir}/general.tar.gz")
   into refTestExpandDir
 }
 
-task cleanRefTestsMainnet(type: Delete) {
+tasks.register('cleanRefTestsMainnet', Delete) {
   delete "${refTestExpandDir}/tests/mainnet"
 }
 
-task expandRefTestsMainnet(type: Copy, dependsOn: [cleanRefTestsMainnet, downloadEthRefTests]) {
+tasks.register('expandRefTestsMainnet', Copy) {
+  dependsOn cleanRefTestsMainnet, downloadEthRefTests
   from tarTree("${refTestDownloadDir}/mainnet.tar.gz")
   into refTestExpandDir
 }
 
-task cleanRefTestsMinimal(type: Delete) {
+tasks.register('cleanRefTestsMinimal', Delete) {
   delete "${refTestExpandDir}/tests/minimal"
 }
 
-task expandRefTestsMinimal(type: Copy, dependsOn: [cleanRefTestsMinimal, downloadEthRefTests]) {
+tasks.register('expandRefTestsMinimal', Copy) {
+  dependsOn cleanRefTestsMinimal, downloadEthRefTests
   from tarTree("${refTestDownloadDir}/minimal.tar.gz")
   into refTestExpandDir
 }
 
-task cleanRefTestsBls(type: Delete) {
+tasks.register('cleanRefTestsBls', Delete) {
   delete "${refTestExpandDir}/tests/bls"
 }
 
-task expandRefTestsBls(type: Copy, dependsOn: [cleanRefTestsBls, downloadBlsRefTests]) {
+tasks.register('expandRefTestsBls', Copy) {
+  dependsOn cleanRefTestsBls, downloadBlsRefTests
   from tarTree("${blsRefTestDownloadDir}/bls_tests_yaml.tar.gz")
   into "${refTestExpandDir}/tests/bls"
 }
 
-task cleanRefTestsSlashingProtectionInterchange(type: Delete) {
+tasks.register('cleanRefTestsSlashingProtectionInterchange', Delete) {
   delete "${refTestExpandDir}/tests/slashing-protection-interchange"
 }
 
-task expandRefTestsSlashingProtectionInterchange(type: Copy, dependsOn: [cleanRefTestsSlashingProtectionInterchange, downloadSlashingProtectionInterchangeRefTests]) {
+tasks.register('expandRefTestsSlashingProtectionInterchange', Copy) {
+  dependsOn cleanRefTestsSlashingProtectionInterchange, downloadSlashingProtectionInterchangeRefTests
   from {
     tarTree("${slashingProtectionInterchangeRefTestDownloadDir}/slashing-protection-interchange-tests.tar.gz").matching {
       include "**/tests/generated/*.json"
@@ -511,12 +519,33 @@ task expandRefTestsSlashingProtectionInterchange(type: Copy, dependsOn: [cleanRe
   into "${refTestExpandDir}/tests/slashing-protection-interchange"
 }
 
-task expandRefTests(dependsOn: [expandRefTestsGeneral, expandRefTestsMainnet, expandRefTestsMinimal, expandRefTestsBls, expandRefTestsSlashingProtectionInterchange])
-task cleanRefTests(dependsOn: [cleanRefTestsGeneral, cleanRefTestsMainnet, cleanRefTestsMinimal, cleanRefTestsBls, cleanRefTestsSlashingProtectionInterchange])
+tasks.register('expandRefTests') {
+  dependsOn expandRefTestsGeneral, expandRefTestsMainnet, expandRefTestsMinimal, expandRefTestsBls, expandRefTestsSlashingProtectionInterchange
+}
+tasks.register('cleanRefTests') {
+  dependsOn cleanRefTestsGeneral, cleanRefTestsMainnet, cleanRefTestsMinimal, cleanRefTestsBls, cleanRefTestsSlashingProtectionInterchange
+}
 
-task deploy() {}
+tasks.register('deploy') {}
+
+// https://github.com/jk1/Gradle-License-Report/issues/337#issuecomment-3241442179
+// License report tasks resolve subproject configurations which requires exclusive project locks in Gradle 9.
+// The plugin doesn't support --parallel, so disable the original tasks and run them in a separate
+// Gradle process with --no-parallel.
+generateLicenseReport.enabled = false
+checkLicense.enabled = false
+def gradlewCommand = System.getProperty('os.name').toLowerCase().contains('windows') ? 'gradlew.bat' : './gradlew'
+tasks.register('licenseCheck', Exec) {
+  workingDir rootDir
+  commandLine gradlewCommand, 'generateLicenseReport', 'checkLicense', '--no-parallel', '-PenableLicenseReport=true'
+}
+if (project.hasProperty('enableLicenseReport')) {
+  generateLicenseReport.enabled = true
+  checkLicense.enabled = true
+}
 
 licenseReport {
+  projects = project.subprojects
   configurations = ['runtimeClasspath']
   outputDir = "${buildDir}/reports/licenses"
   // These jars don't have machine readable license information
@@ -534,7 +563,7 @@ licenseReport {
   renderers = [new GroupedLicenseHtmlRenderer(includeTimestamp: false)]
 }
 
-task checkMavenCoordinateCollisions {
+tasks.register('checkMavenCoordinateCollisions') {
   doLast {
     def coordinates = [:]
     getAllprojects().forEach {
@@ -571,7 +600,7 @@ application {
   ]
 }
 
-task autocomplete(type: JavaExec) {
+tasks.register('autocomplete', JavaExec) {
   dependsOn compileJava
   outputs.file "build/teku.autocomplete.sh"
 
@@ -581,11 +610,11 @@ task autocomplete(type: JavaExec) {
 }
 
 installDist {
-  dependsOn checkLicense, startScripts, autocomplete
+  dependsOn licenseCheck, startScripts, autocomplete
 }
 
 distTar {
-  dependsOn checkLicense, startScripts, autocomplete
+  dependsOn licenseCheck, startScripts, autocomplete
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.tar.gz')
   }
@@ -598,7 +627,7 @@ distTar {
 }
 
 distZip {
-  dependsOn checkLicense, startScripts, autocomplete
+  dependsOn licenseCheck, startScripts, autocomplete
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.zip')
   }
@@ -629,6 +658,12 @@ startScripts {
   }
 }
 
+interface InjectedOps {
+  @Inject ExecOperations getExecutor()
+  @Inject FileSystemOperations getFs()
+}
+def system = objects.newInstance(InjectedOps)
+
 // rename the top level dir from teku-<version> to teku and this makes it really
 // simple for use in docker
 tasks.register("dockerDistUntar") {
@@ -641,7 +676,7 @@ tasks.register("dockerDistUntar") {
     def dockerBuildDir = new File(dockerBuildPath)
     dockerBuildDir.deleteDir()
     dockerBuildDir.mkdir()
-    copy {
+    system.fs.copy {
       from tarTree(distTarFile)
       into(dockerBuildPath)
     }
@@ -656,36 +691,36 @@ def localDockerImage = "local/teku"
 
 def executableAndArg = System.getProperty('os.name').toLowerCase().contains('windows') ? ["cmd", "/c"] : ["sh", "-c"]
 
-task localDocker {
+tasks.register('localDocker') {
   dependsOn dockerDistUntar
   def dockerBuildVersion = 'develop'
   doLast {
     def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
     def commitHashTag = includeCommitHashInDockerTag ? '-' + grgit.head().getAbbreviatedId() : ''
-    copy {
-      from file("${projectDir}/docker/${dockerJdkVariants[0]}/Dockerfile")
-      into(dockerBuildDir)
+    system.fs.copy {
+        from file("${projectDir}/docker/${dockerJdkVariants[0]}/Dockerfile")
+        into(dockerBuildDir)
     }
-    exec {
-      def image = "${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag}"
-      workingDir dockerBuildDir
-      executable executableAndArg[0]
-      args executableAndArg[1], "docker build --pull --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
+    system.executor.exec {
+        def image = "${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag}"
+        workingDir dockerBuildDir
+        executable executableAndArg[0]
+        args executableAndArg[1], "docker build --pull --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
     }
     // tag the "default" (which is the variant in the zero position)
-    exec {
-      executable executableAndArg[0]
-      args executableAndArg[1], "docker tag ${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag} ${localDockerImage}:${dockerBuildVersion}${commitHashTag}"
+    system.executor.exec {
+        executable executableAndArg[0]
+        args executableAndArg[1], "docker tag ${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag} ${localDockerImage}:${dockerBuildVersion}${commitHashTag}"
     }
   }
 }
 
-task localDockerClean {
+tasks.register('localDockerClean') {
   def dockerBuildVersion = 'develop'
   def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
   def commitHashTag = includeCommitHashInDockerTag ? '-' + grgit.head().getAbbreviatedId() : ''
   doLast {
-    exec {
+    system.executor.exec {
       executable executableAndArg[0]
       args executableAndArg[1], "docker rmi ${localDockerImage}:${dockerBuildVersion} ${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag}"
     }
@@ -694,18 +729,18 @@ task localDockerClean {
 
 def dockerImage = "consensys/teku"
 
-task distDocker  {
+tasks.register('distDocker')  {
   dependsOn dockerDistUntar
   def dockerBuildVersion = 'develop'
   doLast {
     def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
     def commitHashTag = includeCommitHashInDockerTag ? '-' + grgit.head().getAbbreviatedId() : ''
     for (def variant in dockerJdkVariants) {
-      copy {
+      system.fs.copy {
         from file("${projectDir}/docker/${variant}/Dockerfile")
         into(dockerBuildDir)
       }
-      exec {
+      system.executor.exec {
         def image = "${dockerImage}:${dockerBuildVersion}-${variant}${commitHashTag}"
         workingDir dockerBuildDir
         executable executableAndArg[0]
@@ -713,14 +748,14 @@ task distDocker  {
       }
     }
     // tag the "default" (which is the variant in the zero position)
-    exec {
+    system.executor.exec {
       executable executableAndArg[0]
       args executableAndArg[1], "docker tag ${dockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag} ${dockerImage}:${dockerBuildVersion}${commitHashTag}"
     }
   }
 }
 
-task uploadDocker {
+tasks.register('uploadDocker') {
   dependsOn([distDocker])
   def dockerBuildVersion = "${rootProject.version}".replace('+', '-')
   def architecture = System.getenv('architecture')
@@ -747,12 +782,12 @@ task uploadDocker {
         versionPrefixes.forEach { prefix -> tags += "-t ${dockerImage}:${prefix.trim()}-${architecture}${commitHashTag} "}
       }
 
-      copy {
+      system.fs.copy {
         from file("${projectDir}/docker/${variant}/Dockerfile")
         into(dockerBuildDir)
       }
 
-      exec {
+      system.executor.exec {
         workingDir dockerBuildDir
         executable executableAndArg[0]
         args executableAndArg[1], "docker build --pull --platform ${platform} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} ${tags} ."
@@ -761,7 +796,7 @@ task uploadDocker {
       //docker trust sign runs one image at a time, so we have to remove the '-t' in the string and split into a list we can use
       def trustTags = tags.replaceAll( '-t ', '' ).trim().split(' ')
       for (def t in trustTags) {
-        exec {
+        system.executor.exec {
           workingDir dockerBuildDir
           executable executableAndArg[0]
           args executableAndArg[1], "docker push ${t} "
@@ -771,7 +806,7 @@ task uploadDocker {
   }
 }
 
-task manifestDocker {
+tasks.register('manifestDocker') {
   def dockerBuildVersion = "${rootProject.version}".replace('+', '-')
   def versionPrefixes = [dockerBuildVersion]
   def platforms = ["arm64", "amd64"]
@@ -799,7 +834,7 @@ task manifestDocker {
 
       for (def tag in tags) {
         platforms.forEach { platform -> cmd += "${tag}-${platform}${commitHashTag} " }
-        exec {
+        system.executor.exec {
           executable executableAndArg[0]
           args executableAndArg[1], "docker manifest create ${tag}${commitHashTag} ${cmd} && docker manifest push ${tag}${commitHashTag}"
         }
@@ -870,16 +905,16 @@ subprojects {
   apply plugin: 'idea'
   idea {
     module {
-      testSourceDirs += project.sourceSets.testFixtures.java.srcDirs
-      testSourceDirs += project.sourceSets.testFixtures.resources.srcDirs
-      testSourceDirs += project.sourceSets.integrationTest.java.srcDirs
-      testSourceDirs += project.sourceSets.integrationTest.resources.srcDirs
-      testSourceDirs += project.sourceSets.acceptanceTest.java.srcDirs
-      testSourceDirs += project.sourceSets.acceptanceTest.resources.srcDirs
-      testSourceDirs += project.sourceSets.propertyTest.java.srcDirs
-      testSourceDirs += project.sourceSets.propertyTest.resources.srcDirs
-      testSourceDirs += project.sourceSets.referenceTest.java.srcDirs
-      testSourceDirs += project.sourceSets.referenceTest.resources.srcDirs
+      testSources.from(project.sourceSets.testFixtures.java.srcDirs)
+      testResources.from(project.sourceSets.testFixtures.resources.srcDirs)
+      testSources.from(project.sourceSets.integrationTest.java.srcDirs)
+      testResources.from(project.sourceSets.integrationTest.resources.srcDirs)
+      testSources.from(project.sourceSets.acceptanceTest.java.srcDirs)
+      testResources.from(project.sourceSets.acceptanceTest.resources.srcDirs)
+      testSources.from(project.sourceSets.propertyTest.java.srcDirs)
+      testResources.from(project.sourceSets.propertyTest.resources.srcDirs)
+      testSources.from(project.sourceSets.referenceTest.java.srcDirs)
+      testResources.from(project.sourceSets.referenceTest.resources.srcDirs)
     }
   }
 
@@ -899,8 +934,8 @@ subprojects {
       }
       publications {
         mavenJava(MavenPublication) {
-          groupId "tech.pegasys.teku.internal"
-          version "${project.version}"
+          groupId = "tech.pegasys.teku.internal"
+          version = "${project.version}"
           if (sourceSetIsPopulated("main")) {
             from components.java
             artifact sourcesJar
@@ -967,7 +1002,8 @@ subprojects {
 
     classes.finalizedBy(jmhClasses)
 
-    task jmh(type: JavaExec, dependsOn: jmhClasses) {
+    tasks.register('jmh', JavaExec) {
+      dependsOn jmhClasses
       mainClass = 'org.openjdk.jmh.Main'
       classpath = sourceSets.jmh.compileClasspath + sourceSets.jmh.runtimeClasspath
       systemProperty("jmh.blackhole.mode", "COMPILER")
@@ -1044,7 +1080,8 @@ subprojects {
     dependencies.testRuntimeOnly(dependencies.testFixtures(project(':infrastructure:logging')))
   }
 
-  task integrationTest(type: Test, dependsOn:["compileIntegrationTestJava"]){
+  tasks.register('integrationTest', Test) {
+    dependsOn compileIntegrationTestJava
     group = "verification"
     description = "Runs the Teku integration tests"
 
@@ -1052,16 +1089,18 @@ subprojects {
     classpath = sourceSets.integrationTest.runtimeClasspath
   }
 
-  task acceptanceTest(type: Test, dependsOn:["compileAcceptanceTestJava", rootProject.distDocker]){
+  tasks.register('acceptanceTest', Test) {
+    dependsOn "compileAcceptanceTestJava", rootProject.distDocker
     group = "verification"
     description = "Runs the Teku acceptance tests"
 
-    systemProperty "teku.testArtifactDir", new File(project.buildDir, "test-artifacts").getAbsolutePath()
+    systemProperty "teku.testArtifactDir", layout.buildDirectory.dir("test-artifacts").get().asFile.absolutePath
     testClassesDirs = sourceSets.acceptanceTest.output.classesDirs
     classpath = sourceSets.acceptanceTest.runtimeClasspath
   }
 
-  task propertyTest(type: Test, dependsOn:["compilePropertyTestJava"]){
+  tasks.register('propertyTest', Test) {
+    dependsOn "compilePropertyTestJava"
     group = "verification"
     description = "Runs the Teku property tests"
 
@@ -1069,7 +1108,8 @@ subprojects {
     classpath = sourceSets.propertyTest.runtimeClasspath
   }
 
-  task referenceTest(type: Test, dependsOn:["compileReferenceTestJava"]){
+  tasks.register('referenceTest', Test) {
+    dependsOn "compileReferenceTestJava"
     group = "verification"
     description = "Runs the Teku reference tests"
 
@@ -1170,13 +1210,13 @@ def calculateVersion() {
   return version
 }
 
-task printVersion() {
+tasks.register('printVersion') {
   doFirst {
     print "Specific version: ${specificVersion}  Publish version: ${project.version}"
   }
 }
 
-task buildPrintVersion() {
+tasks.register('buildPrintVersion') {
   doFirst {
     println "specific-version=${specificVersion}"
     println "publish-version=${project.version}"
@@ -1188,13 +1228,13 @@ def getCheckedOutGitCommitHash() {
   grgit ? grgit.head().id.take(takeFromHash) : 'UNKNOWN'
 }
 
-task cloudsmithUpload {
-  dependsOn([distTar, distZip])
-  doLast {
-    exec {
-      executable project.file("scripts/cloudsmith-upload.sh")
-      args rootProject.version, distTar.archiveFile.get(), distZip.archiveFile.get()
+tasks.register('cloudsmithUpload') {
+    dependsOn([distTar, distZip])
+    doLast {
+        system.executor.exec {
+            executable project.file("scripts/cloudsmith-upload.sh")
+            args rootProject.version, distTar.archiveFile.get(), distZip.archiveFile.get()
+        }
     }
-  }
 }
 

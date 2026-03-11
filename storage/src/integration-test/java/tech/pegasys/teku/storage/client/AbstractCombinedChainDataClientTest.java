@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -60,6 +61,13 @@ public abstract class AbstractCombinedChainDataClientTest {
     client = storageSystem.combinedChainDataClient();
   }
 
+  @AfterEach
+  public void tearDown() throws Exception {
+    if (storageSystem != null) {
+      storageSystem.close();
+    }
+  }
+
   protected abstract StateStorageMode getStorageMode();
 
   protected StorageSystem createStorageSystem() {
@@ -97,12 +105,12 @@ public abstract class AbstractCombinedChainDataClientTest {
     chainUpdater.advanceChain(recentSlot);
     chainUpdater.advanceChain();
 
-    // Restart
-    final StorageSystem restarted = storageSystem.restarted(getStorageMode());
-    final CombinedChainDataClient client = restarted.combinedChainDataClient();
+    // Restart (restarted() closes the original database, so reassign for tearDown)
+    storageSystem = storageSystem.restarted(getStorageMode());
+    final CombinedChainDataClient client = storageSystem.combinedChainDataClient();
     // We should now have an initialized store, but no chosen chainhead
-    assertThat(restarted.recentChainData().getStore()).isNotNull();
-    assertThat(restarted.recentChainData().getBestBlockRoot()).isEmpty();
+    assertThat(storageSystem.recentChainData().getStore()).isNotNull();
+    assertThat(storageSystem.recentChainData().getBestBlockRoot()).isEmpty();
 
     // Check recent slot
     final UInt64 querySlot = recentSlot;

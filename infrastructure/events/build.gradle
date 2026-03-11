@@ -9,6 +9,6 @@ dependencies {
 
 publishing {
   publications {
-    mavenJava(MavenPublication) { artifactId 'infrastructure-events' }
+    mavenJava(MavenPublication) { artifactId = 'infrastructure-events' }
   }
 }

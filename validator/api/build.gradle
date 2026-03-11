@@ -20,6 +20,6 @@ dependencies {
 
 publishing {
   publications {
-    mavenJava(MavenPublication) { artifactId 'validator-api' }
+    mavenJava(MavenPublication) { artifactId = 'validator-api' }
   }
 }

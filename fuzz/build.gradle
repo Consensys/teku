@@ -18,5 +18,5 @@ dependencies {
 task fuzzDist(type: Copy) {
     dependsOn([jar])
     from configurations.runtimeClasspath + configurations.runtimeClasspath.allArtifacts.collect { it.file }
-    destinationDir file("$buildDir/fuzzDist")
+    destinationDir = file("$buildDir/fuzzDist")
 }
