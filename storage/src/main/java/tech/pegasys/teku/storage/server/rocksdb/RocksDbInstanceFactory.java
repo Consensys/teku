@@ -94,7 +94,8 @@ public class RocksDbInstanceFactory {
             List.of(txOptions, dbOptions, columnFamilyOptions, rocksDbStats, blockCache));
 
     List<ColumnFamilyDescriptor> columnDescriptors =
-        createColumnFamilyDescriptors(configuration, columns, deletedColumns, columnFamilyOptions, resources);
+        createColumnFamilyDescriptors(
+            configuration, columns, deletedColumns, columnFamilyOptions, resources);
     Map<Bytes, KvStoreColumn<?, ?>> columnsById =
         columns.stream().collect(Collectors.toMap(KvStoreColumn::getId, Function.identity()));
 
