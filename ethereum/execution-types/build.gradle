@@ -1,10 +1,10 @@
 dependencies {
-    implementation project(':infrastructure:bytes')
-    implementation project(':infrastructure:crypto')
-    implementation project(':infrastructure:json')
+	implementation project(':infrastructure:bytes')
+	implementation project(':infrastructure:crypto')
+	implementation project(':infrastructure:json')
 
-    testFixturesApi 'com.fasterxml.jackson.core:jackson-databind'
-    testImplementation project(':ethereum:json-types')
+	testFixturesApi 'com.fasterxml.jackson.core:jackson-databind'
+	testImplementation project(':ethereum:json-types')
 
-    testImplementation testFixtures(project(':infrastructure:json'))
+	testImplementation testFixtures(project(':infrastructure:json'))
 }

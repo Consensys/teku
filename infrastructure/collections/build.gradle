@@ -1,5 +1,5 @@
 dependencies {
-  implementation 'com.google.guava:guava'
+	implementation 'com.google.guava:guava'
 
-  testFixturesImplementation 'it.unimi.dsi:fastutil'
+	testFixturesImplementation 'it.unimi.dsi:fastutil'
 }
