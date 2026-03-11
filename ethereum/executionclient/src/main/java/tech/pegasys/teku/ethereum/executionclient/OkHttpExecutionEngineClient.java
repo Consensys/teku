@@ -92,7 +92,7 @@ public class OkHttpExecutionEngineClient implements ExecutionEngineClient {
 
   private static final Duration EXCHANGE_CAPABILITIES_TIMEOUT = Duration.ofSeconds(1);
   private static final Duration GET_CLIENT_VERSION_TIMEOUT = Duration.ofSeconds(1);
-  private static final Duration GET_BLOBS_TIMEOUT = Duration.ofSeconds(1);
+  private static final Duration GET_BLOBS_TIMEOUT = Duration.ofSeconds(2);
   private static final Duration GET_PAYLOAD_TIMEOUT = Duration.ofSeconds(2);
 
   public static final List<String> NON_CRITICAL_METHODS =
@@ -435,7 +435,7 @@ public class OkHttpExecutionEngineClient implements ExecutionEngineClient {
                 return;
               }
 
-              final JsonNode jsonResponse = objectMapper.readTree(body.string());
+              final JsonNode jsonResponse = objectMapper.readTree(body.byteStream());
               final JsonNode errorNode = jsonResponse.get("error");
               if (errorNode != null && !errorNode.isNull()) {
                 final int code = errorNode.path("code").asInt();
