@@ -61,7 +61,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
@@ -80,7 +79,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @TestSpecContext(milestone = {CAPELLA, DENEB, ELECTRA, FULU, GLOAS})
 public class OkHttpExecutionEngineClientTest {
-
+  private static final Logger LOG = LogManager.getLogger();
   private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);
 
   private final MockWebServer mockWebServer = new MockWebServer();
@@ -88,12 +87,12 @@ public class OkHttpExecutionEngineClientTest {
   private final ExecutionClientEventsChannel executionClientEventsPublisher =
       mock(ExecutionClientEventsChannel.class);
 
-  ObjectMapper objectMapper;
-  DataStructureUtil dataStructureUtil;
-  Spec spec;
-  SpecMilestone specMilestone;
+  private ObjectMapper objectMapper;
+  private DataStructureUtil dataStructureUtil;
+  private Spec spec;
+  private SpecMilestone specMilestone;
 
-  OkHttpExecutionEngineClient eeClient;
+  private OkHttpExecutionEngineClient eeClient;
 
   @BeforeEach
   void setUp(final SpecContext specContext) throws IOException {
@@ -112,8 +111,6 @@ public class OkHttpExecutionEngineClientTest {
             OkHttpExecutionEngineClient.NON_CRITICAL_METHODS);
   }
 
-  private static final Logger LOG = LogManager.getLogger();
-
   @AfterEach
   public void afterEach() throws Exception {
     mockWebServer.shutdown();
@@ -122,8 +119,7 @@ public class OkHttpExecutionEngineClientTest {
   @TestTemplate
   @SuppressWarnings("unchecked")
   void forkChoiceUpdated_shouldRoundtripWithMockedWebServer() throws Exception {
-    final Bytes32 latestValidHash =
-        Bytes32.fromHexString("0x135bc3400c2839fd856a524871200bd5e362db615fc4565e1870ed9a2a936464");
+    final Bytes32 latestValidHash = dataStructureUtil.randomBytes32();
     final String validationError = "error";
     final PayloadStatus payloadStatusResponse =
         PayloadStatus.invalid(Optional.of(latestValidHash), Optional.of(validationError));
@@ -138,21 +134,17 @@ public class OkHttpExecutionEngineClientTest {
 
     mockSuccessfulResponse(bodyResponse);
 
+    final Bytes32 headBlockHash = dataStructureUtil.randomBytes32();
+    final Bytes32 safeBlockHash = dataStructureUtil.randomBytes32();
+    final Bytes32 finalizedBlockHash = dataStructureUtil.randomBytes32();
     final ForkChoiceStateV1 forkChoiceStateV1Request =
-        new ForkChoiceStateV1(
-            Bytes32.fromHexString(
-                "0x235bc3400c2839fd856a524871200bd5e362db615fc4565e1870ed9a2a936464"),
-            Bytes32.fromHexString(
-                "0x367cbd40ac7318427aadb97345a91fa2e965daf3158d7f1846f1306305f41bef"),
-            Bytes32.fromHexString(
-                "0xfd18cf40cc907a739be483f1ca0ee23ad65cdd3df23205eabc6d660a75d1f54e"));
+        new ForkChoiceStateV1(headBlockHash, safeBlockHash, finalizedBlockHash);
 
     final PayloadAttributesV1 payloadAttributesV1Request =
         new PayloadAttributesV1(
             UInt64.valueOf(10),
-            Bytes32.fromHexString(
-                "0x367cbd40ac7318427aadb97345a91fa2e965daf3158d7f1846f1306305f41bef"),
-            Bytes20.fromHexString("0xfd18cf40cc907a739be483f1ca0ee23ad65cdd3d"));
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomBytes20());
 
     final SafeFuture<Response<ForkChoiceUpdatedResult>> futureResponseForkChoiceUpdatedResult =
         eeClient.forkChoiceUpdatedV1(
@@ -170,18 +162,16 @@ public class OkHttpExecutionEngineClientTest {
 
     verifyJsonRpcMethodCall(data, "engine_forkchoiceUpdatedV1");
 
-    assertThat(forkChoiceState.get("headBlockHash"))
-        .isEqualTo("0x235bc3400c2839fd856a524871200bd5e362db615fc4565e1870ed9a2a936464");
-    assertThat(forkChoiceState.get("safeBlockHash"))
-        .isEqualTo("0x367cbd40ac7318427aadb97345a91fa2e965daf3158d7f1846f1306305f41bef");
+    assertThat(forkChoiceState.get("headBlockHash")).isEqualTo(headBlockHash.toHexString());
+    assertThat(forkChoiceState.get("safeBlockHash")).isEqualTo(safeBlockHash.toHexString());
     assertThat(forkChoiceState.get("finalizedBlockHash"))
-        .isEqualTo("0xfd18cf40cc907a739be483f1ca0ee23ad65cdd3df23205eabc6d660a75d1f54e");
+        .isEqualTo(finalizedBlockHash.toHexString());
 
     assertThat(payloadAttributes.get("timestamp")).isEqualTo("0xa");
     assertThat(payloadAttributes.get("prevRandao"))
-        .isEqualTo("0x367cbd40ac7318427aadb97345a91fa2e965daf3158d7f1846f1306305f41bef");
+        .isEqualTo(payloadAttributesV1Request.prevRandao.toHexString());
     assertThat(payloadAttributes.get("suggestedFeeRecipient"))
-        .isEqualTo("0xfd18cf40cc907a739be483f1ca0ee23ad65cdd3d");
+        .isEqualTo(payloadAttributesV1Request.suggestedFeeRecipient.toHexString());
 
     assertThat(futureResponseForkChoiceUpdatedResult)
         .succeedsWithin(1, TimeUnit.SECONDS)

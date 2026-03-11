@@ -357,8 +357,6 @@ public class OkHttpExecutionEngineClient implements ExecutionEngineClient {
         GET_BLOBS_TIMEOUT);
   }
 
-  // ----------------------------- Core infrastructure -----------------------------
-
   private SafeFuture<PowBlock> doEthBlockRequest(final String method, final List<Object> params) {
     return doRequest(method, params, EthBlockResult.class, EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT)
         .thenApply(Response::payload)
