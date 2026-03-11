@@ -19,8 +19,10 @@ dependencies {
 
   implementation 'io.consensys.tuweni:tuweni-bytes'
 
+  jmhImplementation project(':ethereum:executionclient')
   jmhImplementation project(':infrastructure:crypto')
   jmhImplementation 'io.consensys.tuweni:tuweni-ssz'
+  jmhImplementation 'com.fasterxml.jackson.module:jackson-module-blackbird'
   jmhImplementation testFixtures(project(':ethereum:weaksubjectivity'))
   jmhImplementation testFixtures(project(':infrastructure:async'))
   jmhImplementation testFixtures(project('::networking:eth2'))
