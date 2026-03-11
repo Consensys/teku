@@ -315,7 +315,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public Optional<SignedBeaconBlock> getNonCanonicalBlockByRoot(final Bytes32 blockRoot) {
-    return dao.getNonCanonicalBlock(blockRoot).map(b -> b);
+    return dao.getNonCanonicalBlock(blockRoot);
   }
 
   @Override
