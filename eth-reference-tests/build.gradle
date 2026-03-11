@@ -1,6 +1,13 @@
 jar { enabled = false }
 
+configurations {
+  // Local configuration for generateReferenceTestClasses — avoids cross-project lock issues in Gradle 9
+  refTestGenerator
+}
+
 dependencies {
+  refTestGenerator project(':eth-tests')
+
   referenceTestImplementation project(':beacon:validator')
   referenceTestImplementation project(':ethereum:networks')
   referenceTestImplementation project(':ethereum:spec')
@@ -39,7 +46,7 @@ task generateReferenceTestClasses(type: JavaExec) {
   dependsOn(cleanReferenceTestClasses)
   group = "Execution"
   description = "Generate reference test classes"
-  classpath = project.project(':eth-tests').sourceSets.referenceTest.runtimeClasspath
+  classpath = configurations.refTestGenerator
   mainClass = 'tech.pegasys.teku.ethtests.ReferenceTestGenerator'
   args = [project.file('src/referenceTest/generated_tests').absolutePath]
   systemProperty("teku.ref-test-module.path", project.file("../eth-reference-tests").absolutePath)

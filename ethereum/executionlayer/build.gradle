@@ -22,7 +22,7 @@ dependencies {
 
 publishing {
   publications {
-    mavenJava(MavenPublication) { artifactId 'ethereum-executionlayer' }
+    mavenJava(MavenPublication) { artifactId = 'ethereum-executionlayer' }
   }
 }
 

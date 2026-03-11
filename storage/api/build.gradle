@@ -11,6 +11,6 @@ dependencies {
 
 publishing {
     publications {
-        mavenJava(MavenPublication) { artifactId 'storage-api' }
+        mavenJava(MavenPublication) { artifactId = 'storage-api' }
     }
 }
