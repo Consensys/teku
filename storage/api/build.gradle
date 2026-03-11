@@ -1,16 +1,16 @@
 dependencies {
-    implementation project(':infrastructure:async')
-    implementation project(':infrastructure:events')
-    implementation project(':infrastructure:metrics')
-    implementation project(':infrastructure:exceptions')
-    implementation project(':ethereum:pow:api')
-    implementation project(':ethereum:spec')
+	implementation project(':infrastructure:async')
+	implementation project(':infrastructure:events')
+	implementation project(':infrastructure:metrics')
+	implementation project(':infrastructure:exceptions')
+	implementation project(':ethereum:pow:api')
+	implementation project(':ethereum:spec')
 
-    implementation 'io.consensys.tuweni:tuweni-bytes'
+	implementation 'io.consensys.tuweni:tuweni-bytes'
 }
 
 publishing {
-    publications {
-        mavenJava(MavenPublication) { artifactId = 'storage-api' }
-    }
+	publications {
+		mavenJava(MavenPublication) { artifactId = 'storage-api' }
+	}
 }

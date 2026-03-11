@@ -1,19 +1,19 @@
 dependencies {
-  implementation project(':ethereum:networks')
-  implementation project(':ethereum:pow:api')
-  implementation project(':ethereum:spec')
-  implementation project(':infrastructure:async')
-  implementation project(':infrastructure:exceptions')
-  implementation project(':infrastructure:logging')
-  implementation project(':infrastructure:metrics')
-  implementation project(':infrastructure:serviceutils')
-  implementation project(':storage')
-  implementation project(':storage:api')
-  implementation project(':infrastructure:events')
+	implementation project(':ethereum:networks')
+	implementation project(':ethereum:pow:api')
+	implementation project(':ethereum:spec')
+	implementation project(':infrastructure:async')
+	implementation project(':infrastructure:exceptions')
+	implementation project(':infrastructure:logging')
+	implementation project(':infrastructure:metrics')
+	implementation project(':infrastructure:serviceutils')
+	implementation project(':storage')
+	implementation project(':storage:api')
+	implementation project(':infrastructure:events')
 
-  implementation 'org.hyperledger.besu:besu-plugin-api'
+	implementation 'org.hyperledger.besu:besu-plugin-api'
 
-  testImplementation testFixtures(project(':infrastructure:async'))
-  testImplementation testFixtures(project(':ethereum:execution-types'))
-  testImplementation 'org.hyperledger.besu.internal:besu-metrics-core'
+	testImplementation testFixtures(project(':infrastructure:async'))
+	testImplementation testFixtures(project(':ethereum:execution-types'))
+	testImplementation 'org.hyperledger.besu.internal:besu-metrics-core'
 }

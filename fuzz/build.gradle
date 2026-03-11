@@ -1,22 +1,22 @@
 dependencies {
-    api 'com.fasterxml.jackson.core:jackson-databind'
-    implementation project(':ethereum:networks')
-    implementation project(':ethereum:spec')
-    implementation testFixtures(project(':ethereum:spec'))
-    implementation project(':infrastructure:bls')
-    implementation project(':infrastructure:ssz')
+	api 'com.fasterxml.jackson.core:jackson-databind'
+	implementation project(':ethereum:networks')
+	implementation project(':ethereum:spec')
+	implementation testFixtures(project(':ethereum:spec'))
+	implementation project(':infrastructure:bls')
+	implementation project(':infrastructure:ssz')
 
-    implementation 'io.consensys.tuweni:tuweni-bytes'
-    implementation 'it.unimi.dsi:fastutil'
+	implementation 'io.consensys.tuweni:tuweni-bytes'
+	implementation 'it.unimi.dsi:fastutil'
 
-    testImplementation 'org.xerial.snappy:snappy-java'
-    testImplementation testFixtures(project(':ethereum:spec'))
-    testImplementation project(':infrastructure:json')
+	testImplementation 'org.xerial.snappy:snappy-java'
+	testImplementation testFixtures(project(':ethereum:spec'))
+	testImplementation project(':infrastructure:json')
 }
 
 
 task fuzzDist(type: Copy) {
-    dependsOn([jar])
-    from configurations.runtimeClasspath + configurations.runtimeClasspath.allArtifacts.collect { it.file }
-    destinationDir = file("$buildDir/fuzzDist")
+	dependsOn([jar])
+	from configurations.runtimeClasspath + configurations.runtimeClasspath.allArtifacts.collect { it.file }
+	destinationDir = file("$buildDir/fuzzDist")
 }
