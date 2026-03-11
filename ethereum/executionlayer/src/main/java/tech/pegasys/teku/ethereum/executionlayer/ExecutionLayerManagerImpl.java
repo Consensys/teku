@@ -36,8 +36,6 @@ import tech.pegasys.teku.ethereum.executionclient.metrics.MetricRecordingExecuti
 import tech.pegasys.teku.ethereum.executionclient.rest.RestBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestBuilderClientOptions;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClient;
-import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JClient;
-import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
@@ -116,12 +114,11 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   public static ExecutionEngineClient createEngineClient(
-      final Web3JClient web3JClient,
+      final ExecutionEngineClient rawEngineClient,
       final TimeProvider timeProvider,
       final MetricsSystem metricsSystem) {
-    final ExecutionEngineClient engineClient = new Web3JExecutionEngineClient(web3JClient);
     final ExecutionEngineClient metricEngineClient =
-        new MetricRecordingExecutionEngineClient(engineClient, timeProvider, metricsSystem);
+        new MetricRecordingExecutionEngineClient(rawEngineClient, timeProvider, metricsSystem);
     return new ThrottlingExecutionEngineClient(
         metricEngineClient, MAXIMUM_CONCURRENT_EE_REQUESTS, metricsSystem);
   }
