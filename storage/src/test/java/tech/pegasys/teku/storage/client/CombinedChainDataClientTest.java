@@ -380,7 +380,7 @@ class CombinedChainDataClientTest {
   }
 
   @Test
-  void getSlotByBlockRoot_shouldFallBackToNonCanonicalBlock() {
+  void getSlotByBlockRoot_shouldFallBackToNonCanonicalBlockWhenEnabled() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(7);
     when(recentChainData.getSlotForBlockRoot(block.getRoot())).thenReturn(Optional.empty());
     when(historicalChainData.getFinalizedSlotByBlockRoot(block.getRoot()))
@@ -388,10 +388,26 @@ class CombinedChainDataClientTest {
     when(historicalChainData.getNonCanonicalBlockByRoot(block.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
 
+    // by default should skip nonCanonical
     final Optional<UInt64> result =
         SafeFutureAssert.safeJoin(client.getSlotByBlockRoot(block.getRoot()));
 
-    assertThat(result).hasValue(block.getSlot());
+    assertThat(result).isEmpty();
+    verify(historicalChainData, never()).getNonCanonicalBlockByRoot(any());
+
+    // when disabled, should skip nonCanonical
+    final Optional<UInt64> result2 =
+        SafeFutureAssert.safeJoin(client.getSlotByBlockRoot(block.getRoot(), false));
+
+    assertThat(result2).isEmpty();
+    verify(historicalChainData, never()).getNonCanonicalBlockByRoot(any());
+
+    // when enabled, should return nonCanonical
+    final Optional<UInt64> result3 =
+        SafeFutureAssert.safeJoin(client.getSlotByBlockRoot(block.getRoot(), true));
+
+    assertThat(result3).hasValue(block.getSlot());
+    verify(historicalChainData).getNonCanonicalBlockByRoot(block.getRoot());
   }
 
   @Test

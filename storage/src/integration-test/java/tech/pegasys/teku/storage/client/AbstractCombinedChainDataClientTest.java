@@ -428,7 +428,7 @@ public abstract class AbstractCombinedChainDataClientTest {
   }
 
   @Test
-  public void getSlotByBlockRoot_shouldReturnSlotForNonCanonicalBlock() {
+  public void getSlotByBlockRoot_shouldReturnSlotForNonCanonicalBlockWhenEnabled() {
     storageSystem =
         InMemoryStorageSystemBuilder.create()
             .storageMode(getStorageMode())
@@ -453,8 +453,19 @@ public abstract class AbstractCombinedChainDataClientTest {
     chainUpdater.finalizeEpoch(finalizedEpoch);
     chainUpdater.addNewBestBlock();
 
+    // by default should skip nonCanonical
     final SafeFuture<Optional<UInt64>> result = client.getSlotByBlockRoot(forkBlock.getRoot());
-    assertThat(result).isCompletedWithValue(Optional.of(forkBlock.getSlot()));
+    assertThat(result).isCompletedWithValue(Optional.empty());
+
+    // when disabled, should skip nonCanonical
+    final SafeFuture<Optional<UInt64>> result2 =
+        client.getSlotByBlockRoot(forkBlock.getRoot(), false);
+    assertThat(result2).isCompletedWithValue(Optional.empty());
+
+    // when enabled, should return nonCanonical
+    final SafeFuture<Optional<UInt64>> result3 =
+        client.getSlotByBlockRoot(forkBlock.getRoot(), true);
+    assertThat(result3).isCompletedWithValue(Optional.of(forkBlock.getSlot()));
   }
 
   public static Stream<Arguments> getQueryBySlotParameters() {
