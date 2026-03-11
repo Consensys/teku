@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import okhttp3.Call;
@@ -90,13 +89,10 @@ public class OkHttpExecutionEngineClient implements ExecutionEngineClient {
   private static final Duration EXCHANGE_CAPABILITIES_TIMEOUT = Duration.ofSeconds(1);
   private static final Duration GET_CLIENT_VERSION_TIMEOUT = Duration.ofSeconds(1);
   private static final Duration GET_BLOBS_TIMEOUT = Duration.ofSeconds(1);
+  private static final Duration GET_PAYLOAD_TIMEOUT = Duration.ofSeconds(2);
 
   public static final List<String> NON_CRITICAL_METHODS =
-      List.of(
-          "engine_exchangeCapabilities",
-          "engine_getClientVersionV1",
-          "engine_getBlobsV1",
-          "engine_getBlobsV2");
+      List.of("engine_exchangeCapabilities", "engine_getClientVersionV1", "engine_getBlobsV1");
 
   private final OkHttpClient httpClient;
   private final HttpUrl endpointUrl;
@@ -141,7 +137,7 @@ public class OkHttpExecutionEngineClient implements ExecutionEngineClient {
         "engine_getPayloadV1",
         Collections.singletonList(payloadId.toHexString()),
         ExecutionPayloadV1.class,
-        EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
+        GET_PAYLOAD_TIMEOUT);
   }
 
   @Override
@@ -150,7 +146,7 @@ public class OkHttpExecutionEngineClient implements ExecutionEngineClient {
         "engine_getPayloadV2",
         Collections.singletonList(payloadId.toHexString()),
         GetPayloadV2Response.class,
-        EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
+        GET_PAYLOAD_TIMEOUT);
   }
 
   @Override
@@ -159,7 +155,7 @@ public class OkHttpExecutionEngineClient implements ExecutionEngineClient {
         "engine_getPayloadV3",
         Collections.singletonList(payloadId.toHexString()),
         GetPayloadV3Response.class,
-        EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
+        GET_PAYLOAD_TIMEOUT);
   }
 
   @Override
@@ -168,7 +164,7 @@ public class OkHttpExecutionEngineClient implements ExecutionEngineClient {
         "engine_getPayloadV4",
         Collections.singletonList(payloadId.toHexString()),
         GetPayloadV4Response.class,
-        EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
+        GET_PAYLOAD_TIMEOUT);
   }
 
   @Override
@@ -177,7 +173,7 @@ public class OkHttpExecutionEngineClient implements ExecutionEngineClient {
         "engine_getPayloadV5",
         Collections.singletonList(payloadId.toHexString()),
         GetPayloadV5Response.class,
-        EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
+        GET_PAYLOAD_TIMEOUT);
   }
 
   @Override
@@ -186,7 +182,7 @@ public class OkHttpExecutionEngineClient implements ExecutionEngineClient {
         "engine_getPayloadV6",
         Collections.singletonList(payloadId.toHexString()),
         GetPayloadV6Response.class,
-        EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
+        GET_PAYLOAD_TIMEOUT);
   }
 
   @Override
@@ -399,8 +395,12 @@ public class OkHttpExecutionEngineClient implements ExecutionEngineClient {
             .build();
 
     final SafeFuture<Response<T>> future = new SafeFuture<>();
-    final Call call = httpClient.newCall(httpRequest);
-    call.timeout().timeout(timeout.toMillis(), TimeUnit.MILLISECONDS);
+    final Call call;
+    if (timeout.toMillis() != httpClient.callTimeoutMillis()) {
+      call = httpClient.newBuilder().callTimeout(timeout).build().newCall(httpRequest);
+    } else {
+      call = httpClient.newCall(httpRequest);
+    }
 
     call.enqueue(
         new Callback() {
@@ -538,6 +538,7 @@ public class OkHttpExecutionEngineClient implements ExecutionEngineClient {
 
   @JsonIgnoreProperties(ignoreUnknown = true)
   static class EthBlockResult {
+
     @JsonProperty("hash")
     public String hash;
 

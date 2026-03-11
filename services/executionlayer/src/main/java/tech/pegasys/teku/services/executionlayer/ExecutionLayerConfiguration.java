@@ -69,7 +69,7 @@ public class ExecutionLayerConfiguration {
       final boolean builderSetUserAgentHeader,
       final boolean useShouldOverrideBuilderFlag,
       final boolean exchangeCapabilitiesMonitoringEnabled,
-      final boolean useNewEngineApiClient1) {
+      final boolean useNewEngineApiClient) {
     this.spec = spec;
     this.engineEndpoint = engineEndpoint;
     this.engineJwtSecretFile = engineJwtSecretFile;
@@ -84,7 +84,7 @@ public class ExecutionLayerConfiguration {
     this.builderSetUserAgentHeader = builderSetUserAgentHeader;
     this.useShouldOverrideBuilderFlag = useShouldOverrideBuilderFlag;
     this.exchangeCapabilitiesMonitoringEnabled = exchangeCapabilitiesMonitoringEnabled;
-    this.useNewEngineApiClient = useNewEngineApiClient1;
+    this.useNewEngineApiClient = useNewEngineApiClient;
   }
 
   public static Builder builder() {

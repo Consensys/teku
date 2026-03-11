@@ -130,9 +130,6 @@ public class ExecutionLayerService extends Service {
           createStubExecutionLayerManager(serviceConfig, config, builderCircuitBreaker);
     } else {
       if (!config.isUseNewEngineApiClient()) {
-
-        LOG.info("Using legacy Web3j Engine API client");
-
         executionLayerManager =
             createRealExecutionLayerManager(
                 serviceConfig,
@@ -142,17 +139,14 @@ public class ExecutionLayerService extends Service {
                 builderRestClientProvider,
                 builderCircuitBreaker);
       } else {
-        LOG.info("Using new Engine API client");
-
+        LOG.info("Using new experimental Engine API client");
         final Optional<JwtConfig> jwtConfig =
             JwtConfig.createIfNeeded(
                 true,
                 config.getEngineJwtSecretFile(),
                 config.getEngineJwtClaimId(),
                 beaconDataDirectory);
-        final OkHttpClient okHttpClient =
-            OkHttpClientCreator.create(
-                EL_ENGINE_BLOCK_EXECUTION_TIMEOUT, LOG, jwtConfig, timeProvider);
+        final OkHttpClient okHttpClient = OkHttpClientCreator.create(LOG, jwtConfig, timeProvider);
         final ExecutionEngineClient newEngineApiClient =
             new OkHttpExecutionEngineClient(
                 okHttpClient,
