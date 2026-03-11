@@ -1,60 +1,62 @@
 jar { enabled = false }
 
 configurations {
-  // Local configuration for generateReferenceTestClasses — avoids cross-project lock issues in Gradle 9
-  refTestGenerator
+	// Local configuration for generateReferenceTestClasses — avoids cross-project lock issues in Gradle 9
+	refTestGenerator
 }
 
 dependencies {
-  refTestGenerator project(':eth-tests')
+	refTestGenerator project(':eth-tests')
 
-  referenceTestImplementation project(':beacon:validator')
-  referenceTestImplementation project(':ethereum:networks')
-  referenceTestImplementation project(':ethereum:spec')
-  referenceTestImplementation testFixtures(project(':ethereum:spec'))
-  referenceTestImplementation testFixtures(project(':ethereum:statetransition'))
-  referenceTestImplementation project(':ethereum:statetransition')
-  referenceTestImplementation project(':eth-tests')
-  referenceTestImplementation project(':infrastructure:bls')
-  referenceTestImplementation project(':infrastructure:serviceutils')
-  referenceTestImplementation project(':infrastructure:ssz')
-  referenceTestImplementation testFixtures(project(':infrastructure:ssz'))
-  referenceTestImplementation project(':storage')
-  referenceTestImplementation testFixtures(project(':storage'))
-  referenceTestImplementation project(':infrastructure:async')
-  referenceTestImplementation project(':infrastructure:io')
-  referenceTestImplementation testFixtures(project(':infrastructure:async'))
-  referenceTestImplementation testFixtures(project(':infrastructure:kzg'))
-  referenceTestImplementation testFixtures(project(':infrastructure:metrics'))
-  referenceTestImplementation project(':infrastructure:time')
-  referenceTestImplementation project(':data:dataexchange')
+	referenceTestImplementation project(':beacon:validator')
+	referenceTestImplementation project(':ethereum:networks')
+	referenceTestImplementation project(':ethereum:spec')
+	referenceTestImplementation testFixtures(project(':ethereum:spec'))
+	referenceTestImplementation testFixtures(project(':ethereum:statetransition'))
+	referenceTestImplementation project(':ethereum:statetransition')
+	referenceTestImplementation project(':eth-tests')
+	referenceTestImplementation project(':infrastructure:bls')
+	referenceTestImplementation project(':infrastructure:serviceutils')
+	referenceTestImplementation project(':infrastructure:ssz')
+	referenceTestImplementation testFixtures(project(':infrastructure:ssz'))
+	referenceTestImplementation project(':storage')
+	referenceTestImplementation testFixtures(project(':storage'))
+	referenceTestImplementation project(':infrastructure:async')
+	referenceTestImplementation project(':infrastructure:io')
+	referenceTestImplementation testFixtures(project(':infrastructure:async'))
+	referenceTestImplementation testFixtures(project(':infrastructure:kzg'))
+	referenceTestImplementation testFixtures(project(':infrastructure:metrics'))
+	referenceTestImplementation project(':infrastructure:time')
+	referenceTestImplementation project(':data:dataexchange')
 
-  referenceTestImplementation 'org.hyperledger.besu:besu-plugin-api'
-  referenceTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
-  referenceTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  referenceTestImplementation 'io.consensys.tuweni:tuweni-bytes'
-  referenceTestImplementation 'io.consensys.tuweni:tuweni-ssz'
-  referenceTestImplementation 'org.xerial.snappy:snappy-java'
+	referenceTestImplementation 'org.hyperledger.besu:besu-plugin-api'
+	referenceTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
+	referenceTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+	referenceTestImplementation 'io.consensys.tuweni:tuweni-bytes'
+	referenceTestImplementation 'io.consensys.tuweni:tuweni-ssz'
+	referenceTestImplementation 'org.xerial.snappy:snappy-java'
 }
 
 task cleanReferenceTestClasses(type: Delete) {
-  delete project.file('src/referenceTest/generated')
-  delete project.file('src/referenceTest/generated_tests')
+	delete project.file('src/referenceTest/generated')
+	delete project.file('src/referenceTest/generated_tests')
 }
 
 task generateReferenceTestClasses(type: JavaExec) {
-  dependsOn(cleanReferenceTestClasses)
-  group = "Execution"
-  description = "Generate reference test classes"
-  classpath = configurations.refTestGenerator
-  mainClass = 'tech.pegasys.teku.ethtests.ReferenceTestGenerator'
-  args = [project.file('src/referenceTest/generated_tests').absolutePath]
-  systemProperty("teku.ref-test-module.path", project.file("../eth-reference-tests").absolutePath)
+	dependsOn(cleanReferenceTestClasses)
+	group = "Execution"
+	description = "Generate reference test classes"
+	classpath = configurations.refTestGenerator
+	mainClass = 'tech.pegasys.teku.ethtests.ReferenceTestGenerator'
+	args = [
+		project.file('src/referenceTest/generated_tests').absolutePath
+	]
+	systemProperty("teku.ref-test-module.path", project.file("../eth-reference-tests").absolutePath)
 }
 
 compileReferenceTestJava {
-  dependsOn generateReferenceTestClasses
-  // Fork worker to compile tests and avoid OoM errors during compilation
-  options.fork = true
-  options.forkOptions.memoryMaximumSize = "2048m"
+	dependsOn generateReferenceTestClasses
+	// Fork worker to compile tests and avoid OoM errors during compilation
+	options.fork = true
+	options.forkOptions.memoryMaximumSize = "2048m"
 }

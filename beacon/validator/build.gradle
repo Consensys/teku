@@ -1,56 +1,56 @@
 idea {
-  module {
-    testSources.from(sourceSets.jmh.java.srcDirs)
-  }
+	module {
+		testSources.from(sourceSets.jmh.java.srcDirs)
+	}
 }
 
 dependencies {
-  implementation project(':infrastructure:async')
-  implementation project(':infrastructure:bls')
-  implementation project(':validator:api')
-  implementation project(':validator:client')
-  implementation project(':storage')
-  implementation project(':storage:api')
-  implementation project(':infrastructure:serviceutils')
-  implementation project(':ethereum:performance-trackers')
-  implementation project(':ethereum:statetransition')
-  implementation project(':ethereum:events')
-  implementation project(':ethereum:pow:api')
-  implementation project(':ethereum:pow:merkletree')
-  implementation project(':ethereum:spec')
-  implementation project(':ethereum:executionclient')
-  implementation project(':networking:eth2')
-  implementation project(':infrastructure:logging')
-  implementation project(':infrastructure:ssz')
-  implementation project(':beacon:pow')
-  implementation project(':beacon:sync')
-  implementation project(':data:serializer')
-  implementation project(':data:provider')
-  implementation project(':infrastructure:events')
-  implementation project(':infrastructure:exceptions')
-  implementation project(':infrastructure:metrics')
-  implementation project(':infrastructure:version')
-  implementation project(':ethereum:json-types')
+	implementation project(':infrastructure:async')
+	implementation project(':infrastructure:bls')
+	implementation project(':validator:api')
+	implementation project(':validator:client')
+	implementation project(':storage')
+	implementation project(':storage:api')
+	implementation project(':infrastructure:serviceutils')
+	implementation project(':ethereum:performance-trackers')
+	implementation project(':ethereum:statetransition')
+	implementation project(':ethereum:events')
+	implementation project(':ethereum:pow:api')
+	implementation project(':ethereum:pow:merkletree')
+	implementation project(':ethereum:spec')
+	implementation project(':ethereum:executionclient')
+	implementation project(':networking:eth2')
+	implementation project(':infrastructure:logging')
+	implementation project(':infrastructure:ssz')
+	implementation project(':beacon:pow')
+	implementation project(':beacon:sync')
+	implementation project(':data:serializer')
+	implementation project(':data:provider')
+	implementation project(':infrastructure:events')
+	implementation project(':infrastructure:exceptions')
+	implementation project(':infrastructure:metrics')
+	implementation project(':infrastructure:version')
+	implementation project(':ethereum:json-types')
 
-  implementation 'it.unimi.dsi:fastutil'
-  implementation 'io.consensys.tuweni:tuweni-bytes'
-  implementation 'io.consensys.tuweni:tuweni-ssz'
+	implementation 'it.unimi.dsi:fastutil'
+	implementation 'io.consensys.tuweni:tuweni-bytes'
+	implementation 'io.consensys.tuweni:tuweni-ssz'
 
-  testImplementation project(':infrastructure:metrics')
-  testImplementation testFixtures(project(':ethereum:spec'))
-  testImplementation testFixtures(project(':ethereum:statetransition'))
-  testImplementation testFixtures(project(':ethereum:networks'))
-  testImplementation testFixtures(project(':storage'))
-  testImplementation testFixtures(project(':infrastructure:async'))
-  testImplementation testFixtures(project(':infrastructure:logging'))
-  testImplementation testFixtures(project(':infrastructure:metrics'))
-  testImplementation testFixtures(project(':infrastructure:time'))
-  testImplementation testFixtures(project(':infrastructure:kzg'))
+	testImplementation project(':infrastructure:metrics')
+	testImplementation testFixtures(project(':ethereum:spec'))
+	testImplementation testFixtures(project(':ethereum:statetransition'))
+	testImplementation testFixtures(project(':ethereum:networks'))
+	testImplementation testFixtures(project(':storage'))
+	testImplementation testFixtures(project(':infrastructure:async'))
+	testImplementation testFixtures(project(':infrastructure:logging'))
+	testImplementation testFixtures(project(':infrastructure:metrics'))
+	testImplementation testFixtures(project(':infrastructure:time'))
+	testImplementation testFixtures(project(':infrastructure:kzg'))
 
-  integrationTestImplementation testFixtures(project(':ethereum:spec'))
-  integrationTestImplementation testFixtures(project(':infrastructure:async'))
+	integrationTestImplementation testFixtures(project(':ethereum:spec'))
+	integrationTestImplementation testFixtures(project(':infrastructure:async'))
 
-  jmhImplementation testFixtures(project(':ethereum:spec'))
-  jmhImplementation 'org.mockito:mockito-core'
-  jmhImplementation testFixtures(project(':eth-benchmark-tests'))
+	jmhImplementation testFixtures(project(':ethereum:spec'))
+	jmhImplementation 'org.mockito:mockito-core'
+	jmhImplementation testFixtures(project(':eth-benchmark-tests'))
 }
