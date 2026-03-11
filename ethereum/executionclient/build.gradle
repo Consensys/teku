@@ -14,6 +14,8 @@ dependencies {
   implementation project(':ethereum:events')
 
   api 'org.web3j:core'
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
+  implementation 'com.squareup.okhttp3:okhttp'
   implementation 'io.consensys.tuweni:tuweni-units'
   implementation 'io.jsonwebtoken:jjwt-api'
   implementation 'com.fasterxml.jackson.module:jackson-module-blackbird'
@@ -25,6 +27,7 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:time'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':ethereum:spec'))
+  testImplementation 'com.squareup.okhttp3:mockwebserver'
 
   integrationTestImplementation testFixtures(project(':infrastructure:json'))
   integrationTestImplementation testFixtures(project(':infrastructure:time'))
