@@ -74,7 +74,7 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
             KvStoreSerializer.createStateSerializer(spec),
             true);
     slotsByFinalizedStateRoot =
-        KvStoreColumn.create(finalizedOffset + 4, BYTES32_SERIALIZER, UINT64_SERIALIZER, true);
+        KvStoreColumn.create(finalizedOffset + 4, BYTES32_SERIALIZER, UINT64_SERIALIZER);
     nonCanonicalBlocksByRoot =
         KvStoreColumn.create(
             finalizedOffset + 5,
