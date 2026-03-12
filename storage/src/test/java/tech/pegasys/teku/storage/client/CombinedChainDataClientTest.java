@@ -352,6 +352,79 @@ class CombinedChainDataClientTest {
   }
 
   @Test
+  void getSlotByBlockRoot_shouldReturnSlotFromRecentChainData() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
+    when(recentChainData.getSlotForBlockRoot(block.getRoot()))
+        .thenReturn(Optional.of(block.getSlot()));
+
+    final Optional<UInt64> result =
+        SafeFutureAssert.safeJoin(client.getSlotByBlockRoot(block.getRoot()));
+
+    assertThat(result).hasValue(block.getSlot());
+    verify(historicalChainData, never()).getFinalizedSlotByBlockRoot(any());
+    verify(historicalChainData, never()).getNonCanonicalBlockByRoot(any());
+  }
+
+  @Test
+  void getSlotByBlockRoot_shouldFallBackToFinalizedSlotLookup() {
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    final UInt64 slot = UInt64.valueOf(42);
+    when(recentChainData.getSlotForBlockRoot(blockRoot)).thenReturn(Optional.empty());
+    when(historicalChainData.getFinalizedSlotByBlockRoot(blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(slot)));
+
+    final Optional<UInt64> result = SafeFutureAssert.safeJoin(client.getSlotByBlockRoot(blockRoot));
+
+    assertThat(result).hasValue(slot);
+    verify(historicalChainData, never()).getNonCanonicalBlockByRoot(any());
+  }
+
+  @Test
+  void getSlotByBlockRoot_shouldFallBackToNonCanonicalBlockWhenEnabled() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(7);
+    when(recentChainData.getSlotForBlockRoot(block.getRoot())).thenReturn(Optional.empty());
+    when(historicalChainData.getFinalizedSlotByBlockRoot(block.getRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(historicalChainData.getNonCanonicalBlockByRoot(block.getRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
+
+    // by default should skip nonCanonical
+    final Optional<UInt64> result =
+        SafeFutureAssert.safeJoin(client.getSlotByBlockRoot(block.getRoot()));
+
+    assertThat(result).isEmpty();
+    verify(historicalChainData, never()).getNonCanonicalBlockByRoot(any());
+
+    // when disabled, should skip nonCanonical
+    final Optional<UInt64> result2 =
+        SafeFutureAssert.safeJoin(client.getSlotByBlockRoot(block.getRoot(), false));
+
+    assertThat(result2).isEmpty();
+    verify(historicalChainData, never()).getNonCanonicalBlockByRoot(any());
+
+    // when enabled, should return nonCanonical
+    final Optional<UInt64> result3 =
+        SafeFutureAssert.safeJoin(client.getSlotByBlockRoot(block.getRoot(), true));
+
+    assertThat(result3).hasValue(block.getSlot());
+    verify(historicalChainData).getNonCanonicalBlockByRoot(block.getRoot());
+  }
+
+  @Test
+  void getSlotByBlockRoot_shouldReturnEmptyWhenNotFound() {
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    when(recentChainData.getSlotForBlockRoot(blockRoot)).thenReturn(Optional.empty());
+    when(historicalChainData.getFinalizedSlotByBlockRoot(blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(historicalChainData.getNonCanonicalBlockByRoot(blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    final Optional<UInt64> result = SafeFutureAssert.safeJoin(client.getSlotByBlockRoot(blockRoot));
+
+    assertThat(result).isEmpty();
+  }
+
+  @Test
   @SuppressWarnings("FutureReturnValueIgnored")
   void getEarliestAvailableDataColumnSlot_WithFallback_shouldRespectConfig() {
     client.getEarliestAvailableDataColumnSlotWithFallback();

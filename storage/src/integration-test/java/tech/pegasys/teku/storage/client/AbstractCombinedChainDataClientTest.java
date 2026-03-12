@@ -393,6 +393,81 @@ public abstract class AbstractCombinedChainDataClientTest {
     assertThat(actual).isCompletedWithValue(Optional.of(expected));
   }
 
+  @Test
+  public void getSlotByBlockRoot_shouldReturnSlotForHotBlock() {
+    chainUpdater.initializeGenesis();
+    final SignedBlockAndState block = chainUpdater.addNewBestBlock();
+
+    final SafeFuture<Optional<UInt64>> result = client.getSlotByBlockRoot(block.getRoot());
+    assertThat(result).isCompletedWithValue(Optional.of(block.getSlot()));
+  }
+
+  @Test
+  public void getSlotByBlockRoot_shouldReturnSlotForFinalizedBlock() {
+    final UInt64 finalizedEpoch = UInt64.valueOf(2);
+    final UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch);
+
+    chainUpdater.initializeGenesis();
+    final SignedBlockAndState historicalBlock = chainUpdater.advanceChain();
+    chainUpdater.advanceChain(finalizedSlot);
+    chainUpdater.finalizeEpoch(finalizedEpoch);
+    chainUpdater.addNewBestBlock();
+
+    final SafeFuture<Optional<UInt64>> result =
+        client.getSlotByBlockRoot(historicalBlock.getRoot());
+    assertThat(result).isCompletedWithValue(Optional.of(historicalBlock.getSlot()));
+  }
+
+  @Test
+  public void getSlotByBlockRoot_shouldReturnEmptyForUnknownRoot() {
+    chainUpdater.initializeGenesis();
+    chainUpdater.addNewBestBlock();
+
+    final SafeFuture<Optional<UInt64>> result = client.getSlotByBlockRoot(Bytes32.ZERO);
+    assertThat(result).isCompletedWithValue(Optional.empty());
+  }
+
+  @Test
+  public void getSlotByBlockRoot_shouldReturnSlotForNonCanonicalBlockWhenEnabled() {
+    storageSystem =
+        InMemoryStorageSystemBuilder.create()
+            .storageMode(getStorageMode())
+            .specProvider(spec)
+            .storeNonCanonicalBlocks(true)
+            .build();
+    chainUpdater = new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
+    client = storageSystem.combinedChainDataClient();
+
+    chainUpdater.initializeGenesis();
+
+    // Create a fork
+    chainUpdater.advanceChain();
+    final ChainBuilder fork = chainBuilder.fork();
+    final SignedBlockAndState forkBlock = fork.generateNextBlock();
+    chainUpdater.saveBlock(forkBlock);
+
+    // Advance canonical chain and finalize so the fork block becomes non-canonical
+    final UInt64 finalizedEpoch = UInt64.valueOf(2);
+    final UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch);
+    chainUpdater.advanceChain(finalizedSlot);
+    chainUpdater.finalizeEpoch(finalizedEpoch);
+    chainUpdater.addNewBestBlock();
+
+    // by default should skip nonCanonical
+    final SafeFuture<Optional<UInt64>> result = client.getSlotByBlockRoot(forkBlock.getRoot());
+    assertThat(result).isCompletedWithValue(Optional.empty());
+
+    // when disabled, should skip nonCanonical
+    final SafeFuture<Optional<UInt64>> result2 =
+        client.getSlotByBlockRoot(forkBlock.getRoot(), false);
+    assertThat(result2).isCompletedWithValue(Optional.empty());
+
+    // when enabled, should return nonCanonical
+    final SafeFuture<Optional<UInt64>> result3 =
+        client.getSlotByBlockRoot(forkBlock.getRoot(), true);
+    assertThat(result3).isCompletedWithValue(Optional.of(forkBlock.getSlot()));
+  }
+
   public static Stream<Arguments> getQueryBySlotParameters() {
     return Stream.of(
         Arguments.of("getLatestStateAtSlot", new GetLatestStateAtSlotTestCase()),

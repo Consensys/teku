@@ -226,8 +226,11 @@ public class GossipValidationHelper {
         .getCurrentSlot()
         .map(
             currentSlot -> {
-              final UInt64 nextEpoch = spec.computeEpochAtSlot(currentSlot).plus(ONE);
-              return spec.computeEpochAtSlot(slot).equals(nextEpoch);
+              final int slotsPerEpoch = spec.getSlotsPerEpoch(currentSlot);
+              final UInt64 currentEpochStart = currentSlot.minus(currentSlot.mod(slotsPerEpoch));
+              final UInt64 nextEpochStart = currentEpochStart.plus(slotsPerEpoch);
+              return slot.isGreaterThanOrEqualTo(nextEpochStart)
+                  && slot.isLessThan(nextEpochStart.plus(slotsPerEpoch));
             })
         .orElse(false);
   }
