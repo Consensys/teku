@@ -70,7 +70,6 @@ import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
-import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
@@ -127,9 +126,6 @@ public class ValidatorApiHandlerIntegrationTest {
       mock(ExecutionPayloadFactory.class);
   private final ExecutionPayloadPublisher executionPayloadPublisher =
       mock(ExecutionPayloadPublisher.class);
-  private final ExecutionPayloadBidManager executionPayloadBidManager =
-      mock(ExecutionPayloadBidManager.class);
-
   private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
   private final SyncCommitteeMessagePool syncCommitteeMessagePool =
       mock(SyncCommitteeMessagePool.class);
