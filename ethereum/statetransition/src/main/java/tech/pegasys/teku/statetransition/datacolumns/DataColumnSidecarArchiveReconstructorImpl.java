@@ -134,12 +134,7 @@ public class DataColumnSidecarArchiveReconstructorImpl
 
                       final List<BlobAndCellProofs> blobAndCellProofsList = new ArrayList<>();
                       for (int i = 0;
-                          i
-                              < sidecars
-                                  .getFirst()
-                                  .getMaybeKzgCommitments()
-                                  .orElseThrow()
-                                  .size();
+                          i < sidecars.getFirst().getMaybeKzgCommitments().orElseThrow().size();
                           i++) {
                         final int blobIndex = i;
                         final Bytes blob =
@@ -237,7 +232,7 @@ public class DataColumnSidecarArchiveReconstructorImpl
         spec.computeStartSlotAtEpoch(
             finalizedEpoch.min(
                 currentEpoch.minusMinZero(dataColumnSidecarExtensionRetentionEpochs)));
-    sidecarArchivePrunableChannel.onSidecarArchivePrunableSlot(lastPrunableSlot).finishDebug(LOG);
+    sidecarArchivePrunableChannel.onSidecarArchivePrunableSlot(lastPrunableSlot);
   }
 
   private int getNextTaskId() {

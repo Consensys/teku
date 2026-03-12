@@ -13,10 +13,9 @@
 
 package tech.pegasys.teku.storage.api;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface SidecarArchivePrunableChannel extends VoidReturningChannelInterface {
-  SafeFuture<Void> onSidecarArchivePrunableSlot(UInt64 slot);
+  void onSidecarArchivePrunableSlot(UInt64 slot);
 }

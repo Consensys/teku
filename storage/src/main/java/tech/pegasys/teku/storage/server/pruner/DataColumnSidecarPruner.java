@@ -145,9 +145,8 @@ public class DataColumnSidecarPruner extends Service implements SidecarArchivePr
   }
 
   @Override
-  public SafeFuture<Void> onSidecarArchivePrunableSlot(final UInt64 slot) {
+  public void onSidecarArchivePrunableSlot(final UInt64 slot) {
     lastDataColumnSidecarArchivePrunableSlot.set(slot.longValue());
-    return SafeFuture.COMPLETE;
   }
 
   /**
