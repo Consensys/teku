@@ -226,7 +226,6 @@ public class ValidatorApiHandlerIntegrationTest {
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
-            executionPayloadBidManager,
             ExecutionProofManager.NOOP);
   }
 

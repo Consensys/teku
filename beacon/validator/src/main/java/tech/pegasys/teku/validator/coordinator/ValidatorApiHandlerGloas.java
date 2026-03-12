@@ -26,6 +26,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscrib
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -43,6 +44,8 @@ import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
 
 public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
+
+  private final ExecutionPayloadBidManager executionPayloadBidManager;
 
   public ValidatorApiHandlerGloas(
       final ChainDataProvider chainDataProvider,
@@ -97,8 +100,8 @@ public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
         executionPayloadManager,
         executionPayloadFactory,
         executionPayloadPublisher,
-        executionPayloadBidManager,
         executionProofManager);
+    this.executionPayloadBidManager = executionPayloadBidManager;
   }
 
   @Override
@@ -147,5 +150,20 @@ public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
                     // after the Gloas fork)
                     .getExecutionPayloadStateIfAvailable(blockRoot)
                     .flatMap(state -> combinedChainDataClient.regenerateBeaconState(state, slot)));
+  }
+
+  @Override
+  public SafeFuture<Void> publishSignedExecutionPayloadBid(
+          final SignedExecutionPayloadBid signedExecutionPayloadBid) {
+    return executionPayloadBidManager
+            .validateAndAddBid(signedExecutionPayloadBid, ExecutionPayloadBidManager.RemoteBidOrigin.BUILDER)
+            .thenAccept(
+                    result -> {
+                      if (!result.isAccept()) {
+                        throw new IllegalArgumentException(
+                                "Invalid execution payload bid: "
+                                        + result.getDescription().orElse("unknown reason"));
+                      }
+                    });
   }
 }

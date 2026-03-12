@@ -169,7 +169,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private final ExecutionPayloadManager executionPayloadManager;
   private final ExecutionPayloadFactory executionPayloadFactory;
   private final ExecutionPayloadPublisher executionPayloadPublisher;
-  private final ExecutionPayloadBidManager executionPayloadBidManager;
+
 
   private final AttesterDutiesGenerator attesterDutiesGenerator;
   private final ExecutionProofManager executionProofManager;
@@ -200,7 +200,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final ExecutionPayloadManager executionPayloadManager,
       final ExecutionPayloadFactory executionPayloadFactory,
       final ExecutionPayloadPublisher executionPayloadPublisher,
-      final ExecutionPayloadBidManager executionPayloadBidManager,
       final ExecutionProofManager executionProofManager) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
@@ -227,7 +226,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     this.executionPayloadManager = executionPayloadManager;
     this.executionPayloadFactory = executionPayloadFactory;
     this.executionPayloadPublisher = executionPayloadPublisher;
-    this.executionPayloadBidManager = executionPayloadBidManager;
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
     this.executionProofManager = executionProofManager;
   }
@@ -974,7 +972,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
   }
 
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9997 (not required for devnet-0)
   @Override
   public SafeFuture<Optional<ExecutionPayloadBid>> createUnsignedExecutionPayloadBid(
       final UInt64 slot, final UInt64 builderIndex) {
@@ -984,16 +981,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   @Override
   public SafeFuture<Void> publishSignedExecutionPayloadBid(
       final SignedExecutionPayloadBid signedExecutionPayloadBid) {
-    return executionPayloadBidManager
-        .validateAndAddBid(signedExecutionPayloadBid, RemoteBidOrigin.BUILDER)
-        .thenAccept(
-            result -> {
-              if (!result.isAccept()) {
-                throw new IllegalArgumentException(
-                    "Invalid execution payload bid: "
-                        + result.getDescription().orElse("unknown reason"));
-              }
-            });
+    throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
   }
 
   @Override

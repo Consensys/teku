@@ -343,7 +343,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
-            executionPayloadBidManager,
             executionProofManager);
     validatorApiChannel = validatorApiHandler;
     chainUpdater.initializeGenesis();
