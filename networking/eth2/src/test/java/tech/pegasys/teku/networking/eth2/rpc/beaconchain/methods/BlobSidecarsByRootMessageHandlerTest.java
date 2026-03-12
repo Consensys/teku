@@ -129,8 +129,8 @@ public class BlobSidecarsByRootMessageHandlerTest {
     when(combinedChainDataClient.getSlotByBlockRoot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(currentForkFirstSlot)));
     // deneb fork epoch is finalized
-    when(combinedChainDataClient.getFinalizedBlock())
-        .thenReturn(Optional.of(dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot)));
+    when(combinedChainDataClient.getFinalizedBlockSlot())
+        .thenReturn(Optional.of(currentForkFirstSlot));
     when(combinedChainDataClient.getStore()).thenReturn(store);
     when(combinedChainDataClient.getRecentChainData()).thenReturn(recentChainData);
     when(callback.respond(any())).thenReturn(SafeFuture.COMPLETE);

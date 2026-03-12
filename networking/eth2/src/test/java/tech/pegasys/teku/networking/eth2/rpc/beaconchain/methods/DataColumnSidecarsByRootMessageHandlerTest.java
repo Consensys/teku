@@ -205,7 +205,6 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     final Bytes32 secondBlockRoot = dataColumnsByRootIdentifiers[1].getBlockRoot();
     when(combinedChainDataClient.getSlotByBlockRoot(secondBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-
     when(combinedChainDataClient.getSidecar(any()))
         .thenAnswer(
             invocation -> {
