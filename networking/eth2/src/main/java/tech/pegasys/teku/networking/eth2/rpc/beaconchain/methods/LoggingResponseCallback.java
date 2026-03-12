@@ -51,9 +51,4 @@ public record LoggingResponseCallback<T>(
     logger.onError(error);
     callback.completeWithUnexpectedError(error);
   }
-
-  @Override
-  public void alwaysRun(final Runnable runnable) {
-    callback.alwaysRun(runnable);
-  }
 }

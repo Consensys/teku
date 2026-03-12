@@ -87,7 +87,7 @@ public class WithPrecomputeBenchmark {
             .map(sidecar -> sidecar.getKzgProofs().stream().map(SszKZGProof::getKZGProof).toList())
             .toList();
     final List<BlobAndCellProofs> blobAndCellProofsList = new ArrayList<>();
-    for (int i = 0; i < sidecars.getFirst().getKzgCommitments().size(); i++) {
+    for (int i = 0; i < sidecars.getFirst().getMaybeKzgCommitments().orElseThrow().size(); i++) {
       final int blobIndex = i;
       final Bytes blob =
           sidecars.stream()
