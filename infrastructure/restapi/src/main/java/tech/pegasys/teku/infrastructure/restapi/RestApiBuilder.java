@@ -42,8 +42,6 @@ import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import org.eclipse.jetty.util.thread.VirtualThreadPool;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.JavalinEndpointAdapter;
@@ -234,16 +232,6 @@ public class RestApiBuilder {
             }
           }
         });
-
-    // Enable bounded virtual threads for request handling
-    if (server.getThreadPool() instanceof QueuedThreadPool qtp) {
-      final VirtualThreadPool virtualThreadPool = new VirtualThreadPool();
-      virtualThreadPool.setMaxConcurrentTasks(250);
-      qtp.setVirtualThreadsExecutor(virtualThreadPool);
-      LOG.info(
-          "Virtual threads enabled for REST API (max concurrent tasks: {})",
-          virtualThreadPool.getMaxConcurrentTasks());
-    }
   }
 
   private SslContextFactory.Server getSslContextFactory() {

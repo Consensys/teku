@@ -32,7 +32,7 @@ dependencyManagement {
 
 		dependency 'info.picocli:picocli:4.7.7'
 
-		dependencySet(group: 'io.javalin', version: '7.0.0') {
+		dependencySet(group: 'io.javalin', version: '7.0.1') {
 			entry 'javalin'
 			entry 'javalin-rendering-thymeleaf'
 		}
