@@ -62,6 +62,8 @@ public class Eth2NetworkConfiguration {
 
   public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = true;
 
+  public static final boolean DEFAULT_QUARTZ_SCHEDULER_ENABLED = false;
+
   public static final boolean DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED = true;
 
   public static final boolean DEFAULT_AGGREGATING_ATTESTATION_POOL_PROFILING_ENABLED = false;
@@ -151,6 +153,7 @@ public class Eth2NetworkConfiguration {
   private final int aggregatingAttestationPoolV2BlockAggregationTimeLimit;
   private final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit;
   private final int attestationWaitLimitMillis;
+  private final boolean quartzSchedulerEnabled;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
@@ -189,7 +192,8 @@ public class Eth2NetworkConfiguration {
       final boolean aggregatingAttestationPoolProfilingEnabled,
       final int aggregatingAttestationPoolV2BlockAggregationTimeLimit,
       final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
-      final int attestationWaitLimitMillis) {
+      final int attestationWaitLimitMillis,
+      final boolean quartzSchedulerEnabled) {
     this.spec = spec;
     this.constants = constants;
     this.stateBoostrapConfig = stateBoostrapConfig;
@@ -233,6 +237,7 @@ public class Eth2NetworkConfiguration {
     this.aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit =
         aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit;
     this.attestationWaitLimitMillis = attestationWaitLimitMillis;
+    this.quartzSchedulerEnabled = quartzSchedulerEnabled;
 
     LOG.debug("Attestation wait time limit in ratchet: {} ms", attestationWaitLimitMillis);
 
@@ -391,6 +396,10 @@ public class Eth2NetworkConfiguration {
     return dataColumnSidecarRecoveryMaxDelayMillis;
   }
 
+  public boolean isQuartzSchedulerEnabled() {
+    return quartzSchedulerEnabled;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -528,6 +537,7 @@ public class Eth2NetworkConfiguration {
     private int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit =
         DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_TOTAL_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS;
     private int attestationWaitLimitMillis = DEFAULT_ATTESTATION_WAIT_TIMEOUT_MILLIS;
+    private boolean quartzSchedulerEnabled = DEFAULT_QUARTZ_SCHEDULER_ENABLED;
 
     public void spec(final Spec spec) {
       this.spec = spec;
@@ -628,7 +638,8 @@ public class Eth2NetworkConfiguration {
           aggregatingAttestationPoolProfilingEnabled,
           aggregatingAttestationPoolV2BlockAggregationTimeLimit,
           aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
-          attestationWaitLimitMillis);
+          attestationWaitLimitMillis,
+          quartzSchedulerEnabled);
     }
 
     private boolean resolvePrepareBlockProductionAbility(
@@ -946,6 +957,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder rustKzgEnabled(final boolean rustKzgEnabled) {
       this.rustKzgEnabled = rustKzgEnabled;
+      return this;
+    }
+
+    public Builder quartzSchedulerEnabled(final boolean quartzSchedulerEnabled) {
+      this.quartzSchedulerEnabled = quartzSchedulerEnabled;
       return this;
     }
 
