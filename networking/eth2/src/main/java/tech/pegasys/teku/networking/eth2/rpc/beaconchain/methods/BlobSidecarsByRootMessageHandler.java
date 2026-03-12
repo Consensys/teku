@@ -173,10 +173,7 @@ public class BlobSidecarsByRootMessageHandler
       final UInt64 finalizedEpoch) {
     return maybeSidecar
         .map(sidecar -> SafeFuture.completedFuture(Optional.of(sidecar.getSlot())))
-        .orElse(
-            combinedChainDataClient
-                .getBlockByBlockRoot(identifier.getBlockRoot())
-                .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot)))
+        .orElse(combinedChainDataClient.getSlotByBlockRoot(identifier.getBlockRoot()))
         .thenComposeChecked(
             maybeSlot -> {
               if (maybeSlot.isEmpty()
