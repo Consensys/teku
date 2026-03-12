@@ -293,18 +293,18 @@ public class DataColumnSidecarsByRangeMessageHandler
 
     private List<DataColumnSlotAndIdentifier> filterIdentifiers(
         final List<DataColumnSlotAndIdentifier> dbIdentifiers) {
-      final NavigableMap<UInt64, List<DataColumnSlotAndIdentifier>> canonicalSlotToColumnId =
+      final NavigableMap<UInt64, List<DataColumnSlotAndIdentifier>> canonicalSlotToColumnIds =
           dbIdentifiers.stream()
               .filter(this::isCanonicalHotOrFinalizedDataColumnSidecar)
               .collect(
                   Collectors.groupingBy(
                       DataColumnSlotAndIdentifier::slot, TreeMap::new, Collectors.toList()));
       final List<DataColumnSlotAndIdentifier> matchingKeys = new ArrayList<>();
-      for (final UInt64 slot : canonicalSlotToColumnId.navigableKeySet()) {
-        if (maybeSuperNodePruned && !canonicalSlotToColumnId.get(slot).isEmpty()) {
+      for (final UInt64 slot : canonicalSlotToColumnIds.navigableKeySet()) {
+        if (maybeSuperNodePruned && !canonicalSlotToColumnIds.get(slot).isEmpty()) {
           // Adding all requested, we expect we either have it
           // or can reconstruct from proof archives
-          final DataColumnSlotAndIdentifier first = canonicalSlotToColumnId.get(slot).getFirst();
+          final DataColumnSlotAndIdentifier first = canonicalSlotToColumnIds.get(slot).getFirst();
           columns.stream()
               .sorted()
               .forEach(
@@ -313,7 +313,7 @@ public class DataColumnSidecarsByRangeMessageHandler
                           new DataColumnSlotAndIdentifier(
                               first.slot(), first.blockRoot(), column)));
         } else {
-          canonicalSlotToColumnId.get(slot).stream()
+          canonicalSlotToColumnIds.get(slot).stream()
               .filter(key -> columns.contains(key.columnIndex()))
               .forEach(matchingKeys::add);
         }
