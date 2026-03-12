@@ -60,7 +60,7 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
   private V6SchemaCombinedSnapshot(final Spec spec, final int finalizedOffset) {
     super(spec, finalizedOffset);
     slotsByFinalizedRoot =
-        KvStoreColumn.create(finalizedOffset + 1, BYTES32_SERIALIZER, UINT64_SERIALIZER, true);
+        KvStoreColumn.create(finalizedOffset + 1, BYTES32_SERIALIZER, UINT64_SERIALIZER);
     finalizedBlocksBySlot =
         KvStoreColumn.create(
             finalizedOffset + 2,
