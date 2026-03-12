@@ -154,16 +154,17 @@ public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
 
   @Override
   public SafeFuture<Void> publishSignedExecutionPayloadBid(
-          final SignedExecutionPayloadBid signedExecutionPayloadBid) {
+      final SignedExecutionPayloadBid signedExecutionPayloadBid) {
     return executionPayloadBidManager
-            .validateAndAddBid(signedExecutionPayloadBid, ExecutionPayloadBidManager.RemoteBidOrigin.BUILDER)
-            .thenAccept(
-                    result -> {
-                      if (!result.isAccept()) {
-                        throw new IllegalArgumentException(
-                                "Invalid execution payload bid: "
-                                        + result.getDescription().orElse("unknown reason"));
-                      }
-                    });
+        .validateAndAddBid(
+            signedExecutionPayloadBid, ExecutionPayloadBidManager.RemoteBidOrigin.BUILDER)
+        .thenAccept(
+            result -> {
+              if (!result.isAccept()) {
+                throw new IllegalArgumentException(
+                    "Invalid execution payload bid: "
+                        + result.getDescription().orElse("unknown reason"));
+              }
+            });
   }
 }
