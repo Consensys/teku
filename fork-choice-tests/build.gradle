@@ -1,22 +1,22 @@
 jar { enabled = false }
 
 dependencies {
-    integrationTestImplementation testFixtures(project(':ethereum:spec'))
-    integrationTestImplementation project(':ethereum:statetransition')
-    integrationTestImplementation project(':eth-tests')
-    integrationTestImplementation project(':infrastructure:bls')
-    integrationTestImplementation project(':infrastructure:ssz')
-    integrationTestImplementation project(':storage')
-    integrationTestImplementation project(':infrastructure:async')
-    integrationTestImplementation project(':infrastructure:time')
+	integrationTestImplementation testFixtures(project(':ethereum:spec'))
+	integrationTestImplementation project(':ethereum:statetransition')
+	integrationTestImplementation project(':eth-tests')
+	integrationTestImplementation project(':infrastructure:bls')
+	integrationTestImplementation project(':infrastructure:ssz')
+	integrationTestImplementation project(':storage')
+	integrationTestImplementation project(':infrastructure:async')
+	integrationTestImplementation project(':infrastructure:time')
 
-    integrationTestImplementation testFixtures(project(':ethereum:networks'))
-    integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
-    integrationTestImplementation testFixtures(project(':infrastructure:async'))
-    integrationTestImplementation testFixtures(project(':storage'))
-    testImplementation testFixtures(project(':infrastructure:metrics'))
+	integrationTestImplementation testFixtures(project(':ethereum:networks'))
+	integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
+	integrationTestImplementation testFixtures(project(':infrastructure:async'))
+	integrationTestImplementation testFixtures(project(':storage'))
+	testImplementation testFixtures(project(':infrastructure:metrics'))
 
-    integrationTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
-    integrationTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-    integrationTestImplementation 'io.consensys.tuweni:tuweni-bytes'
+	integrationTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
+	integrationTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+	integrationTestImplementation 'io.consensys.tuweni:tuweni-bytes'
 }
