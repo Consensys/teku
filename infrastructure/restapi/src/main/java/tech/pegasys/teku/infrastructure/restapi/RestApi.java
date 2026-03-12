@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.restapi;
 
-import com.google.common.base.Throwables;
 import io.javalin.Javalin;
 import io.javalin.util.JavalinBindException;
 import java.util.Optional;
@@ -42,20 +41,10 @@ public class RestApi extends Service {
     try {
       app.start();
       LOG.info("Listening on port {}", app.port());
+    } catch (final JavalinBindException e) {
+      throw new InvalidConfigurationException(e.getMessage());
     } catch (final RuntimeException e) {
-      if (e instanceof JavalinBindException) {
-        // The message in JavalinBindException has the port number in conflict
-        throw new InvalidConfigurationException(e.getMessage());
-      } else if (e instanceof IllegalStateException
-          || Throwables.getRootCause(e) instanceof IllegalStateException) {
-        // IllegalStateException is a sign that something needed has failed to be initialised.
-        // throwing it here will terminate the process effectively.
-        LOG.error("Failed to start Rest API", e);
-        throw e;
-      } else {
-        // Any other exception during startup is fatal
-        throw new IllegalStateException("Rest API failed to start", e);
-      }
+      throw new IllegalStateException("Rest API failed to start", e);
     }
     return SafeFuture.COMPLETE;
   }
