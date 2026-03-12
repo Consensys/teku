@@ -116,6 +116,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
     final SyncController syncController =
         new SyncController(
             eventThread,
+            asyncRunner,
             new OrderedAsyncRunner(asyncRunner),
             recentChainData,
             new SyncTargetSelector(
