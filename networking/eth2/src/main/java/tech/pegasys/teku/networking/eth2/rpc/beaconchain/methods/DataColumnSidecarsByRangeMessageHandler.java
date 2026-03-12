@@ -322,14 +322,14 @@ public class DataColumnSidecarsByRangeMessageHandler
       return matchingKeys;
     }
 
-    boolean isCanonicalHotDataColumnSidecarOrFinalized(
+    private boolean isCanonicalHotDataColumnSidecarOrFinalized(
         final DataColumnSlotAndIdentifier columnSlotAndIdentifier) {
       return finalizedSlot.isGreaterThanOrEqualTo(columnSlotAndIdentifier.slot())
           // not finalized, let's check if it is on canonical chain
           || isCanonicalHotDataColumnSidecar(columnSlotAndIdentifier);
     }
 
-    boolean isComplete() {
+    private boolean isComplete() {
       return endSlot.isLessThan(startSlot)
           || dataColumnSidecarKeysIterator.map(iterator -> !iterator.hasNext()).orElse(false);
     }
