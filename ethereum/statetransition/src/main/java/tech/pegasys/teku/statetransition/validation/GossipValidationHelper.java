@@ -221,6 +221,20 @@ public class GossipValidationHelper {
         .orElse(false);
   }
 
+  public boolean isSlotInNextEpoch(final UInt64 slot) {
+    return recentChainData
+        .getCurrentSlot()
+        .map(
+            currentSlot -> {
+              final int slotsPerEpoch = spec.getSlotsPerEpoch(currentSlot);
+              final UInt64 currentEpochStart = currentSlot.minus(currentSlot.mod(slotsPerEpoch));
+              final UInt64 nextEpochStart = currentEpochStart.plus(slotsPerEpoch);
+              return slot.isGreaterThanOrEqualTo(nextEpochStart)
+                  && slot.isLessThan(nextEpochStart.plus(slotsPerEpoch));
+            })
+        .orElse(false);
+  }
+
   public boolean builderHasEnoughBalanceForBid(
       final UInt64 bidValue,
       final UInt64 builderIndex,
