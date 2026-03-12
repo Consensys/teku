@@ -421,10 +421,6 @@ public class BatchSync implements Sync {
         isCurrentlyImportingBatch(importedBatch),
         "Received import complete for batch that shouldn't have been importing");
     importingBatch = Optional.empty();
-    importedBatch
-        .getLastBlock()
-        .ifPresent(
-            lastBlock -> subscribers.deliver(subscriber -> subscriber.onBlocksImported(lastBlock)));
     if (switchingBranches) {
       // We switched to a different chain while this was importing. Can't infer anything about other
       // batches from this result but should still penalise the peer that sent it to us.
@@ -467,6 +463,11 @@ public class BatchSync implements Sync {
       // Everything prior to this batch must already exist on our chain so we can drop them all
       activeBatches.removeUpToIncluding(importedBatch);
       commonAncestorSlot = SafeFuture.completedFuture(importedBatch.getLastSlot());
+      importedBatch
+          .getLastBlock()
+          .ifPresent(
+              lastBlock ->
+                  subscribers.deliver(subscriber -> subscriber.onBlocksImported(lastBlock)));
     }
     progressSync();
     if (activeBatches.isEmpty()) {
