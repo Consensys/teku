@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
@@ -115,6 +116,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProces
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil.ExecutionPayloadProposalData;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
@@ -631,6 +633,38 @@ public class Spec {
     return atState(state).beaconStateAccessors().getBeaconProposerIndex(state, slot);
   }
 
+  /**
+   * Returns the proposer index for the given slot, advancing the state via slot processing if
+   * necessary. On FULU+, the ProposerLookahead allows resolving the proposer without slot
+   * processing for slots in the current or next epoch. On earlier forks, slot processing is avoided
+   * only when the slot is in the same epoch as the state.
+   *
+   * @param state a beacon state at or before the requested slot
+   * @param slot the slot to get the proposer index for (must be >= state.slot)
+   */
+  public int getProposerIndexAtSlot(final BeaconState state, final UInt64 slot)
+      throws SlotProcessingException, EpochProcessingException {
+    checkArgument(
+        state.getSlot().isLessThanOrEqualTo(slot),
+        "State slot %s must not be ahead of requested slot %s",
+        state.getSlot(),
+        slot);
+
+    final BeaconState actualState;
+
+    if (canCalculateProposerIndexAtSlot(state, slot)) {
+      actualState = state;
+    } else {
+      actualState = processSlots(state, slot);
+    }
+
+    return getBeaconProposerIndex(actualState, slot);
+  }
+
+  public boolean canCalculateProposerIndexAtSlot(final BeaconState state, final UInt64 slot) {
+    return atState(state).beaconStateAccessors().canCalculateProposerIndexAtSlot(state, slot);
+  }
+
   public UInt64 getCommitteeCountPerSlot(final BeaconState state, final UInt64 epoch) {
     return atState(state).beaconStateAccessors().getCommitteeCountPerSlot(state, epoch);
   }
@@ -659,7 +693,7 @@ public class Spec {
     return atSlot(slot).getForkChoiceUtil().getContributionDueMillis();
   }
 
-  public int getPayloadAttestationDueMillis(final UInt64 slot) {
+  public Optional<Integer> getPayloadAttestationDueMillis(final UInt64 slot) {
     return atSlot(slot).getForkChoiceUtil().getPayloadAttestationDueMillis();
   }
 
@@ -828,15 +862,16 @@ public class Spec {
         .onTick(store, timeMillis);
   }
 
-  public AttestationProcessingResult validateAttestation(
+  public SafeFuture<AttestationProcessingResult> validateAttestationAsync(
       final ReadOnlyStore store,
       final ValidatableAttestation validatableAttestation,
-      final Optional<BeaconState> maybeState) {
+      final Optional<BeaconState> maybeState,
+      final AsyncBLSSignatureVerifier asyncSignatureVerifier) {
     final UInt64 slot = validatableAttestation.getAttestation().getData().getSlot();
     final Fork fork = forkSchedule.getFork(computeEpochAtSlot(slot));
     return atSlot(slot)
         .getForkChoiceUtil()
-        .validate(fork, store, validatableAttestation, maybeState);
+        .validateAsync(fork, store, validatableAttestation, maybeState, asyncSignatureVerifier);
   }
 
   public Optional<OperationInvalidReason> validateAttesterSlashing(
@@ -1088,6 +1123,15 @@ public class Spec {
                     "Attempting to use execution requests processor when spec does not have execution requests processor"));
   }
 
+  // Data Column Sidecar Util
+
+  public DataColumnSidecarUtil getDataColumnSidecarUtil(final UInt64 slot) {
+    return atSlot(slot)
+        .getDataColumnSidecarUtil()
+        .orElseThrow(
+            () -> new IllegalStateException("DataColumnSidecarUtil not available at slot " + slot));
+  }
+
   // Execution Payload Processor Utils
 
   public ExecutionPayloadProcessor getExecutionPayloadProcessor(final UInt64 slot) {
@@ -1267,6 +1311,10 @@ public class Spec {
     return getSpecConfigFulu().map(SpecConfigFulu::getDataColumnSidecarSubnetCount);
   }
 
+  public int getNumberOfCustodyGroups(final UInt64 slot) {
+    return SpecConfigFulu.required(atSlot(slot).getConfig()).getNumberOfCustodyGroups();
+  }
+
   public boolean isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
       final ReadOnlyStore store, final UInt64 epoch) {
     if (getSpecConfigFulu().isEmpty()) {
@@ -1359,7 +1407,7 @@ public class Spec {
       case PHASE0, ALTAIR, BELLATRIX, CAPELLA -> Optional.empty();
       case DENEB, ELECTRA ->
           Optional.of(SpecConfigDeneb.required(specVersion.getConfig()).getMaxBlobsPerBlock());
-      case FULU, GLOAS -> {
+      case FULU, GLOAS, HEZE -> {
         final UInt64 epoch = specVersion.miscHelpers().computeEpochAtSlot(slot);
         yield Optional.of(
             MiscHelpersFulu.required(specVersion.miscHelpers())

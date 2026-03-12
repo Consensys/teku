@@ -19,9 +19,11 @@ import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMilli
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
@@ -32,6 +34,7 @@ import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.storage.server.ChainStorage;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ChainUpdater {
@@ -41,12 +44,14 @@ public class ChainUpdater {
   public final BlobSidecarManager blobSidecarManager;
   public final Spec spec;
   public final BlockOptions blockOptions = BlockOptions.create();
+  private final Consumer<DataColumnSidecar> dataColumnSidecarPersister;
 
   public ChainUpdater(final RecentChainData recentChainData, final ChainBuilder chainBuilder) {
     this.recentChainData = recentChainData;
     this.chainBuilder = chainBuilder;
     this.blobSidecarManager = BlobSidecarManager.NOOP;
     this.spec = TestSpecFactory.createMinimalPhase0();
+    this.dataColumnSidecarPersister = __ -> {};
   }
 
   public ChainUpdater(
@@ -55,6 +60,7 @@ public class ChainUpdater {
     this.chainBuilder = chainBuilder;
     this.spec = spec;
     this.blobSidecarManager = BlobSidecarManager.NOOP;
+    this.dataColumnSidecarPersister = __ -> {};
   }
 
   public ChainUpdater(
@@ -66,6 +72,20 @@ public class ChainUpdater {
     this.chainBuilder = chainBuilder;
     this.spec = spec;
     this.blobSidecarManager = blobSidecarManager;
+    this.dataColumnSidecarPersister = __ -> {};
+  }
+
+  public ChainUpdater(
+      final RecentChainData recentChainData,
+      final ChainBuilder chainBuilder,
+      final BlobSidecarManager blobSidecarManager,
+      final Spec spec,
+      final ChainStorage chainStorage) {
+    this.recentChainData = recentChainData;
+    this.chainBuilder = chainBuilder;
+    this.spec = spec;
+    this.blobSidecarManager = blobSidecarManager;
+    this.dataColumnSidecarPersister = sidecar -> chainStorage.onNewSidecar(sidecar).join();
   }
 
   public UInt64 getHeadSlot() {
@@ -271,6 +291,7 @@ public class ChainUpdater {
     } else {
       saveBlock(block, blobSidecars);
     }
+    chainBuilder.getDataColumnSidecars(block.getRoot()).forEach(dataColumnSidecarPersister);
     chainBuilder.getExecutionPayloadAndStateAtSlot(slot).ifPresent(this::saveExecutionPayload);
     return block;
   }

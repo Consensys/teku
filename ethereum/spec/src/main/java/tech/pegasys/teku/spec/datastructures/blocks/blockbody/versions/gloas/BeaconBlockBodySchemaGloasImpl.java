@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -219,12 +220,15 @@ public class BeaconBlockBodySchemaGloasImpl
 
   @Override
   public SszListSchema<SszKZGCommitment, ?> getBlobKzgCommitmentsSchema() {
-    throw new UnsupportedOperationException("blob_kzg_commitments field was removed in Gloas");
+    return ((SignedExecutionPayloadBidSchema)
+            getChildSchema(getFieldIndex(BlockBodyFields.SIGNED_EXECUTION_PAYLOAD_BID)))
+        .getMessageSchema()
+        .getBlobKzgCommitmentsSchema();
   }
 
   @Override
   public long getBlobKzgCommitmentsGeneralizedIndex() {
-    throw new UnsupportedOperationException("blob_kzg_commitments field was removed in Gloas");
+    throw new UnsupportedOperationException("Not required in Gloas");
   }
 
   @Override

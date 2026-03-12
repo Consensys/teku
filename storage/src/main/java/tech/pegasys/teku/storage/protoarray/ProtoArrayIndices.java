@@ -32,7 +32,9 @@ public class ProtoArrayIndices {
   }
 
   public Optional<Integer> get(final Bytes32 root) {
-    return rootIndices.containsKey(root) ? Optional.of(rootIndices.getInt(root)) : Optional.empty();
+    // we operate in the assumption that protoarray indices are always >= 0
+    final int nodeIndex = rootIndices.getOrDefault(root, -1);
+    return nodeIndex == -1 ? Optional.empty() : Optional.of(nodeIndex);
   }
 
   public void remove(final Bytes32 root) {

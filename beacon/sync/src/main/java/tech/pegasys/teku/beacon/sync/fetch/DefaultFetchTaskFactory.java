@@ -38,4 +38,10 @@ public class DefaultFetchTaskFactory implements FetchTaskFactory {
       final BlobIdentifier blobIdentifier, final Optional<Eth2Peer> preferredPeer) {
     return new FetchBlobSidecarTask(eth2Network, preferredPeer, blobIdentifier);
   }
+
+  @Override
+  public FetchExecutionPayloadTask createFetchExecutionPayloadTask(
+      final Bytes32 beaconBlockRoot, final Optional<Eth2Peer> preferredPeer) {
+    return new FetchExecutionPayloadTask(eth2Network, preferredPeer, beaconBlockRoot);
+  }
 }

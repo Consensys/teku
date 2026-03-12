@@ -143,24 +143,6 @@ public abstract class AttestationUtil {
         .map(committee::getInt);
   }
 
-  public AttestationProcessingResult isValidIndexedAttestation(
-      final Fork fork, final BeaconState state, final ValidatableAttestation attestation) {
-    return isValidIndexedAttestation(
-        fork, state, attestation, specConfig.getBLSSignatureVerifier());
-  }
-
-  public AttestationProcessingResult isValidIndexedAttestation(
-      final Fork fork,
-      final BeaconState state,
-      final ValidatableAttestation attestation,
-      final BLSSignatureVerifier blsSignatureVerifier) {
-    final SafeFuture<AttestationProcessingResult> result =
-        isValidIndexedAttestationAsync(
-            fork, state, attestation, AsyncBLSSignatureVerifier.wrap(blsSignatureVerifier));
-
-    return result.getImmediately();
-  }
-
   public SafeFuture<AttestationProcessingResult> isValidIndexedAttestationAsync(
       final Fork fork,
       final BeaconState state,
@@ -327,12 +309,12 @@ public abstract class AttestationUtil {
           Attestation attestation, UInt64 genesisTime, UInt64 currentTimeMillis);
 
   public abstract Attestation convertSingleAttestationToAggregated(
-      final BeaconState state, final SingleAttestation singleAttestation);
+      BeaconState state, SingleAttestation singleAttestation);
 
-  public abstract AttestationValidationResult validateIndexValue(final UInt64 index);
+  public abstract AttestationValidationResult validateCommitteeIndexValue(UInt64 committeeIndex);
 
   public abstract AttestationValidationResult validatePayloadStatus(
-      final AttestationData attestationData, final Optional<UInt64> maybeBlockSlot);
+      AttestationData attestationData, Optional<UInt64> maybeBlockSlot);
 
   public enum SlotInclusionGossipValidationResult {
     IGNORE,

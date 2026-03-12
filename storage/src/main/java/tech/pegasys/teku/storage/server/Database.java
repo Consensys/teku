@@ -202,6 +202,8 @@ public interface Database extends AutoCloseable {
 
   Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock();
 
+  Optional<SignedBeaconBlock> getNonCanonicalBlockByRoot(Bytes32 blockRoot);
+
   List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot);
 
   @MustBeClosed

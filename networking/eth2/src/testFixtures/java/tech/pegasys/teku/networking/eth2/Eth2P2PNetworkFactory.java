@@ -26,10 +26,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -116,7 +119,6 @@ import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
@@ -185,6 +187,7 @@ public class Eth2P2PNetworkFactory {
     protected Duration eth2StatusUpdateInterval;
     protected Spec spec = TestSpecFactory.createMinimalPhase0();
     protected DebugDataDumper debugDataDumper;
+    protected Supplier<Boolean> isSuperNodeSupplier;
 
     public Eth2P2PNetwork startNetwork() throws Exception {
       setDefaults();
@@ -252,12 +255,39 @@ public class Eth2P2PNetworkFactory {
               RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
         }
         final UInt256 discoveryNodeId = DISCOVERY_NODE_ID_GENERATOR.next();
+        final int numberOfColumns = spec.getNumberOfDataColumns().orElse(0);
+        final Set<UInt64> allColumns =
+            IntStream.range(0, numberOfColumns)
+                .mapToObj(UInt64::valueOf)
+                .collect(Collectors.toSet());
+        final CustodyGroupCountManager custodyGroupCountManager =
+            new CustodyGroupCountManager() {
+              @Override
+              public int getCustodyGroupCount() {
+                return numberOfColumns;
+              }
+
+              @Override
+              public Set<UInt64> getCustodyColumnIndices() {
+                return allColumns;
+              }
+
+              @Override
+              public int getSamplingGroupCount() {
+                return numberOfColumns;
+              }
+
+              @Override
+              public Set<UInt64> getSamplingColumnIndices() {
+                return allColumns;
+              }
+            };
+
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(
                 asyncRunner,
                 combinedChainDataClient,
-                () -> DataColumnSidecarByRootCustody.NOOP,
-                () -> CustodyGroupCountManager.NOOP,
+                () -> custodyGroupCountManager,
                 metadataMessagesFactory,
                 METRICS_SYSTEM,
                 attestationSubnetService,
@@ -373,11 +403,7 @@ public class Eth2P2PNetworkFactory {
             .map(
                 forkAndSpecMilestone ->
                     createSubscriptions(
-                        forkAndSpecMilestone,
-                        metricsSystem,
-                        network,
-                        gossipEncoding,
-                        config.isExecutionProofTopicEnabled()))
+                        forkAndSpecMilestone, metricsSystem, network, gossipEncoding, config))
             .forEach(gossipForkManagerBuilder::fork);
 
         final GossipForkManager gossipForkManager = gossipForkManagerBuilder.build();
@@ -406,7 +432,7 @@ public class Eth2P2PNetworkFactory {
         final NoOpMetricsSystem metricsSystem,
         final DiscoveryNetwork<?> network,
         final GossipEncoding gossipEncoding,
-        final boolean isExecutionProofTopicEnabled) {
+        final P2PConfig p2PConfig) {
       return switch (forkAndSpecMilestone.getSpecMilestone()) {
         case PHASE0 ->
             new GossipForkSubscriptionsPhase0(
@@ -520,7 +546,7 @@ public class Eth2P2PNetworkFactory {
                 signedBlsToExecutionChangeProcessor,
                 debugDataDumper,
                 executionProofOperationProcessor,
-                isExecutionProofTopicEnabled);
+                p2PConfig.isExecutionProofTopicEnabled());
         case FULU ->
             new GossipForkSubscriptionsFulu(
                 forkAndSpecMilestone.getFork(),
@@ -544,8 +570,9 @@ public class Eth2P2PNetworkFactory {
                 debugDataDumper,
                 DasGossipLogger.NOOP,
                 executionProofOperationProcessor,
-                isExecutionProofTopicEnabled);
-        case GLOAS ->
+                p2PConfig.isExecutionProofTopicEnabled(),
+                isSuperNodeSupplier);
+        case GLOAS, HEZE ->
             new GossipForkSubscriptionsGloas(
                 forkAndSpecMilestone.getFork(),
                 spec,
@@ -571,7 +598,8 @@ public class Eth2P2PNetworkFactory {
                 debugDataDumper,
                 DasGossipLogger.NOOP,
                 executionProofOperationProcessor,
-                isExecutionProofTopicEnabled);
+                p2PConfig.isExecutionProofTopicEnabled(),
+                isSuperNodeSupplier);
       };
     }
 
@@ -677,6 +705,9 @@ public class Eth2P2PNetworkFactory {
       }
       if (executionPayloadBidProcessor == null) {
         executionPayloadBidProcessor = OperationProcessor.noop();
+      }
+      if (isSuperNodeSupplier == null) {
+        isSuperNodeSupplier = () -> false;
       }
     }
 
@@ -894,6 +925,12 @@ public class Eth2P2PNetworkFactory {
     public Eth2P2PNetworkBuilder p2pDebugDataDumper(final DebugDataDumper debugDataDumper) {
       checkNotNull(debugDataDumper);
       this.debugDataDumper = debugDataDumper;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder isSuperNodeSupplier(final Supplier<Boolean> isSuperNodeSupplier) {
+      checkNotNull(isSuperNodeSupplier);
+      this.isSuperNodeSupplier = isSuperNodeSupplier;
       return this;
     }
   }

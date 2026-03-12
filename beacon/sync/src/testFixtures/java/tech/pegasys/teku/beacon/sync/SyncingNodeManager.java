@@ -65,6 +65,7 @@ import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
@@ -207,6 +208,7 @@ public class SyncingNodeManager {
             blockImporter,
             BlobSidecarManager.NOOP,
             BlockBlobSidecarsTrackersPool.NOOP,
+            ExecutionPayloadManager.NOOP,
             new NoOpMetricsSystem(),
             SyncConfig.DEFAULT_FORWARD_SYNC_BATCH_SIZE,
             OptionalInt.empty(),

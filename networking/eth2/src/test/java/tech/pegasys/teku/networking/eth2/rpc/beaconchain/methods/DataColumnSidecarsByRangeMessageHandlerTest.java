@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -26,6 +27,8 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
+import static tech.pegasys.teku.spec.SpecMilestone.FULU;
+import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import com.google.common.collect.ImmutableSortedMap;
 import java.util.ArrayList;
@@ -51,7 +54,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -69,7 +71,7 @@ import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveRec
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
-@TestSpecContext(milestone = SpecMilestone.FULU)
+@TestSpecContext(milestone = {FULU, GLOAS})
 public class DataColumnSidecarsByRangeMessageHandlerTest {
 
   private static final RequestKey ZERO_OBJECTS_REQUEST_APPROVAL = new RequestKey(ZERO, 101);
@@ -109,6 +111,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
               throw new IllegalArgumentException("Milestone is not supported");
           case FULU -> TestSpecFactory.createMinimalWithFuluForkEpoch(currentForkEpoch);
           case GLOAS -> TestSpecFactory.createMinimalWithGloasForkEpoch(currentForkEpoch);
+          case HEZE -> TestSpecFactory.createMinimalWithHezeForkEpoch(currentForkEpoch);
         };
     dataStructureUtil = new DataStructureUtil(spec);
     final SpecVersion specVersionFulu = spec.atEpoch(currentForkEpoch);
@@ -116,7 +119,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     maxRequestDataColumnSidecars = UInt64.valueOf(specConfigFulu.getMaxRequestDataColumnSidecars());
     handler =
         new DataColumnSidecarsByRangeMessageHandler(
-            SpecConfigFulu.required(specVersionFulu.getConfig()),
+            spec,
             metricsSystem,
             combinedChainDataClient,
             dataColumnSidecarArchiveReconstructor,
@@ -465,7 +468,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     when(combinedChainDataClient.getBlockAtSlotExact(any()))
         .thenReturn(
             SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomSignedBeaconBlock())));
-    when(dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(any(), any(), any()))
+    when(dataColumnSidecarArchiveReconstructor.reconstructDataColumnSidecar(any(), any(), anyInt()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
@@ -487,10 +490,10 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     final List<DataColumnSidecar> actualSent = argumentCaptor.getAllValues();
 
     verify(listener).completeSuccessfully();
-    verify(listener).alwaysRun(any());
+    verify(dataColumnSidecarArchiveReconstructor).onRequestCompleted(anyInt());
     // same slot-roots as we have in DB, but other indices
     verify(dataColumnSidecarArchiveReconstructor, times(expectedSent.size()))
-        .reconstructDataColumnSidecar(any(), any(), any());
+        .reconstructDataColumnSidecar(any(), any(), anyInt());
 
     AssertionsForInterfaceTypes.assertThat(actualSent).containsExactlyElementsOf(expectedSent);
   }

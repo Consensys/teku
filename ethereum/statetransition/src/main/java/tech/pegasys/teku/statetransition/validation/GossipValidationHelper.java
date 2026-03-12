@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -25,11 +26,13 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -85,6 +88,10 @@ public class GossipValidationHelper {
       final UInt64 builderIndex,
       final BLSSignature signature,
       final BeaconState state) {
+    if (builderIndex.equals(BUILDER_INDEX_SELF_BUILD)) {
+      return isSignatureValidWithRespectToProposerIndex(
+          signingRoot, state.getLatestBlockHeader().getProposerIndex(), signature, state);
+    }
     return spec.getBuilderPubKey(state, builderIndex)
         .map(publicKey -> BLS.verify(publicKey, signingRoot, signature))
         .orElse(false);
@@ -100,6 +107,15 @@ public class GossipValidationHelper {
         .orElse(false);
   }
 
+  public boolean isSignatureValidWithRespectToProposerIndex(
+      final DataColumnSidecarUtil.SignatureVerificationData signatureVerificationData) {
+    return isSignatureValidWithRespectToProposerIndex(
+        signatureVerificationData.signingRoot(),
+        signatureVerificationData.proposerIndex(),
+        signatureVerificationData.signature(),
+        signatureVerificationData.state());
+  }
+
   /**
    * Retrieve the state for the parent block, applying the epoch transition if required to be able
    * to calculate the expected proposer for block.
@@ -112,6 +128,14 @@ public class GossipValidationHelper {
         ? recentChainData.retrieveBlockState(
             new SlotAndBlockRoot(firstSlotInBlockEpoch, parentBlockRoot))
         : recentChainData.retrieveBlockState(parentBlockRoot);
+  }
+
+  public SafeFuture<Optional<BeaconState>> getParentStateInBlockEpoch(
+      final DataColumnSidecarUtil.StateRetrievalData stateRetrievalData) {
+    return getParentStateInBlockEpoch(
+        stateRetrievalData.parentBlockSlot(),
+        stateRetrievalData.parentBlockRoot(),
+        stateRetrievalData.slot());
   }
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlotAndBlockRoot(
@@ -132,6 +156,14 @@ public class GossipValidationHelper {
       final UInt64 proposerIndex, final UInt64 slot, final BeaconState postState) {
     final int expectedProposerIndex = spec.getBeaconProposerIndex(postState, slot);
     return expectedProposerIndex == proposerIndex.longValue();
+  }
+
+  public boolean isProposerTheExpectedProposer(
+      final DataColumnSidecarUtil.ProposerValidationData proposerValidationData) {
+    return isProposerTheExpectedProposer(
+        proposerValidationData.proposerIndex(),
+        proposerValidationData.slot(),
+        proposerValidationData.postState());
   }
 
   public Optional<UInt64> getSlotForBlockRoot(final Bytes32 blockRoot) {
@@ -167,6 +199,10 @@ public class GossipValidationHelper {
     return recentChainData.retrieveBlockByRoot(root);
   }
 
+  public SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlockByRoot(final Bytes32 root) {
+    return recentChainData.retrieveSignedBlockByRoot(root);
+  }
+
   public boolean isActiveBuilder(
       final UInt64 builderIndex, final BeaconState state, final UInt64 slot) {
     return MiscHelpersGloas.required(spec.atSlot(slot).miscHelpers())
@@ -182,6 +218,20 @@ public class GossipValidationHelper {
     return recentChainData
         .getCurrentSlot()
         .map(currentSlot -> slot.equals(currentSlot) || slot.equals(currentSlot.plus(ONE)))
+        .orElse(false);
+  }
+
+  public boolean isSlotInNextEpoch(final UInt64 slot) {
+    return recentChainData
+        .getCurrentSlot()
+        .map(
+            currentSlot -> {
+              final int slotsPerEpoch = spec.getSlotsPerEpoch(currentSlot);
+              final UInt64 currentEpochStart = currentSlot.minus(currentSlot.mod(slotsPerEpoch));
+              final UInt64 nextEpochStart = currentEpochStart.plus(slotsPerEpoch);
+              return slot.isGreaterThanOrEqualTo(nextEpochStart)
+                  && slot.isLessThan(nextEpochStart.plus(slotsPerEpoch));
+            })
         .orElse(false);
   }
 

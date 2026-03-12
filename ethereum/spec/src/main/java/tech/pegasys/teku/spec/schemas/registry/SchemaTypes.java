@@ -53,8 +53,10 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadA
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessageSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferencesSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferencesSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
@@ -65,6 +67,8 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Consolid
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.InclusionListSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.heze.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
@@ -245,6 +249,10 @@ public class SchemaTypes {
       create("EXECUTION_PAYLOAD_BID_SCHEMA");
   public static final SchemaId<SignedExecutionPayloadBidSchema>
       SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA = create("SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA");
+  public static final SchemaId<ProposerPreferencesSchema> PROPOSER_PREFERENCES_SCHEMA =
+      create("PROPOSER_PREFERENCES_SCHEMA");
+  public static final SchemaId<SignedProposerPreferencesSchema> SIGNED_PROPOSER_PREFERENCES_SCHEMA =
+      create("SIGNED_PROPOSER_PREFERENCES_SCHEMA");
   public static final SchemaId<ExecutionPayloadEnvelopeSchema> EXECUTION_PAYLOAD_ENVELOPE_SCHEMA =
       create("EXECUTION_PAYLOAD_ENVELOPE_SCHEMA");
   public static final SchemaId<SignedExecutionPayloadEnvelopeSchema>
@@ -258,6 +266,12 @@ public class SchemaTypes {
   public static final SchemaId<ExecutionPayloadEnvelopesByRootRequestMessageSchema>
       EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT_REQUEST_MESSAGE_SCHEMA =
           create("EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT_REQUEST_MESSAGE_SCHEMA");
+
+  // Heze
+  public static final SchemaId<InclusionListSchema> INCLUSION_LIST_SCHEMA =
+      create("INCLUSION_LIST_SCHEMA");
+  public static final SchemaId<SignedInclusionListSchema> SIGNED_INCLUSION_LIST_SCHEMA =
+      create("SIGNED_INCLUSION_LIST_SCHEMA");
 
   private SchemaTypes() {
     // Prevent instantiation

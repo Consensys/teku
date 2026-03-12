@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.client;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -44,8 +45,10 @@ public abstract class BlobReconstructor {
       final List<DataColumnSidecar> dataColumnSidecars,
       final List<UInt64> blobIndices,
       final BlobSchema blobSchema) {
-
-    return IntStream.range(0, dataColumnSidecars.getFirst().getKzgCommitments().size())
+    if (dataColumnSidecars.isEmpty()) {
+      return Collections.emptyList();
+    }
+    return IntStream.range(0, dataColumnSidecars.getFirst().getKzgProofs().size())
         .filter(index -> blobIndices.isEmpty() || blobIndices.contains(UInt64.valueOf(index)))
         .mapToObj(blobIndex -> constructBlob(dataColumnSidecars, blobIndex, blobSchema))
         .toList();

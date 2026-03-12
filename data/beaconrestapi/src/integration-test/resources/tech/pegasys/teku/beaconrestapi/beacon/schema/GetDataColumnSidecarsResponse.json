@@ -5,7 +5,7 @@
   "properties" : {
     "version" : {
       "type" : "string",
-      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu", "gloas" ]
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu", "gloas", "heze" ]
     },
     "execution_optimistic" : {
       "type" : "boolean"
@@ -16,7 +16,13 @@
     "data" : {
       "type" : "array",
       "items" : {
-        "$ref" : "#/components/schemas/DataColumnSidecarFulu"
+        "title" : "DataColumnSidecar",
+        "type" : "object",
+        "oneOf" : [ {
+          "$ref" : "#/components/schemas/DataColumnSidecarFulu"
+        }, {
+          "$ref" : "#/components/schemas/DataColumnSidecarGloas"
+        } ]
       }
     }
   }

@@ -34,6 +34,7 @@ public class StoreAssertions {
             "timeMillis",
             "stateCountGauge",
             "blockCountGauge",
+            "executionPayloadCountGauge",
             "checkpointCountGauge",
             "votesLock",
             "readVotesLock",
@@ -59,7 +60,8 @@ public class StoreAssertions {
             "epochStatesCountGauge",
             "blobSidecars",
             "blobSidecarsBlocksCountGauge",
-            "executionPayloadStates")
+            "executionPayloadStates",
+            "executionPayloads")
         .isEqualTo(expectedState);
     assertThat(actualState.getOrderedBlockRoots())
         .containsExactlyElementsOf(expectedState.getOrderedBlockRoots());

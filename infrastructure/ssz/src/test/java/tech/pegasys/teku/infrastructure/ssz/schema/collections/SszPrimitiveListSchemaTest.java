@@ -20,9 +20,15 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableComposite;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszPrimitiveVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SszPrimitiveListSchemaTest extends SszListSchemaTestBase {
@@ -80,5 +86,50 @@ public class SszPrimitiveListSchemaTest extends SszListSchemaTestBase {
         LongStream.range(1, 11).mapToObj(UInt64::valueOf).collect(Collectors.toList());
     SszPrimitiveVector<UInt64, SszUInt64> vector1 = schema.of(uints);
     assertThat(vector1.asListUnboxed()).hasSize(10).containsSequence(uints);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @MethodSource("testSchemaArguments")
+  @ParameterizedTest
+  <T extends SszData> void createTreeFromElements_shouldMatchGenericPath(
+      final SszPrimitiveListSchema<?, ?, ?> schema) {
+    if (schema.getMaxLength() == 0) {
+      return;
+    }
+    final List<T> elements =
+        (List<T>)
+            sszDataGenerator
+                .withMaxListSize((int) schema.getMaxLength())
+                .randomData(schema)
+                .asList();
+    if (elements.isEmpty()) {
+      return;
+    }
+
+    // Optimized path (the override in SszPrimitiveListSchemaImpl)
+    final TreeNode optimizedTree = schema.createTreeFromElements((List) elements);
+
+    // Generic path: replicate SszCollectionSchema default implementation
+    final SszMutableComposite<T> writableCopy =
+        (SszMutableComposite<T>) schema.getDefault().createWritableCopy();
+    int idx = 0;
+    for (T element : elements) {
+      writableCopy.set(idx++, element);
+    }
+    final TreeNode genericTree = writableCopy.commitChanges().getBackingNode();
+
+    assertThat(optimizedTree.hashTreeRoot())
+        .describedAs(
+            "Hash tree root mismatch for schema %s with %d elements",
+            schema.getElementSchema(), elements.size())
+        .isEqualTo(genericTree.hashTreeRoot());
+
+    SszList<T> optimizedList = (SszList<T>) schema.createFromBackingNode(optimizedTree);
+    SszList<T> genericList = (SszList<T>) schema.createFromBackingNode(genericTree);
+    assertThat(optimizedList.sszSerialize())
+        .describedAs(
+            "SSZ serialization mismatch for schema %s with %d elements",
+            schema.getElementSchema(), elements.size())
+        .isEqualTo(genericList.sszSerialize());
   }
 }

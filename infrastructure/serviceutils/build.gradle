@@ -1,14 +1,14 @@
 dependencies {
-  api project(':infrastructure:time')
+	api project(':infrastructure:time')
 
-  implementation project(':infrastructure:metrics')
-  implementation project(':infrastructure:events')
-  implementation project(':infrastructure:exceptions')
-  implementation project(':infrastructure:async')
-  implementation project(':infrastructure:logging')
-  implementation project(':infrastructure:version')
+	implementation project(':infrastructure:metrics')
+	implementation project(':infrastructure:events')
+	implementation project(':infrastructure:exceptions')
+	implementation project(':infrastructure:async')
+	implementation project(':infrastructure:logging')
+	implementation project(':infrastructure:version')
 
-  implementation 'org.hyperledger.besu:besu-plugin-api'
+	implementation 'org.hyperledger.besu:besu-plugin-api'
 
-  testImplementation testFixtures(project(':infrastructure:async'))
+	testImplementation testFixtures(project(':infrastructure:async'))
 }

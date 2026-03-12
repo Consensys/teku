@@ -46,7 +46,6 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.Meta
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -76,7 +75,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final Spec spec,
       final AsyncRunner asyncRunner,
       final CombinedChainDataClient combinedChainDataClient,
-      final Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier,
       final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final RecentChainData recentChainData,
       final MetricsSystem metricsSystem,
@@ -99,7 +97,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             asyncRunner,
             this,
             combinedChainDataClient,
-            dataColumnSidecarCustodySupplier,
             custodyGroupCountManagerSupplier,
             recentChainData,
             metricsSystem,
@@ -116,7 +113,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   public static Eth2PeerManager create(
       final AsyncRunner asyncRunner,
       final CombinedChainDataClient combinedChainDataClient,
-      final Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier,
       final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final MetadataMessagesFactory metadataMessagesFactory,
       final MetricsSystem metricsSystem,
@@ -145,7 +141,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         spec,
         asyncRunner,
         combinedChainDataClient,
-        dataColumnSidecarCustodySupplier,
         custodyGroupCountManagerSupplier,
         combinedChainDataClient.getRecentChainData(),
         metricsSystem,

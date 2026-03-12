@@ -65,6 +65,9 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
                 .withSubscribeAllCustodySubnetsEnabled()
                 .withInteropValidators(0, 0)
                 .withDasDisableElRecovery()
+                // need to disable this feature or node will go forward not waiting for
+                // reconstruction
+                .withColumnsDataAvailabilityHalfCheckDisabled()
                 .withReworkedRecoveryTimeouts(recoveryTimeout, downloadTimeout)
                 .build());
 
@@ -140,6 +143,9 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
                 .withSubscribeAllCustodySubnetsEnabled()
                 .withInteropValidators(0, 0)
                 .withDasDisableElRecovery()
+                // need to disable this feature or node will go forward not waiting for
+                // reconstruction
+                .withColumnsDataAvailabilityHalfCheckDisabled()
                 .withReworkedRecoveryTimeouts(recoveryTimeout, downloadTimeout)
                 .build());
 

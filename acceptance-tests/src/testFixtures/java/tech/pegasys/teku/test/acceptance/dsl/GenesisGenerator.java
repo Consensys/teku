@@ -95,6 +95,13 @@ public class GenesisGenerator {
     return this;
   }
 
+  public GenesisGenerator witGloasEpoch(final UInt64 gloasForkEpoch) {
+    specConfigModifier =
+        specConfigModifier.andThen(
+            specConfigBuilder -> specConfigBuilder.gloasForkEpoch(gloasForkEpoch));
+    return this;
+  }
+
   public GenesisGenerator withTotalTerminalDifficulty(final long totalTerminalDifficulty) {
     return withTotalTerminalDifficulty(UInt256.valueOf(totalTerminalDifficulty));
   }

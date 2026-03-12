@@ -1,18 +1,18 @@
 dependencies {
-    api project(':ethereum:spec')
+	api project(':ethereum:spec')
 
-    implementation project(':ethereum:execution-types')
-    implementation project(':infrastructure:async')
-    implementation project(':infrastructure:http')
-    implementation project(':infrastructure:io')
-    implementation project(':infrastructure:exceptions')
-    implementation project(':infrastructure:time')
-    implementation 'io.consensys.tuweni:tuweni-units'
+	implementation project(':ethereum:execution-types')
+	implementation project(':infrastructure:async')
+	implementation project(':infrastructure:http')
+	implementation project(':infrastructure:io')
+	implementation project(':infrastructure:exceptions')
+	implementation project(':infrastructure:time')
+	implementation 'io.consensys.tuweni:tuweni-units'
 
-    testImplementation 'tech.pegasys.discovery:discovery'
+	testImplementation 'tech.pegasys.discovery:discovery'
 
-    testFixturesImplementation project(':ethereum:spec')
-    testFixturesImplementation project(':infrastructure:io')
-    testImplementation testFixtures(project(':infrastructure:time'))
-    testFixturesImplementation 'com.google.guava:guava'
+	testFixturesImplementation project(':ethereum:spec')
+	testFixturesImplementation project(':infrastructure:io')
+	testImplementation testFixtures(project(':infrastructure:time'))
+	testFixturesImplementation 'com.google.guava:guava'
 }
