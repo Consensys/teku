@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import java.util.List;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
@@ -26,10 +29,12 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscrib
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
@@ -42,6 +47,10 @@ import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
 
 public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
+
+  private static final Logger LOG = LogManager.getLogger();
+
+  private final ProposerPreferencesManager proposerPreferencesManager;
 
   public ValidatorApiHandlerGloas(
       final ChainDataProvider chainDataProvider,
@@ -69,7 +78,8 @@ public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
       final ExecutionPayloadManager executionPayloadManager,
       final ExecutionPayloadFactory executionPayloadFactory,
       final ExecutionPayloadPublisher executionPayloadPublisher,
-      final ExecutionProofManager executionProofManager) {
+      final ExecutionProofManager executionProofManager,
+      final ProposerPreferencesManager proposerPreferencesManager) {
     super(
         chainDataProvider,
         nodeDataProvider,
@@ -96,6 +106,28 @@ public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
         executionPayloadFactory,
         executionPayloadPublisher,
         executionProofManager);
+    this.proposerPreferencesManager = proposerPreferencesManager;
+  }
+
+  @Override
+  public SafeFuture<Void> sendSignedProposerPreferences(
+      final List<SignedProposerPreferences> signedProposerPreferences) {
+    return SafeFuture.collectAll(
+            signedProposerPreferences.stream()
+                .map(proposerPreferencesManager::validateAndAddProposerPreferences))
+        .thenAccept(
+            results -> {
+              final List<String> errorMessages =
+                  results.stream()
+                      .filter(result -> result.isReject())
+                      .flatMap(result -> result.getDescription().stream())
+                      .toList();
+              if (!errorMessages.isEmpty()) {
+                LOG.warn(
+                    "Some proposer preferences were rejected: {}",
+                    String.join("; ", errorMessages));
+              }
+            });
   }
 
   @Override

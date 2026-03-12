@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -142,6 +143,13 @@ public class LocalSigner implements Signer {
       final PayloadAttestationData payloadAttestationData, final ForkInfo forkInfo) {
     return sign(
         signingRootUtil.signingRootForSignPayloadAttestationData(payloadAttestationData, forkInfo));
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signProposerPreferences(
+      final ProposerPreferences proposerPreferences, final ForkInfo forkInfo) {
+    return sign(
+        signingRootUtil.signingRootForSignProposerPreferences(proposerPreferences, forkInfo));
   }
 
   private SafeFuture<Bytes> signingRootFromSyncCommitteeUtils(

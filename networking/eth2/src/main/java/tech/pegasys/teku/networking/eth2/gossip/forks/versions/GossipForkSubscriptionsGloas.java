@@ -180,17 +180,17 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
 
   void addProposerPreferencesGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
     this.proposerPreferencesGossipManager =
-            new ProposerPreferencesGossipManager(
-                    spec,
-                    recentChainData,
-                    asyncRunner,
-                    discoveryNetwork,
-                    gossipEncoding,
-                    forkInfo,
-                    forkDigest,
-                    proposerPreferencesProcessor,
-                    spec.getNetworkingConfig(),
-                    debugDataDumper);
+        new ProposerPreferencesGossipManager(
+            spec,
+            recentChainData,
+            asyncRunner,
+            discoveryNetwork,
+            gossipEncoding,
+            forkInfo,
+            forkDigest,
+            proposerPreferencesProcessor,
+            spec.getNetworkingConfig(),
+            debugDataDumper);
     addGossipManager(proposerPreferencesGossipManager);
   }
 

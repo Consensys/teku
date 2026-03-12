@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -269,6 +270,27 @@ class LocalSignerTest {
 
     final SafeFuture<BLSSignature> result =
         signer.signPayloadAttestationData(payloadAttestationData, fork);
+    asyncRunner.executeQueuedActions();
+
+    assertThat(result)
+        .withFailMessage(
+            "expected: %s\nbut was: %s",
+            expectedSignature.toBytesCompressed().toBase64String(),
+            result.getImmediately().toBytesCompressed().toBase64String())
+        .isCompletedWithValue(expectedSignature);
+  }
+
+  @Test
+  public void shouldSignProposerPreferences() {
+    final ProposerPreferences proposerPreferences =
+        dataStructureUtilGloas.randomProposerPreferences();
+    final BLSSignature expectedSignature =
+        BLSSignature.fromBytesCompressed(
+            Bytes.fromBase64String(
+                "oPcTkYS7MhABHPLzvC18A9Nt7eo4ZlVf2kKFKx/Ofh58tCECwt6fFgRw2C4fTsvnDlVgJV/+kH9UFPBJWt9Rzawa4Qp07CzsDTOy2dO5zeiEjn2n6JKNTXlnMKnqkjzH"));
+
+    final SafeFuture<BLSSignature> result =
+        signer.signProposerPreferences(proposerPreferences, fork);
     asyncRunner.executeQueuedActions();
 
     assertThat(result)

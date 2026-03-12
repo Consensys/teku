@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.execution;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
@@ -34,10 +35,16 @@ public interface ProposerPreferencesManager {
         public Optional<ProposerPreferences> getProposerPreferences(final UInt64 slot) {
           return Optional.empty();
         }
+
+        @Override
+        public void subscribeAcceptedProposerPreferences(
+            final Consumer<SignedProposerPreferences> listener) {}
       };
 
   SafeFuture<InternalValidationResult> validateAndAddProposerPreferences(
       SignedProposerPreferences signedProposerPreferences);
 
   Optional<ProposerPreferences> getProposerPreferences(UInt64 slot);
+
+  void subscribeAcceptedProposerPreferences(Consumer<SignedProposerPreferences> listener);
 }

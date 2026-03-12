@@ -13,8 +13,13 @@
 
 package tech.pegasys.teku.statetransition.execution;
 
+import static tech.pegasys.teku.spec.config.Constants.MAX_SLOTS_TO_TRACK_PROPOSER_PREFERENCES;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -25,11 +30,10 @@ import tech.pegasys.teku.statetransition.validation.ProposerPreferencesGossipVal
 
 public class DefaultProposerPreferencesManager implements ProposerPreferencesManager {
 
-  private static final int MAX_SLOTS_TO_TRACK = 10;
-
   private final ProposerPreferencesGossipValidator proposerPreferencesGossipValidator;
   private final Map<UInt64, ProposerPreferences> acceptedProposerPreferences =
-      LimitedMap.createSynchronizedLRU(MAX_SLOTS_TO_TRACK);
+      LimitedMap.createSynchronizedLRU(MAX_SLOTS_TO_TRACK_PROPOSER_PREFERENCES);
+  private final List<Consumer<SignedProposerPreferences>> acceptedListeners = new ArrayList<>();
 
   public DefaultProposerPreferencesManager(
       final ProposerPreferencesGossipValidator proposerPreferencesGossipValidator) {
@@ -47,6 +51,7 @@ public class DefaultProposerPreferencesManager implements ProposerPreferencesMan
                 acceptedProposerPreferences.put(
                     signedProposerPreferences.getMessage().getProposalSlot(),
                     signedProposerPreferences.getMessage());
+                acceptedListeners.forEach(listener -> listener.accept(signedProposerPreferences));
               }
               return result;
             });
@@ -55,5 +60,11 @@ public class DefaultProposerPreferencesManager implements ProposerPreferencesMan
   @Override
   public Optional<ProposerPreferences> getProposerPreferences(final UInt64 slot) {
     return Optional.ofNullable(acceptedProposerPreferences.get(slot));
+  }
+
+  @Override
+  public void subscribeAcceptedProposerPreferences(
+      final Consumer<SignedProposerPreferences> listener) {
+    acceptedListeners.add(listener);
   }
 }

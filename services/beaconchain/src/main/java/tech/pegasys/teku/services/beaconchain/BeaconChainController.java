@@ -1784,7 +1784,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
               executionPayloadManager,
               executionPayloadFactory,
               executionPayloadPublisher,
-              executionProofManager);
+              executionProofManager,
+              proposerPreferencesManager);
     } else {
       this.validatorApiHandler =
           new ValidatorApiHandler(
@@ -2022,6 +2023,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishSignedBlsToExecutionChange));
     payloadAttestationPool.subscribeOperationAdded(
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishPayloadAttestationMessage));
+    proposerPreferencesManager.subscribeAcceptedProposerPreferences(
+        p2pNetwork::publishProposerPreferences);
 
     eventChannels.subscribe(
         CustodyGroupCountChannel.class,
