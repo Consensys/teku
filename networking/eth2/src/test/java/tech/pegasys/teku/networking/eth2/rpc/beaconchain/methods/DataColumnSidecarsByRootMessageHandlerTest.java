@@ -59,7 +59,6 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
@@ -142,6 +141,8 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     when(peer.approveRequest()).thenReturn(true);
     when(peer.approveDataColumnSidecarsRequest(any(), anyLong())).thenReturn(allowedRequest);
     reset(combinedChainDataClient);
+    when(combinedChainDataClient.getSlotByBlockRoot(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(currentForkFirstSlot)));
     when(combinedChainDataClient.getBlockByBlockRoot(any()))
         .thenReturn(
             SafeFuture.completedFuture(
@@ -202,7 +203,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
 
     // the second block root can't be found in the database
     final Bytes32 secondBlockRoot = dataColumnsByRootIdentifiers[1].getBlockRoot();
-    when(combinedChainDataClient.getBlockByBlockRoot(secondBlockRoot))
+    when(combinedChainDataClient.getSlotByBlockRoot(secondBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     when(combinedChainDataClient.getNonCanonicalSidecar(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
@@ -262,10 +263,8 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
         generateDataColumnsByRootIdentifiers(4, 1);
 
     // an old block out of availability window
-    final SignedBeaconBlock signedBeaconBlock =
-        dataStructureUtil.randomSignedBeaconBlock(UInt64.valueOf(100));
-    when(combinedChainDataClient.getBlockByBlockRoot(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(signedBeaconBlock)));
+    when(combinedChainDataClient.getSlotByBlockRoot(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(UInt64.valueOf(100))));
     when(combinedChainDataClient.getSidecar(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     when(combinedChainDataClient.getNonCanonicalSidecar(any()))
@@ -448,12 +447,12 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     // canonical sidecar not found
     when(combinedChainDataClient.getSidecar(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    // first call resolves the slot, second call (in archive fallback) finds block pruned
+    // slot resolution returns the slot
     final UInt64 currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
+    when(combinedChainDataClient.getSlotByBlockRoot(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(currentForkFirstSlot)));
+    // archive fallback finds block pruned
     when(combinedChainDataClient.getBlockByBlockRoot(any()))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                Optional.of(dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot))))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     // non-canonical sidecar is available
     when(combinedChainDataClient.getNonCanonicalSidecar(any()))
@@ -502,12 +501,12 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
 
     // First request
     handler.onIncomingMessage(protocolId, peer, messageSchema.of(identifiers), callback);
-    verify(combinedChainDataClient, times(1)).getBlockByBlockRoot(blockRoot);
+    verify(combinedChainDataClient, times(1)).getSlotByBlockRoot(blockRoot);
 
     // Second request with the same block root
     handler.onIncomingMessage(protocolId, peer, messageSchema.of(identifiers), callback);
     // Still only one call - the second request used the cache
-    verify(combinedChainDataClient, times(1)).getBlockByBlockRoot(blockRoot);
+    verify(combinedChainDataClient, times(1)).getSlotByBlockRoot(blockRoot);
   }
 
   private DataColumnsByRootIdentifier[] generateDataColumnsByRootIdentifiers(

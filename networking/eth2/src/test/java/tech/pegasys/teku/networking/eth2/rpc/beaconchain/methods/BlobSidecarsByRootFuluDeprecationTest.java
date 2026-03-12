@@ -94,10 +94,8 @@ public class BlobSidecarsByRootFuluDeprecationTest {
     when(peer.approveBlobSidecarsRequest(eq(callback), anyLong()))
         .thenReturn(allowedObjectsRequest);
     reset(combinedChainDataClient);
-    when(combinedChainDataClient.getBlockByBlockRoot(any()))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                Optional.of(dataStructureUtil.randomSignedBeaconBlock(fuluForkFirstSlot))));
+    when(combinedChainDataClient.getSlotByBlockRoot(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(fuluForkFirstSlot)));
     // epoch 1 = electra is finalized, epochs 2+ not
     when(combinedChainDataClient.getFinalizedBlock())
         .thenReturn(
@@ -171,9 +169,9 @@ public class BlobSidecarsByRootFuluDeprecationTest {
     verify(peer, times(1))
         .adjustBlobSidecarsRequest(eq(allowedObjectsRequest.orElseThrow()), eq(Long.valueOf(2)));
 
-    verify(combinedChainDataClient, times(1)).getBlockByBlockRoot(firstBlockRoot);
-    verify(combinedChainDataClient, times(1)).getBlockByBlockRoot(secondBlockRoot);
-    verify(combinedChainDataClient, times(1)).getBlockByBlockRoot(thirdBlockRoot);
+    verify(combinedChainDataClient, times(1)).getSlotByBlockRoot(firstBlockRoot);
+    verify(combinedChainDataClient, times(1)).getSlotByBlockRoot(secondBlockRoot);
+    verify(combinedChainDataClient, times(1)).getSlotByBlockRoot(thirdBlockRoot);
     verify(callback, times(2)).respond(blobSidecarCaptor.capture());
     verify(callback).completeSuccessfully();
 

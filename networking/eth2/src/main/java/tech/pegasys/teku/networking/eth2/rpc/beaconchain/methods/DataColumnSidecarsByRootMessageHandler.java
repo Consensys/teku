@@ -34,7 +34,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
@@ -210,8 +209,7 @@ public class DataColumnSidecarsByRootMessageHandler
       return SafeFuture.completedFuture(cached);
     }
     return combinedChainDataClient
-        .getBlockByBlockRoot(blockRoot)
-        .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot))
+        .getSlotByBlockRoot(blockRoot)
         .thenPeek(
             maybeSlot ->
                 maybeSlot.ifPresent(
