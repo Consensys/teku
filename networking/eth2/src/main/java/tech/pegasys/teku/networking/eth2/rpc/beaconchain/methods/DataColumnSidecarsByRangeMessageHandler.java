@@ -295,6 +295,7 @@ public class DataColumnSidecarsByRangeMessageHandler
         final List<DataColumnSlotAndIdentifier> dbIdentifiers) {
       final NavigableMap<UInt64, List<DataColumnSlotAndIdentifier>> slotMap =
           dbIdentifiers.stream()
+              .filter(this::isCanonicalHotDataColumnSidecarOrFinalized)
               .collect(
                   Collectors.groupingBy(
                       DataColumnSlotAndIdentifier::slot, TreeMap::new, Collectors.toList()));
@@ -321,6 +322,13 @@ public class DataColumnSidecarsByRangeMessageHandler
       return matchingKeys;
     }
 
+    boolean isCanonicalHotDataColumnSidecarOrFinalized(
+        final DataColumnSlotAndIdentifier columnSlotAndIdentifier) {
+      return finalizedSlot.isGreaterThanOrEqualTo(columnSlotAndIdentifier.slot())
+          // not finalized, let's check if it is on canonical chain
+          || isCanonicalHotDataColumnSidecar(columnSlotAndIdentifier);
+    }
+
     boolean isComplete() {
       return endSlot.isLessThan(startSlot)
           || dataColumnSidecarKeysIterator.map(iterator -> !iterator.hasNext()).orElse(false);
@@ -331,23 +339,17 @@ public class DataColumnSidecarsByRangeMessageHandler
       if (dataColumnSidecarIdentifiers.hasNext()) {
         final DataColumnSlotAndIdentifier columnSlotAndIdentifier =
             dataColumnSidecarIdentifiers.next();
-        if (finalizedSlot.isGreaterThanOrEqualTo(columnSlotAndIdentifier.slot())
-            // not finalized, let's check if it is on canonical chain
-            || isCanonicalHotDataColumnSidecar(columnSlotAndIdentifier)) {
 
-          return combinedChainDataClient
-              .getSidecar(columnSlotAndIdentifier)
-              .thenCompose(
-                  maybeSidecar -> {
-                    if (maybeSidecar.isPresent()) {
-                      return SafeFuture.completedFuture(maybeSidecar);
-                    } else {
-                      return tryArchiveSidecarReconstruction(columnSlotAndIdentifier);
-                    }
-                  });
-        }
-        // non-canonical, try next one
-        return getNextDataColumnSidecar(dataColumnSidecarIdentifiers);
+        return combinedChainDataClient
+            .getSidecar(columnSlotAndIdentifier)
+            .thenCompose(
+                maybeSidecar -> {
+                  if (maybeSidecar.isPresent()) {
+                    return SafeFuture.completedFuture(maybeSidecar);
+                  } else {
+                    return tryArchiveSidecarReconstruction(columnSlotAndIdentifier);
+                  }
+                });
       }
 
       return SafeFuture.completedFuture(Optional.empty());
