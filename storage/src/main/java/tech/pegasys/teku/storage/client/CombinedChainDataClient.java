@@ -579,6 +579,35 @@ public class CombinedChainDataClient {
             });
   }
 
+  public SafeFuture<Optional<UInt64>> getSlotByBlockRoot(final Bytes32 blockRoot) {
+    return getSlotByBlockRoot(blockRoot, false);
+  }
+
+  public SafeFuture<Optional<UInt64>> getSlotByBlockRoot(
+      final Bytes32 blockRoot, final boolean includeFinalizedNonCanonical) {
+    // 1. recentChainData: sync fork-choice lookup (hot blocks)
+    final Optional<UInt64> hotSlot = recentChainData.getSlotForBlockRoot(blockRoot);
+    if (hotSlot.isPresent()) {
+      return SafeFuture.completedFuture(hotSlot);
+    }
+    // 2. historical canonical: efficient slot-index lookup in DB
+    return historicalChainData
+        .getFinalizedSlotByBlockRoot(blockRoot)
+        .thenCompose(
+            maybeSlot -> {
+              if (maybeSlot.isPresent()) {
+                return SafeFuture.completedFuture(maybeSlot);
+              }
+              // 3. historical nonCanonical only: get block and extract slot
+              if (includeFinalizedNonCanonical) {
+                return historicalChainData
+                    .getNonCanonicalBlockByRoot(blockRoot)
+                    .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot));
+              }
+              return SafeFuture.completedFuture(Optional.empty());
+            });
+  }
+
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> getExecutionPayloadByBlockRoot(
       final Bytes32 blockRoot) {
     return recentChainData

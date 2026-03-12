@@ -37,4 +37,5 @@ public class Domain {
   // Gloas
   public static final Bytes4 BEACON_BUILDER = Bytes4.fromHexString("0x0B000000");
   public static final Bytes4 PTC_ATTESTER = Bytes4.fromHexString("0x0C000000");
+  public static final Bytes4 PROPOSER_PREFERENCES = Bytes4.fromHexString("0x0D000000");
 }

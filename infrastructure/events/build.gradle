@@ -1,14 +1,14 @@
 dependencies {
-  implementation project(':infrastructure:metrics')
-  implementation project(':infrastructure:async')
-  implementation project(':infrastructure:subscribers')
+	implementation project(':infrastructure:metrics')
+	implementation project(':infrastructure:async')
+	implementation project(':infrastructure:subscribers')
 
-  testImplementation 'org.hyperledger.besu.internal:besu-metrics-core'
-  testImplementation testFixtures(project(':infrastructure:async'))
+	testImplementation 'org.hyperledger.besu.internal:besu-metrics-core'
+	testImplementation testFixtures(project(':infrastructure:async'))
 }
 
 publishing {
-  publications {
-    mavenJava(MavenPublication) { artifactId 'infrastructure-events' }
-  }
+	publications {
+		mavenJava(MavenPublication) { artifactId = 'infrastructure-events' }
+	}
 }

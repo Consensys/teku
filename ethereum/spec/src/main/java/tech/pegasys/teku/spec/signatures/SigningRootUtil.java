@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -136,6 +137,18 @@ public class SigningRootUtil {
         spec.computeEpochAtSlot(slot),
         forkInfo.getFork(),
         forkInfo.getGenesisValidatorsRoot());
+  }
+
+  public Bytes signingRootForSignProposerPreferences(
+      final ProposerPreferences preferences, final ForkInfo forkInfo) {
+    final UInt64 slot = preferences.getProposalSlot();
+    final Bytes32 domain =
+        spec.getDomain(
+            Domain.PROPOSER_PREFERENCES,
+            spec.computeEpochAtSlot(slot),
+            forkInfo.getFork(),
+            forkInfo.getGenesisValidatorsRoot());
+    return spec.atSlot(slot).miscHelpers().computeSigningRoot(preferences, domain);
   }
 
   public Bytes signingRootForSignPayloadAttestationData(

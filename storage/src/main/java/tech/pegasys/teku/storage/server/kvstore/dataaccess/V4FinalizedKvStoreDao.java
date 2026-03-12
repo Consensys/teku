@@ -135,7 +135,7 @@ public class V4FinalizedKvStoreDao {
     return db.get(schema.getOptimisticTransitionBlockSlot());
   }
 
-  public Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(final Bytes32 root) {
+  public Optional<SignedBeaconBlock> getNonCanonicalBlock(final Bytes32 root) {
     return db.get(schema.getColumnNonCanonicalBlocksByRoot(), root);
   }
 

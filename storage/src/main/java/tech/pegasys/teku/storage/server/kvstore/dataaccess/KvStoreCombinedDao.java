@@ -87,7 +87,7 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<UInt64> getCustodyGroupCount();
 
-  Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(Bytes32 root);
+  Optional<SignedBeaconBlock> getNonCanonicalBlock(Bytes32 root);
 
   void ingest(KvStoreCombinedDao dao, int batchSize, Consumer<String> logger);
 
