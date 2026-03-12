@@ -49,7 +49,11 @@ class RocksDbStatsTest {
     final ObservableMetricsSystem metricsSystem =
         new PrometheusMetricsSystem(Set.of(TekuMetricCategory.STORAGE_HOT_DB), true);
 
-    try (RocksDbStats stats = new RocksDbStats(metricsSystem, TekuMetricCategory.STORAGE_HOT_DB, KvStoreConfiguration.v6SingleDefaults())) {
+    try (RocksDbStats stats =
+        new RocksDbStats(
+            metricsSystem,
+            TekuMetricCategory.STORAGE_HOT_DB,
+            KvStoreConfiguration.v6SingleDefaults())) {
       stats.registerMetrics(database);
 
       when(database.getLongProperty(any())).thenThrow(new RocksDBException("Database shutdown"));
