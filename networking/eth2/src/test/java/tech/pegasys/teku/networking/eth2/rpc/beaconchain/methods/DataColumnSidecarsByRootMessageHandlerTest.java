@@ -207,6 +207,8 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     when(combinedChainDataClient.getNonCanonicalSidecar(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(combinedChainDataClient.getNonCanonicalSidecar(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     when(combinedChainDataClient.getSidecar(any()))
         .thenAnswer(
