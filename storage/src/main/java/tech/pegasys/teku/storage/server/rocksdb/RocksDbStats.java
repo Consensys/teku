@@ -174,12 +174,14 @@ public class RocksDbStats implements AutoCloseable {
   private final MetricCategory category;
   private final KvStoreConfiguration configuration;
 
-  public RocksDbStats(final MetricsSystem metricsSystem, final MetricCategory category, final KvStoreConfiguration configuration) {
+  public RocksDbStats(
+      final MetricsSystem metricsSystem,
+      final MetricCategory category,
+      final KvStoreConfiguration configuration) {
     this.stats = new Statistics();
     this.metricsSystem = metricsSystem;
     this.category = category;
     this.configuration = configuration;
-
   }
 
   public Statistics getStats() {
@@ -199,22 +201,22 @@ public class RocksDbStats implements AutoCloseable {
         () -> getLongProperty(database, "rocksdb.cur-size-all-mem-tables"));
 
     // Blob DB size metrics for measuring space savings
-    if(configuration.blobDbEnabled()) {
+    if (configuration.blobDbEnabled()) {
       metricsSystem.createLongGauge(
-              category,
-              "total_blob_file_size",
-              "Total size of all blob files in bytes",
-              () -> getLongProperty(database, "rocksdb.total-blob-file-size"));
+          category,
+          "total_blob_file_size",
+          "Total size of all blob files in bytes",
+          () -> getLongProperty(database, "rocksdb.total-blob-file-size"));
       metricsSystem.createLongGauge(
-              category,
-              "live_blob_file_size",
-              "Size of live blob files in bytes (excluding garbage)",
-              () -> getLongProperty(database, "rocksdb.live-blob-file-size"));
+          category,
+          "live_blob_file_size",
+          "Size of live blob files in bytes (excluding garbage)",
+          () -> getLongProperty(database, "rocksdb.live-blob-file-size"));
       metricsSystem.createLongGauge(
-              category,
-              "num_blob_files",
-              "Number of blob files",
-              () -> getLongProperty(database, "rocksdb.num-blob-files"));
+          category,
+          "num_blob_files",
+          "Number of blob files",
+          () -> getLongProperty(database, "rocksdb.num-blob-files"));
     }
 
     for (final TickerType ticker : TICKERS) {

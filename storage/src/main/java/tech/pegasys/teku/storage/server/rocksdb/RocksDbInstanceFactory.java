@@ -84,7 +84,8 @@ public class RocksDbInstanceFactory {
 
     // Create options
     final TransactionDBOptions txOptions = new TransactionDBOptions();
-    final RocksDbStats rocksDbStats = new RocksDbStats(metricsSystem, metricCategory, configuration);
+    final RocksDbStats rocksDbStats =
+        new RocksDbStats(metricsSystem, metricCategory, configuration);
     final DBOptions dbOptions = createDBOptions(configuration, rocksDbStats.getStats());
     final LRUCache blockCache = new LRUCache(configuration.getCacheCapacity());
     final ColumnFamilyOptions columnFamilyOptions =
