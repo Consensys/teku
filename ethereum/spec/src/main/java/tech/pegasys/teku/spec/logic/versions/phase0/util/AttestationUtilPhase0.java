@@ -72,7 +72,7 @@ public class AttestationUtilPhase0 extends AttestationUtil {
   }
 
   @Override
-  public AttestationValidationResult validateIndexValue(final UInt64 index) {
+  public AttestationValidationResult validateCommitteeIndexValue(final UInt64 index) {
     // No index validation before Electra
     return AttestationValidationResult.VALID;
   }

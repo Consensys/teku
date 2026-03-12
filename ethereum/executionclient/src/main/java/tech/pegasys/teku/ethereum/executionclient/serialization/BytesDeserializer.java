@@ -13,17 +13,12 @@
 
 package tech.pegasys.teku.ethereum.executionclient.serialization;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import java.io.IOException;
 import org.apache.tuweni.bytes.Bytes;
 
-public class BytesDeserializer extends JsonDeserializer<Bytes> {
+public class BytesDeserializer extends AbstractBytesDeserializer<Bytes> {
 
   @Override
-  public Bytes deserialize(final JsonParser p, final DeserializationContext ctxt)
-      throws IOException {
-    return Bytes.fromHexString(p.getValueAsString());
+  protected Bytes fromRawBytes(final byte[] bytes) {
+    return Bytes.wrap(bytes);
   }
 }

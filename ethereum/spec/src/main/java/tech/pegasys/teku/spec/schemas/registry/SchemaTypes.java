@@ -53,8 +53,10 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadA
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessageSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferencesSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferencesSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
@@ -247,6 +249,10 @@ public class SchemaTypes {
       create("EXECUTION_PAYLOAD_BID_SCHEMA");
   public static final SchemaId<SignedExecutionPayloadBidSchema>
       SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA = create("SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA");
+  public static final SchemaId<ProposerPreferencesSchema> PROPOSER_PREFERENCES_SCHEMA =
+      create("PROPOSER_PREFERENCES_SCHEMA");
+  public static final SchemaId<SignedProposerPreferencesSchema> SIGNED_PROPOSER_PREFERENCES_SCHEMA =
+      create("SIGNED_PROPOSER_PREFERENCES_SCHEMA");
   public static final SchemaId<ExecutionPayloadEnvelopeSchema> EXECUTION_PAYLOAD_ENVELOPE_SCHEMA =
       create("EXECUTION_PAYLOAD_ENVELOPE_SCHEMA");
   public static final SchemaId<SignedExecutionPayloadEnvelopeSchema>
