@@ -293,18 +293,18 @@ public class DataColumnSidecarsByRangeMessageHandler
 
     private List<DataColumnSlotAndIdentifier> filterIdentifiers(
         final List<DataColumnSlotAndIdentifier> dbIdentifiers) {
-      final NavigableMap<UInt64, List<DataColumnSlotAndIdentifier>> slotMap =
+      final NavigableMap<UInt64, List<DataColumnSlotAndIdentifier>> canonicalSlotToColumnId =
           dbIdentifiers.stream()
-              .filter(this::isCanonicalHotDataColumnSidecarOrFinalized)
+              .filter(this::isCanonicalHotOrFinalizedDataColumnSidecar)
               .collect(
                   Collectors.groupingBy(
                       DataColumnSlotAndIdentifier::slot, TreeMap::new, Collectors.toList()));
       final List<DataColumnSlotAndIdentifier> matchingKeys = new ArrayList<>();
-      for (final UInt64 slot : slotMap.navigableKeySet()) {
-        if (maybeSuperNodePruned && !slotMap.get(slot).isEmpty()) {
+      for (final UInt64 slot : canonicalSlotToColumnId.navigableKeySet()) {
+        if (maybeSuperNodePruned && !canonicalSlotToColumnId.get(slot).isEmpty()) {
           // Adding all requested, we expect we either have it
           // or can reconstruct from proof archives
-          final DataColumnSlotAndIdentifier first = slotMap.get(slot).getFirst();
+          final DataColumnSlotAndIdentifier first = canonicalSlotToColumnId.get(slot).getFirst();
           columns.stream()
               .sorted()
               .forEach(
@@ -313,7 +313,7 @@ public class DataColumnSidecarsByRangeMessageHandler
                           new DataColumnSlotAndIdentifier(
                               first.slot(), first.blockRoot(), column)));
         } else {
-          slotMap.get(slot).stream()
+          canonicalSlotToColumnId.get(slot).stream()
               .filter(key -> columns.contains(key.columnIndex()))
               .forEach(matchingKeys::add);
         }
@@ -322,7 +322,7 @@ public class DataColumnSidecarsByRangeMessageHandler
       return matchingKeys;
     }
 
-    private boolean isCanonicalHotDataColumnSidecarOrFinalized(
+    private boolean isCanonicalHotOrFinalizedDataColumnSidecar(
         final DataColumnSlotAndIdentifier columnSlotAndIdentifier) {
       return finalizedSlot.isGreaterThanOrEqualTo(columnSlotAndIdentifier.slot())
           // not finalized, let's check if it is on canonical chain
