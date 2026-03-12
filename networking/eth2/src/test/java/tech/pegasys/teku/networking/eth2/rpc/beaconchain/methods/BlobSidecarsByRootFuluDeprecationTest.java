@@ -97,11 +97,8 @@ public class BlobSidecarsByRootFuluDeprecationTest {
     when(combinedChainDataClient.getSlotByBlockRoot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(fuluForkFirstSlot)));
     // epoch 1 = electra is finalized, epochs 2+ not
-    when(combinedChainDataClient.getFinalizedBlock())
-        .thenReturn(
-            Optional.of(
-                dataStructureUtil.randomSignedBeaconBlock(
-                    spec.computeStartSlotAtEpoch(UInt64.ZERO))));
+    when(combinedChainDataClient.getFinalizedBlockSlot())
+        .thenReturn(Optional.of(spec.computeStartSlotAtEpoch(UInt64.ZERO)));
     when(combinedChainDataClient.getStore()).thenReturn(store);
     when(combinedChainDataClient.getRecentChainData()).thenReturn(recentChainData);
     when(callback.respond(any())).thenReturn(SafeFuture.COMPLETE);
