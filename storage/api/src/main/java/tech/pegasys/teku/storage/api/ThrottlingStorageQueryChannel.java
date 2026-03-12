@@ -159,6 +159,12 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
+  public SafeFuture<Optional<SignedBeaconBlock>> getNonCanonicalBlockByRoot(
+      final Bytes32 blockRoot) {
+    return taskQueue.queueTask(() -> delegate.getNonCanonicalBlockByRoot(blockRoot));
+  }
+
+  @Override
   public SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot) {
     return taskQueue.queueTask(() -> delegate.getNonCanonicalBlocksBySlot(slot));
   }
