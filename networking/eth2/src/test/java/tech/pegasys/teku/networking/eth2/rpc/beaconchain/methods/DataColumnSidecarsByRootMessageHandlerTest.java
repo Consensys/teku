@@ -205,9 +205,6 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     final Bytes32 secondBlockRoot = dataColumnsByRootIdentifiers[1].getBlockRoot();
     when(combinedChainDataClient.getSlotByBlockRoot(secondBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    when(combinedChainDataClient.getNonCanonicalSidecar(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-
     when(combinedChainDataClient.getSidecar(any()))
         .thenAnswer(
             invocation -> {
@@ -266,8 +263,6 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     when(combinedChainDataClient.getSlotByBlockRoot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(UInt64.valueOf(100))));
     when(combinedChainDataClient.getSidecar(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    when(combinedChainDataClient.getNonCanonicalSidecar(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     handler.onIncomingMessage(
@@ -333,7 +328,6 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     // Sending 3 data column sidecars
     verify(peer).adjustDataColumnSidecarsRequest(eq(allowedRequest.get()), eq(Long.valueOf(3)));
 
-    verify(combinedChainDataClient, never()).getNonCanonicalSidecar(any());
     verify(callback, times(3)).respond(datacolumnSidecarCaptor.capture());
     verify(callback).completeSuccessfully();
 
@@ -380,7 +374,6 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     // Sending 3 data column sidecars
     verify(peer, never()).adjustDataColumnSidecarsRequest(any(), anyLong());
 
-    verify(combinedChainDataClient, never()).getNonCanonicalSidecar(any());
     verify(combinedChainDataClient, never()).getFinalizedBlockSlot();
     verify(combinedChainDataClient, never()).getFinalizedBlock();
     verify(callback, times(4)).respond(datacolumnSidecarCaptor.capture());
@@ -419,7 +412,6 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     // Sending 0 data column sidecars, archive reconstructed empty
     verify(peer).adjustDataColumnSidecarsRequest(any(), eq(Long.valueOf(0)));
 
-    verify(combinedChainDataClient, never()).getNonCanonicalSidecar(any());
     verify(combinedChainDataClient, never()).getFinalizedBlockSlot();
     verify(combinedChainDataClient, never()).getFinalizedBlock();
     verify(callback).completeSuccessfully();
@@ -436,38 +428,6 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     verify(dataColumnSidecarArchiveReconstructor, times(4))
         .reconstructDataColumnSidecar(any(), any(), anyInt());
     verify(dataColumnSidecarArchiveReconstructor).onRequestCompleted(anyInt());
-  }
-
-  @TestTemplate
-  public void shouldFallbackToNonCanonicalSidecarWhenBlockIsPruned() {
-    final DataColumnsByRootIdentifier[] dataColumnsByRootIdentifiers =
-        generateDataColumnsByRootIdentifiers(1, 1);
-    final DataColumnSidecar nonCanonicalSidecar = dataStructureUtil.randomDataColumnSidecar();
-
-    // canonical sidecar not found
-    when(combinedChainDataClient.getSidecar(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    // slot resolution returns the slot
-    final UInt64 currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
-    when(combinedChainDataClient.getSlotByBlockRoot(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(currentForkFirstSlot)));
-    // archive fallback finds block pruned
-    when(combinedChainDataClient.getBlockByBlockRoot(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    // non-canonical sidecar is available
-    when(combinedChainDataClient.getNonCanonicalSidecar(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(nonCanonicalSidecar)));
-
-    handler.onIncomingMessage(
-        protocolId, peer, messageSchema.of(dataColumnsByRootIdentifiers), callback);
-
-    verify(combinedChainDataClient).getNonCanonicalSidecar(any());
-    verify(callback, times(1)).respond(datacolumnSidecarCaptor.capture());
-    verify(callback).completeSuccessfully();
-
-    assertThat(datacolumnSidecarCaptor.getValue()).isEqualTo(nonCanonicalSidecar);
-    verify(dataColumnSidecarArchiveReconstructor, never())
-        .reconstructDataColumnSidecar(any(), any(), anyInt());
   }
 
   @TestTemplate
