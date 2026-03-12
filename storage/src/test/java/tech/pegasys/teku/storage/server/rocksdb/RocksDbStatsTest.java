@@ -31,6 +31,7 @@ import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
+import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 
 class RocksDbStatsTest {
 
@@ -48,7 +49,7 @@ class RocksDbStatsTest {
     final ObservableMetricsSystem metricsSystem =
         new PrometheusMetricsSystem(Set.of(TekuMetricCategory.STORAGE_HOT_DB), true);
 
-    try (RocksDbStats stats = new RocksDbStats(metricsSystem, TekuMetricCategory.STORAGE_HOT_DB)) {
+    try (RocksDbStats stats = new RocksDbStats(metricsSystem, TekuMetricCategory.STORAGE_HOT_DB, KvStoreConfiguration.v6SingleDefaults())) {
       stats.registerMetrics(database);
 
       when(database.getLongProperty(any())).thenThrow(new RocksDBException("Database shutdown"));
