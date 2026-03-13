@@ -62,6 +62,9 @@ public class SpecConfigData {
     configAttributes.put("DOMAIN_SELECTION_PROOF", getDomainSelectionProof().toHexString());
     configAttributes.put("DOMAIN_AGGREGATE_AND_PROOF", getDomainAggregateAndProof().toHexString());
     configAttributes.put("DOMAIN_APPLICATION_BUILDER", getDomainApplicationBuilder().toHexString());
+    configAttributes.put("DOMAIN_BEACON_BUILDER", getDomainBeaconBuilder().toHexString());
+    configAttributes.put("DOMAIN_PTC_ATTESTER", getDomainPtcAttester().toHexString());
+    configAttributes.put("DOMAIN_PROPOSER_PREFERENCES", getDomainProposerPreferences().toHexString());
 
     getDomainSyncCommittee()
         .ifPresent(
@@ -127,6 +130,18 @@ public class SpecConfigData {
 
   public Bytes4 getDomainBlsToExecutionChange() {
     return Domain.BLS_TO_EXECUTION_CHANGE;
+  }
+
+  public Bytes4 getDomainBeaconBuilder() {
+    return Domain.BEACON_BUILDER;
+  }
+
+  public Bytes4 getDomainPtcAttester() {
+    return Domain.PTC_ATTESTER;
+  }
+
+  public Bytes4 getDomainProposerPreferences() {
+    return Domain.PROPOSER_PREFERENCES;
   }
 
   private Optional<Bytes4> getDomainSyncCommittee() {
