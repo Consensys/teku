@@ -1,0 +1,50 @@
+{
+  "get" : {
+    "tags" : [ "Beacon" ],
+    "operationId" : "getPoolPayloadAttestations",
+    "summary" : "Get PayloadAttestationMessages from operations pool",
+    "description" : "Retrieves payload attestations known by the node but not necessarily incorporated into any block.",
+    "parameters" : [ {
+      "name" : "slot",
+      "in" : "query",
+      "schema" : {
+        "type" : "string",
+        "description" : "`UInt64` Slot to query in the canonical chain.",
+        "example" : "1",
+        "format" : "uint64"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "Request successful",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetPoolPayloadAttestationsResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

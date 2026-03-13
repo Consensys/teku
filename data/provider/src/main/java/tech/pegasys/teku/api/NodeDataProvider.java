@@ -179,8 +179,12 @@ public class NodeDataProvider {
     return new ArrayList<>(voluntaryExitPool.getAll());
   }
 
-  public List<PayloadAttestationMessage> getPayloadAttestations() {
-    return payloadAttestationPool.getPayloadAttestationMessages();
+  public List<PayloadAttestationMessage> getPayloadAttestations(final Optional<UInt64> maybeSlot) {
+    final List<PayloadAttestationMessage> messages =
+        payloadAttestationPool.getPayloadAttestationMessages();
+    return maybeSlot
+        .map(slot -> messages.stream().filter(msg -> msg.getData().getSlot().equals(slot)).toList())
+        .orElse(messages);
   }
 
   public SafeFuture<InternalValidationResult> postVoluntaryExit(final SignedVoluntaryExit exit) {

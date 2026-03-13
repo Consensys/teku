@@ -13,14 +13,17 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Header;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
@@ -28,6 +31,7 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
@@ -52,6 +56,7 @@ public class GetPayloadAttestations extends RestApiEndpoint {
             .description(
                 "Retrieves payload attestations known by the node but not necessarily incorporated into any block.")
             .tags(TAG_BEACON)
+            .queryParam(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION))
             .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
             .build());
     this.nodeDataProvider = provider;
@@ -60,7 +65,9 @@ public class GetPayloadAttestations extends RestApiEndpoint {
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
-    request.respondOk(nodeDataProvider.getPayloadAttestations());
+    final Optional<UInt64> slot =
+        request.getOptionalQueryParameter(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION));
+    request.respondOk(nodeDataProvider.getPayloadAttestations(slot));
   }
 
   private static SerializableTypeDefinition<List<PayloadAttestationMessage>> getResponseType(
