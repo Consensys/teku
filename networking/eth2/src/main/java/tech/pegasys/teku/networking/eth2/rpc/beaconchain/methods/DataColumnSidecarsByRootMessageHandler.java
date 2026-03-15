@@ -161,7 +161,7 @@ public class DataColumnSidecarsByRootMessageHandler
         .finish(err -> handleError(err, completionCallback, "data column sidecars by root"));
   }
 
-  private SafeFuture<Optional<DataColumnSidecar>> getArchiveOrNonCanonicalDataColumnSidecar(
+  private SafeFuture<Optional<DataColumnSidecar>> tryArchiveReconstruction(
       final DataColumnSlotAndIdentifier identifier, final int messageId) {
     final boolean isSuperNodePruned =
         dataColumnSidecarArchiveReconstructor.isSidecarPruned(
@@ -179,7 +179,8 @@ public class DataColumnSidecarsByRootMessageHandler
                     maybeBlock.get(), identifier.columnIndex(), messageId);
               });
     }
-    return combinedChainDataClient.getNonCanonicalSidecar(identifier);
+
+    return SafeFuture.completedFuture(Optional.empty());
   }
 
   /**
@@ -261,10 +262,8 @@ public class DataColumnSidecarsByRootMessageHandler
               if (maybeSidecar.isPresent()) {
                 return SafeFuture.completedFuture(maybeSidecar);
               }
-              // Fallback to compacted archive or non-canonical sidecar if the canonical one is not
-              // found
-              return getArchiveOrNonCanonicalDataColumnSidecar(
-                  dataColumnSlotAndIdentifier, messageId);
+              // Fallback to compacted archive reconstruction if the canonical one is not found
+              return tryArchiveReconstruction(dataColumnSlotAndIdentifier, messageId);
             });
   }
 }
