@@ -1,7 +1,7 @@
 dependencies {
-    implementation 'io.consensys.tuweni:tuweni-bytes'
-    implementation 'net.java.dev.jna:jna'
-    implementation project(':infrastructure:exceptions')
+	implementation 'io.consensys.tuweni:tuweni-bytes'
+	implementation 'net.java.dev.jna:jna'
+	implementation project(':infrastructure:exceptions')
 
-    testFixturesImplementation 'commons-io:commons-io'
+	testFixturesImplementation 'commons-io:commons-io'
 }

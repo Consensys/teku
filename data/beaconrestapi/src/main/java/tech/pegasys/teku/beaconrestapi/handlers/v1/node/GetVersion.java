@@ -49,6 +49,7 @@ public class GetVersion extends RestApiEndpoint {
             .description(
                 "similar to [HTTP User-Agent](https://tools.ietf.org/html/rfc7231#section-5.5.3).")
             .tags(TAG_NODE)
+            .deprecated(true)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .build());
   }

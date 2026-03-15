@@ -70,4 +70,8 @@ public class TickProcessingPerformance {
   public void forkChoiceNotifierUpdated() {
     performanceTracker.addEvent("forkchoice_notifier_updated");
   }
+
+  public void payloadAttestationsDueComplete() {
+    performanceTracker.addEvent("payload_attestations_due_complete");
+  }
 }

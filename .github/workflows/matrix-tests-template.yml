@@ -27,6 +27,10 @@ on:
         type: string
         required: false
         default: gha-runner-scale-set-ubuntu-22.04-amd64-xxl
+      gradle_args:
+        type: string
+        required: false
+        default: ''
 
 permissions:
   actions: read     # download the assemble output as an artifacts
@@ -106,7 +110,7 @@ jobs:
       - name: Run ${{ inputs.stage_name }} (shard)
         if: steps.shard.outputs.args != ''
         run: |
-          ./gradlew --no-daemon --parallel --info ${{ inputs.gradle_task }} ${{ steps.shard.outputs.args }}
+          ./gradlew --no-daemon --parallel ${{ inputs.gradle_args }} ${{ inputs.gradle_task }} ${{ steps.shard.outputs.args }}
 
       - name: Upload JUnit XML + HTML for ${{ inputs.stage_name }}
         if: always()

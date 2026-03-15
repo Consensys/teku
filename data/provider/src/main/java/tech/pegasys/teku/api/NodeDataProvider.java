@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -132,7 +133,7 @@ public class NodeDataProvider {
         attestationPool.getAttestations(maybeSlot, maybeCommitteeIndex), maybeSlot);
   }
 
-  public List<UInt64> getCustodyColumnIndices() {
+  public Set<UInt64> getCustodyColumnIndices() {
     return custodyGroupCountManager.getCustodyColumnIndices();
   }
 

@@ -267,7 +267,7 @@ public class DataColumnSidecarCustodyImpl
               slot, Optional.empty(), Collections.emptyList(), Collections.emptyList()));
     }
     final SafeFuture<Optional<Bytes32>> maybeCanonicalBlockRoot = getBlockRootWithBlobs(slot);
-    final List<UInt64> requiredColumns = custodyGroupCountManager.getCustodyColumnIndices();
+    final Set<UInt64> requiredColumns = custodyGroupCountManager.getCustodyColumnIndices();
     final SafeFuture<List<DataColumnSlotAndIdentifier>> existingColumns =
         db.getColumnIdentifiers(slot);
     return SafeFuture.allOf(maybeCanonicalBlockRoot, existingColumns)
