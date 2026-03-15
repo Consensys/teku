@@ -70,7 +70,7 @@ public class AttestationUtilGloas extends AttestationUtilElectra {
   }
 
   @Override
-  public AttestationValidationResult validateIndexValue(final UInt64 index) {
+  public AttestationValidationResult validateCommitteeIndexValue(final UInt64 index) {
     // [REJECT] attestation.data.index < 2
     if (!index.isLessThan(2)) {
       return AttestationValidationResult.invalid(

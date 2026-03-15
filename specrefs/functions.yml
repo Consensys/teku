@@ -4460,7 +4460,7 @@
 - name: get_payload_attestation_due_ms#gloas
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
-      search: public int getPayloadAttestationDueMillis(
+      search: public Optional<Integer> getPayloadAttestationDueMillis(
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigGloasImpl.java
       search: private final int payloadAttestationDueBps;
   spec: |
@@ -6468,7 +6468,7 @@
 - name: is_valid_indexed_attestation#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/AttestationUtil.java
-      search: public AttestationProcessingResult\s+isValidIndexedAttestation\s*\(\s*final\s+Fork\s+\w+\s*,\s*final\s+BeaconState\s+\w+\s*,\s*final\s+ValidatableAttestation\s+\w+\s*\)
+      search: public AttestationProcessingResult\s+isValidIndexedAttestation\s*\(\s*final\s+Fork\s+\w+\s*,\s*final\s+BeaconState\s+\w+\s*,\s*final\s+IndexedAttestation\s+\w+\s*\)
       regex: true
   spec: |
     <spec fn="is_valid_indexed_attestation" fork="phase0" hash="31223a33">
