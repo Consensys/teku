@@ -64,7 +64,8 @@ public class SpecConfigData {
     configAttributes.put("DOMAIN_APPLICATION_BUILDER", getDomainApplicationBuilder().toHexString());
     configAttributes.put("DOMAIN_BEACON_BUILDER", getDomainBeaconBuilder().toHexString());
     configAttributes.put("DOMAIN_PTC_ATTESTER", getDomainPtcAttester().toHexString());
-    configAttributes.put("DOMAIN_PROPOSER_PREFERENCES", getDomainProposerPreferences().toHexString());
+    configAttributes.put(
+        "DOMAIN_PROPOSER_PREFERENCES", getDomainProposerPreferences().toHexString());
 
     getDomainSyncCommittee()
         .ifPresent(
