@@ -13,8 +13,8 @@
         "0x32a7d23faa44fc04cc23dc3b560a55ade3deb2c393e9de2e6d20bdad2416c39b4a2cc99ce8dad0f8165c8eae1794a314",
         "0xf943e43fcb615e36ec5aa6b9db6f1746d0d5b50d708f6400e39cf25495f39cfb83cd7680f9b72f2f4013c5a9c23c7861"
       ],
-      "slot": "4666673844721362956",
-      "beacon_block_root": "0x34fac6c9c003d15b27e1b60e775137a639e586f9362549a7c1771d119baadc6a"
+      "slot": "26360681478",
+      "beacon_block_root": "0xf6d05df79a2ea6f5939715a641c48e564e91194eeaec5330270ba8dc2e0c914c"
     },
     {
       "index": "107",
@@ -32,8 +32,8 @@
         "0x999e0140abe701de220ca2e0b9c3b044b1c6ba33e0a3985dfe16a16b510f08468d2f98a614d3cd89dc99754cde5585e1",
         "0x603b1340cb04640f42436c5e3e2973dd9ebdbd7dbd491e2f7593d612c2ece1a5c7d0458a25b02cc00751ac4788fe592e"
       ],
-      "slot": "4590659586689121994",
-      "beacon_block_root": "0x94b158d6671becee2b9d84d04ad7d3b0cebf1c97b9a574e9c41f2c6dcc36cc99"
+      "slot": "1344560997",
+      "beacon_block_root": "0x26fe7c973420fa5da28a543968c1bddaaf5dcc3be9eb9d098e7f94aaff8614ab"
     },
     {
       "index": "73",
@@ -59,8 +59,8 @@
         "0x3624343f893e8948a933c0cfa8787f4e8c309829ce142cd140c0dbcc2c4d1a3d4781ae9b52157b0f99eba1d919a62961",
         "0x49452e3f298a688d9e7627fb7c01941b923397bb84dd548b6e411f9506aed1c7dfa074fa4c765bfde003e585e06d8d47"
       ],
-      "slot": "4539432581202110249",
-      "beacon_block_root": "0x6989cee2fa672518f9fc6fb4ee1f22f009d81bf3471de9967e34211e295bf1dd"
+      "slot": "2601055124",
+      "beacon_block_root": "0xfde043ceb98738c58fa64a58f0602c528c3a9434257ebd5bc0283f155a192736"
     }
   ]
 }

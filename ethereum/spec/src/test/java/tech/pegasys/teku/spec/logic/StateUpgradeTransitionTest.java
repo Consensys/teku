@@ -51,7 +51,8 @@ import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
       SpecMilestone.DENEB,
       SpecMilestone.ELECTRA,
       SpecMilestone.FULU,
-      SpecMilestone.GLOAS
+      SpecMilestone.GLOAS,
+      SpecMilestone.HEZE
     },
     doNotGenerateSpec = true)
 public class StateUpgradeTransitionTest {
@@ -106,6 +107,11 @@ public class StateUpgradeTransitionTest {
             beforeBeaconStateClass = BeaconStateFulu.class;
             afterBeaconStateClass = BeaconStateGloas.class;
             yield TestSpecFactory.createMinimalWithGloasForkEpoch(milestoneTransitionEpoch);
+          }
+          case HEZE -> {
+            beforeBeaconStateClass = BeaconStateGloas.class;
+            afterBeaconStateClass = BeaconStateGloas.class;
+            yield TestSpecFactory.createMinimalWithHezeForkEpoch(milestoneTransitionEpoch);
           }
         };
 

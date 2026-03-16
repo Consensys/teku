@@ -45,6 +45,9 @@ public class BlockProposalUtilFulu extends BlockProposalUtilPhase0 {
   @Override
   public UInt64 getStateSlotForProposerDuties(
       final Spec spec, final UInt64 stateEpoch, final UInt64 dutiesEpoch) {
+    if (stateEpoch.isLessThan(dutiesEpoch) && stateEpoch.increment().isLessThan(dutiesEpoch)) {
+      return spec.computeStartSlotAtEpoch(dutiesEpoch.minusMinZero(1));
+    }
     return dutiesEpoch.isGreaterThan(stateEpoch)
         ? spec.computeStartSlotAtEpoch(stateEpoch)
         : spec.computeStartSlotAtEpoch(dutiesEpoch);

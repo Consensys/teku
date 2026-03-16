@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -53,11 +52,17 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.versions.phase0.StatusMessagePhase0;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 
 public class PeerSyncTest extends AbstractSyncTest {
+
+  private static final UInt64 DENEB_FORK_EPOCH = UInt64.valueOf(100);
+  private static final UInt64 GLOAS_FORK_EPOCH = DENEB_FORK_EPOCH.plus(300);
+
   private static final UInt64 FORWARD_SYNC_BATCH_SIZE =
       UInt64.valueOf(SyncConfig.DEFAULT_FORWARD_SYNC_BATCH_SIZE);
 
@@ -79,10 +84,27 @@ public class PeerSyncTest extends AbstractSyncTest {
               PEER_HEAD_SLOT));
 
   private final UInt64 denebPeerSlotsAhead = UInt64.valueOf(20);
+  private final UInt64 denebFirstSlot = spec.computeStartSlotAtEpoch(DENEB_FORK_EPOCH);
   private final UInt64 denebPeerHeadSlot = denebFirstSlot.plus(denebPeerSlotsAhead);
   private final UInt64 denebPeerFinalizedEpoch = spec.computeEpochAtSlot(denebPeerHeadSlot);
 
+  private final UInt64 gloasPeerSlotsAhead = UInt64.valueOf(20);
+  private final UInt64 gloasFirstSlot = spec.computeStartSlotAtEpoch(GLOAS_FORK_EPOCH);
+  private final UInt64 gloasPeerHeadSlot = gloasFirstSlot.plus(gloasPeerSlotsAhead);
+  private final UInt64 gloasPeerFinalizedEpoch = spec.computeEpochAtSlot(gloasPeerHeadSlot);
+
   private PeerSync peerSync;
+
+  @Override
+  protected Spec getSpec() {
+    return TestSpecFactory.createMinimalGloas(
+        builder ->
+            builder
+                .denebForkEpoch(DENEB_FORK_EPOCH)
+                .electraForkEpoch(DENEB_FORK_EPOCH.plus(100))
+                .fuluForkEpoch(DENEB_FORK_EPOCH.plus(200))
+                .gloasForkEpoch(GLOAS_FORK_EPOCH));
+  }
 
   @BeforeEach
   public void setUp() {
@@ -90,12 +112,18 @@ public class PeerSyncTest extends AbstractSyncTest {
     when(recentChainData.getHeadSlot()).thenReturn(UInt64.ONE);
     when(peer.getStatus()).thenReturn(PEER_STATUS);
     when(peer.disconnectCleanly(any())).thenReturn(SafeFuture.COMPLETE);
-    // By default, set up block and blob sidecar import to succeed
-    final SignedBeaconBlock block = mock(SignedBeaconBlock.class);
-    final SafeFuture<BlockImportResult> result =
-        SafeFuture.completedFuture(BlockImportResult.successful(block));
-    when(blockImporter.importBlock(any())).thenReturn(result);
+    // By default, set up imports to succeed
+    when(blockImporter.importBlock(any()))
+        .thenAnswer(
+            invocationOnMock ->
+                SafeFuture.completedFuture(
+                    BlockImportResult.successful(invocationOnMock.getArgument(0))));
     when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(false);
+    when(executionPayloadManager.importExecutionPayload(any()))
+        .thenAnswer(
+            invocationOnMock ->
+                SafeFuture.completedFuture(
+                    ExecutionPayloadImportResult.successful(invocationOnMock.getArgument(0))));
 
     peerSync =
         new PeerSync(
@@ -104,6 +132,7 @@ public class PeerSyncTest extends AbstractSyncTest {
             blockImporter,
             blobSidecarManager,
             blockBlobSidecarsTrackersPool,
+            executionPayloadManager,
             FORWARD_SYNC_BATCH_SIZE.intValue(),
             OptionalInt.empty(),
             new NoOpMetricsSystem());
@@ -445,7 +474,7 @@ public class PeerSyncTest extends AbstractSyncTest {
   @Test
   void sync_stopSyncIfPeerSendsBlocksInWrongOrder() {
     final UInt64 startSlot = UInt64.ONE;
-    UInt64 peerHeadSlot = UInt64.valueOf(1000000);
+    UInt64 peerHeadSlot = UInt64.valueOf(1000);
 
     withPeerHeadSlot(peerHeadSlot);
 
@@ -476,7 +505,7 @@ public class PeerSyncTest extends AbstractSyncTest {
   @Test
   void sync_continueSyncIfPeerThrottlesAReasonableAmount() {
     final UInt64 startSlot = UInt64.ONE;
-    UInt64 peerHeadSlot = UInt64.valueOf(1000000);
+    UInt64 peerHeadSlot = UInt64.valueOf(1000);
 
     withPeerHeadSlot(peerHeadSlot);
 
@@ -517,7 +546,7 @@ public class PeerSyncTest extends AbstractSyncTest {
 
   @Test
   void sync_blocksAndBlobSidecarsForDeneb() {
-    when(recentChainData.getFinalizedEpoch()).thenReturn(denebForkEpoch);
+    when(recentChainData.getFinalizedEpoch()).thenReturn(DENEB_FORK_EPOCH);
     when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
 
     final UInt64 denebSecondSlot = denebFirstSlot.plus(1);
@@ -562,10 +591,10 @@ public class PeerSyncTest extends AbstractSyncTest {
         TestSpecFactory.createMinimalFulu(
             builder ->
                 builder
-                    .denebForkEpoch(denebForkEpoch)
-                    .electraForkEpoch(denebForkEpoch)
+                    .denebForkEpoch(DENEB_FORK_EPOCH)
+                    .electraForkEpoch(DENEB_FORK_EPOCH)
                     .fuluForkEpoch(fuluEpoch));
-    when(recentChainData.getFinalizedEpoch()).thenReturn(denebForkEpoch);
+    when(recentChainData.getFinalizedEpoch()).thenReturn(DENEB_FORK_EPOCH);
     when(blobSidecarManager.isAvailabilityRequiredAtSlot(any()))
         .thenAnswer(
             args -> {
@@ -617,6 +646,54 @@ public class PeerSyncTest extends AbstractSyncTest {
     verify(peer, never()).disconnectImmediately(any(), anyBoolean());
   }
 
+  @Test
+  void sync_blocksAndExecutionPayloadsForGloas() {
+    when(recentChainData.getFinalizedEpoch()).thenReturn(GLOAS_FORK_EPOCH);
+
+    final UInt64 gloasSecondSlot = gloasFirstSlot.plus(1);
+
+    withGloasPeerHeadSlot();
+
+    final SafeFuture<Void> blocksRequestFuture = new SafeFuture<>();
+    final SafeFuture<Void> executionPayloadsRequestFuture = new SafeFuture<>();
+
+    when(peer.requestBlocksByRange(any(), any(), any())).thenReturn(blocksRequestFuture);
+    when(peer.requestExecutionPayloadEnvelopesByRange(any(), any(), any()))
+        .thenReturn(executionPayloadsRequestFuture);
+
+    final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
+
+    assertThat(syncFuture).isNotDone();
+
+    // update the chain with the peer finalized epoch to ensure next time the sync completes
+    when(recentChainData.getFinalizedEpoch()).thenReturn(gloasPeerFinalizedEpoch);
+
+    verify(peer)
+        .requestExecutionPayloadEnvelopesByRange(
+            eq(gloasSecondSlot), eq(gloasPeerSlotsAhead), any());
+
+    final Map<UInt64, SignedExecutionPayloadEnvelope> executionPayloadsBySlot =
+        completeRequestWithExecutionPayloadsAtSlots(
+            executionPayloadsRequestFuture, gloasSecondSlot, gloasPeerSlotsAhead);
+
+    verify(peer)
+        .requestExecutionPayloadEnvelopesByRange(
+            eq(gloasSecondSlot), eq(gloasPeerSlotsAhead), any());
+
+    completeRequestWithBlocksAtSlots(blocksRequestFuture, gloasSecondSlot, gloasPeerSlotsAhead);
+
+    // verify importing of execution payload
+    executionPayloadsBySlot
+        .values()
+        .forEach(
+            executionPayload ->
+                verify(executionPayloadManager).importExecutionPayload(executionPayload));
+
+    // Check that the sync is done and the peer was not disconnected.
+    assertThat(syncFuture).isCompleted();
+    verify(peer, never()).disconnectCleanly(any());
+  }
+
   private void verifyBlobSidecarsAddedToPool(
       final UInt64 startSlot,
       final UInt64 count,
@@ -636,6 +713,10 @@ public class PeerSyncTest extends AbstractSyncTest {
 
   private void withDenebPeerHeadSlot() {
     withPeerHeadSlot(denebPeerHeadSlot, denebPeerFinalizedEpoch, PEER_HEAD_BLOCK_ROOT);
+  }
+
+  private void withGloasPeerHeadSlot() {
+    withPeerHeadSlot(gloasPeerHeadSlot, gloasPeerFinalizedEpoch, PEER_HEAD_BLOCK_ROOT);
   }
 
   private void withPeerFinalizedEpoch(final UInt64 finalizedEpoch) {

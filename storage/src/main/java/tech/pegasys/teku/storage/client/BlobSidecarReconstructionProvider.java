@@ -135,7 +135,7 @@ public class BlobSidecarReconstructionProvider {
         SchemaDefinitionsDeneb.required(
             spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions());
 
-    return IntStream.range(0, dataColumnSidecars.getFirst().getKzgCommitments().size())
+    return IntStream.range(0, dataColumnSidecars.getFirst().getKzgProofs().size())
         .filter(index -> blobIndices.isEmpty() || blobIndices.contains(UInt64.valueOf(index)))
         .mapToObj(
             blobIndex ->

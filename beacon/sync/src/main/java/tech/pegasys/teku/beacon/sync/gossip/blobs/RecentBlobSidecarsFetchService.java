@@ -53,7 +53,7 @@ public class RecentBlobSidecarsFetchService
     this.fetchTaskFactory = fetchTaskFactory;
   }
 
-  public static RecentBlobSidecarsFetchService create(
+  static RecentBlobSidecarsFetchService create(
       final AsyncRunner asyncRunner,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final ForwardSync forwardSync,
