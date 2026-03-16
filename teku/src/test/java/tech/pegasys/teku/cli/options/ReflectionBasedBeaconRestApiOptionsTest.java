@@ -241,6 +241,45 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
   }
 
   @Test
+  void restApiVirtualThreadsEnabled_disabledByDefault() {
+    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.isRestApiVirtualThreadsEnabled()).isFalse();
+  }
+
+  @Test
+  void restApiVirtualThreadsEnabled_shouldNotRequireAValue() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xrest-api-virtual-threads-enabled");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.isRestApiVirtualThreadsEnabled()).isTrue();
+  }
+
+  @Test
+  void restApiVirtualThreadsEnabled_canBeEnabled() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xrest-api-virtual-threads-enabled=true");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.isRestApiVirtualThreadsEnabled()).isTrue();
+  }
+
+  @Test
+  void restApiVirtualThreadsMaxThreads_defaultValue() {
+    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.getRestApiVirtualThreadsMaxThreads())
+        .isEqualTo(BeaconRestApiConfig.DEFAULT_REST_API_VIRTUAL_THREADS_MAX);
+  }
+
+  @Test
+  void restApiVirtualThreadsMaxThreads_canBeOverridden() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xrest-api-virtual-threads-max-threads=64");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.getRestApiVirtualThreadsMaxThreads()).isEqualTo(64);
+  }
+
+  @Test
   void columnsDataAvailabilityHalfCheckEnabled_enabledByDefault() {
     TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
     assertThat(tekuConfiguration.p2p().isColumnsDataAvailabilityHalfCheckEnabled()).isTrue();

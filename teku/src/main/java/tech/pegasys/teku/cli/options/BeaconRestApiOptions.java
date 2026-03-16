@@ -131,6 +131,23 @@ public class BeaconRestApiOptions {
   private Integer validatorThreads;
 
   @Option(
+      names = {"--Xrest-api-virtual-threads-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Enables virtual threads for REST API request handling",
+      fallbackValue = "true",
+      arity = "0..1",
+      hidden = true)
+  private boolean restApiVirtualThreadsEnabled = false;
+
+  @Option(
+      names = {"--Xrest-api-virtual-threads-max-threads"},
+      paramLabel = "<INTEGER>",
+      hidden = true)
+  private int restApiVirtualThreadsMaxThreads =
+      BeaconRestApiConfig.DEFAULT_REST_API_VIRTUAL_THREADS_MAX;
+
+  @Option(
       names = {"--rest-api-getblobs-sidecars-download-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -175,6 +192,8 @@ public class BeaconRestApiOptions {
                 .getBlobsSidecarsDownloadEnabled(getBlobsSidecarsDownloadEnabled)
                 .getBlobsSidecarsDownloadTimeoutSeconds(getBlobsSidecarsDownloadTimeoutSeconds)
                 .maxPendingEvents(maxPendingEvents)
-                .validatorThreads(Optional.ofNullable(validatorThreads)));
+                .validatorThreads(Optional.ofNullable(validatorThreads))
+                .restApiVirtualThreadsEnabled(restApiVirtualThreadsEnabled)
+                .restApiVirtualThreadsMaxThreads(restApiVirtualThreadsMaxThreads));
   }
 }
