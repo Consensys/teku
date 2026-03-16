@@ -463,7 +463,8 @@ public class Eth2NetworkConfiguration {
         && Objects.equals(totalTerminalDifficultyOverride, that.totalTerminalDifficultyOverride)
         && Objects.equals(terminalBlockHashEpochOverride, that.terminalBlockHashEpochOverride)
         && Objects.equals(eth2Network, that.eth2Network)
-        && Objects.equals(epochsStoreBlobs, that.epochsStoreBlobs);
+        && Objects.equals(epochsStoreBlobs, that.epochsStoreBlobs)
+        && quartzSchedulerEnabled == that.quartzSchedulerEnabled;
   }
 
   @Override
@@ -499,7 +500,8 @@ public class Eth2NetworkConfiguration {
         prepareBlockProductionEnabled,
         forkChoiceUpdatedAlwaysSendPayloadAttributes,
         rustKzgEnabled,
-        dataColumnSidecarExtensionRetentionEpochs);
+        dataColumnSidecarExtensionRetentionEpochs,
+        quartzSchedulerEnabled);
   }
 
   public static class Builder {
