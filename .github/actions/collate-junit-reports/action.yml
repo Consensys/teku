@@ -55,7 +55,8 @@ runs:
       with:
         report-path: './ctrf/${{inputs.stage_key}}/ctrf-report.json'
         # Disable PR interaction
-        pull-request: false
+        pull-request: true
+        on-fail-only: true
         status-check: false
         update-comment: false
         overwrite-comment: true
@@ -69,8 +70,10 @@ runs:
         # Enables a full test report type — typically lists all tests and their statuses, not just failed.
         test-report: false
         previous-results-report: true
-        max-previous-runs-to-fetch: 10
-        report-order: 'summary-report,failed-report,flaky-report,insights-report,test-report'
+        max-previous-runs-to-fetch: 50
+        flaky-rate-report: true
+        previous-results-max: 10
+        report-order: 'summary-report,failed-report,flaky-report,flaky-rate-report,insights-report,test-report'
       env:
         GITHUB_TOKEN: ${{ github.token }}
                 
