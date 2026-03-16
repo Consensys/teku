@@ -1768,6 +1768,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               executionPayloadManager,
               executionPayloadFactory,
               executionPayloadPublisher,
+              executionPayloadBidManager,
               executionProofManager);
     } else {
       this.validatorApiHandler =
