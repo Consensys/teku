@@ -29,6 +29,7 @@ import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okio.ByteString;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.AfterEach;
@@ -84,18 +85,6 @@ class OkHttpWebSocketExecutionEngineClientTest {
 
     assertThat(response).isNotNull();
     assertThat(response.payload()).isNull();
-  }
-
-  private static @NonNull MockResponse webSocketResponse(final String s) {
-    return new MockResponse()
-        .withWebSocketUpgrade(
-            new WebSocketListener() {
-              @Override
-              public void onMessage(
-                  @NotNull final WebSocket webSocket, @NotNull final String text) {
-                webSocket.send(s);
-              }
-            });
   }
 
   @Test
@@ -257,5 +246,23 @@ class OkHttpWebSocketExecutionEngineClientTest {
     future.get(5, TimeUnit.SECONDS);
 
     assertThat(receivedMessage.get()).contains("engine_getPayloadV1");
+  }
+
+  private static MockResponse webSocketResponse(final String s) {
+    return new MockResponse()
+        .withWebSocketUpgrade(
+            new WebSocketListener() {
+              @Override
+              public void onMessage(
+                  @NotNull final WebSocket webSocket, @NotNull final String text) {
+                webSocket.send(s);
+              }
+
+              @Override
+              public void onMessage(
+                  @NonNull final WebSocket webSocket, @NonNull final ByteString bytes) {
+                webSocket.send(ByteString.encodeUtf8(s));
+              }
+            });
   }
 }

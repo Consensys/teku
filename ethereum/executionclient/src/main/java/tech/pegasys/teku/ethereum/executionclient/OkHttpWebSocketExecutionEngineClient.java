@@ -28,6 +28,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
+import okio.ByteString;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
@@ -110,11 +111,7 @@ public class OkHttpWebSocketExecutionEngineClient extends OkHttpExecutionEngineC
               try {
                 final JsonNode errorNode = jsonResponse.get("error");
                 if (errorNode != null && !errorNode.isNull()) {
-                  final int code = errorNode.path("code").asInt();
-                  final String msg = errorNode.path("message").asText();
-                  final String formattedError =
-                      String.format(
-                          "JSON-RPC error: %s (%d): %s", describeJsonRpcErrorCode(code), code, msg);
+                  final String formattedError = getFormattedError(errorNode);
                   if (isCritical) {
                     eventLog.executionClientRequestFailed(new Exception(formattedError), false);
                   }
@@ -141,6 +138,14 @@ public class OkHttpWebSocketExecutionEngineClient extends OkHttpExecutionEngineC
             });
   }
 
+  private static String getFormattedError(final JsonNode errorNode) {
+    final int code = errorNode.path("code").asInt();
+    final String msg = errorNode.path("message").asText();
+    final String formattedError =
+        String.format("JSON-RPC error: %s (%d): %s", describeJsonRpcErrorCode(code), code, msg);
+    return formattedError;
+  }
+
   private long extractRequestId(final byte[] requestBodyBytes) {
     try {
       final JsonNode node = objectMapper.readTree(requestBodyBytes);
@@ -154,11 +159,20 @@ public class OkHttpWebSocketExecutionEngineClient extends OkHttpExecutionEngineC
 
     @Override
     public void onMessage(final WebSocket ws, final String text) {
+      onMessageInternal(text.getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Override
+    public void onMessage(final WebSocket ws, final ByteString bytes) {
+      onMessageInternal(bytes.toByteArray());
+    }
+
+    void onMessageInternal(final byte[] bytes) {
       try {
-        final JsonNode jsonResponse = objectMapper.readTree(text);
+        final JsonNode jsonResponse = objectMapper.readTree(bytes);
         final JsonNode idNode = jsonResponse.get("id");
         if (idNode == null || idNode.isNull()) {
-          LOG.warn("Received WebSocket message without id: {}", text);
+          LOG.warn("Received WebSocket message without id");
           return;
         }
         final long id = idNode.asLong();
