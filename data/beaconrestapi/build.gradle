@@ -26,7 +26,6 @@ dependencies {
 	implementation 'com.google.guava:guava'
 	implementation 'io.swagger.core.v3:swagger-core'
 	implementation 'io.swagger.core.v3:swagger-annotations'
-	implementation 'io.github.classgraph:classgraph'
 	implementation 'io.javalin:javalin'
 	implementation 'io.consensys.tuweni:tuweni-units'
 	implementation 'org.webjars:swagger-ui'
