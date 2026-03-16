@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class DataColumnSidecarsByRootListenerValidatingProxy
     extends DataColumnSidecarsByRootValidator implements RpcResponseListener<DataColumnSidecar> {
@@ -38,7 +39,8 @@ public class DataColumnSidecarsByRootListenerValidatingProxy
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider,
       final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator,
-      final List<DataColumnsByRootIdentifier> expectedByRootIdentifiers) {
+      final List<DataColumnsByRootIdentifier> expectedByRootIdentifiers,
+      final CombinedChainDataClient combinedChainDataClient) {
     super(
         peer,
         spec,
@@ -52,20 +54,18 @@ public class DataColumnSidecarsByRootListenerValidatingProxy
                         .map(
                             column ->
                                 new DataColumnIdentifier(byRootIdentifier.getBlockRoot(), column)))
-            .toList());
+            .toList(),
+        combinedChainDataClient);
     this.listener = listener;
   }
 
   @Override
   public SafeFuture<?> onResponse(final DataColumnSidecar dataColumnSidecar) {
-    return SafeFuture.of(
-            () -> {
-              validate(dataColumnSidecar);
-              return verifySignature(dataColumnSidecar);
-            })
+    return validate(dataColumnSidecar)
+        .thenCompose(__ -> verifySignature(dataColumnSidecar))
         .thenCompose(
-            signatureIsValid -> {
-              if (signatureIsValid) {
+            signatureValidation -> {
+              if (signatureValidation) {
                 return SafeFuture.COMPLETE;
               }
               return SafeFuture.failedFuture(

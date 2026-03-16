@@ -26,6 +26,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
+import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -78,7 +79,7 @@ import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@TestSpecContext(milestone = {CAPELLA, DENEB, ELECTRA, FULU})
+@TestSpecContext(milestone = {CAPELLA, DENEB, ELECTRA, FULU, GLOAS})
 public class Web3JExecutionEngineClientTest {
 
   private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);

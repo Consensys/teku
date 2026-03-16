@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -86,6 +88,10 @@ public class GossipValidationHelper {
       final UInt64 builderIndex,
       final BLSSignature signature,
       final BeaconState state) {
+    if (builderIndex.equals(BUILDER_INDEX_SELF_BUILD)) {
+      return isSignatureValidWithRespectToProposerIndex(
+          signingRoot, state.getLatestBlockHeader().getProposerIndex(), signature, state);
+    }
     return spec.getBuilderPubKey(state, builderIndex)
         .map(publicKey -> BLS.verify(publicKey, signingRoot, signature))
         .orElse(false);
@@ -193,6 +199,10 @@ public class GossipValidationHelper {
     return recentChainData.retrieveBlockByRoot(root);
   }
 
+  public SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlockByRoot(final Bytes32 root) {
+    return recentChainData.retrieveSignedBlockByRoot(root);
+  }
+
   public boolean isActiveBuilder(
       final UInt64 builderIndex, final BeaconState state, final UInt64 slot) {
     return MiscHelpersGloas.required(spec.atSlot(slot).miscHelpers())
@@ -208,6 +218,20 @@ public class GossipValidationHelper {
     return recentChainData
         .getCurrentSlot()
         .map(currentSlot -> slot.equals(currentSlot) || slot.equals(currentSlot.plus(ONE)))
+        .orElse(false);
+  }
+
+  public boolean isSlotInNextEpoch(final UInt64 slot) {
+    return recentChainData
+        .getCurrentSlot()
+        .map(
+            currentSlot -> {
+              final int slotsPerEpoch = spec.getSlotsPerEpoch(currentSlot);
+              final UInt64 currentEpochStart = currentSlot.minus(currentSlot.mod(slotsPerEpoch));
+              final UInt64 nextEpochStart = currentEpochStart.plus(slotsPerEpoch);
+              return slot.isGreaterThanOrEqualTo(nextEpochStart)
+                  && slot.isLessThan(nextEpochStart.plus(slotsPerEpoch));
+            })
         .orElse(false);
   }
 

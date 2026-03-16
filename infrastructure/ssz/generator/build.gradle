@@ -1,23 +1,23 @@
 dependencies {
-  compileOnly 'io.consensys.tuweni:tuweni-bytes'
-  implementation project(':infrastructure:ssz')
+	compileOnly 'io.consensys.tuweni:tuweni-bytes'
+	implementation project(':infrastructure:ssz')
 }
 
 task generateContainers(type: JavaExec) {
-    dependsOn compileJava
+	dependsOn compileJava
 
-    mainClass = 'tech.pegasys.teku.infrastructure.ssz.ContainersGenerator'
-    args project.sourceSets.main.java.srcDirs.join(" "),
-            project.parent.sourceSets.main.java.srcDirs.join(" ")
-    classpath sourceSets.main.runtimeClasspath
+	mainClass = 'tech.pegasys.teku.infrastructure.ssz.ContainersGenerator'
+	args project.sourceSets.main.java.srcDirs.join(" "),
+			project.parent.sourceSets.main.java.srcDirs.join(" ")
+	classpath sourceSets.main.runtimeClasspath
 }
 
 tasks.getByPath(':infrastructure:ssz:spotlessApply').mustRunAfter(generateContainers)
 
 task generateAndFormatContainers {
-    dependsOn generateContainers, ':infrastructure:ssz:spotlessApply'
+	dependsOn generateContainers, ':infrastructure:ssz:spotlessApply'
 }
 
 tasks.withType(Test) {
-    systemProperty 'ssz.project.source.path', project.parent.projectDir
+	systemProperty 'ssz.project.source.path', project.parent.projectDir
 }

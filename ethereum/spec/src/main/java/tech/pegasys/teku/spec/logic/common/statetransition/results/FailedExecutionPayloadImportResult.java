@@ -33,6 +33,17 @@ class FailedExecutionPayloadImportResult implements ExecutionPayloadImportResult
   }
 
   @Override
+  public boolean hasFailedExecution() {
+    return failureReason == FailureReason.FAILED_EXECUTION
+        || failureReason == FailureReason.FAILED_EXECUTION_SYNCING;
+  }
+
+  @Override
+  public boolean isDataNotAvailable() {
+    return failureReason == FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE;
+  }
+
+  @Override
   public SignedExecutionPayloadEnvelope getExecutionPayload() {
     return null;
   }

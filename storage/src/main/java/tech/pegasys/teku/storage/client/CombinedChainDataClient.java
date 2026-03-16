@@ -30,7 +30,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -65,6 +64,8 @@ public class CombinedChainDataClient {
       completedFuture(Optional.empty());
   private static final SafeFuture<Optional<SignedBeaconBlock>> BLOCK_NOT_AVAILABLE =
       completedFuture(Optional.empty());
+  private static final SafeFuture<Optional<SignedExecutionPayloadEnvelope>>
+      EXECUTION_PAYLOAD_NOT_AVAILABLE = completedFuture(Optional.empty());
 
   private final RecentChainData recentChainData;
   private final StorageQueryChannel historicalChainData;
@@ -130,6 +131,38 @@ public class CombinedChainDataClient {
                     .thenApply(
                         maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot))))
         .orElseGet(() -> historicalChainData.getFinalizedBlockAtSlot(slot));
+  }
+
+  /**
+   * Returns the execution payload envelope proposed for the requested slot on the chain identified
+   * by <code>headBlockRoot</code>. If the slot was empty or the payload was absent, no execution
+   * payload is returned.
+   *
+   * @param slot the slot to get the execution payload for
+   * @param headBlockRoot the block root of the head of the chain
+   * @return the execution payload at the requested slot or empty if the slot was empty or the
+   *     payload was absent
+   */
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> getExecutionPayloadAtSlotExact(
+      final UInt64 slot, final Bytes32 headBlockRoot) {
+    if (!isStoreAvailable()) {
+      return EXECUTION_PAYLOAD_NOT_AVAILABLE;
+    }
+
+    // Try to pull root from recent data
+    return recentChainData
+        .getBlockRootInEffectBySlot(slot, headBlockRoot)
+        .map(
+            blockRoot ->
+                getExecutionPayloadByBlockRoot(blockRoot)
+                    .thenApply(
+                        maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot))))
+        .orElseGet(
+            () -> {
+              // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 query for an execution
+              // payload for a finalized slot from the  historical chain data
+              return SafeFuture.completedFuture(Optional.empty());
+            });
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockInEffectAtSlot(final UInt64 slot) {
@@ -546,6 +579,35 @@ public class CombinedChainDataClient {
             });
   }
 
+  public SafeFuture<Optional<UInt64>> getSlotByBlockRoot(final Bytes32 blockRoot) {
+    return getSlotByBlockRoot(blockRoot, false);
+  }
+
+  public SafeFuture<Optional<UInt64>> getSlotByBlockRoot(
+      final Bytes32 blockRoot, final boolean includeFinalizedNonCanonical) {
+    // 1. recentChainData: sync fork-choice lookup (hot blocks)
+    final Optional<UInt64> hotSlot = recentChainData.getSlotForBlockRoot(blockRoot);
+    if (hotSlot.isPresent()) {
+      return SafeFuture.completedFuture(hotSlot);
+    }
+    // 2. historical canonical: efficient slot-index lookup in DB
+    return historicalChainData
+        .getFinalizedSlotByBlockRoot(blockRoot)
+        .thenCompose(
+            maybeSlot -> {
+              if (maybeSlot.isPresent()) {
+                return SafeFuture.completedFuture(maybeSlot);
+              }
+              // 3. historical nonCanonical only: get block and extract slot
+              if (includeFinalizedNonCanonical) {
+                return historicalChainData
+                    .getNonCanonicalBlockByRoot(blockRoot)
+                    .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot));
+              }
+              return SafeFuture.completedFuture(Optional.empty());
+            });
+  }
+
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> getExecutionPayloadByBlockRoot(
       final Bytes32 blockRoot) {
     return recentChainData
@@ -556,9 +618,8 @@ public class CombinedChainDataClient {
                 return SafeFuture.completedFuture(maybeExecutionPayload);
               }
               // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 query for an execution
-              // payload from the historical chain data
-              return SafeFuture.failedFuture(
-                  new UnsupportedOperationException("Not yet implemented"));
+              // payload by block root from the historical chain data
+              return SafeFuture.completedFuture(Optional.empty());
             });
   }
 
@@ -581,19 +642,13 @@ public class CombinedChainDataClient {
     if (recentlyValidatedBlobSidecar.isPresent()) {
       return SafeFuture.completedFuture(recentlyValidatedBlobSidecar);
     }
-    final Optional<UInt64> hotSlotForBlockRoot = recentChainData.getSlotForBlockRoot(blockRoot);
-    if (hotSlotForBlockRoot.isPresent()) {
-      return getBlobSidecarByKey(
-          new SlotAndBlockRootAndBlobIndex(hotSlotForBlockRoot.get(), blockRoot, index));
-    }
-    return historicalChainData
-        .getBlockByBlockRoot(blockRoot)
+
+    return getSlotByBlockRoot(blockRoot)
         .thenCompose(
-            blockOptional -> {
-              if (blockOptional.isPresent()) {
+            maybeSlot -> {
+              if (maybeSlot.isPresent()) {
                 return getBlobSidecarByKey(
-                    new SlotAndBlockRootAndBlobIndex(
-                        blockOptional.get().getSlot(), blockRoot, index));
+                    new SlotAndBlockRootAndBlobIndex(maybeSlot.get(), blockRoot, index));
               } else {
                 return SafeFuture.completedFuture(Optional.empty());
               }
@@ -830,11 +885,6 @@ public class CombinedChainDataClient {
     return historicalChainData.getDataColumnIdentifiers(slot);
   }
 
-  public SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalDataColumnIdentifiers(
-      final UInt64 slot) {
-    return historicalChainData.getNonCanonicalDataColumnIdentifiers(slot);
-  }
-
   public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(
       final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
     return historicalChainData.getDataColumnIdentifiers(startSlot, endSlot, limit);
@@ -848,10 +898,24 @@ public class CombinedChainDataClient {
     return historicalChainData.getEarliestDataColumnSidecarSlot();
   }
 
-  public SafeFuture<List<List<KZGProof>>> getDataColumnSidecarProofs(final UInt64 slot) {
-    return historicalChainData
-        .getDataColumnSidecarsProofs(slot)
-        .thenApply(maybeProofs -> maybeProofs.orElseGet(List::of));
+  public Optional<BeaconState> regenerateBeaconState(
+      final BeaconState preState, final UInt64 slot) {
+    if (preState.getSlot().equals(slot)) {
+      return Optional.of(preState);
+    } else if (slot.compareTo(getCurrentSlot()) > 0) {
+      LOG.debug("Attempted to wind forward to a future state: {}", slot.toString());
+      return Optional.empty();
+    }
+    try {
+      LOG.debug(
+          "Processing slots to regenerate state from slot {}, target slot {}",
+          preState::getSlot,
+          () -> slot);
+      return Optional.of(spec.processSlots(preState, slot));
+    } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
+      LOG.debug("State Transition error", e);
+      return Optional.empty();
+    }
   }
 
   private SafeFuture<Optional<BeaconState>> getStateFromSlotAndBlock(
@@ -885,26 +949,6 @@ public class CombinedChainDataClient {
             maybeState ->
                 maybeState.flatMap(
                     preState -> regenerateBeaconState(preState, slotAndBlockRoot.getSlot())));
-  }
-
-  private Optional<BeaconState> regenerateBeaconState(
-      final BeaconState preState, final UInt64 slot) {
-    if (preState.getSlot().equals(slot)) {
-      return Optional.of(preState);
-    } else if (slot.compareTo(getCurrentSlot()) > 0) {
-      LOG.debug("Attempted to wind forward to a future state: {}", slot.toString());
-      return Optional.empty();
-    }
-    try {
-      LOG.debug(
-          "Processing slots to regenerate state from slot {}, target slot {}",
-          preState::getSlot,
-          () -> slot);
-      return Optional.of(spec.processSlots(preState, slot));
-    } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
-      LOG.debug("State Transition error", e);
-      return Optional.empty();
-    }
   }
 
   private SafeFuture<Optional<SignedBlockAndState>> getStateForBlock(

@@ -16,8 +16,10 @@ package tech.pegasys.teku.statetransition.datacolumns;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -25,9 +27,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -36,7 +38,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
@@ -54,7 +55,6 @@ public class CustodyGroupCountManagerImplTest {
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private MiscHelpersFulu miscHelpersFulu;
   private Spec spec;
-  private SpecConfigFulu specConfigFulu;
   private CustodyGroupCountManagerImpl custodyGroupCountManager;
 
   @Test
@@ -62,7 +62,7 @@ public class CustodyGroupCountManagerImplTest {
 
     setUpManager(4, 8, 8);
 
-    final List<UInt64> samplingColumnIndices = custodyGroupCountManager.getSamplingColumnIndices();
+    final Set<UInt64> samplingColumnIndices = custodyGroupCountManager.getSamplingColumnIndices();
     // Sampling column groups should always include all custody columns at the minimum.
     assertThat(samplingColumnIndices)
         .containsAll(custodyGroupCountManager.getCustodyColumnIndices());
@@ -78,7 +78,6 @@ public class CustodyGroupCountManagerImplTest {
     custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
             spec,
-            spec.getGenesisSpecConfig().toVersionFulu().orElseThrow(),
             spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
             proposersDataManager,
             custodyGroupCountChannel,
@@ -106,7 +105,6 @@ public class CustodyGroupCountManagerImplTest {
     custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
             spec,
-            spec.getGenesisSpecConfig().toVersionFulu().orElseThrow(),
             spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
             proposersDataManager,
             custodyGroupCountChannel,
@@ -133,7 +131,6 @@ public class CustodyGroupCountManagerImplTest {
     custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
             spec,
-            spec.getGenesisSpecConfig().toVersionFulu().orElseThrow(),
             spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
             proposersDataManager,
             custodyGroupCountChannel,
@@ -168,7 +165,6 @@ public class CustodyGroupCountManagerImplTest {
     custodyGroupCountManager.onSlot(UInt64.ZERO);
 
     assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(4);
-    assertThat(custodyGroupCountManager.getCustodyGroupSyncedCount()).isEqualTo(4);
 
     // prepare a validator
     when(proposersDataManager.getPreparedProposerInfo())
@@ -186,14 +182,97 @@ public class CustodyGroupCountManagerImplTest {
         .thenReturn(Optional.of(UInt64.valueOf(10)));
 
     assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(10);
-    assertThat(custodyGroupCountManager.getCustodyGroupSyncedCount()).isEqualTo(10);
 
-    final List<UInt64> samplingColumnIndices = custodyGroupCountManager.getSamplingColumnIndices();
+    final Set<UInt64> samplingColumnIndices = custodyGroupCountManager.getSamplingColumnIndices();
 
     assertThat(samplingColumnIndices)
         .containsAll(custodyGroupCountManager.getCustodyColumnIndices());
     assertThat(metricsSystem.getGauge(TekuMetricCategory.BEACON, "custody_groups").getValue())
         .isEqualTo(10);
+  }
+
+  @Test
+  public void onSlot_shouldStopRecomputingWhenSuperNode() {
+    // custodyGroupCount = numberOfCustodyGroups = 128, so isSuperNode returns true
+    setUpManager(128, 8, 8);
+    assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(128);
+
+    custodyGroupCountManager.onSlot(UInt64.ZERO);
+
+    // onSlot should exit immediately before calling getPreparedProposerInfo
+    verifyNoMoreInteractions(proposersDataManager);
+  }
+
+  @Test
+  public void onSlot_shouldDeferGenesisInitUntilValidatorsAppear() {
+    setUpManager(4, 8, 8);
+
+    // First call at genesis with no validators
+    when(proposersDataManager.getPreparedProposerInfo()).thenReturn(Map.of());
+    custodyGroupCountManager.onSlot(UInt64.ZERO);
+
+    // No genesis init — getBestFinalizedState not called
+    verify(combinedChainDataClient, never()).getBestFinalizedState();
+
+    // Validators appear, still epoch 0 (slot 1, minimal config has 8 slots/epoch)
+    when(proposersDataManager.getPreparedProposerInfo())
+        .thenReturn(Map.of(UInt64.ZERO, mock(PreparedProposerInfo.class)));
+    custodyGroupCountManager.onSlot(UInt64.ONE);
+
+    // Genesis initialization now fires
+    verify(combinedChainDataClient, times(1)).getBestFinalizedState();
+  }
+
+  @Test
+  public void snapshotShouldBeConsistentAfterUpdate() {
+    setUpManager(4, 8, 8);
+    assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(4);
+
+    // Trigger update to custody=10
+    when(miscHelpersFulu.getValidatorsCustodyRequirement(any(), anySet()))
+        .thenReturn(UInt64.valueOf(10));
+
+    final SafeFuture<Optional<Integer>> result =
+        custodyGroupCountManager.computeAndUpdateCustodyGroupCount(
+            Map.of(UInt64.ZERO, mock(PreparedProposerInfo.class)));
+
+    assertThat(result).isCompletedWithValue(Optional.of(10));
+
+    // All getters must reflect values computed from the same custody count
+    assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(10);
+
+    final int expectedSamplingGroupCount = miscHelpersFulu.getSamplingGroupCount(10);
+    assertThat(custodyGroupCountManager.getSamplingGroupCount())
+        .isEqualTo(expectedSamplingGroupCount);
+
+    final Set<UInt64> custodyColumns = custodyGroupCountManager.getCustodyColumnIndices();
+    final Set<UInt64> samplingColumns = custodyGroupCountManager.getSamplingColumnIndices();
+
+    assertThat(custodyColumns).isNotEmpty();
+    assertThat(samplingColumns).isNotEmpty();
+    // Sampling columns must be a superset of custody columns
+    assertThat(samplingColumns).containsAll(custodyColumns);
+  }
+
+  @Test
+  public void shouldNotFireChannelNotificationWhenCustodyCountUnchanged() {
+    setUpManager(4, 8, 8);
+
+    // Initial construction fires the channel notification
+    verify(custodyGroupCountChannel, times(1)).onGroupCountUpdate(anyInt(), anyInt());
+    reset(custodyGroupCountChannel);
+
+    // Compute again with same result (custody stays at 4)
+    when(miscHelpersFulu.getValidatorsCustodyRequirement(any(), anySet()))
+        .thenReturn(UInt64.valueOf(4));
+
+    assertThat(
+            custodyGroupCountManager.computeAndUpdateCustodyGroupCount(
+                Map.of(UInt64.ZERO, mock(PreparedProposerInfo.class))))
+        .isCompleted();
+
+    // Channel should NOT be notified since count didn't change
+    verifyNoMoreInteractions(custodyGroupCountChannel);
   }
 
   private void setUpManager(
@@ -217,7 +296,6 @@ public class CustodyGroupCountManagerImplTest {
                             .balancePerAdditionalCustodyGroup(UInt64.valueOf(32000000000L))
                             .minEpochsForDataColumnSidecarsRequests(64)));
 
-    specConfigFulu = SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
     miscHelpersFulu =
         spy(MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers()));
 
@@ -226,7 +304,6 @@ public class CustodyGroupCountManagerImplTest {
     custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
             spec,
-            specConfigFulu,
             miscHelpersFulu,
             proposersDataManager,
             custodyGroupCountChannel,

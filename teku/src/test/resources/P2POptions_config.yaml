@@ -19,3 +19,4 @@ Xp2p-sync-batch-size: 103
 Xp2p-sync-max-pending-batches: 8
 Xp2p-sync-blocks-rate-limit: 100
 Xp2p-sync-blob-sidecars-rate-limit: 400
+Xmin-bid-increment-percentage: 5

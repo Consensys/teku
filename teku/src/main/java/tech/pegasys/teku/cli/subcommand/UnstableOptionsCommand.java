@@ -14,9 +14,11 @@
 package tech.pegasys.teku.cli.subcommand;
 
 import java.io.PrintWriter;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.ColorScheme;
 import picocli.CommandLine.Model.CommandSpec;
@@ -59,6 +61,19 @@ public class UnstableOptionsCommand implements Runnable, CommandLine.IHelpComman
                 optionsByModuleName.put(
                     argSpec.heading().replace("%n", ""), argSpec.allOptionsNested()));
     commandSpec.mixins().forEach((name, spec) -> optionsByModuleName.put(name, spec.options()));
+
+    // Collect options already covered by mixins and arg groups
+    final Set<OptionSpec> alreadyCovered = new HashSet<>();
+    commandSpec.mixins().values().forEach(spec -> alreadyCovered.addAll(spec.options()));
+    commandSpec.argGroups().forEach(ag -> alreadyCovered.addAll(ag.allOptionsNested()));
+
+    // Include any hidden options defined directly on the command class itself
+    final List<OptionSpec> directOptions =
+        commandSpec.options().stream().filter(opt -> !alreadyCovered.contains(opt)).toList();
+    if (!directOptions.isEmpty()) {
+      optionsByModuleName.put(commandSpec.name(), directOptions);
+    }
+
     optionsByModuleName.forEach(this::printUnstableOptions);
   }
 

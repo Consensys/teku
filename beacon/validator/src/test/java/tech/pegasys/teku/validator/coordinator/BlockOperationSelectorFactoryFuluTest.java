@@ -321,7 +321,7 @@ class BlockOperationSelectorFactoryFuluTest {
                               blobIndex ->
                                   expectedProofs.get(blobIndex * CELLS_PER_EXT_BLOB + index))
                           .toList());
-              assertThat(dataColumnSidecar.getKzgCommitments()).isEqualTo(expectedCommitments);
+              assertThat(dataColumnSidecar.getMaybeKzgCommitments()).contains(expectedCommitments);
               // verify the merkle proof
               assertThat(miscHelpersFulu.verifyDataColumnSidecarInclusionProof(dataColumnSidecar))
                   .isTrue();
@@ -383,7 +383,7 @@ class BlockOperationSelectorFactoryFuluTest {
                               blobIndex ->
                                   expectedProofs.get(blobIndex * CELLS_PER_EXT_BLOB + index))
                           .toList());
-              assertThat(dataColumnSidecar.getKzgCommitments()).isEqualTo(expectedCommitments);
+              assertThat(dataColumnSidecar.getMaybeKzgCommitments()).contains(expectedCommitments);
               // verify the merkle proof
               assertThat(miscHelpersFulu.verifyDataColumnSidecarInclusionProof(dataColumnSidecar))
                   .isTrue();

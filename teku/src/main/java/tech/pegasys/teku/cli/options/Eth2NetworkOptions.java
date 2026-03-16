@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_ASYNC_P2P_MAX_THREADS;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
@@ -234,17 +235,12 @@ public class Eth2NetworkOptions {
   private UInt64 gloasForkEpoch;
 
   @Option(
-      names = {"--Xmin-bid-increment-percentage"},
+      names = {"--Xnetwork-heze-fork-epoch"},
       hidden = true,
-      paramLabel = "<INTEGER>",
-      description =
-          "Minimum bid increment percentage for execution payload bid gossip validation. "
-              + "New bids must exceed the current highest bid by at least this percentage. "
-              + "Used for DoS protection against bid spamming. Default: 1 (1%)",
-      arity = "1",
-      defaultValue = "1",
-      showDefaultValue = Visibility.ALWAYS)
-  private int minBidIncrementPercentage = 1;
+      paramLabel = "<epoch>",
+      description = "Override the Heze fork activation epoch.",
+      arity = "1")
+  private UInt64 hezeForkEpoch;
 
   @Option(
       names = {"--Xnetwork-total-terminal-difficulty-override"},
@@ -409,18 +405,24 @@ public class Eth2NetworkOptions {
       Eth2NetworkConfiguration
           .DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_TOTAL_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS;
 
+  @Option(
+      names = {"--Xdata-column-sidecar-extension-retention-epochs"},
+      paramLabel = "<NUMBER>",
+      description =
+          "Configures period, when all sidecars are kept on supernode. When it's over, half of the older "
+              + "finalized sidecars outside the boundary of this period will be pruned, decreasing "
+              + "occupied storage, but slowing down ReqResp responses. It will not affect Beacon-API speed.",
+      arity = "1",
+      hidden = true)
+  private int dataColumnSidecarExtensionRetentionEpochs =
+      Eth2NetworkConfiguration.DEFAULT_DATA_COLUMN_SIDECAR_EXTENSION_RETENTION_EPOCHS;
+
   public Eth2NetworkConfiguration getNetworkConfiguration() {
     return createEth2NetworkConfig(builder -> {});
   }
 
-  public Eth2NetworkConfiguration getNetworkConfiguration(
-      final Consumer<Eth2NetworkConfiguration.Builder> modifier) {
-    return createEth2NetworkConfig(modifier);
-  }
-
   public void configure(final TekuConfiguration.Builder builder) {
     builder.eth2NetworkConfig(this::configureEth2Network);
-    builder.minBidIncrementPercentage(minBidIncrementPercentage);
   }
 
   private Eth2NetworkConfiguration createEth2NetworkConfig(
@@ -468,21 +470,66 @@ public class Eth2NetworkOptions {
     }
     if (bellatrixForkEpoch != null) {
       builder.bellatrixForkEpoch(bellatrixForkEpoch);
+      if (bellatrixForkEpoch.isZero()) {
+        implicitEpochDefault(altairForkEpoch, builder::altairForkEpoch);
+      }
     }
     if (capellaForkEpoch != null) {
       builder.capellaForkEpoch(capellaForkEpoch);
+      if (capellaForkEpoch.isZero()) {
+        implicitEpochDefault(altairForkEpoch, builder::altairForkEpoch);
+        implicitEpochDefault(bellatrixForkEpoch, builder::bellatrixForkEpoch);
+      }
     }
     if (denebForkEpoch != null) {
       builder.denebForkEpoch(denebForkEpoch);
+      if (denebForkEpoch.isZero()) {
+        implicitEpochDefault(altairForkEpoch, builder::altairForkEpoch);
+        implicitEpochDefault(bellatrixForkEpoch, builder::bellatrixForkEpoch);
+        implicitEpochDefault(capellaForkEpoch, builder::capellaForkEpoch);
+      }
     }
     if (electraForkEpoch != null) {
       builder.electraForkEpoch(electraForkEpoch);
+      if (electraForkEpoch.isZero()) {
+        implicitEpochDefault(altairForkEpoch, builder::altairForkEpoch);
+        implicitEpochDefault(bellatrixForkEpoch, builder::bellatrixForkEpoch);
+        implicitEpochDefault(capellaForkEpoch, builder::capellaForkEpoch);
+        implicitEpochDefault(denebForkEpoch, builder::denebForkEpoch);
+      }
     }
     if (fuluForkEpoch != null) {
       builder.fuluForkEpoch(fuluForkEpoch);
+      if (fuluForkEpoch.isZero()) {
+        implicitEpochDefault(altairForkEpoch, builder::altairForkEpoch);
+        implicitEpochDefault(bellatrixForkEpoch, builder::bellatrixForkEpoch);
+        implicitEpochDefault(capellaForkEpoch, builder::capellaForkEpoch);
+        implicitEpochDefault(denebForkEpoch, builder::denebForkEpoch);
+        implicitEpochDefault(electraForkEpoch, builder::electraForkEpoch);
+      }
     }
     if (gloasForkEpoch != null) {
       builder.gloasForkEpoch(gloasForkEpoch);
+      if (gloasForkEpoch.isZero()) {
+        implicitEpochDefault(altairForkEpoch, builder::altairForkEpoch);
+        implicitEpochDefault(bellatrixForkEpoch, builder::bellatrixForkEpoch);
+        implicitEpochDefault(capellaForkEpoch, builder::capellaForkEpoch);
+        implicitEpochDefault(denebForkEpoch, builder::denebForkEpoch);
+        implicitEpochDefault(electraForkEpoch, builder::electraForkEpoch);
+        implicitEpochDefault(fuluForkEpoch, builder::fuluForkEpoch);
+      }
+    }
+    if (hezeForkEpoch != null) {
+      builder.hezeForkEpoch(hezeForkEpoch);
+      if (hezeForkEpoch.isZero()) {
+        implicitEpochDefault(altairForkEpoch, builder::altairForkEpoch);
+        implicitEpochDefault(bellatrixForkEpoch, builder::bellatrixForkEpoch);
+        implicitEpochDefault(capellaForkEpoch, builder::capellaForkEpoch);
+        implicitEpochDefault(denebForkEpoch, builder::denebForkEpoch);
+        implicitEpochDefault(electraForkEpoch, builder::electraForkEpoch);
+        implicitEpochDefault(fuluForkEpoch, builder::fuluForkEpoch);
+        implicitEpochDefault(gloasForkEpoch, builder::gloasForkEpoch);
+      }
     }
     if (totalTerminalDifficultyOverride != null) {
       builder.totalTerminalDifficultyOverride(totalTerminalDifficultyOverride);
@@ -514,13 +561,21 @@ public class Eth2NetworkOptions {
         .epochsStoreBlobs(epochsStoreBlobs)
         .attestationWaitLimitMillis(attestationWaitlimitMillis)
         .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes)
-        .rustKzgEnabled(rustKzgEnabled);
+        .rustKzgEnabled(rustKzgEnabled)
+        .dataColumnSidecarExtensionRetentionEpochs(dataColumnSidecarExtensionRetentionEpochs);
     kzgPrecompute.ifPresent(builder::kzgPrecompute);
     dataColumnSidecarRecoveryMaxDelayMillis.ifPresent(
         builder::dataColumnSidecarRecoveryMaxDelayMillis);
     asyncP2pMaxQueue.ifPresent(builder::asyncP2pMaxQueue);
     pendingAttestationsMaxQueue.ifPresent(builder::pendingAttestationsMaxQueue);
     asyncBeaconChainMaxQueue.ifPresent(builder::asyncBeaconChainMaxQueue);
+  }
+
+  private void implicitEpochDefault(
+      final UInt64 forkEpoch, final Consumer<UInt64> forkDefaultConsumer) {
+    if (forkEpoch == null) {
+      forkDefaultConsumer.accept(ZERO);
+    }
   }
 
   public String getNetwork() {

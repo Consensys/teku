@@ -20,22 +20,20 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
-import tech.pegasys.teku.spec.propertytest.suppliers.datacolumn.versions.fulu.DataColumnSidecarFuluSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.datacolumn.versions.fulu.DataColumnSidecarSupplier;
 
 public class DataColumnSidecarPropertyTest {
 
   @Property
   void roundTrip(
-      @ForAll(supplier = DataColumnSidecarFuluSupplier.class)
-          final DataColumnSidecar dataColumnSidecar)
+      @ForAll(supplier = DataColumnSidecarSupplier.class) final DataColumnSidecar dataColumnSidecar)
       throws JsonProcessingException {
     assertRoundTrip(dataColumnSidecar);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = DataColumnSidecarFuluSupplier.class)
-          final DataColumnSidecar dataColumnSidecar,
+      @ForAll(supplier = DataColumnSidecarSupplier.class) final DataColumnSidecar dataColumnSidecar,
       @ForAll final int seed) {
     assertDeserializeMutatedThrowsExpected(dataColumnSidecar, seed);
   }

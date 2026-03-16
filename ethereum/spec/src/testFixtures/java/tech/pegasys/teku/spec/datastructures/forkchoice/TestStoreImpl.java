@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -180,6 +179,10 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     return Optional.of(new SignedBlockAndState(block, state));
   }
 
+  private SignedExecutionPayloadEnvelope getSignedExecutionPayload(final Bytes32 blockRoot) {
+    return executionPayloads.get(blockRoot);
+  }
+
   @Override
   public boolean containsBlock(final Bytes32 blockRoot) {
     return blocks.containsKey(blockRoot);
@@ -227,6 +230,12 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
+  public Optional<SignedExecutionPayloadEnvelope> getExecutionPayloadIfAvailable(
+      final Bytes32 blockRoot) {
+    return Optional.ofNullable(getSignedExecutionPayload(blockRoot));
+  }
+
+  @Override
   public SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlock(final Bytes32 blockRoot) {
     return SafeFuture.completedFuture(getBlockIfAvailable(blockRoot));
   }
@@ -250,15 +259,19 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(
       final SlotAndBlockRoot slotAndBlockRoot) {
-    // TODO-gloas
-    return SafeFuture.failedFuture(
-        new NotImplementedException("TODO-Gloas - fetch execution payload state"));
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not implemented"));
   }
 
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(
       final SlotAndBlockRoot slotAndBlockRoot) {
-    throw new UnsupportedOperationException("Not implemented");
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not implemented"));
+  }
+
+  @Override
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveSignedExecutionPayload(
+      final Bytes32 blockRoot) {
+    return SafeFuture.completedFuture(getExecutionPayloadIfAvailable(blockRoot));
   }
 
   @Override

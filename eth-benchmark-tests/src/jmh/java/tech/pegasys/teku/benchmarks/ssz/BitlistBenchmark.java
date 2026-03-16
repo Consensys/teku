@@ -63,6 +63,30 @@ public class BitlistBenchmark {
     bh.consume(MANY_BITS_SET.getBitCount());
   }
 
+  @Benchmark
+  @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  public void createBitlistAndSerialize(Blackhole bh) {
+    SszBitlist bitlist = BITLIST_SCHEMA.ofBits(BITLIST_SIZE, 42);
+    bh.consume(bitlist.sszSerialize());
+  }
+
+  @Benchmark
+  @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  public void createBitlistAndOr(Blackhole bh) {
+    SszBitlist single = BITLIST_SCHEMA.ofBits(BITLIST_SIZE, 42);
+    bh.consume(MANY_BITS_SET.or(single));
+  }
+
+  @Benchmark
+  @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  public void createBitlistAndHashTreeRoot(Blackhole bh) {
+    SszBitlist bitlist = BITLIST_SCHEMA.ofBits(BITLIST_SIZE, 42);
+    bh.consume(bitlist.hashTreeRoot());
+  }
+
   private static SszBitlist createBitlist(final int... setBits) {
     return BITLIST_SCHEMA.ofBits(BITLIST_SIZE, setBits);
   }

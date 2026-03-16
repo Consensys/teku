@@ -45,11 +45,12 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.VoluntaryExitValidator.ExitInvalidReason;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.signatures.LocalSigner;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -62,7 +63,7 @@ public class VoluntaryExitValidatorTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private RecentChainData recentChainData;
-  private BeaconChainUtil beaconChainUtil;
+  private ChainUpdater chainUpdater;
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1_000_000_000);
 
   private VoluntaryExitValidator voluntaryExitValidator;
@@ -70,15 +71,15 @@ public class VoluntaryExitValidatorTest {
   @BeforeEach
   void beforeEach() {
     recentChainData = MemoryOnlyRecentChainData.create(spec);
-    beaconChainUtil = BeaconChainUtil.create(spec, recentChainData, VALIDATOR_KEYS, true);
-
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
+    chainUpdater = new ChainUpdater(recentChainData, chainBuilder, spec);
+    chainUpdater.initializeGenesis();
     voluntaryExitValidator = new VoluntaryExitValidator(mockSpec, recentChainData, timeProvider);
   }
 
   @Test
-  public void shouldAcceptValidVoluntaryExit() throws Exception {
-    beaconChainUtil.initializeStorage();
-    beaconChainUtil.createAndImportBlockAtSlot(6);
+  public void shouldAcceptValidVoluntaryExit() {
+    advanceChainAndUpdateBestBlock(6);
     SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
     when(mockSpec.validateVoluntaryExit(getBestState(), exit)).thenReturn(Optional.empty());
     when(mockSpec.verifyVoluntaryExitSignature(getBestState(), exit, BLSSignatureVerifier.SIMPLE))
@@ -87,9 +88,8 @@ public class VoluntaryExitValidatorTest {
   }
 
   @Test
-  public void shouldAcceptVoluntaryExitThatWasSeenTooLongAgo() throws Exception {
-    beaconChainUtil.initializeStorage();
-    beaconChainUtil.createAndImportBlockAtSlot(6);
+  public void shouldAcceptVoluntaryExitThatWasSeenTooLongAgo() {
+    advanceChainAndUpdateBestBlock(6);
     SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
     when(mockSpec.validateVoluntaryExit(getBestState(), exit)).thenReturn(Optional.empty());
     when(mockSpec.verifyVoluntaryExitSignature(getBestState(), exit, BLSSignatureVerifier.SIMPLE))
@@ -100,24 +100,23 @@ public class VoluntaryExitValidatorTest {
     assertValidationResult(exit, ACCEPT);
   }
 
-  // TODO-gloas: #10340
   @ParameterizedTest
-  @EnumSource(value = SpecMilestone.class, names = "GLOAS", mode = EnumSource.Mode.EXCLUDE)
-  public void shouldAcceptOwnSignedVoluntaryExitNoMocks(final SpecMilestone specMilestone)
-      throws Exception {
+  @EnumSource(value = SpecMilestone.class)
+  public void shouldAcceptOwnSignedVoluntaryExitNoMocks(final SpecMilestone specMilestone) {
     final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);
     recentChainData = MemoryOnlyRecentChainData.create(spec);
-    beaconChainUtil = BeaconChainUtil.create(spec, recentChainData, VALIDATOR_KEYS, true);
-    beaconChainUtil.initializeStorage();
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
+    chainUpdater = new ChainUpdater(recentChainData, chainBuilder, spec);
+    chainUpdater.initializeGenesis();
     // cannot exit before epoch 64
-    beaconChainUtil.createAndImportBlockAtSlot(spec.slotsPerEpoch(UInt64.ZERO) * 64L);
+    advanceChainAndUpdateBestBlock(spec.slotsPerEpoch(UInt64.ZERO) * 64L);
     this.voluntaryExitValidator = new VoluntaryExitValidator(spec, recentChainData, timeProvider);
 
     final UInt64 currentEpoch = spec.getCurrentEpoch(getBestState());
     assertThat(spec.atEpoch(currentEpoch).getMilestone()).isEqualTo(specMilestone);
 
     final VoluntaryExit voluntaryExit = new VoluntaryExit(currentEpoch, UInt64.ZERO);
-    BLSSignature exitSignature =
+    final BLSSignature exitSignature =
         new LocalSigner(spec, VALIDATOR_KEYS.get(0), SyncAsyncRunner.SYNC_RUNNER)
             .signVoluntaryExit(
                 voluntaryExit,
@@ -131,9 +130,8 @@ public class VoluntaryExitValidatorTest {
   }
 
   @Test
-  public void shouldIgnoreExitsAfterTheFirstForValidator() throws Exception {
-    beaconChainUtil.initializeStorage();
-    beaconChainUtil.createAndImportBlockAtSlot(6);
+  public void shouldIgnoreExitsAfterTheFirstForValidator() {
+    advanceChainAndUpdateBestBlock(6);
 
     SignedVoluntaryExit exit1 = dataStructureUtil.randomSignedVoluntaryExit();
     SignedVoluntaryExit exit2 = new SignedVoluntaryExit(exit1.getMessage(), exit1.getSignature());
@@ -150,9 +148,8 @@ public class VoluntaryExitValidatorTest {
   }
 
   @Test
-  public void shouldRejectInvalidExit() throws Exception {
-    beaconChainUtil.initializeStorage();
-    beaconChainUtil.createAndImportBlockAtSlot(6);
+  public void shouldRejectInvalidExit() {
+    advanceChainAndUpdateBestBlock(6);
     SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
     when(mockSpec.validateVoluntaryExit(getBestState(), exit))
         .thenReturn(Optional.of(ExitInvalidReason.exitInitiated()));
@@ -163,9 +160,8 @@ public class VoluntaryExitValidatorTest {
   }
 
   @Test
-  public void shouldRejectExitWithInvalidSignature() throws Exception {
-    beaconChainUtil.initializeStorage();
-    beaconChainUtil.createAndImportBlockAtSlot(6);
+  public void shouldRejectExitWithInvalidSignature() {
+    advanceChainAndUpdateBestBlock(6);
     SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
     when(mockSpec.validateVoluntaryExit(getBestState(), exit)).thenReturn(Optional.empty());
     when(mockSpec.verifyVoluntaryExitSignature(getBestState(), exit, BLSSignatureVerifier.SIMPLE))
@@ -189,6 +185,10 @@ public class VoluntaryExitValidatorTest {
             result ->
                 result.code() == expectedCode
                     && result.getDescription().orElse("").contains(description));
+  }
+
+  private void advanceChainAndUpdateBestBlock(final long slot) {
+    chainUpdater.updateBestBlock(chainUpdater.advanceChain(slot));
   }
 
   private BeaconState getBestState() {

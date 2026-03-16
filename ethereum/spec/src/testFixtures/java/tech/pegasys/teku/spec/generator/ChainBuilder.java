@@ -42,7 +42,6 @@ import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -82,10 +81,10 @@ import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil.ExecutionPayloadProposalData;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.signatures.LocalSigner;
@@ -192,20 +191,6 @@ public class ChainBuilder {
   public Optional<SignedExecutionPayloadEnvelope> getExecutionPayload(final Bytes32 blockRoot) {
     return Optional.ofNullable(executionPayloadsByHash.get(blockRoot))
         .map(SignedExecutionPayloadAndState::executionPayload);
-  }
-
-  public List<SignedExecutionPayloadEnvelope> getExecutionPayloads(
-      final UInt64 startSlot, final UInt64 count) {
-    return executionPayloads.values().stream()
-        .filter(
-            signedExecutionPayloadAndState -> {
-              final UInt64 slot =
-                  signedExecutionPayloadAndState.executionPayload().getMessage().getSlot();
-              return slot.isGreaterThanOrEqualTo(startSlot)
-                  && slot.isLessThan(startSlot.plus(count));
-            })
-        .map(SignedExecutionPayloadAndState::executionPayload)
-        .toList();
   }
 
   public List<BlobSidecar> getBlobSidecars(final Bytes32 blockRoot) {
@@ -377,6 +362,12 @@ public class ChainBuilder {
 
   public BeaconState getStateAtSlot(final UInt64 slot) {
     return resultToState(getBlockAndStateAtSlot(slot));
+  }
+
+  public SignedExecutionPayloadEnvelope getExecutionPayloadAtSlot(final long slot) {
+    return Optional.ofNullable(executionPayloads.get(UInt64.valueOf(slot)))
+        .map(SignedExecutionPayloadAndState::executionPayload)
+        .orElse(null);
   }
 
   public Optional<SignedExecutionPayloadAndState> getExecutionPayloadAndStateAtSlot(
@@ -1006,20 +997,21 @@ public class ChainBuilder {
     }
 
     if (options.isStoreDataColumnSidecarsEnabled()) {
-      final MiscHelpersFulu miscHelpersFulu =
-          MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
       final List<BlobAndCellProofs> blobAndCellProofsList =
           blobs.stream()
-              .map(
-                  blob -> {
-                    final List<KZGProof> cellProofs = blobsUtil.computeKzgCellProofs(blob);
-                    return new BlobAndCellProofs(blob, cellProofs);
-                  })
+              .map(blob -> new BlobAndCellProofs(blob, blobsUtil.computeKzgCellProofs(blob)))
               .toList();
+      final SignedBeaconBlock block = nextBlockAndState.getBlock();
+      final DataColumnSidecarUtil dataColumnSidecarUtil =
+          spec.getDataColumnSidecarUtil(nextBlockAndState.getSlot());
       final List<DataColumnSidecar> dataColumnSidecars =
-          miscHelpersFulu.constructDataColumnSidecars(
-              nextBlockAndState.getBlock(), blobAndCellProofsList);
-
+          dataColumnSidecarUtil.constructDataColumnSidecars(
+              Optional.of(block.asHeader()),
+              nextBlockAndState.getSlotAndBlockRoot(),
+              Optional.of(dataColumnSidecarUtil.getKzgCommitments(block.getMessage())),
+              dataColumnSidecarUtil.computeDataColumnKzgCommitmentsInclusionProof(
+                  block.getMessage().getBody()),
+              blobAndCellProofsList);
       trackDataColumnSidecars(nextBlockAndState.getSlotAndBlockRoot(), dataColumnSidecars);
     }
     return nextBlockAndState;

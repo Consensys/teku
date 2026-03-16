@@ -42,12 +42,18 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
 
   private final Spec spec;
   private final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator;
+  private final ReceivedExecutionPayloadBidEventsChannel
+      receivedExecutionPayloadBidEventsChannelPublisher;
 
   public DefaultExecutionPayloadBidManager(
       final Spec spec,
-      final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator) {
+      final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator,
+      final ReceivedExecutionPayloadBidEventsChannel
+          receivedExecutionPayloadBidEventsChannelPublisher) {
     this.spec = spec;
     this.executionPayloadBidGossipValidator = executionPayloadBidGossipValidator;
+    this.receivedExecutionPayloadBidEventsChannelPublisher =
+        receivedExecutionPayloadBidEventsChannelPublisher;
   }
 
   @Override
@@ -60,10 +66,13 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
         result -> {
           switch (result.code()) {
             // TODO-GLOAS handle bids
-            case ACCEPT, REJECT, SAVE_FOR_FUTURE, IGNORE -> {}
+            case ACCEPT ->
+                receivedExecutionPayloadBidEventsChannelPublisher.onExecutionPayloadBidValidated(
+                    signedBid);
+            case REJECT, SAVE_FOR_FUTURE, IGNORE -> {}
           }
         });
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+    return validationResult;
   }
 
   @Override
@@ -89,6 +98,9 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
               weiToEth(getPayloadResponse.getExecutionPayloadValue()),
               formatAbbreviatedHashRoot(localSelfBuiltSignedBid.getMessage().getBlockHash()),
               slot);
+          // no need for gossip validation for local self-built bids
+          receivedExecutionPayloadBidEventsChannelPublisher.onExecutionPayloadBidValidated(
+              localSelfBuiltSignedBid);
           return localSelfBuiltSignedBid;
         });
   }

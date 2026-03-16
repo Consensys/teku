@@ -28,6 +28,8 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -42,11 +44,12 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRangeRequestMessage;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
-import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class ExecutionPayloadEnvelopesByRangeMessageHandlerTest {
   private final Spec spec = TestSpecFactory.createMinimalGloas();
@@ -57,9 +60,13 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandlerTest {
   private static final String PROTOCOL_ID =
       BeaconChainMethodIds.getExecutionPayloadEnvelopesByRangeMethodId(1, RPC_ENCODING);
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
-  private final RecentChainData recentChainData = mock(RecentChainData.class);
+  private final CombinedChainDataClient combinedChainDataClient =
+      mock(CombinedChainDataClient.class);
   private final ExecutionPayloadEnvelopesByRangeMessageHandler handler =
-      new ExecutionPayloadEnvelopesByRangeMessageHandler(spec, metricsSystem, recentChainData);
+      new ExecutionPayloadEnvelopesByRangeMessageHandler(
+          SpecConfigGloas.required(spec.getGenesisSpecConfig()),
+          metricsSystem,
+          combinedChainDataClient);
   final Eth2Peer peer = mock(Eth2Peer.class);
 
   @SuppressWarnings("unchecked")
@@ -73,13 +80,25 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandlerTest {
     when(peer.approveRequest()).thenReturn(true);
     when(peer.approveExecutionPayloadEnvelopesRequest(any(), anyLong()))
         .thenReturn(Optional.of(new RequestKey(ZERO, 42)));
-
-    // Forward execution payload envelope requests from the mock to the ChainBuilder
-    when(recentChainData.retrieveSignedExecutionPayloadEnvelopeByRange(any(), any()))
+    // Forward hot roots requests from the mock to the ChainBuilder
+    when(combinedChainDataClient.getAncestorRoots(any(), eq(UInt64.ONE), any()))
         .thenAnswer(
-            i ->
-                SafeFuture.completedFuture(
-                    chainBuilder.getExecutionPayloads(i.getArgument(0), i.getArgument(1))));
+            i -> {
+              final UInt64 startSlot = i.getArgument(0);
+              return chainBuilder
+                  .streamBlocksAndStates(
+                      startSlot, startSlot.plus(i.getArgument(2)).minusMinZero(1))
+                  .collect(
+                      Collectors.toMap(
+                          blockAndState -> blockAndState.getBlock().getSlot(),
+                          blockAndState -> blockAndState.getBlock().getRoot(),
+                          (e1, e2) -> e1,
+                          TreeMap::new));
+            });
+    // Forward execution payload envelope block root requests from the mock to the ChainBuilder
+    when(combinedChainDataClient.getExecutionPayloadByBlockRoot(any()))
+        .thenAnswer(
+            i -> SafeFuture.completedFuture(chainBuilder.getExecutionPayload(i.getArgument(0))));
 
     when(callback.respond(any())).thenReturn(SafeFuture.COMPLETE);
   }
@@ -94,35 +113,17 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandlerTest {
     assertThat(response.get().getMessage())
         .containsIgnoringCase("maximum of 128 execution payload envelopes");
     assertThat(getLabelledCounterValue("count_too_big")).isEqualTo(1);
-    assertThat(getLabelledCounterValue("start_slot_invalid")).isEqualTo(0);
-    verifyNoInteractions(recentChainData);
+    verifyNoInteractions(combinedChainDataClient);
   }
 
   @Test
   void validateRequest_maxCount() {
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UInt64.ZERO);
     final Optional<RpcException> response =
         handler.validateRequest(
             PROTOCOL_ID,
             new ExecutionPayloadEnvelopesByRangeRequestMessage(UInt64.ONE, UInt64.valueOf(128)));
     assertThat(response).isEmpty();
     assertThat(getLabelledCounterValue("count_too_big")).isEqualTo(0);
-    assertThat(getLabelledCounterValue("start_slot_invalid")).isEqualTo(0);
-    verify(recentChainData).getFinalizedEpoch();
-  }
-
-  @Test
-  void validateRequest_startSlotTooEarly() {
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UInt64.ONE);
-    final Optional<RpcException> response =
-        handler.validateRequest(
-            PROTOCOL_ID,
-            new ExecutionPayloadEnvelopesByRangeRequestMessage(UInt64.ONE, UInt64.valueOf(128)));
-    assertThat(response).isNotEmpty();
-    assertThat(response.get().getMessage()).containsIgnoringCase("prior to finalized");
-    assertThat(getLabelledCounterValue("count_too_big")).isEqualTo(0);
-    assertThat(getLabelledCounterValue("start_slot_invalid")).isEqualTo(1);
-    verify(recentChainData).getFinalizedEpoch();
   }
 
   @Test

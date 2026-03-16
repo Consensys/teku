@@ -51,19 +51,21 @@ class SimpleLeafNode implements LeafNode, TreeNode {
   @Override
   public Bytes32 hashTreeRoot() {
     Bytes32 cachedHash = this.cachedHash;
-    if (cachedHash != null) {
-      return cachedHash;
+    if (cachedHash == null) {
+      cachedHash = Bytes32.wrap(Arrays.copyOf(data.toArrayUnsafe(), MAX_BYTE_SIZE));
+      this.cachedHash = cachedHash;
     }
-    return Bytes32.wrap(Arrays.copyOf(data.toArrayUnsafe(), MAX_BYTE_SIZE));
+    return cachedHash;
   }
 
   @Override
   public Bytes32 hashTreeRoot(final Sha256 sha256) {
     Bytes32 cachedHash = this.cachedHash;
-    if (cachedHash != null) {
-      return cachedHash;
+    if (cachedHash == null) {
+      cachedHash = Bytes32.wrap(Arrays.copyOf(data.toArrayUnsafe(), MAX_BYTE_SIZE));
+      this.cachedHash = cachedHash;
     }
-    return Bytes32.wrap(Arrays.copyOf(data.toArrayUnsafe(), MAX_BYTE_SIZE));
+    return cachedHash;
   }
 
   @Override

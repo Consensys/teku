@@ -78,6 +78,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -169,13 +170,16 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final PerformanceTracker performanceTracker = mock(PerformanceTracker.class);
   protected final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
       mock(SyncCommitteeSubscriptionManager.class);
-  protected final PayloadAttestationPool payloadAttestationPool = PayloadAttestationPool.NOOP;
+  protected final PayloadAttestationPool payloadAttestationPool =
+      mock(PayloadAttestationPool.class);
   protected final ExecutionPayloadManager executionPayloadManager =
       mock(ExecutionPayloadManager.class);
   protected final ExecutionPayloadFactory executionPayloadFactory =
       mock(ExecutionPayloadFactory.class);
   protected final ExecutionPayloadPublisher executionPayloadPublisher =
       mock(ExecutionPayloadPublisher.class);
+  protected final ExecutionPayloadBidManager executionPayloadBidManager =
+      ExecutionPayloadBidManager.NOOP;
   protected final ExecutionProofManager executionProofManager = mock(ExecutionProofManager.class);
   protected RewardCalculator rewardCalculator = mock(RewardCalculator.class);
 
@@ -284,6 +288,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .forkChoiceNotifier(forkChoiceNotifier)
             .rewardCalculator(rewardCalculator)
             .dataColumnSidecarManager(dataColumnSidecarManager)
+            .payloadAttestationPool(payloadAttestationPool)
             .build();
 
     beaconRestApi =
@@ -531,7 +536,14 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   }
 
   @AfterEach
-  public void tearDown() {
+  public void tearDown() throws Exception {
     assertThat(beaconRestApi.stop()).isCompleted();
+    if (client != null) {
+      client.dispatcher().executorService().shutdown();
+      client.connectionPool().evictAll();
+    }
+    if (storageSystem != null) {
+      storageSystem.close();
+    }
   }
 }
