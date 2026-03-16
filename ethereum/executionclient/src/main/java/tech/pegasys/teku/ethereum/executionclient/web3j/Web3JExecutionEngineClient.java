@@ -58,6 +58,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   private static final Duration EXCHANGE_CAPABILITIES_TIMEOUT = Duration.ofSeconds(1);
   private static final Duration GET_CLIENT_VERSION_TIMEOUT = Duration.ofSeconds(1);
   private static final Duration GET_BLOBS_TIMEOUT = Duration.ofSeconds(1);
+  private static final Duration GET_PAYLOAD_TIMEOUT = Duration.ofSeconds(2);
 
   private final Web3JClient web3JClient;
 
@@ -102,7 +103,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             Collections.singletonList(payloadId.toHexString()),
             web3JClient.getWeb3jService(),
             ExecutionPayloadV1Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
+    return web3JClient.doRequest(web3jRequest, GET_PAYLOAD_TIMEOUT);
   }
 
   @Override
@@ -113,7 +114,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             Collections.singletonList(payloadId.toHexString()),
             web3JClient.getWeb3jService(),
             GetPayloadV2Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
+    return web3JClient.doRequest(web3jRequest, GET_PAYLOAD_TIMEOUT);
   }
 
   @Override
@@ -124,7 +125,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             Collections.singletonList(payloadId.toHexString()),
             web3JClient.getWeb3jService(),
             GetPayloadV3Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
+    return web3JClient.doRequest(web3jRequest, GET_PAYLOAD_TIMEOUT);
   }
 
   @Override
@@ -135,7 +136,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             Collections.singletonList(payloadId.toHexString()),
             web3JClient.getWeb3jService(),
             GetPayloadV4Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
+    return web3JClient.doRequest(web3jRequest, GET_PAYLOAD_TIMEOUT);
   }
 
   @Override
@@ -146,7 +147,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             Collections.singletonList(payloadId.toHexString()),
             web3JClient.getWeb3jService(),
             GetPayloadV5Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
+    return web3JClient.doRequest(web3jRequest, GET_PAYLOAD_TIMEOUT);
   }
 
   @Override
@@ -157,7 +158,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             Collections.singletonList(payloadId.toHexString()),
             web3JClient.getWeb3jService(),
             GetPayloadV6Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
+    return web3JClient.doRequest(web3jRequest, GET_PAYLOAD_TIMEOUT);
   }
 
   @Override

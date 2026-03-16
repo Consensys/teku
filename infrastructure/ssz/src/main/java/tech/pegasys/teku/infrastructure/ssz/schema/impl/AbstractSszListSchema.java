@@ -110,7 +110,7 @@ public abstract class AbstractSszListSchema<
         // BitlistImpl is handled specially
         return length / 8 + 1;
       } else {
-        return bitsCeilToBytes(length * getSszElementBitSize());
+        return Math.toIntExact(bitsCeilToBytes((long) length * getSszElementBitSize()));
       }
     } else {
       return getCompatibleVectorSchema().getVariablePartSize(getVectorNode(node), length)

@@ -75,7 +75,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -163,13 +163,13 @@ public class BeaconChainMethods {
       final AsyncRunner asyncRunner,
       final PeerLookup peerLookup,
       final CombinedChainDataClient combinedChainDataClient,
-      final Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier,
       final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final RecentChainData recentChainData,
       final MetricsSystem metricsSystem,
       final StatusMessageFactory statusMessageFactory,
       final MetadataMessagesFactory metadataMessagesFactory,
       final RpcEncoding rpcEncoding,
+      final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor,
       final DasReqRespLogger dasLogger) {
     return new BeaconChainMethods(
         createStatus(spec, asyncRunner, statusMessageFactory, peerLookup, rpcEncoding),
@@ -205,11 +205,11 @@ public class BeaconChainMethods {
             metricsSystem,
             asyncRunner,
             combinedChainDataClient,
-            dataColumnSidecarCustodySupplier,
             custodyGroupCountManagerSupplier,
             peerLookup,
             rpcEncoding,
             recentChainData,
+            dataColumnSidecarArchiveReconstructor,
             dasLogger),
         createDataColumnsSidecarsByRange(
             spec,
@@ -219,6 +219,7 @@ public class BeaconChainMethods {
             peerLookup,
             rpcEncoding,
             recentChainData,
+            dataColumnSidecarArchiveReconstructor,
             dasLogger),
         createExecutionPayloadEnvelopesByRoot(
             spec, asyncRunner, peerLookup, rpcEncoding, recentChainData, metricsSystem),
@@ -462,11 +463,11 @@ public class BeaconChainMethods {
           final MetricsSystem metricsSystem,
           final AsyncRunner asyncRunner,
           final CombinedChainDataClient combinedChainDataClient,
-          final Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier,
           final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
           final PeerLookup peerLookup,
           final RpcEncoding rpcEncoding,
           final RecentChainData recentChainData,
+          final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor,
           final DasReqRespLogger dasLogger) {
     if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
       return Optional.empty();
@@ -481,8 +482,8 @@ public class BeaconChainMethods {
             spec,
             metricsSystem,
             combinedChainDataClient,
-            dataColumnSidecarCustodySupplier,
             custodyGroupCountManagerSupplier,
+            dataColumnSidecarArchiveReconstructor,
             dasLogger);
     final DataColumnSidecarsByRootRequestMessageSchema
         dataColumnSidecarsByRootRequestMessageSchema =
@@ -512,6 +513,7 @@ public class BeaconChainMethods {
           final PeerLookup peerLookup,
           final RpcEncoding rpcEncoding,
           final RecentChainData recentChainData,
+          final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor,
           final DasReqRespLogger dasLogger) {
 
     if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
@@ -530,7 +532,11 @@ public class BeaconChainMethods {
 
     final DataColumnSidecarsByRangeMessageHandler dataColumnSidecarsByRangeMessageHandler =
         new DataColumnSidecarsByRangeMessageHandler(
-            spec, metricsSystem, combinedChainDataClient, dasLogger);
+            spec,
+            metricsSystem,
+            combinedChainDataClient,
+            dataColumnSidecarArchiveReconstructor,
+            dasLogger);
 
     return Optional.of(
         new SingleProtocolEth2RpcMethod<>(

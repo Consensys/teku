@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.BlockRootAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 
@@ -81,6 +82,10 @@ public class ExecutionPayloadEnvelope
 
   public SlotAndBlockRoot getSlotAndBlockRoot() {
     return new SlotAndBlockRoot(getSlot(), getBeaconBlockRoot());
+  }
+
+  public BlockRootAndBuilderIndex getBlockRootAndBuilderIndex() {
+    return new BlockRootAndBuilderIndex(getBeaconBlockRoot(), getBuilderIndex());
   }
 
   @Override

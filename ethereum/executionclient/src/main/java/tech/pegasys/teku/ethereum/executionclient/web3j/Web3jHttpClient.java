@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ethereum.executionclient.web3j;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.module.blackbird.BlackbirdModule;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Collection;
@@ -20,6 +22,7 @@ import java.util.Optional;
 import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.web3j.protocol.ObjectMapperFactory;
 import org.web3j.protocol.Web3jService;
 import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
@@ -43,6 +46,13 @@ class Web3jHttpClient extends Web3JClient {
     final OkHttpClient okHttpClient =
         OkHttpClientCreator.create(timeout, LOG, jwtConfig, timeProvider);
     final Web3jService httpService = new HttpService(endpoint.toString(), okHttpClient);
+
+    // same call that is made in the constructor's hierarchy HttpService -> Service
+    // returns the same ObjectMapper instance (singleton) so when we register the module it
+    // applies to all usages within Web3jService
+    final ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper(false);
+    objectMapper.registerModule(new BlackbirdModule());
+
     initWeb3jService(httpService);
   }
 }
