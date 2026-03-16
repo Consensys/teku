@@ -36,7 +36,7 @@ import tech.pegasys.teku.service.serviceutils.Service;
 
 public class QuartzTimerService extends Service {
   private static final Logger LOG = LogManager.getLogger();
-  public static final double TIME_TICKER_REFRESH_RATE = 2; // per sec
+  public static final int TIME_TICKER_REFRESH_RATE = 2; // per sec
   public static final String TICK_HANDLER = "TickHandler";
 
   private static final AtomicInteger TIMER_ID_GENERATOR = new AtomicInteger();
@@ -45,10 +45,15 @@ public class QuartzTimerService extends Service {
   private final Scheduler sched;
   private final JobDetail job;
   // Tick interval
-  private final int intervalMs = (int) ((1.0 / TIME_TICKER_REFRESH_RATE) * 1000);
+  private final int intervalMs;
 
   public QuartzTimerService(final TimeTickHandler timeTickHandler) {
-    LOG.info("Initializing Quartz Timer Service");
+    this(timeTickHandler, 1000 / TIME_TICKER_REFRESH_RATE);
+  }
+
+  QuartzTimerService(final TimeTickHandler timeTickHandler, final int intervalMs) {
+    LOG.debug("Initialize QuartzTimerService with tick interval: {} ms", intervalMs);
+    this.intervalMs = intervalMs;
     final SchedulerFactory sf = createSchedulerFactory();
     try {
       sched = sf.getScheduler();

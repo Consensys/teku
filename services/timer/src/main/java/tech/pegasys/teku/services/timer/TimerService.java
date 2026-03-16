@@ -27,6 +27,7 @@ public class TimerService extends Service {
   public static final double TIME_TICKER_REFRESH_RATE = 2; // per sec
 
   private final TimeTickHandler timeTickHandler;
+  private final long intervalMs;
   private final ScheduledExecutorService scheduler =
       Executors.newSingleThreadScheduledExecutor(
           r -> {
@@ -37,15 +38,19 @@ public class TimerService extends Service {
   private ScheduledFuture<?> scheduledTask;
 
   public TimerService(final TimeTickHandler timeTickHandler) {
-    LOG.trace("Initializing Timer Service");
+    this(timeTickHandler, (long) ((1.0 / TIME_TICKER_REFRESH_RATE) * 1000));
+  }
+
+  TimerService(final TimeTickHandler timeTickHandler, final long intervalMs) {
+    LOG.debug("Initialize TimerService with tick interval: {} ms", intervalMs);
     this.timeTickHandler = timeTickHandler;
+    this.intervalMs = intervalMs;
   }
 
   @Override
   public SafeFuture<?> doStart() {
-    final long intervalMs = (long) ((1.0 / TIME_TICKER_REFRESH_RATE) * 1000);
     scheduledTask =
-        scheduler.scheduleAtFixedRate(
+        scheduler.scheduleWithFixedDelay(
             timeTickHandler::onTick, 0, intervalMs, TimeUnit.MILLISECONDS);
     return SafeFuture.COMPLETE;
   }
