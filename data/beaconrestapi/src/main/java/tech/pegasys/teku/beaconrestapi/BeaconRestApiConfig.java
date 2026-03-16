@@ -312,6 +312,12 @@ public class BeaconRestApiConfig {
 
     public BeaconRestApiConfigBuilder restApiVirtualThreadsMaxThreads(
         final int restApiVirtualThreadsMaxThreads) {
+      if (restApiVirtualThreadsMaxThreads < 1 || restApiVirtualThreadsMaxThreads > 5_000) {
+        throw new InvalidConfigurationException(
+            String.format(
+                "Invalid restApiVirtualThreadsMaxThreads: %d should be between 1 and 5000",
+                restApiVirtualThreadsMaxThreads));
+      }
       this.restApiVirtualThreadsMaxThreads = restApiVirtualThreadsMaxThreads;
       return this;
     }
