@@ -68,16 +68,15 @@ public class DataColumnSidecarSelectorFactoryTest {
     dataColumnSidecarSelectorFactory = new DataColumnSidecarSelectorFactory(spec, client);
 
     // Post-FULU initialization part
-    if (!specContext.getSpecMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-      return;
+    if (specContext.getSpecMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+      dataColumnSidecars =
+          IntStream.range(0, 5)
+              .mapToObj(
+                  index ->
+                      dataStructureUtil.randomDataColumnSidecar(
+                          block.asHeader(), UInt64.valueOf(index)))
+              .toList();
     }
-    dataColumnSidecars =
-        IntStream.range(0, 5)
-            .mapToObj(
-                index ->
-                    dataStructureUtil.randomDataColumnSidecar(
-                        block.asHeader(), UInt64.valueOf(index)))
-            .toList();
   }
 
   @TestTemplate
@@ -224,14 +223,10 @@ public class DataColumnSidecarSelectorFactoryTest {
   public void slotSelector_shouldGetDataColumnSidecarsByRetrievingBlockWhenSlotNotFinalized()
       throws ExecutionException, InterruptedException {
     specContext.assumeFuluActive();
-    final SignedBlockAndState blockAndState = dataStructureUtil.randomSignedBlockAndState(100);
 
     when(client.isFinalized(block.getSlot())).thenReturn(false);
-    when(client.getBlockAtSlotExact(block.getSlot()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
     when(client.getDataColumnSidecars(block.getSlot(), indices))
         .thenReturn(SafeFuture.completedFuture(dataColumnSidecars));
-    when(client.getChainHead()).thenReturn(Optional.of(ChainHead.create(blockAndState)));
 
     final Optional<DataColumnSidecarsAndMetaData> result =
         dataColumnSidecarSelectorFactory
