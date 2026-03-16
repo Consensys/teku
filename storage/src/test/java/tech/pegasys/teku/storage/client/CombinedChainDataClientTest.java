@@ -317,7 +317,8 @@ class CombinedChainDataClientTest {
             client.getBlobSidecarByBlockRootAndIndex(sidecar2.getBlockRoot(), sidecar2.getIndex()));
     assertThat(result2).hasValue(sidecar2);
 
-    final Bytes32 blockRoot = setupGetBlockByBlockRoot(sidecar.getSlot().plus(1));
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    setupGetSlotForBlockRoot(blockRoot, sidecar.getSlot().plus(1));
     final Optional<BlobSidecar> incorrectResult =
         SafeFutureAssert.safeJoin(
             client.getBlobSidecarByBlockRootAndIndex(blockRoot, sidecar.getIndex()));
@@ -461,7 +462,7 @@ class CombinedChainDataClientTest {
         .thenAnswer(
             args -> {
               final Bytes32 argRoot = args.getArgument(0);
-              if (argRoot.equals(blockRoot)) {
+              if (blockRoot.equals(argRoot)) {
                 return Optional.of(slot);
               } else {
                 return Optional.empty();
@@ -482,20 +483,5 @@ class CombinedChainDataClientTest {
                 return Optional.empty();
               }
             });
-  }
-
-  private Bytes32 setupGetBlockByBlockRoot(final UInt64 slot) {
-    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlock(slot);
-    when(historicalChainData.getBlockByBlockRoot(any()))
-        .thenAnswer(
-            args -> {
-              final Bytes32 argRoot = args.getArgument(0);
-              if (argRoot.equals(signedBeaconBlock.getRoot())) {
-                return SafeFuture.completedFuture(Optional.of(signedBeaconBlock));
-              } else {
-                return SafeFuture.completedFuture(Optional.empty());
-              }
-            });
-    return signedBeaconBlock.getRoot();
   }
 }

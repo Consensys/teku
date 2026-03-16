@@ -106,6 +106,10 @@ public class Eth2NetworkConfiguration {
   public static final int DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS =
       Math.max(Runtime.getRuntime().availableProcessors(), DEFAULT_VALIDATOR_EXECUTOR_THREADS);
 
+  // TODO: consider switching to 512 after tests
+  public static final int DEFAULT_DATA_COLUMN_SIDECAR_EXTENSION_RETENTION_EPOCHS =
+      Integer.MAX_VALUE;
+
   public static final int DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE = DEFAULT_MAX_QUEUE_SIZE;
 
   public static final String FINALIZED_STATE_URL_PATH = "eth/v2/debug/beacon/states/finalized";
@@ -154,6 +158,7 @@ public class Eth2NetworkConfiguration {
   private final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit;
   private final int attestationWaitLimitMillis;
   private final boolean quartzSchedulerEnabled;
+  private final int dataColumnSidecarExtensionRetentionEpochs;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
@@ -193,6 +198,7 @@ public class Eth2NetworkConfiguration {
       final int aggregatingAttestationPoolV2BlockAggregationTimeLimit,
       final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
       final int attestationWaitLimitMillis,
+      final int dataColumnSidecarExtensionRetentionEpochs,
       final boolean quartzSchedulerEnabled) {
     this.spec = spec;
     this.constants = constants;
@@ -238,6 +244,7 @@ public class Eth2NetworkConfiguration {
         aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit;
     this.attestationWaitLimitMillis = attestationWaitLimitMillis;
     this.quartzSchedulerEnabled = quartzSchedulerEnabled;
+    this.dataColumnSidecarExtensionRetentionEpochs = dataColumnSidecarExtensionRetentionEpochs;
 
     LOG.debug("Attestation wait time limit in ratchet: {} ms", attestationWaitLimitMillis);
 
@@ -396,6 +403,10 @@ public class Eth2NetworkConfiguration {
     return dataColumnSidecarRecoveryMaxDelayMillis;
   }
 
+  public int getDataColumnSidecarExtensionRetentionEpochs() {
+    return dataColumnSidecarExtensionRetentionEpochs;
+  }
+
   public boolean isQuartzSchedulerEnabled() {
     return quartzSchedulerEnabled;
   }
@@ -430,6 +441,8 @@ public class Eth2NetworkConfiguration {
             == that.aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit
         && forkChoiceUpdatedAlwaysSendPayloadAttributes
             == that.forkChoiceUpdatedAlwaysSendPayloadAttributes
+        && dataColumnSidecarExtensionRetentionEpochs
+            == that.dataColumnSidecarExtensionRetentionEpochs
         && rustKzgEnabled == that.rustKzgEnabled
         && Objects.equals(spec, that.spec)
         && Objects.equals(constants, that.constants)
@@ -485,7 +498,8 @@ public class Eth2NetworkConfiguration {
         forkChoiceLateBlockReorgEnabled,
         prepareBlockProductionEnabled,
         forkChoiceUpdatedAlwaysSendPayloadAttributes,
-        rustKzgEnabled);
+        rustKzgEnabled,
+        dataColumnSidecarExtensionRetentionEpochs);
   }
 
   public static class Builder {
@@ -529,6 +543,8 @@ public class Eth2NetworkConfiguration {
     private boolean rustKzgEnabled = DEFAULT_RUST_KZG_ENABLED;
     private OptionalInt kzgPrecompute = OptionalInt.empty();
     private OptionalLong dataColumnSidecarRecoveryMaxDelayMillis = OptionalLong.empty();
+    private int dataColumnSidecarExtensionRetentionEpochs =
+        DEFAULT_DATA_COLUMN_SIDECAR_EXTENSION_RETENTION_EPOCHS;
     private boolean strictConfigLoadingEnabled;
     private boolean aggregatingAttestationPoolProfilingEnabled =
         DEFAULT_AGGREGATING_ATTESTATION_POOL_PROFILING_ENABLED;
@@ -639,6 +655,7 @@ public class Eth2NetworkConfiguration {
           aggregatingAttestationPoolV2BlockAggregationTimeLimit,
           aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
           attestationWaitLimitMillis,
+          dataColumnSidecarExtensionRetentionEpochs,
           quartzSchedulerEnabled);
     }
 
@@ -975,6 +992,15 @@ public class Eth2NetworkConfiguration {
       checkNotNull(dataColumnSidecarRecoveryMaxDelayMillis);
       this.dataColumnSidecarRecoveryMaxDelayMillis =
           OptionalLong.of(dataColumnSidecarRecoveryMaxDelayMillis);
+      return this;
+    }
+
+    public Builder dataColumnSidecarExtensionRetentionEpochs(
+        final int dataColumnSidecarExtensionRetentionEpochs) {
+      checkArgument(
+          dataColumnSidecarExtensionRetentionEpochs >= 0,
+          "Negative number of epochs is not allowed");
+      this.dataColumnSidecarExtensionRetentionEpochs = dataColumnSidecarExtensionRetentionEpochs;
       return this;
     }
 
