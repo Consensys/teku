@@ -642,19 +642,13 @@ public class CombinedChainDataClient {
     if (recentlyValidatedBlobSidecar.isPresent()) {
       return SafeFuture.completedFuture(recentlyValidatedBlobSidecar);
     }
-    final Optional<UInt64> hotSlotForBlockRoot = recentChainData.getSlotForBlockRoot(blockRoot);
-    if (hotSlotForBlockRoot.isPresent()) {
-      return getBlobSidecarByKey(
-          new SlotAndBlockRootAndBlobIndex(hotSlotForBlockRoot.get(), blockRoot, index));
-    }
-    return historicalChainData
-        .getBlockByBlockRoot(blockRoot)
+
+    return getSlotByBlockRoot(blockRoot)
         .thenCompose(
-            blockOptional -> {
-              if (blockOptional.isPresent()) {
+            maybeSlot -> {
+              if (maybeSlot.isPresent()) {
                 return getBlobSidecarByKey(
-                    new SlotAndBlockRootAndBlobIndex(
-                        blockOptional.get().getSlot(), blockRoot, index));
+                    new SlotAndBlockRootAndBlobIndex(maybeSlot.get(), blockRoot, index));
               } else {
                 return SafeFuture.completedFuture(Optional.empty());
               }
