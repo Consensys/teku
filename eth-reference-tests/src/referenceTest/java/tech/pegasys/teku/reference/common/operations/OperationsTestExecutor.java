@@ -43,7 +43,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Be
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
@@ -406,8 +406,18 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       throws BlockProcessingException {
     final SchemaDefinitionsCapella schemaDefinitionsCapella =
         SchemaDefinitionsCapella.required(testDefinition.getSpec().getGenesisSchemaDefinitions());
-    final ExecutionPayload executionPayload =
-        loadSsz(testDefinition, dataFileName, schemaDefinitionsCapella.getExecutionPayloadSchema());
+    final Optional<ExecutionPayloadSummary> executionPayload;
+    if (schemaDefinitionsCapella.toVersionGloas().isPresent()) {
+      // no execution payload in withdrawals tests for >= Gloas
+      executionPayload = Optional.empty();
+    } else {
+      executionPayload =
+          Optional.of(
+              loadSsz(
+                  testDefinition,
+                  dataFileName,
+                  schemaDefinitionsCapella.getExecutionPayloadSchema()));
+    }
     processor.processWithdrawals(state, executionPayload);
   }
 

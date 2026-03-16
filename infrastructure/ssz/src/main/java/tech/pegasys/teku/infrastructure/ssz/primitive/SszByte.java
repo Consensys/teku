@@ -27,6 +27,10 @@ public class SszByte extends AbstractSszPrimitive<Byte> {
     return new SszByte((byte) value);
   }
 
+  public static SszByte asUInt8(final byte value) {
+    return new SszByte(value, SszPrimitiveSchemas.UINT8_SCHEMA);
+  }
+
   public static SszByte asUInt8(final int value) {
     checkArgument(value >= 0 && value <= 255, "value must be in uint8 range (0–255)");
     return new SszByte((byte) value, SszPrimitiveSchemas.UINT8_SCHEMA);

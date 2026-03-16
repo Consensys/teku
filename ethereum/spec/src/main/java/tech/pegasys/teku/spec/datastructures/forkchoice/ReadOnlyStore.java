@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -114,6 +115,14 @@ public interface ReadOnlyStore extends TimeProvider {
    */
   Optional<SignedBeaconBlock> getBlockIfAvailable(Bytes32 blockRoot);
 
+  /**
+   * Returns an execution payload only if it is immediately available (not pruned).
+   *
+   * @param blockRoot The block root of the execution payload to retrieve
+   * @return The execution payload if available.
+   */
+  Optional<SignedExecutionPayloadEnvelope> getExecutionPayloadIfAvailable(Bytes32 blockRoot);
+
   Optional<List<BlobSidecar>> getBlobSidecarsIfAvailable(SlotAndBlockRoot slotAndBlockRoot);
 
   default SafeFuture<Optional<BeaconBlock>> retrieveBlock(final Bytes32 blockRoot) {
@@ -129,6 +138,12 @@ public interface ReadOnlyStore extends TimeProvider {
   SafeFuture<Optional<BeaconState>> retrieveBlockState(Bytes32 blockRoot);
 
   SafeFuture<Optional<BeaconState>> retrieveBlockState(SlotAndBlockRoot slotAndBlockRoot);
+
+  SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveSignedExecutionPayload(
+      Bytes32 blockRoot);
+
+  SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(
+      SlotAndBlockRoot slotAndBlockRoot);
 
   SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint);
 

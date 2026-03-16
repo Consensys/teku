@@ -27,11 +27,14 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
 public interface DataColumnSidecar extends SszContainer {
 
+  @Override
+  DataColumnSidecarSchema<? extends DataColumnSidecar> getSchema();
+
   UInt64 getIndex();
 
   DataColumn getColumn();
 
-  SszList<SszKZGCommitment> getKzgCommitments();
+  Optional<SszList<SszKZGCommitment>> getMaybeKzgCommitments();
 
   SszList<SszKZGProof> getKzgProofs();
 
@@ -51,7 +54,6 @@ public interface DataColumnSidecar extends SszContainer {
         getBeaconBlockRoot(),
         getIndex(),
         getColumn().toBriefString(),
-        getKzgCommitments().size(),
         getKzgProofs().size());
   }
 }

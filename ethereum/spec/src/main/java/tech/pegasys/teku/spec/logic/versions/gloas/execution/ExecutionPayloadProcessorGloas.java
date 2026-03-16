@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
@@ -149,13 +150,6 @@ public class ExecutionPayloadProcessorGloas extends AbstractExecutionPayloadProc
       throw new ExecutionPayloadProcessingException(
           "Builder index of the envelope is not consistent with the builder index of the committed bid");
     }
-    if (!envelope
-        .getBlobKzgCommitments()
-        .hashTreeRoot()
-        .equals(committedBid.getBlobKzgCommitmentsRoot())) {
-      throw new ExecutionPayloadProcessingException(
-          "The hash tree root of the blob kzg commitments in the envelope are not consistent with the blob kzg commitments root of the committed bid");
-    }
     if (!envelope.getPayload().getPrevRandao().equals(committedBid.getPrevRandao())) {
       throw new ExecutionPayloadProcessingException(
           "Prev randao of the envelope is not consistent with the prev randao of the committed bid");
@@ -189,17 +183,10 @@ public class ExecutionPayloadProcessorGloas extends AbstractExecutionPayloadProc
         .equals(miscHelpers.computeTimeAtSlot(state.getGenesisTime(), state.getSlot()))) {
       throw new ExecutionPayloadProcessingException("Timestamp of the payload is not as expected");
     }
-    // Verify commitments are under limit
-    if (envelope.getBlobKzgCommitments().size()
-        > miscHelpers
-            .getBlobParameters(beaconStateAccessors.getCurrentEpoch(state))
-            .maxBlobsPerBlock()) {
-      throw new ExecutionPayloadProcessingException(
-          "Number of kzg commitments in the envelope exceeds max blobs per block");
-    }
     // Verify the execution payload is valid
     if (payloadExecutor.isPresent()) {
-      final NewPayloadRequest payloadToExecute = computeNewPayloadRequest(state, envelope);
+      final NewPayloadRequest payloadToExecute =
+          computeNewPayloadRequest(state, envelope, committedBid.getBlobKzgCommitments());
       final boolean optimisticallyAccept =
           payloadExecutor.get().optimisticallyExecute(Optional.empty(), payloadToExecute);
       if (!optimisticallyAccept) {
@@ -258,9 +245,11 @@ public class ExecutionPayloadProcessorGloas extends AbstractExecutionPayloadProc
   }
 
   protected NewPayloadRequest computeNewPayloadRequest(
-      final BeaconState state, final ExecutionPayloadEnvelope envelope) {
+      final BeaconState state,
+      final ExecutionPayloadEnvelope envelope,
+      final SszList<SszKZGCommitment> blobKzgCommitments) {
     final List<VersionedHash> versionedHashes =
-        envelope.getBlobKzgCommitments().stream()
+        blobKzgCommitments.stream()
             .map(SszKZGCommitment::getKZGCommitment)
             .map(miscHelpers::kzgCommitmentToVersionedHash)
             .toList();

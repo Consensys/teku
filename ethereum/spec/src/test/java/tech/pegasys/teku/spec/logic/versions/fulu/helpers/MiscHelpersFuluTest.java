@@ -153,7 +153,7 @@ public class MiscHelpersFuluTest {
   @Test
   void shouldRejectIfDataColumnSidecarHasNoKzgCommitments() {
     final DataColumnSidecar emptyKzgCommitments =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
+        dataStructureUtil.randomDataColumnSidecar(
             dataStructureUtil.randomSignedBeaconBlockWithCommitments(0), UInt64.ONE);
     assertThat(miscHelpersFulu.verifyDataColumnSidecar(emptyKzgCommitments)).isFalse();
   }
@@ -227,13 +227,15 @@ public class MiscHelpersFuluTest {
                             dataStructureUtil.randomBytes32(),
                             dataStructureUtil.randomBytes32())));
 
+    final DataColumnSidecarFulu dataColumnSideCarFulu =
+        DataColumnSidecarFulu.required(dataColumnSidecar);
     assertThat(
             predicatesMock.isValidMerkleBranch(
-                dataColumnSidecar.getKzgCommitments().hashTreeRoot(),
-                DataColumnSidecarFulu.required(dataColumnSidecar).getKzgCommitmentsInclusionProof(),
+                dataColumnSideCarFulu.getKzgCommitments().hashTreeRoot(),
+                dataColumnSideCarFulu.getKzgCommitmentsInclusionProof(),
                 specConfigFulu.getKzgCommitmentsInclusionProofDepth().intValue(),
                 miscHelpersFuluWithMockPredicates.getBlockBodyKzgCommitmentsGeneralizedIndex(),
-                DataColumnSidecarFulu.required(dataColumnSidecar).getBlockBodyRoot()))
+                dataColumnSideCarFulu.getBlockBodyRoot()))
         .isTrue();
     assertThat(
             miscHelpersFuluWithMockPredicates.verifyDataColumnSidecarInclusionProof(

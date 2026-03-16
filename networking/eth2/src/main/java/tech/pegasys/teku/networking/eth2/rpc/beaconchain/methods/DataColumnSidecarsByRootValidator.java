@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.peers.DataColumnSidecarSignatureValidator;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class DataColumnSidecarsByRootValidator extends AbstractDataColumnSidecarValidator {
   private final Set<DataColumnIdentifier> expectedDataColumnIdentifiers;
@@ -41,8 +43,9 @@ public class DataColumnSidecarsByRootValidator extends AbstractDataColumnSidecar
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider,
       final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator,
-      final List<DataColumnIdentifier> expectedDataColumnIdentifiers) {
-    super(peer, spec, dataColumnSidecarSignatureValidator);
+      final List<DataColumnIdentifier> expectedDataColumnIdentifiers,
+      final CombinedChainDataClient combinedChainDataClient) {
+    super(peer, spec, dataColumnSidecarSignatureValidator, combinedChainDataClient);
     this.expectedDataColumnIdentifiers = ConcurrentHashMap.newKeySet();
     this.expectedDataColumnIdentifiers.addAll(expectedDataColumnIdentifiers);
     this.dataColumnSidecarInclusionProofVerificationTimeSeconds =
@@ -52,28 +55,50 @@ public class DataColumnSidecarsByRootValidator extends AbstractDataColumnSidecar
         DATA_COLUMN_SIDECAR_KZG_BATCH_VERIFICATION_HISTOGRAM.apply(metricsSystem, timeProvider);
   }
 
-  public void validate(final DataColumnSidecar dataColumnSidecar) {
+  public SafeFuture<Void> validate(final DataColumnSidecar dataColumnSidecar) {
     final DataColumnIdentifier dataColumnIdentifier =
         DataColumnIdentifier.createFromSidecar(dataColumnSidecar);
     if (!expectedDataColumnIdentifiers.remove(dataColumnIdentifier)) {
-      throw new DataColumnSidecarsResponseInvalidResponseException(
-          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_UNEXPECTED_IDENTIFIER);
+      return SafeFuture.failedFuture(
+          new DataColumnSidecarsResponseInvalidResponseException(
+              peer, InvalidResponseType.DATA_COLUMN_SIDECAR_UNEXPECTED_IDENTIFIER));
     }
 
-    verifyValidity(dataColumnSidecar);
+    if (!verifyValidity(dataColumnSidecar)) {
+      return SafeFuture.failedFuture(
+          new DataColumnSidecarsResponseInvalidResponseException(
+              peer,
+              DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
+                  .DATA_COLUMN_SIDECAR_VALIDITY_CHECK_FAILED));
+    }
+
+    final boolean inclusionProofValid;
     try (MetricsHistogram.Timer ignored =
         dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer()) {
-      verifyInclusionProof(dataColumnSidecar);
-    } catch (final IOException ioException) {
-      throw new DataColumnSidecarsResponseInvalidResponseException(
-          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
+      inclusionProofValid = verifyInclusionProof(dataColumnSidecar);
+    } catch (final IOException e) {
+      return SafeFuture.failedFuture(
+          new DataColumnSidecarsResponseInvalidResponseException(
+              peer, InvalidResponseType.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED));
     }
-    try (MetricsHistogram.Timer ignored =
-        dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-      verifyKzgProof(dataColumnSidecar);
-    } catch (final IOException ioException) {
-      throw new DataColumnSidecarsResponseInvalidResponseException(
-          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
+    if (!inclusionProofValid) {
+      return SafeFuture.failedFuture(
+          new DataColumnSidecarsResponseInvalidResponseException(
+              peer, InvalidResponseType.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED));
     }
+
+    final MetricsHistogram.Timer kzgVerificationTimer =
+        dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer();
+    return verifyKzgProofs(dataColumnSidecar)
+        .whenComplete((result, error) -> kzgVerificationTimer.closeUnchecked().run())
+        .thenCompose(
+            maybeKzgProofsValidationResult -> {
+              if (maybeKzgProofsValidationResult.isPresent()) {
+                return SafeFuture.failedFuture(
+                    new DataColumnSidecarsResponseInvalidResponseException(
+                        peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED));
+              }
+              return SafeFuture.COMPLETE;
+            });
   }
 }

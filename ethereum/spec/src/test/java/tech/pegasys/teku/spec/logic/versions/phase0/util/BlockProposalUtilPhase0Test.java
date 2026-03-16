@@ -38,12 +38,13 @@ class BlockProposalUtilPhase0Test {
   @ParameterizedTest
   @MethodSource("getStateSlotForProposerDutiesTestCases")
   public void getStateSlotForProposerDuties(final int requestedEpoch, final int expectedSlot) {
+    final UInt64 epoch = UInt64.valueOf(requestedEpoch);
     final Spec localSpec = TestSpecFactory.createMinimal(SpecMilestone.PHASE0);
     final UInt64 querySlot =
         localSpec
             .getGenesisSpec()
             .getBlockProposalUtil()
-            .getStateSlotForProposerDuties(localSpec, UInt64.valueOf(requestedEpoch));
+            .getStateSlotForProposerDuties(localSpec, epoch, epoch);
 
     assertThat(querySlot.intValue()).isEqualTo(expectedSlot);
   }

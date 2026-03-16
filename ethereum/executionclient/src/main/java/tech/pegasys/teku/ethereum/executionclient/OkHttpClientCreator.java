@@ -25,6 +25,15 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class OkHttpClientCreator {
 
+  // The timeout used by default for call and read timeouts when not specified
+  // Note: this can be overridden per-request (e.g. for getPayload or newPayload
+  private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(1);
+
+  public static OkHttpClient create(
+      final Logger logger, final Optional<JwtConfig> jwtConfig, final TimeProvider timeProvider) {
+    return create(DEFAULT_TIMEOUT, logger, jwtConfig, timeProvider);
+  }
+
   public static OkHttpClient create(
       final Duration timeout,
       final Logger logger,

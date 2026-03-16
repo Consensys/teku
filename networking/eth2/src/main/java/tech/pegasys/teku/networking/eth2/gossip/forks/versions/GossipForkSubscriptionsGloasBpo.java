@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
+import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -74,7 +75,8 @@ public class GossipForkSubscriptionsGloasBpo extends GossipForkSubscriptionsGloa
       final DebugDataDumper debugDataDumper,
       final DasGossipLogger dasGossipLogger,
       final BlobParameters bpo,
-      final boolean isExecutionProofTopicEnabled) {
+      final boolean isExecutionProofTopicEnabled,
+      final Supplier<Boolean> isSuperNodeSupplier) {
     super(
         fork,
         spec,
@@ -100,7 +102,8 @@ public class GossipForkSubscriptionsGloasBpo extends GossipForkSubscriptionsGloa
         debugDataDumper,
         dasGossipLogger,
         executionProofOperationProcessor,
-        isExecutionProofTopicEnabled);
+        isExecutionProofTopicEnabled,
+        isSuperNodeSupplier);
     this.bpo = bpo;
   }
 

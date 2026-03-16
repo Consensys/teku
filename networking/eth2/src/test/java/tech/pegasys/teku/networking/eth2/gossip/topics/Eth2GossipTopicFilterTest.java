@@ -27,10 +27,12 @@ import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
+import static tech.pegasys.teku.spec.SpecMilestone.HEZE;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -45,12 +47,13 @@ import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.builder.FuluBuilder;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
-@TestSpecContext(milestone = {DENEB, ELECTRA, FULU, GLOAS})
+@TestSpecContext(milestone = {DENEB, ELECTRA, FULU, GLOAS, HEZE})
 class Eth2GossipTopicFilterTest {
   private final UInt64 nextMilestoneForkEpoch = UInt64.valueOf(10);
   private final BlobParameters bpoFork = new BlobParameters(UInt64.valueOf(11), 64);
@@ -71,6 +74,10 @@ class Eth2GossipTopicFilterTest {
     currentSpecMilestone = specContext.getSpecMilestone().getPreviousMilestone();
     nextSpecMilestone = specContext.getSpecMilestone();
 
+    final Consumer<FuluBuilder> fuluBuilder =
+        fb ->
+            fb.blobSchedule(
+                List.of(new BlobScheduleEntry(bpoFork.epoch(), bpoFork.maxBlobsPerBlock())));
     spec =
         switch (nextSpecMilestone) {
           case PHASE0, ALTAIR, BELLATRIX, CAPELLA ->
@@ -79,24 +86,13 @@ class Eth2GossipTopicFilterTest {
           case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(nextMilestoneForkEpoch);
           case FULU ->
               TestSpecFactory.createMinimalFulu(
-                  b ->
-                      b.fuluForkEpoch(nextMilestoneForkEpoch)
-                          .fuluBuilder(
-                              fb ->
-                                  fb.blobSchedule(
-                                      List.of(
-                                          new BlobScheduleEntry(
-                                              bpoFork.epoch(), bpoFork.maxBlobsPerBlock())))));
+                  b -> b.fuluBuilder(fuluBuilder).fuluForkEpoch(nextMilestoneForkEpoch));
           case GLOAS ->
               TestSpecFactory.createMinimalGloas(
-                  b ->
-                      b.gloasForkEpoch(nextMilestoneForkEpoch)
-                          .fuluBuilder(
-                              fb ->
-                                  fb.blobSchedule(
-                                      List.of(
-                                          new BlobScheduleEntry(
-                                              bpoFork.epoch(), bpoFork.maxBlobsPerBlock())))));
+                  b -> b.fuluBuilder(fuluBuilder).gloasForkEpoch(nextMilestoneForkEpoch));
+          case HEZE ->
+              TestSpecFactory.createMinimalHeze(
+                  b -> b.fuluBuilder(fuluBuilder).hezeForkEpoch(nextMilestoneForkEpoch));
         };
     p2pConfig = P2PConfig.builder().specProvider(spec).build();
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);

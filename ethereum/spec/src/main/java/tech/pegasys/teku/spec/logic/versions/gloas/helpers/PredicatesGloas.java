@@ -50,10 +50,11 @@ public class PredicatesGloas extends PredicatesElectra {
    * must be called on a beacon state before processing the execution payload bid in the block.
    */
   public boolean isParentBlockFull(final BeaconState state) {
-    return BeaconStateGloas.required(state)
+    final BeaconStateGloas beaconStateGloas = BeaconStateGloas.required(state);
+    return beaconStateGloas
         .getLatestExecutionPayloadBid()
         .getBlockHash()
-        .equals(BeaconStateGloas.required(state).getLatestBlockHash());
+        .equals(beaconStateGloas.getLatestBlockHash());
   }
 
   public boolean isBuilderIndex(final UInt64 validatorIndex) {

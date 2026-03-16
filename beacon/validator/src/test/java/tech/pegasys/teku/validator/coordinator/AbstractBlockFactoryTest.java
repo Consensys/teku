@@ -609,8 +609,7 @@ public abstract class AbstractBlockFactoryTest {
                           ZERO,
                           blobsBundle
                               .map(blobKzgCommitmentsSchema::createFromBlobsBundle)
-                              .orElse(blobKzgCommitmentsSchema.of())
-                              .hashTreeRoot());
+                              .orElse(blobKzgCommitmentsSchema.of()));
               return SafeFuture.completedFuture(
                   Optional.of(
                       schemaDefinitions

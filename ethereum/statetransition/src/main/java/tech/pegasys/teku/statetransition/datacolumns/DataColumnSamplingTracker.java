@@ -29,7 +29,7 @@ import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 record DataColumnSamplingTracker(
     UInt64 slot,
     Bytes32 blockRoot,
-    List<UInt64> samplingRequirement,
+    Set<UInt64> samplingRequirement,
     Set<UInt64> missingColumns,
     AtomicBoolean rpcFetchInProgress,
     SafeFuture<List<UInt64>> completionFuture,
@@ -42,7 +42,7 @@ record DataColumnSamplingTracker(
       final Bytes32 blockRoot,
       final CustodyGroupCountManager custodyGroupCountManager,
       final Optional<Integer> completionColumnCount) {
-    final List<UInt64> samplingRequirement = custodyGroupCountManager.getSamplingColumnIndices();
+    final Set<UInt64> samplingRequirement = custodyGroupCountManager.getSamplingColumnIndices();
     final Set<UInt64> missingColumns = ConcurrentHashMap.newKeySet(samplingRequirement.size());
     missingColumns.addAll(samplingRequirement);
     final SafeFuture<List<UInt64>> completionFuture = new SafeFuture<>();
@@ -77,7 +77,7 @@ record DataColumnSamplingTracker(
           blockRoot,
           columnIdentifier.columnIndex(),
           origin);
-      completionFuture.complete(samplingRequirement);
+      completionFuture.complete(samplingRequirement.stream().toList());
       fullySampled.set(true);
       return true;
     }

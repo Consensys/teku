@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,17 +14,17 @@
 apply plugin: 'java-library'
 
 dependencies {
-  implementation 'com.fasterxml.jackson.core:jackson-databind'
-  implementation 'org.bouncycastle:bcprov-jdk18on'
-  implementation 'com.google.guava:guava'
-  implementation 'org.apache.logging.log4j:log4j-api'
-  implementation 'io.consensys.tuweni:tuweni-bytes'
-  implementation project(":infrastructure:crypto")
+	implementation 'com.fasterxml.jackson.core:jackson-databind'
+	implementation 'org.bouncycastle:bcprov-jdk18on'
+	implementation 'com.google.guava:guava'
+	implementation 'org.apache.logging.log4j:log4j-api'
+	implementation 'io.consensys.tuweni:tuweni-bytes'
+	implementation project(":infrastructure:crypto")
 
-  testImplementation 'org.assertj:assertj-core'
-  testImplementation 'org.junit.jupiter:junit-jupiter-engine'
-  testImplementation 'org.junit.jupiter:junit-jupiter-api'
-  testImplementation 'org.junit.jupiter:junit-jupiter-params'
-  testImplementation 'org.mockito:mockito-core'
-  testImplementation 'org.mockito:mockito-junit-jupiter'
+	testImplementation 'org.assertj:assertj-core'
+	testImplementation 'org.junit.jupiter:junit-jupiter-engine'
+	testImplementation 'org.junit.jupiter:junit-jupiter-api'
+	testImplementation 'org.junit.jupiter:junit-jupiter-params'
+	testImplementation 'org.mockito:mockito-core'
+	testImplementation 'org.mockito:mockito-junit-jupiter'
 }

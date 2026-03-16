@@ -39,6 +39,7 @@ import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.datacolumnselector.DataColumnSidecarSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
+import tech.pegasys.teku.api.executionpayloadselector.ExecutionPayloadSelectorFactory;
 import tech.pegasys.teku.api.fulu.ColumnCustodyAtSlot;
 import tech.pegasys.teku.api.migrated.AttestationRewardsData;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
@@ -75,6 +76,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.BlobSidecarsAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlobsAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.DataColumnSidecarsAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.ExecutionPayloadAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -100,6 +102,7 @@ public class ChainDataProvider {
   private final BlobSidecarSelectorFactory blobSidecarSelectorFactory;
   private final BlobSelectorFactory blobSelectorFactory;
   private final DataColumnSidecarSelectorFactory dataColumnSidecarSelectorFactory;
+  private final ExecutionPayloadSelectorFactory executionPayloadSelectorFactory;
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
   private final RecentChainData recentChainData;
@@ -122,6 +125,7 @@ public class ChainDataProvider {
             spec, combinedChainDataClient, blobSidecarReconstructionProvider),
         new BlobSelectorFactory(spec, combinedChainDataClient, blobReconstructionProvider),
         new DataColumnSidecarSelectorFactory(spec, combinedChainDataClient),
+        new ExecutionPayloadSelectorFactory(spec, combinedChainDataClient),
         rewardCalculator);
   }
 
@@ -135,6 +139,7 @@ public class ChainDataProvider {
       final BlobSidecarSelectorFactory blobSidecarSelectorFactory,
       final BlobSelectorFactory blobSelectorFactory,
       final DataColumnSidecarSelectorFactory dataColumnSidecarSelectorFactory,
+      final ExecutionPayloadSelectorFactory executionPayloadSelectorFactory,
       final RewardCalculator rewardCalculator) {
     this.spec = spec;
     this.combinedChainDataClient = combinedChainDataClient;
@@ -144,6 +149,7 @@ public class ChainDataProvider {
     this.blobSidecarSelectorFactory = blobSidecarSelectorFactory;
     this.blobSelectorFactory = blobSelectorFactory;
     this.dataColumnSidecarSelectorFactory = dataColumnSidecarSelectorFactory;
+    this.executionPayloadSelectorFactory = executionPayloadSelectorFactory;
     this.rewardCalculator = rewardCalculator;
   }
 
@@ -232,6 +238,13 @@ public class ChainDataProvider {
     return dataColumnSidecarSelectorFactory
         .createSelectorForBlockId(blockIdParam)
         .getDataColumnSidecars(indices);
+  }
+
+  public SafeFuture<Optional<ExecutionPayloadAndMetaData>> getExecutionPayloadEnvelope(
+      final String blockIdParam) {
+    return executionPayloadSelectorFactory
+        .createSelectorForBlockId(blockIdParam)
+        .getExecutionPayload();
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> getBlockRoot(final String blockIdParam) {

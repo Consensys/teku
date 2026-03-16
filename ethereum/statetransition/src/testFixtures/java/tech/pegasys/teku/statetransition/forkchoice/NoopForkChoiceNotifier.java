@@ -34,6 +34,9 @@ public class NoopForkChoiceNotifier implements ForkChoiceNotifier {
   public void onAttestationsDue(final UInt64 slot) {}
 
   @Override
+  public void onPayloadAttestationsDue(final UInt64 slot) {}
+
+  @Override
   public void onSyncingStatusChanged(final boolean inSync) {}
 
   @Override

@@ -29,9 +29,14 @@ public class RewardsTestExecutorBellatrix extends RewardsTestExecutorAltair {
 
   public static final ImmutableMap<String, TestExecutor> REWARDS_TEST_TYPES =
       ImmutableMap.of(
-          "rewards/basic", new RewardsTestExecutorBellatrix(),
-          "rewards/leak", new RewardsTestExecutorBellatrix(),
-          "rewards/random", new RewardsTestExecutorBellatrix());
+          "rewards/basic",
+          new RewardsTestExecutorBellatrix(),
+          "rewards/leak",
+          new RewardsTestExecutorBellatrix(),
+          "rewards/random",
+          new RewardsTestExecutorBellatrix(),
+          "rewards/inactivity_scores",
+          new RewardsTestExecutorBellatrix());
 
   @Override
   protected RewardsAndPenaltiesCalculatorAltair createRewardsAndPenaltiesCalculator(

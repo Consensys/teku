@@ -1,17 +1,6 @@
 
 name: ci
 
-# Circle
-# https://app.circleci.com/pipelines/github/Consensys/teku/38576/workflows/4aac2ddd-0cbd-4d9c-9285-e49f911411d0
-# https://circleci.com/pricing/price-list/
-# medium   2    4
-# medium+  3    6
-# large    4    8
-# xlarge   8    16
-# 2xlarge  16   32
-# 2xlarge+ 20   40
-
-
 ## RUNNERS
 # https://docs.github.com/en/actions/reference/runners/github-hosted-runners
 # ubuntu-24.04 = 4cpu, 16GB
@@ -39,7 +28,16 @@ on:
       include_hash_in_docker:
         description: 'include_hash_in_docker'
         required: false
-        default: 'false'  # string "false"
+        default: 'false'
+      gradle_log_level:
+        description: 'Gradle log level for test jobs'
+        required: false
+        type: choice
+        default: 'lifecycle'
+        options:
+          - lifecycle
+          - info
+          - debug
 
 # if a new commit is made, cancel this run
 concurrency:
@@ -94,7 +92,7 @@ jobs:
           $Env:JAVA_TOOL_OPTIONS = "-Xmx2g"
           $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.vfs.watch=false"
           cmd.exe /c gradlew.bat --no-daemon --parallel --build-cache
-      - name: Build
+      - name: Collect test results
         shell: powershell
         run: |
           New-Item -ItemType Directory -Force build\test-results
@@ -104,7 +102,7 @@ jobs:
         if: always()
         with:
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 3
           path: |
             build/test-results/
 
@@ -140,14 +138,14 @@ jobs:
           name: distribution-tar
           path: |
             build/distributions/*.tar.gz
-          retention-days: 3
+          retention-days: 14
       - name: Upload distribution zip
         uses: actions/upload-artifact@v6
         with:
           name: distribution-zip
           path: |
             build/distributions/*.zip
-          retention-days: 3          
+          retention-days: 7          
       - name: Upload workspace build
         uses: actions/upload-artifact@v6
         with:
@@ -181,7 +179,7 @@ jobs:
         shell: bash
         run: |
           ./gradlew --no-daemon --parallel installDist
-      - name: Build runnable Teku binaries
+      - name: Extract OpenAPI spec
         shell: bash
         run: |
           mkdir -p .openapidoc/spec
@@ -227,7 +225,7 @@ jobs:
           path: ${{ github.workspace }}/.openapidoc/spec
       - name: List openapidoc spec
         run: |
-          tree .openapidoc/spec/          
+          ls -R .openapidoc/spec/
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
@@ -262,6 +260,7 @@ jobs:
       src_pattern: "*/src/test/java/*"
       src_root: "src/test/java"
       runner: "gha-runner-scale-set-ubuntu-22.04-amd64-large"
+      gradle_args: ${{ (inputs.gradle_log_level == 'info' && '--info') || (inputs.gradle_log_level == 'debug' && '--debug') || '' }}
 
   unitTestsResult:
     runs-on: ubuntu-24.04
@@ -269,7 +268,7 @@ jobs:
     if: always()
     steps:
       - run: |
-          echo "unitTests result: ${{ needs.prunitTestspertyTests.result }}"
+          echo "unitTests result: ${{ needs.unitTests.result }}"
           if [ "${{ needs.unitTests.result }}" != "success" ]; then
             echo "❌ One or more unitTests matrix jobs failed."
             exit 1
@@ -290,27 +289,42 @@ jobs:
 
   integrationTests:
     needs: assemble
-    runs-on: gha-runner-scale-set-ubuntu-22.04-amd64-xxl
+    uses: ./.github/workflows/matrix-tests-template.yml
+    secrets: inherit
+    with:
+      assemble_output_run_id: ${{ github.run_id }}
+      stage_name: Integration Tests
+      stage_key: integration
+      gradle_task: integrationTest
+      src_pattern: "*/src/integration-test/java/*"
+      src_root: "src/integration-test/java"
+      runner: "gha-runner-scale-set-ubuntu-22.04-amd64-large"
+      gradle_args: ${{ (inputs.gradle_log_level == 'info' && '--info') || (inputs.gradle_log_level == 'debug' && '--debug') || '' }}
+
+  integrationTestsResult:
+    runs-on: ubuntu-24.04
+    needs: integrationTests
+    if: always()
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
+      - run: |
+          echo "integrationTests result: ${{ needs.integrationTests.result }}"
+          if [ "${{ needs.integrationTests.result }}" != "success" ]; then
+            echo "❌ One or more integrationTests matrix jobs failed."
+            exit 1
+          fi
+          echo "✅ All integrationTests matrix jobs passed."
+
+  integrationTestsReport:
+    runs-on: ubuntu-24.04
+    needs: integrationTests
+    if: always()
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/collate-junit-reports
+        continue-on-error: true
+        if: always()
         with:
-          submodules: 'recursive'
-      - name: Prepare
-        uses: ./.github/actions/prepare
-      - name: Download assemble-output
-        uses: actions/download-artifact@v7
-        with:
-          name: assemble-output
-          path: ${{ github.workspace }}   
-      - name: Integration Tests
-        run: |
-          ./gradlew integrationTest
-      - name: Test results 
-        uses: ./.github/actions/collate-test-results
-        if: always()        
-        with:
-          stage_key: 'integration'
+          stage_key: integration
 
   propertyTests:
     needs: assemble
@@ -324,6 +338,7 @@ jobs:
       src_pattern: "*/src/property-test/java/*"
       src_root: "src/property-test/java"
       runner: "gha-runner-scale-set-ubuntu-22.04-amd64-xl"
+      gradle_args: ${{ (inputs.gradle_log_level == 'info' && '--info') || (inputs.gradle_log_level == 'debug' && '--debug') || '' }}
 
   propertyTestsResult:
     runs-on: ubuntu-24.04
@@ -362,6 +377,7 @@ jobs:
       src_pattern: "*/src/acceptance-test/java/*"
       src_root: "src/acceptance-test/java"
       runner: "ubuntu-latest-128"
+      gradle_args: ${{ (inputs.gradle_log_level == 'info' && '--info') || (inputs.gradle_log_level == 'debug' && '--debug') || '' }}
 
   acceptanceTestsResult:
     runs-on: ubuntu-24.04
@@ -413,7 +429,7 @@ jobs:
           key: reftests-${{ hashFiles('build.gradle') }}
       - shell: bash
         run: |
-          tree ./eth-reference-tests/            
+          ls -R ./eth-reference-tests/
       - name: FetchReferenceTests
         shell: bash
         run: |
@@ -430,14 +446,16 @@ jobs:
         with:
           path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
           key: reftests-${{ hashFiles('build.gradle') }}
+      - name: Compress reftests
+        shell: bash
+        run: |
+          tar -cf reftests.tar ./eth-reference-tests/
       - name: Upload reftests
         uses: actions/upload-artifact@v6
         with:
           name: reftests
-          path: |
-            ./eth-reference-tests/
+          path: reftests.tar
           retention-days: 1
-          include-hidden-files: 'true'
 
   referenceTests:
     needs: referenceTestsPrep
@@ -466,7 +484,7 @@ jobs:
       - uses: actions/cache/restore@v4
         with:
           path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
-          key: reftests-${{ hashFiles('build.gradle') }}          
+          key: reftests-${{ hashFiles('build.gradle') }}
       - name: Download reftests
         uses: actions/download-artifact@v7
         with:
@@ -474,12 +492,11 @@ jobs:
           repository: ${{ github.repository }}
           run-id: ${{ github.run_id }}
           name: reftests
-          merge-multiple: true 
-          path: ./eth-reference-tests
-      - uses: actions/cache/restore@v4
-        with:
-          path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
-          key: reftests-${{ hashFiles('build.gradle') }}
+      - name: Extract reftests
+        shell: bash
+        run: |
+          tar -xf reftests.tar
+          rm reftests.tar
       - name: Compute shard ${{ matrix.shard }} of ${{ matrix.total }} for ReferenceTests
         id: shard
         shell: bash

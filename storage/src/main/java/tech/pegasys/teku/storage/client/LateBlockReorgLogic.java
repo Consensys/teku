@@ -56,6 +56,7 @@ public class LateBlockReorgLogic {
     this.recentChainData = recentChainData;
   }
 
+  // record_block_timeliness
   public void setBlockTimelinessFromArrivalTime(
       final SignedBeaconBlock block, final UInt64 arrivalTimeMillis) {
     if (blockTimeliness.get(block.getRoot()) != null) {

@@ -63,7 +63,6 @@ public class ExecutionPayloadProposalUtil {
                       builderIndex,
                       blockAndState.getRoot(),
                       proposalSlot,
-                      executionPayloadProposalData.kzgCommitments,
                       tmpStateRoot);
             });
     return newExecutionPayload.thenApplyChecked(
