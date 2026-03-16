@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ethereum.executionclient;
 
-import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
 import static tech.pegasys.teku.spec.config.Constants.EL_ENGINE_BLOCK_EXECUTION_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT;
 
@@ -23,11 +22,9 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.module.blackbird.BlackbirdModule;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.net.ConnectException;
 import java.time.Duration;
@@ -42,14 +39,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.HttpUrl;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.ResponseBody;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
@@ -82,42 +71,34 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
-public class OkHttpExecutionEngineClient implements ExecutionEngineClient {
-
-  private static final MediaType JSON_MEDIA_TYPE = MediaType.get("application/json");
+public abstract class OkHttpExecutionEngineClient implements ExecutionEngineClient {
 
   private static final int ERROR_REPEAT_DELAY_MILLIS = 30 * 1000;
   private static final int NO_ERROR_TIME = -1;
   private static final long STARTUP_LAST_ERROR_TIME = 0;
 
-  private static final Duration EXCHANGE_CAPABILITIES_TIMEOUT = Duration.ofSeconds(1);
-  private static final Duration GET_CLIENT_VERSION_TIMEOUT = Duration.ofSeconds(1);
-  private static final Duration GET_BLOBS_TIMEOUT = Duration.ofSeconds(2);
-  private static final Duration GET_PAYLOAD_TIMEOUT = Duration.ofSeconds(2);
+  protected static final Duration EXCHANGE_CAPABILITIES_TIMEOUT = Duration.ofSeconds(1);
+  protected static final Duration GET_CLIENT_VERSION_TIMEOUT = Duration.ofSeconds(1);
+  protected static final Duration GET_BLOBS_TIMEOUT = Duration.ofSeconds(2);
+  protected static final Duration GET_PAYLOAD_TIMEOUT = Duration.ofSeconds(2);
 
   public static final List<String> NON_CRITICAL_METHODS =
       List.of("engine_exchangeCapabilities", "engine_getClientVersionV1", "engine_getBlobsV1");
 
-  private final OkHttpClient httpClient;
-  private final HttpUrl endpointUrl;
-  private final EventLogger eventLog;
-  private final TimeProvider timeProvider;
-  private final ExecutionClientEventsChannel executionClientEventsPublisher;
-  private final Set<String> nonCriticalMethods;
-  private final ObjectMapper objectMapper;
-  private final AtomicLong requestIdCounter = new AtomicLong(0);
+  protected final EventLogger eventLog;
+  protected final TimeProvider timeProvider;
+  protected final ExecutionClientEventsChannel executionClientEventsPublisher;
+  protected final Set<String> nonCriticalMethods;
+  protected final ObjectMapper objectMapper;
+  protected final AtomicLong requestIdCounter = new AtomicLong(0);
 
   private long lastErrorTime = STARTUP_LAST_ERROR_TIME;
 
-  public OkHttpExecutionEngineClient(
-      final OkHttpClient httpClient,
-      final String endpoint,
+  protected OkHttpExecutionEngineClient(
       final EventLogger eventLog,
       final TimeProvider timeProvider,
       final ExecutionClientEventsChannel executionClientEventsPublisher,
       final Collection<String> nonCriticalMethods) {
-    this.httpClient = httpClient;
-    this.endpointUrl = HttpUrl.get(endpoint);
     this.eventLog = eventLog;
     this.timeProvider = timeProvider;
     this.executionClientEventsPublisher = executionClientEventsPublisher;
@@ -372,7 +353,7 @@ public class OkHttpExecutionEngineClient implements ExecutionEngineClient {
             UInt64.valueOf(new BigInteger(block.timestamp.substring(2), 16)));
   }
 
-  private <T> SafeFuture<Response<T>> doRequest(
+  protected <T> SafeFuture<Response<T>> doRequest(
       final String method,
       final List<Object> params,
       final Class<T> resultClass,
@@ -380,92 +361,10 @@ public class OkHttpExecutionEngineClient implements ExecutionEngineClient {
     return doRequest(method, params, objectMapper.constructType(resultClass), timeout);
   }
 
-  private <T> SafeFuture<Response<T>> doRequest(
-      final String method,
-      final List<Object> params,
-      final JavaType resultType,
-      final Duration timeout) {
-    final boolean isCritical = !nonCriticalMethods.contains(method);
+  protected abstract <T> SafeFuture<Response<T>> doRequest(
+      String method, List<Object> params, JavaType resultType, Duration timeout);
 
-    final byte[] requestBodyBytes;
-    try {
-      requestBodyBytes = buildRequestBody(method, params);
-    } catch (final Exception e) {
-      handleError(isCritical, e, false);
-      return SafeFuture.completedFuture(Response.fromErrorMessage(getMessageOrSimpleName(e)));
-    }
-
-    final Request httpRequest =
-        new Request.Builder()
-            .url(endpointUrl)
-            .post(RequestBody.create(requestBodyBytes, JSON_MEDIA_TYPE))
-            .build();
-
-    final SafeFuture<Response<T>> future = new SafeFuture<>();
-    final Call call;
-    if (timeout.toMillis() != httpClient.callTimeoutMillis()) {
-      call = httpClient.newBuilder().callTimeout(timeout).build().newCall(httpRequest);
-    } else {
-      call = httpClient.newCall(httpRequest);
-    }
-
-    call.enqueue(
-        new Callback() {
-          @Override
-          public void onFailure(final Call call, final IOException e) {
-            handleError(isCritical, e, false);
-            future.complete(Response.fromErrorMessage(getMessageOrSimpleName(e)));
-          }
-
-          @Override
-          public void onResponse(final Call call, final okhttp3.Response httpResponse) {
-            try (httpResponse) {
-              final ResponseBody body = httpResponse.body();
-              if (!httpResponse.isSuccessful() || body == null) {
-                final boolean couldBeAuthError =
-                    httpResponse.code() == 401 || httpResponse.code() == 403;
-                final String errorMsg =
-                    body != null
-                        ? body.string()
-                        : (httpResponse.code() + ": " + httpResponse.message());
-                handleError(isCritical, new Exception(errorMsg), couldBeAuthError);
-                future.complete(Response.fromErrorMessage(errorMsg));
-                return;
-              }
-
-              final JsonNode jsonResponse = objectMapper.readTree(body.byteStream());
-              final JsonNode errorNode = jsonResponse.get("error");
-              if (errorNode != null && !errorNode.isNull()) {
-                final int code = errorNode.path("code").asInt();
-                final String msg = errorNode.path("message").asText();
-                final String formattedError =
-                    String.format(
-                        "JSON-RPC error: %s (%d): %s", describeJsonRpcErrorCode(code), code, msg);
-                if (isCritical) {
-                  eventLog.executionClientRequestFailed(new Exception(formattedError), false);
-                }
-                future.complete(Response.fromErrorMessage(formattedError));
-                return;
-              }
-
-              handleSuccess(isCritical);
-              final JsonNode resultNode = jsonResponse.get("result");
-              final T result =
-                  resultNode == null || resultNode.isNull()
-                      ? null
-                      : objectMapper.treeToValue(resultNode, resultType);
-              future.complete(Response.fromPayloadReceivedAsJson(result));
-            } catch (final Exception e) {
-              handleError(isCritical, e, false);
-              future.complete(Response.fromErrorMessage(getMessageOrSimpleName(e)));
-            }
-          }
-        });
-
-    return future;
-  }
-
-  private byte[] buildRequestBody(final String method, final List<Object> params)
+  protected byte[] buildRequestBody(final String method, final List<Object> params)
       throws JsonProcessingException {
     final Map<String, Object> request = new LinkedHashMap<>();
     request.put("jsonrpc", "2.0");
@@ -475,7 +374,7 @@ public class OkHttpExecutionEngineClient implements ExecutionEngineClient {
     return objectMapper.writeValueAsBytes(request);
   }
 
-  private static String describeJsonRpcErrorCode(final int code) {
+  protected static String describeJsonRpcErrorCode(final int code) {
     if (code == -32700) {
       return "Parse error";
     }
@@ -497,7 +396,7 @@ public class OkHttpExecutionEngineClient implements ExecutionEngineClient {
     return "Internal error";
   }
 
-  private synchronized void handleSuccess(final boolean isCritical) {
+  protected synchronized void handleSuccess(final boolean isCritical) {
     if (isCritical) {
       if (lastErrorTime == STARTUP_LAST_ERROR_TIME) {
         eventLog.executionClientIsOnline();
@@ -510,7 +409,7 @@ public class OkHttpExecutionEngineClient implements ExecutionEngineClient {
     }
   }
 
-  private synchronized void handleError(
+  protected synchronized void handleError(
       final boolean isCritical, final Throwable error, final boolean couldBeAuthError) {
     if (isCritical && shouldReportError()) {
       logExecutionClientError(error, couldBeAuthError);
@@ -537,7 +436,7 @@ public class OkHttpExecutionEngineClient implements ExecutionEngineClient {
     }
   }
 
-  private List<Object> list(final Object... items) {
+  protected List<Object> list(final Object... items) {
     final List<Object> list = new ArrayList<>();
     Collections.addAll(list, items);
     return list;
