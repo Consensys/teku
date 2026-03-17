@@ -207,10 +207,12 @@ public class OkHttpWebSocketExecutionEngineClient extends OkHttpExecutionEngineC
       handleDisconnect(new Exception("WebSocket closed: " + code + " " + reason));
     }
 
-    private synchronized void handleDisconnect(final Throwable cause) {
-      connected.set(false);
-      pendingRequests.forEach((id, future) -> future.completeExceptionally(cause));
-      pendingRequests.clear();
+    private void handleDisconnect(final Throwable cause) {
+      synchronized (this) {
+        connected.set(false);
+        pendingRequests.forEach((id, future) -> future.completeExceptionally(cause));
+        pendingRequests.clear();
+      }
     }
   }
 }
