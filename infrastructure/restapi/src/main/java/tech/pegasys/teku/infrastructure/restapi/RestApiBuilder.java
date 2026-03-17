@@ -41,7 +41,9 @@ import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.util.VirtualThreads;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.eclipse.jetty.util.thread.VirtualThreadPool;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.JavalinEndpointAdapter;
@@ -54,6 +56,8 @@ public class RestApiBuilder {
   private int port;
   private String listenAddress = "127.0.0.1";
   private OptionalInt maxUrlLength = OptionalInt.empty();
+  private boolean virtualThreadsEnabled;
+  private OptionalInt virtualThreadsMaxThreads = OptionalInt.empty();
   private List<String> corsAllowedOrigins = emptyList();
   private List<String> hostAllowlist = emptyList();
   private final Map<Class<? extends Exception>, RestApiExceptionHandler<?>> exceptionHandlers =
@@ -90,6 +94,16 @@ public class RestApiBuilder {
 
   public RestApiBuilder maxUrlLength(final int maxUrlLength) {
     this.maxUrlLength = OptionalInt.of(maxUrlLength);
+    return this;
+  }
+
+  public RestApiBuilder virtualThreadsEnabled(final boolean virtualThreadsEnabled) {
+    this.virtualThreadsEnabled = virtualThreadsEnabled;
+    return this;
+  }
+
+  public RestApiBuilder virtualThreadsMaxThreads(final int virtualThreadsMaxThreads) {
+    this.virtualThreadsMaxThreads = OptionalInt.of(virtualThreadsMaxThreads);
     return this;
   }
 
@@ -232,6 +246,21 @@ public class RestApiBuilder {
             }
           }
         });
+    if (virtualThreadsEnabled) {
+      if (!(server.getThreadPool() instanceof VirtualThreads.Configurable configurable)) {
+        throw new IllegalStateException(
+            "Virtual threads enabled but thread pool does not support virtual threads");
+      }
+      final int maxThreads =
+          virtualThreadsMaxThreads.orElseThrow(
+              () -> new IllegalStateException("virtualThreadsMaxThreads must be set"));
+      final VirtualThreadPool virtualThreadPool = new VirtualThreadPool();
+      virtualThreadPool.setMaxConcurrentTasks(maxThreads);
+      configurable.setVirtualThreadsExecutor(virtualThreadPool);
+      LOG.info(
+          "Virtual threads enabled for REST API (max concurrent tasks: {})",
+          virtualThreadPool.getMaxConcurrentTasks());
+    }
   }
 
   private SslContextFactory.Server getSslContextFactory() {
