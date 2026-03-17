@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessa
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.net.ProtocolException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Collection;
@@ -133,7 +134,9 @@ public class OkHttpWebSocketExecutionEngineClient extends OkHttpExecutionEngineC
         .exceptionally(
             throwable -> {
               pendingRequests.remove(requestId);
-              handleError(isCritical, throwable, false);
+              final boolean couldBeAuthError =
+                  throwable.getCause().getClass().isAssignableFrom(ProtocolException.class);
+              handleError(isCritical, throwable, couldBeAuthError);
               return Response.fromErrorMessage(getMessageOrSimpleName(throwable));
             });
   }

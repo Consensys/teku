@@ -411,7 +411,7 @@ public abstract class OkHttpExecutionEngineClient implements ExecutionEngineClie
 
   protected synchronized void handleError(
       final boolean isCritical, final Throwable error, final boolean couldBeAuthError) {
-    if (isCritical && shouldReportError()) {
+    if ((isCritical || couldBeAuthError) && shouldReportError()) {
       logExecutionClientError(error, couldBeAuthError);
       executionClientEventsPublisher.onAvailabilityUpdated(false);
     }
