@@ -62,12 +62,17 @@ public class OkHttpWebSocketExecutionEngineClient extends OkHttpExecutionEngineC
     this.wsRequest = new Request.Builder().url(endpoint).build();
   }
 
-  private synchronized void ensureConnected() {
+  private void ensureConnected() {
     if (connected.get()) {
       return;
     }
-    webSocket = httpClient.newWebSocket(wsRequest, new JsonRpcWebSocketListener());
-    connected.set(true);
+    synchronized (this) {
+      if (connected.get()) {
+        return;
+      }
+      webSocket = httpClient.newWebSocket(wsRequest, new JsonRpcWebSocketListener());
+      connected.set(true);
+    }
   }
 
   @Override
@@ -202,7 +207,7 @@ public class OkHttpWebSocketExecutionEngineClient extends OkHttpExecutionEngineC
       handleDisconnect(new Exception("WebSocket closed: " + code + " " + reason));
     }
 
-    private void handleDisconnect(final Throwable cause) {
+    private synchronized void handleDisconnect(final Throwable cause) {
       connected.set(false);
       pendingRequests.forEach((id, future) -> future.completeExceptionally(cause));
       pendingRequests.clear();
