@@ -1,0 +1,81 @@
+{
+  "post" : {
+    "tags" : [ "Validator", "Validator Required Api" ],
+    "operationId" : "getPtcDuties",
+    "summary" : "Get PTC duties",
+    "description" : "Requests the beacon node to provide a set of Payload Timeliness Committee (PTC) duties, which should be performed by validators, for a particular epoch. Duties should only need to be checked once per epoch, however a chain reorganization could occur, resulting in a change of duties. For full safety, you should monitor head events and confirm the dependent root in this response matches:\n\n - event.previous_duty_dependent_root when compute_epoch_at_slot(event.slot) == epoch\n - event.block otherwise\n\nThe dependent_root value is get_block_root_at_slot(state, compute_start_slot_at_epoch(epoch - 1) - 1) or the genesis block root in the case of underflow.",
+    "parameters" : [ {
+      "name" : "epoch",
+      "required" : true,
+      "in" : "path",
+      "schema" : {
+        "type" : "string",
+        "description" : "`uint64` Epoch number to query.",
+        "example" : "1",
+        "format" : "uint64"
+      }
+    } ],
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "type" : "array",
+            "minItems" : 1,
+            "items" : {
+              "type" : "string",
+              "description" : "integer string",
+              "example" : "1",
+              "format" : "integer"
+            }
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Success response",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetPtcDutiesResponse"
+            }
+          }
+        }
+      },
+      "204" : {
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "content" : { }
+      },
+      "503" : {
+        "description" : "Beacon node is currently syncing and not serving requests.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}
