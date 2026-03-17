@@ -38,7 +38,8 @@ public class BeaconRestApiConfig {
   public static final boolean DEFAULT_BEACON_LIVENESS_TRACKING_ENABLED = false;
   public static final boolean DEFAULT_GETBLOBS_SIDECARS_DOWNLOAD_ENABLED = false;
   public static final Duration DEFAULT_GETBLOBS_SIDECARS_DOWNLOAD_TIMEOUT = Duration.ofSeconds(5);
-  public static final int DEFAULT_REST_API_VIRTUAL_THREADS_MAX = 200;
+  public static final boolean DEFAULT_REST_API_VIRTUAL_THREADS_ENABLED = false;
+  public static final int DEFAULT_REST_API_VIRTUAL_THREADS_MAX_CONCURRENT_TASKS = 200;
   public static final int DEFAULT_TARGET_VALIDATORS_API_THREADS = 10;
 
   // Beacon REST API
@@ -57,7 +58,7 @@ public class BeaconRestApiConfig {
   private final int maxPendingEvents;
   private final Optional<Integer> validatorThreads;
   private final boolean restApiVirtualThreadsEnabled;
-  private final int restApiVirtualThreadsMaxThreads;
+  private final int restApiVirtualThreadsMaxConcurrentTasks;
 
   private BeaconRestApiConfig(
       final int restApiPort,
@@ -75,7 +76,7 @@ public class BeaconRestApiConfig {
       final boolean getBlobsSidecarsDownloadEnabled,
       final Duration getBlobsSidecarsDownloadTimeoutSeconds,
       final boolean restApiVirtualThreadsEnabled,
-      final int restApiVirtualThreadsMaxThreads) {
+      final int restApiVirtualThreadsMaxConcurrentTasks) {
     this.restApiPort = restApiPort;
     this.restApiDocsEnabled = restApiDocsEnabled;
     this.restApiEnabled = restApiEnabled;
@@ -91,7 +92,7 @@ public class BeaconRestApiConfig {
     this.getBlobsSidecarsDownloadEnabled = getBlobsSidecarsDownloadEnabled;
     this.getBlobsSidecarsDownloadTimeoutSeconds = getBlobsSidecarsDownloadTimeoutSeconds;
     this.restApiVirtualThreadsEnabled = restApiVirtualThreadsEnabled;
-    this.restApiVirtualThreadsMaxThreads = restApiVirtualThreadsMaxThreads;
+    this.restApiVirtualThreadsMaxConcurrentTasks = restApiVirtualThreadsMaxConcurrentTasks;
   }
 
   public int getRestApiPort() {
@@ -165,8 +166,8 @@ public class BeaconRestApiConfig {
     return restApiVirtualThreadsEnabled;
   }
 
-  public int getRestApiVirtualThreadsMaxThreads() {
-    return restApiVirtualThreadsMaxThreads;
+  public int getRestApiVirtualThreadsMaxConcurrentTasks() {
+    return restApiVirtualThreadsMaxConcurrentTasks;
   }
 
   public static BeaconRestApiConfigBuilder builder() {
@@ -189,8 +190,9 @@ public class BeaconRestApiConfig {
     private int maxPendingEvents = DEFAULT_MAX_EVENT_QUEUE_SIZE;
     private int maxUrlLength = DEFAULT_MAX_URL_LENGTH;
     private Optional<Integer> validatorThreads = Optional.empty();
-    private boolean restApiVirtualThreadsEnabled = false;
-    private int restApiVirtualThreadsMaxThreads = DEFAULT_REST_API_VIRTUAL_THREADS_MAX;
+    private boolean restApiVirtualThreadsEnabled = DEFAULT_REST_API_VIRTUAL_THREADS_ENABLED;
+    private int restApiVirtualThreadsMaxConcurrentTasks =
+        DEFAULT_REST_API_VIRTUAL_THREADS_MAX_CONCURRENT_TASKS;
     private Eth1Address eth1DepositContractAddress;
 
     private BeaconRestApiConfigBuilder() {}
@@ -310,15 +312,16 @@ public class BeaconRestApiConfig {
       return this;
     }
 
-    public BeaconRestApiConfigBuilder restApiVirtualThreadsMaxThreads(
-        final int restApiVirtualThreadsMaxThreads) {
-      if (restApiVirtualThreadsMaxThreads < 1 || restApiVirtualThreadsMaxThreads > 5_000) {
+    public BeaconRestApiConfigBuilder restApiVirtualThreadsMaxConcurrentTasks(
+        final int restApiVirtualThreadsMaxConcurrentTasks) {
+      if (restApiVirtualThreadsMaxConcurrentTasks < 1
+          || restApiVirtualThreadsMaxConcurrentTasks > 5_000) {
         throw new InvalidConfigurationException(
             String.format(
-                "Invalid restApiVirtualThreadsMaxThreads: %d should be between 1 and 5000",
-                restApiVirtualThreadsMaxThreads));
+                "Invalid restApiVirtualThreadsMaxConcurrentTasks: %d should be between 1 and 5000",
+                restApiVirtualThreadsMaxConcurrentTasks));
       }
-      this.restApiVirtualThreadsMaxThreads = restApiVirtualThreadsMaxThreads;
+      this.restApiVirtualThreadsMaxConcurrentTasks = restApiVirtualThreadsMaxConcurrentTasks;
       return this;
     }
 
@@ -339,7 +342,7 @@ public class BeaconRestApiConfig {
           getBlobsSidecarsDownloadEnabled,
           getBlobsSidecarsDownloadTimeoutSeconds,
           restApiVirtualThreadsEnabled,
-          restApiVirtualThreadsMaxThreads);
+          restApiVirtualThreadsMaxConcurrentTasks);
     }
 
     public BeaconRestApiConfigBuilder maxUrlLength(final int maxUrlLength) {

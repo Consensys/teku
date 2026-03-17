@@ -264,19 +264,19 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
   }
 
   @Test
-  void restApiVirtualThreadsMaxThreads_defaultValue() {
+  void restApiVirtualThreadsMaxConcurrentTasks_defaultValue() {
     TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
     final BeaconRestApiConfig config = getConfig(tekuConfiguration);
-    assertThat(config.getRestApiVirtualThreadsMaxThreads())
-        .isEqualTo(BeaconRestApiConfig.DEFAULT_REST_API_VIRTUAL_THREADS_MAX);
+    assertThat(config.getRestApiVirtualThreadsMaxConcurrentTasks())
+        .isEqualTo(BeaconRestApiConfig.DEFAULT_REST_API_VIRTUAL_THREADS_MAX_CONCURRENT_TASKS);
   }
 
   @Test
-  void restApiVirtualThreadsMaxThreads_canBeOverridden() {
+  void restApiVirtualThreadsMaxConcurrentTasks_canBeOverridden() {
     TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--Xrest-api-virtual-threads-max-threads=64");
+        getTekuConfigurationFromArguments("--Xrest-api-virtual-threads-max-concurrent-tasks=64");
     final BeaconRestApiConfig config = getConfig(tekuConfiguration);
-    assertThat(config.getRestApiVirtualThreadsMaxThreads()).isEqualTo(64);
+    assertThat(config.getRestApiVirtualThreadsMaxConcurrentTasks()).isEqualTo(64);
   }
 
   @Test

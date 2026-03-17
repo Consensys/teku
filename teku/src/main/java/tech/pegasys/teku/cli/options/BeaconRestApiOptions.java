@@ -138,14 +138,15 @@ public class BeaconRestApiOptions {
       fallbackValue = "true",
       arity = "0..1",
       hidden = true)
-  private boolean restApiVirtualThreadsEnabled = false;
+  private boolean restApiVirtualThreadsEnabled =
+      BeaconRestApiConfig.DEFAULT_REST_API_VIRTUAL_THREADS_ENABLED;
 
   @Option(
-      names = {"--Xrest-api-virtual-threads-max-threads"},
+      names = {"--Xrest-api-virtual-threads-max-concurrent-tasks"},
       paramLabel = "<INTEGER>",
       hidden = true)
-  private int restApiVirtualThreadsMaxThreads =
-      BeaconRestApiConfig.DEFAULT_REST_API_VIRTUAL_THREADS_MAX;
+  private int restApiVirtualThreadsMaxConcurrentTasks =
+      BeaconRestApiConfig.DEFAULT_REST_API_VIRTUAL_THREADS_MAX_CONCURRENT_TASKS;
 
   @Option(
       names = {"--rest-api-getblobs-sidecars-download-enabled"},
@@ -194,6 +195,6 @@ public class BeaconRestApiOptions {
                 .maxPendingEvents(maxPendingEvents)
                 .validatorThreads(Optional.ofNullable(validatorThreads))
                 .restApiVirtualThreadsEnabled(restApiVirtualThreadsEnabled)
-                .restApiVirtualThreadsMaxThreads(restApiVirtualThreadsMaxThreads));
+                .restApiVirtualThreadsMaxConcurrentTasks(restApiVirtualThreadsMaxConcurrentTasks));
   }
 }
