@@ -429,7 +429,7 @@ public abstract class OkHttpExecutionEngineClient implements ExecutionEngineClie
   private void logExecutionClientError(final Throwable error, final boolean couldBeAuthError) {
     if (ExceptionUtil.hasCause(error, ConnectException.class)) {
       eventLog.executionClientConnectFailure();
-    } else if (error instanceof TimeoutException) {
+    } else if (ExceptionUtil.hasCause(error, TimeoutException.class)) {
       eventLog.executionClientRequestTimedOut();
     } else {
       eventLog.executionClientRequestFailed(error, couldBeAuthError);
