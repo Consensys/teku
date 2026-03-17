@@ -11,22 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.restapi.endpoints;
+package tech.pegasys.teku.spec.propertytest.suppliers.type;
 
-import io.javalin.http.Context;
-import io.javalin.http.Handler;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class JavalinEndpointAdapter implements Handler {
-
-  private final RestApiEndpoint endpoint;
-
-  public JavalinEndpointAdapter(final RestApiEndpoint endpoint) {
-    this.endpoint = endpoint;
-  }
-
-  @Override
-  public void handle(final Context ctx) throws Exception {
-    final RestApiRequest request = new JavalinRestApiRequest(ctx, endpoint.getMetadata());
-    endpoint.handleRequest(request);
+public class Bytes32Supplier extends DataStructureUtilSupplier<Bytes32> {
+  public Bytes32Supplier() {
+    super(DataStructureUtil::randomBytes32);
   }
 }

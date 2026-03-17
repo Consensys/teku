@@ -172,13 +172,19 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
     return Optional.empty();
   }
 
-  private UInt256 parseUInt256Header(final Response response, final String headerName) {
+  static UInt256 parseUInt256Header(final Response response, final String headerName) {
     final String headerValue = response.header(headerName);
     if (headerValue == null) {
       LOG.warn("Header {} not found in response, defaulting value to ZERO", headerName);
       return UInt256.ZERO;
     }
-    return UInt256.valueOf(new BigInteger(headerValue, 10));
+    try {
+      return UInt256.valueOf(new BigInteger(headerValue, 10));
+    } catch (final IllegalArgumentException e) {
+      LOG.warn(
+          "Invalid value for header {}: '{}', " + "defaulting to ZERO", headerName, headerValue);
+      return UInt256.ZERO;
+    }
   }
 
   private DeserializableTypeDefinition<ProduceBlockResponse> buildDeserializableTypeDefinition(

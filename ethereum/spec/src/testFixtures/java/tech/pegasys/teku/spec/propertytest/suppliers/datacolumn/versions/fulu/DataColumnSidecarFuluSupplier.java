@@ -11,22 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.restapi.endpoints;
+package tech.pegasys.teku.spec.propertytest.suppliers.datacolumn.versions.fulu;
 
-import io.javalin.http.Context;
-import io.javalin.http.Handler;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class JavalinEndpointAdapter implements Handler {
+public class DataColumnSidecarFuluSupplier extends DataStructureUtilSupplier<DataColumnSidecar> {
 
-  private final RestApiEndpoint endpoint;
-
-  public JavalinEndpointAdapter(final RestApiEndpoint endpoint) {
-    this.endpoint = endpoint;
-  }
-
-  @Override
-  public void handle(final Context ctx) throws Exception {
-    final RestApiRequest request = new JavalinRestApiRequest(ctx, endpoint.getMetadata());
-    endpoint.handleRequest(request);
+  public DataColumnSidecarFuluSupplier() {
+    super(DataStructureUtil::randomDataColumnSidecar, SpecMilestone.FULU, SpecMilestone.FULU);
   }
 }
