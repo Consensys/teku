@@ -35,6 +35,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
@@ -140,7 +141,7 @@ public class OkHttpWebSocketExecutionEngineClient extends OkHttpExecutionEngineC
             throwable -> {
               pendingRequests.remove(requestId);
               final boolean couldBeAuthError =
-                  ProtocolException.class.isAssignableFrom(throwable.getCause().getClass());
+                  ExceptionUtil.hasCause(throwable, ProtocolException.class);
               handleError(isCritical, throwable, couldBeAuthError);
               return Response.fromErrorMessage(getMessageOrSimpleName(throwable));
             });
