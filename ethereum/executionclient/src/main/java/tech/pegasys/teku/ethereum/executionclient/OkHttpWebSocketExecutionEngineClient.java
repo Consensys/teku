@@ -140,7 +140,7 @@ public class OkHttpWebSocketExecutionEngineClient extends OkHttpExecutionEngineC
             throwable -> {
               pendingRequests.remove(requestId);
               final boolean couldBeAuthError =
-                  throwable.getCause().getClass().isAssignableFrom(ProtocolException.class);
+                  ProtocolException.class.isAssignableFrom(throwable.getCause().getClass());
               handleError(isCritical, throwable, couldBeAuthError);
               return Response.fromErrorMessage(getMessageOrSimpleName(throwable));
             });
