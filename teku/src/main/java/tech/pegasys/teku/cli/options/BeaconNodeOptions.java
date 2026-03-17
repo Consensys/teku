@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
+import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 
@@ -22,6 +23,7 @@ public class BeaconNodeOptions {
       names = {"--Xevent-channel-virtual-threads-enabled"},
       description = "Use virtual threads for event channel delivery",
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       hidden = true,
       fallbackValue = "true",
       arity = "0..1")
