@@ -282,19 +282,25 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
   @Test
   void restApiVirtualThreadsMaxThreads_shouldRejectZero() {
     assertThatThrownBy(
-        () -> getTekuConfigurationFromArguments("--Xrest-api-virtual-threads-max-threads=0"));
+        () ->
+            getTekuConfigurationFromArguments(
+                "--Xrest-api-virtual-threads-max-concurrent-tasks=0"));
   }
 
   @Test
   void restApiVirtualThreadsMaxThreads_shouldRejectNegative() {
     assertThatThrownBy(
-        () -> getTekuConfigurationFromArguments("--Xrest-api-virtual-threads-max-threads=-1"));
+        () ->
+            getTekuConfigurationFromArguments(
+                "--Xrest-api-virtual-threads-max-concurrent-tasks=-1"));
   }
 
   @Test
   void restApiVirtualThreadsMaxThreads_shouldRejectAboveUpperBound() {
     assertThatThrownBy(
-        () -> getTekuConfigurationFromArguments("--Xrest-api-virtual-threads-max-threads=5001"));
+        () ->
+            getTekuConfigurationFromArguments(
+                "--Xrest-api-virtual-threads-max-concurrent-tasks=5001"));
   }
 
   @Test
