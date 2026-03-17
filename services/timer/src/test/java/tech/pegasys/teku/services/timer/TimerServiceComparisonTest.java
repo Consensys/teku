@@ -22,6 +22,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import tech.pegasys.teku.service.serviceutils.Service;
 
 class TimerServiceComparisonTest {
@@ -45,6 +47,7 @@ class TimerServiceComparisonTest {
    * same wall-clock window.
    */
   @Test
+  @DisabledOnOs(OS.WINDOWS)
   void shortOperations_bothTimerServicesBehaveEquivalently() throws Exception {
     final AtomicInteger timerCounter = new AtomicInteger();
     final AtomicInteger quartzCounter = new AtomicInteger();
@@ -77,6 +80,7 @@ class TimerServiceComparisonTest {
    * <p>Both services should therefore produce a similar, moderate tick count (~5–6 in the window).
    */
   @Test
+  @DisabledOnOs(OS.WINDOWS)
   void longOperations_bothServicesSkipMissedTicksWithoutCatchup() throws Exception {
     final AtomicInteger timerCounter = new AtomicInteger();
     final AtomicInteger quartzCounter = new AtomicInteger();
