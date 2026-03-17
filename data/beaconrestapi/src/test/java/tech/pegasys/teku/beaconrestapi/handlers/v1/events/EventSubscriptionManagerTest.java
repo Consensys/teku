@@ -473,6 +473,7 @@ public class EventSubscriptionManagerTest {
 
     triggerExecutionPayloadBidEvent();
     checkEvent("execution_payload_bid", new ExecutionPayloadBidEvent(sampleExecutionPayloadBid));
+    assertThat(outputStream.getString()).contains("\"version\":\"gloas\"");
   }
 
   @Test
@@ -484,6 +485,7 @@ public class EventSubscriptionManagerTest {
     checkEvent(
         "payload_attestation_message",
         new PayloadAttestationMessageEvent(samplePayloadAttestationMessage));
+    assertThat(outputStream.getString()).contains("\"version\":\"gloas\"");
   }
 
   private void triggerVoluntaryExitEvent() {
