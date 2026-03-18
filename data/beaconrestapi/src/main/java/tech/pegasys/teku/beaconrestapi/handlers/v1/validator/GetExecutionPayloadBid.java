@@ -64,7 +64,6 @@ public class GetExecutionPayloadBid extends RestApiEndpoint {
             .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
             .withNotImplementedResponse()
             .build());
-    this.provider = provider;
   }
 
   private static SerializableTypeDefinition<ExecutionPayloadBid> getResponseType(
