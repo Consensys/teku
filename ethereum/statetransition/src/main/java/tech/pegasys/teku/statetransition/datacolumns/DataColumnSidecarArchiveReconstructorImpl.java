@@ -57,10 +57,7 @@ public class DataColumnSidecarArchiveReconstructorImpl
   private final CombinedChainDataClient chainDataClient;
   private final AsyncRunner reconstructionAsyncRunner;
   private final AtomicInteger nextTaskId = new AtomicInteger(0);
-  // FIXME: I stink!
-  private final Map<
-          Integer, Map<SlotAndBlockRoot, SafeFuture<Map<UInt64, Optional<DataColumnSidecar>>>>>
-      recoveryTasks;
+  private final Map<Integer, Map<SlotAndBlockRoot, SafeFuture<ReconstructionResult>>> recoveryTasks;
   private final SpecConfigFulu specConfigFulu;
   private final int halfColumns;
 
@@ -117,12 +114,11 @@ public class DataColumnSidecarArchiveReconstructorImpl
   @Override
   public SafeFuture<Optional<DataColumnSidecar>> reconstructDataColumnSidecar(
       final SignedBeaconBlock block, final UInt64 index, final int requestId) {
-    final Map<SlotAndBlockRoot, SafeFuture<Map<UInt64, Optional<DataColumnSidecar>>>>
-        slotAndBlockRootSafeFutureMap =
-            recoveryTasks.computeIfAbsent(requestId, __ -> new HashMap<>());
+    final Map<SlotAndBlockRoot, SafeFuture<ReconstructionResult>> slotAndBlockRootSafeFutureMap =
+        recoveryTasks.computeIfAbsent(requestId, __ -> new HashMap<>());
     return slotAndBlockRootSafeFutureMap
         .computeIfAbsent(block.getSlotAndBlockRoot(), __ -> createTask(block))
-        .thenApply(aMap -> aMap.get(index));
+        .thenApply(result -> result.get(index));
   }
 
   @Override
@@ -130,8 +126,7 @@ public class DataColumnSidecarArchiveReconstructorImpl
     return getNextTaskId();
   }
 
-  private SafeFuture<Map<UInt64, Optional<DataColumnSidecar>>> createTask(
-      final SignedBeaconBlock block) {
+  private SafeFuture<ReconstructionResult> createTask(final SignedBeaconBlock block) {
     final DataColumnSidecarUtil dataColumnSidecarUtil =
         spec.getDataColumnSidecarUtil(block.getSlot());
     final BlobSchema blobSchema =
@@ -153,7 +148,7 @@ public class DataColumnSidecarArchiveReconstructorImpl
                     kzgProofs,
                     (sidecars, proofs) -> {
                       if (sidecars.isEmpty() || proofs.isEmpty()) {
-                        return getEmptyResponse();
+                        return emptyResult();
                       }
 
                       final int blobCount = sidecars.getFirst().getColumn().size();
@@ -187,13 +182,15 @@ public class DataColumnSidecarArchiveReconstructorImpl
                                   block.getMessage().getBody()),
                               blobAndCellProofsList);
 
-                      return Stream.iterate(UInt64.valueOf(halfColumns), UInt64::increment)
-                          .limit(halfColumns)
-                          .collect(
-                              Collectors.toMap(
-                                  index -> index,
-                                  index ->
-                                      Optional.of(allDataColumnSidecars.get(index.intValue()))));
+                      return new ReconstructionResult(
+                          Stream.iterate(UInt64.valueOf(halfColumns), UInt64::increment)
+                              .limit(halfColumns)
+                              .collect(
+                                  Collectors.toMap(
+                                      index -> index,
+                                      index ->
+                                          Optional.of(
+                                              allDataColumnSidecars.get(index.intValue())))));
                     }))
         .whenComplete(
             (result, error) -> {
@@ -207,14 +204,15 @@ public class DataColumnSidecarArchiveReconstructorImpl
         .exceptionally(
             ex -> {
               LOG.error(ex.getMessage(), ex);
-              return getEmptyResponse();
+              return emptyResult();
             });
   }
 
-  private Map<UInt64, Optional<DataColumnSidecar>> getEmptyResponse() {
-    return Stream.iterate(UInt64.valueOf(halfColumns), UInt64::increment)
-        .limit(halfColumns)
-        .collect(Collectors.toMap(index -> index, __ -> Optional.empty()));
+  private ReconstructionResult emptyResult() {
+    return new ReconstructionResult(
+        Stream.iterate(UInt64.valueOf(halfColumns), UInt64::increment)
+            .limit(halfColumns)
+            .collect(Collectors.toMap(index -> index, __ -> Optional.empty())));
   }
 
   @Override
@@ -249,7 +247,7 @@ public class DataColumnSidecarArchiveReconstructorImpl
 
   @Override
   public void onRequestCompleted(final int requestId) {
-    final Map<SlotAndBlockRoot, SafeFuture<Map<UInt64, Optional<DataColumnSidecar>>>> removed =
+    final Map<SlotAndBlockRoot, SafeFuture<ReconstructionResult>> removed =
         recoveryTasks.remove(requestId);
     if (removed != null) {
       LOG.debug("Request completed: {}, removing tasks ()", requestId);
@@ -284,5 +282,11 @@ public class DataColumnSidecarArchiveReconstructorImpl
       this.nextTaskId.set(0);
     }
     return nextTaskId;
+  }
+
+  record ReconstructionResult(Map<UInt64, Optional<DataColumnSidecar>> sidecars) {
+    Optional<DataColumnSidecar> get(final UInt64 index) {
+      return Optional.ofNullable(sidecars.get(index)).flatMap(v -> v);
+    }
   }
 }
