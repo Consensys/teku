@@ -25,21 +25,21 @@ import tech.pegasys.teku.infrastructure.collections.LimitedMap;
  * @param <K> Keys type
  * @param <V> Values type
  */
-public class LRUCache<K, V> implements Cache<K, V> {
+public class LegacyLRUCache<K, V> implements Cache<K, V> {
 
-  public static <K, V> LRUCache<K, V> create(final int capacity) {
-    return new LRUCache<>(LimitedMap.createNonSynchronized(capacity));
+  public static <K, V> LegacyLRUCache<K, V> create(final int capacity) {
+    return new LegacyLRUCache<>(LimitedMap.createNonSynchronized(capacity));
   }
 
   private final LimitedMap<K, V> cacheData;
 
-  private LRUCache(final LimitedMap<K, V> cacheData) {
+  private LegacyLRUCache(final LimitedMap<K, V> cacheData) {
     this.cacheData = cacheData;
   }
 
   @Override
   public synchronized Cache<K, V> copy() {
-    return new LRUCache<>(cacheData.copy());
+    return new LegacyLRUCache<>(cacheData.copy());
   }
 
   @Override

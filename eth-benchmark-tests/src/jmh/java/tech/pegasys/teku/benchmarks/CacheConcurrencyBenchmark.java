@@ -31,8 +31,9 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
-import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
-import tech.pegasys.teku.infrastructure.collections.cache.StripedCache;
+import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
+import tech.pegasys.teku.infrastructure.collections.cache.ConcurrentMapCache;
+import tech.pegasys.teku.infrastructure.collections.cache.LegacyLRUCache;
 
 /** Benchmark comparing Striped LRU Cache to a single synchronized LRU cache implementation */
 @State(Scope.Group)
@@ -45,7 +46,7 @@ import tech.pegasys.teku.infrastructure.collections.cache.StripedCache;
     jvmArgs = {"-Xms2G", "-Xmx2G"})
 public class CacheConcurrencyBenchmark {
 
-  @Param({"LRU", "STRIPED"})
+  @Param({"LRU", "CAFFEINE", "CONCURRENT_MAP"})
   public String cacheType;
 
   @Param({"1024"})
@@ -63,10 +64,13 @@ public class CacheConcurrencyBenchmark {
   public void setup() {
     switch (cacheType) {
       case "LRU":
-        cache = LRUCache.create(cacheSize);
+        cache = LegacyLRUCache.create(cacheSize);
         break;
-      case "STRIPED":
-        cache = StripedCache.createUnbounded();
+      case "CAFFEINE":
+        cache = CaffeineCache.create(cacheSize);
+        break;
+      case "CONCURRENT_MAP":
+        cache = new ConcurrentMapCache<>();
         break;
       default:
         throw new IllegalStateException("Unknown cache type: " + cacheType);

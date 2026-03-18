@@ -13,11 +13,27 @@
 
 package tech.pegasys.teku.infrastructure.collections.cache;
 
-/** Concrete test class for LRUCache that inherits all contract tests. */
-public class LRUCacheTest extends CacheContractTest {
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
-  @Override
-  protected <K, V> Cache<K, V> createCache(final int capacity) {
-    return LRUCache.create(capacity);
+public class CacheMaintenanceExecutor {
+
+  private static final Executor INSTANCE =
+      Executors.newSingleThreadExecutor(
+          r -> {
+            final Thread t = new Thread(r, "caffeine-maintenance");
+            t.setDaemon(true);
+            return t;
+          });
+
+  private CacheMaintenanceExecutor() {}
+
+  /**
+   * Returns the shared cache maintenance executor.
+   *
+   * @return the shared cache maintenance executor
+   */
+  public static Executor getInstance() {
+    return INSTANCE;
   }
 }

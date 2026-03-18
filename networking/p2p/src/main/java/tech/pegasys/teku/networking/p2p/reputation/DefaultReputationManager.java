@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
-import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
+import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -52,7 +52,7 @@ public class DefaultReputationManager implements ReputationManager {
       final int capacity,
       final PeerPools peerPools) {
     this.timeProvider = timeProvider;
-    this.peerReputations = LRUCache.create(capacity);
+    this.peerReputations = CaffeineCache.create(capacity);
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.NETWORK,
         "peer_reputation_cache_size",

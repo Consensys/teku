@@ -29,8 +29,9 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
-import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
-import tech.pegasys.teku.infrastructure.collections.cache.StripedCache;
+import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
+import tech.pegasys.teku.infrastructure.collections.cache.ConcurrentMapCache;
+import tech.pegasys.teku.infrastructure.collections.cache.LegacyLRUCache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 
@@ -45,8 +46,15 @@ public class TransitionCachesBenchmark {
       TekuPair.of(UInt64.MAX_VALUE, UInt64.MAX_VALUE);
 
   public enum CacheType {
-    HYBRID(LRUCache::create, StripedCache::createUnbounded),
-    LRU(LRUCache::create);
+    HYBRID(CaffeineCache::create, ConcurrentMapCache::new),
+    LEGACY_LRU(
+        LegacyLRUCache::create,
+        new TransitionCaches.UnboundedCacheFactory() {
+          @Override
+          public <K, V> Cache<K, V> create() {
+            return LegacyLRUCache.create(Integer.MAX_VALUE - 1);
+          }
+        });
 
     private final TransitionCaches.CacheFactory boundedCacheFactory;
     private final TransitionCaches.UnboundedCacheFactory unboundedCacheFactory;
@@ -58,18 +66,6 @@ public class TransitionCachesBenchmark {
       this.unboundedCacheFactory = unboundedCacheFactory;
     }
 
-    CacheType(final TransitionCaches.CacheFactory cacheFactory) {
-      this.boundedCacheFactory = cacheFactory;
-      // Use LRU for unbounded caches too (not ideal for concurrency, but for comparison)
-      this.unboundedCacheFactory =
-          new TransitionCaches.UnboundedCacheFactory() {
-            @Override
-            public <K, V> Cache<K, V> create() {
-              return LRUCache.create(Integer.MAX_VALUE - 1);
-            }
-          };
-    }
-
     public TransitionCaches createCaches() {
       return new TransitionCaches(boundedCacheFactory, unboundedCacheFactory);
     }
@@ -78,7 +74,7 @@ public class TransitionCachesBenchmark {
   @State(Scope.Benchmark)
   public static class BenchmarkState {
 
-    @Param({"HYBRID", "LRU"})
+    @Param({"HYBRID", "LEGACY_LRU"})
     public CacheType cacheType;
 
     @Param({"0", "5"})

@@ -18,14 +18,15 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.beacon.pow.TimeBasedEth1HeadTracker;
+import tech.pegasys.teku.infrastructure.collections.cache.CacheMaintenanceExecutor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -46,15 +47,15 @@ public class StateCacheLoaderTest {
     final BeaconState availableState = dataStructureUtil.randomBeaconState(UInt64.ZERO);
     when(database.getLatestAvailableFinalizedState(any())).thenReturn(Optional.of(availableState));
 
-    final CacheBuilder<UInt64, BeaconState> cacheBuilder =
-        CacheBuilder.newBuilder()
-            .maximumSize(2)
-            .removalListener((k) -> LOG.info(String.format("removed %s", k.getKey())));
     this.cache =
-        cacheBuilder.build(new StateCacheLoader(spec, database, 1, 2, finalizedStateCache));
+        Caffeine.newBuilder()
+            .maximumSize(2)
+            .executor(CacheMaintenanceExecutor.getInstance())
+            .removalListener((key, value, cause) -> LOG.info(String.format("removed %s", key)))
+            .build(new StateCacheLoader(spec, database, 1, 2, finalizedStateCache));
     try (LogCaptor logCaptor = LogCaptor.forClass(TimeBasedEth1HeadTracker.class)) {
       assertThatThrownBy(() -> cache.get(UInt64.valueOf(4)))
-          .hasCauseInstanceOf(FinalizedStateCache.StateUnavailableException.class);
+          .isInstanceOf(FinalizedStateCache.StateUnavailableException.class);
       logCaptor.assertErrorLog(
           "Refusing to regenerate a state that is 4 slots from what we have stored");
     }

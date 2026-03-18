@@ -18,8 +18,8 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
+import tech.pegasys.teku.infrastructure.collections.cache.ConcurrentMapCache;
 import tech.pegasys.teku.infrastructure.collections.cache.NoOpCache;
-import tech.pegasys.teku.infrastructure.collections.cache.StripedCache;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -46,7 +46,7 @@ public class ValidatorIndexCache {
   }
 
   public ValidatorIndexCache() {
-    this(StripedCache.createUnbounded());
+    this(new ConcurrentMapCache<>());
   }
 
   public Optional<Integer> getValidatorIndex(

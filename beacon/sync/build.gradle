@@ -16,6 +16,7 @@ dependencies {
 	implementation project(':storage:api')
 	implementation project(':infrastructure:events')
 
+	implementation 'com.github.ben-manes.caffeine:caffeine'
 	implementation 'io.consensys.tuweni:tuweni-bytes'
 
 	testImplementation testFixtures(project(':ethereum:spec'))

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -17,48 +17,43 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
-/** Concrete test class for StripedCache that inherits all contract tests. */
-public class StripedCacheTest extends CacheContractTest {
+/** Concrete test class for ConcurrentMapCache that inherits all contract tests. */
+public class ConcurrentMapCacheTest extends CacheContractTest {
 
   @Override
   protected <K, V> Cache<K, V> createCache(final int capacity) {
-    // StripedCache is unbounded, so we ignore the capacity parameter
-    return StripedCache.createUnbounded();
+    return new ConcurrentMapCache<>();
   }
 
   @Override
   protected <K, V> Cache<K, V> createUnboundedCache() {
-    return StripedCache.createUnbounded();
+    return new ConcurrentMapCache<>();
   }
 
   @Override
   @Test
   void get_shouldEvictAnItemWhenCapacityIsReached() {
-    // StripedCache is unbounded, so eviction tests don't apply
-    // Skip this test
+    // ConcurrentMapCache is unbounded — verify it grows instead of evicting
+    final Cache<Integer, Integer> cache = createCache(16);
+    for (int i = 0; i <= 16; i++) {
+      cache.get(i, key -> key);
+    }
+    assertThat(cache.size()).isEqualTo(17);
   }
 
   @Override
   @Test
   void copy_shouldPreserveCapacityLimit() {
-    // StripedCache is unbounded, so capacity limit tests don't apply
-    // Skip this test
-  }
-
-  @Test
-  void stripingDistributesKeysAcrossMultipleStripes() {
-    final Cache<Integer, Integer> cache = StripedCache.createUnbounded();
-
-    // Add many keys to ensure they distribute across stripes
-    for (int i = 0; i < 1000; i++) {
+    // ConcurrentMapCache is unbounded — verify copy preserves all entries and grows freely
+    final Cache<Integer, Integer> cache = createCache(16);
+    for (int i = 0; i < 20; i++) {
       cache.get(i, key -> key);
     }
+    final Cache<Integer, Integer> copy = cache.copy();
+    assertThat(copy.size()).isEqualTo(20);
 
-    assertThat(cache.size()).isEqualTo(1000);
-
-    // Verify all keys are retrievable (proves correct stripe distribution)
-    for (int i = 0; i < 1000; i++) {
-      assertThat(cache.getCached(i)).as("Key %d should be in cache", i).contains(i);
-    }
+    copy.get(100, key -> key);
+    assertThat(copy.size()).isEqualTo(21);
+    assertThat(cache.size()).isEqualTo(20);
   }
 }

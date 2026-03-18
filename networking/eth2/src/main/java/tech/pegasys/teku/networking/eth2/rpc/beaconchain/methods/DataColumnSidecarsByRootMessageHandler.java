@@ -24,7 +24,8 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
+import tech.pegasys.teku.infrastructure.collections.cache.Cache;
+import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
@@ -56,8 +57,8 @@ public class DataColumnSidecarsByRootMessageHandler
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
   private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
-  private final LRUCache<Bytes32, UInt64> blockRootSlotCache =
-      LRUCache.create(ROOT_SLOT_CACHE_SIZE);
+  private final Cache<Bytes32, UInt64> blockRootSlotCache =
+      CaffeineCache.create(ROOT_SLOT_CACHE_SIZE);
 
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalDataColumnSidecarsRequestedCounter;
