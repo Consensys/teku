@@ -62,7 +62,7 @@ public class Eth2NetworkConfiguration {
 
   public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = true;
 
-  public static final boolean DEFAULT_QUARTZ_SCHEDULER_ENABLED = false;
+  public static final boolean DEFAULT_QUARTZ_SCHEDULER_ENABLED = true;
 
   public static final boolean DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED = true;
 

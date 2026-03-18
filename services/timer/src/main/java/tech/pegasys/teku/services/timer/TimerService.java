@@ -13,21 +13,29 @@
 
 package tech.pegasys.teku.services.timer;
 
+import com.google.common.base.Throwables;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 
 public class TimerService extends Service {
+  private final TimeProvider timeProvider;
   private static final Logger LOG = LogManager.getLogger();
-  public static final double TIME_TICKER_REFRESH_RATE = 2; // per sec
 
   private final TimeTickHandler timeTickHandler;
-  private final long intervalMs;
+  private final AtomicReference<Future<?>> executorFuture =
+      new AtomicReference<>(SafeFuture.COMPLETE);
+  private final int intervalsPerSecond;
   private final ScheduledExecutorService scheduler =
       Executors.newSingleThreadScheduledExecutor(
           r -> {
@@ -35,30 +43,79 @@ public class TimerService extends Service {
             t.setDaemon(true);
             return t;
           });
-  private ScheduledFuture<?> scheduledTask;
+  private final ExecutorService taskExecutor = Executors.newFixedThreadPool(1);
 
   public TimerService(final TimeTickHandler timeTickHandler) {
-    this(timeTickHandler, (long) ((1.0 / TIME_TICKER_REFRESH_RATE) * 1000));
+    this(timeTickHandler, 2, new SystemTimeProvider());
   }
 
-  TimerService(final TimeTickHandler timeTickHandler, final long intervalMs) {
-    LOG.debug("Initialize TimerService with tick interval: {} ms", intervalMs);
+  TimerService(
+      final TimeTickHandler timeTickHandler,
+      final int intervalsPerSecond,
+      final TimeProvider timeProvider) {
+    LOG.debug("Initialize TimerService with {} ticks per second", intervalsPerSecond);
     this.timeTickHandler = timeTickHandler;
-    this.intervalMs = intervalMs;
+    this.intervalsPerSecond = intervalsPerSecond;
+    this.timeProvider = timeProvider;
   }
 
   @Override
   public SafeFuture<?> doStart() {
-    scheduledTask =
-        scheduler.scheduleWithFixedDelay(
-            timeTickHandler::onTick, 0, intervalMs, TimeUnit.MILLISECONDS);
+    scheduleNextTick();
     return SafeFuture.COMPLETE;
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private void scheduleNextTick() {
+    final UInt64 currentTime = timeProvider.getTimeInMillis();
+    final long millisFromSecondStart = currentTime.mod(1000).longValue();
+    final long nextMillisStart = nextTickDue(millisFromSecondStart, intervalsPerSecond);
+    scheduler.schedule(
+        () -> {
+          scheduleNextTick();
+          if (executorFuture.get().isDone()) {
+            executorFuture.set(taskExecutor.submit(this::safeTick));
+          } else {
+            LOG.debug("Dropped tick at {}", currentTime);
+          }
+        },
+        nextMillisStart,
+        TimeUnit.MILLISECONDS);
+    LOG.trace("Current tick time {}; Scheduled next in {} ms", currentTime, nextMillisStart);
+  }
+
+  static long nextTickDue(final long currentMillisOffset, final int ticksPerSecond) {
+    final long current = currentMillisOffset / (1000 / ticksPerSecond);
+    final long next = (current + 1) % ticksPerSecond;
+    if (next == 0) {
+      return 1000 - currentMillisOffset;
+    }
+    final long millisTarget = (1000 / ticksPerSecond) * next;
+    if (millisTarget > currentMillisOffset) {
+      return millisTarget - currentMillisOffset;
+    }
+    // due to run now
+    return 0;
+  }
+
+  private void safeTick() {
+    try {
+      timeTickHandler.onTick();
+      LOG.trace("Tick completed at {}", timeProvider::getTimeInMillis);
+    } catch (final Throwable t) {
+      final Throwable rootCause = Throwables.getRootCause(t);
+      if (rootCause instanceof InterruptedException) {
+        LOG.trace("Shutting down", rootCause);
+      } else {
+        LOG.error("Unhandled exception in timer tick handler", t);
+      }
+    }
   }
 
   @Override
   public SafeFuture<?> doStop() {
-    scheduledTask.cancel(false);
     scheduler.shutdown();
+    taskExecutor.shutdown();
     return SafeFuture.COMPLETE;
   }
 }
