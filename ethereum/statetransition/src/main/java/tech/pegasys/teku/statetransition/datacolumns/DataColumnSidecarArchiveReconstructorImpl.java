@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -110,12 +109,11 @@ public class DataColumnSidecarArchiveReconstructorImpl
             "Total number of failed data column sidecar archive reconstructions");
   }
 
-  // TODO: refactor, make concurrent safe
   @Override
   public SafeFuture<Optional<DataColumnSidecar>> reconstructDataColumnSidecar(
       final SignedBeaconBlock block, final UInt64 index, final int requestId) {
     final Map<SlotAndBlockRoot, SafeFuture<ReconstructionResult>> slotAndBlockRootSafeFutureMap =
-        recoveryTasks.computeIfAbsent(requestId, __ -> new HashMap<>());
+        recoveryTasks.computeIfAbsent(requestId, __ -> new ConcurrentHashMap<>());
     return slotAndBlockRootSafeFutureMap
         .computeIfAbsent(block.getSlotAndBlockRoot(), __ -> createTask(block))
         .thenApply(result -> result.get(index));
