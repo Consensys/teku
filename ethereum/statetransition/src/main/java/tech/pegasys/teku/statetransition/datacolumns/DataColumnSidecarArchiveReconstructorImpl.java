@@ -263,7 +263,7 @@ public class DataColumnSidecarArchiveReconstructorImpl
     }
     final UInt64 finalizedEpoch = checkpoint.getEpoch();
     final UInt64 currentEpoch = spec.getCurrentEpoch(chainDataClient.getStore());
-    // TODO: cover pruning boundary calculation with a test
+
     final UInt64 pruningBoundaryEpoch =
         finalizedEpoch.min(currentEpoch.minusMinZero(dataColumnSidecarExtensionRetentionEpochs));
     if (pruningBoundaryEpoch.isZero()) {
