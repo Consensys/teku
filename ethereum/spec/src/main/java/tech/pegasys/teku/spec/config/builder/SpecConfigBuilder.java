@@ -238,7 +238,7 @@ public class SpecConfigBuilder {
         && churnLimitQuotient != null) {
       final Integer newMinEpochsForBlockRequests = computeMinEpochsForBlockRequests();
       LOG.debug(
-          "Setting attestationSubnetPrefixBits to {} (was {})",
+          "Setting minEpochsForBlockRequests to {} (was {})",
           newMinEpochsForBlockRequests,
           attestationSubnetPrefixBits);
       minEpochsForBlockRequests = newMinEpochsForBlockRequests;
