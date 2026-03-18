@@ -240,7 +240,7 @@ public class SpecConfigBuilder {
       LOG.debug(
           "Setting minEpochsForBlockRequests to {} (was {})",
           newMinEpochsForBlockRequests,
-          attestationSubnetPrefixBits);
+              minEpochsForBlockRequests);
       minEpochsForBlockRequests = newMinEpochsForBlockRequests;
     }
 
