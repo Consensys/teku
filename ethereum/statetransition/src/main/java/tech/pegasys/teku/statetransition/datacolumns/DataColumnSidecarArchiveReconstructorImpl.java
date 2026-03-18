@@ -44,7 +44,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.SidecarArchivePrunableChannel;
@@ -63,8 +63,6 @@ public class DataColumnSidecarArchiveReconstructorImpl
       recoveryTasks;
   private final SpecConfigFulu specConfigFulu;
   private final int halfColumns;
-  private final MiscHelpersFulu miscHelpersFulu;
-  private final SchemaDefinitionsFulu schemaDefinitionsFulu;
 
   private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
   private final Spec spec;
@@ -93,11 +91,6 @@ public class DataColumnSidecarArchiveReconstructorImpl
     this.specConfigFulu =
         SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
     this.halfColumns = specConfigFulu.getNumberOfColumns() / 2;
-    this.miscHelpersFulu =
-        MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
-    this.schemaDefinitionsFulu =
-        SchemaDefinitionsFulu.required(
-            spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions());
     this.recoveryTasks = new ConcurrentHashMap<>();
     this.sidecarArchivePrunableChannel = sidecarArchivePrunableChannel;
     this.reconstructionTimeSeconds =
@@ -139,7 +132,11 @@ public class DataColumnSidecarArchiveReconstructorImpl
 
   private SafeFuture<Map<UInt64, Optional<DataColumnSidecar>>> createTask(
       final SignedBeaconBlock block) {
-    final BlobSchema blobSchema = schemaDefinitionsFulu.getBlobSchema();
+    final DataColumnSidecarUtil dataColumnSidecarUtil =
+        spec.getDataColumnSidecarUtil(block.getSlot());
+    final BlobSchema blobSchema =
+        SchemaDefinitionsFulu.required(spec.atSlot(block.getSlot()).getSchemaDefinitions())
+            .getBlobSchema();
     final MetricsHistogram.Timer timer = reconstructionTimeSeconds.startTimer();
 
     final List<UInt64> firstHalfOfIndices =
@@ -148,7 +145,6 @@ public class DataColumnSidecarArchiveReconstructorImpl
         chainDataClient.getDataColumnSidecars(block.getSlot(), firstHalfOfIndices);
     final SafeFuture<List<List<KZGProof>>> kzgProofs =
         chainDataClient.getDataColumnSidecarProofs(block.getSlot());
-    // FIXME: Gloas??
 
     return reconstructionAsyncRunner
         .runAsync(
@@ -160,10 +156,9 @@ public class DataColumnSidecarArchiveReconstructorImpl
                         return getEmptyResponse();
                       }
 
+                      final int blobCount = sidecars.getFirst().getColumn().size();
                       final List<BlobAndCellProofs> blobAndCellProofsList = new ArrayList<>();
-                      for (int i = 0;
-                          i < sidecars.getFirst().getMaybeKzgCommitments().orElseThrow().size();
-                          i++) {
+                      for (int i = 0; i < blobCount; i++) {
                         final int blobIndex = i;
                         final Bytes blob =
                             sidecars.stream()
@@ -181,8 +176,16 @@ public class DataColumnSidecarArchiveReconstructorImpl
                             new BlobAndCellProofs(blobSchema.create(blob), blobProofs);
                         blobAndCellProofsList.add(blobAndCellProofs);
                       }
+
                       final List<DataColumnSidecar> allDataColumnSidecars =
-                          miscHelpersFulu.constructDataColumnSidecars(block, blobAndCellProofsList);
+                          dataColumnSidecarUtil.constructDataColumnSidecars(
+                              Optional.of(block.asHeader()),
+                              block.getSlotAndBlockRoot(),
+                              Optional.of(
+                                  dataColumnSidecarUtil.getKzgCommitments(block.getMessage())),
+                              dataColumnSidecarUtil.computeDataColumnKzgCommitmentsInclusionProof(
+                                  block.getMessage().getBody()),
+                              blobAndCellProofsList);
 
                       return Stream.iterate(UInt64.valueOf(halfColumns), UInt64::increment)
                           .limit(halfColumns)
