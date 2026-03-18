@@ -29,7 +29,7 @@ class GetExecutionPayloadBidTest extends AbstractMigratedBeaconHandlerTest {
   @BeforeEach
   void setUp() {
     setSpec(TestSpecFactory.createMinimalGloas());
-    setHandler(new GetExecutionPayloadBid(validatorDataProvider, spec, schemaDefinitionCache));
+    setHandler(new GetExecutionPayloadBid(validatorDataProvider, schemaDefinitionCache));
     request.setPathParameter("slot", "1");
     request.setPathParameter("builder_index", "1");
   }

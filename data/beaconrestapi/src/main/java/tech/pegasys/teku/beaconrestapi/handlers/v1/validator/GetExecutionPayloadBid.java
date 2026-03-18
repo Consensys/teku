@@ -29,7 +29,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
@@ -47,16 +46,12 @@ public class GetExecutionPayloadBid extends RestApiEndpoint {
           "`uint64` Index of the builder from which the execution payload bid is requested.");
 
   public GetExecutionPayloadBid(
-      final DataProvider provider,
-      final Spec spec,
-      final SchemaDefinitionCache schemaDefinitionCache) {
-    this(provider.getValidatorDataProvider(), spec, schemaDefinitionCache);
+      final DataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
+    this(provider.getValidatorDataProvider(), schemaDefinitionCache);
   }
 
   public GetExecutionPayloadBid(
-      final ValidatorDataProvider provider,
-      final Spec spec,
-      final SchemaDefinitionCache schemaDefinitionCache) {
+      final ValidatorDataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getExecutionPayloadBid")
@@ -69,6 +64,7 @@ public class GetExecutionPayloadBid extends RestApiEndpoint {
             .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
             .withNotImplementedResponse()
             .build());
+    this.provider = provider;
   }
 
   private static SerializableTypeDefinition<ExecutionPayloadBid> getResponseType(

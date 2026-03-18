@@ -27,7 +27,7 @@
     } ],
     "responses" : {
       "200" : {
-        "description" : "Request successful",
+        "description" : "Successful response",
         "content" : {
           "application/json" : {
             "schema" : {
@@ -36,8 +36,8 @@
           }
         }
       },
-      "501" : {
-        "description" : "Not implemented",
+      "400" : {
+        "description" : "Invalid request - the slot or builder_index is invalid",
         "content" : {
           "application/json" : {
             "schema" : {
@@ -46,8 +46,18 @@
           }
         }
       },
-      "400" : {
-        "description" : "The request could not be processed, check the response for more information.",
+      "404" : {
+        "description" : "Execution payload bid not available for the requested slot and builder",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "406" : {
+        "description" : "Not acceptable - the Accept header is not supported",
         "content" : {
           "application/json" : {
             "schema" : {
