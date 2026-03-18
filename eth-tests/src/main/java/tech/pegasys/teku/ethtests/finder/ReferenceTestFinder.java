@@ -78,6 +78,9 @@ public class ReferenceTestFinder {
                               "gloas - mainnet - fork_choice/on_execution_payload",
                               "gloas - minimal - fork_choice/on_execution_payload",
                               "gloas - mainnet - fork_choice/on_block - proposer_boost",
+                              "gloas - minimal - fork_choice/on_block",
+                              "gloas - minimal - fork_choice/get_head",
+                              "gloas - minimal - fork_choice/withholding",
                               "gloas - minimal - fork_choice/reorg",
                               // this has been fixed in
                               // https://github.com/ethereum/consensus-specs/pull/5005/changes
