@@ -110,12 +110,7 @@ class BeaconChainControllerTest {
                 .fuluForkEpoch(fuluForkEpoch)
                 .denebBuilder(
                     deneb ->
-                        deneb.minEpochsForBlobSidecarsRequests(
-                            minEpochsForBlobSidecarsRequests))
-                .fuluBuilder(
-                    fulu ->
-                        fulu.minEpochsForDataColumnSidecarsRequests(
-                            minEpochsForBlobSidecarsRequests)));
+                        deneb.minEpochsForBlobSidecarsRequests(minEpochsForBlobSidecarsRequests)));
   }
 
   private BeaconChainController createController(final Spec spec) {

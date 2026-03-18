@@ -2494,22 +2494,17 @@ public class BeaconChainController extends Service implements BeaconChainControl
       return false;
     }
     final UInt64 fuluForkEpoch = spec.getGenesisSpec().getConfig().getFuluForkEpoch();
-    final int minEpochsForDataColumnSidecarsRequests =
-        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
-            .getMinEpochsForDataColumnSidecarsRequests();
     final int minEpochsForBlobSidecarsRequests =
-            SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
-                    .getMinEpochsForBlobSidecarsRequests();
-    final int maxMinRetention = Math.max(minEpochsForDataColumnSidecarsRequests,minEpochsForBlobSidecarsRequests);
+        SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
+            .getMinEpochsForBlobSidecarsRequests();
     return recentChainData
         .getCurrentEpoch()
         .map(
             currentEpoch ->
                 currentEpoch
                     .minusMinZero(fuluForkEpoch)
-                    .isGreaterThan(maxMinRetention))
+                    .isGreaterThan(minEpochsForBlobSidecarsRequests))
         .orElse(false);
-
   }
 
   @Override
