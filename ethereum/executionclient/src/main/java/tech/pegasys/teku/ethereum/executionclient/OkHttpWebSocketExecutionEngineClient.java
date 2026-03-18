@@ -196,6 +196,11 @@ public class OkHttpWebSocketExecutionEngineClient extends OkHttpExecutionEngineC
     }
 
     @Override
+    public void onClosing(final WebSocket ws, final int code, final String reason) {
+      ws.close(code, reason);
+    }
+
+    @Override
     public void onClosed(final WebSocket ws, final int code, final String reason) {
       LOG.debug("WebSocket connection closed: {} {}", code, reason);
       handleDisconnect(new Exception("WebSocket closed: " + code + " " + reason));

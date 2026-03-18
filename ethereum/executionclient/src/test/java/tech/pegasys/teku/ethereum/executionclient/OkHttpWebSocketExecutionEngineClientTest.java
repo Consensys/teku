@@ -241,7 +241,7 @@ class OkHttpWebSocketExecutionEngineClientTest {
     final tech.pegasys.teku.ethereum.executionclient.schema.Response<ExecutionPayloadV1> response2 =
         future2.get(5, TimeUnit.SECONDS);
     assertThat(response2).isNotNull();
-    assertThat(response2.payload()).isNull();
+    assertThat(response2.errorMessage()).isNull();
   }
 
   @Test
