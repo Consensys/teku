@@ -64,7 +64,7 @@ public class OkHttpHttpExecutionEngineClient extends OkHttpExecutionEngineClient
 
     final byte[] requestBodyBytes;
     try {
-      requestBodyBytes = buildRequestBody(method, params);
+      requestBodyBytes = writeRequestAsByteArray(buildRequest(method, params));
     } catch (final Exception e) {
       handleError(isCritical, e, false);
       return SafeFuture.completedFuture(Response.fromErrorMessage(getMessageOrSimpleName(e)));

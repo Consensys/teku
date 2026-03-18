@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -41,9 +42,12 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class OkHttpWebSocketExecutionEngineClientTest {
 
+  private final ObjectMapper objectMapper = new ObjectMapper();
   private final MockWebServer mockWebServer = new MockWebServer();
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInMillis(1000);
   private final EventLogger eventLog = mock(EventLogger.class);
@@ -140,19 +144,32 @@ class OkHttpWebSocketExecutionEngineClientTest {
 
   @Test
   void multipleRequests_matchResponsesById() throws Exception {
+    final DataStructureUtil dataStructureUtil =
+        new DataStructureUtil(TestSpecFactory.createMainnetFulu());
+    final ExecutionPayloadV1 executionPayloadV1resp1 =
+        ExecutionPayloadV1.fromInternalExecutionPayload(dataStructureUtil.randomExecutionPayload());
+    final ExecutionPayloadV1 executionPayloadV1resp2 =
+        ExecutionPayloadV1.fromInternalExecutionPayload(dataStructureUtil.randomExecutionPayload());
+
+    final String jsonResponse1 =
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":"
+            + objectMapper.writeValueAsString(executionPayloadV1resp1)
+            + "}";
+    final String jsonResponse2 =
+        "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":"
+            + objectMapper.writeValueAsString(executionPayloadV1resp2)
+            + "}";
+
     mockWebServer.enqueue(
         new MockResponse()
             .withWebSocketUpgrade(
                 new WebSocketListener() {
                   @Override
-                  public void onMessage(
-                      @NotNull final WebSocket webSocket, @NotNull final String text) {
-                    // Echo back with the same id, delayed for the first request
-                    if (text.contains("\"id\":1")) {
-                      // Respond to id 1 after id 2
-                    } else {
-                      webSocket.send("{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":null}");
-                      webSocket.send("{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":null}");
+                  public void onMessage(final WebSocket webSocket, final String text) {
+                    if (text.contains("\"id\":2")) {
+                      // Respond to id 2 before id 1
+                      webSocket.send(jsonResponse2);
+                      webSocket.send(jsonResponse1);
                     }
                   }
                 }));
@@ -162,13 +179,13 @@ class OkHttpWebSocketExecutionEngineClientTest {
     final SafeFuture<tech.pegasys.teku.ethereum.executionclient.schema.Response<ExecutionPayloadV1>>
         future2 = engineClient.getPayloadV1(Bytes8.fromHexStringLenient("0x2"));
 
-    final tech.pegasys.teku.ethereum.executionclient.schema.Response<ExecutionPayloadV1> response2 =
-        future2.get(5, TimeUnit.SECONDS);
     final tech.pegasys.teku.ethereum.executionclient.schema.Response<ExecutionPayloadV1> response1 =
         future1.get(5, TimeUnit.SECONDS);
+    final tech.pegasys.teku.ethereum.executionclient.schema.Response<ExecutionPayloadV1> response2 =
+        future2.get(5, TimeUnit.SECONDS);
 
-    assertThat(response1).isNotNull();
-    assertThat(response2).isNotNull();
+    assertThat(response1.payload()).isEqualTo(executionPayloadV1resp1);
+    assertThat(response2.payload()).isEqualTo(executionPayloadV1resp2);
   }
 
   @Test

@@ -32,9 +32,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
@@ -56,6 +54,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV5Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV6Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.JsonRpcRequest;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
@@ -364,14 +363,18 @@ public abstract class OkHttpExecutionEngineClient implements ExecutionEngineClie
   protected abstract <T> SafeFuture<Response<T>> doRequest(
       String method, List<Object> params, JavaType resultType, Duration timeout);
 
-  protected byte[] buildRequestBody(final String method, final List<Object> params)
+  protected JsonRpcRequest buildRequest(final String method, final List<Object> params) {
+    return new JsonRpcRequest(method, params, requestIdCounter.incrementAndGet());
+  }
+
+  protected byte[] writeRequestAsByteArray(final JsonRpcRequest request)
       throws JsonProcessingException {
-    final Map<String, Object> request = new LinkedHashMap<>();
-    request.put("jsonrpc", "2.0");
-    request.put("method", method);
-    request.put("params", params);
-    request.put("id", requestIdCounter.incrementAndGet());
     return objectMapper.writeValueAsBytes(request);
+  }
+
+  protected String writeRequestAsString(final JsonRpcRequest request)
+      throws JsonProcessingException {
+    return objectMapper.writeValueAsString(request);
   }
 
   protected static String describeJsonRpcErrorCode(final int code) {

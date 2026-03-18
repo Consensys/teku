@@ -33,6 +33,7 @@ import okio.ByteString;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
+import tech.pegasys.teku.ethereum.executionclient.schema.JsonRpcRequest;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
@@ -84,9 +85,12 @@ public class OkHttpWebSocketExecutionEngineClient extends OkHttpExecutionEngineC
       final Duration timeout) {
     final boolean isCritical = !nonCriticalMethods.contains(method);
 
-    final byte[] requestBodyBytes;
+    final JsonRpcRequest request = buildRequest(method, params);
+    final long requestId = request.id();
+
+    final String requestBody;
     try {
-      requestBodyBytes = buildRequestBody(method, params);
+      requestBody = writeRequestAsString(request);
     } catch (final Exception e) {
       handleError(isCritical, e, false);
       return SafeFuture.completedFuture(Response.fromErrorMessage(getMessageOrSimpleName(e)));
@@ -98,12 +102,10 @@ public class OkHttpWebSocketExecutionEngineClient extends OkHttpExecutionEngineC
       handleError(isCritical, e, false);
       return SafeFuture.completedFuture(Response.fromErrorMessage(getMessageOrSimpleName(e)));
     }
-
-    final long requestId = extractRequestId(requestBodyBytes);
     final SafeFuture<JsonNode> jsonFuture = new SafeFuture<>();
     pendingRequests.put(requestId, jsonFuture);
 
-    final boolean sent = webSocket.send(new String(requestBodyBytes, StandardCharsets.UTF_8));
+    final boolean sent = webSocket.send(requestBody);
     if (!sent) {
       pendingRequests.remove(requestId);
       final String errorMsg = "Failed to send WebSocket message";
@@ -153,15 +155,6 @@ public class OkHttpWebSocketExecutionEngineClient extends OkHttpExecutionEngineC
     final String formattedError =
         String.format("JSON-RPC error: %s (%d): %s", describeJsonRpcErrorCode(code), code, msg);
     return formattedError;
-  }
-
-  private long extractRequestId(final byte[] requestBodyBytes) {
-    try {
-      final JsonNode node = objectMapper.readTree(requestBodyBytes);
-      return node.get("id").asLong();
-    } catch (final Exception e) {
-      throw new IllegalStateException("Failed to extract request id from JSON-RPC request", e);
-    }
   }
 
   private class JsonRpcWebSocketListener extends WebSocketListener {
