@@ -693,7 +693,7 @@ public class Spec {
     return atSlot(slot).getForkChoiceUtil().getContributionDueMillis();
   }
 
-  public int getPayloadAttestationDueMillis(final UInt64 slot) {
+  public Optional<Integer> getPayloadAttestationDueMillis(final UInt64 slot) {
     return atSlot(slot).getForkChoiceUtil().getPayloadAttestationDueMillis();
   }
 

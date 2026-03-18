@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.ethereum.json.types;
 
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
+
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes48;
@@ -35,6 +39,11 @@ public class SharedApiTypes {
           .description(
               "The validator's BLS public key, uniquely identifying them. _48-bytes, hex encoded with 0x prefix, case insensitive._")
           .build();
+
+  public static final DeserializableTypeDefinition<List<Integer>> BODY_INTEGER_LIST =
+      DeserializableTypeDefinition.listOf(INTEGER_TYPE, Optional.of(1), Optional.empty());
+  public static final DeserializableTypeDefinition<List<String>> BODY_STRING_LIST =
+      DeserializableTypeDefinition.listOf(STRING_TYPE);
 
   public static <T extends SszData, S extends SszSchema<T>>
       DeserializableTypeDefinition<T> withDataWrapper(final S schema) {

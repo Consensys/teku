@@ -17,6 +17,7 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.RestApiBuilderAddon;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetExecutionPayloadEnvelope;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetExecutionPayloadBid;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostPublishExecutionPayloadBid;
 import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -45,5 +46,6 @@ public class GloasRestApiBuilderAddon implements RestApiBuilderAddon {
     return builder
         .endpoint(new GetExecutionPayloadEnvelope(dataProvider, schemaCache))
         .endpoint(new GetExecutionPayloadBid(dataProvider, schemaCache));
+        .endpoint(new PostPublishExecutionPayloadBid(dataProvider, schemaCache));
   }
 }

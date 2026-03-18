@@ -146,6 +146,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
             "Created leveldb1 Hot database ({}) at {}",
             dbVersion.getValue(),
             dbDirectory.getAbsolutePath());
+        warnLevelDbDeprecation();
         LOG.info(
             "Created leveldb1 Finalized database ({}) at {}",
             dbVersion.getValue(),
@@ -153,6 +154,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       }
       case LEVELDB2 -> {
         database = createLevelDbV2Database();
+        warnLevelDbDeprecation();
         LOG.info(
             "Created leveldb2 Hot and Finalized database ({}) at {}",
             dbVersion.getValue(),
@@ -160,6 +162,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       }
       case LEVELDB_TREE -> {
         database = createLevelDbTreeDatabase();
+        warnLevelDbDeprecation();
         LOG.info(
             "Created leveldb_tree Hot and Finalized database ({}) at {}",
             dbVersion.getValue(),
@@ -170,6 +173,11 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     initDatabaseVersionMetrics(metricsSystem, dbVersion, stateStorageMode);
 
     return database;
+  }
+
+  private void warnLevelDbDeprecation() {
+    LOG.warn(
+        "NOTE: Leveldb support has been deprecated and may be removed in a future release. Please refer to https://docs.teku.consensys.io/how-to/migrate-database to migrate.");
   }
 
   public StateStorageMode getStateStorageMode() {

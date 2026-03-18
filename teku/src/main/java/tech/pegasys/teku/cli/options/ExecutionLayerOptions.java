@@ -146,6 +146,16 @@ public class ExecutionLayerOptions {
   private boolean exchangeCapabilitiesMonitoringEnabled =
       DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED;
 
+  @Option(
+      names = {"--Xnew-engine-api-client-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enables the new Engine API client.",
+      arity = "0..1",
+      showDefaultValue = Visibility.ALWAYS,
+      fallbackValue = "true",
+      hidden = true)
+  private boolean useNewEngineApiClient = false;
+
   public void configure(final Builder builder) {
     builder.executionLayer(
         b ->
@@ -161,7 +171,8 @@ public class ExecutionLayerOptions {
                 .builderBidCompareFactor(builderBidCompareFactor)
                 .builderSetUserAgentHeader(builderSetUserAgentHeader)
                 .useShouldOverrideBuilderFlag(useShouldOverrideBuilderFlag)
-                .exchangeCapabilitiesMonitoringEnabled(exchangeCapabilitiesMonitoringEnabled));
+                .exchangeCapabilitiesMonitoringEnabled(exchangeCapabilitiesMonitoringEnabled)
+                .useNewEngineApiClient(useNewEngineApiClient));
     depositOptions.configure(builder);
   }
 }

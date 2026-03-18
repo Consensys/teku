@@ -1,50 +1,50 @@
 dependencies {
-  implementation project(':beacon:pow')
-  implementation project(':ethereum:spec')
-  implementation project(':ethereum:statetransition')
-  implementation project(':infrastructure:async')
-  implementation project(':infrastructure:bytes')
-  implementation project(':infrastructure:collections')
-  implementation project(':infrastructure:crypto')
-  implementation project(':infrastructure:exceptions')
-  implementation project(':infrastructure:io')
-  implementation project(':infrastructure:logging')
-  implementation project(':infrastructure:metrics')
-  implementation project(':infrastructure:subscribers')
-  implementation project(':infrastructure:time')
-  implementation project(':infrastructure:version')
-  implementation project(':infrastructure:serviceutils')
-  implementation project(':storage')
-  implementation project(':infrastructure:ssz')
+	implementation project(':beacon:pow')
+	implementation project(':ethereum:spec')
+	implementation project(':ethereum:statetransition')
+	implementation project(':infrastructure:async')
+	implementation project(':infrastructure:bytes')
+	implementation project(':infrastructure:collections')
+	implementation project(':infrastructure:crypto')
+	implementation project(':infrastructure:exceptions')
+	implementation project(':infrastructure:io')
+	implementation project(':infrastructure:logging')
+	implementation project(':infrastructure:metrics')
+	implementation project(':infrastructure:subscribers')
+	implementation project(':infrastructure:time')
+	implementation project(':infrastructure:version')
+	implementation project(':infrastructure:serviceutils')
+	implementation project(':storage')
+	implementation project(':infrastructure:ssz')
 
-  implementation 'io.libp2p:jvm-libp2p'
-  implementation 'io.netty:netty-handler'
-  implementation 'io.consensys.tuweni:tuweni-units'
-  implementation 'io.consensys.tuweni:tuweni-crypto'
-  implementation 'tech.pegasys.discovery:discovery'
+	implementation 'io.libp2p:jvm-libp2p'
+	implementation 'io.netty:netty-handler'
+	implementation 'io.consensys.tuweni:tuweni-units'
+	implementation 'io.consensys.tuweni:tuweni-crypto'
+	implementation 'tech.pegasys.discovery:discovery'
 
-  testImplementation testFixtures(project(':ethereum:statetransition'))
-  testImplementation testFixtures(project(':ethereum:spec'))
-  testImplementation testFixtures(project(':infrastructure:metrics'))
-  testImplementation testFixtures(project(':infrastructure:async'))
-  testImplementation testFixtures(project(':infrastructure:time'))
+	testImplementation testFixtures(project(':ethereum:statetransition'))
+	testImplementation testFixtures(project(':ethereum:spec'))
+	testImplementation testFixtures(project(':infrastructure:metrics'))
+	testImplementation testFixtures(project(':infrastructure:async'))
+	testImplementation testFixtures(project(':infrastructure:time'))
 
-  testImplementation 'org.hyperledger.besu.internal:besu-metrics-core'
+	testImplementation 'org.hyperledger.besu.internal:besu-metrics-core'
 
-  testFixturesApi 'io.consensys.tuweni:tuweni-bytes'
+	testFixturesApi 'io.consensys.tuweni:tuweni-bytes'
 
-  testFixturesCompileOnly 'org.jetbrains.kotlin:kotlin-stdlib'
+	testFixturesCompileOnly 'org.jetbrains.kotlin:kotlin-stdlib'
 
-  testFixturesImplementation testFixtures(project(':ethereum:spec'))
-  testFixturesImplementation project(':ethereum:networks')
-  testFixturesImplementation project(':storage')
-  testFixturesImplementation testFixtures(project(':infrastructure:async'))
-  testFixturesImplementation testFixtures(project(':infrastructure:crypto'))
-  testFixturesImplementation testFixtures(project(':infrastructure:time'))
-  testFixturesImplementation project(':infrastructure:subscribers')
+	testFixturesImplementation testFixtures(project(':ethereum:spec'))
+	testFixturesImplementation project(':ethereum:networks')
+	testFixturesImplementation project(':storage')
+	testFixturesImplementation testFixtures(project(':infrastructure:async'))
+	testFixturesImplementation testFixtures(project(':infrastructure:crypto'))
+	testFixturesImplementation testFixtures(project(':infrastructure:time'))
+	testFixturesImplementation project(':infrastructure:subscribers')
 
-  testFixturesImplementation 'org.hyperledger.besu:besu-plugin-api'
-  testFixturesImplementation 'org.hyperledger.besu.internal:besu-metrics-core'
-  testFixturesImplementation 'io.libp2p:jvm-libp2p'
-  testFixturesImplementation 'org.apache.logging.log4j:log4j-core'
+	testFixturesImplementation 'org.hyperledger.besu:besu-plugin-api'
+	testFixturesImplementation 'org.hyperledger.besu.internal:besu-metrics-core'
+	testFixturesImplementation 'io.libp2p:jvm-libp2p'
+	testFixturesImplementation 'org.apache.logging.log4j:log4j-core'
 }
