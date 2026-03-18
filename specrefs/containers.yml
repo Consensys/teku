@@ -1148,6 +1148,18 @@
         state_summary_root: Root
     </spec>
 
+- name: InclusionList#heze
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/heze/InclusionList.java
+  spec: |
+    <spec container="InclusionList" fork="heze" hash="7c3fadd5">
+    class InclusionList(Container):
+        slot: Slot
+        validator_index: ValidatorIndex
+        inclusion_list_committee_root: Root
+        transactions: List[Transaction, MAX_TRANSACTIONS_PER_PAYLOAD]
+    </spec>
+
 - name: IndexedAttestation#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/IndexedAttestation.java
@@ -1513,6 +1525,16 @@
     <spec container="SignedExecutionPayloadEnvelope" fork="gloas" hash="ab8f3404">
     class SignedExecutionPayloadEnvelope(Container):
         message: ExecutionPayloadEnvelope
+        signature: BLSSignature
+    </spec>
+
+- name: SignedInclusionList#heze
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/heze/SignedInclusionList.java
+  spec: |
+    <spec container="SignedInclusionList" fork="heze" hash="d1f6abde">
+    class SignedInclusionList(Container):
+        message: InclusionList
         signature: BLSSignature
     </spec>
 
