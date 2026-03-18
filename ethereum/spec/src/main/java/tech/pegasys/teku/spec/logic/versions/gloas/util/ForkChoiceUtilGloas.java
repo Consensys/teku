@@ -29,7 +29,6 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.PayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
@@ -104,20 +103,6 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
   public Optional<Integer> getPayloadAttestationDueMillis() {
     final SpecConfigGloas configGloas = SpecConfigGloas.required(specConfig);
     return Optional.of(getSlotComponentDurationMillis(configGloas.getPayloadAttestationDueBps()));
-  }
-
-  // Checking of blob data availability is delayed until the processing of the execution payload
-  @Override
-  public AvailabilityChecker<?> createAvailabilityChecker(final SignedBeaconBlock block) {
-    return AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR;
-  }
-
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/10311 add a real data availability check
-  // (not required for devnet-0)
-  @Override
-  public AvailabilityChecker<?> createAvailabilityChecker(
-      final SignedExecutionPayloadEnvelope executionPayload) {
-    return AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR;
   }
 
   @Override

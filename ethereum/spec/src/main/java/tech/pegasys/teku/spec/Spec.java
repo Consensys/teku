@@ -127,6 +127,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
@@ -186,6 +187,9 @@ public class Spec {
             specVersion -> {
               // inject ForkChoiceUtil dependencies
               switch (specVersion.getForkChoiceUtil()) {
+                case ForkChoiceUtilGloas forkChoiceUtilGloas ->
+                    forkChoiceUtilGloas.setDataColumnSidecarAvailabilityCheckerFactory(
+                        dataColumnSidecarAvailabilityCheckerFactory);
                 case ForkChoiceUtilFulu forkChoiceUtilFulu ->
                     forkChoiceUtilFulu.setDataColumnSidecarAvailabilityCheckerFactory(
                         dataColumnSidecarAvailabilityCheckerFactory);
