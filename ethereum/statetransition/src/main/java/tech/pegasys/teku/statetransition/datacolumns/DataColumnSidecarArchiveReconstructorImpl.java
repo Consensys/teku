@@ -127,9 +127,6 @@ public class DataColumnSidecarArchiveReconstructorImpl
   private SafeFuture<ReconstructionResult> createTask(final SignedBeaconBlock block) {
     final DataColumnSidecarUtil dataColumnSidecarUtil =
         spec.getDataColumnSidecarUtil(block.getSlot());
-    final BlobSchema blobSchema =
-        SchemaDefinitionsFulu.required(spec.atSlot(block.getSlot()).getSchemaDefinitions())
-            .getBlobSchema();
     final MetricsHistogram.Timer timer = reconstructionTimeSeconds.startTimer();
 
     final List<UInt64> firstHalfOfIndices =
@@ -149,26 +146,8 @@ public class DataColumnSidecarArchiveReconstructorImpl
                         return emptyResult();
                       }
 
-                      final int blobCount = sidecars.getFirst().getColumn().size();
-                      final List<BlobAndCellProofs> blobAndCellProofsList = new ArrayList<>();
-                      for (int i = 0; i < blobCount; i++) {
-                        final int blobIndex = i;
-                        final Bytes blob =
-                            sidecars.stream()
-                                .map(sidecar -> sidecar.getColumn().get(blobIndex).getBytes())
-                                .reduce(Bytes.EMPTY, Bytes::concatenate);
-                        final List<KZGProof> blobProofs = new ArrayList<>();
-                        for (int j = 0; j < halfColumns; j++) {
-                          blobProofs.add(
-                              sidecars.get(j).getKzgProofs().get(blobIndex).getKZGProof());
-                        }
-                        for (int j = 0; j < halfColumns; j++) {
-                          blobProofs.add(proofs.get(j).get(blobIndex));
-                        }
-                        final BlobAndCellProofs blobAndCellProofs =
-                            new BlobAndCellProofs(blobSchema.create(blob), blobProofs);
-                        blobAndCellProofsList.add(blobAndCellProofs);
-                      }
+                      final List<BlobAndCellProofs> blobAndCellProofsList =
+                          constructBlobAndCellProofsList(sidecars, proofs);
 
                       final List<DataColumnSidecar> allDataColumnSidecars =
                           dataColumnSidecarUtil.constructDataColumnSidecars(
@@ -204,6 +183,36 @@ public class DataColumnSidecarArchiveReconstructorImpl
               LOG.error(ex.getMessage(), ex);
               return emptyResult();
             });
+  }
+
+  private List<BlobAndCellProofs> constructBlobAndCellProofsList(
+      final List<DataColumnSidecar> sidecars, final List<List<KZGProof>> proofs) {
+    final DataColumnSidecar firstSidecar = sidecars.getFirst();
+    final int blobCount = firstSidecar.getColumn().size();
+    final List<BlobAndCellProofs> blobAndCellProofsList = new ArrayList<>();
+    for (int i = 0; i < blobCount; i++) {
+      final int blobIndex = i;
+      final Bytes blob =
+          sidecars.stream()
+              .map(sidecar -> sidecar.getColumn().get(blobIndex).getBytes())
+              .reduce(Bytes.EMPTY, Bytes::concatenate);
+      final List<KZGProof> blobProofs = new ArrayList<>();
+      for (int j = 0; j < halfColumns; j++) {
+        blobProofs.add(sidecars.get(j).getKzgProofs().get(blobIndex).getKZGProof());
+      }
+      for (int j = 0; j < halfColumns; j++) {
+        blobProofs.add(proofs.get(j).get(blobIndex));
+      }
+
+      final BlobSchema blobSchema =
+          SchemaDefinitionsFulu.required(spec.atSlot(firstSidecar.getSlot()).getSchemaDefinitions())
+              .getBlobSchema();
+      final BlobAndCellProofs blobAndCellProofs =
+          new BlobAndCellProofs(blobSchema.create(blob), blobProofs);
+      blobAndCellProofsList.add(blobAndCellProofs);
+    }
+
+    return blobAndCellProofsList;
   }
 
   private ReconstructionResult emptyResult() {
