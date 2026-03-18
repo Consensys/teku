@@ -66,6 +66,8 @@ public class SpecConfigData {
     configAttributes.put("DOMAIN_PTC_ATTESTER", getDomainPtcAttester().toHexString());
     configAttributes.put(
         "DOMAIN_PROPOSER_PREFERENCES", getDomainProposerPreferences().toHexString());
+    configAttributes.put(
+        "DOMAIN_INCLUSION_LIST_COMMITTEE", getDomainInclusionListCommittee().toHexString());
 
     getDomainSyncCommittee()
         .ifPresent(
@@ -143,6 +145,10 @@ public class SpecConfigData {
 
   public Bytes4 getDomainProposerPreferences() {
     return Domain.PROPOSER_PREFERENCES;
+  }
+
+  public Bytes4 getDomainInclusionListCommittee() {
+    return Domain.INCLUSION_LIST_COMMITTEE;
   }
 
   private Optional<Bytes4> getDomainSyncCommittee() {
