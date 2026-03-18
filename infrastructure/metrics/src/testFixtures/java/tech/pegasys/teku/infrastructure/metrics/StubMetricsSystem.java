@@ -147,6 +147,8 @@ public class StubMetricsSystem implements MetricsSystem {
     return Set.of();
   }
 
+  // This should be replaced by CaffeineCache when the besu dependency is updated
+  // see https://github.com/besu-eth/besu/pull/9909
   @Override
   public void createGuavaCacheCollector(
       final MetricCategory category, final String name, final Cache<?, ?> cache) {}

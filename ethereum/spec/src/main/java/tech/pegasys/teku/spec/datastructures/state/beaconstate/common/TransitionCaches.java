@@ -24,9 +24,8 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
-import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
+import tech.pegasys.teku.infrastructure.collections.cache.ConcurrentMapCache;
 import tech.pegasys.teku.infrastructure.collections.cache.NoOpCache;
-import tech.pegasys.teku.infrastructure.collections.cache.StripedCache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ProgressiveTotalBalancesUpdates;
@@ -71,26 +70,26 @@ public class TransitionCaches {
 
   /**
    * Creates new instance with clean caches. Uses: - CaffeineCache for beaconCommittee (high
-   * contention, hot path) - LRUCache for other bounded caches (lightweight, copied frequently) -
-   * StripedCache for unbounded validator caches (16x less lock contention)
+   * contention, hot path) - LegacyLRUCache for other bounded caches (lightweight, copied
+   * frequently) - StripedCache for unbounded validator caches (16x less lock contention)
    */
   public static TransitionCaches createNewEmpty() {
     return new TransitionCaches(
-        LRUCache.create(MAX_ACTIVE_VALIDATORS_CACHE),
-        LRUCache.create(MAX_BEACON_PROPOSER_INDEX_CACHE),
+        CaffeineCache.create(MAX_ACTIVE_VALIDATORS_CACHE),
+        CaffeineCache.create(MAX_BEACON_PROPOSER_INDEX_CACHE),
         CaffeineCache.create(MAX_BEACON_COMMITTEE_CACHE),
-        LRUCache.create(MAX_BEACON_COMMITTEES_SIZE_CACHE),
-        LRUCache.create(MAX_BEACON_COMMITTEE_CACHE),
-        LRUCache.create(MAX_TOTAL_ACTIVE_BALANCE_CACHE),
-        StripedCache.createUnbounded(),
-        new ValidatorIndexCache(StripedCache.createUnbounded()),
-        LRUCache.create(MAX_COMMITTEE_SHUFFLE_CACHE),
-        LRUCache.create(MAX_EFFECTIVE_BALANCE_CACHE),
-        LRUCache.create(MAX_SYNC_COMMITTEE_CACHE),
-        LRUCache.create(MAX_BASE_REWARD_PER_INCREMENT_CACHE),
+        CaffeineCache.create(MAX_BEACON_COMMITTEES_SIZE_CACHE),
+        CaffeineCache.create(MAX_BEACON_COMMITTEE_CACHE),
+        CaffeineCache.create(MAX_TOTAL_ACTIVE_BALANCE_CACHE),
+        new ConcurrentMapCache<>(),
+        new ValidatorIndexCache(new ConcurrentMapCache<>()),
+        CaffeineCache.create(MAX_COMMITTEE_SHUFFLE_CACHE),
+        CaffeineCache.create(MAX_EFFECTIVE_BALANCE_CACHE),
+        CaffeineCache.create(MAX_SYNC_COMMITTEE_CACHE),
+        CaffeineCache.create(MAX_BASE_REWARD_PER_INCREMENT_CACHE),
         ProgressiveTotalBalancesUpdates.NOOP,
-        StripedCache.createUnbounded(),
-        StripedCache.createUnbounded());
+        new ConcurrentMapCache<>(),
+        new ConcurrentMapCache<>());
   }
 
   /** Returns the instance which doesn't cache anything */
@@ -306,7 +305,7 @@ public class TransitionCaches {
         syncCommitteeCache.copy(),
         baseRewardPerIncrement.copy(),
         progressiveTotalBalances.copy(),
-        buildersPubKeys.copy(),
-        builderIndexCache.copy());
+        buildersPubKeys,
+        builderIndexCache);
   }
 }

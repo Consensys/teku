@@ -15,8 +15,8 @@ package tech.pegasys.teku.beacon.sync.historical;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.cache.CacheBuilder;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
@@ -30,6 +30,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.collections.cache.CacheMaintenanceExecutor;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -105,10 +106,11 @@ public class HistoricalBlockSyncService extends Service {
 
     this.badPeerCache =
         Collections.newSetFromMap(
-            CacheBuilder.newBuilder()
+            Caffeine.newBuilder()
                 .maximumSize(100)
                 .expireAfterWrite(Duration.ofMinutes(5))
-                .removalListener(__ -> logBadPeerCacheSize(false))
+                .executor(CacheMaintenanceExecutor.getInstance())
+                .removalListener((key, value, cause) -> logBadPeerCacheSize(false))
                 .<NodeId, Boolean>build()
                 .asMap());
 

@@ -43,7 +43,10 @@ public final class CaffeineCache<K, V> implements Cache<K, V> {
    * @return A new instance of CaffeineCache.
    */
   public static <K, V> CaffeineCache<K, V> create(final int capacity) {
-    final Caffeine<Object, Object> builder = Caffeine.newBuilder().maximumSize(capacity);
+    final Caffeine<Object, Object> builder =
+        Caffeine.newBuilder()
+            .maximumSize(capacity)
+            .executor(CacheMaintenanceExecutor.getInstance());
     return buildCache(builder);
   }
 

@@ -35,7 +35,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
-import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
+import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -316,7 +316,7 @@ public class SimpleSidecarRetriever
   static class ConnectedPeer {
     private final UInt256 nodeId;
     private final Supplier<Optional<UInt64>> maybeEarliestAvailableSlot;
-    private final Cache<CacheKey, Set<UInt64>> custodyIndicesCache = LRUCache.create(2);
+    private final Cache<CacheKey, Set<UInt64>> custodyIndicesCache = CaffeineCache.create(2);
     private final MiscHelpersFulu miscHelpersFulu;
     private final Spec spec;
     private final Supplier<Integer> custodyCountSupplier;
