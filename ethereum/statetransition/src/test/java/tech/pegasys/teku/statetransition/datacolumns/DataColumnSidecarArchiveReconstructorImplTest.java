@@ -54,18 +54,18 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
     milestone = {SpecMilestone.FULU, SpecMilestone.GLOAS})
 public class DataColumnSidecarArchiveReconstructorImplTest {
 
-  protected Spec spec;
-  protected DataStructureUtil dataStructureUtil;
-  protected final StubMetricsSystem metricsSystem = new StubMetricsSystem();
-  protected final StubTimeProvider timeProvider = StubTimeProvider.withTimeInMillis(ZERO);
-  protected final SyncAsyncRunner asyncRunner = SyncAsyncRunner.SYNC_RUNNER;
-  protected final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
-  protected final SidecarArchivePrunableChannel sidecarArchivePrunableChannel =
+  private Spec spec;
+  private DataStructureUtil dataStructureUtil;
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInMillis(ZERO);
+  private final SyncAsyncRunner asyncRunner = SyncAsyncRunner.SYNC_RUNNER;
+  private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
+  private final SidecarArchivePrunableChannel sidecarArchivePrunableChannel =
       mock(SidecarArchivePrunableChannel.class);
-  protected final UpdatableStore store = mock(UpdatableStore.class);
+  private final UpdatableStore store = mock(UpdatableStore.class);
 
-  protected int halfColumns;
-  protected DataColumnSidecarArchiveReconstructorImpl reconstructor;
+  private int halfColumns;
+  private DataColumnSidecarArchiveReconstructorImpl reconstructor;
 
   @BeforeEach
   public void setup(final SpecContext specContext) {
@@ -83,10 +83,7 @@ public class DataColumnSidecarArchiveReconstructorImplTest {
         new DataColumnSidecarArchiveReconstructorImpl(
             chainDataClient,
             asyncRunner,
-            () ->
-                DasCustodyStand.createCustodyGroupCountManager(
-                    specConfigFulu.getNumberOfCustodyGroups(),
-                    specConfigFulu.getNumberOfCustodyGroups()),
+            () -> true,
             spec,
             0,
             sidecarArchivePrunableChannel,
@@ -223,17 +220,12 @@ public class DataColumnSidecarArchiveReconstructorImplTest {
 
   @TestTemplate
   public void shouldPruneWithRespectToRetentionEpochs() {
-    final SpecConfigFulu specConfigFulu =
-        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
     final int retentionEpochs = 4;
     reconstructor =
         new DataColumnSidecarArchiveReconstructorImpl(
             chainDataClient,
             asyncRunner,
-            () ->
-                DasCustodyStand.createCustodyGroupCountManager(
-                    specConfigFulu.getNumberOfCustodyGroups(),
-                    specConfigFulu.getNumberOfCustodyGroups()),
+            () -> true,
             spec,
             retentionEpochs,
             sidecarArchivePrunableChannel,

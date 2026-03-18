@@ -1955,7 +1955,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new DataColumnSidecarArchiveReconstructorImpl(
               throttlingCombinedChainDataClient.orElse(combinedChainDataClient),
               asyncRunnerFactory.create("data_column_sidecar_archive_reconstruction", 2),
-              () -> custodyGroupCountManager,
+              isSuperNodeSupplier,
               spec,
               beaconConfig.eth2NetworkConfig().getDataColumnSidecarExtensionRetentionEpochs(),
               eventChannels.getPublisher(SidecarArchivePrunableChannel.class),

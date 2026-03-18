@@ -60,7 +60,7 @@ public class DataColumnSidecarArchiveReconstructorImpl
   private final SpecConfigFulu specConfigFulu;
   private final int halfColumns;
 
-  private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
+  private final Supplier<Boolean> isSuperNodeSupplier;
   private final Spec spec;
   private final UInt64 dataColumnSidecarExtensionRetentionEpochs;
   private final SidecarArchivePrunableChannel sidecarArchivePrunableChannel;
@@ -72,7 +72,7 @@ public class DataColumnSidecarArchiveReconstructorImpl
   public DataColumnSidecarArchiveReconstructorImpl(
       final CombinedChainDataClient chainDataClient,
       final AsyncRunner reconstructionAsyncRunner,
-      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
+      final Supplier<Boolean> isSuperNodeSupplier,
       final Spec spec,
       final int dataColumnSidecarExtensionRetentionEpochs,
       final SidecarArchivePrunableChannel sidecarArchivePrunableChannel,
@@ -80,7 +80,7 @@ public class DataColumnSidecarArchiveReconstructorImpl
       final TimeProvider timeProvider) {
     this.chainDataClient = chainDataClient;
     this.reconstructionAsyncRunner = reconstructionAsyncRunner;
-    this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
+    this.isSuperNodeSupplier = isSuperNodeSupplier;
     this.spec = spec;
     this.dataColumnSidecarExtensionRetentionEpochs =
         UInt64.valueOf(dataColumnSidecarExtensionRetentionEpochs);
@@ -224,10 +224,7 @@ public class DataColumnSidecarArchiveReconstructorImpl
 
   @Override
   public boolean isSidecarPruned(final UInt64 slot, final UInt64 index) {
-    final boolean isSupernode =
-        specConfigFulu.getNumberOfColumns()
-            == custodyGroupCountManagerSupplier.get().getCustodyGroupCount();
-    if (!isSupernode) {
+    if (!isSuperNodeSupplier.get()) {
       return false;
     }
 
@@ -264,10 +261,7 @@ public class DataColumnSidecarArchiveReconstructorImpl
   @Override
   public void onNewFinalizedCheckpoint(
       final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
-    final boolean isSupernode =
-        specConfigFulu.getNumberOfColumns()
-            == custodyGroupCountManagerSupplier.get().getCustodyGroupCount();
-    if (!isSupernode) {
+    if (!isSuperNodeSupplier.get()) {
       return;
     }
     final UInt64 finalizedEpoch = checkpoint.getEpoch();
