@@ -7,16 +7,12 @@
 ## Unreleased Changes
 
 ### Breaking Changes
- - Removed development cli arg `--Xp2p-reworked-sidecar-recovery-enabled`.
 
 ### Additions and Improvements
 
-- New data columns sidecar backfiller enabled. It improves how the beacon node downloads past blobs related data it needs to custody.
-- New CLI flag `--rest-api-getblobs-sidecars-download-enabled` allows the beacon node to serve `getBlobs` REST API responses by attempting to fetch missing blob sidecars from the p2p network. The new flag `--rest-api-getblobs-sidecars-download-timeout` controls the network fetch timeout (default: 5 seconds). 
-- New CLI flag `--force-clear-db` to remove the beacon database on startup.
-
+- Implemented PostPtcDuties rest api endpoint (gloas api).
+- Added `/eth/v2/node/version` endpoint to retrieve structured version information for both beacon node and execution client.
+- Added deprecation warning on startup for any leveldb database types.
+- Increased default timeout of Engine API Get Payload requests to 2 seconds.
 
 ### Bug Fixes
-
-- Added `DOMAIN_BLS_TO_EXECUTION_CHANGE` to spec api output.
-

@@ -685,6 +685,12 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withColumnsDataAvailabilityHalfCheckDisabled() {
+    LOG.debug("Xcolumns-data-availability-half-check-enabled: {}", false);
+    configMap.put("Xcolumns-data-availability-half-check-enabled", false);
+    return this;
+  }
+
   public TekuNodeConfigBuilder withGetBlobsSidecarsDownloadApiEnabled() {
     LOG.debug("--rest-api-getblobs-sidecars-download-enabled: {}", true);
     configMap.put("rest-api-getblobs-sidecars-download-enabled", true);

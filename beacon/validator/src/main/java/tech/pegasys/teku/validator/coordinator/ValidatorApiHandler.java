@@ -101,6 +101,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
+import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -146,7 +147,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private final ChainDataProvider chainDataProvider;
   private final NodeDataProvider nodeDataProvider;
   private final NetworkDataProvider networkDataProvider;
-  private final CombinedChainDataClient combinedChainDataClient;
+  protected final CombinedChainDataClient combinedChainDataClient;
   private final SyncStateProvider syncStateProvider;
   private final BlockFactory blockFactory;
   private final AggregatingAttestationPool attestationPool;
@@ -155,8 +156,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private final ActiveValidatorTracker activeValidatorTracker;
   private final DutyMetrics dutyMetrics;
   private final PerformanceTracker performanceTracker;
-  private final Spec spec;
-  private final ForkChoiceTrigger forkChoiceTrigger;
+  protected final Spec spec;
+  protected final ForkChoiceTrigger forkChoiceTrigger;
   private final SyncCommitteeMessagePool syncCommitteeMessagePool;
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
@@ -312,7 +313,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   }
 
   @Override
-  public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
+  public SafeFuture<Optional<ProposerDuties>> getProposerDuties(
+      final UInt64 epoch, final boolean isFuluCompatible) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
@@ -328,7 +330,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     }
 
     final UInt64 stateSlot =
-        spec.atEpoch(epoch).getBlockProposalUtil().getStateSlotForProposerDuties(spec, epoch);
+        spec.atEpoch(epoch)
+            .getBlockProposalUtil()
+            .getStateSlotForProposerDuties(spec, currentEpoch, epoch);
     LOG.debug(
         "Retrieving proposer duties for epoch {}, current epoch {}, state query slot {}",
         epoch,
@@ -336,7 +340,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
         stateSlot);
     return combinedChainDataClient
         .getStateAtSlotExact(stateSlot)
-        .thenApply(maybeState -> maybeState.map(state -> getProposerDutiesFromState(state, epoch)));
+        .thenApply(
+            maybeState ->
+                maybeState.map(
+                    state -> getProposerDutiesFromState(state, epoch, isFuluCompatible)));
   }
 
   @Override
@@ -445,23 +452,26 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private BlockProductionPreparationContext prepareBlockProductionInternal(final UInt64 slot) {
     return blockProductionPreparationContextBySlotCache.computeIfAbsent(
         slot,
-        keySlot -> {
-          LOG.info("Preparing block production for slot {}", keySlot);
+        __ -> {
+          LOG.info("Preparing block production for slot {}", slot);
           final BlockProductionPerformance productionPerformance =
-              blockProductionAndPublishingPerformanceFactory.createForProduction(keySlot);
+              blockProductionAndPublishingPerformanceFactory.createForProduction(slot);
           final SafeFuture<Optional<BeaconState>> state =
               forkChoiceTrigger
-                  .prepareForBlockProduction(keySlot, productionPerformance)
-                  .thenCompose(
-                      ignored ->
-                          combinedChainDataClient.getStateForBlockProduction(
-                              keySlot,
-                              forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled(),
-                              productionPerformance::lateBlockReorgPreparationCompleted))
-                  .thenPeek(__ -> productionPerformance.getState());
+                  .prepareForBlockProduction(slot, productionPerformance)
+                  .thenCompose(___ -> getStateForBlockProduction(slot, productionPerformance))
+                  .thenPeek(___ -> productionPerformance.getState());
 
           return new BlockProductionPreparationContext(state, productionPerformance);
         });
+  }
+
+  protected SafeFuture<Optional<BeaconState>> getStateForBlockProduction(
+      final UInt64 slot, final BlockProductionPerformance productionPerformance) {
+    return combinedChainDataClient.getStateForBlockProduction(
+        slot,
+        forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled(),
+        productionPerformance::lateBlockReorgPreparationCompleted);
   }
 
   private SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlockInternal(
@@ -594,11 +604,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                                                     block,
                                                     checkpointState.getState(),
                                                     slot,
-                                                    committeeIndex)));
+                                                    computeCommitteeIndexForAttestation(
+                                                        slot, block, committeeIndex))));
                               } else {
                                 final AttestationData attestationData =
                                     createAttestationData(
-                                        block, blockAndState.getState(), slot, committeeIndex);
+                                        block,
+                                        blockAndState.getState(),
+                                        slot,
+                                        computeCommitteeIndexForAttestation(
+                                            slot, block, committeeIndex));
                                 return SafeFuture.completedFuture(Optional.of(attestationData));
                               }
                             }));
@@ -606,22 +621,26 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     return result;
   }
 
+  protected int computeCommitteeIndexForAttestation(
+      final UInt64 slot, final BeaconBlock block, final int committeeIndex) {
+    return committeeIndex;
+  }
+
   private AttestationData createAttestationData(
       final BeaconBlock block,
       final BeaconState state,
       final UInt64 slot,
       final int committeeIndex) {
-    final UInt64 epoch = spec.computeEpochAtSlot(slot);
-    final int committeeCount = spec.getCommitteeCountPerSlot(state, epoch).intValue();
-
-    if (committeeIndex < 0 || committeeIndex >= committeeCount) {
-      throw new IllegalArgumentException(
-          "Invalid committee index "
-              + committeeIndex
-              + " - expected between 0 and "
-              + (committeeCount - 1));
-    }
     final UInt64 committeeIndexUnsigned = UInt64.valueOf(committeeIndex);
+    // attestation validation
+    spec.atSlot(slot)
+        .getAttestationUtil()
+        .validateCommitteeIndexValue(committeeIndexUnsigned)
+        .getReason()
+        .ifPresent(
+            reason -> {
+              throw new IllegalArgumentException(reason);
+            });
     return spec.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);
   }
 
@@ -950,7 +969,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
   }
 
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9997 (not required for devnet-0)
   @Override
   public SafeFuture<Optional<ExecutionPayloadBid>> createUnsignedExecutionPayloadBid(
       final UInt64 slot, final UInt64 builderIndex) {
@@ -1023,7 +1041,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     return !syncStateProvider.getCurrentSyncState().isInSync();
   }
 
-  private ProposerDuties getProposerDutiesFromState(final BeaconState state, final UInt64 epoch) {
+  private ProposerDuties getProposerDutiesFromState(
+      final BeaconState state, final UInt64 epoch, final boolean isFuluCompatible) {
     final List<ProposerDuty> result = getProposalSlotsForEpoch(state, epoch);
     if (spec.atEpoch(epoch).getMilestone().isLessThan(SpecMilestone.FULU)) {
       return new ProposerDuties(
@@ -1031,10 +1050,27 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
           result,
           combinedChainDataClient.isChainHeadOptimistic());
     }
+    final UInt64 currentEpoch = spec.getCurrentEpoch(state);
+    final boolean greaterThanCurrentEpoch = epoch.isGreaterThan(currentEpoch);
+    final BlockProposalUtil blockProposalUtil;
+    if (isFuluCompatible) {
+      blockProposalUtil = spec.atEpoch(epoch).getBlockProposalUtil();
+    } else {
+      blockProposalUtil = spec.forMilestone(SpecMilestone.PHASE0).getBlockProposalUtil();
+    }
     final Bytes32 dependentRoot =
-        epoch.isGreaterThanOrEqualTo(spec.getCurrentEpoch(state))
-            ? spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state)
-            : spec.atEpoch(epoch).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
+        blockProposalUtil.getBlockProposalDependentRoot(
+            combinedChainDataClient.getBestBlockRoot().orElseThrow(),
+            spec.atEpoch(epoch).getBeaconStateUtil().getPreviousDutyDependentRoot(state),
+            spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state),
+            spec.computeEpochAtSlot(state.getSlot()),
+            epoch);
+    LOG.trace(
+        "state epoch {}, duties epoch {}, greaterThanCurrentEpoch {}, dependentRoot {}",
+        currentEpoch,
+        epoch,
+        greaterThanCurrentEpoch,
+        dependentRoot);
     return new ProposerDuties(
         dependentRoot, result, combinedChainDataClient.isChainHeadOptimistic());
   }

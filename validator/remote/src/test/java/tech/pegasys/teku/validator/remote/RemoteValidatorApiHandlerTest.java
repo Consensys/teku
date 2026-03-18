@@ -182,7 +182,7 @@ class RemoteValidatorApiHandlerTest {
     when(typeDefClient.getGenesis())
         .thenReturn(Optional.of(new GenesisData(genesisTime, dataStructureUtil.randomBytes32())));
 
-    SafeFuture<Optional<GenesisData>> future = apiHandler.getGenesisData();
+    final SafeFuture<Optional<GenesisData>> future = apiHandler.getGenesisData();
 
     assertThat(unwrapToValue(future).getGenesisTime()).isEqualTo(genesisTime);
   }
@@ -191,7 +191,7 @@ class RemoteValidatorApiHandlerTest {
   public void getGenesisTime_WhenNotPresent_ReturnsEmpty() {
     when(typeDefClient.getGenesis()).thenReturn(Optional.empty());
 
-    SafeFuture<Optional<GenesisData>> future = apiHandler.getGenesisData();
+    final SafeFuture<Optional<GenesisData>> future = apiHandler.getGenesisData();
 
     assertThat(unwrapToOptional(future)).isNotPresent();
   }
@@ -341,7 +341,7 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   public void getAttestationDuties_WithEmptyPublicKeys_ReturnsEmpty() {
-    SafeFuture<Optional<AttesterDuties>> future =
+    final SafeFuture<Optional<AttesterDuties>> future =
         apiHandler.getAttestationDuties(ONE, IntList.of());
 
     assertThat(unwrapToOptional(future)).isEmpty();
@@ -355,7 +355,7 @@ class RemoteValidatorApiHandlerTest {
                 new AttesterDuties(
                     false, dataStructureUtil.randomBytes32(), Collections.emptyList())));
 
-    SafeFuture<Optional<AttesterDuties>> future =
+    final SafeFuture<Optional<AttesterDuties>> future =
         apiHandler.getAttestationDuties(ONE, IntList.of(1234));
 
     assertThat(unwrapToValue(future).getDuties()).isEmpty();
@@ -385,17 +385,17 @@ class RemoteValidatorApiHandlerTest {
                 new AttesterDuties(
                     false, dataStructureUtil.randomBytes32(), List.of(expectedValidatorDuties))));
 
-    SafeFuture<Optional<AttesterDuties>> future =
+    final SafeFuture<Optional<AttesterDuties>> future =
         apiHandler.getAttestationDuties(ONE, IntList.of(validatorIndex));
 
-    AttesterDuties validatorDuties = unwrapToValue(future);
+    final AttesterDuties validatorDuties = unwrapToValue(future);
 
     assertThat(validatorDuties.getDuties().get(0)).isEqualTo(expectedValidatorDuties);
   }
 
   @Test
   public void getProposerDuties_WithEmptyPublicKeys_ReturnsEmpty() {
-    SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(ONE);
+    final SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(ONE, false);
 
     assertThat(unwrapToOptional(future)).isEmpty();
   }
@@ -408,7 +408,7 @@ class RemoteValidatorApiHandlerTest {
                 new ProposerDuties(
                     Bytes32.fromHexString("0x1234"), Collections.emptyList(), false)));
 
-    SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(ONE);
+    final SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(ONE, false);
 
     assertThat(unwrapToValue(future).getDuties()).isEmpty();
   }
@@ -426,9 +426,9 @@ class RemoteValidatorApiHandlerTest {
 
     when(typeDefClient.getProposerDuties(ONE)).thenReturn(Optional.of(response));
 
-    SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(ONE);
+    final SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(ONE, false);
 
-    ProposerDuties validatorDuties = unwrapToValue(future);
+    final ProposerDuties validatorDuties = unwrapToValue(future);
 
     assertThat(validatorDuties.getDuties().get(0)).isEqualTo(expectedValidatorDuties);
     assertThat(validatorDuties.getDependentRoot()).isEqualTo(response.getDependentRoot());
@@ -443,7 +443,7 @@ class RemoteValidatorApiHandlerTest {
             .build();
     when(typeDefClient.getPeerCount()).thenReturn(Optional.of(response));
     final SafeFuture<Optional<PeerCount>> peerCountFuture = apiHandler.getPeerCount();
-    PeerCount peerCount = unwrapToValue(readinessAsyncRunner, peerCountFuture);
+    final PeerCount peerCount = unwrapToValue(readinessAsyncRunner, peerCountFuture);
     assertThat(peerCount).isEqualTo(response);
   }
 
@@ -451,7 +451,7 @@ class RemoteValidatorApiHandlerTest {
   public void createAttestationData_WhenNone_ReturnsEmpty() {
     when(typeDefClient.createAttestationData(any(), anyInt())).thenReturn(Optional.empty());
 
-    SafeFuture<Optional<AttestationData>> future = apiHandler.createAttestationData(ONE, 0);
+    final SafeFuture<Optional<AttestationData>> future = apiHandler.createAttestationData(ONE, 0);
 
     assertThat(unwrapToOptional(future)).isEmpty();
   }
@@ -463,7 +463,7 @@ class RemoteValidatorApiHandlerTest {
     when(typeDefClient.createAttestationData(ONE, 0))
         .thenReturn(Optional.of(attestation.getData()));
 
-    SafeFuture<Optional<AttestationData>> future = apiHandler.createAttestationData(ONE, 0);
+    final SafeFuture<Optional<AttestationData>> future = apiHandler.createAttestationData(ONE, 0);
 
     assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(attestation.getData());
   }
@@ -472,7 +472,7 @@ class RemoteValidatorApiHandlerTest {
   public void createUnsignedBlock_WhenNoneFound_ReturnsEmpty() {
     final BLSSignature blsSignature = dataStructureUtil.randomSignature();
 
-    SafeFuture<Optional<BlockContainerAndMetaData>> future =
+    final SafeFuture<Optional<BlockContainerAndMetaData>> future =
         apiHandler.createUnsignedBlock(
             ONE, blsSignature, Optional.of(Bytes32.random()), Optional.empty());
 
@@ -493,7 +493,7 @@ class RemoteValidatorApiHandlerTest {
             eq(Optional.empty())))
         .thenReturn(Optional.of(blockContainerAndMetaData));
 
-    SafeFuture<Optional<BlockContainerAndMetaData>> future =
+    final SafeFuture<Optional<BlockContainerAndMetaData>> future =
         apiHandler.createUnsignedBlock(ONE, blsSignature, graffiti, Optional.empty());
 
     final BlockContainerAndMetaData resultValue = unwrapToValue(future);
@@ -518,7 +518,7 @@ class RemoteValidatorApiHandlerTest {
             eq(Optional.of(ONE))))
         .thenReturn(Optional.of(blockContainerAndMetaData));
 
-    SafeFuture<Optional<BlockContainerAndMetaData>> future =
+    final SafeFuture<Optional<BlockContainerAndMetaData>> future =
         apiHandler.createUnsignedBlock(ONE, blsSignature, graffiti, Optional.of(ONE));
 
     final BlockContainerAndMetaData resultValue = unwrapToValue(future);
@@ -543,7 +543,7 @@ class RemoteValidatorApiHandlerTest {
             eq(Optional.empty())))
         .thenReturn(Optional.of(blockContentsAndMetaData));
 
-    SafeFuture<Optional<BlockContainerAndMetaData>> future =
+    final SafeFuture<Optional<BlockContainerAndMetaData>> future =
         apiHandler.createUnsignedBlock(ONE, blsSignature, graffiti, Optional.empty());
 
     final BlockContainerAndMetaData resultValue = unwrapToValue(future);
@@ -562,7 +562,7 @@ class RemoteValidatorApiHandlerTest {
 
     when(typeDefClient.sendSignedBlock(any(), any())).thenReturn(expectedResult);
 
-    ArgumentCaptor<SignedBeaconBlock> argumentCaptor =
+    final ArgumentCaptor<SignedBeaconBlock> argumentCaptor =
         ArgumentCaptor.forClass(SignedBeaconBlock.class);
 
     final SafeFuture<SendSignedBlockResult> result =
@@ -584,7 +584,7 @@ class RemoteValidatorApiHandlerTest {
         .when(typeDefClient)
         .createAggregate(slot, attHashTreeRoot, Optional.empty());
 
-    SafeFuture<Optional<Attestation>> future =
+    final SafeFuture<Optional<Attestation>> future =
         apiHandler.createAggregate(slot, attHashTreeRoot, Optional.of(ONE));
 
     assertThat(unwrapToOptional(future)).isEmpty();
@@ -603,7 +603,7 @@ class RemoteValidatorApiHandlerTest {
         .when(typeDefClient)
         .createAggregate(slot, attHashTreeRoot, Optional.of(ONE));
 
-    SafeFuture<Optional<Attestation>> future =
+    final SafeFuture<Optional<Attestation>> future =
         apiHandler.createAggregate(slot, attHashTreeRoot, Optional.of(ONE));
 
     assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(attestation);
@@ -706,9 +706,9 @@ class RemoteValidatorApiHandlerTest {
 
     final UInt64 epoch = dataStructureUtil.randomEpoch();
 
-    List<UInt64> validatorIndices = List.of(firstIndex, secondIndex, thirdIndex);
+    final List<UInt64> validatorIndices = List.of(firstIndex, secondIndex, thirdIndex);
 
-    List<ValidatorLivenessAtEpoch> validatorLivenesses =
+    final List<ValidatorLivenessAtEpoch> validatorLivenesses =
         List.of(
             new ValidatorLivenessAtEpoch(firstIndex, false),
             new ValidatorLivenessAtEpoch(secondIndex, true),
@@ -722,7 +722,7 @@ class RemoteValidatorApiHandlerTest {
 
     assertThat(result).isCompleted();
     assertThat(result.get()).isPresent();
-    List<ValidatorLivenessAtEpoch> validatorLivenessAtEpochesResult = result.get().get();
+    final List<ValidatorLivenessAtEpoch> validatorLivenessAtEpochesResult = result.get().get();
     assertThat(validatorIsLive(validatorLivenessAtEpochesResult, firstIndex)).isFalse();
     assertThat(validatorIsLive(validatorLivenessAtEpochesResult, secondIndex)).isTrue();
     assertThat(validatorIsLive(validatorLivenessAtEpochesResult, thirdIndex)).isTrue();

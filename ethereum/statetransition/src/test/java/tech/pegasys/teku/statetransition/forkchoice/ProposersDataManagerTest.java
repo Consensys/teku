@@ -74,6 +74,7 @@ class ProposersDataManagerTest {
               case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(currentForkEpoch);
               case FULU -> TestSpecFactory.createMinimalWithFuluForkEpoch(currentForkEpoch);
               case GLOAS -> TestSpecFactory.createMinimalWithGloasForkEpoch(currentForkEpoch);
+              case HEZE -> TestSpecFactory.createMinimalWithHezeForkEpoch(currentForkEpoch);
             });
     dataStructureUtil = specContext.getDataStructureUtil();
     defaultAddress = dataStructureUtil.randomEth1Address();

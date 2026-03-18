@@ -100,7 +100,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
@@ -120,7 +120,6 @@ public class Eth2P2PNetworkBuilder {
   protected P2PConfig config;
   protected EventChannels eventChannels;
   protected CombinedChainDataClient combinedChainDataClient;
-  protected Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier;
   protected Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
   protected MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
   protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
@@ -158,6 +157,8 @@ public class Eth2P2PNetworkBuilder {
   protected DebugDataDumper debugDataDumper;
   private DasGossipLogger dasGossipLogger;
   private DasReqRespLogger dasReqRespLogger;
+  private Supplier<Boolean> isSuperNodeSupplier;
+  private DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor;
 
   protected Eth2P2PNetworkBuilder() {}
 
@@ -188,7 +189,6 @@ public class Eth2P2PNetworkBuilder {
         Eth2PeerManager.create(
             asyncRunner,
             combinedChainDataClient,
-            dataColumnSidecarCustodySupplier,
             custodyGroupCountManagerSupplier,
             metadataMessagesFactory,
             metricsSystem,
@@ -206,6 +206,7 @@ public class Eth2P2PNetworkBuilder {
             config.getPeerRequestLimit(),
             spec,
             discoveryNodeIdExtractor,
+            dataColumnSidecarArchiveReconstructor,
             dasReqRespLogger);
     final Collection<RpcMethod<?, ?, ?>> eth2RpcMethods =
         eth2PeerManager.getBeaconChainMethods().all();
@@ -405,8 +406,9 @@ public class Eth2P2PNetworkBuilder {
               debugDataDumper,
               dasGossipLogger,
               executionProofOperationProcessor,
-              config.isExecutionProofTopicEnabled());
-      case GLOAS ->
+              config.isExecutionProofTopicEnabled(),
+              isSuperNodeSupplier);
+      case GLOAS, HEZE ->
           new GossipForkSubscriptionsGloas(
               forkAndSpecMilestone.getFork(),
               spec,
@@ -432,7 +434,8 @@ public class Eth2P2PNetworkBuilder {
               debugDataDumper,
               dasGossipLogger,
               executionProofOperationProcessor,
-              config.isExecutionProofTopicEnabled());
+              config.isExecutionProofTopicEnabled(),
+              isSuperNodeSupplier);
     };
   }
 
@@ -466,8 +469,9 @@ public class Eth2P2PNetworkBuilder {
               debugDataDumper,
               dasGossipLogger,
               bpo,
-              config.isExecutionProofTopicEnabled());
-      case GLOAS ->
+              config.isExecutionProofTopicEnabled(),
+              isSuperNodeSupplier);
+      case GLOAS, HEZE ->
           new GossipForkSubscriptionsGloasBpo(
               forkAndSpecMilestone.getFork(),
               spec,
@@ -494,7 +498,8 @@ public class Eth2P2PNetworkBuilder {
               debugDataDumper,
               dasGossipLogger,
               bpo,
-              config.isExecutionProofTopicEnabled());
+              config.isExecutionProofTopicEnabled(),
+              isSuperNodeSupplier);
       default ->
           throw new IllegalStateException(
               "BPO is not supported for: " + forkAndSpecMilestone.getSpecMilestone());
@@ -608,7 +613,6 @@ public class Eth2P2PNetworkBuilder {
     assertNotNull("eventChannels", eventChannels);
     assertNotNull("metricsSystem", metricsSystem);
     assertNotNull("combinedChainDataClient", combinedChainDataClient);
-    assertNotNull("dataColumnSidecarCustodySupplier", dataColumnSidecarCustodySupplier);
     assertNotNull("custodyGroupCountManagerSupplier", custodyGroupCountManagerSupplier);
     assertNotNull("metadataMessagesFactory", metadataMessagesFactory);
     assertNotNull("keyValueStore", keyValueStore);
@@ -653,13 +657,6 @@ public class Eth2P2PNetworkBuilder {
       final CombinedChainDataClient combinedChainDataClient) {
     checkNotNull(combinedChainDataClient);
     this.combinedChainDataClient = combinedChainDataClient;
-    return this;
-  }
-
-  public Eth2P2PNetworkBuilder dataColumnSidecarCustody(
-      final Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier) {
-    checkNotNull(dataColumnSidecarCustodySupplier);
-    this.dataColumnSidecarCustodySupplier = dataColumnSidecarCustodySupplier;
     return this;
   }
 
@@ -877,6 +874,17 @@ public class Eth2P2PNetworkBuilder {
 
   public Eth2P2PNetworkBuilder reqRespDasLogger(final DasReqRespLogger dasReqRespLogger) {
     this.dasReqRespLogger = dasReqRespLogger;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder isSuperNodeSupplier(final Supplier<Boolean> isSuperNodeSupplier) {
+    this.isSuperNodeSupplier = isSuperNodeSupplier;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder dataColumnSidecarArchiveReconstructor(
+      final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor) {
+    this.dataColumnSidecarArchiveReconstructor = dataColumnSidecarArchiveReconstructor;
     return this;
   }
 }

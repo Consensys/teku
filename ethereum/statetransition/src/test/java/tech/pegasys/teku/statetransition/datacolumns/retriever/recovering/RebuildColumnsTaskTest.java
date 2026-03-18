@@ -352,7 +352,10 @@ class RebuildColumnsTaskTest {
             slotAndBlockRoot.getSlot(),
             isMatchingRoot ? slotAndBlockRoot.getBlockRoot() : dataStructureUtil.randomBytes32(),
             column);
-    return new PendingRecoveryRequestTestArticle(future, columnId, timeProvider.getTimeInMillis());
+    final PendingRecoveryRequestTestArticle pendingRecoveryRequest =
+        new PendingRecoveryRequestTestArticle(future, columnId, timeProvider.getTimeInMillis());
+    pendingRecoveryRequest.start();
+    return pendingRecoveryRequest;
   }
 
   static class PendingRecoveryRequestTestArticle extends PendingRecoveryRequest {
@@ -368,15 +371,6 @@ class RebuildColumnsTaskTest {
           RECOVERY_TIMEOUT,
           METRIC,
           () -> {});
-    }
-
-    PendingRecoveryRequestTestArticle(
-        final DataColumnSlotAndIdentifier columnId,
-        final SafeFuture<DataColumnSidecar> downloadFuture,
-        final UInt64 timestamp,
-        final Duration timeout,
-        final Duration downloadTimeout) {
-      super(columnId, downloadFuture, timestamp, timeout, downloadTimeout, METRIC, () -> {});
     }
   }
 

@@ -241,15 +241,71 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
   }
 
   @Test
-  void columnsDataAvailabilityHalfCheckEnabled_disabledByDefault() {
+  void restApiVirtualThreadsEnabled_disabledByDefault() {
     TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
-    assertThat(tekuConfiguration.p2p().isColumnsDataAvailabilityHalfCheckEnabled()).isFalse();
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.isRestApiVirtualThreadsEnabled()).isFalse();
   }
 
   @Test
-  void columnsDataAvailabilityHalfCheckEnabled_toggles() {
+  void restApiVirtualThreadsEnabled_shouldNotRequireAValue() {
     TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--Xcolumns-data-availability-half-check-enabled");
+        getTekuConfigurationFromArguments("--Xrest-api-virtual-threads-enabled");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.isRestApiVirtualThreadsEnabled()).isTrue();
+  }
+
+  @Test
+  void restApiVirtualThreadsEnabled_canBeEnabled() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xrest-api-virtual-threads-enabled=true");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.isRestApiVirtualThreadsEnabled()).isTrue();
+  }
+
+  @Test
+  void restApiVirtualThreadsMaxConcurrentTasks_defaultValue() {
+    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.getRestApiVirtualThreadsMaxConcurrentTasks())
+        .isEqualTo(BeaconRestApiConfig.DEFAULT_REST_API_VIRTUAL_THREADS_MAX_CONCURRENT_TASKS);
+  }
+
+  @Test
+  void restApiVirtualThreadsMaxConcurrentTasks_canBeOverridden() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xrest-api-virtual-threads-max-concurrent-tasks=64");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.getRestApiVirtualThreadsMaxConcurrentTasks()).isEqualTo(64);
+  }
+
+  @Test
+  void restApiVirtualThreadsMaxThreads_shouldRejectZero() {
+    assertThatThrownBy(
+        () ->
+            getTekuConfigurationFromArguments(
+                "--Xrest-api-virtual-threads-max-concurrent-tasks=0"));
+  }
+
+  @Test
+  void restApiVirtualThreadsMaxThreads_shouldRejectNegative() {
+    assertThatThrownBy(
+        () ->
+            getTekuConfigurationFromArguments(
+                "--Xrest-api-virtual-threads-max-concurrent-tasks=-1"));
+  }
+
+  @Test
+  void restApiVirtualThreadsMaxThreads_shouldRejectAboveUpperBound() {
+    assertThatThrownBy(
+        () ->
+            getTekuConfigurationFromArguments(
+                "--Xrest-api-virtual-threads-max-concurrent-tasks=5001"));
+  }
+
+  @Test
+  void columnsDataAvailabilityHalfCheckEnabled_enabledByDefault() {
+    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
     assertThat(tekuConfiguration.p2p().isColumnsDataAvailabilityHalfCheckEnabled()).isTrue();
   }
 }

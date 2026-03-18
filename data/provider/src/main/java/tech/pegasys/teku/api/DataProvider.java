@@ -31,6 +31,7 @@ import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.client.BlobReconstructionProvider;
@@ -124,6 +125,7 @@ public class DataProvider {
     private BlobReconstructionProvider blobReconstructionProvider;
     private DataColumnSidecarManager dataColumnSidecarManager;
     private CustodyGroupCountManager custodyGroupCountManager;
+    private PayloadAttestationPool payloadAttestationPool;
 
     public Builder recentChainData(final RecentChainData recentChainData) {
       this.recentChainData = recentChainData;
@@ -263,6 +265,7 @@ public class DataProvider {
               recentChainData,
               dataColumnSidecarManager,
               custodyGroupCountManager,
+              payloadAttestationPool,
               spec);
       final ChainDataProvider chainDataProvider =
           new ChainDataProvider(
@@ -303,6 +306,11 @@ public class DataProvider {
     public Builder custodyGroupCountManager(
         final CustodyGroupCountManager custodyGroupCountManager) {
       this.custodyGroupCountManager = custodyGroupCountManager;
+      return this;
+    }
+
+    public Builder payloadAttestationPool(final PayloadAttestationPool payloadAttestationPool) {
+      this.payloadAttestationPool = payloadAttestationPool;
       return this;
     }
   }

@@ -25,8 +25,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
@@ -110,29 +114,29 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       case V4 -> {
         database = createV4Database();
         LOG.info(
-            "Created V4 Hot database ({}) at {}",
+            "Created RocksDB V4 Hot database ({}) at {}",
             dbVersion.getValue(),
             dbDirectory.getAbsolutePath());
         LOG.info(
-            "Created V4 Finalized database ({}) at {}",
+            "Created RocksDB V4 Finalized database ({}) at {}",
             dbVersion.getValue(),
             v5ArchiveDirectory.getAbsolutePath());
       }
       case V5 -> {
         database = createV5Database();
         LOG.info(
-            "Created V5 Hot database ({}) at {}",
+            "Created RocksDB V5 Hot database ({}) at {}",
             dbVersion.getValue(),
             dbDirectory.getAbsolutePath());
         LOG.info(
-            "Created V5 Finalized database ({}) at {}",
+            "Created RocksDB V5 Finalized database ({}) at {}",
             dbVersion.getValue(),
             v5ArchiveDirectory.getAbsolutePath());
       }
       case V6 -> {
         database = createV6Database();
         LOG.info(
-            "Created V6 Hot and Finalized database ({}) at {}",
+            "Created RocksDB V6 Hot and Finalized database ({}) at {}",
             dbVersion.getValue(),
             dbDirectory.getAbsolutePath());
       }
@@ -142,6 +146,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
             "Created leveldb1 Hot database ({}) at {}",
             dbVersion.getValue(),
             dbDirectory.getAbsolutePath());
+        warnLevelDbDeprecation();
         LOG.info(
             "Created leveldb1 Finalized database ({}) at {}",
             dbVersion.getValue(),
@@ -149,6 +154,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       }
       case LEVELDB2 -> {
         database = createLevelDbV2Database();
+        warnLevelDbDeprecation();
         LOG.info(
             "Created leveldb2 Hot and Finalized database ({}) at {}",
             dbVersion.getValue(),
@@ -156,6 +162,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       }
       case LEVELDB_TREE -> {
         database = createLevelDbTreeDatabase();
+        warnLevelDbDeprecation();
         LOG.info(
             "Created leveldb_tree Hot and Finalized database ({}) at {}",
             dbVersion.getValue(),
@@ -163,7 +170,14 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       }
       default -> throw new UnsupportedOperationException("Unhandled database version " + dbVersion);
     }
+    initDatabaseVersionMetrics(metricsSystem, dbVersion, stateStorageMode);
+
     return database;
+  }
+
+  private void warnLevelDbDeprecation() {
+    LOG.warn(
+        "NOTE: Leveldb support has been deprecated and may be removed in a future release. Please refer to https://docs.teku.consensys.io/how-to/migrate-database to migrate.");
   }
 
   public StateStorageMode getStateStorageMode() {
@@ -393,5 +407,19 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           "Failed to write database storage mode to file " + dbStorageModeFile.getAbsolutePath(),
           e);
     }
+  }
+
+  private void initDatabaseVersionMetrics(
+      final MetricsSystem metricsSystem,
+      final DatabaseVersion dbVersion,
+      final StateStorageMode storageMode) {
+    final String version = dbVersion.getValue() + "_" + storageMode.name();
+    final LabelledMetric<Counter> versionCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.BEACON,
+            VersionProvider.CLIENT_IDENTITY + "_db_version_total",
+            "Teku DB version and storage mode",
+            "version");
+    versionCounter.labels(version).inc();
   }
 }

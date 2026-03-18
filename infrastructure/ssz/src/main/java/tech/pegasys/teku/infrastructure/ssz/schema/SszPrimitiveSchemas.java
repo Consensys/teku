@@ -168,6 +168,11 @@ public final class SszPrimitiveSchemas {
         }
 
         @Override
+        public SszByte boxed(final Byte rawValue) {
+          return SszByte.asUInt8(rawValue);
+        }
+
+        @Override
         public String toString() {
           return "UInt8";
         }

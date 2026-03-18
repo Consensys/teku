@@ -77,22 +77,23 @@ public class SidecarRetrieverTest {
   private final DataColumnSidecarRetrieverStub delegateRetriever =
       new DataColumnSidecarRetrieverStub();
 
-  private final SidecarRetriever retriever =
-      new SidecarRetriever(
-          delegateRetriever,
-          miscHelpers,
-          dbAccessor,
-          stubAsyncRunner,
-          RECOVERY_TIMEOUT,
-          RECOVERY_TIMEOUT.dividedBy(2),
-          CHECK_INTERVAL,
-          timeProvider,
-          columnCount,
-          custodyManager,
-          metricsSystem);
+  private SidecarRetriever retriever;
 
   @BeforeEach
   void setUp() {
+    this.retriever =
+        new SidecarRetriever(
+            delegateRetriever,
+            miscHelpers,
+            dbAccessor,
+            stubAsyncRunner,
+            RECOVERY_TIMEOUT,
+            RECOVERY_TIMEOUT.dividedBy(2),
+            CHECK_INTERVAL,
+            timeProvider,
+            columnCount,
+            custodyManager,
+            metricsSystem);
     retriever.start();
   }
 

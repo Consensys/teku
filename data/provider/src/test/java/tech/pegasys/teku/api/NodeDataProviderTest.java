@@ -46,6 +46,7 @@ import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
@@ -67,6 +68,7 @@ public class NodeDataProviderTest {
   private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   private final CustodyGroupCountManager custodyGroupCountManager =
       mock(CustodyGroupCountManager.class);
+  private final PayloadAttestationPool payloadAttestationPool = mock(PayloadAttestationPool.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
 
   private final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
@@ -101,6 +103,7 @@ public class NodeDataProviderTest {
             recentChainData,
             dataColumnSidecarManager,
             custodyGroupCountManager,
+            payloadAttestationPool,
             spec);
   }
 
@@ -226,6 +229,7 @@ public class NodeDataProviderTest {
             recentChainData,
             dataColumnSidecarManager,
             custodyGroupCountManager,
+            payloadAttestationPool,
             specMock);
     return specMock;
   }

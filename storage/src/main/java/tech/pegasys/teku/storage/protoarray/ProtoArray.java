@@ -161,6 +161,36 @@ public class ProtoArray {
     updateBestDescendantOfParent(node, nodeIndex);
   }
 
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 this is just a workaround for
+  // devnet-0, we need a proper fork choice implementation
+  public void onExecutionPayload(
+      final Bytes32 blockRoot,
+      final UInt64 executionBlockNumber,
+      final Bytes32 executionBlockHash) {
+    if (!indices.contains(blockRoot)) {
+      return;
+    }
+    final int trackedIndex = indices.get(blockRoot).orElseThrow();
+    final ProtoNode trackedNode = nodes.get(trackedIndex);
+
+    final ProtoNode node =
+        new ProtoNode(
+            trackedNode.getBlockSlot(),
+            trackedNode.getStateRoot(),
+            blockRoot,
+            trackedNode.getParentRoot(),
+            trackedNode.getParentIndex(),
+            trackedNode.getBlockData().getCheckpoints(),
+            executionBlockNumber,
+            executionBlockHash,
+            trackedNode.getWeight(),
+            trackedNode.getBestChildIndex(),
+            trackedNode.getBestDescendantIndex(),
+            trackedNode.getBlockData().getValidationStatus());
+
+    nodes.set(trackedIndex, node);
+  }
+
   public void setInitialCanonicalBlockRoot(final Bytes32 initialCanonicalBlockRoot) {
     final Optional<ProtoNode> initialCanonicalProtoNode = getProtoNode(initialCanonicalBlockRoot);
     if (initialCanonicalProtoNode.isEmpty()) {

@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -68,6 +69,14 @@ public class SszBitlistSchemaImpl extends SszPrimitiveListSchemaImpl<Boolean, Ss
     return ofBits(
         elements.size(),
         IntStream.range(0, elements.size()).filter(i -> elements.get(i).get()).toArray());
+  }
+
+  public TreeNode createTreeFromBitData(final int size, final byte[] bitSetBytes) {
+    final int dataByteLen = TreeUtil.bitsCeilToBytes(size);
+    final Bytes treeBytes =
+        dataByteLen == 0 ? Bytes.EMPTY : Bytes.wrap(Arrays.copyOf(bitSetBytes, dataByteLen));
+    final TreeNode dataTree = SchemaUtils.createTreeFromBytes(treeBytes, treeDepth());
+    return createTree(dataTree, size);
   }
 
   @Override

@@ -66,7 +66,7 @@ public class GetProposerDutiesTest extends AbstractMigratedBeaconHandlerTest {
 
     when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    when(validatorDataProvider.getProposerDuties(eq(UInt64.valueOf(100))))
+    when(validatorDataProvider.getProposerDutiesElectraDependentRoot(eq(UInt64.valueOf(100))))
         .thenReturn(SafeFuture.completedFuture(Optional.of(duties)));
 
     handler.handleRequest(request);

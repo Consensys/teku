@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.withdrawals;
 
+import com.google.common.base.Preconditions;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
@@ -68,11 +69,13 @@ public class WithdrawalsHelpersGloas extends WithdrawalsHelpersElectra {
     UInt64 withdrawalIndex = getNextWithdrawalIndex(state, withdrawals);
     int processedBuilderWithdrawalsCount = 0;
 
-    final int withdrawalsLimit = specConfig.getMaxWithdrawalsPerPayload();
+    final int withdrawalsLimit = specConfig.getMaxWithdrawalsPerPayload() - 1;
+
+    Preconditions.checkArgument(withdrawals.size() <= withdrawalsLimit);
 
     for (BuilderPendingWithdrawal withdrawal :
         BeaconStateGloas.required(state).getBuilderPendingWithdrawals()) {
-      if (withdrawals.size() == withdrawalsLimit) {
+      if (withdrawals.size() >= withdrawalsLimit) {
         break;
       }
       final UInt64 builderIndex = withdrawal.getBuilderIndex();
@@ -106,13 +109,15 @@ public class WithdrawalsHelpersGloas extends WithdrawalsHelpersElectra {
 
     int processedBuildersSweepCount = 0;
 
-    final int withdrawalsLimit = specConfig.getMaxWithdrawalsPerPayload();
+    final int withdrawalsLimit = specConfig.getMaxWithdrawalsPerPayload() - 1;
+
+    Preconditions.checkArgument(withdrawals.size() <= withdrawalsLimit);
 
     final int buildersLimit =
         Math.min(buildersCount, specConfigGloas.getMaxBuildersPerWithdrawalsSweep());
 
     for (int i = 0; i < buildersLimit; i++) {
-      if (withdrawals.size() == withdrawalsLimit) {
+      if (withdrawals.size() >= withdrawalsLimit) {
         break;
       }
       final Builder builder = builders.get(builderIndex.intValue());

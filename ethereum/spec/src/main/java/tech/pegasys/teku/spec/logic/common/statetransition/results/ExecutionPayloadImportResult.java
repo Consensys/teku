@@ -16,11 +16,16 @@ package tech.pegasys.teku.spec.logic.common.statetransition.results;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 
+@SuppressWarnings("ClassInitializationDeadlock")
 public interface ExecutionPayloadImportResult {
 
   ExecutionPayloadImportResult FAILED_UNKNOWN_BEACON_BLOCK_ROOT =
       new FailedExecutionPayloadImportResult(
           FailureReason.UNKNOWN_BEACON_BLOCK_ROOT, Optional.empty());
+
+  ExecutionPayloadImportResult FAILED_EXECUTION_SYNCING =
+      new FailedExecutionPayloadImportResult(
+          FailureReason.FAILED_EXECUTION_SYNCING, Optional.empty());
 
   static ExecutionPayloadImportResult failedStateTransition(final Exception cause) {
     return new FailedExecutionPayloadImportResult(
@@ -57,12 +62,21 @@ public interface ExecutionPayloadImportResult {
     UNKNOWN_BEACON_BLOCK_ROOT,
     FAILED_STATE_TRANSITION,
     FAILED_EXECUTION,
+    FAILED_EXECUTION_SYNCING,
     FAILED_DATA_AVAILABILITY_CHECK_INVALID,
     FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE,
     INTERNAL_ERROR // A catch-all category for unexpected errors (bugs)
   }
 
   boolean isSuccessful();
+
+  default boolean hasFailedExecution() {
+    return false;
+  }
+
+  default boolean isDataNotAvailable() {
+    return false;
+  }
 
   /**
    * @return If successful, returns a {@code SignedExecutionPayloadEnvelope}, otherwise returns

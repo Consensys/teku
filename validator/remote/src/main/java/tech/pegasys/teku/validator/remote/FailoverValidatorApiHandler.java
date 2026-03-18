@@ -155,9 +155,10 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
+  public SafeFuture<Optional<ProposerDuties>> getProposerDuties(
+      final UInt64 epoch, final boolean isFuluCompatible) {
     return tryRequestUntilSuccess(
-        apiChannel -> apiChannel.getProposerDuties(epoch),
+        apiChannel -> apiChannel.getProposerDuties(epoch, isFuluCompatible),
         BeaconNodeRequestLabels.GET_PROPOSER_DUTIES_REQUESTS_METHOD);
   }
 
