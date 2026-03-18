@@ -267,11 +267,14 @@ public class DataColumnSidecarArchiveReconstructorImpl
     }
     final UInt64 finalizedEpoch = checkpoint.getEpoch();
     final UInt64 currentEpoch = spec.getCurrentEpoch(chainDataClient.getStore());
-    // TODO: check on +1 error
+    // TODO: cover pruning boundary calculation with a test
+    final UInt64 pruningBoundaryEpoch =
+        finalizedEpoch.min(currentEpoch.minusMinZero(dataColumnSidecarExtensionRetentionEpochs));
+    if (pruningBoundaryEpoch.isZero()) {
+      return;
+    }
     final UInt64 lastPrunableSlot =
-        spec.computeStartSlotAtEpoch(
-            finalizedEpoch.min(
-                currentEpoch.minusMinZero(dataColumnSidecarExtensionRetentionEpochs)));
+        spec.computeStartSlotAtEpoch(pruningBoundaryEpoch).minusMinZero(1);
     sidecarArchivePrunableChannel.onSidecarArchivePrunableSlot(lastPrunableSlot);
   }
 
