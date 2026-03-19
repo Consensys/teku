@@ -221,6 +221,21 @@ class Store extends CacheableStore {
     };
   }
 
+  private ExecutionPayloadProvider createExecutionPayloadProviderWhileLocked(
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> payloadMap) {
+    return (roots) -> {
+      readLock.lock();
+      try {
+        return SafeFuture.completedFuture(
+            roots.stream()
+                .filter(payloadMap::containsKey)
+                .collect(Collectors.toMap(Function.identity(), payloadMap::get)));
+      } finally {
+        readLock.unlock();
+      }
+    };
+  }
+
   static UpdatableStore create(
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
@@ -1070,7 +1085,7 @@ class Store extends CacheableStore {
                 blockRoot,
                 treeBuilder.build(),
                 blockProvider,
-                ExecutionPayloadProvider.fromDynamicMap(executionPayloads),
+                createExecutionPayloadProviderWhileLocked(executionPayloads),
                 new StateRegenerationBaseSelector(
                     spec,
                     Optional.ofNullable(latestEpochBoundary.get()),

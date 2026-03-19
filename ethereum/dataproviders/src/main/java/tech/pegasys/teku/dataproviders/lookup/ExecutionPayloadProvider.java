@@ -15,6 +15,7 @@ package tech.pegasys.teku.dataproviders.lookup;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -32,8 +33,10 @@ public interface ExecutionPayloadProvider {
     return roots ->
         SafeFuture.completedFuture(
             roots.stream()
-                .filter(payloadMap::containsKey)
-                .collect(Collectors.toMap(Function.identity(), payloadMap::get)));
+                .flatMap(root -> Optional.ofNullable(payloadMap.get(root)).stream())
+                .collect(
+                    Collectors.toMap(
+                        SignedExecutionPayloadEnvelope::getBeaconBlockRoot, Function.identity())));
   }
 
   SafeFuture<Map<Bytes32, SignedExecutionPayloadEnvelope>> getExecutionPayloads(
