@@ -43,7 +43,14 @@ public class TimerService extends Service {
             t.setDaemon(true);
             return t;
           });
-  private final ExecutorService taskExecutor = Executors.newFixedThreadPool(1);
+  private final ExecutorService taskExecutor =
+      Executors.newFixedThreadPool(
+          1,
+          runnable -> {
+            final Thread thread = new Thread(runnable, "TimeTickTask");
+            thread.setDaemon(true);
+            return thread;
+          });
 
   public TimerService(final TimeTickHandler timeTickHandler) {
     this(timeTickHandler, 2, new SystemTimeProvider());
