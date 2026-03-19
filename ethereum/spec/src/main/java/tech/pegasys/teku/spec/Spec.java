@@ -113,7 +113,6 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvali
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.ExecutionPayloadProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
@@ -1061,19 +1060,8 @@ public class Spec {
   public BeaconState replayValidatedExecutionPayload(
       final BeaconState blockState, final SignedExecutionPayloadEnvelope signedEnvelope)
       throws StateTransitionException {
-    try {
-      return blockState.updated(
-          mutableState ->
-              getExecutionPayloadProcessor(blockState.getSlot())
-                  .processExecutionPayload(
-                      signedEnvelope,
-                      mutableState,
-                      BLSSignatureVerifier.NO_OP,
-                      Optional.empty(),
-                      false));
-    } catch (ExecutionPayloadProcessingException e) {
-      throw new StateTransitionException(e);
-    }
+    return getExecutionPayloadProcessor(blockState.getSlot())
+        .replayValidatedExecutionPayload(signedEnvelope, blockState);
   }
 
   public BlockCheckpoints calculateBlockCheckpoints(final BeaconState state) {

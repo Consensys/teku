@@ -58,4 +58,8 @@ public interface ExecutionPayloadProcessor {
       ExecutionPayloadEnvelope envelope,
       Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws ExecutionPayloadProcessingException;
+
+  BeaconState replayValidatedExecutionPayload(
+      SignedExecutionPayloadEnvelope signedEnvelope, BeaconState blockState)
+      throws StateTransitionException;
 }
