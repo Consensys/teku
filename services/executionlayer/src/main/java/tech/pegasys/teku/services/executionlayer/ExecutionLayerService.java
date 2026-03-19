@@ -151,6 +151,7 @@ public class ExecutionLayerService extends Service {
         final ExecutionEngineClient newEngineApiClient =
             OkHttpExecutionEngineClientFactory.create(
                 okHttpClient,
+                () -> serviceConfig.createAsyncRunner("ipc-reader", 1),
                 config.getEngineEndpoint(),
                 EVENT_LOG,
                 timeProvider,

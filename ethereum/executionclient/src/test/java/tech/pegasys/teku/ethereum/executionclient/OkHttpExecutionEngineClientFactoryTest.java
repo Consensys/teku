@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 class OkHttpExecutionEngineClientFactoryTest {
 
   private final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+  private final AsyncRunner asyncRunner = mock(AsyncRunner.class);
   private final EventLogger eventLog = mock(EventLogger.class);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInMillis(1000);
   private final ExecutionClientEventsChannel executionClientEventsPublisher =
@@ -49,6 +51,12 @@ class OkHttpExecutionEngineClientFactoryTest {
   }
 
   @Test
+  void createsIpcClient_forFileEndpoint() {
+    final ExecutionEngineClient client = createClient("file:///tmp/foo.ipc");
+    assertThat(client).isInstanceOf(IpcSocketExecutionEngineClient.class);
+  }
+
+  @Test
   void throwsException_forUnsupportedScheme() {
     assertThatThrownBy(() -> createClient("ftp://localhost:8551"))
         .isInstanceOf(InvalidConfigurationException.class)
@@ -66,6 +74,7 @@ class OkHttpExecutionEngineClientFactoryTest {
   private ExecutionEngineClient createClient(final String endpoint) {
     return OkHttpExecutionEngineClientFactory.create(
         httpClient,
+        () -> asyncRunner,
         endpoint,
         eventLog,
         timeProvider,
