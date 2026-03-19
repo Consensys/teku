@@ -221,7 +221,8 @@ public class P2POptions {
       names = {"--Xp2p-subnet-aware-peer-selection-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Enables multi-pass subnet aware peer selection",
-      fallbackValue = "false",
+      showDefaultValue = Visibility.ALWAYS,
+      fallbackValue = "true",
       arity = "1",
       hidden = true)
   private Boolean p2pSubnetAwarePeerSelectionActive =
