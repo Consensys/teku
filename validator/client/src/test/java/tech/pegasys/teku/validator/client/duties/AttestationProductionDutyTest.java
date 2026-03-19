@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -118,7 +117,7 @@ class AttestationProductionDutyTest {
   @TestTemplate
   public void shouldFailWhenUnsignedAttestationCanNotBeCreated() {
     final Validator validator = createValidator();
-    when(validatorApiChannel.createAttestationData(SLOT, 0))
+    when(validatorApiChannel.createAttestationData(SLOT, Optional.of(0)))
         .thenReturn(completedFuture(Optional.empty()));
 
     final SafeFuture<Optional<AttestationData>> attestationFuture =
@@ -145,7 +144,7 @@ class AttestationProductionDutyTest {
     final Optional<AttestationData> invalidAttestationData =
         Optional.of(dataStructureUtil.randomAttestationData(SLOT.increment()));
 
-    when(validatorApiChannel.createAttestationData(SLOT, 0))
+    when(validatorApiChannel.createAttestationData(SLOT, Optional.of(0)))
         .thenReturn(completedFuture(invalidAttestationData));
 
     final SafeFuture<Optional<AttestationData>> attestationFuture =
@@ -174,7 +173,7 @@ class AttestationProductionDutyTest {
     final Optional<AttestationData> invalidAttestationData =
         Optional.of(dataStructureUtil.randomAttestationData(SLOT, UInt64.ONE));
 
-    when(validatorApiChannel.createAttestationData(SLOT, 0))
+    when(validatorApiChannel.createAttestationData(SLOT, Optional.of(0)))
         .thenReturn(completedFuture(invalidAttestationData));
 
     final SafeFuture<Optional<AttestationData>> attestationFuture =
@@ -209,7 +208,7 @@ class AttestationProductionDutyTest {
     final int validator2CommitteeIndex = 1;
     final int validator2CommitteePosition = 3;
     final int validator2CommitteeSize = 8;
-    when(validatorApiChannel.createAttestationData(SLOT, validator1CommitteeIndex))
+    when(validatorApiChannel.createAttestationData(SLOT, Optional.of(validator1CommitteeIndex)))
         .thenReturn(completedFuture(Optional.empty()));
     final AttestationData attestationData = expectCreateAttestationData(validator2CommitteeIndex);
     final Attestation expectedAttestation =
@@ -307,7 +306,7 @@ class AttestationProductionDutyTest {
 
     performAndReportDuty();
 
-    verify(validatorApiChannel).createAttestationData(SLOT, 0);
+    verify(validatorApiChannel).createAttestationData(SLOT, Optional.of(0));
 
     assertThat(attestationResult1).isCompletedWithValue(Optional.of(attestationData));
     assertThat(attestationResult2).isCompletedWithValue(Optional.of(attestationData));
@@ -342,7 +341,7 @@ class AttestationProductionDutyTest {
     final int validator2CommitteePosition = 3;
     final int validator2CommitteeSize = 12;
     final RuntimeException failure = new RuntimeException("Golly gee");
-    when(validatorApiChannel.createAttestationData(SLOT, validator1CommitteeIndex))
+    when(validatorApiChannel.createAttestationData(SLOT, Optional.of(validator1CommitteeIndex)))
         .thenReturn(failedFuture(failure));
     final AttestationData attestationData = expectCreateAttestationData(validator2CommitteeIndex);
     final Attestation expectedAttestation =
@@ -594,7 +593,7 @@ class AttestationProductionDutyTest {
             expectedAttestation1, expectedAttestation2, expectedAttestation3);
 
     // Should have only needed to create one unsigned attestation and reused it for each validator
-    verify(validatorApiChannel, times(1)).createAttestationData(any(), anyInt());
+    verify(validatorApiChannel, times(1)).createAttestationData(any(), any());
     verify(validatorLogger)
         .dutyCompleted(
             TYPE, SLOT, 3, Set.of(attestationData.getBeaconBlockRoot()), Optional.empty());
@@ -687,7 +686,7 @@ class AttestationProductionDutyTest {
             expectedAttestation1, expectedAttestation2, expectedAttestation3);
 
     // Need to create an unsigned attestation for each committee
-    verify(validatorApiChannel, times(isElectra ? 1 : 2)).createAttestationData(any(), anyInt());
+    verify(validatorApiChannel, times(isElectra ? 1 : 2)).createAttestationData(any(), any());
     verify(validatorLogger)
         .dutyCompleted(
             TYPE,
@@ -735,7 +734,8 @@ class AttestationProductionDutyTest {
 
   private AttestationData expectCreateAttestationData(final int committeeIndex) {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(SLOT);
-    when(validatorApiChannel.createAttestationData(SLOT, isElectra ? 0 : committeeIndex))
+    when(validatorApiChannel.createAttestationData(
+            SLOT, Optional.of(isElectra ? 0 : committeeIndex)))
         .thenReturn(completedFuture(Optional.of(attestationData)));
     return attestationData;
   }

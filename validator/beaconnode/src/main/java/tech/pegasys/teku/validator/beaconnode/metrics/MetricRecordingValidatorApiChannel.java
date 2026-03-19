@@ -164,7 +164,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<AttestationData>> createAttestationData(
-      final UInt64 slot, final int committeeIndex) {
+      final UInt64 slot, final Optional<Integer> committeeIndex) {
     return countOptionalDataRequest(
         delegate.createAttestationData(slot, committeeIndex),
         BeaconNodeRequestLabels.CREATE_ATTESTATION_METHOD);

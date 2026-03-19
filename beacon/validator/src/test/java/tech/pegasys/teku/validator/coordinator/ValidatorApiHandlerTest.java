@@ -682,7 +682,7 @@ class ValidatorApiHandlerTest {
   public void createAttestationData_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
     final SafeFuture<Optional<AttestationData>> result =
-        validatorApiHandler.createAttestationData(ONE, 1);
+        validatorApiHandler.createAttestationData(ONE, Optional.of(1));
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -704,9 +704,8 @@ class ValidatorApiHandlerTest {
 
     when(chainDataClient.isOptimisticBlock(blockAndState.getRoot())).thenReturn(true);
 
-    final int committeeIndex = 0;
     final SafeFuture<Optional<AttestationData>> result =
-        validatorApiHandler.createAttestationData(slot, committeeIndex);
+        validatorApiHandler.createAttestationData(slot, Optional.of(0));
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -727,9 +726,8 @@ class ValidatorApiHandlerTest {
         .thenReturn(blockAndStateResult);
     when(forkChoiceTrigger.prepareForAttestationProduction(slot)).thenReturn(SafeFuture.COMPLETE);
 
-    final int committeeIndex = 0;
     final SafeFuture<Optional<AttestationData>> result =
-        validatorApiHandler.createAttestationData(slot, committeeIndex);
+        validatorApiHandler.createAttestationData(slot, Optional.of(0));
 
     assertThat(result).isCompleted();
     final Optional<AttestationData> maybeAttestation = safeJoin(result);
@@ -741,7 +739,7 @@ class ValidatorApiHandlerTest {
                 slot,
                 blockAndState.getState(),
                 blockAndState.getBlock().getMessage(),
-                UInt64.valueOf(committeeIndex)));
+                UInt64.ZERO));
     assertThat(attestationData.getSlot()).isEqualTo(slot);
     final InOrder inOrder = inOrder(forkChoiceTrigger, chainDataClient);
 
@@ -755,9 +753,8 @@ class ValidatorApiHandlerTest {
     final UInt64 slot = spec.computeStartSlotAtEpoch(EPOCH).plus(ONE);
     when(chainDataClient.getCurrentSlot()).thenReturn(slot.minus(1));
 
-    final int committeeIndex = 0;
     final SafeFuture<Optional<AttestationData>> result =
-        validatorApiHandler.createAttestationData(slot, committeeIndex);
+        validatorApiHandler.createAttestationData(slot, Optional.of(0));
 
     assertThatSafeFuture(result).isCompletedExceptionallyWith(IllegalArgumentException.class);
   }
@@ -786,9 +783,8 @@ class ValidatorApiHandlerTest {
                     spec, new Checkpoint(EPOCH, block.getRoot()), block, rightState)));
     when(forkChoiceTrigger.prepareForAttestationProduction(slot)).thenReturn(SafeFuture.COMPLETE);
 
-    final int committeeIndex = 0;
     final SafeFuture<Optional<AttestationData>> result =
-        validatorApiHandler.createAttestationData(slot, committeeIndex);
+        validatorApiHandler.createAttestationData(slot, Optional.of(0));
 
     assertThat(result).isCompleted();
     final Optional<AttestationData> maybeAttestation = safeJoin(result);
@@ -796,8 +792,7 @@ class ValidatorApiHandlerTest {
     final AttestationData attestationData = maybeAttestation.orElseThrow();
     assertThat(attestationData)
         .isEqualTo(
-            spec.getGenericAttestationData(
-                slot, rightState, block.getMessage(), UInt64.valueOf(committeeIndex)));
+            spec.getGenericAttestationData(slot, rightState, block.getMessage(), UInt64.ZERO));
     assertThat(attestationData.getSlot()).isEqualTo(slot);
   }
 

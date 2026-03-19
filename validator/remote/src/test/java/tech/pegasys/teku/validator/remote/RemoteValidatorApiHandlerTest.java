@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -449,9 +448,10 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   public void createAttestationData_WhenNone_ReturnsEmpty() {
-    when(typeDefClient.createAttestationData(any(), anyInt())).thenReturn(Optional.empty());
+    when(typeDefClient.createAttestationData(any(), any())).thenReturn(Optional.empty());
 
-    final SafeFuture<Optional<AttestationData>> future = apiHandler.createAttestationData(ONE, 0);
+    final SafeFuture<Optional<AttestationData>> future =
+        apiHandler.createAttestationData(ONE, Optional.of(0));
 
     assertThat(unwrapToOptional(future)).isEmpty();
   }
@@ -460,10 +460,11 @@ class RemoteValidatorApiHandlerTest {
   public void createAttestationData_WhenFound_ReturnsAttestation() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
 
-    when(typeDefClient.createAttestationData(ONE, 0))
+    when(typeDefClient.createAttestationData(ONE, Optional.of(0)))
         .thenReturn(Optional.of(attestation.getData()));
 
-    final SafeFuture<Optional<AttestationData>> future = apiHandler.createAttestationData(ONE, 0);
+    final SafeFuture<Optional<AttestationData>> future =
+        apiHandler.createAttestationData(ONE, Optional.of(0));
 
     assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(attestation.getData());
   }

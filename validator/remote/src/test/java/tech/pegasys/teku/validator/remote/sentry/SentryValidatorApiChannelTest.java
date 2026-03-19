@@ -151,9 +151,9 @@ class SentryValidatorApiChannelTest {
 
   @Test
   void createAttestationDataShouldUseDutiesProviderChannel() {
-    sentryValidatorApiChannel.createAttestationData(UInt64.ZERO, 0);
+    sentryValidatorApiChannel.createAttestationData(UInt64.ZERO, Optional.of(0));
 
-    verify(dutiesProviderChannel).createAttestationData(eq(UInt64.ZERO), eq(0));
+    verify(dutiesProviderChannel).createAttestationData(eq(UInt64.ZERO), eq(Optional.of(0)));
     verifyNoInteractions(blockHandlerChannel);
     verifyNoInteractions(attestationPublisherChannel);
   }

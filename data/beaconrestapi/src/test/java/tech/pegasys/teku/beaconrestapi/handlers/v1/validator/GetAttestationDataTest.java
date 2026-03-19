@@ -59,7 +59,7 @@ class GetAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
   void shouldReturnAttestationDataInformation() throws Exception {
     request.setQueryParameter(SLOT, "1");
     request.setOptionalQueryParameter(COMMITTEE_INDEX, "1");
-    when(validatorDataProvider.createAttestationDataAtSlot(ONE, 1))
+    when(validatorDataProvider.createAttestationDataAtSlot(ONE, Optional.of(1)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(attestationData)));
 
     handler.handleRequest(request);
@@ -72,7 +72,7 @@ class GetAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
   @Test
   void shouldFail_whenCommitteeIndexIsMissingPreGloas() throws JsonProcessingException {
     request.setQueryParameter(SLOT, "1");
-    when(validatorDataProvider.createAttestationDataAtSlot(ONE, 1))
+    when(validatorDataProvider.createAttestationDataAtSlot(ONE, Optional.of(1)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(attestationData)));
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);

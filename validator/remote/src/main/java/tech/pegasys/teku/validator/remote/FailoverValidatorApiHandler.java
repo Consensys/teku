@@ -207,7 +207,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<AttestationData>> createAttestationData(
-      final UInt64 slot, final int committeeIndex) {
+      final UInt64 slot, final Optional<Integer> committeeIndex) {
     return tryRequestUntilSuccess(
         apiChannel -> apiChannel.createAttestationData(slot, committeeIndex),
         BeaconNodeRequestLabels.CREATE_ATTESTATION_METHOD);

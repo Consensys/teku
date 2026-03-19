@@ -116,7 +116,7 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
 
         @Override
         public SafeFuture<Optional<AttestationData>> createAttestationData(
-            final UInt64 slot, final int committeeIndex) {
+            final UInt64 slot, final Optional<Integer> committeeIndex) {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
@@ -280,7 +280,8 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
       Optional<Bytes32> graffiti,
       Optional<UInt64> requestedBuilderBoostFactor);
 
-  SafeFuture<Optional<AttestationData>> createAttestationData(UInt64 slot, int committeeIndex);
+  SafeFuture<Optional<AttestationData>> createAttestationData(
+      UInt64 slot, Optional<Integer> committeeIndex);
 
   SafeFuture<Optional<Attestation>> createAggregate(
       UInt64 slot, Bytes32 attestationHashTreeRoot, Optional<UInt64> committeeIndex);

@@ -544,7 +544,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
 
   @Override
   public SafeFuture<Optional<AttestationData>> createAttestationData(
-      final UInt64 slot, final int committeeIndex) {
+      final UInt64 slot, final Optional<Integer> committeeIndex) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
@@ -622,8 +622,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   }
 
   protected int computeCommitteeIndexForAttestation(
-      final UInt64 slot, final BeaconBlock block, final int committeeIndex) {
-    return committeeIndex;
+      final UInt64 slot, final BeaconBlock block, final Optional<Integer> committeeIndex) {
+    return committeeIndex.orElse(0);
   }
 
   private AttestationData createAttestationData(

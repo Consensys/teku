@@ -106,7 +106,7 @@ public class GetAttestationData extends RestApiEndpoint {
     }
 
     final SafeFuture<Optional<AttestationData>> future =
-        provider.createAttestationDataAtSlot(slot, committeeIndex.orElse(UInt64.ZERO).intValue());
+        provider.createAttestationDataAtSlot(slot, committeeIndex.map(UInt64::intValue));
 
     request.respondAsync(
         future.thenApply(

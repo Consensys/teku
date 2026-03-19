@@ -33,10 +33,11 @@ public class CreateAttestationDataRequest extends AbstractTypeDefRequest {
     super(baseEndpoint, okHttpClient);
   }
 
-  public Optional<AttestationData> submit(final UInt64 slot, final int committeeIndex) {
+  public Optional<AttestationData> submit(
+      final UInt64 slot, final Optional<Integer> committeeIndex) {
     final Map<String, String> queryParams = new HashMap<>();
     queryParams.put(SLOT, slot.toString());
-    queryParams.put(COMMITTEE_INDEX, Integer.toString(committeeIndex));
+    committeeIndex.ifPresent(index -> queryParams.put(COMMITTEE_INDEX, Integer.toString(index)));
     return get(
         ValidatorApiMethod.GET_ATTESTATION_DATA,
         queryParams,

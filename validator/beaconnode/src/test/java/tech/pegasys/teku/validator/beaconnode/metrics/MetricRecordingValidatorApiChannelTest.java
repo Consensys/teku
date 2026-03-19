@@ -211,7 +211,7 @@ class MetricRecordingValidatorApiChannelTest {
             dataStructureUtil.randomBlockContainerAndMetaData(slot)),
         requestDataTest(
             "createAttestationData",
-            channel -> channel.createAttestationData(slot, 4),
+            channel -> channel.createAttestationData(slot, Optional.of(4)),
             BeaconNodeRequestLabels.CREATE_ATTESTATION_METHOD,
             dataStructureUtil.randomAttestationData()),
         Arguments.of(

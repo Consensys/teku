@@ -830,7 +830,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final UInt64 slot = dataStructureUtil.randomSlot();
     final int committeeIndex = dataStructureUtil.randomPositiveInt();
 
-    typeDefClient.createAttestationData(slot, committeeIndex);
+    typeDefClient.createAttestationData(slot, Optional.of(committeeIndex));
 
     final RecordedRequest request = mockWebServer.takeRequest();
 

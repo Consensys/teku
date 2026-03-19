@@ -208,12 +208,12 @@ public class ValidatorDataProviderTest {
   @TestTemplate
   void getAttestationDataAtSlot_shouldThrowIfFutureSlotRequested() {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(validatorApiChannel.createAttestationData(ONE, 0))
+    when(validatorApiChannel.createAttestationData(ONE, Optional.of(0)))
         .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("Computer says no")));
 
     final SafeFuture<Optional<AttestationData>> result =
-        provider.createAttestationDataAtSlot(ONE, 0);
-    verify(validatorApiChannel).createAttestationData(ONE, 0);
+        provider.createAttestationDataAtSlot(ONE, Optional.of(0));
+    verify(validatorApiChannel).createAttestationData(ONE, Optional.of(0));
     SafeFutureAssert.assertThatSafeFuture(result)
         .isCompletedExceptionallyWith(BadRequestException.class);
   }
@@ -222,7 +222,7 @@ public class ValidatorDataProviderTest {
   void getAttestationDataAtSlot_shouldThrowIfStoreNotFound() {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(false);
     final SafeFuture<Optional<AttestationData>> result =
-        provider.createAttestationDataAtSlot(ZERO, 0);
+        provider.createAttestationDataAtSlot(ZERO, Optional.of(0));
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::join).hasRootCauseInstanceOf(ChainDataUnavailableException.class);
     verify(combinedChainDataClient).isStoreAvailable();
@@ -231,12 +231,12 @@ public class ValidatorDataProviderTest {
   @TestTemplate
   void getAttestationDataAtSlot_shouldReturnEmptyIfBlockNotFound() {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(validatorApiChannel.createAttestationData(ZERO, 0))
+    when(validatorApiChannel.createAttestationData(ZERO, Optional.of(0)))
         .thenReturn(completedFuture(Optional.empty()));
 
     final SafeFuture<Optional<AttestationData>> result =
-        provider.createAttestationDataAtSlot(ZERO, 0);
-    verify(validatorApiChannel).createAttestationData(ZERO, 0);
+        provider.createAttestationDataAtSlot(ZERO, Optional.of(0));
+    verify(validatorApiChannel).createAttestationData(ZERO, Optional.of(0));
     assertThat(result).isCompletedWithValue(Optional.empty());
   }
 
@@ -244,11 +244,11 @@ public class ValidatorDataProviderTest {
   void getAttestationDataAtSlot_shouldReturnAttestationData() {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
     final AttestationData internalData = dataStructureUtil.randomAttestationData();
-    when(validatorApiChannel.createAttestationData(ONE, 0))
+    when(validatorApiChannel.createAttestationData(ONE, Optional.of(0)))
         .thenReturn(completedFuture(Optional.of(internalData)));
 
     final SafeFuture<Optional<AttestationData>> result =
-        provider.createAttestationDataAtSlot(ONE, 0);
+        provider.createAttestationDataAtSlot(ONE, Optional.of(0));
     assertThat(result).isCompleted();
     AttestationData data = safeJoin(result).orElseThrow();
     assertThat(data.getIndex()).isEqualTo(internalData.getIndex());

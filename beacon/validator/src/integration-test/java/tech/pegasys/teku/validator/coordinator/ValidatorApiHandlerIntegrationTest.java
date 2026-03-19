@@ -248,9 +248,8 @@ public class ValidatorApiHandlerIntegrationTest {
     assertThat(epochBoundaryBlock).isNotNull();
     final Checkpoint expectedTarget = new Checkpoint(targetEpoch, epochBoundaryBlock.getRoot());
 
-    final int committeeIndex = 0;
     final SafeFuture<Optional<AttestationData>> result =
-        handler.createAttestationData(targetSlot, committeeIndex);
+        handler.createAttestationData(targetSlot, Optional.of(0));
     assertThatSafeFuture(result).isCompletedWithNonEmptyOptional();
     final AttestationData attestation = safeJoin(result).orElseThrow();
     assertThat(attestation.getBeaconBlockRoot()).isEqualTo(latestBlock.getRoot());
@@ -280,9 +279,8 @@ public class ValidatorApiHandlerIntegrationTest {
     assertThat(latestBlock).isNotNull();
     final Checkpoint expectedTarget = new Checkpoint(targetEpoch, latestBlock.getRoot());
 
-    final int committeeIndex = 0;
     final SafeFuture<Optional<AttestationData>> result =
-        handler.createAttestationData(targetSlot, committeeIndex);
+        handler.createAttestationData(targetSlot, Optional.of(0));
     assertThatSafeFuture(result).isCompletedWithNonEmptyOptional();
     final AttestationData attestation = safeJoin(result).orElseThrow();
     assertThat(attestation.getBeaconBlockRoot()).isEqualTo(latestBlock.getRoot());

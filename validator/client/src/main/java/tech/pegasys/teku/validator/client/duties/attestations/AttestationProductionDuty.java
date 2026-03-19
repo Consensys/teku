@@ -152,7 +152,7 @@ public class AttestationProductionDuty implements Duty {
       final AttestationDataProducer attestationDataProducer,
       final SignedAttestationProducer signedAttestationProducer) {
     final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture =
-        attestationDataProducer.createAttestationData(slot, committeeIndex);
+        attestationDataProducer.createAttestationData(slot, Optional.of(committeeIndex));
     unsignedAttestationFuture.propagateTo(committee.getAttestationDataFuture());
 
     return committee.getValidators().stream()
@@ -196,7 +196,8 @@ public class AttestationProductionDuty implements Duty {
       // in Electra and later, the committee index in AttestationData is always 0, so we ask for a
       // single AttestationData which will be good for all committees in the slot
       final Supplier<SafeFuture<Optional<AttestationData>>> cachedCall =
-          Suppliers.memoize(() -> createAttestationDataFromValidatorApiChannel(slot, 0));
+          Suppliers.memoize(
+              () -> createAttestationDataFromValidatorApiChannel(slot, Optional.of(0)));
 
       return (slot, committeeIndex) -> cachedCall.get();
     }
@@ -205,7 +206,7 @@ public class AttestationProductionDuty implements Duty {
   }
 
   private SafeFuture<Optional<AttestationData>> createAttestationDataFromValidatorApiChannel(
-      final UInt64 slot, final int committeeIndex) {
+      final UInt64 slot, final Optional<Integer> committeeIndex) {
     return validatorDutyMetrics.record(
         () -> validatorApiChannel.createAttestationData(slot, committeeIndex), this, CREATE_TOTAL);
   }
@@ -326,6 +327,6 @@ public class AttestationProductionDuty implements Duty {
   @FunctionalInterface
   private interface AttestationDataProducer {
     SafeFuture<Optional<AttestationData>> createAttestationData(
-        final UInt64 slot, int committeeIndex);
+        final UInt64 slot, Optional<Integer> committeeIndex);
   }
 }

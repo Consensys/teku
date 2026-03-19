@@ -110,7 +110,7 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<Optional<AttestationData>> createAttestationDataAtSlot(
-      final UInt64 slot, final int committeeIndex) {
+      final UInt64 slot, final Optional<Integer> committeeIndex) {
     if (!isStoreAvailable()) {
       return SafeFuture.failedFuture(new ChainDataUnavailableException());
     }

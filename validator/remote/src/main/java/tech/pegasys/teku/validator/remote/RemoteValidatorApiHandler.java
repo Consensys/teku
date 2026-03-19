@@ -233,7 +233,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<AttestationData>> createAttestationData(
-      final UInt64 slot, final int committeeIndex) {
+      final UInt64 slot, final Optional<Integer> committeeIndex) {
     return sendRequest(() -> typeDefClient.createAttestationData(slot, committeeIndex));
   }
 

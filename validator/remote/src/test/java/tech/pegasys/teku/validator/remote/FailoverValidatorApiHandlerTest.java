@@ -743,7 +743,7 @@ class FailoverValidatorApiHandlerTest {
             Optional.of(mock(BlockContainerAndMetaData.class))),
         getArguments(
             "createAttestationData",
-            apiChannel -> apiChannel.createAttestationData(slot, 0),
+            apiChannel -> apiChannel.createAttestationData(slot, Optional.of(0)),
             BeaconNodeRequestLabels.CREATE_ATTESTATION_METHOD,
             Optional.of(mock(AttestationData.class))),
         getArguments(

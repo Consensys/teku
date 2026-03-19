@@ -170,7 +170,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   }
 
   public Optional<AttestationData> createAttestationData(
-      final UInt64 slot, final int committeeIndex) {
+      final UInt64 slot, final Optional<Integer> committeeIndex) {
 
     final CreateAttestationDataRequest createAttestationDataRequest =
         new CreateAttestationDataRequest(getBaseEndpoint(), getOkHttpClient());

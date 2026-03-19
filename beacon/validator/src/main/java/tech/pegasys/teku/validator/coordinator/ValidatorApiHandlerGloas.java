@@ -14,6 +14,8 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
@@ -44,7 +46,7 @@ import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
 
 public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
-
+  private static final Logger LOG = LogManager.getLogger();
   private final ExecutionPayloadBidManager executionPayloadBidManager;
 
   public ValidatorApiHandlerGloas(
@@ -122,17 +124,29 @@ public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
 
   @Override
   protected int computeCommitteeIndexForAttestation(
-      final UInt64 slot, final BeaconBlock block, final int committeeIndex) {
+      final UInt64 slot, final BeaconBlock block, final Optional<Integer> committeeIndex) {
+    if (committeeIndex.isPresent()) {
+      LOG.debug("committeeIndex passed in, using the supplied value {}", committeeIndex::get);
+      return committeeIndex.get();
+    }
+
+    // compute the index based on availability
     if (slot.equals(block.getSlot())) {
+      LOG.debug("slot {} same as block slot", slot);
       return 0;
     }
+
     return spec.atSlot(slot)
         .getForkChoiceUtil()
         .toVersionGloas()
         .map(
-            forkChoiceUtil ->
-                forkChoiceUtil.isBlockStatusFull(combinedChainDataClient.getStore(), block) ? 1 : 0)
-        .orElse(0);
+            gloasUtil -> {
+              final int index =
+                  gloasUtil.isBlockStatusFull(combinedChainDataClient.getStore(), block) ? 1 : 0;
+              LOG.debug("committee index set to {} at slot {}", index, slot);
+              return index;
+            })
+        .orElse(1);
   }
 
   private Optional<BeaconState> getExecutionPayloadStateForBlockProduction(final UInt64 slot) {
