@@ -112,6 +112,7 @@ import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -831,7 +832,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initBlobSidecarManager() {
-    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB) && !isSafeToDeactivateDenebFeatures()) {
       final FutureItems<BlobSidecar> futureBlobSidecars =
           FutureItems.create(BlobSidecar::getSlot, futureItemsMetric, "blob_sidecars");
 
@@ -1247,7 +1248,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initBlockBlobSidecarsTrackersPool() {
     LOG.debug("BeaconChainController.initBlockBlobSidecarsTrackersPool()");
-    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB) && !isSafeToDeactivateDenebFeatures()) {
       final BlockImportChannel blockImportChannel =
           eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
       final BlobSidecarGossipChannel blobSidecarGossipChannel =
@@ -2486,6 +2487,24 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     slotProcessor.onTick(currentTimeMillis, performanceRecord);
     performanceRecord.ifPresent(TickProcessingPerformance::complete);
+  }
+
+  boolean isSafeToDeactivateDenebFeatures() {
+    if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
+      return false;
+    }
+    final UInt64 fuluForkEpoch = spec.getGenesisSpec().getConfig().getFuluForkEpoch();
+    final int minEpochsForBlobSidecarsRequests =
+        SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
+            .getMinEpochsForBlobSidecarsRequests();
+    return recentChainData
+        .getCurrentEpoch()
+        .map(
+            currentEpoch ->
+                currentEpoch
+                    .minusMinZero(fuluForkEpoch)
+                    .isGreaterThan(minEpochsForBlobSidecarsRequests))
+        .orElse(false);
   }
 
   @Override
