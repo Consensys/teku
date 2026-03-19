@@ -32,6 +32,7 @@ import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.OkHttpClientCreator;
 import tech.pegasys.teku.ethereum.executionclient.OkHttpExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionclient.OkHttpExecutionEngineClientFactory;
 import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClientProvider;
 import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
@@ -148,7 +149,7 @@ public class ExecutionLayerService extends Service {
                 beaconDataDirectory);
         final OkHttpClient okHttpClient = OkHttpClientCreator.create(LOG, jwtConfig, timeProvider);
         final ExecutionEngineClient newEngineApiClient =
-            new OkHttpExecutionEngineClient(
+            OkHttpExecutionEngineClientFactory.create(
                 okHttpClient,
                 config.getEngineEndpoint(),
                 EVENT_LOG,
