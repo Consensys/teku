@@ -11,26 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.forkchoice;
+package tech.pegasys.teku.ethereum.executionclient.schema;
 
-/**
- * Possible status of a payload in the fork-choice
- *
- * <p>Spec reference:
- * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md
- */
-public enum PayloadStatus {
-  PAYLOAD_STATUS_EMPTY(0),
-  PAYLOAD_STATUS_FULL(1),
-  PAYLOAD_STATUS_PENDING(2);
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 
-  private final int value;
+public record JsonRpcRequest(
+    @JsonProperty("jsonrpc") String jsonrpc,
+    @JsonProperty("method") String method,
+    @JsonProperty("params") List<Object> params,
+    @JsonProperty("id") long id) {
 
-  PayloadStatus(final int value) {
-    this.value = value;
-  }
-
-  public int getValue() {
-    return value;
+  public JsonRpcRequest(final String method, final List<Object> params, final long id) {
+    this("2.0", method, params, id);
   }
 }

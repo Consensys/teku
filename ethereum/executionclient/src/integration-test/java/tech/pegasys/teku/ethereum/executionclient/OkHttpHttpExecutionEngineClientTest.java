@@ -78,7 +78,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @TestSpecContext(milestone = {CAPELLA, DENEB, ELECTRA, FULU, GLOAS})
-public class OkHttpExecutionEngineClientTest {
+public class OkHttpHttpExecutionEngineClientTest {
   private static final Logger LOG = LogManager.getLogger();
   private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);
 
@@ -92,7 +92,7 @@ public class OkHttpExecutionEngineClientTest {
   private Spec spec;
   private SpecMilestone specMilestone;
 
-  private OkHttpExecutionEngineClient eeClient;
+  private ExecutionEngineClient eeClient;
 
   @BeforeEach
   void setUp(final SpecContext specContext) throws IOException {
@@ -102,7 +102,7 @@ public class OkHttpExecutionEngineClientTest {
     specMilestone = specContext.getSpecMilestone();
     mockWebServer.start();
     eeClient =
-        new OkHttpExecutionEngineClient(
+        new OkHttpHttpExecutionEngineClient(
             OkHttpClientCreator.create(DEFAULT_TIMEOUT, LOG, Optional.empty(), timeProvider),
             "http://localhost:" + mockWebServer.getPort(),
             EVENT_LOG,

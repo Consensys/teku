@@ -198,6 +198,8 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .listenAddress(config.getRestApiInterface())
             .port(config.getRestApiPort())
             .maxUrlLength(config.getMaxUrlLength())
+            .virtualThreadsEnabled(config.isRestApiVirtualThreadsEnabled())
+            .virtualThreadsMaxThreads(config.getRestApiVirtualThreadsMaxConcurrentTasks())
             .corsAllowedOrigins(config.getRestApiCorsAllowedOrigins())
             .hostAllowlist(config.getRestApiHostAllowlist())
             .exceptionHandler(
