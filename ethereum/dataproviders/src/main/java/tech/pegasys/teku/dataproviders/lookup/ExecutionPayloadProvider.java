@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.dataproviders.lookup;
 
+import com.google.common.collect.Sets;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
@@ -37,6 +38,39 @@ public interface ExecutionPayloadProvider {
                 .collect(
                     Collectors.toMap(
                         SignedExecutionPayloadEnvelope::getBeaconBlockRoot, Function.identity())));
+  }
+
+  /**
+   * Combines multiple providers, querying the primary first and falling back to secondary providers
+   * for any missing roots. Use this to combine a hot store provider with a database-backed
+   * provider.
+   */
+  static ExecutionPayloadProvider combined(
+      final ExecutionPayloadProvider primaryProvider,
+      final ExecutionPayloadProvider... secondaryProviders) {
+    return (final Set<Bytes32> blockRoots) -> {
+      SafeFuture<Map<Bytes32, SignedExecutionPayloadEnvelope>> result =
+          primaryProvider.getExecutionPayloads(blockRoots);
+      for (ExecutionPayloadProvider nextProvider : secondaryProviders) {
+        result =
+            result.thenCompose(
+                payloads -> {
+                  final Set<Bytes32> remainingRoots =
+                      Sets.difference(blockRoots, payloads.keySet());
+                  if (remainingRoots.isEmpty()) {
+                    return SafeFuture.completedFuture(payloads);
+                  }
+                  return nextProvider
+                      .getExecutionPayloads(remainingRoots)
+                      .thenApply(
+                          morePayloads -> {
+                            payloads.putAll(morePayloads);
+                            return payloads;
+                          });
+                });
+      }
+      return result;
+    };
   }
 
   SafeFuture<Map<Bytes32, SignedExecutionPayloadEnvelope>> getExecutionPayloads(
