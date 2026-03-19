@@ -15,7 +15,7 @@ package tech.pegasys.teku.storage.server.state;
 
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
-import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.google.common.cache.CacheLoader;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.Database;
 
-class StateCacheLoader implements CacheLoader<UInt64, BeaconState> {
+class StateCacheLoader extends CacheLoader<UInt64, BeaconState> {
   private static final Logger LOG = LogManager.getLogger();
   private final int stateRebuildTimeoutSeconds;
   private final Database database;

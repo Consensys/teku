@@ -13,14 +13,15 @@
 
 package tech.pegasys.teku.storage.server.state;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.github.benmanes.caffeine.cache.RemovalCause;
-import com.github.benmanes.caffeine.cache.RemovalListener;
+import com.google.common.base.Throwables;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.LoadingCache;
+import com.google.common.cache.RemovalCause;
+import com.google.common.cache.RemovalNotification;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListSet;
-import tech.pegasys.teku.infrastructure.collections.cache.CacheMaintenanceExecutor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -61,17 +62,10 @@ public class FinalizedStateCache {
       final boolean useSoftReferences,
       final int stateRebuildTimeoutSeconds,
       final long maxRegenerateSlots) {
-    final RemovalListener<UInt64, BeaconState> removalListener =
-        (key, value, cause) -> {
-          if (cause != RemovalCause.REPLACED) {
-            availableSlots.remove(key);
-          }
-        };
-    final var cacheBuilder =
-        Caffeine.newBuilder()
+    final CacheBuilder<UInt64, BeaconState> cacheBuilder =
+        CacheBuilder.newBuilder()
             .maximumSize(maximumCacheSize)
-            .executor(CacheMaintenanceExecutor.getInstance())
-            .removalListener(removalListener);
+            .removalListener(this::onRemovedFromCache);
     if (useSoftReferences) {
       cacheBuilder.softValues();
     }
@@ -81,11 +75,21 @@ public class FinalizedStateCache {
                 spec, database, stateRebuildTimeoutSeconds, maxRegenerateSlots, this));
   }
 
+  private void onRemovedFromCache(
+      final RemovalNotification<UInt64, BeaconState> removalNotification) {
+    if (removalNotification.getCause() != RemovalCause.REPLACED) {
+      availableSlots.remove(removalNotification.getKey());
+    }
+  }
+
   public Optional<BeaconState> getFinalizedState(final UInt64 slot) {
     try {
-      return Optional.of(stateCache.get(slot));
-    } catch (final StateUnavailableException e) {
-      return Optional.empty();
+      return Optional.of(stateCache.getUnchecked(slot));
+    } catch (final UncheckedExecutionException e) {
+      if (Throwables.getRootCause(e) instanceof StateUnavailableException) {
+        return Optional.empty();
+      }
+      throw new RuntimeException("Error while regenerating state", e);
     }
   }
 
