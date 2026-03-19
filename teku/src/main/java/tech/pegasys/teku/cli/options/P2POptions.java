@@ -225,7 +225,7 @@ public class P2POptions {
       arity = "1",
       hidden = true)
   private Boolean p2pSubnetAwarePeerSelectionActive =
-      P2PConfig.DEFAULT_P2P_TARGET_SUBNET_AWARE_PEER_SELECTION_ACTIVE;
+      P2PConfig.DEFAULT_P2P_SUBNET_AWARE_PEER_SELECTION_ACTIVE;
 
   @Option(
       names = {"--Xp2p-minimum-randomly-selected-peer-count"},
