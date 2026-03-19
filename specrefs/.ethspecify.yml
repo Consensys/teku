@@ -1,4 +1,4 @@
-version: v1.7.0-alpha.2
+version: v1.7.0-alpha.3
 style: full
 
 specrefs:
@@ -44,11 +44,7 @@ specrefs:
       # Not implemented: gloas
       - PTC_TIMELINESS_INDEX#gloas
       - NUM_BLOCK_TIMELINESS_DEADLINES#gloas
-      - DOMAIN_PROPOSER_PREFERENCES#gloas
       - ATTESTATION_TIMELINESS_INDEX#gloas
-      - PAYLOAD_STATUS_EMPTY#gloas
-      - PAYLOAD_STATUS_FULL#gloas
-      - PAYLOAD_STATUS_PENDING#gloas
 
     containers:
       # Not defined, unnecessary
@@ -66,6 +62,11 @@ specrefs:
       - ProposerPreferences#gloas
       - SignedProposerPreferences#gloas
 
+      # Not implemented: heze
+      - BeaconState#heze
+      - ExecutionPayloadBid#heze
+      - SignedExecutionPayloadBid#heze
+
     dataclasses:
       # Not defined, implemented differently
       - LatestMessage
@@ -74,6 +75,11 @@ specrefs:
 
       # No light client support
       - LightClientStore
+
+      # Not implemented: heze
+      - GetInclusionListResponse#heze
+      - InclusionListStore#heze
+      - PayloadAttributes#heze
 
     functions:
       # Functions implemented by KZG library for EIP-4844
@@ -317,3 +323,26 @@ specrefs:
       - should_apply_proposer_boost#gloas
       - update_proposer_boost_root#gloas
       - is_data_available#gloas
+      - is_payload_data_available#gloas
+
+      # Not implemented: heze
+      - get_forkchoice_store#heze
+      - get_inclusion_list_bits#heze
+      - get_inclusion_list_committee#heze
+      - get_inclusion_list_committee_assignment#heze
+      - get_inclusion_list_signature#heze
+      - get_inclusion_list_store#heze
+      - get_inclusion_list_submission_due_ms#heze
+      - get_inclusion_list_transactions#heze
+      - get_proposer_inclusion_list_cutoff_ms#heze
+      - get_view_freeze_cutoff_ms#heze
+      - is_inclusion_list_bits_inclusive#heze
+      - is_payload_inclusion_list_satisfied#heze
+      - is_valid_inclusion_list_signature#heze
+      - on_execution_payload#heze
+      - on_inclusion_list#heze
+      - prepare_execution_payload#heze
+      - process_inclusion_list#heze
+      - record_payload_inclusion_list_satisfaction#heze
+      - should_extend_payload#heze
+      - upgrade_to_heze#heze

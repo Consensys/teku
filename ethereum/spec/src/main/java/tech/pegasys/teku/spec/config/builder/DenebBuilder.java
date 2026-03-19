@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
@@ -26,6 +28,7 @@ import tech.pegasys.teku.spec.config.SpecConfigDenebImpl;
 
 public class DenebBuilder extends BaseForkBuilder
     implements ForkConfigBuilder<SpecConfigCapella, SpecConfigDeneb> {
+  private static final Logger LOG = LogManager.getLogger();
 
   private Integer maxPerEpochActivationChurnLimit;
   private Integer fieldElementsPerBlob;
@@ -116,6 +119,13 @@ public class DenebBuilder extends BaseForkBuilder
   @Override
   public void validate() {
     defaultValuesIfRequired(this);
+    if (maxRequestBlobSidecars == null
+        && maxRequestBlocksDeneb != null
+        && maxBlobsPerBlock != null) {
+      final Integer newMaxRequestBlobSidecars = computeMaxRequestBlobSidecars();
+      LOG.debug("Setting maxRequestBlobSidecars to {}", newMaxRequestBlobSidecars);
+      maxRequestBlobSidecars = newMaxRequestBlobSidecars;
+    }
     validateConstants();
   }
 
@@ -133,6 +143,11 @@ public class DenebBuilder extends BaseForkBuilder
     constants.put("blobSidecarSubnetCount", blobSidecarSubnetCount);
 
     return constants;
+  }
+
+  // compute_max_request_blob_sidecars
+  private Integer computeMaxRequestBlobSidecars() {
+    return maxRequestBlocksDeneb * maxBlobsPerBlock;
   }
 
   @Override

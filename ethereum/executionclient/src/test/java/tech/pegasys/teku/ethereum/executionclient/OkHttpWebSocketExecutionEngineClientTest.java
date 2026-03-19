@@ -14,14 +14,19 @@
 package tech.pegasys.teku.ethereum.executionclient;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.lang.reflect.Field;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import okhttp3.OkHttpClient;
@@ -263,6 +268,43 @@ class OkHttpWebSocketExecutionEngineClientTest {
     future.get(5, TimeUnit.SECONDS);
 
     assertThat(receivedMessage.get()).contains("engine_getPayloadV1");
+  }
+
+  @Test
+  void unexpectedExceptionOnSend_returnsFailedFuture() throws Exception {
+    // First establish a connection
+    mockWebServer.enqueue(webSocketResponse("{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":null}"));
+    engineClient.getPayloadV1(Bytes8.fromHexStringLenient("0x1")).get(5, TimeUnit.SECONDS);
+
+    // Replace the internal webSocket with a mock that throws on send()
+    final WebSocket throwingWebSocket = mock(WebSocket.class);
+    final RuntimeException expectedException = new RuntimeException("Unexpected send failure");
+    when(throwingWebSocket.send(anyString())).thenThrow(expectedException);
+
+    final Field wsField = OkHttpWebSocketExecutionEngineClient.class.getDeclaredField("webSocket");
+    wsField.setAccessible(true);
+    wsField.set(engineClient, throwingWebSocket);
+
+    final SafeFuture<tech.pegasys.teku.ethereum.executionclient.schema.Response<ExecutionPayloadV1>>
+        future = engineClient.getPayloadV1(Bytes8.fromHexStringLenient("0x2"));
+
+    assertThat(future).isCompletedExceptionally();
+    assertThatThrownBy(() -> future.get())
+        .hasCauseInstanceOf(RuntimeException.class)
+        .hasRootCauseMessage("Unexpected send failure");
+
+    verifyRequestWasRemovedFromPendingRequests();
+  }
+
+  private void verifyRequestWasRemovedFromPendingRequests()
+      throws NoSuchFieldException, IllegalAccessException {
+    final Field pendingField =
+        OkHttpWebSocketExecutionEngineClient.class.getDeclaredField("pendingRequests");
+    pendingField.setAccessible(true);
+    @SuppressWarnings("unchecked")
+    final ConcurrentHashMap<Long, ?> pendingRequests =
+        (ConcurrentHashMap<Long, ?>) pendingField.get(engineClient);
+    assertThat(pendingRequests).isEmpty();
   }
 
   private static MockResponse webSocketResponse(final String s) {

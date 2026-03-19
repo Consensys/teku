@@ -105,12 +105,20 @@ public class OkHttpWebSocketExecutionEngineClient extends OkHttpExecutionEngineC
     final SafeFuture<JsonNode> jsonFuture = new SafeFuture<>();
     pendingRequests.put(requestId, jsonFuture);
 
-    final boolean sent = webSocket.send(requestBody);
-    if (!sent) {
+    try {
+      final boolean sent = webSocket.send(requestBody);
+      // This branch is for expected errors like disconnected, not able to write to socket, etc (all
+      // handled by library)
+      if (!sent) {
+        pendingRequests.remove(requestId);
+        final String errorMsg = "Failed to send WebSocket message";
+        handleError(isCritical, new Exception(errorMsg), false);
+        return SafeFuture.completedFuture(Response.fromErrorMessage(errorMsg));
+      }
+    } catch (final Exception e) {
+      // This branch is unexpected so we are raising the error
       pendingRequests.remove(requestId);
-      final String errorMsg = "Failed to send WebSocket message";
-      handleError(isCritical, new Exception(errorMsg), false);
-      return SafeFuture.completedFuture(Response.fromErrorMessage(errorMsg));
+      return SafeFuture.failedFuture(e);
     }
 
     return jsonFuture
@@ -152,9 +160,7 @@ public class OkHttpWebSocketExecutionEngineClient extends OkHttpExecutionEngineC
   private static String getFormattedError(final JsonNode errorNode) {
     final int code = errorNode.path("code").asInt();
     final String msg = errorNode.path("message").asText();
-    final String formattedError =
-        String.format("JSON-RPC error: %s (%d): %s", describeJsonRpcErrorCode(code), code, msg);
-    return formattedError;
+    return String.format("JSON-RPC error: %s (%d): %s", describeJsonRpcErrorCode(code), code, msg);
   }
 
   private class JsonRpcWebSocketListener extends WebSocketListener {
