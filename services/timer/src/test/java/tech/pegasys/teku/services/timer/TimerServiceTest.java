@@ -23,8 +23,6 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -94,7 +92,6 @@ class TimerServiceTest {
 
   @ParameterizedTest
   @MethodSource("timeToNextTaskMs")
-  @DisabledOnOs(OS.WINDOWS)
   void nextTickDueCases(final long millis, final int ticksPerSecond, final long expectedValue) {
     assertThat(TimerService.nextTickDue(millis, ticksPerSecond)).isEqualTo(expectedValue);
   }
@@ -119,7 +116,6 @@ class TimerServiceTest {
   /** Both services should fire a comparable number of ticks in a fixed wall-clock window. */
   @ParameterizedTest(name = "{0}")
   @MethodSource("timerServiceFactories")
-  @DisabledOnOs(OS.WINDOWS)
   void comparison_ticksFire_withinExpectedRange(
       final String name, final Function<TimeTickHandler, Service> factory) throws Exception {
     final AtomicInteger counter = new AtomicInteger();
@@ -167,7 +163,6 @@ class TimerServiceTest {
    */
   @ParameterizedTest(name = "{0}")
   @MethodSource("timerServiceFactories")
-  @DisabledOnOs(OS.WINDOWS)
   void comparison_slowTick_doesNotCauseCatchupBurst(
       final String name, final Function<TimeTickHandler, Service> factory) throws Exception {
     final AtomicInteger counter = new AtomicInteger();
