@@ -45,7 +45,12 @@ class TimerServiceTest {
         Arguments.of(1, 2, 499),
         Arguments.of(499, 2, 1),
         Arguments.of(500, 2, 500),
-        Arguments.of(999, 2, 1));
+        Arguments.of(999, 2, 1),
+        // ticksPerSecond = 3 (intervalMs = 333): non-divisible case
+        Arguments.of(0, 3, 333),
+        Arguments.of(333, 3, 333),
+        Arguments.of(666, 3, 334),
+        Arguments.of(999, 3, 1));
   }
 
   @AfterEach

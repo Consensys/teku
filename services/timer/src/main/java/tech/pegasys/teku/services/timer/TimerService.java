@@ -85,12 +85,13 @@ public class TimerService extends Service {
   }
 
   static long nextTickDue(final long currentMillisOffset, final int ticksPerSecond) {
-    final long current = currentMillisOffset / (1000 / ticksPerSecond);
+    final long intervalMs = 1000 / ticksPerSecond;
+    final long current = Math.min(currentMillisOffset / intervalMs, ticksPerSecond - 1);
     final long next = (current + 1) % ticksPerSecond;
     if (next == 0) {
       return 1000 - currentMillisOffset;
     }
-    final long millisTarget = (1000 / ticksPerSecond) * next;
+    final long millisTarget = intervalMs * next;
     if (millisTarget > currentMillisOffset) {
       return millisTarget - currentMillisOffset;
     }
