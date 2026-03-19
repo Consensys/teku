@@ -25,7 +25,6 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -33,14 +32,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.ethereum.executionclient.schema.JsonRpcRequest;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
-public class IpcSocketExecutionEngineClient extends OkHttpExecutionEngineClient {
+public class IpcSocketExecutionEngineClient extends AbstractExecutionEngineClient {
+
+  public static String IPC_READER_ASYNC_RUNNER_NAME = "ipcreader";
+  public static int IPC_READER_MAX_THREADS = 1;
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -53,14 +55,13 @@ public class IpcSocketExecutionEngineClient extends OkHttpExecutionEngineClient 
   private volatile Socket socket;
   private volatile OutputStream outputStream;
 
-  public IpcSocketExecutionEngineClient(
+  IpcSocketExecutionEngineClient(
       final AsyncRunner asyncRunner,
       final Path ipcPath,
       final EventLogger eventLog,
       final TimeProvider timeProvider,
-      final ExecutionClientEventsChannel executionClientEventsPublisher,
-      final Collection<String> nonCriticalMethods) {
-    super(eventLog, timeProvider, executionClientEventsPublisher, nonCriticalMethods);
+      final ExecutionClientEventsChannel executionClientEventsPublisher) {
+    super(eventLog, timeProvider, executionClientEventsPublisher);
     this.asyncRunner = asyncRunner;
     this.socketFactory = new UnixDomainSocketFactory(ipcPath);
   }
@@ -150,7 +151,7 @@ public class IpcSocketExecutionEngineClient extends OkHttpExecutionEngineClient 
       final List<Object> params,
       final JavaType resultType,
       final Duration timeout) {
-    final boolean isCritical = !nonCriticalMethods.contains(method);
+    final boolean isCritical = isCriticalMethod(method);
 
     final JsonRpcRequest request = buildRequest(method, params);
     final long requestId = request.id();
@@ -222,7 +223,6 @@ public class IpcSocketExecutionEngineClient extends OkHttpExecutionEngineClient 
   private static String getFormattedError(final JsonNode errorNode) {
     final int code = errorNode.path("code").asInt();
     final String msg = errorNode.path("message").asText();
-    return String.format(
-        "JSON-RPC error: %s (%d): %s", describeJsonRpcErrorCode(code), code, msg);
+    return String.format("JSON-RPC error: %s (%d): %s", describeJsonRpcErrorCode(code), code, msg);
   }
 }

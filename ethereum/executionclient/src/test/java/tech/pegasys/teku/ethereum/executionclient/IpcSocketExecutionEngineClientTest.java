@@ -43,9 +43,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
-import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
+import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
@@ -79,8 +79,7 @@ class IpcSocketExecutionEngineClientTest {
             socketPath,
             eventLog,
             timeProvider,
-            executionClientEventsPublisher,
-            OkHttpExecutionEngineClient.NON_CRITICAL_METHODS);
+            executionClientEventsPublisher);
   }
 
   @AfterEach

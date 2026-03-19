@@ -27,7 +27,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 
-class OkHttpExecutionEngineClientFactoryTest {
+class ExecutionEngineClientFactoryTest {
 
   private final OkHttpClient httpClient = new OkHttpClient.Builder().build();
   private final AsyncRunner asyncRunner = mock(AsyncRunner.class);
@@ -57,6 +57,13 @@ class OkHttpExecutionEngineClientFactoryTest {
   }
 
   @Test
+  void throwsException_forFileEndpointOnWindows() {
+    assertThatThrownBy(() -> createClient("file:///tmp/foo.ipc", false))
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessageContaining("not supported on Windows");
+  }
+
+  @Test
   void throwsException_forUnsupportedScheme() {
     assertThatThrownBy(() -> createClient("ftp://localhost:8551"))
         .isInstanceOf(InvalidConfigurationException.class)
@@ -72,13 +79,23 @@ class OkHttpExecutionEngineClientFactoryTest {
   }
 
   private ExecutionEngineClient createClient(final String endpoint) {
-    return OkHttpExecutionEngineClientFactory.create(
-        httpClient,
-        () -> asyncRunner,
+    return ExecutionEngineClientFactory.create(
         endpoint,
-        eventLog,
         timeProvider,
+        eventLog,
         executionClientEventsPublisher,
-        OkHttpExecutionEngineClient.NON_CRITICAL_METHODS);
+        () -> httpClient,
+        () -> asyncRunner);
+  }
+
+  private ExecutionEngineClient createClient(final String endpoint, final boolean isUnix) {
+    return ExecutionEngineClientFactory.create(
+        endpoint,
+        timeProvider,
+        eventLog,
+        executionClientEventsPublisher,
+        () -> httpClient,
+        () -> asyncRunner,
+        isUnix);
   }
 }
