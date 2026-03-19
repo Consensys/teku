@@ -589,6 +589,7 @@ public class Eth2P2PNetworkBuilder {
                         dataColumnSidecarSubnetTopicProvider,
                         dataColumnSidecarSubnetService,
                         config.getTargetSubnetSubscriberCount(),
+                        config.isSubnetAwarePeerSelectionActive(),
                         subnetPeerCountGauge),
                 reputationManager,
                 Collections::shuffle))

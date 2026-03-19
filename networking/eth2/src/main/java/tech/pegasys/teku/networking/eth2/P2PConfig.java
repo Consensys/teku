@@ -41,6 +41,7 @@ public class P2PConfig {
 
   public static final boolean DEFAULT_PEER_ALL_TOPIC_FILTER_ENABLED = true;
   public static final int DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT = 2;
+  public static final boolean DEFAULT_P2P_TARGET_SUBNET_AWARE_PEER_SELECTION_ACTIVE = false;
   public static final boolean DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED = false;
   public static final boolean DEFAULT_GOSSIP_SCORING_ENABLED = true;
   public static final boolean DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED = true;
@@ -80,6 +81,7 @@ public class P2PConfig {
 
   private final GossipEncoding gossipEncoding;
   private final int targetSubnetSubscriberCount;
+  private final boolean subnetAwarePeerSelectionActive;
   private final boolean subscribeAllSubnetsEnabled;
   private final int custodyGroupCountOverride;
   private final OptionalInt dasPublishWithholdColumnsEverySlots;
@@ -112,6 +114,7 @@ public class P2PConfig {
       final GossipConfigurator gossipConfigurator,
       final GossipEncoding gossipEncoding,
       final int targetSubnetSubscriberCount,
+      final boolean subnetAwarePeerSelectionActive,
       final boolean subscribeAllSubnetsEnabled,
       final int custodyGroupCountOverride,
       final OptionalInt dasPublishWithholdColumnsEverySlots,
@@ -142,6 +145,7 @@ public class P2PConfig {
     this.gossipConfigurator = gossipConfigurator;
     this.gossipEncoding = gossipEncoding;
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
+    this.subnetAwarePeerSelectionActive = subnetAwarePeerSelectionActive;
     this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
     this.custodyGroupCountOverride = custodyGroupCountOverride;
     this.dasPublishWithholdColumnsEverySlots = dasPublishWithholdColumnsEverySlots;
@@ -195,6 +199,10 @@ public class P2PConfig {
 
   public int getTargetSubnetSubscriberCount() {
     return targetSubnetSubscriberCount;
+  }
+
+  public boolean isSubnetAwarePeerSelectionActive() {
+    return subnetAwarePeerSelectionActive;
   }
 
   public boolean isSubscribeAllSubnetsEnabled() {
@@ -309,6 +317,8 @@ public class P2PConfig {
     private Boolean isGossipScoringEnabled = DEFAULT_GOSSIP_SCORING_ENABLED;
     private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     private Integer targetSubnetSubscriberCount = DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
+    private Boolean subnetAwarePeerSelectionActive =
+        DEFAULT_P2P_TARGET_SUBNET_AWARE_PEER_SELECTION_ACTIVE;
     private Boolean subscribeAllSubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
     private Boolean subscribeAllCustodySubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
     private int custodyGroupCountOverride = DEFAULT_CUSTODY_GROUP_COUNT_OVERRIDE;
@@ -390,6 +400,7 @@ public class P2PConfig {
           gossipConfigurator,
           gossipEncoding,
           targetSubnetSubscriberCount,
+          subnetAwarePeerSelectionActive,
           subscribeAllSubnetsEnabled,
           custodyGroupCountOverride,
           dasPublishWithholdColumnsEverySlotsOptional,
@@ -449,6 +460,12 @@ public class P2PConfig {
             String.format("Invalid targetSubnetSubscriberCount: %d", targetSubnetSubscriberCount));
       }
       this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
+      return this;
+    }
+
+    public Builder subnetAwarePeerSelectionActive(final Boolean subnetAwarePeerSelectionActive) {
+      checkNotNull(subnetAwarePeerSelectionActive);
+      this.subnetAwarePeerSelectionActive = subnetAwarePeerSelectionActive;
       return this;
     }
 

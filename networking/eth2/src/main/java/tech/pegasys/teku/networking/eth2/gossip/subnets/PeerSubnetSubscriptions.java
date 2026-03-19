@@ -48,18 +48,21 @@ public class PeerSubnetSubscriptions {
   private final NodeIdToDataColumnSidecarSubnetsCalculator
       nodeIdToDataColumnSidecarSubnetsCalculator;
   private final int targetSubnetSubscriberCount;
+  private final boolean subnetAwarePeerSelectionActive;
 
   private PeerSubnetSubscriptions(
       final SubnetSubscriptions attestationSubnetSubscriptions,
       final SubnetSubscriptions syncCommitteeSubnetSubscriptions,
       final SubnetSubscriptions dataColumnSidecarSubnetSubscriptions,
       final NodeIdToDataColumnSidecarSubnetsCalculator nodeIdToDataColumnSidecarSubnetsCalculator,
-      final int targetSubnetSubscriberCount) {
+      final int targetSubnetSubscriberCount,
+      final boolean subnetAwarePeerSelectionActive) {
     this.attestationSubnetSubscriptions = attestationSubnetSubscriptions;
     this.syncCommitteeSubnetSubscriptions = syncCommitteeSubnetSubscriptions;
     this.dataColumnSidecarSubnetSubscriptions = dataColumnSidecarSubnetSubscriptions;
     this.nodeIdToDataColumnSidecarSubnetsCalculator = nodeIdToDataColumnSidecarSubnetsCalculator;
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
+    this.subnetAwarePeerSelectionActive = subnetAwarePeerSelectionActive;
   }
 
   public static PeerSubnetSubscriptions create(
@@ -72,6 +75,7 @@ public class PeerSubnetSubscriptions {
       final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider,
       final SubnetSubscriptionService dataColumnSidecarSubnetService,
       final int targetSubnetSubscriberCount,
+      final boolean subnetAwarePeerSelectionActive,
       final SettableLabelledGauge subnetPeerCountGauge) {
     final Map<String, Collection<NodeId>> subscribersByTopic = network.getSubscribersByTopic();
 
@@ -87,6 +91,7 @@ public class PeerSubnetSubscriptions {
     final PeerSubnetSubscriptions subscriptions =
         builder(currentSchemaDefinitions, SszBitvectorSchema.create(dataColumnSidecarSubnetCount))
             .targetSubnetSubscriberCount(targetSubnetSubscriberCount)
+            .setSubnetAwarePeerSelectionActive(subnetAwarePeerSelectionActive)
             .nodeIdToDataColumnSidecarSubnetsCalculator(nodeIdToDataColumnSidecarSubnetsCalculator)
             .attestationSubnetSubscriptions(
                 b ->
@@ -274,6 +279,10 @@ public class PeerSubnetSubscriptions {
     return optionalInts.stream().flatMapToInt(OptionalInt::stream).min();
   }
 
+  public boolean isSubnetAwarePeerSelectionActive() {
+    return subnetAwarePeerSelectionActive;
+  }
+
   public interface Factory {
 
     /**
@@ -378,6 +387,8 @@ public class PeerSubnetSubscriptions {
     private final SubnetSubscriptions.Builder dataColumnSidecarSubnetSubscriptions;
     private NodeIdToDataColumnSidecarSubnetsCalculator nodeIdToDataColumnSidecarSubnetsCalculator;
     private int targetSubnetSubscriberCount = 2;
+    private boolean subnetAwarePeerSelectionActive;
+    ;
 
     private Builder(
         final SchemaDefinitionsSupplier currentSchemaDefinitions,
@@ -396,7 +407,8 @@ public class PeerSubnetSubscriptions {
           syncCommitteeSubnetSubscriptions.build(),
           dataColumnSidecarSubnetSubscriptions.build(),
           nodeIdToDataColumnSidecarSubnetsCalculator,
-          targetSubnetSubscriberCount);
+          targetSubnetSubscriberCount,
+          subnetAwarePeerSelectionActive);
     }
 
     public Builder targetSubnetSubscriberCount(final int targetSubnetSubscriberCount) {
@@ -430,6 +442,11 @@ public class PeerSubnetSubscriptions {
         final NodeIdToDataColumnSidecarSubnetsCalculator
             nodeIdToDataColumnSidecarSubnetsCalculator) {
       this.nodeIdToDataColumnSidecarSubnetsCalculator = nodeIdToDataColumnSidecarSubnetsCalculator;
+      return this;
+    }
+
+    public Builder setSubnetAwarePeerSelectionActive(final boolean subnetAwarePeerSelectionActive) {
+      this.subnetAwarePeerSelectionActive = subnetAwarePeerSelectionActive;
       return this;
     }
   }

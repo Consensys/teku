@@ -218,6 +218,16 @@ public class P2POptions {
   private int p2pTargetSubnetSubscriberCount = P2PConfig.DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
 
   @Option(
+      names = {"--Xp2p-subnet-aware-peer-selection-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enables multi-pass subnet aware peer selection",
+      fallbackValue = "false",
+      arity = "1",
+      hidden = true)
+  private Boolean p2pSubnetAwarePeerSelectionActive =
+      P2PConfig.DEFAULT_P2P_TARGET_SUBNET_AWARE_PEER_SELECTION_ACTIVE;
+
+  @Option(
       names = {"--Xp2p-minimum-randomly-selected-peer-count"},
       paramLabel = "<INTEGER>",
       description =
@@ -697,6 +707,7 @@ public class P2POptions {
                   .batchVerifyMaxBatchSize(batchVerifyMaxBatchSize)
                   .batchVerifyStrictThreadLimitEnabled(batchVerifyStrictThreadLimitEnabled)
                   .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
+                  .subnetAwarePeerSelectionActive(p2pSubnetAwarePeerSelectionActive)
                   .isGossipScoringEnabled(gossipScoringEnabled)
                   .peerBlocksRateLimit(peerBlocksRateLimit)
                   .peerBlobSidecarsRateLimit(peerBlobSidecarsRateLimit)

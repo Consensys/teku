@@ -258,6 +258,7 @@ class PeerSubnetSubscriptionsTest {
   // - PEER2 which provides 5 of the 7 subnets.
   // - PEER3 which provides 3 of the 7 subnets
   // -> When setting Max 2, we should select PEER1 and PEER3 as the new peers.
+  // -> This test only works with the new multi-pass subnet aware peer selection
   public void shouldScoreCandidatePeersAccordingToUniqueness1() {
     dataColumnSubscriptions.setSubscriptions(IntList.of(0, 1, 2, 3, 4, 5, 6, 7));
     final Map<PeerId, SszBitvector> peer2subnets =
@@ -274,7 +275,8 @@ class PeerSubnetSubscriptionsTest {
               final PeerId peerId = invocation.getArgument(0);
               return Optional.ofNullable(peer2subnets.get(peerId));
             });
-    final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
+    final PeerSubnetSubscriptions subscriptions =
+        createPeerSubnetSubscriptionsWithSubnetAwarePeerSelection(true);
 
     verifySetup(subscriptions, subscribersByTopic);
 
@@ -344,6 +346,8 @@ class PeerSubnetSubscriptionsTest {
   // 99: node service subnets 0,1, 126 and 127.
   // We want to be a supernode ourselves and serve all 128 from MAX 50 peers.
   // -> Should select peer 98,99 + 48 others so that all subnets are covered.
+  // -> This test only works with the new multi-pass subnet aware peer selection
+
   public void shouldScoreCandidatePeersInRealWorldScenario() {
     final List<Integer> allSubnets = IntStream.rangeClosed(0, 127).boxed().toList();
     dataColumnSubscriptions.setSubscriptions(allSubnets);
@@ -385,7 +389,8 @@ class PeerSubnetSubscriptionsTest {
               final PeerId peerId = invocation.getArgument(0);
               return Optional.ofNullable(peer2subnets.get(peerId));
             });
-    final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
+    final PeerSubnetSubscriptions subscriptions =
+        createPeerSubnetSubscriptionsWithSubnetAwarePeerSelection(true);
 
     verifySetup(subscriptions, subscribersByTopic);
 
@@ -820,7 +825,8 @@ class PeerSubnetSubscriptionsTest {
         .set(anyDouble(), matches(DATA_COLUMN_SIDECAR_SUBNET_TOPIC_PREFIX));
   }
 
-  private PeerSubnetSubscriptions createPeerSubnetSubscriptions() {
+  private PeerSubnetSubscriptions createPeerSubnetSubscriptionsWithSubnetAwarePeerSelection(
+      final boolean subnetAwarePeerSelectionActive) {
     return PeerSubnetSubscriptions.create(
         currentSpecVersionSupplier.get(),
         nodeIdToDataColumnSidecarSubnetsCalculator,
@@ -831,7 +837,12 @@ class PeerSubnetSubscriptionsTest {
         dataColumnSidecarSubnetTopicProvider,
         dataColumnSubscriptions,
         TARGET_SUBSCRIBER_COUNT,
+        subnetAwarePeerSelectionActive,
         subnetPeerCountGauge);
+  }
+
+  private PeerSubnetSubscriptions createPeerSubnetSubscriptions() {
+    return createPeerSubnetSubscriptionsWithSubnetAwarePeerSelection(false);
   }
 
   private void withSubscriberCountForAllSubnets(final int subscriberCount) {

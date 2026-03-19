@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.IntUnaryOperator;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -65,6 +66,15 @@ public class SubnetScorer implements PeerScorer {
       final List<DiscoveryPeer> candidates, final int maxToSelect) {
     final SelectedCandidateSubnetCountChanges subnetChanges =
         new SelectedCandidateSubnetCountChanges();
+
+    if (!peerSubnetSubscriptions.isSubnetAwarePeerSelectionActive()) {
+      return candidates.stream()
+          .sorted(
+              Comparator.comparing((Function<DiscoveryPeer, Integer>) this::scoreCandidatePeer)
+                  .reversed())
+          .limit(maxToSelect)
+          .toList();
+    }
 
     List<DiscoveryPeer> selectedPeers = new ArrayList<>();
     List<DiscoveryPeer> remainingPeers = new ArrayList<>(candidates);
@@ -112,6 +122,10 @@ public class SubnetScorer implements PeerScorer {
     }
 
     return selectedPeers;
+  }
+
+  public int scoreCandidatePeer(final DiscoveryPeer candidate) {
+    return scoreCandidatePeer(candidate, new SelectedCandidateSubnetCountChanges());
   }
 
   public int scoreCandidatePeer(
