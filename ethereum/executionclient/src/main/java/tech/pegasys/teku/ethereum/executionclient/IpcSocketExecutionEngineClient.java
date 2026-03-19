@@ -41,8 +41,8 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class IpcSocketExecutionEngineClient extends AbstractExecutionEngineClient {
 
-  public static String IPC_READER_ASYNC_RUNNER_NAME = "ipcreader";
-  public static int IPC_READER_MAX_THREADS = 1;
+  public static final String IPC_READER_ASYNC_RUNNER_NAME = "ipcreader";
+  public static final int IPC_READER_MAX_THREADS = 1;
 
   private static final Logger LOG = LogManager.getLogger();
 
