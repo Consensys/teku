@@ -1,63 +1,63 @@
 idea {
-  module {
-    testSourceDirs += sourceSets.jmh.java.srcDirs
-  }
+	module {
+		testSources.from(sourceSets.jmh.java.srcDirs)
+	}
 }
 
 dependencies {
-  api project(':ethereum:events')
+	api project(':ethereum:events')
 
-  implementation project(':ethereum:performance-trackers')
-  implementation project(':ethereum:execution-types')
-  implementation project(':ethereum:dataproviders')
-  implementation project(':ethereum:pow:api')
-  implementation project(':ethereum:spec')
-  implementation project(':ethereum:weaksubjectivity')
-  implementation project(':infrastructure:async')
-  implementation project(':infrastructure:bls')
-  implementation project(':infrastructure:collections')
-  implementation project(':infrastructure:exceptions')
-  implementation project(':infrastructure:logging')
-  implementation project(':infrastructure:metrics')
-  implementation project(':infrastructure:subscribers')
-  implementation project(':infrastructure:time')
-  implementation project(':infrastructure:serviceutils')
-  implementation project(':storage')
-  implementation project(':storage:api')
+	implementation project(':ethereum:performance-trackers')
+	implementation project(':ethereum:execution-types')
+	implementation project(':ethereum:dataproviders')
+	implementation project(':ethereum:pow:api')
+	implementation project(':ethereum:spec')
+	implementation project(':ethereum:weaksubjectivity')
+	implementation project(':infrastructure:async')
+	implementation project(':infrastructure:bls')
+	implementation project(':infrastructure:collections')
+	implementation project(':infrastructure:exceptions')
+	implementation project(':infrastructure:logging')
+	implementation project(':infrastructure:metrics')
+	implementation project(':infrastructure:subscribers')
+	implementation project(':infrastructure:time')
+	implementation project(':infrastructure:serviceutils')
+	implementation project(':storage')
+	implementation project(':storage:api')
 
-  implementation 'io.consensys.tuweni:tuweni-units'
-  implementation 'org.hyperledger.besu.internal:besu-metrics-core'
-  implementation 'io.libp2p:jvm-libp2p'
+	implementation 'io.consensys.tuweni:tuweni-units'
+	implementation 'org.hyperledger.besu.internal:besu-metrics-core'
+	implementation 'io.libp2p:jvm-libp2p'
 
-  testImplementation testFixtures(project(':ethereum:spec'))
-  testImplementation testFixtures(project(':ethereum:networks'))
-  testImplementation testFixtures(project(':ethereum:weaksubjectivity'))
-  testImplementation testFixtures(project(':infrastructure:async'))
-  testImplementation testFixtures(project(':infrastructure:bls'))
-  testImplementation testFixtures(project(':infrastructure:time'))
-  testImplementation testFixtures(project(':infrastructure:metrics'))
-  testImplementation testFixtures(project(':infrastructure:kzg'))
-  testImplementation testFixtures(project(':storage'))
-  testImplementation testFixtures(project(':infrastructure:logging'))
+	testImplementation testFixtures(project(':ethereum:spec'))
+	testImplementation testFixtures(project(':ethereum:networks'))
+	testImplementation testFixtures(project(':ethereum:weaksubjectivity'))
+	testImplementation testFixtures(project(':infrastructure:async'))
+	testImplementation testFixtures(project(':infrastructure:bls'))
+	testImplementation testFixtures(project(':infrastructure:time'))
+	testImplementation testFixtures(project(':infrastructure:metrics'))
+	testImplementation testFixtures(project(':infrastructure:kzg'))
+	testImplementation testFixtures(project(':storage'))
+	testImplementation testFixtures(project(':infrastructure:logging'))
 
-  testFixturesApi testFixtures(project(':infrastructure:bls'))
-  testFixturesApi testFixtures(project(':storage'))
+	testFixturesApi testFixtures(project(':infrastructure:bls'))
+	testFixturesApi testFixtures(project(':storage'))
 
-  testFixturesImplementation 'org.mockito:mockito-core'
-  testFixturesImplementation project(':ethereum:spec')
-  testFixturesImplementation project(':infrastructure:async')
-  testFixturesImplementation testFixtures(project(':infrastructure:async'))
-  testFixturesImplementation testFixtures(project(':infrastructure:logging'))
-  testFixturesImplementation project(':infrastructure:serviceutils')
-  testFixturesImplementation testFixtures(project(':infrastructure:subscribers'))
-  testFixturesImplementation project(':infrastructure:time')
-  testFixturesImplementation testFixtures(project(':ethereum:spec'))
-  testFixturesImplementation testFixtures(project(':infrastructure:metrics'))
-  testFixturesImplementation testFixtures(project(':infrastructure:time'))
-  testFixturesImplementation 'org.apache.logging.log4j:log4j-core'
+	testFixturesImplementation 'org.mockito:mockito-core'
+	testFixturesImplementation project(':ethereum:spec')
+	testFixturesImplementation project(':infrastructure:async')
+	testFixturesImplementation testFixtures(project(':infrastructure:async'))
+	testFixturesImplementation testFixtures(project(':infrastructure:logging'))
+	testFixturesImplementation project(':infrastructure:serviceutils')
+	testFixturesImplementation testFixtures(project(':infrastructure:subscribers'))
+	testFixturesImplementation project(':infrastructure:time')
+	testFixturesImplementation testFixtures(project(':ethereum:spec'))
+	testFixturesImplementation testFixtures(project(':infrastructure:metrics'))
+	testFixturesImplementation testFixtures(project(':infrastructure:time'))
+	testFixturesImplementation 'org.apache.logging.log4j:log4j-core'
 
-  jmhImplementation testFixtures(project(':infrastructure:bls'))
-  jmhImplementation testFixtures(project(':ethereum:spec'))
-  jmhImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  jmhImplementation 'org.mockito:mockito-core'
+	jmhImplementation testFixtures(project(':infrastructure:bls'))
+	jmhImplementation testFixtures(project(':ethereum:spec'))
+	jmhImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+	jmhImplementation 'org.mockito:mockito-core'
 }

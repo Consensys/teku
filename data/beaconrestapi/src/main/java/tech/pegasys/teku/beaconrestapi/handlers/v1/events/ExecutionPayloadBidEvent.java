@@ -13,11 +13,30 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
+
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 
-public class ExecutionPayloadBidEvent extends Event<SignedExecutionPayloadBid> {
+public class ExecutionPayloadBidEvent
+    extends Event<ExecutionPayloadBidEvent.VersionedExecutionPayloadBid> {
+
+  record VersionedExecutionPayloadBid(SpecMilestone version, SignedExecutionPayloadBid data) {}
+
+  private static SerializableTypeDefinition<VersionedExecutionPayloadBid> buildTypeDef(
+      final SignedExecutionPayloadBid bid) {
+    return SerializableTypeDefinition.object(VersionedExecutionPayloadBid.class)
+        .name("VersionedExecutionPayloadBid")
+        .withField("version", MILESTONE_TYPE, VersionedExecutionPayloadBid::version)
+        .withField(
+            "data", bid.getSchema().getJsonTypeDefinition(), VersionedExecutionPayloadBid::data)
+        .build();
+  }
 
   public ExecutionPayloadBidEvent(final SignedExecutionPayloadBid executionPayloadBid) {
-    super(executionPayloadBid.getSchema().getJsonTypeDefinition(), executionPayloadBid);
+    super(
+        buildTypeDef(executionPayloadBid),
+        new VersionedExecutionPayloadBid(SpecMilestone.GLOAS, executionPayloadBid));
   }
 }
