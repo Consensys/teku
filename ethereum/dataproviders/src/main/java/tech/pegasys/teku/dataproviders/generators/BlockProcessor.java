@@ -15,6 +15,7 @@ package tech.pegasys.teku.dataproviders.generators;
 
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 
@@ -30,6 +31,19 @@ class BlockProcessor {
       return spec.replayValidatedBlock(preState, block);
     } catch (StateTransitionException e) {
       throw new IllegalStateException(getFailedStateGenerationError(block), e);
+    }
+  }
+
+  public BeaconState processExecutionPayload(
+      final BeaconState blockState, final SignedExecutionPayloadEnvelope signedEnvelope) {
+    try {
+      return spec.replayValidatedExecutionPayload(blockState, signedEnvelope);
+    } catch (StateTransitionException e) {
+      throw new IllegalStateException(
+          String.format(
+              "Unable to process execution payload at slot %s",
+              signedEnvelope.getMessage().getSlot()),
+          e);
     }
   }
 

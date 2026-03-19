@@ -45,6 +45,7 @@ import tech.pegasys.teku.dataproviders.generators.StateGenerationTask;
 import tech.pegasys.teku.dataproviders.generators.StateRegenerationBaseSelector;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -1069,6 +1070,7 @@ class Store extends CacheableStore {
                 blockRoot,
                 treeBuilder.build(),
                 blockProvider,
+                ExecutionPayloadProvider.fromDynamicMap(executionPayloads),
                 new StateRegenerationBaseSelector(
                     spec,
                     Optional.ofNullable(latestEpochBoundary.get()),

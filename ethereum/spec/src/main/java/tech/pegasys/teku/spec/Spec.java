@@ -81,6 +81,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.epbs.ExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -112,6 +113,7 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvali
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.ExecutionPayloadProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
@@ -1052,6 +1054,24 @@ public class Spec {
               BLSSignatureVerifier.NO_OP,
               Optional.empty());
     } catch (SlotProcessingException | EpochProcessingException | BlockProcessingException e) {
+      throw new StateTransitionException(e);
+    }
+  }
+
+  public BeaconState replayValidatedExecutionPayload(
+      final BeaconState blockState, final SignedExecutionPayloadEnvelope signedEnvelope)
+      throws StateTransitionException {
+    try {
+      return blockState.updated(
+          mutableState ->
+              getExecutionPayloadProcessor(blockState.getSlot())
+                  .processExecutionPayload(
+                      signedEnvelope,
+                      mutableState,
+                      BLSSignatureVerifier.NO_OP,
+                      Optional.empty(),
+                      false));
+    } catch (ExecutionPayloadProcessingException e) {
       throw new StateTransitionException(e);
     }
   }
