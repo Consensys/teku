@@ -106,7 +106,7 @@ public class IpcSocketExecutionEngineClient extends AbstractExecutionEngineClien
                   LOG.warn("IPC reader error", e);
                 }
               } finally {
-                handleDisconnect(new Exception("IPC connection closed"));
+                handleDisconnect(currentSocket, new Exception("IPC connection closed"));
               }
             })
         .finishError(LOG);
@@ -132,19 +132,25 @@ public class IpcSocketExecutionEngineClient extends AbstractExecutionEngineClien
     }
   }
 
-  private void handleDisconnect(final Throwable cause) {
+  @SuppressWarnings("ReferenceComparison")
+  private void handleDisconnect(final Socket disconnectedSocket, final Throwable cause) {
     synchronized (this) {
+      if (socket != disconnectedSocket) {
+        // Connection has already been replaced, close stale socket
+        closeSocket(disconnectedSocket);
+        return;
+      }
       connected.set(false);
       pendingRequests.forEach((id, future) -> future.completeExceptionally(cause));
       pendingRequests.clear();
-      closeSocket();
+      closeSocket(disconnectedSocket);
     }
   }
 
-  private void closeSocket() {
+  private void closeSocket(final Socket socketToClose) {
     try {
-      if (socket != null) {
-        socket.close();
+      if (socketToClose != null) {
+        socketToClose.close();
       }
     } catch (final IOException e) {
       LOG.debug("Error closing IPC socket", e);
@@ -188,7 +194,7 @@ public class IpcSocketExecutionEngineClient extends AbstractExecutionEngineClien
       }
     } catch (final IOException e) {
       pendingRequests.remove(requestId);
-      handleDisconnect(e);
+      handleDisconnect(socket, e);
       handleError(isCritical, e, false);
       return SafeFuture.completedFuture(Response.fromErrorMessage(getMessageOrSimpleName(e)));
     }
