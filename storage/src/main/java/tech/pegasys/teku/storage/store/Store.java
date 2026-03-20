@@ -221,12 +221,12 @@ class Store extends CacheableStore {
     };
   }
 
-  // TODO-GLOAS execution payload envelopes are only kept in the bounded hot store and are not
-  //  persisted to the database. For chains longer than blockCacheSize, older execution payloads
-  //  will be unavailable during state regeneration, causing GLOAS block replay to fail.
-  //  To fix: persist SignedExecutionPayloadEnvelope to the database during finalization and use
-  //  ExecutionPayloadProvider.combined() to add a database-backed fallback (like
-  //  BlockProvider.combined does for blocks)
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098
+  //  Execution payload envelopes are only kept in the bounded hot store and are not persisted to
+  //  the database. For chains longer than blockCacheSize, older execution payloads will be
+  //  unavailable during state regeneration, causing GLOAS block replay to fail. Once #10098 is
+  //  resolved, use ExecutionPayloadProvider.combined() to add a database-backed fallback (like
+  //  BlockProvider.combined does for blocks).
   private ExecutionPayloadProvider createExecutionPayloadProviderWhileLocked(
       final Map<Bytes32, SignedExecutionPayloadEnvelope> payloadMap) {
     return (roots) -> {

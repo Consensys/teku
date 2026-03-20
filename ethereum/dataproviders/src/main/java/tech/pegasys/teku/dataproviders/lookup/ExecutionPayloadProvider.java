@@ -15,6 +15,7 @@ package tech.pegasys.teku.dataproviders.lookup;
 
 import com.google.common.collect.Sets;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -50,7 +51,7 @@ public interface ExecutionPayloadProvider {
       final ExecutionPayloadProvider... secondaryProviders) {
     return (final Set<Bytes32> blockRoots) -> {
       SafeFuture<Map<Bytes32, SignedExecutionPayloadEnvelope>> result =
-          primaryProvider.getExecutionPayloads(blockRoots);
+          primaryProvider.getExecutionPayloads(blockRoots).thenApply(HashMap::new);
       for (ExecutionPayloadProvider nextProvider : secondaryProviders) {
         result =
             result.thenCompose(
