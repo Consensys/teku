@@ -122,34 +122,32 @@ public class DiscV5Service extends Service implements DiscoveryService {
         discoConfig.getBootnodes().stream().map(NodeRecordFactory.DEFAULT::fromEnr).toList();
     final NodeRecordBuilder nodeRecordBuilder =
         new NodeRecordBuilder().signer(localNodeSigner).seq(seqNo);
-    if (p2pConfig.hasUserExplicitlySetAdvertisedIps()) {
-      final List<String> advertisedIps = p2pConfig.getAdvertisedIps();
-      Preconditions.checkState(
-          advertisedIps.size() == 1 || advertisedIps.size() == 2,
-          "The configured advertised IPs must be either 1 or 2");
-      if (advertisedIps.size() == 1) {
-        nodeRecordBuilder.address(
-            advertisedIps.get(0),
-            discoConfig.getAdvertisedUdpPort(),
-            p2pConfig.getAdvertisedPort());
-      } else {
-        // IPv4 and IPv6 (dual-stack)
-        advertisedIps.forEach(
-            advertisedIp -> {
-              final IPVersion ipVersion = IPVersionResolver.resolve(advertisedIp);
-              final int advertisedUdpPort =
-                  switch (ipVersion) {
-                    case IP_V4 -> discoConfig.getAdvertisedUdpPort();
-                    case IP_V6 -> discoConfig.getAdvertisedUdpPortIpv6();
-                  };
-              final int advertisedTcpPort =
-                  switch (ipVersion) {
-                    case IP_V4 -> p2pConfig.getAdvertisedPort();
-                    case IP_V6 -> p2pConfig.getAdvertisedPortIpv6();
-                  };
-              nodeRecordBuilder.address(advertisedIp, advertisedUdpPort, advertisedTcpPort);
-            });
-      }
+    final List<String> advertisedIps = p2pConfig.getAdvertisedIps();
+    Preconditions.checkState(
+        advertisedIps.size() == 1 || advertisedIps.size() == 2,
+        "The configured advertised IPs must be either 1 or 2");
+    if (advertisedIps.size() == 1) {
+      nodeRecordBuilder.address(
+          advertisedIps.get(0),
+          discoConfig.getAdvertisedUdpPort(),
+          p2pConfig.getAdvertisedPort());
+    } else {
+      // IPv4 and IPv6 (dual-stack)
+      advertisedIps.forEach(
+          advertisedIp -> {
+            final IPVersion ipVersion = IPVersionResolver.resolve(advertisedIp);
+            final int advertisedUdpPort =
+                switch (ipVersion) {
+                  case IP_V4 -> discoConfig.getAdvertisedUdpPort();
+                  case IP_V6 -> discoConfig.getAdvertisedUdpPortIpv6();
+                };
+            final int advertisedTcpPort =
+                switch (ipVersion) {
+                  case IP_V4 -> p2pConfig.getAdvertisedPort();
+                  case IP_V6 -> p2pConfig.getAdvertisedPortIpv6();
+                };
+            nodeRecordBuilder.address(advertisedIp, advertisedUdpPort, advertisedTcpPort);
+          });
     }
     final NodeRecord localNodeRecord = nodeRecordBuilder.build();
     this.discoverySystem =
