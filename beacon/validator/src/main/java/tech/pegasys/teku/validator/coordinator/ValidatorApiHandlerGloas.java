@@ -132,7 +132,10 @@ public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
         .map(
             forkChoiceUtil ->
                 forkChoiceUtil.isBlockStatusFull(combinedChainDataClient.getStore(), block) ? 1 : 0)
-        .orElse(0);
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    String.format("Could not get gloas fork choice util from slot %s", slot)));
   }
 
   private Optional<BeaconState> getExecutionPayloadStateForBlockProduction(final UInt64 slot) {

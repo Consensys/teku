@@ -101,10 +101,13 @@ public class GetAttestationData extends RestApiEndpoint {
     final UInt64 slot = request.getQueryParameter(SLOT_PARAM);
     final Optional<UInt64> committeeIndex =
         request.getOptionalQueryParameter(COMMITTEE_INDEX_PARAMETER);
-    if (!validate(request, spec.atSlot(slot).getMilestone(), committeeIndex)) {
+    final SpecMilestone milestone = spec.atSlot(slot).getMilestone();
+    if (!validate(request, milestone, committeeIndex)) {
       return;
     }
 
+    // committeeIndex will be ignored from gloas as it's computed,
+    // so can pass in 0 in that instance
     final SafeFuture<Optional<AttestationData>> future =
         provider.createAttestationDataAtSlot(slot, committeeIndex.orElse(UInt64.ZERO).intValue());
 
