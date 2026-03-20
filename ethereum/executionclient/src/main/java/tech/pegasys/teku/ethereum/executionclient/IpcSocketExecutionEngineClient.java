@@ -188,6 +188,7 @@ public class IpcSocketExecutionEngineClient extends AbstractExecutionEngineClien
       }
     } catch (final IOException e) {
       pendingRequests.remove(requestId);
+      handleDisconnect(e);
       handleError(isCritical, e, false);
       return SafeFuture.completedFuture(Response.fromErrorMessage(getMessageOrSimpleName(e)));
     }
