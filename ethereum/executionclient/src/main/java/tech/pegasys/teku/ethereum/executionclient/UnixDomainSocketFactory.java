@@ -82,8 +82,14 @@ class UnixDomainSocketFactory extends SocketFactory {
 
     @Override
     public void connect(final SocketAddress endpoint, final int timeout) throws IOException {
-      channel = SocketChannel.open(StandardProtocolFamily.UNIX);
-      channel.connect(UnixDomainSocketAddress.of(path));
+      final SocketChannel newChannel = SocketChannel.open(StandardProtocolFamily.UNIX);
+      try {
+        newChannel.connect(UnixDomainSocketAddress.of(path));
+      } catch (final IOException e) {
+        newChannel.close();
+        throw e;
+      }
+      channel = newChannel;
     }
 
     @Override

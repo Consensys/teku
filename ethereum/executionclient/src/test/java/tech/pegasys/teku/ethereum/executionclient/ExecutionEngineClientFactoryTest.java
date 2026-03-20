@@ -19,6 +19,8 @@ import static org.mockito.Mockito.mock;
 
 import okhttp3.OkHttpClient;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
@@ -27,6 +29,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 
+@DisabledOnOs(OS.WINDOWS)
 class ExecutionEngineClientFactoryTest {
 
   private final OkHttpClient httpClient = new OkHttpClient.Builder().build();

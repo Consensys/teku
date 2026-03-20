@@ -74,9 +74,15 @@ public class IpcSocketExecutionEngineClient extends AbstractExecutionEngineClien
       if (connected.get()) {
         return;
       }
-      socket = socketFactory.createSocket();
-      socket.connect(null);
-      outputStream = socket.getOutputStream();
+      final Socket newSocket = socketFactory.createSocket();
+      try {
+        newSocket.connect(null);
+      } catch (final IOException e) {
+        newSocket.close();
+        throw e;
+      }
+      socket = newSocket;
+      outputStream = newSocket.getOutputStream();
       connected.set(true);
       startReaderThread();
     }
