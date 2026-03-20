@@ -128,9 +128,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
         "The configured advertised IPs must be either 1 or 2");
     if (advertisedIps.size() == 1) {
       nodeRecordBuilder.address(
-          advertisedIps.get(0),
-          discoConfig.getAdvertisedUdpPort(),
-          p2pConfig.getAdvertisedPort());
+          advertisedIps.get(0), discoConfig.getAdvertisedUdpPort(), p2pConfig.getAdvertisedPort());
     } else {
       // IPv4 and IPv6 (dual-stack)
       advertisedIps.forEach(

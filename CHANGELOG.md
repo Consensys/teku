@@ -16,3 +16,4 @@
 - Increased default timeout of Engine API Get Payload requests to 2 seconds.
 
 ### Bug Fixes
+- Fixed ipv6 discovery
