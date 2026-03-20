@@ -14,6 +14,10 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_ACCEPTABLE;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_IMPLEMENTED;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
@@ -44,21 +48,26 @@ class GetExecutionPayloadBidTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   void metadata_shouldHandle400() throws JsonProcessingException {
-    verifyMetadataErrorResponse(handler, SC_NOT_IMPLEMENTED);
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
   }
 
   @Test
   void metadata_shouldHandle404() throws JsonProcessingException {
-    verifyMetadataErrorResponse(handler, SC_NOT_IMPLEMENTED);
+    verifyMetadataErrorResponse(handler, SC_NOT_FOUND);
   }
 
   @Test
   void metadata_shouldHandle406() throws JsonProcessingException {
-    verifyMetadataErrorResponse(handler, SC_NOT_IMPLEMENTED);
+    verifyMetadataErrorResponse(handler, SC_NOT_ACCEPTABLE);
   }
 
   @Test
   void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  void metadata_shouldHandle501() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_NOT_IMPLEMENTED);
   }
 }
