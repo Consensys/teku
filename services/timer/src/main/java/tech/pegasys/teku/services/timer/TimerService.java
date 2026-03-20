@@ -83,7 +83,7 @@ public class TimerService extends Service {
           if (executorFuture.get().isDone()) {
             executorFuture.set(taskExecutor.submit(this::safeTick));
           } else {
-            LOG.debug("Dropped tick at {}", currentTime);
+            LOG.debug("Dropped tick at {}", timeProvider.getTimeInMillis());
           }
         },
         nextMillisStart,
@@ -99,11 +99,7 @@ public class TimerService extends Service {
       return 1000 - currentMillisOffset;
     }
     final long millisTarget = intervalMs * next;
-    if (millisTarget > currentMillisOffset) {
-      return millisTarget - currentMillisOffset;
-    }
-    // due to run now
-    return 0;
+    return millisTarget - currentMillisOffset;
   }
 
   private void safeTick() {
