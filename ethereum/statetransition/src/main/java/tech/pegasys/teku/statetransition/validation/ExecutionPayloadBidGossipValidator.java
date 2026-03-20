@@ -96,7 +96,7 @@ public class ExecutionPayloadBidGossipValidator {
     final Optional<ProposerPreferences> proposerPreferences =
         proposerPreferencesManager.getProposerPreferences(bid.getSlot());
     if (proposerPreferences.isEmpty()) {
-      return completedFuture(ignore("No proposer preferences seen for slot %s", bid.getSlot()));
+      return completedFuture(SAVE_FOR_FUTURE);
     }
 
     /*

@@ -1,23 +1,23 @@
 dependencies {
-  implementation project(':ethereum:json-types')
-  implementation project(':ethereum:spec')
-  implementation project(':infrastructure:async')
-  implementation project(':infrastructure:events')
-  implementation project(':infrastructure:metrics')
-  implementation project(':infrastructure:time')
-  implementation project(':validator:api')
-  implementation project(':data:serializer')
+	implementation project(':ethereum:json-types')
+	implementation project(':ethereum:spec')
+	implementation project(':infrastructure:async')
+	implementation project(':infrastructure:events')
+	implementation project(':infrastructure:metrics')
+	implementation project(':infrastructure:time')
+	implementation project(':validator:api')
+	implementation project(':data:serializer')
 
-  implementation 'io.consensys.tuweni:tuweni-bytes'
+	implementation 'io.consensys.tuweni:tuweni-bytes'
 
-  implementation 'com.google.guava:guava'
-  implementation 'org.apache.logging.log4j:log4j-api'
-  implementation 'org.apache.commons:commons-lang3'
+	implementation 'com.google.guava:guava'
+	implementation 'org.apache.logging.log4j:log4j-api'
+	implementation 'org.apache.commons:commons-lang3'
 
-  testImplementation 'org.mockito:mockito-core'
-  testImplementation project(':ethereum:networks')
-  testImplementation testFixtures(project(':ethereum:spec'))
-  testImplementation testFixtures(project(':infrastructure:async'))
-  testImplementation testFixtures(project(':infrastructure:metrics'))
-  testImplementation testFixtures(project(':infrastructure:time'))
+	testImplementation 'org.mockito:mockito-core'
+	testImplementation project(':ethereum:networks')
+	testImplementation testFixtures(project(':ethereum:spec'))
+	testImplementation testFixtures(project(':infrastructure:async'))
+	testImplementation testFixtures(project(':infrastructure:metrics'))
+	testImplementation testFixtures(project(':infrastructure:time'))
 }

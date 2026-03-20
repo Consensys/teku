@@ -976,7 +976,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
   }
 
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9997 (not required for devnet-0)
   @Override
   public SafeFuture<Optional<ExecutionPayloadBid>> createUnsignedExecutionPayloadBid(
       final UInt64 slot, final UInt64 builderIndex) {

@@ -135,10 +135,9 @@ public class ExecutionPayloadBidGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldIgnore_whenProposerPreferencesNotSeen() {
+  void shouldSaveForFuture_whenProposerPreferencesNotSeen() {
     when(proposerPreferencesManager.getProposerPreferences(slot)).thenReturn(Optional.empty());
-    assertThatSafeFuture(bidValidator.validate(signedBid))
-        .isCompletedWithValue(ignore("No proposer preferences seen for slot %s", slot));
+    assertThatSafeFuture(bidValidator.validate(signedBid)).isCompletedWithValue(SAVE_FOR_FUTURE);
   }
 
   @TestTemplate

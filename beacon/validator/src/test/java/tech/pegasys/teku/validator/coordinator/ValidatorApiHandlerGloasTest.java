@@ -86,6 +86,7 @@ class ValidatorApiHandlerGloasTest {
             mock(),
             mock(),
             mock(),
+            mock(),
             proposerPreferencesManager);
   }
 

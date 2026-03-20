@@ -1,11 +1,11 @@
 dependencies {
-    implementation project(':ethereum:execution-types')
-    implementation project(':ethereum:spec')
-    implementation project(':data:serializer')
-    implementation project(':infrastructure:restapi')
-    implementation project(':infrastructure:http')
+	implementation project(':ethereum:execution-types')
+	implementation project(':ethereum:spec')
+	implementation project(':data:serializer')
+	implementation project(':infrastructure:restapi')
+	implementation project(':infrastructure:http')
 
-    implementation 'io.consensys.tuweni:tuweni-units'
+	implementation 'io.consensys.tuweni:tuweni-units'
 
-    testImplementation testFixtures(project(':ethereum:spec'))
+	testImplementation testFixtures(project(':ethereum:spec'))
 }

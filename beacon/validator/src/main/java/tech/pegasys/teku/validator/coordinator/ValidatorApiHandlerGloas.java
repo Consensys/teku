@@ -29,10 +29,12 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscrib
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
@@ -50,6 +52,7 @@ public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private final ExecutionPayloadBidManager executionPayloadBidManager;
   private final ProposerPreferencesManager proposerPreferencesManager;
 
   public ValidatorApiHandlerGloas(
@@ -78,6 +81,7 @@ public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
       final ExecutionPayloadManager executionPayloadManager,
       final ExecutionPayloadFactory executionPayloadFactory,
       final ExecutionPayloadPublisher executionPayloadPublisher,
+      final ExecutionPayloadBidManager executionPayloadBidManager,
       final ExecutionProofManager executionProofManager,
       final ProposerPreferencesManager proposerPreferencesManager) {
     super(
@@ -106,6 +110,7 @@ public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
         executionPayloadFactory,
         executionPayloadPublisher,
         executionProofManager);
+    this.executionPayloadBidManager = executionPayloadBidManager;
     this.proposerPreferencesManager = proposerPreferencesManager;
   }
 
@@ -176,5 +181,21 @@ public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
                     // after the Gloas fork)
                     .getExecutionPayloadStateIfAvailable(blockRoot)
                     .flatMap(state -> combinedChainDataClient.regenerateBeaconState(state, slot)));
+  }
+
+  @Override
+  public SafeFuture<Void> publishSignedExecutionPayloadBid(
+      final SignedExecutionPayloadBid signedExecutionPayloadBid) {
+    return executionPayloadBidManager
+        .validateAndAddBid(
+            signedExecutionPayloadBid, ExecutionPayloadBidManager.RemoteBidOrigin.BUILDER)
+        .thenAccept(
+            result -> {
+              if (!result.isAccept()) {
+                throw new IllegalArgumentException(
+                    "Invalid execution payload bid: "
+                        + result.getDescription().orElse("unknown reason"));
+              }
+            });
   }
 }

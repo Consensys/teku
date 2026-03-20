@@ -107,11 +107,13 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerBlockManagerFactory;
+import tech.pegasys.teku.services.timer.QuartzTimerService;
 import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -171,6 +173,7 @@ import tech.pegasys.teku.statetransition.datacolumns.DasPreSampler;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustodyImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
@@ -408,7 +411,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile RewardCalculator rewardCalculator;
   protected UInt64 genesisTimeTracker = ZERO;
   protected BlockManager blockManager;
-  protected TimerService timerService;
+  protected Service timerService;
   protected PoolFactory poolFactory;
   protected SettableLabelledGauge futureItemsMetric;
   protected IntSupplier rejectedExecutionCountSupplier;
@@ -580,7 +583,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     coalescingChainHeadChannel =
         new CoalescingChainHeadChannel(
             eventChannels.getPublisher(ChainHeadChannel.class), EVENT_LOG);
-    timerService = new TimerService(this::onTick);
+    timerService =
+        beaconConfig.eth2NetworkConfig().isQuartzSchedulerEnabled()
+            ? new QuartzTimerService(this::onTick)
+            : new TimerService(this::onTick);
 
     final CombinedStorageChannel combinedStorageChannel =
         eventChannels.getPublisher(CombinedStorageChannel.class, beaconAsyncRunner);
@@ -835,7 +841,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initBlobSidecarManager() {
-    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB) && !isSafeToDeactivateDenebFeatures()) {
       final FutureItems<BlobSidecar> futureBlobSidecars =
           FutureItems.create(BlobSidecar::getSlot, futureItemsMetric, "blob_sidecars");
 
@@ -1263,7 +1269,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initBlockBlobSidecarsTrackersPool() {
     LOG.debug("BeaconChainController.initBlockBlobSidecarsTrackersPool()");
-    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB) && !isSafeToDeactivateDenebFeatures()) {
       final BlockImportChannel blockImportChannel =
           eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
       final BlobSidecarGossipChannel blobSidecarGossipChannel =
@@ -1784,6 +1790,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               executionPayloadManager,
               executionPayloadFactory,
               executionPayloadPublisher,
+              executionPayloadBidManager,
               executionProofManager,
               proposerPreferencesManager);
     } else {
@@ -1963,6 +1970,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final SuperNodeSupplier isSuperNodeSupplier =
         new SuperNodeSupplier(spec, () -> custodyGroupCountManager);
 
+    // TODO: Implementation + subscription
+    final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor =
+        DataColumnSidecarArchiveReconstructor.NOOP;
+
     this.p2pNetwork =
         createEth2P2PNetworkBuilder()
             .config(beaconConfig.p2pConfig())
@@ -1995,6 +2006,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     proposerPreferencesManager.validateAndAddProposerPreferences(
                         signedProposerPreferences))
             .gossipDasLogger(dasGossipLogger)
+            .dataColumnSidecarArchiveReconstructor(dataColumnSidecarArchiveReconstructor)
             .reqRespDasLogger(dasReqRespLogger)
             .isSuperNodeSupplier(isSuperNodeSupplier)
             .processedAttestationSubscriptionProvider(
@@ -2503,6 +2515,24 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     slotProcessor.onTick(currentTimeMillis, performanceRecord);
     performanceRecord.ifPresent(TickProcessingPerformance::complete);
+  }
+
+  boolean isSafeToDeactivateDenebFeatures() {
+    if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
+      return false;
+    }
+    final UInt64 fuluForkEpoch = spec.getGenesisSpec().getConfig().getFuluForkEpoch();
+    final int minEpochsForBlobSidecarsRequests =
+        SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
+            .getMinEpochsForBlobSidecarsRequests();
+    return recentChainData
+        .getCurrentEpoch()
+        .map(
+            currentEpoch ->
+                currentEpoch
+                    .minusMinZero(fuluForkEpoch)
+                    .isGreaterThan(minEpochsForBlobSidecarsRequests))
+        .orElse(false);
   }
 
   @Override

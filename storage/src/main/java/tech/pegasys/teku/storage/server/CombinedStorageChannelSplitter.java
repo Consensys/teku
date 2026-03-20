@@ -206,6 +206,12 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
+  public SafeFuture<Optional<SignedBeaconBlock>> getNonCanonicalBlockByRoot(
+      final Bytes32 blockRoot) {
+    return asyncRunner.runAsync(() -> queryDelegate.getNonCanonicalBlockByRoot(blockRoot));
+  }
+
+  @Override
   public SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot) {
     return asyncRunner.runAsync(() -> queryDelegate.getNonCanonicalBlocksBySlot(slot));
   }

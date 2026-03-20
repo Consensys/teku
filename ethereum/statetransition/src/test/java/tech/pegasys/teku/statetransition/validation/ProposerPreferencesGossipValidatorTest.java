@@ -15,6 +15,9 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
@@ -91,6 +94,7 @@ public class ProposerPreferencesGossipValidatorTest {
     when(gossipValidationHelper.isSlotInNextEpoch(proposalSlot)).thenReturn(false);
     assertThatSafeFuture(validator.validate(signedProposerPreferences))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+    verify(recentChainData, never()).getBestState();
   }
 
   @TestTemplate
@@ -100,6 +104,7 @@ public class ProposerPreferencesGossipValidatorTest {
 
     assertThatSafeFuture(validator.validate(signedProposerPreferences))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+    verify(recentChainData, times(1)).getBestState();
   }
 
   @TestTemplate
@@ -110,6 +115,8 @@ public class ProposerPreferencesGossipValidatorTest {
 
     assertThatSafeFuture(validator.validate(wrongIndexPreferences))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
+    verify(gossipValidationHelper, never())
+        .isSignatureValidWithRespectToProposerIndex(any(), any(), any(), any());
   }
 
   @TestTemplate
