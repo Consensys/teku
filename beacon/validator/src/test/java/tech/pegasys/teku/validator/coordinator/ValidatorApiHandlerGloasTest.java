@@ -95,14 +95,14 @@ class ValidatorApiHandlerGloasTest {
     final SignedProposerPreferences signedProposerPreferences =
         dataStructureUtil.randomSignedProposerPreferences();
 
-    when(proposerPreferencesManager.validateAndAddProposerPreferences(any()))
+    when(proposerPreferencesManager.addLocal(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     final SafeFuture<Void> result =
         handler.sendSignedProposerPreferences(List.of(signedProposerPreferences));
 
     assertThat(result).isCompleted();
-    verify(proposerPreferencesManager).validateAndAddProposerPreferences(signedProposerPreferences);
+    verify(proposerPreferencesManager).addLocal(signedProposerPreferences);
   }
 
   @TestTemplate
@@ -110,7 +110,7 @@ class ValidatorApiHandlerGloasTest {
     final SignedProposerPreferences signedProposerPreferences =
         dataStructureUtil.randomSignedProposerPreferences();
 
-    when(proposerPreferencesManager.validateAndAddProposerPreferences(any()))
+    when(proposerPreferencesManager.addLocal(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("bad signature")));
 
     final SafeFuture<Void> result =
@@ -124,6 +124,6 @@ class ValidatorApiHandlerGloasTest {
     final SafeFuture<Void> result = handler.sendSignedProposerPreferences(List.of());
 
     assertThat(result).isCompleted();
-    verify(proposerPreferencesManager, never()).validateAndAddProposerPreferences(any());
+    verify(proposerPreferencesManager, never()).addLocal(any());
   }
 }

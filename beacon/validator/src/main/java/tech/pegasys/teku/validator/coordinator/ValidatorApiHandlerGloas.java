@@ -118,8 +118,7 @@ public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
   public SafeFuture<Void> sendSignedProposerPreferences(
       final List<SignedProposerPreferences> signedProposerPreferences) {
     return SafeFuture.collectAll(
-            signedProposerPreferences.stream()
-                .map(proposerPreferencesManager::validateAndAddProposerPreferences))
+            signedProposerPreferences.stream().map(proposerPreferencesManager::addLocal))
         .thenAccept(
             results -> {
               final List<String> errorMessages =

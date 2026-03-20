@@ -14,14 +14,15 @@
 package tech.pegasys.teku.statetransition.execution;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 
-import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ProposerPreferencesGossipValidator;
 
@@ -41,7 +43,8 @@ public class DefaultProposerPreferencesManagerTest {
       mock(ProposerPreferencesGossipValidator.class);
 
   @SuppressWarnings("unchecked")
-  private final Consumer<SignedProposerPreferences> listener = mock(Consumer.class);
+  private final OperationAddedSubscriber<SignedProposerPreferences> subscriber =
+      mock(OperationAddedSubscriber.class);
 
   private DefaultProposerPreferencesManager manager;
   private DataStructureUtil dataStructureUtil;
@@ -50,7 +53,7 @@ public class DefaultProposerPreferencesManagerTest {
   void setUp(final SpecContext specContext) {
     dataStructureUtil = specContext.getDataStructureUtil();
     manager = new DefaultProposerPreferencesManager(gossipValidator);
-    manager.subscribeAcceptedProposerPreferences(listener);
+    manager.subscribeOperationAdded(subscriber);
   }
 
   @TestTemplate
@@ -62,7 +65,7 @@ public class DefaultProposerPreferencesManagerTest {
     when(gossipValidator.validate(signedProposerPreferences))
         .thenReturn(SafeFuture.completedFuture(ACCEPT));
 
-    safeJoin(manager.validateAndAddProposerPreferences(signedProposerPreferences));
+    safeJoin(manager.addLocal(signedProposerPreferences));
 
     assertThat(manager.getProposerPreferences(slot))
         .hasValue(signedProposerPreferences.getMessage());
@@ -77,35 +80,48 @@ public class DefaultProposerPreferencesManagerTest {
     when(gossipValidator.validate(signedProposerPreferences))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("bad signature")));
 
-    safeJoin(manager.validateAndAddProposerPreferences(signedProposerPreferences));
+    safeJoin(manager.addLocal(signedProposerPreferences));
 
     assertThat(manager.getProposerPreferences(slot)).isEmpty();
   }
 
   @TestTemplate
-  void shouldNotifyListenerOnAccept() {
+  void shouldNotifySubscriberOnAcceptWithFromNetworkFalseForLocal() {
     final SignedProposerPreferences signedProposerPreferences =
         dataStructureUtil.randomSignedProposerPreferences();
 
     when(gossipValidator.validate(signedProposerPreferences))
         .thenReturn(SafeFuture.completedFuture(ACCEPT));
 
-    safeJoin(manager.validateAndAddProposerPreferences(signedProposerPreferences));
+    safeJoin(manager.addLocal(signedProposerPreferences));
 
-    verify(listener).accept(signedProposerPreferences);
+    verify(subscriber).onOperationAdded(eq(signedProposerPreferences), eq(ACCEPT), eq(false));
   }
 
   @TestTemplate
-  void shouldNotNotifyListenerOnReject() {
+  void shouldNotifySubscriberOnAcceptWithFromNetworkTrueForRemote() {
+    final SignedProposerPreferences signedProposerPreferences =
+        dataStructureUtil.randomSignedProposerPreferences();
+
+    when(gossipValidator.validate(signedProposerPreferences))
+        .thenReturn(SafeFuture.completedFuture(ACCEPT));
+
+    safeJoin(manager.addRemote(signedProposerPreferences));
+
+    verify(subscriber).onOperationAdded(eq(signedProposerPreferences), eq(ACCEPT), eq(true));
+  }
+
+  @TestTemplate
+  void shouldNotNotifySubscriberOnReject() {
     final SignedProposerPreferences signedProposerPreferences =
         dataStructureUtil.randomSignedProposerPreferences();
 
     when(gossipValidator.validate(signedProposerPreferences))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("bad signature")));
 
-    safeJoin(manager.validateAndAddProposerPreferences(signedProposerPreferences));
+    safeJoin(manager.addLocal(signedProposerPreferences));
 
-    verifyNoInteractions(listener);
+    verify(subscriber, never()).onOperationAdded(any(), any(), eq(false));
   }
 
   @TestTemplate

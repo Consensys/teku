@@ -14,11 +14,11 @@
 package tech.pegasys.teku.statetransition.execution;
 
 import java.util.Optional;
-import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
+import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public interface ProposerPreferencesManager {
@@ -26,7 +26,13 @@ public interface ProposerPreferencesManager {
   ProposerPreferencesManager NOOP =
       new ProposerPreferencesManager() {
         @Override
-        public SafeFuture<InternalValidationResult> validateAndAddProposerPreferences(
+        public SafeFuture<InternalValidationResult> addLocal(
+            final SignedProposerPreferences signedProposerPreferences) {
+          return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+        }
+
+        @Override
+        public SafeFuture<InternalValidationResult> addRemote(
             final SignedProposerPreferences signedProposerPreferences) {
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
         }
@@ -37,14 +43,17 @@ public interface ProposerPreferencesManager {
         }
 
         @Override
-        public void subscribeAcceptedProposerPreferences(
-            final Consumer<SignedProposerPreferences> listener) {}
+        public void subscribeOperationAdded(
+            final OperationAddedSubscriber<SignedProposerPreferences> subscriber) {}
       };
 
-  SafeFuture<InternalValidationResult> validateAndAddProposerPreferences(
+  SafeFuture<InternalValidationResult> addLocal(
+      SignedProposerPreferences signedProposerPreferences);
+
+  SafeFuture<InternalValidationResult> addRemote(
       SignedProposerPreferences signedProposerPreferences);
 
   Optional<ProposerPreferences> getProposerPreferences(UInt64 slot);
 
-  void subscribeAcceptedProposerPreferences(Consumer<SignedProposerPreferences> listener);
+  void subscribeOperationAdded(OperationAddedSubscriber<SignedProposerPreferences> subscriber);
 }
