@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
@@ -238,8 +239,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final SignedExecutionPayloadEnvelope signedEnvelope,
       final ExecutionLayerChannel executionLayer) {
     return recentChainData
-        .retrieveBlockState(signedEnvelope.getSlotAndBlockRoot())
-        .thenCompose(blockState -> onExecutionPayload(signedEnvelope, blockState, executionLayer));
+        .retrieveBlockAndState(signedEnvelope.getBeaconBlockRoot())
+        .thenCompose(
+            maybeBlockAndState ->
+                onExecutionPayload(signedEnvelope, maybeBlockAndState, executionLayer));
   }
 
   public SafeFuture<AttestationProcessingResult> onAttestation(
@@ -529,74 +532,67 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   /**
-   * Import an execution payload to the store. The supplied {@code blockState} must be the
-   * post-state after processing the block whose root is the beacon block root of the execution
-   * payload
+   * Import an execution payload to the store. The supplied {@code blockAndState} must contain the
+   * block and post-state after processing the block whose root is the beacon block root of the
+   * execution payload
    */
   private SafeFuture<ExecutionPayloadImportResult> onExecutionPayload(
       final SignedExecutionPayloadEnvelope signedEnvelope,
-      final Optional<BeaconState> blockState,
+      final Optional<SignedBlockAndState> blockAndState,
       final ExecutionLayerChannel executionLayer) {
-    if (blockState.isEmpty()) {
+    if (blockAndState.isEmpty()) {
       return SafeFuture.completedFuture(
           ExecutionPayloadImportResult.FAILED_UNKNOWN_BEACON_BLOCK_ROOT);
     }
 
+    final SignedBeaconBlock signedBeaconBlock = blockAndState.get().getBlock();
+    final BeaconState blockState = blockAndState.get().getState();
+
     final ForkChoiceUtil forkChoiceUtil = spec.atSlot(signedEnvelope.getSlot()).getForkChoiceUtil();
 
-    return recentChainData
-        .retrieveSignedBlockByRoot(signedEnvelope.getBeaconBlockRoot())
-        .thenCompose(
-            maybeSignedBeaconBlock -> {
-              if (maybeSignedBeaconBlock.isEmpty()) {
-                return SafeFuture.completedFuture(
-                    ExecutionPayloadImportResult.FAILED_UNKNOWN_BEACON_BLOCK_ROOT);
-              }
-              final SignedBeaconBlock signedBeaconBlock = maybeSignedBeaconBlock.get();
-              final AvailabilityChecker<?> availabilityChecker =
-                  forkChoiceUtil.createAvailabilityChecker(signedBeaconBlock);
-              availabilityChecker.initiateDataAvailabilityCheck();
-              final ForkChoicePayloadExecutorGloas payloadExecutor =
-                  ForkChoicePayloadExecutorGloas.create(signedEnvelope, executionLayer);
+    final AvailabilityChecker<?> availabilityChecker =
+        forkChoiceUtil.createAvailabilityChecker(signedBeaconBlock);
+    availabilityChecker.initiateDataAvailabilityCheck();
+    final ForkChoicePayloadExecutorGloas payloadExecutor =
+        ForkChoicePayloadExecutorGloas.create(signedEnvelope, executionLayer);
 
-              final BeaconState postState;
-              try {
-                postState =
-                    spec.getExecutionPayloadProcessor(signedEnvelope.getSlot())
-                        .processAndVerifyExecutionPayload(
-                            signedEnvelope, blockState.get(), Optional.of(payloadExecutor));
-              } catch (final StateTransitionException ex) {
-                final ExecutionPayloadImportResult result =
-                    ExecutionPayloadImportResult.failedStateTransition(ex);
-                reportInvalidExecutionPayload(signedEnvelope, result);
-                return SafeFuture.completedFuture(result);
-              }
+    final BeaconState postState;
+    try {
+      postState =
+          spec.getExecutionPayloadProcessor(signedEnvelope.getSlot())
+              .processAndVerifyExecutionPayload(
+                  signedEnvelope, blockState, Optional.of(payloadExecutor));
+    } catch (final StateTransitionException ex) {
+      final ExecutionPayloadImportResult result =
+          ExecutionPayloadImportResult.failedStateTransition(ex);
+      reportInvalidExecutionPayload(signedEnvelope, result);
+      return SafeFuture.completedFuture(result);
+    }
 
-              final SafeFuture<? extends DataAndValidationResult<?>> dataAndValidationResultFuture =
-                  availabilityChecker
-                      .getAvailabilityCheckResult()
-                      .thenPeek(
-                          result ->
-                              LOG.debug(
-                                  "Data availability check for slot: {}, builder: {}, block_root: {} result: {}",
-                                  signedEnvelope.getSlot(),
-                                  signedEnvelope.getMessage().getBuilderIndex(),
-                                  signedEnvelope.getBeaconBlockRoot(),
-                                  result.toLogString()));
+    final SafeFuture<? extends DataAndValidationResult<?>> dataAndValidationResultFuture =
+        availabilityChecker
+            .getAvailabilityCheckResult()
+            .thenPeek(
+                result ->
+                    LOG.debug(
+                        "Data availability check for slot: {}, builder: {}, block_root: {} result: {}",
+                        signedEnvelope.getSlot(),
+                        signedEnvelope.getMessage().getBuilderIndex(),
+                        signedEnvelope.getBeaconBlockRoot(),
+                        result.toLogString()));
 
-              return payloadExecutor
-                  .getExecutionResult()
-                  .thenCombineAsync(
-                      dataAndValidationResultFuture,
-                      (payloadResult, dataAndValidationResult) ->
-                          importExecutionPayloadAndState(
-                              signedEnvelope,
-                              forkChoiceUtil,
-                              postState,
-                              payloadResult,
-                              dataAndValidationResult),
-                      forkChoiceExecutor);
-            });
+    return payloadExecutor
+        .getExecutionResult()
+        .thenCombineAsync(
+            dataAndValidationResultFuture,
+            (payloadResult, dataAndValidationResult) ->
+                importExecutionPayloadAndState(
+                    signedEnvelope,
+                    forkChoiceUtil,
+                    postState,
+                    payloadResult,
+                    dataAndValidationResult),
+            forkChoiceExecutor);
   }
 
   private BlockImportResult importBlockAndState(
