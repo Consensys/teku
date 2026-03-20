@@ -38,67 +38,68 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 
 public class GetExecutionPayloadBid extends RestApiEndpoint {
-  public static final String ROUTE =
-      "/eth/v1/validator/execution_payload_bid/{slot}/{builder_index}";
+    public static final String ROUTE = "/eth/v1/validator/execution_payload_bid/{slot}/{builder_index}";
 
-  private static final ParameterMetadata<UInt64> SLOT_PARAM =
-      SLOT_PARAMETER.withDescription(
-          "`uint64` Slot for which the execution payload bid is requested. Must be current slot or next slot.");
+    @SuppressWarnings("unused")
+    private final ValidatorDataProvider provider;
 
-  private static final ParameterMetadata<UInt64> BUILDER_INDEX_PARAM =
-      PARAMETER_BUILDER_INDEX.withDescription(
-          "`uint64` Index of the builder from which the execution payload bid is requested.");
+    private static final ParameterMetadata<UInt64> SLOT_PARAM = SLOT_PARAMETER.withDescription(
+            "`uint64` Slot for which the execution payload bid is requested. Must be current slot or next slot.");
 
-  public GetExecutionPayloadBid(
-      final DataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
-    this(provider.getValidatorDataProvider(), schemaDefinitionCache);
-  }
+    private static final ParameterMetadata<UInt64> BUILDER_INDEX_PARAM = PARAMETER_BUILDER_INDEX.withDescription(
+            "`uint64` Index of the builder from which the execution payload bid is requested.");
 
-  public GetExecutionPayloadBid(
-      final ValidatorDataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
-    super(
-        EndpointMetadata.get(ROUTE)
-            .operationId("getExecutionPayloadBid")
-            .summary("Get execution payload bid")
-            .description(
-                "Retrieves execution payload bid for a given slot and builder. Depending on `Accept` header, it can be returned either as json or as bytes serialized by SSZ.")
-            .tags(TAG_VALIDATOR)
-            .pathParam(SLOT_PARAM)
-            .pathParam(BUILDER_INDEX_PARAM)
-            .response(SC_OK, "Successful response", getResponseType(schemaDefinitionCache))
-            .withBadRequestResponse(
-                Optional.of("Invalid request - the slot or builder_index is invalid"))
-            .response(
-                SC_NOT_FOUND,
-                "Execution payload bid not available for the requested slot and builder",
-                HTTP_ERROR_RESPONSE_TYPE)
-            .response(
-                SC_NOT_ACCEPTABLE,
-                "Not acceptable - the Accept header is not supported",
-                HTTP_ERROR_RESPONSE_TYPE)
-            .withInternalErrorResponse()
-            .withNotImplementedResponse()
-            .build());
-  }
+    public GetExecutionPayloadBid(
+            final DataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
+        this(provider.getValidatorDataProvider(), schemaDefinitionCache);
+    }
 
-  private static SerializableTypeDefinition<ExecutionPayloadBid> getResponseType(
-      final SchemaDefinitionCache schemaDefinitionCache) {
-    return SerializableTypeDefinition.object(ExecutionPayloadBid.class)
-        .name("ProduceExecutionPayloadBidResponse")
-        .withField(
-            "data",
-            schemaDefinitionCache
-                .getSchemaDefinition(SpecMilestone.GLOAS)
-                .toVersionGloas()
-                .orElseThrow()
-                .getExecutionPayloadBidSchema()
-                .getJsonTypeDefinition(),
-            Function.identity())
-        .build();
-  }
+    public GetExecutionPayloadBid(
+            final ValidatorDataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
+        super(
+                EndpointMetadata.get(ROUTE)
+                        .operationId("getExecutionPayloadBid")
+                        .summary("Get execution payload bid")
+                        .description(
+                                "Retrieves execution payload bid for a given slot and builder. Depending on `Accept` header, it can be returned either as json or as bytes serialized by SSZ.")
+                        .tags(TAG_VALIDATOR)
+                        .pathParam(SLOT_PARAM)
+                        .pathParam(BUILDER_INDEX_PARAM)
+                        .response(SC_OK, "Successful response", getResponseType(schemaDefinitionCache))
+                        .withBadRequestResponse(
+                                Optional.of("Invalid request - the slot or builder_index is invalid"))
+                        .response(
+                                SC_NOT_FOUND,
+                                "Execution payload bid not available for the requested slot and builder",
+                                HTTP_ERROR_RESPONSE_TYPE)
+                        .response(
+                                SC_NOT_ACCEPTABLE,
+                                "Not acceptable - the Accept header is not supported",
+                                HTTP_ERROR_RESPONSE_TYPE)
+                        .withInternalErrorResponse()
+                        .withNotImplementedResponse()
+                        .build());
+        this.provider = provider;
+    }
 
-  @Override
-  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    request.respondError(SC_NOT_IMPLEMENTED, "Not implemented");
-  }
+    private static SerializableTypeDefinition<ExecutionPayloadBid> getResponseType(
+            final SchemaDefinitionCache schemaDefinitionCache) {
+        return SerializableTypeDefinition.object(ExecutionPayloadBid.class)
+                .name("ProduceExecutionPayloadBidResponse")
+                .withField(
+                        "data",
+                        schemaDefinitionCache
+                                .getSchemaDefinition(SpecMilestone.GLOAS)
+                                .toVersionGloas()
+                                .orElseThrow()
+                                .getExecutionPayloadBidSchema()
+                                .getJsonTypeDefinition(),
+                        Function.identity())
+                .build();
+    }
+
+    @Override
+    public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
+        request.respondError(SC_NOT_IMPLEMENTED, "Not implemented");
+    }
 }

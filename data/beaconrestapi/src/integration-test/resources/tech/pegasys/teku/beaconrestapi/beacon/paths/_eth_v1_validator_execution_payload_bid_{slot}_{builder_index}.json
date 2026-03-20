@@ -75,6 +75,16 @@
             }
           }
         }
+      },
+      "501" : {
+        "description" : "Not implemented",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       }
     }
   }
