@@ -43,7 +43,22 @@ class GetExecutionPayloadBidTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  void metadata_shouldHandle501() throws JsonProcessingException {
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_NOT_IMPLEMENTED);
+  }
+
+  @Test
+  void metadata_shouldHandle404() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_NOT_IMPLEMENTED);
+  }
+
+  @Test
+  void metadata_shouldHandle406() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_NOT_IMPLEMENTED);
+  }
+
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_NOT_IMPLEMENTED);
   }
 }

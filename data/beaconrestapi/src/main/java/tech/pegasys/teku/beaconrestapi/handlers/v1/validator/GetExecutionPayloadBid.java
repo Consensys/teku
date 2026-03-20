@@ -15,11 +15,15 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BUILDER_INDEX;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_ACCEPTABLE;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_IMPLEMENTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -61,7 +65,18 @@ public class GetExecutionPayloadBid extends RestApiEndpoint {
             .tags(TAG_VALIDATOR)
             .pathParam(SLOT_PARAM)
             .pathParam(BUILDER_INDEX_PARAM)
-            .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
+            .response(SC_OK, "Successful response", getResponseType(schemaDefinitionCache))
+            .withBadRequestResponse(
+                Optional.of("Invalid request - the slot or builder_index is invalid"))
+            .response(
+                SC_NOT_FOUND,
+                "Execution payload bid not available for the requested slot and builder",
+                HTTP_ERROR_RESPONSE_TYPE)
+            .response(
+                SC_NOT_ACCEPTABLE,
+                "Not acceptable - the Accept header is not supported",
+                HTTP_ERROR_RESPONSE_TYPE)
+            .withInternalErrorResponse()
             .withNotImplementedResponse()
             .build());
   }
