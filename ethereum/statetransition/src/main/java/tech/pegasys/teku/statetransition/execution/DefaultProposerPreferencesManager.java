@@ -25,7 +25,7 @@ import tech.pegasys.teku.statetransition.validation.ProposerPreferencesGossipVal
 
 public class DefaultProposerPreferencesManager implements ProposerPreferencesManager {
 
-  private static final int MAX_SLOTS_TO_TRACK = 10;
+  private static final int MAX_SLOTS_TO_TRACK = 64;
 
   private final ProposerPreferencesGossipValidator proposerPreferencesGossipValidator;
   private final Map<UInt64, ProposerPreferences> acceptedProposerPreferences =
