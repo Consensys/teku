@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.infrastructure.collections;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.cache.CacheBuilder;
 import java.util.Map;
+import tech.pegasys.teku.infrastructure.collections.cache.CacheMaintenanceExecutor;
 
 public interface LimitedMap<K, V> extends Map<K, V> {
 
@@ -76,7 +78,11 @@ public interface LimitedMap<K, V> extends Map<K, V> {
    * @return A map that will evict elements when the max size is exceeded.
    */
   static <K, V> Map<K, V> createSynchronizedIterable(final int maxSize) {
-    return CacheBuilder.newBuilder().maximumSize(maxSize).<K, V>build().asMap();
+    return Caffeine.newBuilder()
+        .maximumSize(maxSize)
+        .executor(CacheMaintenanceExecutor.getInstance())
+        .<K, V>build()
+        .asMap();
   }
 
   /**
@@ -93,6 +99,10 @@ public interface LimitedMap<K, V> extends Map<K, V> {
    *     them.
    */
   static <K, V> Map<K, V> createSoft(final int maxSize) {
+    // TODO-GLOAS: migrate to Caffeine once execution payload envelopes are persisted to the
+    //  database (https://github.com/Consensys/teku/issues/10098). Without EP persistence,
+    //  Caffeine's TinyLFU eviction causes state regeneration to start from a different intermediate
+    //  state, requiring execution payloads that are no longer in the hot store.
     return CacheBuilder.newBuilder().maximumSize(maxSize).softValues().<K, V>build().asMap();
   }
 

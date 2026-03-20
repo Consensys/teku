@@ -15,6 +15,8 @@ package tech.pegasys.teku.storage.server.state;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -89,20 +91,25 @@ class FinalizedStateCacheTest {
 
   @Test
   void shouldLimitNumberOfCachedStates() throws Exception {
-    chainBuilder.generateBlocksUpToSlot(MAXIMUM_CACHE_SIZE + 1);
+    final int totalSlots = MAXIMUM_CACHE_SIZE + 2;
+    chainBuilder.generateBlocksUpToSlot(totalSlots);
     when(database.getLatestAvailableFinalizedState(any()))
         .thenReturn(Optional.of(chainBuilder.getGenesis().getState()));
     allowStreamingBlocks();
 
-    // Fill up the cache
-    for (int i = 1; i <= MAXIMUM_CACHE_SIZE; i++) {
+    // Fill the cache beyond its maximum size to force eviction
+    for (int i = 1; i <= totalSlots; i++) {
       cache.getFinalizedState(UInt64.valueOf(i));
     }
-    // Evict the least recently used item (should be genesis state)
-    cache.getFinalizedState(UInt64.valueOf(MAXIMUM_CACHE_SIZE + 1));
 
-    cache.getFinalizedState(ONE);
-    verify(database, times(2)).streamFinalizedBlocks(ONE, ONE);
+    // Clear invocation tracking, then re-request all slots
+    clearInvocations(database);
+    for (int i = 1; i <= totalSlots; i++) {
+      cache.getFinalizedState(UInt64.valueOf(i));
+    }
+
+    // Some entries must have been evicted and re-fetched from database
+    verify(database, atLeast(totalSlots - MAXIMUM_CACHE_SIZE)).streamFinalizedBlocks(any(), any());
   }
 
   @Test
