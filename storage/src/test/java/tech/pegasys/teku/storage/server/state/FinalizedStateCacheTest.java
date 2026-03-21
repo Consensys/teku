@@ -54,7 +54,7 @@ class FinalizedStateCacheTest {
   }
 
   @Test
-  void shouldUseCachedStateWhenAvailable() throws Exception {
+  void shouldUseCachedStateWhenAvailable() {
     final BeaconState state = chainBuilder.generateBlockAtSlot(ONE).getState();
     when(database.getLatestAvailableFinalizedState(state.getSlot())).thenReturn(Optional.of(state));
 
@@ -67,7 +67,7 @@ class FinalizedStateCacheTest {
   }
 
   @Test
-  void shouldRegenerateFromMoreRecentCachedState() throws Exception {
+  void shouldRegenerateFromMoreRecentCachedState() {
     final UInt64 databaseSlot = UInt64.valueOf(1);
     final UInt64 cachedSlot = UInt64.valueOf(2);
     final UInt64 requestedSlot = UInt64.valueOf(3);
@@ -90,7 +90,7 @@ class FinalizedStateCacheTest {
   }
 
   @Test
-  void shouldLimitNumberOfCachedStates() throws Exception {
+  void shouldLimitNumberOfCachedStates() {
     final int totalSlots = MAXIMUM_CACHE_SIZE + 2;
     chainBuilder.generateBlocksUpToSlot(totalSlots);
     when(database.getLatestAvailableFinalizedState(any()))
