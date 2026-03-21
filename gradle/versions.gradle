@@ -1,12 +1,12 @@
 dependencyManagement {
 	dependencies {
-		dependency 'com.fasterxml.jackson.core:jackson-databind:2.21.0'
-		dependencySet(group: 'com.fasterxml.jackson.dataformat', version: '2.21.0') {
+		dependency 'com.fasterxml.jackson.core:jackson-databind:2.21.1'
+		dependencySet(group: 'com.fasterxml.jackson.dataformat', version: '2.21.1') {
 			entry 'jackson-dataformat-yaml'
 			entry 'jackson-dataformat-toml'
 		}
-		dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.21.0'
-		dependency 'com.fasterxml.jackson.module:jackson-module-blackbird:2.21.0'
+		dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.21.1'
+		dependency 'com.fasterxml.jackson.module:jackson-module-blackbird:2.21.1'
 
 		dependencySet(group: 'com.google.errorprone', version: '2.45.0') {
 			entry 'error_prone_annotation'
@@ -20,7 +20,7 @@ dependencyManagement {
 		dependency 'com.google.guava:guava:33.1.0-jre'
 		dependency 'com.github.ben-manes.caffeine:caffeine:3.2.3'
 
-		dependency 'org.yaml:snakeyaml:2.5'
+		dependency 'org.yaml:snakeyaml:2.6'
 
 		dependency 'org.jsoup:jsoup:1.22.1'
 
@@ -33,7 +33,7 @@ dependencyManagement {
 
 		dependency 'info.picocli:picocli:4.7.7'
 
-		dependencySet(group: 'io.javalin', version: '7.0.1') {
+		dependencySet(group: 'io.javalin', version: '7.1.0') {
 			entry 'javalin'
 			entry 'javalin-rendering-thymeleaf'
 		}
@@ -57,10 +57,10 @@ dependencyManagement {
 		}
 
 		// On update don't forget to change version in tech.pegasys.teku.infrastructure.restapi.SwaggerUIBuilder
-		dependency 'org.webjars:swagger-ui:5.31.0'
+		dependency 'org.webjars:swagger-ui:5.32.1'
 
 		dependency 'org.thymeleaf:thymeleaf:3.1.3.RELEASE'
-		dependencySet(group: 'com.github.oshi', version: '6.8.3') {
+		dependencySet(group: 'com.github.oshi', version: '6.10.0') {
 			entry 'oshi-core'
 			entry 'oshi-core-java11'
 		}
@@ -114,7 +114,7 @@ dependencyManagement {
 
 		dependency 'net.java.dev.jna:jna:5.18.1'
 
-		dependencySet(group: 'org.mockito', version: '5.21.0') {
+		dependencySet(group: 'org.mockito', version: '5.23.0') {
 			entry 'mockito-core'
 			entry 'mockito-junit-jupiter'
 		}
@@ -136,16 +136,16 @@ dependencyManagement {
 			entry 'utils'
 		}
 
-		dependency 'org.xerial.snappy:snappy-java:1.1.10.7'
+		dependency 'org.xerial.snappy:snappy-java:1.1.10.8'
 
 		dependency 'io.prometheus:prometheus-metrics-bom:1.3.10'
 
-		dependencySet(group: 'org.hyperledger.besu.internal', version: '26.1.0') {
+		dependencySet(group: 'org.hyperledger.besu.internal', version: '26.2.0') {
 			entry 'besu-metrics-core'
 			entry 'besu-ethereum-core'
 			entry 'besu-config'
 		}
-		dependencySet(group: 'org.hyperledger.besu', version: '26.1.0') {
+		dependencySet(group: 'org.hyperledger.besu', version: '26.2.0') {
 			entry 'besu-datatypes'
 			entry 'besu-evm'
 			entry 'besu-plugin-api'

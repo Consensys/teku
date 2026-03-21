@@ -34,8 +34,9 @@ public class ScheduledTimeEvent implements Job {
    */
   @Override
   public void execute(final JobExecutionContext context) {
-    JobDataMap data = context.getJobDetail().getJobDataMap();
-    TimeTickHandler timeTickHandler = (TimeTickHandler) data.get(TimerService.TICK_HANDLER);
+    final JobDataMap data = context.getJobDetail().getJobDataMap();
+    final TimeTickHandler timeTickHandler =
+        (TimeTickHandler) data.get(QuartzTimerService.TICK_HANDLER);
     timeTickHandler.onTick();
   }
 }
