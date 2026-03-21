@@ -32,7 +32,6 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
-import tech.pegasys.teku.infrastructure.collections.cache.ConcurrentMapCache;
 import tech.pegasys.teku.infrastructure.collections.cache.LegacyLRUCache;
 
 /** Benchmark comparing Striped LRU Cache to a single synchronized LRU cache implementation */
@@ -46,7 +45,7 @@ import tech.pegasys.teku.infrastructure.collections.cache.LegacyLRUCache;
     jvmArgs = {"-Xms2G", "-Xmx2G"})
 public class CacheConcurrencyBenchmark {
 
-  @Param({"LRU", "CAFFEINE", "CONCURRENT_MAP"})
+  @Param({"LRU", "CAFFEINE"})
   public String cacheType;
 
   @Param({"1024"})
@@ -68,9 +67,6 @@ public class CacheConcurrencyBenchmark {
         break;
       case "CAFFEINE":
         cache = CaffeineCache.create(cacheSize);
-        break;
-      case "CONCURRENT_MAP":
-        cache = new ConcurrentMapCache<>();
         break;
       default:
         throw new IllegalStateException("Unknown cache type: " + cacheType);

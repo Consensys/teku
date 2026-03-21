@@ -30,7 +30,6 @@ import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
-import tech.pegasys.teku.infrastructure.collections.cache.ConcurrentMapCache;
 import tech.pegasys.teku.infrastructure.collections.cache.LegacyLRUCache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
@@ -46,35 +45,24 @@ public class TransitionCachesBenchmark {
       TekuPair.of(UInt64.MAX_VALUE, UInt64.MAX_VALUE);
 
   public enum CacheType {
-    HYBRID(CaffeineCache::create, ConcurrentMapCache::new),
-    LEGACY_LRU(
-        LegacyLRUCache::create,
-        new TransitionCaches.UnboundedCacheFactory() {
-          @Override
-          public <K, V> Cache<K, V> create() {
-            return LegacyLRUCache.create(Integer.MAX_VALUE - 1);
-          }
-        });
+    CAFFEINE(CaffeineCache::create),
+    LEGACY_LRU(LegacyLRUCache::create);
 
-    private final TransitionCaches.CacheFactory boundedCacheFactory;
-    private final TransitionCaches.UnboundedCacheFactory unboundedCacheFactory;
+    private final TransitionCaches.CacheFactory cacheFactory;
 
-    CacheType(
-        final TransitionCaches.CacheFactory boundedCacheFactory,
-        final TransitionCaches.UnboundedCacheFactory unboundedCacheFactory) {
-      this.boundedCacheFactory = boundedCacheFactory;
-      this.unboundedCacheFactory = unboundedCacheFactory;
+    CacheType(final TransitionCaches.CacheFactory cacheFactory) {
+      this.cacheFactory = cacheFactory;
     }
 
     public TransitionCaches createCaches() {
-      return new TransitionCaches(boundedCacheFactory, unboundedCacheFactory);
+      return new TransitionCaches(cacheFactory);
     }
   }
 
   @State(Scope.Benchmark)
   public static class BenchmarkState {
 
-    @Param({"HYBRID", "LEGACY_LRU"})
+    @Param({"CAFFEINE", "LEGACY_LRU"})
     public CacheType cacheType;
 
     @Param({"0", "5"})
