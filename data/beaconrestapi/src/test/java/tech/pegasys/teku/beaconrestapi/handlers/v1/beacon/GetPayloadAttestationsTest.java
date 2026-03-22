@@ -27,8 +27,10 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 class GetPayloadAttestationsTest extends AbstractMigratedBeaconHandlerTest {
 
@@ -40,15 +42,17 @@ class GetPayloadAttestationsTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   void shouldReturnPayloadAttestationsInformation() throws JsonProcessingException {
-    final List<PayloadAttestationMessage> responseData =
+    final List<PayloadAttestation> responseData =
         List.of(
-            dataStructureUtil.randomPayloadAttestationMessage(),
-            dataStructureUtil.randomPayloadAttestationMessage());
-    when(nodeDataProvider.getPayloadAttestations(any())).thenReturn(responseData);
+            dataStructureUtil.randomPayloadAttestation(),
+            dataStructureUtil.randomPayloadAttestation());
+    final ObjectAndMetaData<List<PayloadAttestation>> responseWithMetaData =
+        new ObjectAndMetaData<>(responseData, SpecMilestone.GLOAS, false, false, false);
+    when(nodeDataProvider.getPayloadAttestations(any())).thenReturn(responseWithMetaData);
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(responseData);
+    assertThat(request.getResponseBody()).isEqualTo(responseWithMetaData);
   }
 
   @Test
@@ -63,11 +67,13 @@ class GetPayloadAttestationsTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   void metadata_shouldHandle200() throws JsonProcessingException {
-    final List<PayloadAttestationMessage> responseData =
+    final List<PayloadAttestation> responseData =
         List.of(
-            dataStructureUtil.randomPayloadAttestationMessage(),
-            dataStructureUtil.randomPayloadAttestationMessage());
-    final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
+            dataStructureUtil.randomPayloadAttestation(),
+            dataStructureUtil.randomPayloadAttestation());
+    final ObjectAndMetaData<List<PayloadAttestation>> responseWithMetaData =
+        new ObjectAndMetaData<>(responseData, SpecMilestone.GLOAS, false, false, false);
+    final String data = getResponseStringFromMetadata(handler, SC_OK, responseWithMetaData);
     assertThat(data).isNotEmpty();
   }
 }

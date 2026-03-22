@@ -14,8 +14,11 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_CONSENSUS_HEADER_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
@@ -24,7 +27,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Header;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -33,7 +35,8 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
@@ -52,12 +55,16 @@ public class GetPayloadAttestations extends RestApiEndpoint {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getPoolPayloadAttestations")
-            .summary("Get PayloadAttestationMessages from operations pool")
+            .summary("Get PayloadAttestations from operations pool")
             .description(
                 "Retrieves payload attestations known by the node but not necessarily incorporated into any block.")
             .tags(TAG_BEACON)
             .queryParam(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION))
-            .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
+            .response(
+                SC_OK,
+                "Request successful",
+                getResponseType(schemaDefinitionCache),
+                ETH_CONSENSUS_HEADER_TYPE)
             .build());
     this.nodeDataProvider = provider;
   }
@@ -67,21 +74,26 @@ public class GetPayloadAttestations extends RestApiEndpoint {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
     final Optional<UInt64> slot =
         request.getOptionalQueryParameter(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION));
-    request.respondOk(nodeDataProvider.getPayloadAttestations(slot));
+    final ObjectAndMetaData<List<PayloadAttestation>> attestationsAndMetaData =
+        nodeDataProvider.getPayloadAttestations(slot);
+    request.header(
+        HEADER_CONSENSUS_VERSION, attestationsAndMetaData.getMilestone().lowerCaseName());
+    request.respondOk(attestationsAndMetaData);
   }
 
-  private static SerializableTypeDefinition<List<PayloadAttestationMessage>> getResponseType(
-      final SchemaDefinitionCache schemaDefinitionCache) {
-    return SerializableTypeDefinition.<List<PayloadAttestationMessage>>object()
+  private static SerializableTypeDefinition<ObjectAndMetaData<List<PayloadAttestation>>>
+      getResponseType(final SchemaDefinitionCache schemaDefinitionCache) {
+    return SerializableTypeDefinition.<ObjectAndMetaData<List<PayloadAttestation>>>object()
         .name("GetPoolPayloadAttestationsResponse")
+        .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
         .withField(
             "data",
             listOf(
                 SchemaDefinitionsGloas.required(
                         schemaDefinitionCache.getSchemaDefinition(SpecMilestone.GLOAS))
-                    .getPayloadAttestationMessageSchema()
+                    .getPayloadAttestationSchema()
                     .getJsonTypeDefinition()),
-            Function.identity())
+            ObjectAndMetaData::getData)
         .build();
   }
 }

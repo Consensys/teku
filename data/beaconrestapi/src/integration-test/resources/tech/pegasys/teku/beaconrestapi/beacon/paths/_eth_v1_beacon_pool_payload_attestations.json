@@ -2,7 +2,7 @@
   "get" : {
     "tags" : [ "Beacon" ],
     "operationId" : "getPoolPayloadAttestations",
-    "summary" : "Get PayloadAttestationMessages from operations pool",
+    "summary" : "Get PayloadAttestations from operations pool",
     "description" : "Retrieves payload attestations known by the node but not necessarily incorporated into any block.",
     "parameters" : [ {
       "name" : "slot",
@@ -17,6 +17,17 @@
     "responses" : {
       "200" : {
         "description" : "Request successful",
+        "headers" : {
+          "Eth-Consensus-Version" : {
+            "description" : "Required in response so client can deserialize returned json or ssz data more effectively.",
+            "required" : true,
+            "schema" : {
+              "type" : "string",
+              "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu", "gloas", "heze" ],
+              "example" : "phase0"
+            }
+          }
+        },
         "content" : {
           "application/json" : {
             "schema" : {
