@@ -103,6 +103,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -118,6 +119,7 @@ import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
@@ -172,6 +174,7 @@ public class Eth2P2PNetworkFactory {
     protected OperationProcessor<SignedExecutionPayloadEnvelope> executionPayloadProcessor;
     protected OperationProcessor<PayloadAttestationMessage> payloadAttestationMessageProcessor;
     protected OperationProcessor<SignedExecutionPayloadBid> executionPayloadBidProcessor;
+    protected OperationProcessor<SignedProposerPreferences> proposerPreferencesProcessor;
     protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
     protected VerifiedBlockAttestationsSubscriptionProvider
         verifiedBlockAttestationsSubscriptionProvider;
@@ -303,6 +306,7 @@ public class Eth2P2PNetworkFactory {
                 P2PConfig.DEFAULT_PEER_REQUEST_LIMIT,
                 spec,
                 __ -> Optional.of(discoveryNodeId),
+                DataColumnSidecarArchiveReconstructor.NOOP,
                 DasReqRespLogger.NOOP);
 
         List<RpcMethod<?, ?, ?>> rpcMethods =
@@ -593,6 +597,7 @@ public class Eth2P2PNetworkFactory {
                 executionPayloadProcessor,
                 payloadAttestationMessageProcessor,
                 executionPayloadBidProcessor,
+                proposerPreferencesProcessor,
                 debugDataDumper,
                 DasGossipLogger.NOOP,
                 executionProofOperationProcessor,
@@ -703,6 +708,9 @@ public class Eth2P2PNetworkFactory {
       }
       if (executionPayloadBidProcessor == null) {
         executionPayloadBidProcessor = OperationProcessor.noop();
+      }
+      if (proposerPreferencesProcessor == null) {
+        proposerPreferencesProcessor = OperationProcessor.noop();
       }
       if (isSuperNodeSupplier == null) {
         isSuperNodeSupplier = () -> false;

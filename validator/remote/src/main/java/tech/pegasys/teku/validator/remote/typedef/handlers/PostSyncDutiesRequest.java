@@ -13,9 +13,8 @@
 
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
+import static tech.pegasys.teku.ethereum.json.types.SharedApiTypes.BODY_INTEGER_LIST;
 import static tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDutiesBuilder.SYNC_COMMITTEE_DUTIES_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.listOf;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_DUTIES;
 
 import java.util.Collection;
@@ -39,7 +38,7 @@ public class PostSyncDutiesRequest extends AbstractTypeDefRequest {
         GET_SYNC_COMMITTEE_DUTIES,
         Map.of(RestApiConstants.EPOCH, epoch.toString()),
         validatorIndices.stream().toList(),
-        listOf(INTEGER_TYPE, Optional.of(1), Optional.empty()),
+        BODY_INTEGER_LIST,
         new ResponseHandler<>(SYNC_COMMITTEE_DUTIES_TYPE));
   }
 }

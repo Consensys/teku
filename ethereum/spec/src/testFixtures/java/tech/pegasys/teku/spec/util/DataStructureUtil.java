@@ -143,8 +143,10 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadA
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -3285,6 +3287,18 @@ public final class DataStructureUtil {
                     randomUInt64(),
                     blobKzgCommitments),
             randomSignature());
+  }
+
+  public ProposerPreferences randomProposerPreferences() {
+    return getGloasSchemaDefinitions()
+        .getProposerPreferencesSchema()
+        .create(randomSlot(), randomUInt64(), randomEth1Address(), randomUInt64());
+  }
+
+  public SignedProposerPreferences randomSignedProposerPreferences() {
+    return getGloasSchemaDefinitions()
+        .getSignedProposerPreferencesSchema()
+        .create(randomProposerPreferences(), randomSignature());
   }
 
   public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope() {

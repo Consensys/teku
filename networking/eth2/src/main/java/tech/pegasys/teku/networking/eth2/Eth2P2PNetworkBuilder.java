@@ -86,6 +86,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -100,6 +101,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarArchiveReconstructor;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
@@ -133,6 +135,7 @@ public class Eth2P2PNetworkBuilder {
   protected OperationProcessor<SignedExecutionPayloadEnvelope> executionPayloadProcessor;
   protected OperationProcessor<PayloadAttestationMessage> payloadAttestationMessageProcessor;
   protected OperationProcessor<SignedExecutionPayloadBid> executionPayloadBidProcessor;
+  protected OperationProcessor<SignedProposerPreferences> proposerPreferencesProcessor;
   protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   protected MetricsSystem metricsSystem;
   protected final List<RpcMethod<?, ?, ?>> rpcMethods = new ArrayList<>();
@@ -157,6 +160,7 @@ public class Eth2P2PNetworkBuilder {
   private DasGossipLogger dasGossipLogger;
   private DasReqRespLogger dasReqRespLogger;
   private Supplier<Boolean> isSuperNodeSupplier;
+  private DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor;
 
   protected Eth2P2PNetworkBuilder() {}
 
@@ -204,6 +208,7 @@ public class Eth2P2PNetworkBuilder {
             config.getPeerRequestLimit(),
             spec,
             discoveryNodeIdExtractor,
+            dataColumnSidecarArchiveReconstructor,
             dasReqRespLogger);
     final Collection<RpcMethod<?, ?, ?>> eth2RpcMethods =
         eth2PeerManager.getBeaconChainMethods().all();
@@ -428,6 +433,7 @@ public class Eth2P2PNetworkBuilder {
               executionPayloadProcessor,
               payloadAttestationMessageProcessor,
               executionPayloadBidProcessor,
+              proposerPreferencesProcessor,
               debugDataDumper,
               dasGossipLogger,
               executionProofOperationProcessor,
@@ -491,6 +497,7 @@ public class Eth2P2PNetworkBuilder {
               executionPayloadProcessor,
               payloadAttestationMessageProcessor,
               executionPayloadBidProcessor,
+              proposerPreferencesProcessor,
               executionProofOperationProcessor,
               debugDataDumper,
               dasGossipLogger,
@@ -632,6 +639,7 @@ public class Eth2P2PNetworkBuilder {
     assertNotNull("gossipedPayloadAttestationMessageProcessor", payloadAttestationMessageProcessor);
     assertNotNull("gossipedExecutionProofOperationProcessor", executionProofOperationProcessor);
     assertNotNull("gossipedExecutionPayloadBidProcessor", executionPayloadBidProcessor);
+    assertNotNull("gossipedProposerPreferencesProcessor", proposerPreferencesProcessor);
   }
 
   private void assertNotNull(final String fieldName, final Object fieldValue) {
@@ -793,6 +801,13 @@ public class Eth2P2PNetworkBuilder {
     return this;
   }
 
+  public Eth2P2PNetworkBuilder gossipedProposerPreferencesProcessor(
+      final OperationProcessor<SignedProposerPreferences> gossipedProposerPreferencesProcessor) {
+    checkNotNull(gossipedProposerPreferencesProcessor);
+    this.proposerPreferencesProcessor = gossipedProposerPreferencesProcessor;
+    return this;
+  }
+
   public Eth2P2PNetworkBuilder metricsSystem(final MetricsSystem metricsSystem) {
     checkNotNull(metricsSystem);
     this.metricsSystem = metricsSystem;
@@ -876,6 +891,12 @@ public class Eth2P2PNetworkBuilder {
 
   public Eth2P2PNetworkBuilder isSuperNodeSupplier(final Supplier<Boolean> isSuperNodeSupplier) {
     this.isSuperNodeSupplier = isSuperNodeSupplier;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder dataColumnSidecarArchiveReconstructor(
+      final DataColumnSidecarArchiveReconstructor dataColumnSidecarArchiveReconstructor) {
+    this.dataColumnSidecarArchiveReconstructor = dataColumnSidecarArchiveReconstructor;
     return this;
   }
 }

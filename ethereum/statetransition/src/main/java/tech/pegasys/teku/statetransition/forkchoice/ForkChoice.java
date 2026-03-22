@@ -705,7 +705,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
     updateForkChoiceForImportedBlock(
         block, shouldUpdateProposerBoostRoot, result, forkChoiceStrategy);
-    notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
+    if (forkChoiceUtil.shouldNotifyForkChoiceUpdatedOnBlock()) {
+      notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
+    }
     return result;
   }
 
@@ -756,6 +758,15 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();
+
+    final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+
+    // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 this is just a workaround for
+    // devnet-0, we need a proper fork choice implementation
+    forkChoiceStrategy.processExecutionPayload(signedEnvelope);
+
+    updateForkChoiceForImportedExecutionPayload(signedEnvelope, forkChoiceStrategy);
+    notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
 
     return ExecutionPayloadImportResult.successful(signedEnvelope);
   }
@@ -916,6 +927,20 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       // VC side and requires head event to be sent before attestationDue.
       processHead().finish(error -> LOG.error("Fork choice updating head failed", error));
     }
+  }
+
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 this is just a workaround for
+  // devnet-0, we need a proper fork choice implementation
+  private void updateForkChoiceForImportedExecutionPayload(
+      final SignedExecutionPayloadEnvelope signedEnvelope,
+      final ForkChoiceStrategy forkChoiceStrategy) {
+    recentChainData.updateHead(signedEnvelope.getBeaconBlockRoot(), signedEnvelope.getSlot());
+    final SlotAndBlockRoot bestHeadBlock = findNewChainHead(forkChoiceStrategy);
+    if (!bestHeadBlock.getBlockRoot().equals(signedEnvelope.getBeaconBlockRoot())) {
+      processHead().finish(error -> LOG.error("Fork choice updating head failed", error));
+      return;
+    }
+    recentChainData.updateHead(bestHeadBlock.getBlockRoot(), bestHeadBlock.getSlot());
   }
 
   private SlotAndBlockRoot findNewChainHead(final ForkChoiceStrategy forkChoiceStrategy) {

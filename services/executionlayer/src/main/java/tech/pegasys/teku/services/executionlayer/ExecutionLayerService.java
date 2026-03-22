@@ -22,6 +22,7 @@ import com.google.common.base.Splitter;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -29,8 +30,13 @@ import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionclient.OkHttpClientCreator;
+import tech.pegasys.teku.ethereum.executionclient.OkHttpExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionclient.OkHttpExecutionEngineClientFactory;
+import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClientProvider;
 import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
+import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderBidValidatorImpl;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreaker;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreakerImpl;
@@ -68,6 +74,9 @@ public class ExecutionLayerService extends Service {
     final ExecutionClientEventsChannel executionClientEventsPublisher =
         serviceConfig.getEventChannels().getPublisher(ExecutionClientEventsChannel.class);
 
+    // TODO-lucas This is eventually used on PowchainService. However this is likely legacy and can
+    // be removed as we
+    // don't care about fetching deposits from chain anymore.
     final ExecutionWeb3jClientProvider engineWeb3jClientProvider =
         ExecutionWeb3jClientProvider.create(
             config.getEngineEndpoint(),
@@ -121,14 +130,41 @@ public class ExecutionLayerService extends Service {
       executionLayerManager =
           createStubExecutionLayerManager(serviceConfig, config, builderCircuitBreaker);
     } else {
-      executionLayerManager =
-          createRealExecutionLayerManager(
-              serviceConfig,
-              config,
-              spec,
-              engineWeb3jClientProvider,
-              builderRestClientProvider,
-              builderCircuitBreaker);
+      if (!config.isUseNewEngineApiClient()) {
+        executionLayerManager =
+            createRealExecutionLayerManager(
+                serviceConfig,
+                config,
+                spec,
+                new Web3JExecutionEngineClient(engineWeb3jClientProvider.getWeb3JClient()),
+                builderRestClientProvider,
+                builderCircuitBreaker);
+      } else {
+        LOG.info("Using new experimental Engine API client");
+        final Optional<JwtConfig> jwtConfig =
+            JwtConfig.createIfNeeded(
+                true,
+                config.getEngineJwtSecretFile(),
+                config.getEngineJwtClaimId(),
+                beaconDataDirectory);
+        final OkHttpClient okHttpClient = OkHttpClientCreator.create(LOG, jwtConfig, timeProvider);
+        final ExecutionEngineClient newEngineApiClient =
+            OkHttpExecutionEngineClientFactory.create(
+                okHttpClient,
+                config.getEngineEndpoint(),
+                EVENT_LOG,
+                timeProvider,
+                executionClientEventsPublisher,
+                OkHttpExecutionEngineClient.NON_CRITICAL_METHODS);
+        executionLayerManager =
+            createRealExecutionLayerManager(
+                serviceConfig,
+                config,
+                spec,
+                newEngineApiClient,
+                builderRestClientProvider,
+                builderCircuitBreaker);
+      }
     }
 
     return new ExecutionLayerService(
@@ -158,15 +194,14 @@ public class ExecutionLayerService extends Service {
       final ServiceConfig serviceConfig,
       final ExecutionLayerConfiguration config,
       final Spec spec,
-      final ExecutionWeb3jClientProvider engineWeb3jClientProvider,
+      final ExecutionEngineClient rawEngineClient,
       final Optional<RestClientProvider> builderRestClientProvider,
       final BuilderCircuitBreaker builderCircuitBreaker) {
     final MetricsSystem metricsSystem = serviceConfig.getMetricsSystem();
     final TimeProvider timeProvider = serviceConfig.getTimeProvider();
 
     final ExecutionEngineClient executionEngineClient =
-        ExecutionLayerManagerImpl.createEngineClient(
-            engineWeb3jClientProvider.getWeb3JClient(), timeProvider, metricsSystem);
+        ExecutionLayerManagerImpl.createEngineClient(rawEngineClient, timeProvider, metricsSystem);
 
     final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
         new MilestoneBasedEngineJsonRpcMethodsResolver(config.getSpec(), executionEngineClient);

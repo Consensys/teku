@@ -11,7 +11,7 @@ runs:
   using: "composite"
   steps:
     - name: Gather junit results
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v8
       with:
         pattern: ${{inputs.stage_key}}-reports-*
         path: reports/${{inputs.stage_key}}
@@ -19,11 +19,12 @@ runs:
 
     - shell: bash
       run: |
-        tree reports/
+        ls -R reports/
 
     # # https://github.com/dorny/test-reporter
+    #v2
     - name: Junit Test Reporter
-      uses: dorny/test-reporter@v2
+      uses: dorny/test-reporter@3d76b34a4535afbd0600d347b09a6ee5deb3ed7f
       env:
         NODE_OPTIONS: "--max_old_space_size=4096"      
       with:
@@ -50,8 +51,9 @@ runs:
         npx junit-to-ctrf 'reports/${{inputs.stage_key}}/**/TEST-*.xml' -o ./ctrf/${{inputs.stage_key}}/ctrf-report.json
 
     # Publish test report
+    # v1
     - name: Publish Summary of Test Reports
-      uses: ctrf-io/github-test-reporter@v1
+      uses: ctrf-io/github-test-reporter@024bc4b64d997ca9da86833c6b9548c55c620e40
       with:
         report-path: './ctrf/${{inputs.stage_key}}/ctrf-report.json'
         # Disable PR interaction
@@ -75,7 +77,7 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
                 
     - name: Upload CTRF artifact
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: ctrf-${{inputs.stage_key}}-tests
         path: ./ctrf/${{inputs.stage_key}}/ctrf-report.json 
