@@ -19,7 +19,7 @@ jobs:
     environment: publish
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           submodules: 'recursive'
 
@@ -47,7 +47,7 @@ jobs:
 
       - name: Download distribution
         if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
@@ -73,10 +73,11 @@ jobs:
             echo "prerelease=false" >> $GITHUB_OUTPUT
           fi
       # Create release tag and attach the distribution
+      #v2.6.1
       - name: Teku Release
         if: startsWith(github.ref, 'refs/tags/')
         id: release
-        uses: softprops/action-gh-release@v2.2.1
+        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe
         with:
           files: |
             build/distributions/teku-${{ inputs.publish_version }}.tar.gz
