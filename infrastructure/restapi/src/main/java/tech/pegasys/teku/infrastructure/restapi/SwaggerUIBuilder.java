@@ -153,13 +153,20 @@ public class SwaggerUIBuilder {
     final String entryPrefix = urlStr.substring(bangIdx + 2);
 
     final Path tempDir = Files.createTempDirectory("teku-swagger-ui-");
+    // Register cleanup before extraction so the temp dir is removed even if extraction fails
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> deleteDirectory(tempDir)));
     try (final JarFile jar = new JarFile(jarFilePath)) {
       jar.stream()
           .filter(entry -> entry.getName().startsWith(entryPrefix) && !entry.isDirectory())
           .forEach(
               entry -> {
                 final String relativeName = entry.getName().substring(entryPrefix.length());
-                final Path dest = tempDir.resolve(relativeName);
+                final Path dest = tempDir.resolve(relativeName).normalize();
+                // Guard against Zip Slip: ensure destination is within the temp directory
+                if (!dest.startsWith(tempDir)) {
+                  throw new IllegalStateException(
+                      "JAR entry path escapes target directory: " + entry.getName());
+                }
                 try {
                   Files.createDirectories(dest.getParent());
                   try (final InputStream in = jar.getInputStream(entry)) {
@@ -169,8 +176,9 @@ public class SwaggerUIBuilder {
                   throw new UncheckedIOException(e);
                 }
               });
+    } catch (final UncheckedIOException e) {
+      throw e.getCause();
     }
-    Runtime.getRuntime().addShutdownHook(new Thread(() -> deleteDirectory(tempDir)));
     return tempDir.toAbsolutePath().toString();
   }
 
