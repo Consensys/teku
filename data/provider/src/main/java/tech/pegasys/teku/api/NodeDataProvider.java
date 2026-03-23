@@ -33,7 +33,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -177,6 +179,26 @@ public class NodeDataProvider {
 
   public List<SignedVoluntaryExit> getVoluntaryExits() {
     return new ArrayList<>(voluntaryExitPool.getAll());
+  }
+
+  public ObjectAndMetaData<List<PayloadAttestation>> getPayloadAttestations(
+      final Optional<UInt64> maybeSlot) {
+    final List<PayloadAttestation> attestations =
+        recentChainData
+            .getBestState()
+            .map(SafeFuture::join)
+            .map(
+                state ->
+                    payloadAttestationPool.getAggregatedPayloadAttestations(
+                        slot -> spec.getPtc(state, slot)))
+            .orElse(List.of());
+    final List<PayloadAttestation> filtered =
+        maybeSlot
+            .map(
+                slot ->
+                    attestations.stream().filter(a -> a.getData().getSlot().equals(slot)).toList())
+            .orElse(attestations);
+    return new ObjectAndMetaData<>(filtered, SpecMilestone.GLOAS, false, false, false);
   }
 
   public SafeFuture<InternalValidationResult> postVoluntaryExit(final SignedVoluntaryExit exit) {
