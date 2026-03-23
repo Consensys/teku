@@ -15,12 +15,11 @@ package tech.pegasys.teku.statetransition.execution;
 
 import static tech.pegasys.teku.spec.config.Constants.MAX_SLOTS_TO_TRACK_PROPOSER_PREFERENCES;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
@@ -33,8 +32,8 @@ public class DefaultProposerPreferencesManager implements ProposerPreferencesMan
   private final ProposerPreferencesGossipValidator proposerPreferencesGossipValidator;
   private final Map<UInt64, ProposerPreferences> acceptedProposerPreferences =
       LimitedMap.createSynchronizedLRU(MAX_SLOTS_TO_TRACK_PROPOSER_PREFERENCES);
-  private final List<OperationAddedSubscriber<SignedProposerPreferences>> subscribers =
-      new ArrayList<>();
+  private final Subscribers<OperationAddedSubscriber<SignedProposerPreferences>> subscribers =
+      Subscribers.create(true);
 
   public DefaultProposerPreferencesManager(
       final ProposerPreferencesGossipValidator proposerPreferencesGossipValidator) {
@@ -61,7 +60,7 @@ public class DefaultProposerPreferencesManager implements ProposerPreferencesMan
   @Override
   public void subscribeOperationAdded(
       final OperationAddedSubscriber<SignedProposerPreferences> subscriber) {
-    subscribers.add(subscriber);
+    subscribers.subscribe(subscriber);
   }
 
   private SafeFuture<InternalValidationResult> validateAndAdd(
