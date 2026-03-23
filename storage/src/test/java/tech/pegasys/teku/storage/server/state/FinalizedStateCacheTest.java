@@ -44,9 +44,10 @@ class FinalizedStateCacheTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
   private final Database database = mock(Database.class);
-  // We don't use soft references in unit tests to avoid intermittency
+  // Use Runnable::run as executor for synchronous eviction in tests
   private final FinalizedStateCache cache =
-      new FinalizedStateCache(spec, database, MAXIMUM_CACHE_SIZE, false, 120);
+      new FinalizedStateCache(
+          spec, database, MAXIMUM_CACHE_SIZE, false, 120, 10_000L, Runnable::run);
 
   @BeforeEach
   public void setUp() {

@@ -16,9 +16,11 @@ package tech.pegasys.teku.storage.server.state;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.github.benmanes.caffeine.cache.RemovalCause;
+import com.google.common.annotations.VisibleForTesting;
 import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.Executor;
 import tech.pegasys.teku.infrastructure.collections.cache.CacheMaintenanceExecutor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -60,10 +62,29 @@ public class FinalizedStateCache {
       final boolean useSoftReferences,
       final int stateRebuildTimeoutSeconds,
       final long maxRegenerateSlots) {
+    this(
+        spec,
+        database,
+        maximumCacheSize,
+        useSoftReferences,
+        stateRebuildTimeoutSeconds,
+        maxRegenerateSlots,
+        CacheMaintenanceExecutor.getInstance());
+  }
+
+  @VisibleForTesting
+  FinalizedStateCache(
+      final Spec spec,
+      final Database database,
+      final int maximumCacheSize,
+      final boolean useSoftReferences,
+      final int stateRebuildTimeoutSeconds,
+      final long maxRegenerateSlots,
+      final Executor cacheExecutor) {
     final Caffeine<Object, Object> cacheBuilder =
         Caffeine.newBuilder()
             .maximumSize(maximumCacheSize)
-            .executor(CacheMaintenanceExecutor.getInstance())
+            .executor(cacheExecutor)
             .removalListener(
                 (key, value, cause) -> {
                   if (cause != RemovalCause.REPLACED) {
