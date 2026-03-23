@@ -32,7 +32,9 @@ class BlockProcessor {
       final SignedBeaconBlock block,
       final Optional<SignedExecutionPayloadEnvelope> executionPayload) {
     return executionPayload
-        .map(envelope -> replayExecutionPayload(replayBlock(preState, block), envelope))
+        .map(
+            executionPayloadEnvelope ->
+                replayExecutionPayload(replayBlock(preState, block), executionPayloadEnvelope))
         .orElseGet(() -> replayBlock(preState, block));
   }
 
