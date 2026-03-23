@@ -96,8 +96,10 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USER_RW }}
           password: ${{ secrets.DOCKER_PASSWORD_RW }}
+      
+      # v7.0.0
       - name: build and push the combined manifest
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294
         id: dockerBuildPush
         env:
           DOCKER_BUILD_SUMMARY: false
