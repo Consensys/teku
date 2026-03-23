@@ -74,7 +74,7 @@ class FinalizedStateCacheTest {
     final UInt64 requestedSlot = UInt64.valueOf(3);
     chainBuilder.generateBlocksUpToSlot(requestedSlot);
 
-    // Latest state available from the database is at databaseSlot (1)
+    // Latest state available from the database is at databaseSlot 1
     when(database.getLatestAvailableFinalizedState(any()))
         .thenReturn(Optional.of(chainBuilder.getStateAtSlot(databaseSlot)));
     allowStreamingBlocks();
