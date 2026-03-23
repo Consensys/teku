@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadBidGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.PayloadAttestationMessageGossipManager;
+import tech.pegasys.teku.networking.eth2.gossip.ProposerPreferencesGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
@@ -53,11 +54,12 @@ public class GossipForkSubscriptionsGloasTest {
 
     gossipForkSubscriptions.addGossipManagers(forkInfo(), forkDigest());
 
-    verify(gossipForkSubscriptions, times(13)).addGossipManager(any());
+    verify(gossipForkSubscriptions, times(14)).addGossipManager(any());
     verify(gossipForkSubscriptions).addGossipManager(any(ExecutionPayloadGossipManager.class));
     verify(gossipForkSubscriptions)
         .addGossipManager(any(PayloadAttestationMessageGossipManager.class));
     verify(gossipForkSubscriptions).addGossipManager(any(ExecutionPayloadBidGossipManager.class));
+    verify(gossipForkSubscriptions).addGossipManager(any(ProposerPreferencesGossipManager.class));
   }
 
   private ForkInfo forkInfo() {
@@ -83,6 +85,7 @@ public class GossipForkSubscriptionsGloasTest {
         discoveryNetwork,
         recentChainData,
         gossipEncoding,
+        noopOperationProcessor,
         noopOperationProcessor,
         noopOperationProcessor,
         noopOperationProcessor,

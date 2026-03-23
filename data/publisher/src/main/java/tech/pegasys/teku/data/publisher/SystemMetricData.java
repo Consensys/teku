@@ -20,9 +20,6 @@ import java.io.File;
 import oshi.SystemInfo;
 import oshi.hardware.HardwareAbstractionLayer;
 import oshi.hardware.NetworkIF;
-import oshi.software.os.linux.LinuxOperatingSystem;
-import oshi.software.os.mac.MacOperatingSystem;
-import oshi.software.os.windows.WindowsOperatingSystem;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 
 public class SystemMetricData extends BaseMetricData {
@@ -92,7 +89,7 @@ public class SystemMetricData extends BaseMetricData {
     this.cpuThreads = hardware.getProcessor().getLogicalProcessorCount();
     this.memoryNodeBytesFree = hardware.getMemory().getAvailable();
     this.memoryNodeBytesTotal = hardware.getMemory().getTotal();
-    this.miscNodeBootTsSeconds = getNodeBootSeconds();
+    this.miscNodeBootTsSeconds = systemInfo.getOperatingSystem().getSystemBootTime();
 
     final long[] processStats =
         calculateProcessLoadTicks(hardware.getProcessor().getProcessorCpuLoadTicks());
@@ -109,15 +106,6 @@ public class SystemMetricData extends BaseMetricData {
     this.diskNodeBytesTotal =
         beaconNodeDirectory.exists() ? beaconNodeDirectory.getTotalSpace() : 0L;
     this.diskNodeBytesFree = beaconNodeDirectory.exists() ? beaconNodeDirectory.getFreeSpace() : 0L;
-  }
-
-  private long getNodeBootSeconds() {
-    return switch (miscOs) {
-      case "lin" -> new LinuxOperatingSystem().getSystemBootTime();
-      case "win" -> new WindowsOperatingSystem().getSystemBootTime();
-      case "mac" -> new MacOperatingSystem().getSystemBootTime();
-      default -> 0L;
-    };
   }
 
   private long[] calculateProcessLoadTicks(final long[][] processorCpuLoadTicks) {

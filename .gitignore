@@ -57,4 +57,4 @@ eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
 .jqwik-database
 /teku.db
 node_modules
-.claude/*.local.*
+.claude/
