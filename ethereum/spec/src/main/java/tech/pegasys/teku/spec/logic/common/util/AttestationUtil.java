@@ -313,6 +313,14 @@ public abstract class AttestationUtil {
 
   public abstract AttestationValidationResult validateCommitteeIndexValue(UInt64 committeeIndex);
 
+  public int computeCommitteeIndexForAttestation(
+      final UInt64 slot,
+      final UInt64 blockSlot,
+      final boolean isBlockStatusFull,
+      final int committeeIndex) {
+    return committeeIndex;
+  }
+
   public abstract AttestationValidationResult validatePayloadStatus(
       AttestationData attestationData, Optional<UInt64> maybeBlockSlot);
 

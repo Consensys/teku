@@ -98,6 +98,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -113,7 +114,9 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
@@ -123,6 +126,7 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
@@ -162,6 +166,8 @@ class ValidatorApiHandlerTest {
       mock(ExecutionPayloadFactory.class);
   private final ExecutionPayloadPublisher executionPayloadPublisher =
       mock(ExecutionPayloadPublisher.class);
+  private final ProposerPreferencesManager proposerPreferencesManager =
+      mock(ProposerPreferencesManager.class);
 
   private final SyncCommitteeMessagePool syncCommitteeMessagePool =
       mock(SyncCommitteeMessagePool.class);
@@ -215,11 +221,14 @@ class ValidatorApiHandlerTest {
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
-            executionProofManager);
+            ExecutionPayloadBidManager.NOOP,
+            executionProofManager,
+            proposerPreferencesManager);
 
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(forkChoiceTrigger.prepareForBlockProduction(any(), any())).thenReturn(SafeFuture.COMPLETE);
     when(chainDataClient.isOptimisticBlock(any())).thenReturn(false);
+    when(chainDataClient.getStore()).thenReturn(mock(UpdatableStore.class));
     doAnswer(invocation -> SafeFuture.completedFuture(invocation.getArgument(0)))
         .when(blockFactory)
         .unblindSignedBlockIfBlinded(any(), any());
@@ -502,7 +511,9 @@ class ValidatorApiHandlerTest {
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
-            executionProofManager);
+            ExecutionPayloadBidManager.NOOP,
+            executionProofManager,
+            ProposerPreferencesManager.NOOP);
     dataStructureUtil = new DataStructureUtil(spec);
     // Best state is still in Phase0
     final BeaconState state =
@@ -1483,6 +1494,43 @@ class ValidatorApiHandlerTest {
     final SafeFuture<List<SubmitDataError>> result =
         validatorApiHandler.sendPayloadAttestationMessages(List.of(payloadAttestationMessage));
     assertThat(result).isCompletedWithValue(List.of());
+  }
+
+  @Test
+  void sendSignedProposerPreferences_shouldValidateViaManager() {
+    final SignedProposerPreferences signedProposerPreferences =
+        dataStructureUtil.randomSignedProposerPreferences();
+
+    when(proposerPreferencesManager.addLocal(any()))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+
+    final SafeFuture<Void> result =
+        validatorApiHandler.sendSignedProposerPreferences(List.of(signedProposerPreferences));
+
+    assertThat(result).isCompleted();
+    verify(proposerPreferencesManager).addLocal(signedProposerPreferences);
+  }
+
+  @Test
+  void sendSignedProposerPreferences_shouldCompleteWhenRejected() {
+    final SignedProposerPreferences signedProposerPreferences =
+        dataStructureUtil.randomSignedProposerPreferences();
+
+    when(proposerPreferencesManager.addLocal(any()))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("bad signature")));
+
+    final SafeFuture<Void> result =
+        validatorApiHandler.sendSignedProposerPreferences(List.of(signedProposerPreferences));
+
+    assertThat(result).isCompleted();
+  }
+
+  @Test
+  void sendSignedProposerPreferences_shouldHandleEmptyList() {
+    final SafeFuture<Void> result = validatorApiHandler.sendSignedProposerPreferences(List.of());
+
+    assertThat(result).isCompleted();
+    verify(proposerPreferencesManager, never()).addLocal(any());
   }
 
   private boolean validatorIsLive(

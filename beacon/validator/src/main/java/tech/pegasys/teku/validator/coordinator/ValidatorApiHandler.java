@@ -107,7 +107,9 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
@@ -127,7 +129,7 @@ import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
 
-public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChannel {
+public final class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -148,7 +150,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private final ChainDataProvider chainDataProvider;
   private final NodeDataProvider nodeDataProvider;
   private final NetworkDataProvider networkDataProvider;
-  protected final CombinedChainDataClient combinedChainDataClient;
+  private final CombinedChainDataClient combinedChainDataClient;
   private final SyncStateProvider syncStateProvider;
   private final BlockFactory blockFactory;
   private final AggregatingAttestationPool attestationPool;
@@ -157,8 +159,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private final ActiveValidatorTracker activeValidatorTracker;
   private final DutyMetrics dutyMetrics;
   private final PerformanceTracker performanceTracker;
-  protected final Spec spec;
-  protected final ForkChoiceTrigger forkChoiceTrigger;
+  private final Spec spec;
+  private final ForkChoiceTrigger forkChoiceTrigger;
   private final SyncCommitteeMessagePool syncCommitteeMessagePool;
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
@@ -171,6 +173,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
 
   private final AttesterDutiesGenerator attesterDutiesGenerator;
   private final ExecutionProofManager executionProofManager;
+  private final ExecutionPayloadBidManager executionPayloadBidManager;
+  private final ProposerPreferencesManager proposerPreferencesManager;
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
@@ -198,7 +202,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final ExecutionPayloadManager executionPayloadManager,
       final ExecutionPayloadFactory executionPayloadFactory,
       final ExecutionPayloadPublisher executionPayloadPublisher,
-      final ExecutionProofManager executionProofManager) {
+      final ExecutionPayloadBidManager executionPayloadBidManager,
+      final ExecutionProofManager executionProofManager,
+      final ProposerPreferencesManager proposerPreferencesManager) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
@@ -226,6 +232,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     this.executionPayloadPublisher = executionPayloadPublisher;
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
     this.executionProofManager = executionProofManager;
+    this.executionPayloadBidManager = executionPayloadBidManager;
+    this.proposerPreferencesManager = proposerPreferencesManager;
   }
 
   @Override
@@ -467,12 +475,36 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
         });
   }
 
-  protected SafeFuture<Optional<BeaconState>> getStateForBlockProduction(
+  private SafeFuture<Optional<BeaconState>> getStateForBlockProduction(
       final UInt64 slot, final BlockProductionPerformance productionPerformance) {
+    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10352 this is very simple and naïve
+    // state selection (possibly good enough for devnet-0) that needs to be revisited
+    final Optional<BeaconState> executionPayloadState =
+        getExecutionPayloadStateForBlockProduction(slot);
+    if (executionPayloadState.isPresent()) {
+      return SafeFuture.completedFuture(executionPayloadState);
+    }
     return combinedChainDataClient.getStateForBlockProduction(
         slot,
         forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled(),
         productionPerformance::lateBlockReorgPreparationCompleted);
+  }
+
+  private Optional<BeaconState> getExecutionPayloadStateForBlockProduction(final UInt64 slot) {
+    if (!combinedChainDataClient.isStoreAvailable()) {
+      return Optional.empty();
+    }
+    return combinedChainDataClient
+        .getRecentChainData()
+        .getBlockRootInEffectBySlot(slot)
+        .flatMap(
+            blockRoot ->
+                combinedChainDataClient
+                    .getStore()
+                    // no state will be present for slots before the Gloas fork (or if empty
+                    // after the Gloas fork)
+                    .getExecutionPayloadStateIfAvailable(blockRoot)
+                    .flatMap(state -> combinedChainDataClient.regenerateBeaconState(state, slot)));
   }
 
   private SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlockInternal(
@@ -622,9 +654,20 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     return result;
   }
 
-  protected int computeCommitteeIndexForAttestation(
+  private int computeCommitteeIndexForAttestation(
       final UInt64 slot, final BeaconBlock block, final int committeeIndex) {
-    return committeeIndex;
+    final boolean isBlockStatusFull =
+        spec.atSlot(slot)
+            .getForkChoiceUtil()
+            .toVersionGloas()
+            .map(
+                forkChoiceUtil ->
+                    forkChoiceUtil.isBlockStatusFull(combinedChainDataClient.getStore(), block))
+            .orElse(false);
+    return spec.atSlot(slot)
+        .getAttestationUtil()
+        .computeCommitteeIndexForAttestation(
+            slot, block.getSlot(), isBlockStatusFull, committeeIndex);
   }
 
   private AttestationData createAttestationData(
@@ -938,7 +981,21 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   @Override
   public SafeFuture<Void> sendSignedProposerPreferences(
       final List<SignedProposerPreferences> signedProposerPreferences) {
-    return SafeFuture.COMPLETE;
+    return SafeFuture.collectAll(
+            signedProposerPreferences.stream().map(proposerPreferencesManager::addLocal))
+        .thenAccept(
+            results -> {
+              final List<String> errorMessages =
+                  results.stream()
+                      .filter(result -> result.isReject())
+                      .flatMap(result -> result.getDescription().stream())
+                      .toList();
+              if (!errorMessages.isEmpty()) {
+                LOG.warn(
+                    "Some proposer preferences were rejected: {}",
+                    String.join("; ", errorMessages));
+              }
+            });
   }
 
   @Override
@@ -985,7 +1042,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   @Override
   public SafeFuture<Void> publishSignedExecutionPayloadBid(
       final SignedExecutionPayloadBid signedExecutionPayloadBid) {
-    throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
+    return executionPayloadBidManager
+        .validateAndAddBid(
+            signedExecutionPayloadBid, ExecutionPayloadBidManager.RemoteBidOrigin.BUILDER)
+        .thenAccept(
+            result -> {
+              if (!result.isAccept()) {
+                throw new IllegalArgumentException(
+                    "Invalid execution payload bid: "
+                        + result.getDescription().orElse("unknown reason"));
+              }
+            });
   }
 
   @Override

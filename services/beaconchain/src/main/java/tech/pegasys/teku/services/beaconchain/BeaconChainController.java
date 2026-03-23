@@ -294,7 +294,6 @@ import tech.pegasys.teku.validator.coordinator.GraffitiBuilder;
 import tech.pegasys.teku.validator.coordinator.MilestoneBasedBlockFactory;
 import tech.pegasys.teku.validator.coordinator.StoredLatestCanonicalBlockUpdater;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
-import tech.pegasys.teku.validator.coordinator.ValidatorApiHandlerGloas;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.NoOpPerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
@@ -1763,65 +1762,35 @@ public class BeaconChainController extends Service implements BeaconChainControl
       executionPayloadPublisher = ExecutionPayloadPublisher.NOOP;
     }
 
-    if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
-      this.validatorApiHandler =
-          new ValidatorApiHandlerGloas(
-              dataProvider.getChainDataProvider(),
-              dataProvider.getNodeDataProvider(),
-              dataProvider.getNetworkDataProvider(),
-              combinedChainDataClient,
-              syncService,
-              blockFactory,
-              attestationPool,
-              attestationManager,
-              attestationTopicSubscriber,
-              activeValidatorTracker,
-              dutyMetrics,
-              performanceTracker,
-              spec,
-              forkChoiceTrigger,
-              proposersDataManager,
-              syncCommitteeMessagePool,
-              syncCommitteeContributionPool,
-              syncCommitteeSubscriptionManager,
-              blockProductionPerformanceFactory,
-              blockPublisher,
-              payloadAttestationPool,
-              executionPayloadManager,
-              executionPayloadFactory,
-              executionPayloadPublisher,
-              executionPayloadBidManager,
-              executionProofManager,
-              proposerPreferencesManager);
-    } else {
-      this.validatorApiHandler =
-          new ValidatorApiHandler(
-              dataProvider.getChainDataProvider(),
-              dataProvider.getNodeDataProvider(),
-              dataProvider.getNetworkDataProvider(),
-              combinedChainDataClient,
-              syncService,
-              blockFactory,
-              attestationPool,
-              attestationManager,
-              attestationTopicSubscriber,
-              activeValidatorTracker,
-              dutyMetrics,
-              performanceTracker,
-              spec,
-              forkChoiceTrigger,
-              proposersDataManager,
-              syncCommitteeMessagePool,
-              syncCommitteeContributionPool,
-              syncCommitteeSubscriptionManager,
-              blockProductionPerformanceFactory,
-              blockPublisher,
-              payloadAttestationPool,
-              executionPayloadManager,
-              executionPayloadFactory,
-              executionPayloadPublisher,
-              executionProofManager);
-    }
+    this.validatorApiHandler =
+        new ValidatorApiHandler(
+            dataProvider.getChainDataProvider(),
+            dataProvider.getNodeDataProvider(),
+            dataProvider.getNetworkDataProvider(),
+            combinedChainDataClient,
+            syncService,
+            blockFactory,
+            attestationPool,
+            attestationManager,
+            attestationTopicSubscriber,
+            activeValidatorTracker,
+            dutyMetrics,
+            performanceTracker,
+            spec,
+            forkChoiceTrigger,
+            proposersDataManager,
+            syncCommitteeMessagePool,
+            syncCommitteeContributionPool,
+            syncCommitteeSubscriptionManager,
+            blockProductionPerformanceFactory,
+            blockPublisher,
+            payloadAttestationPool,
+            executionPayloadManager,
+            executionPayloadFactory,
+            executionPayloadPublisher,
+            executionPayloadBidManager,
+            executionProofManager,
+            proposerPreferencesManager);
 
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
