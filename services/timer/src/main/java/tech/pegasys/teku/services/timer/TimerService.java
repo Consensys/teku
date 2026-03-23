@@ -13,98 +13,113 @@
 
 package tech.pegasys.teku.services.timer;
 
-import static org.quartz.JobBuilder.newJob;
-import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
-import static org.quartz.TriggerBuilder.newTrigger;
-
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Date;
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicInteger;
-import org.quartz.JobDetail;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.SchedulerFactory;
-import org.quartz.SimpleTrigger;
-import org.quartz.impl.StdSchedulerFactory;
-import org.quartz.simpl.RAMJobStore;
+import com.google.common.base.Throwables;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 
 public class TimerService extends Service {
+  private final TimeProvider timeProvider;
+  private static final Logger LOG = LogManager.getLogger();
 
-  public static final double TIME_TICKER_REFRESH_RATE = 2; // per sec
-  public static final String TICK_HANDLER = "TickHandler";
-
-  private static final AtomicInteger TIMER_ID_GENERATOR = new AtomicInteger();
-  private static final AtomicInteger TIMER_TRIGGER_ID_GENERATOR = new AtomicInteger();
-
-  private final Scheduler sched;
-  private final JobDetail job;
-  // Tick interval
-  private final int intervalMs = (int) ((1.0 / TIME_TICKER_REFRESH_RATE) * 1000);
+  private final TimeTickHandler timeTickHandler;
+  private final AtomicReference<Future<?>> executorFuture =
+      new AtomicReference<>(SafeFuture.COMPLETE);
+  private final int intervalsPerSecond;
+  private final ScheduledExecutorService scheduler =
+      Executors.newSingleThreadScheduledExecutor(
+          r -> {
+            final Thread t = new Thread(r, "TimeTick");
+            t.setDaemon(true);
+            return t;
+          });
+  private final ExecutorService taskExecutor =
+      Executors.newFixedThreadPool(
+          1,
+          runnable -> {
+            final Thread thread = new Thread(runnable, "TimeTickTask");
+            thread.setDaemon(true);
+            return thread;
+          });
 
   public TimerService(final TimeTickHandler timeTickHandler) {
-    final SchedulerFactory sf = createSchedulerFactory();
-    try {
-      sched = sf.getScheduler();
-      job =
-          newJob(ScheduledTimeEvent.class)
-              .withIdentity("Timer-" + TIMER_ID_GENERATOR.incrementAndGet())
-              .build();
-      job.getJobDataMap().put(TICK_HANDLER, timeTickHandler);
-
-    } catch (SchedulerException e) {
-      throw new IllegalArgumentException("TimerService failed to initialize", e);
-    }
+    this(timeTickHandler, 2, new SystemTimeProvider());
   }
 
-  private StdSchedulerFactory createSchedulerFactory() {
-    try {
-      final Properties properties = new Properties();
-      properties.put("org.quartz.threadPool.threadCount", "1");
-      properties.put("org.quartz.threadPool.threadNamePrefix", "TimeTick");
-      properties.put("org.quartz.jobStore.class", RAMJobStore.class.getName());
-      properties.put("org.quartz.scheduler.skipUpdateCheck", "true");
-      // If job doesn't fire by the time the next one is due, skip it entirely
-      properties.put("org.quartz.jobStore.misfireThreshold", Integer.toString(intervalMs));
-      return new StdSchedulerFactory(properties);
-    } catch (final SchedulerException e) {
-      throw new IllegalStateException("Failed to configure timer", e);
-    }
+  TimerService(
+      final TimeTickHandler timeTickHandler,
+      final int intervalsPerSecond,
+      final TimeProvider timeProvider) {
+    LOG.debug("Initialize TimerService with {} ticks per second", intervalsPerSecond);
+    this.timeTickHandler = timeTickHandler;
+    this.intervalsPerSecond = intervalsPerSecond;
+    this.timeProvider = timeProvider;
   }
 
   @Override
   public SafeFuture<?> doStart() {
+    scheduleNextTick();
+    return SafeFuture.COMPLETE;
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private void scheduleNextTick() {
+    final UInt64 currentTime = timeProvider.getTimeInMillis();
+    final long millisFromSecondStart = currentTime.mod(1000).longValue();
+    final long nextMillisStart = nextTickDue(millisFromSecondStart, intervalsPerSecond);
+    scheduler.schedule(
+        () -> {
+          scheduleNextTick();
+          if (executorFuture.get().isDone()) {
+            executorFuture.set(taskExecutor.submit(this::safeTick));
+          } else {
+            LOG.debug("Dropped tick at {}", timeProvider.getTimeInMillis());
+          }
+        },
+        nextMillisStart,
+        TimeUnit.MILLISECONDS);
+    LOG.trace("Current tick time {}; Scheduled next in {} ms", currentTime, nextMillisStart);
+  }
+
+  static long nextTickDue(final long currentMillisOffset, final int ticksPerSecond) {
+    final long intervalMs = 1000 / ticksPerSecond;
+    final long current = Math.min(currentMillisOffset / intervalMs, ticksPerSecond - 1);
+    final long next = (current + 1) % ticksPerSecond;
+    if (next == 0) {
+      return 1000 - currentMillisOffset;
+    }
+    final long millisTarget = intervalMs * next;
+    return millisTarget - currentMillisOffset;
+  }
+
+  private void safeTick() {
     try {
-      SimpleTrigger trigger =
-          newTrigger()
-              .withIdentity("TimerTrigger-" + TIMER_TRIGGER_ID_GENERATOR.incrementAndGet())
-              .withSchedule(
-                  simpleSchedule()
-                      .withIntervalInMilliseconds(intervalMs)
-                      // If a scheduled event fails (including if it is delayed too much by resource
-                      // contention), then just skip it and fire the next event when it is due
-                      .withMisfireHandlingInstructionNextWithRemainingCount()
-                      .repeatForever())
-              .startAt(Date.from(Instant.now().truncatedTo(ChronoUnit.SECONDS)))
-              .build();
-      sched.scheduleJob(job, trigger);
-      sched.start();
-      return SafeFuture.COMPLETE;
-    } catch (SchedulerException e) {
-      return SafeFuture.failedFuture(new RuntimeException("TimerService failed to start", e));
+      timeTickHandler.onTick();
+      LOG.trace("Tick completed at {}", timeProvider::getTimeInMillis);
+    } catch (final Throwable t) {
+      final Throwable rootCause = Throwables.getRootCause(t);
+      if (rootCause instanceof InterruptedException) {
+        LOG.trace("Shutting down", rootCause);
+      } else {
+        LOG.error("Unhandled exception in timer tick handler", t);
+      }
     }
   }
 
   @Override
   public SafeFuture<?> doStop() {
-    try {
-      sched.shutdown();
-      return SafeFuture.COMPLETE;
-    } catch (SchedulerException e) {
-      return SafeFuture.failedFuture(new RuntimeException("TimerService failed to stop", e));
-    }
+    scheduler.shutdown();
+    taskExecutor.shutdown();
+    return SafeFuture.COMPLETE;
   }
 }
