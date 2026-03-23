@@ -18,7 +18,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
-import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
+import tech.pegasys.teku.infrastructure.collections.cache.ConcurrentMapCache;
 import tech.pegasys.teku.infrastructure.collections.cache.NoOpCache;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -46,7 +46,7 @@ public class ValidatorIndexCache {
   }
 
   public ValidatorIndexCache() {
-    this(CaffeineCache.create(200_000));
+    this(new ConcurrentMapCache<>());
   }
 
   public Optional<Integer> getValidatorIndex(
@@ -101,18 +101,6 @@ public class ValidatorIndexCache {
     if (lastAddedIndex != -1) {
       updateLastIndex(lastAddedIndex);
     }
-
-    // If not found in forward scan, the entry may have been evicted from a bounded cache.
-    // Fall back to scanning already-indexed validators.
-    final int alreadyScannedUpTo = Math.min(lastCachedIndex.get() + 1, validatorList.size());
-    for (int i = 0; i < alreadyScannedUpTo; i++) {
-      final BLSPublicKey pubKey = validatorList.get(i).getPublicKey();
-      if (pubKey.equals(publicKey)) {
-        validatorIndices.invalidateWithNewValue(pubKey, i);
-        return Optional.of(i);
-      }
-    }
-
     return Optional.empty();
   }
 }

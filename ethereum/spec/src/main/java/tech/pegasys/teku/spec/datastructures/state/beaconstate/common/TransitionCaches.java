@@ -24,6 +24,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
+import tech.pegasys.teku.infrastructure.collections.cache.ConcurrentMapCache;
 import tech.pegasys.teku.infrastructure.collections.cache.NoOpCache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
@@ -40,10 +41,6 @@ public class TransitionCaches {
   private static final int MAX_TOTAL_ACTIVE_BALANCE_CACHE = 2;
   private static final int MAX_COMMITTEE_SHUFFLE_CACHE = 3;
   private static final int MAX_EFFECTIVE_BALANCE_CACHE = 1;
-  private static final int MAX_VALIDATOR_PUBKEYS_CACHE = 200_000;
-  private static final int MAX_VALIDATOR_INDEX_CACHE = 200_000;
-  private static final int MAX_BUILDER_PUBKEYS_CACHE = 1_000;
-  private static final int MAX_BUILDER_INDEX_CACHE = 1_000;
   private static final int MAX_SYNC_COMMITTEE_CACHE = 2;
   public static final int MAX_BASE_REWARD_PER_INCREMENT_CACHE = 1;
 
@@ -80,15 +77,15 @@ public class TransitionCaches {
         CaffeineCache.create(MAX_BEACON_COMMITTEES_SIZE_CACHE),
         CaffeineCache.create(MAX_BEACON_COMMITTEE_CACHE),
         CaffeineCache.create(MAX_TOTAL_ACTIVE_BALANCE_CACHE),
-        CaffeineCache.create(MAX_VALIDATOR_PUBKEYS_CACHE),
-        new ValidatorIndexCache(CaffeineCache.create(MAX_VALIDATOR_INDEX_CACHE)),
+        new ConcurrentMapCache<>(),
+        new ValidatorIndexCache(new ConcurrentMapCache<>()),
         CaffeineCache.create(MAX_COMMITTEE_SHUFFLE_CACHE),
         CaffeineCache.create(MAX_EFFECTIVE_BALANCE_CACHE),
         CaffeineCache.create(MAX_SYNC_COMMITTEE_CACHE),
         CaffeineCache.create(MAX_BASE_REWARD_PER_INCREMENT_CACHE),
         ProgressiveTotalBalancesUpdates.NOOP,
-        CaffeineCache.create(MAX_BUILDER_PUBKEYS_CACHE),
-        CaffeineCache.create(MAX_BUILDER_INDEX_CACHE));
+        new ConcurrentMapCache<>(),
+        new ConcurrentMapCache<>());
   }
 
   /** Returns the instance which doesn't cache anything */
@@ -129,16 +126,15 @@ public class TransitionCaches {
     beaconCommitteesSize = boundedCacheFactory.create(MAX_BEACON_COMMITTEES_SIZE_CACHE);
     attestersTotalBalance = boundedCacheFactory.create(MAX_BEACON_COMMITTEE_CACHE);
     totalActiveBalance = boundedCacheFactory.create(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
-    validatorsPubKeys = boundedCacheFactory.create(MAX_VALIDATOR_PUBKEYS_CACHE);
-    validatorIndexCache =
-        new ValidatorIndexCache(boundedCacheFactory.create(MAX_VALIDATOR_INDEX_CACHE));
+    validatorsPubKeys = new ConcurrentMapCache<>();
+    validatorIndexCache = new ValidatorIndexCache(new ConcurrentMapCache<>());
     committeeShuffle = boundedCacheFactory.create(MAX_COMMITTEE_SHUFFLE_CACHE);
     effectiveBalances = boundedCacheFactory.create(MAX_EFFECTIVE_BALANCE_CACHE);
     syncCommitteeCache = boundedCacheFactory.create(MAX_SYNC_COMMITTEE_CACHE);
     baseRewardPerIncrement = boundedCacheFactory.create(MAX_BASE_REWARD_PER_INCREMENT_CACHE);
     progressiveTotalBalances = ProgressiveTotalBalancesUpdates.NOOP;
-    buildersPubKeys = boundedCacheFactory.create(MAX_BUILDER_PUBKEYS_CACHE);
-    builderIndexCache = boundedCacheFactory.create(MAX_BUILDER_INDEX_CACHE);
+    buildersPubKeys = new ConcurrentMapCache<>();
+    builderIndexCache = new ConcurrentMapCache<>();
   }
 
   private TransitionCaches(
