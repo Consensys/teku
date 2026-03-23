@@ -1,22 +1,22 @@
 dependencies {
-  api 'org.bouncycastle:bcprov-jdk18on'
-  implementation project(':ethereum:spec')
-  implementation project(':ethereum:statetransition')
-  implementation project(':infrastructure:async')
-  implementation project(':infrastructure:bls')
-  implementation project(':infrastructure:events')
-  implementation project(':infrastructure:metrics')
-  implementation project(':infrastructure:serviceutils')
-  implementation project(':storage:api')
-  implementation project(':validator:api')
-  implementation project(':validator:beaconnode')
+	api 'org.bouncycastle:bcprov-jdk18on'
+	implementation project(':ethereum:spec')
+	implementation project(':ethereum:statetransition')
+	implementation project(':infrastructure:async')
+	implementation project(':infrastructure:bls')
+	implementation project(':infrastructure:events')
+	implementation project(':infrastructure:metrics')
+	implementation project(':infrastructure:serviceutils')
+	implementation project(':storage:api')
+	implementation project(':validator:api')
+	implementation project(':validator:beaconnode')
 
-  implementation 'io.consensys.tuweni:tuweni-bytes'
+	implementation 'io.consensys.tuweni:tuweni-bytes'
 
-  implementation 'com.google.guava:guava'
-  implementation 'org.apache.logging.log4j:log4j-api'
-  implementation 'org.apache.commons:commons-lang3'
+	implementation 'com.google.guava:guava'
+	implementation 'org.apache.logging.log4j:log4j-api'
+	implementation 'org.apache.commons:commons-lang3'
 
-  testImplementation 'org.mockito:mockito-core'
-  testImplementation testFixtures(project(':ethereum:spec'))
+	testImplementation 'org.mockito:mockito-core'
+	testImplementation testFixtures(project(':ethereum:spec'))
 }

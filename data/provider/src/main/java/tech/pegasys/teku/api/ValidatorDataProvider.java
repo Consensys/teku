@@ -23,6 +23,7 @@ import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.PtcDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -143,6 +145,11 @@ public class ValidatorDataProvider {
         signedBlindedBlockContainer, broadcastValidationLevel);
   }
 
+  public SafeFuture<Void> publishSignedExecutionPayloadBid(
+      final SignedExecutionPayloadBid signedExecutionPayloadBid) {
+    return validatorApiChannel.publishSignedExecutionPayloadBid(signedExecutionPayloadBid);
+  }
+
   public SafeFuture<List<SubmitDataError>> submitCommitteeSignatures(
       final List<SyncCommitteeMessage> messages) {
     return validatorApiChannel.sendSyncCommitteeMessages(
@@ -196,6 +203,10 @@ public class ValidatorDataProvider {
   public SafeFuture<Optional<AttesterDuties>> getAttesterDuties(
       final UInt64 epoch, final IntList indices) {
     return SafeFuture.of(() -> validatorApiChannel.getAttestationDuties(epoch, indices));
+  }
+
+  public SafeFuture<Optional<PtcDuties>> getPtcDuties(final UInt64 epoch, final IntList indices) {
+    return SafeFuture.of(() -> validatorApiChannel.getPtcDuties(epoch, indices));
   }
 
   public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {

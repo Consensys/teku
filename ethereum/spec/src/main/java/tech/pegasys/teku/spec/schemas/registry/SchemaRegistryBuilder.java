@@ -79,6 +79,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_CONSOL
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_DEPOSITS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_PARTIAL_WITHDRAWALS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PROPOSER_LOOKAHEAD_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PROPOSER_PREFERENCES_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGATE_AND_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLINDED_BEACON_BLOCK_SCHEMA;
@@ -88,6 +89,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BUILDER
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_INCLUSION_LIST_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_PROPOSER_PREFERENCES_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SINGLE_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.STATUS_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SYNCNETS_ENR_FIELD_SCHEMA;
@@ -151,8 +153,10 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadA
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessageSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferencesSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferencesSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
@@ -289,6 +293,8 @@ public class SchemaRegistryBuilder {
         .addProvider(createIndexedPayloadAttestationSchemaProvider())
         .addProvider(createExecutionPayloadBidSchemaProvider())
         .addProvider(createSignedExecutionPayloadBidSchemaProvider())
+        .addProvider(createProposerPreferencesSchemaProvider())
+        .addProvider(createSignedProposerPreferencesSchemaProvider())
         .addProvider(createExecutionPayloadEnvelopeSchemaProvider())
         .addProvider(createSignedExecutionPayloadEnvelopeSchemaProvider())
         .addProvider(createExecutionPayloadAvailabilitySchemaProvider())
@@ -989,6 +995,20 @@ public class SchemaRegistryBuilder {
         .withCreator(
             GLOAS,
             (registry, specConfig, schemaName) -> new SignedExecutionPayloadBidSchema(registry))
+        .build();
+  }
+
+  private static SchemaProvider<?> createProposerPreferencesSchemaProvider() {
+    return providerBuilder(PROPOSER_PREFERENCES_SCHEMA)
+        .withCreator(GLOAS, (registry, specConfig, schemaName) -> new ProposerPreferencesSchema())
+        .build();
+  }
+
+  private static SchemaProvider<?> createSignedProposerPreferencesSchemaProvider() {
+    return providerBuilder(SIGNED_PROPOSER_PREFERENCES_SCHEMA)
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) -> new SignedProposerPreferencesSchema(registry))
         .build();
   }
 

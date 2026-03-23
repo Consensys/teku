@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -51,6 +52,7 @@ public class V4FinalizedKvStoreDao {
   private final V4FinalizedStateStorageLogic<SchemaFinalizedSnapshotStateAdapter> stateStorageLogic;
 
   public V4FinalizedKvStoreDao(
+      final MetricsSystem metricsSystem,
       final KvStoreAccessor db,
       final SchemaFinalizedSnapshotStateAdapter schema,
       final V4FinalizedStateStorageLogic<SchemaFinalizedSnapshotStateAdapter> stateStorageLogic) {
@@ -64,6 +66,7 @@ public class V4FinalizedKvStoreDao {
   }
 
   public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
+
     return db.get(schema.getColumnFinalizedBlocksBySlot(), slot);
   }
 
@@ -83,6 +86,7 @@ public class V4FinalizedKvStoreDao {
   }
 
   public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
+
     return db.getFloorEntry(schema.getColumnFinalizedBlocksBySlot(), slot)
         .map(ColumnEntry::getValue);
   }
@@ -131,7 +135,7 @@ public class V4FinalizedKvStoreDao {
     return db.get(schema.getOptimisticTransitionBlockSlot());
   }
 
-  public Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(final Bytes32 root) {
+  public Optional<SignedBeaconBlock> getNonCanonicalBlock(final Bytes32 root) {
     return db.get(schema.getColumnNonCanonicalBlocksByRoot(), root);
   }
 

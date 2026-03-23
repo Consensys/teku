@@ -1,0 +1,10 @@
+{
+  "title" : "ProduceExecutionPayloadBidResponse",
+  "type" : "object",
+  "required" : [ "data" ],
+  "properties" : {
+    "data" : {
+      "$ref" : "#/components/schemas/ExecutionPayloadBid"
+    }
+  }
+}

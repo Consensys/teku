@@ -126,7 +126,6 @@ public class ValidatorApiHandlerIntegrationTest {
       mock(ExecutionPayloadFactory.class);
   private final ExecutionPayloadPublisher executionPayloadPublisher =
       mock(ExecutionPayloadPublisher.class);
-
   private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
   private final SyncCommitteeMessagePool syncCommitteeMessagePool =
       mock(SyncCommitteeMessagePool.class);

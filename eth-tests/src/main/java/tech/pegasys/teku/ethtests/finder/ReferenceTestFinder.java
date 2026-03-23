@@ -75,8 +75,16 @@ public class ReferenceTestFinder {
                               // under development. This is temporary and should be removed once we
                               // are up-to-date with Gloas specs (see
                               // https://github.com/Consensys/teku-internal/issues/221)
+                              "gloas - mainnet - fork_choice/on_execution_payload",
+                              "gloas - minimal - fork_choice/on_execution_payload",
                               "gloas - mainnet - fork_choice/on_block - proposer_boost",
-                              "gloas - minimal - fork_choice/reorg")),
+                              "gloas - minimal - fork_choice/on_block",
+                              "gloas - minimal - fork_choice/get_head",
+                              "gloas - minimal - fork_choice/withholding",
+                              "gloas - minimal - fork_choice/reorg",
+                              // this has been fixed in
+                              // https://github.com/ethereum/consensus-specs/pull/5005/changes
+                              "builder_voluntary_exit__success")),
                       new MerkleProofTestFinder())
                   .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
             });

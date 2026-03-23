@@ -202,7 +202,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
   }
 
   @Override
-  public AttestationValidationResult validateIndexValue(final UInt64 index) {
+  public AttestationValidationResult validateCommitteeIndexValue(final UInt64 index) {
     // [REJECT] attestation.data.index == 0
     if (!index.isZero()) {
       return AttestationValidationResult.invalid(

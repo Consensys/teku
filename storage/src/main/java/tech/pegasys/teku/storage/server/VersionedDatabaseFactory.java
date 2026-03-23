@@ -67,6 +67,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final Eth1Address eth1Address;
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
+  private final boolean rocksdbBlobDbEnabled;
   private final SyncDataAccessor dbSettingFileSyncDataAccessor;
   private final Optional<Eth2Network> maybeNetwork;
 
@@ -85,6 +86,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this.stateStorageFrequency = config.getDataStorageFrequency();
     this.eth1Address = config.getEth1DepositContract();
     this.storeNonCanonicalBlocks = config.isStoreNonCanonicalBlocksEnabled();
+    this.rocksdbBlobDbEnabled = config.isRocksdbBlobDbEnabled();
     this.spec = config.getSpec();
 
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
@@ -146,6 +148,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
             "Created leveldb1 Hot database ({}) at {}",
             dbVersion.getValue(),
             dbDirectory.getAbsolutePath());
+        warnLevelDbDeprecation();
         LOG.info(
             "Created leveldb1 Finalized database ({}) at {}",
             dbVersion.getValue(),
@@ -153,6 +156,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       }
       case LEVELDB2 -> {
         database = createLevelDbV2Database();
+        warnLevelDbDeprecation();
         LOG.info(
             "Created leveldb2 Hot and Finalized database ({}) at {}",
             dbVersion.getValue(),
@@ -160,6 +164,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       }
       case LEVELDB_TREE -> {
         database = createLevelDbTreeDatabase();
+        warnLevelDbDeprecation();
         LOG.info(
             "Created leveldb_tree Hot and Finalized database ({}) at {}",
             dbVersion.getValue(),
@@ -170,6 +175,11 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     initDatabaseVersionMetrics(metricsSystem, dbVersion, stateStorageMode);
 
     return database;
+  }
+
+  private void warnLevelDbDeprecation() {
+    LOG.warn(
+        "NOTE: Leveldb support has been deprecated and may be removed in a future release. Please refer to https://docs.teku.consensys.io/how-to/migrate-database to migrate.");
   }
 
   public StateStorageMode getStateStorageMode() {
@@ -186,8 +196,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           maybeNetwork);
       return RocksDbDatabaseFactory.createV4(
           metricsSystem,
-          KvStoreConfiguration.v4Settings(dbDirectory.toPath()),
-          KvStoreConfiguration.v4Settings(v5ArchiveDirectory.toPath()),
+          KvStoreConfiguration.v4Settings(dbDirectory.toPath())
+              .withBlobDbEnabled(rocksdbBlobDbEnabled),
+          KvStoreConfiguration.v4Settings(v5ArchiveDirectory.toPath())
+              .withBlobDbEnabled(rocksdbBlobDbEnabled),
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
@@ -214,8 +226,14 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           maybeNetwork);
       return RocksDbDatabaseFactory.createV4(
           metricsSystem,
-          metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
-          metaData.getArchiveDbConfiguration().withDatabaseDir(v5ArchiveDirectory.toPath()),
+          metaData
+              .getHotDbConfiguration()
+              .withDatabaseDir(dbDirectory.toPath())
+              .withBlobDbEnabled(rocksdbBlobDbEnabled),
+          metaData
+              .getArchiveDbConfiguration()
+              .withDatabaseDir(v5ArchiveDirectory.toPath())
+              .withBlobDbEnabled(rocksdbBlobDbEnabled),
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
@@ -315,7 +333,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         spec.getGenesisSpecConfig().getDepositChainId(),
         maybeNetwork);
 
-    return metaData.getSingleDbConfiguration().getConfiguration();
+    return metaData
+        .getSingleDbConfiguration()
+        .getConfiguration()
+        .withBlobDbEnabled(rocksdbBlobDbEnabled);
   }
 
   private File getMetadataFile() {

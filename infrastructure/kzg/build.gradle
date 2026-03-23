@@ -1,15 +1,15 @@
 dependencies {
-  implementation project(':infrastructure:io')
-  implementation project(':infrastructure:http')
+	implementation project(':infrastructure:io')
+	implementation project(':infrastructure:http')
 
-  implementation 'io.consensys.tuweni:tuweni-bytes'
-  implementation 'io.consensys.tuweni:tuweni-ssz'
-  implementation 'io.consensys.protocols:jc-kzg-4844'
-  implementation "io.github.crate-crypto:java-eth-kzg"
-  implementation 'commons-io:commons-io'
+	implementation 'io.consensys.tuweni:tuweni-bytes'
+	implementation 'io.consensys.tuweni:tuweni-ssz'
+	implementation 'io.consensys.protocols:jc-kzg-4844'
+	implementation "io.github.crate-crypto:java-eth-kzg"
+	implementation 'commons-io:commons-io'
 
-  testImplementation project(':infrastructure:json')
+	testImplementation project(':infrastructure:json')
 
-  testFixturesImplementation 'com.google.guava:guava'
-  testFixturesImplementation 'io.consensys.tuweni:tuweni-bytes'
+	testFixturesImplementation 'com.google.guava:guava'
+	testFixturesImplementation 'io.consensys.tuweni:tuweni-bytes'
 }

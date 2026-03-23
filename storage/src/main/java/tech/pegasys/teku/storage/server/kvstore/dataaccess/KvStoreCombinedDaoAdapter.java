@@ -268,7 +268,7 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
-  public Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(final Bytes32 root) {
+  public Optional<SignedBeaconBlock> getNonCanonicalBlock(final Bytes32 root) {
     return finalizedDao.getNonCanonicalBlock(root);
   }
 

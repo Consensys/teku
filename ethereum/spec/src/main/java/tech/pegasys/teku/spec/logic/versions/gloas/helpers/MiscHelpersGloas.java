@@ -31,6 +31,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -46,6 +47,8 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -247,6 +250,24 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
     return predicates.isActiveBuilder(state, builderIndex);
   }
 
+  // Check if a pending deposit with a valid signature is in the queue for the given pubkey.
+  public boolean isPendingValidator(final BeaconState state, final BLSPublicKey pubkey) {
+    for (final PendingDeposit pendingDeposit :
+        BeaconStateGloas.required(state).getPendingDeposits()) {
+      if (!pendingDeposit.getPublicKey().equals(pubkey)) {
+        continue;
+      }
+      if (isValidDepositSignature(
+          pendingDeposit.getPublicKey(),
+          pendingDeposit.getWithdrawalCredentials(),
+          pendingDeposit.getAmount(),
+          pendingDeposit.getSignature())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /**
    * verify_data_column_sidecar
    *
@@ -324,6 +345,17 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
             kzgCommitments.stream().map(SszKZGCommitment::getKZGCommitment).toList(),
             cellWithIds,
             dataColumnSidecar.getKzgProofs().stream().map(SszKZGProof::getKZGProof).toList());
+  }
+
+  @Override
+  public boolean shouldIncrementNodeSlotWhenAttestationsAreDue() {
+    return false;
+  }
+
+  // in Gloas, increment the node slot when payload attestations are due
+  @Override
+  public boolean shouldIncrementNodeSlotWhenPayloadAttestationsAreDue() {
+    return true;
   }
 
   @Override

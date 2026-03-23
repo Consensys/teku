@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -26,12 +25,12 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
-import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -49,6 +48,9 @@ import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
+import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
+import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 
 public class ForkChoiceUtil {
 
@@ -513,9 +515,8 @@ public class ForkChoiceUtil {
         .isLessThanOrEqualTo(getCurrentSlot(store));
   }
 
-  @VisibleForTesting
   // get_slot_component_duration_ms
-  int getSlotComponentDurationMillis(final int basisPoints) {
+  protected int getSlotComponentDurationMillis(final int basisPoints) {
     return (basisPoints * specConfig.getSlotDurationMillis()) / 10_000;
   }
 
@@ -542,9 +543,8 @@ public class ForkChoiceUtil {
   }
 
   // get_payload_attestation_due_ms
-  public int getPayloadAttestationDueMillis() {
-    final SpecConfigGloas configGloas = SpecConfigGloas.required(specConfig);
-    return getSlotComponentDurationMillis(configGloas.getPayloadAttestationDueBps());
+  public Optional<Integer> getPayloadAttestationDueMillis() {
+    return Optional.empty();
   }
 
   private boolean isExecutionBlock(final ReadOnlyStore store, final SignedBeaconBlock block) {
@@ -565,5 +565,35 @@ public class ForkChoiceUtil {
   public AvailabilityChecker<?> createAvailabilityChecker(
       final SignedExecutionPayloadEnvelope executionPayload) {
     return AvailabilityChecker.NOOP;
+  }
+
+  public boolean shouldNotifyForkChoiceUpdatedOnBlock() {
+    return true;
+  }
+
+  public SafeFuture<StateAndBlockSummary> retrieveNewChainHeadStateAndBlockSummary(
+      final Bytes32 root, final UInt64 chainHeadSlot, final ReadOnlyStore store) {
+    return store
+        .retrieveStateAndBlockSummary(root)
+        .thenApply(
+            maybeHead ->
+                maybeHead.orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            String.format(
+                                "Unable to update head block as of slot %s.  Block is unavailable: %s.",
+                                chainHeadSlot, root))));
+  }
+
+  public Optional<ForkChoiceUtilDeneb> toVersionDeneb() {
+    return Optional.empty();
+  }
+
+  public Optional<ForkChoiceUtilFulu> toVersionFulu() {
+    return Optional.empty();
+  }
+
+  public Optional<ForkChoiceUtilGloas> toVersionGloas() {
+    return Optional.empty();
   }
 }
