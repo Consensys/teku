@@ -72,7 +72,7 @@ class ForkChoiceNotifierTest {
   private final InlineEventThread eventThread = new InlineEventThread();
   private final Spec spec =
       TestSpecFactory.createMinimalBellatrix(
-          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
 

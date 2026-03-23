@@ -87,7 +87,7 @@ public class TerminalPowBlockMonitorTest {
                 "minimal",
                 phase0Builder ->
                     phase0Builder
-                        .blsSignatureVerifier(BLSSignatureVerifier.NO_OP)
+                        .blsSignatureVerifier(BLSSignatureVerifier.NOOP)
                         .altairForkEpoch(UInt64.ZERO)
                         .bellatrixForkEpoch(BELLATRIX_FORK_EPOCH)
                         .bellatrixBuilder(bellatrixBuilder)));
