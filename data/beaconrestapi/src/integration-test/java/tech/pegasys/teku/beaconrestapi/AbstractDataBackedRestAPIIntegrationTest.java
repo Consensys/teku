@@ -80,6 +80,7 @@ import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
@@ -179,8 +180,10 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final ExecutionPayloadPublisher executionPayloadPublisher =
       mock(ExecutionPayloadPublisher.class);
   protected final ExecutionPayloadBidManager executionPayloadBidManager =
-      ExecutionPayloadBidManager.NOOP;
+      mock(ExecutionPayloadBidManager.class);
   protected final ExecutionProofManager executionProofManager = mock(ExecutionProofManager.class);
+  protected final ProposerPreferencesManager proposerPreferencesManager =
+      mock(ProposerPreferencesManager.class);
   protected RewardCalculator rewardCalculator = mock(RewardCalculator.class);
 
   protected OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
@@ -343,7 +346,9 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
-            executionProofManager);
+            executionPayloadBidManager,
+            executionProofManager,
+            proposerPreferencesManager);
     validatorApiChannel = validatorApiHandler;
     chainUpdater.initializeGenesis();
     setupAndStartRestAPI();
