@@ -90,13 +90,11 @@ class ChainStateGenerator {
         handler.handle(new SignedBlockAndState(currentBlock, baseState));
         continue;
       }
-      final BeaconState blockState = blockProcessor.process(state, currentBlock);
-      // In GLOAS, execution payloads are processed separately from blocks.
-      // Apply the execution payload to update latestBlockHash for the next block's bid validation.
       state =
-          Optional.ofNullable(executionPayloads.get(currentBlock.getRoot()))
-              .map(envelope -> blockProcessor.processExecutionPayload(blockState, envelope))
-              .orElse(blockState);
+          blockProcessor.process(
+              state,
+              currentBlock,
+              Optional.ofNullable(executionPayloads.get(currentBlock.getRoot())));
       handler.handle(new SignedBlockAndState(currentBlock, state));
     }
   }
