@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
+import static tech.pegasys.teku.ethereum.json.types.SharedApiTypes.BODY_INTEGER_LIST;
 import static tech.pegasys.teku.ethereum.json.types.validator.AttesterDutiesBuilder.ATTESTER_DUTIES_RESPONSE_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DUTIES;
 
 import java.util.Collection;
@@ -24,7 +24,6 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
@@ -39,7 +38,7 @@ public class PostAttesterDutiesRequest extends AbstractTypeDefRequest {
         GET_ATTESTATION_DUTIES,
         Map.of(RestApiConstants.EPOCH, epoch.toString()),
         validatorIndices.stream().toList(),
-        DeserializableTypeDefinition.listOf(INTEGER_TYPE, Optional.of(1), Optional.empty()),
+        BODY_INTEGER_LIST,
         new ResponseHandler<>(ATTESTER_DUTIES_RESPONSE_TYPE));
   }
 }

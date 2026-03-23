@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorElectra {
-
+  private final MiscHelpersGloas miscHelpersGloas;
   private final PredicatesGloas predicatesGloas;
   private final BeaconStateMutatorsGloas beaconStateMutatorsGloas;
   private final BeaconStateAccessorsGloas beaconStateAccessorsGloas;
@@ -52,6 +52,7 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorE
         validatorsUtil,
         beaconStateMutators,
         beaconStateAccessors);
+    this.miscHelpersGloas = miscHelpers;
     this.predicatesGloas = predicates;
     this.beaconStateMutatorsGloas = beaconStateMutators;
     this.beaconStateAccessorsGloas = beaconStateAccessors;
@@ -66,9 +67,10 @@ public class ExecutionRequestsProcessorGloas extends ExecutionRequestsProcessorE
         beaconStateAccessorsGloas.getBuilderIndex(state, depositRequest.getPubkey()).isPresent();
     final boolean isValidator =
         validatorsUtil.getValidatorIndex(state, depositRequest.getPubkey()).isPresent();
-    final boolean isBuilderPrefix =
-        predicatesGloas.isBuilderWithdrawalCredential(depositRequest.getWithdrawalCredentials());
-    if (isBuilder || (isBuilderPrefix && !isValidator)) {
+    if (isBuilder
+        || (predicatesGloas.isBuilderWithdrawalCredential(depositRequest.getWithdrawalCredentials())
+            && !isValidator
+            && !miscHelpersGloas.isPendingValidator(state, depositRequest.getPubkey()))) {
       // Apply builder deposits immediately
       beaconStateMutatorsGloas.applyDepositForBuilder(
           state,

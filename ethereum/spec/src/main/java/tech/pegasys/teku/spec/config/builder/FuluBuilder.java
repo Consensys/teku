@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
@@ -32,6 +34,7 @@ import tech.pegasys.teku.spec.config.SpecConfigFuluImpl;
 
 public class FuluBuilder extends BaseForkBuilder
     implements ForkConfigBuilder<SpecConfigElectra, SpecConfigFulu> {
+  private static final Logger LOG = LogManager.getLogger();
   private UInt64 fieldElementsPerCell;
   private UInt64 fieldElementsPerExtBlob;
   private UInt64 kzgCommitmentsInclusionProofDepth;
@@ -52,6 +55,16 @@ public class FuluBuilder extends BaseForkBuilder
   @Override
   public SpecConfigAndParent<SpecConfigFulu> build(
       final SpecConfigAndParent<SpecConfigElectra> specConfigAndParent) {
+    if (numberOfColumns != null) {
+      final Integer newMaxRequestDataColumnSidecars =
+          computeMaxRequestDataColumnSidecars(
+              specConfigAndParent.specConfig().getMaxRequestBlocksDeneb());
+      LOG.debug(
+          "Setting maxRequestDataColumnSidecars to {} (was {})",
+          newMaxRequestDataColumnSidecars,
+          maxRequestDataColumnSidecars);
+      maxRequestDataColumnSidecars = newMaxRequestDataColumnSidecars;
+    }
     return SpecConfigAndParent.of(
         new SpecConfigFuluImpl(
             specConfigAndParent.specConfig(),
@@ -161,6 +174,7 @@ public class FuluBuilder extends BaseForkBuilder
     return this;
   }
 
+  @Deprecated
   public FuluBuilder maxRequestDataColumnSidecars(final Integer maxRequestDataColumnSidecars) {
     checkNotNull(maxRequestDataColumnSidecars);
     this.maxRequestDataColumnSidecars = maxRequestDataColumnSidecars;
@@ -203,4 +217,9 @@ public class FuluBuilder extends BaseForkBuilder
 
   @Override
   public void addOverridableItemsToRawConfig(final BiConsumer<String, Object> rawConfig) {}
+
+  // compute_max_request_data_column_sidecars
+  private Integer computeMaxRequestDataColumnSidecars(final Integer maxRequestBlocksDeneb) {
+    return maxRequestBlocksDeneb * numberOfColumns;
+  }
 }
