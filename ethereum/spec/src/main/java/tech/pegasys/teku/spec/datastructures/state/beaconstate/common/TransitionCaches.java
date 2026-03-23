@@ -22,6 +22,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
+import tech.pegasys.teku.infrastructure.collections.cache.ArrayIndexedCache;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.CaffeineCache;
 import tech.pegasys.teku.infrastructure.collections.cache.ConcurrentMapCache;
@@ -77,7 +78,7 @@ public class TransitionCaches {
         CaffeineCache.create(MAX_BEACON_COMMITTEES_SIZE_CACHE),
         CaffeineCache.create(MAX_BEACON_COMMITTEE_CACHE),
         CaffeineCache.create(MAX_TOTAL_ACTIVE_BALANCE_CACHE),
-        new ConcurrentMapCache<>(),
+        new ArrayIndexedCache<>(UInt64::intValue),
         new ValidatorIndexCache(new ConcurrentMapCache<>()),
         CaffeineCache.create(MAX_COMMITTEE_SHUFFLE_CACHE),
         CaffeineCache.create(MAX_EFFECTIVE_BALANCE_CACHE),
@@ -126,14 +127,14 @@ public class TransitionCaches {
     beaconCommitteesSize = boundedCacheFactory.create(MAX_BEACON_COMMITTEES_SIZE_CACHE);
     attestersTotalBalance = boundedCacheFactory.create(MAX_BEACON_COMMITTEE_CACHE);
     totalActiveBalance = boundedCacheFactory.create(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
-    validatorsPubKeys = new ConcurrentMapCache<>();
+    validatorsPubKeys = new ArrayIndexedCache<>(UInt64::intValue);
     validatorIndexCache = new ValidatorIndexCache(new ConcurrentMapCache<>());
     committeeShuffle = boundedCacheFactory.create(MAX_COMMITTEE_SHUFFLE_CACHE);
     effectiveBalances = boundedCacheFactory.create(MAX_EFFECTIVE_BALANCE_CACHE);
     syncCommitteeCache = boundedCacheFactory.create(MAX_SYNC_COMMITTEE_CACHE);
     baseRewardPerIncrement = boundedCacheFactory.create(MAX_BASE_REWARD_PER_INCREMENT_CACHE);
     progressiveTotalBalances = ProgressiveTotalBalancesUpdates.NOOP;
-    buildersPubKeys = new ConcurrentMapCache<>();
+    buildersPubKeys = new ArrayIndexedCache<>(UInt64::intValue);
     builderIndexCache = new ConcurrentMapCache<>();
   }
 
