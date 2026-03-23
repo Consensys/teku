@@ -17,10 +17,23 @@ import io.javalin.config.JavalinConfig;
 import io.javalin.http.Handler;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.rendering.template.JavalinThymeleaf;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.jar.JarFile;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
@@ -64,8 +77,8 @@ public class SwaggerUIBuilder {
     config.staticFiles.add(
         staticFileConfig -> {
           staticFileConfig.hostedPath = SWAGGER_HOSTED_PATH;
-          staticFileConfig.directory = RESOURCES_WEBJARS_SWAGGER_UI;
-          staticFileConfig.location = Location.CLASSPATH;
+          staticFileConfig.directory = resolveSwaggerUiDirectory();
+          staticFileConfig.location = Location.EXTERNAL;
           staticFileConfig.skipFileFunction =
               httpServletRequest ->
                   httpServletRequest.getPathInfo() != null
@@ -101,5 +114,95 @@ public class SwaggerUIBuilder {
     templateResolver.setSuffix(".html");
     templateResolver.setCharacterEncoding("UTF-8");
     return templateResolver;
+  }
+
+  /**
+   * Resolves the swagger-ui webjar directory to a real filesystem path. When running from an
+   * unpacked directory (e.g. during development), returns the classpath directory directly. When
+   * running from a JAR (e.g. in Docker), extracts the webjar contents to a temp directory to avoid
+   * issues with Jetty 12's URLResourceFactory failing to verify JAR directory entries on Linux.
+   */
+  private static String resolveSwaggerUiDirectory() {
+    final String resourcePath = "META-INF/resources/webjars/swagger-ui/" + SWAGGER_UI_VERSION + "/";
+    final URL url = SwaggerUIBuilder.class.getClassLoader().getResource(resourcePath);
+    if (url == null) {
+      throw new IllegalStateException(
+          "swagger-ui webjar not found on classpath for version: " + SWAGGER_UI_VERSION);
+    }
+    if ("file".equals(url.getProtocol())) {
+      try {
+        return Path.of(url.toURI()).toString();
+      } catch (final URISyntaxException e) {
+        throw new RuntimeException("Failed to resolve swagger-ui directory", e);
+      }
+    }
+    // jar: protocol — extract to a temp directory to avoid URLConnection issues
+    // with JAR directory entries on Linux (e.g. in Docker).
+    try {
+      return extractSwaggerUiToTempDirectory(url);
+    } catch (final IOException | URISyntaxException e) {
+      throw new RuntimeException("Failed to extract swagger-ui resources", e);
+    }
+  }
+
+  private static String extractSwaggerUiToTempDirectory(final URL jarDirUrl)
+      throws IOException, URISyntaxException {
+    final String urlStr = jarDirUrl.toString();
+    final int bangIdx = urlStr.indexOf("!/");
+    final String jarFilePath = URI.create(urlStr.substring("jar:".length(), bangIdx)).getPath();
+    final String entryPrefix = urlStr.substring(bangIdx + 2);
+
+    final Path tempDir = Files.createTempDirectory("teku-swagger-ui-");
+    // Register cleanup before extraction so the temp dir is removed even if extraction fails
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> deleteDirectory(tempDir)));
+    try (final JarFile jar = new JarFile(jarFilePath)) {
+      jar.stream()
+          .filter(entry -> entry.getName().startsWith(entryPrefix) && !entry.isDirectory())
+          .forEach(
+              entry -> {
+                final String relativeName = entry.getName().substring(entryPrefix.length());
+                final Path dest = tempDir.resolve(relativeName).normalize();
+                // Guard against Zip Slip: ensure destination is within the temp directory
+                if (!dest.startsWith(tempDir)) {
+                  throw new IllegalStateException(
+                      "JAR entry path escapes target directory: " + entry.getName());
+                }
+                try {
+                  Files.createDirectories(dest.getParent());
+                  try (final InputStream in = jar.getInputStream(entry)) {
+                    Files.copy(in, dest, StandardCopyOption.REPLACE_EXISTING);
+                  }
+                } catch (final IOException e) {
+                  throw new UncheckedIOException(e);
+                }
+              });
+    } catch (final UncheckedIOException e) {
+      throw e.getCause();
+    }
+    return tempDir.toAbsolutePath().toString();
+  }
+
+  private static void deleteDirectory(final Path directory) {
+    try {
+      Files.walkFileTree(
+          directory,
+          new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs)
+                throws IOException {
+              Files.delete(file);
+              return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(final Path dir, final IOException exc)
+                throws IOException {
+              Files.delete(dir);
+              return FileVisitResult.CONTINUE;
+            }
+          });
+    } catch (final IOException ignored) {
+      // Best-effort cleanup on shutdown
+    }
   }
 }
