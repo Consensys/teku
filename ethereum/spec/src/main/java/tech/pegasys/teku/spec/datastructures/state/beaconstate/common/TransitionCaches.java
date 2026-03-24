@@ -21,7 +21,9 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
+import tech.pegasys.teku.infrastructure.collections.cache.ArrayIndexedCache;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
+import tech.pegasys.teku.infrastructure.collections.cache.ConcurrentMapCache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.collections.cache.NoOpCache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -102,15 +104,15 @@ public class TransitionCaches {
     beaconCommitteesSize = LRUCache.create(MAX_BEACON_COMMITTEES_SIZE_CACHE);
     attestersTotalBalance = LRUCache.create(MAX_BEACON_COMMITTEE_CACHE);
     totalActiveBalance = LRUCache.create(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
-    validatorsPubKeys = LRUCache.create(Integer.MAX_VALUE - 1);
+    validatorsPubKeys = new ArrayIndexedCache<>(UInt64::intValue);
     validatorIndexCache = new ValidatorIndexCache();
     committeeShuffle = LRUCache.create(MAX_COMMITTEE_SHUFFLE_CACHE);
     effectiveBalances = LRUCache.create(MAX_EFFECTIVE_BALANCE_CACHE);
     syncCommitteeCache = LRUCache.create(MAX_SYNC_COMMITTEE_CACHE);
     baseRewardPerIncrement = LRUCache.create(MAX_BASE_REWARD_PER_INCREMENT_CACHE);
     progressiveTotalBalances = ProgressiveTotalBalancesUpdates.NOOP;
-    buildersPubKeys = LRUCache.create(Integer.MAX_VALUE - 1);
-    builderIndexCache = LRUCache.create(Integer.MAX_VALUE - 1);
+    buildersPubKeys = new ArrayIndexedCache<>(UInt64::intValue);
+    builderIndexCache = new ConcurrentMapCache<>();
   }
 
   private TransitionCaches(
