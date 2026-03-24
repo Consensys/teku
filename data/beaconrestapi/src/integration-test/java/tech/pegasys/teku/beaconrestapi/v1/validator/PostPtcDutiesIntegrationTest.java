@@ -85,4 +85,28 @@ public class PostPtcDutiesIntegrationTest extends AbstractDataBackedRestAPIInteg
     assertThat(duties.executionOptimistic()).isFalse();
     assertThat(duties.duties().getFirst()).isEqualTo(duty);
   }
+
+  @Test
+  void shouldReturnDutiesForNextEpoch() throws IOException {
+    startRestAPIAtGenesis(SpecMilestone.GLOAS);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    final Bytes32 dependentRoot = dataStructureUtil.randomBytes32();
+    final UInt64 nextEpoch = UInt64.valueOf(2);
+    final PtcDuty duty = new PtcDuty(VALIDATOR_KEYS.get(1).getPublicKey(), ONE, UInt64.valueOf(13));
+    final SafeFuture<Optional<PtcDuties>> out =
+        SafeFuture.completedFuture(Optional.of(new PtcDuties(false, dependentRoot, List.of(duty))));
+    when(validatorApiChannel.getPtcDuties(eq(nextEpoch), any())).thenReturn(out);
+
+    final Response response = post(PostPtcDuties.ROUTE.replace("{epoch}", "2"), "[1]");
+    final String responseBody = response.body().string();
+    assertThat(responseBody).isNotEmpty();
+    assertThat(response.code()).isEqualTo(SC_OK);
+
+    final PtcDuties duties = parse(responseBody, PTC_DUTIES_TYPE_DEFINITION);
+
+    assertThat(duties.dependentRoot()).isEqualTo(dependentRoot);
+    assertThat(duties.executionOptimistic()).isFalse();
+    assertThat(duties.duties().getFirst()).isEqualTo(duty);
+  }
 }
