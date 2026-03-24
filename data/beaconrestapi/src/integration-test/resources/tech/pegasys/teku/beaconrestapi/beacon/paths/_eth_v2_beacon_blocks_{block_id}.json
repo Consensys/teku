@@ -3,7 +3,7 @@
     "tags" : [ "Beacon" ],
     "operationId" : "getBlockV2",
     "summary" : "Get block",
-    "description" : "Retrieves block details for given block id.",
+    "description" : "Retrieves block details for given block id. Depending on `Accept` header it can be returned either as JSON or as bytes serialized by SSZ",
     "parameters" : [ {
       "name" : "block_id",
       "required" : true,
@@ -17,6 +17,17 @@
     "responses" : {
       "200" : {
         "description" : "Request successful",
+        "headers" : {
+          "Eth-Consensus-Version" : {
+            "description" : "Required in response so client can deserialize returned json or ssz data more effectively.",
+            "required" : true,
+            "schema" : {
+              "type" : "string",
+              "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu", "gloas", "heze" ],
+              "example" : "phase0"
+            }
+          }
+        },
         "content" : {
           "application/json" : {
             "schema" : {

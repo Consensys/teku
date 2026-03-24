@@ -63,7 +63,7 @@ public class SyncCommitteeAggregationDuty {
       final UInt64 slot, final Bytes32 beaconBlockRoot) {
     final Optional<SyncCommitteeUtil> maybeSyncCommitteeUtils = spec.getSyncCommitteeUtil(slot);
     if (assignments.isEmpty() || maybeSyncCommitteeUtils.isEmpty()) {
-      return SafeFuture.completedFuture(DutyResult.NO_OP);
+      return SafeFuture.completedFuture(DutyResult.NOOP);
     }
     final SyncCommitteeUtil syncCommitteeUtil = maybeSyncCommitteeUtils.get();
 
@@ -156,7 +156,7 @@ public class SyncCommitteeAggregationDuty {
                     selectionProof);
               } else {
                 return SafeFuture.completedFuture(
-                    new AggregationResult(validator.getPublicKey(), DutyResult.NO_OP));
+                    new AggregationResult(validator.getPublicKey(), DutyResult.NOOP));
               }
             })
         .exceptionally(
@@ -182,7 +182,7 @@ public class SyncCommitteeAggregationDuty {
               if (maybeContribution.isEmpty()) {
                 validatorLogger.syncCommitteeAggregationSkipped(slot);
                 return SafeFuture.completedFuture(
-                    new AggregationResult(validatorPublicKey, DutyResult.NO_OP));
+                    new AggregationResult(validatorPublicKey, DutyResult.NOOP));
               }
               return signContribution(
                   syncCommitteeUtil,
@@ -220,14 +220,14 @@ public class SyncCommitteeAggregationDuty {
                         aggregationResult ->
                             DutyResult.forError(aggregationResult.validatorPublicKey, error))
                     .reduce(DutyResult::combine)
-                    .orElse(DutyResult.NO_OP));
+                    .orElse(DutyResult.NOOP));
   }
 
   private DutyResult combineResults(final List<AggregationResult> results) {
     return results.stream()
         .map(result -> result.result)
         .reduce(DutyResult::combine)
-        .orElse(DutyResult.NO_OP);
+        .orElse(DutyResult.NOOP);
   }
 
   private SafeFuture<AggregationResult> signContribution(
