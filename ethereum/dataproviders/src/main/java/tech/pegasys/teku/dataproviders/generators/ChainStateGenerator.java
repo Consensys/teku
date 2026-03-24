@@ -15,21 +15,28 @@ package tech.pegasys.teku.dataproviders.generators;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 class ChainStateGenerator {
   private final BlockProcessor blockProcessor;
   private final List<SignedBeaconBlock> chain;
   private final BeaconState baseState;
+  private final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads;
 
   private ChainStateGenerator(
       final Spec spec,
       final List<SignedBeaconBlock> chain,
       final BeaconState baseState,
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads,
       final boolean skipValidation) {
     if (!skipValidation) {
       for (int i = chain.size() - 1; i > 0; i--) {
@@ -42,6 +49,7 @@ class ChainStateGenerator {
     this.chain = chain;
     this.baseState = baseState;
     this.blockProcessor = new BlockProcessor(spec);
+    this.executionPayloads = executionPayloads;
   }
 
   /**
@@ -53,7 +61,7 @@ class ChainStateGenerator {
    */
   public static ChainStateGenerator create(
       final Spec spec, final List<SignedBeaconBlock> chain, final BeaconState baseState) {
-    return create(spec, chain, baseState, false);
+    return create(spec, chain, baseState, Collections.emptyMap(), false);
   }
 
   static ChainStateGenerator create(
@@ -61,7 +69,16 @@ class ChainStateGenerator {
       final List<SignedBeaconBlock> chain,
       final BeaconState baseState,
       final boolean skipValidation) {
-    return new ChainStateGenerator(spec, chain, baseState, skipValidation);
+    return create(spec, chain, baseState, Collections.emptyMap(), skipValidation);
+  }
+
+  static ChainStateGenerator create(
+      final Spec spec,
+      final List<SignedBeaconBlock> chain,
+      final BeaconState baseState,
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads,
+      final boolean skipValidation) {
+    return new ChainStateGenerator(spec, chain, baseState, executionPayloads, skipValidation);
   }
 
   public void generateStates(final StateHandler handler) {
@@ -73,7 +90,11 @@ class ChainStateGenerator {
         handler.handle(new SignedBlockAndState(currentBlock, baseState));
         continue;
       }
-      state = blockProcessor.process(state, currentBlock);
+      state =
+          blockProcessor.process(
+              state,
+              currentBlock,
+              Optional.ofNullable(executionPayloads.get(currentBlock.getRoot())));
       handler.handle(new SignedBlockAndState(currentBlock, state));
     }
   }
