@@ -57,7 +57,7 @@ import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
 public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface {
-  ValidatorApiChannel NO_OP =
+  ValidatorApiChannel NOOP =
       new ValidatorApiChannel() {
         @Override
         public SafeFuture<Optional<GenesisData>> getGenesisData() {
