@@ -41,7 +41,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
 
   private final Spec spec =
       TestSpecFactory.createMinimalDeneb(
-          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test

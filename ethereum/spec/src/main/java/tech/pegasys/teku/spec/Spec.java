@@ -1050,7 +1050,7 @@ public class Spec {
               blockSlotState,
               block.getMessage(),
               IndexedAttestationCache.NOOP,
-              BLSSignatureVerifier.NO_OP,
+              BLSSignatureVerifier.NOOP,
               Optional.empty());
     } catch (SlotProcessingException | EpochProcessingException | BlockProcessingException e) {
       throw new StateTransitionException(e);

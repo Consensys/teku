@@ -138,7 +138,9 @@ class StateGenerationTaskTest {
     final SignedBlockAndState blockAndState = chainBuilder.getBlockAndStateAtSlot(slot);
     return chainBuilder
         .getExecutionPayloadStateAtSlot(UInt64.valueOf(slot))
-        .map(epState -> new SignedBlockAndState(blockAndState.getBlock(), epState))
+        .map(
+            executionPayloadState ->
+                new SignedBlockAndState(blockAndState.getBlock(), executionPayloadState))
         .orElse(blockAndState);
   }
 

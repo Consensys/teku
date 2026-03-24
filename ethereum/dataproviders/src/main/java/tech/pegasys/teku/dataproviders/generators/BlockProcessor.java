@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.dataproviders.generators;
 
+import java.util.Optional;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
@@ -26,7 +27,18 @@ class BlockProcessor {
     this.spec = spec;
   }
 
-  public BeaconState process(final BeaconState preState, final SignedBeaconBlock block) {
+  public BeaconState process(
+      final BeaconState preState,
+      final SignedBeaconBlock block,
+      final Optional<SignedExecutionPayloadEnvelope> executionPayload) {
+    return executionPayload
+        .map(
+            executionPayloadEnvelope ->
+                replayExecutionPayload(replayBlock(preState, block), executionPayloadEnvelope))
+        .orElseGet(() -> replayBlock(preState, block));
+  }
+
+  private BeaconState replayBlock(final BeaconState preState, final SignedBeaconBlock block) {
     try {
       return spec.replayValidatedBlock(preState, block);
     } catch (StateTransitionException e) {
@@ -34,7 +46,7 @@ class BlockProcessor {
     }
   }
 
-  public BeaconState processExecutionPayload(
+  private BeaconState replayExecutionPayload(
       final BeaconState blockState, final SignedExecutionPayloadEnvelope signedEnvelope) {
     try {
       return spec.replayValidatedExecutionPayload(blockState, signedEnvelope);
