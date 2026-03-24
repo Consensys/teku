@@ -62,12 +62,13 @@ public class PostPtcDuties extends RestApiEndpoint {
             .description(
                 "Requests the beacon node to provide a set of Payload Timeliness Committee (PTC) duties, which "
                     + "should be performed by validators, for a particular epoch. Duties should only need to be "
-                    + "checked once per epoch, however a chain reorganization could occur, "
+                    + "checked once per epoch, however a chain reorganization (of > MIN_SEED_LOOKAHEAD epochs) could occur, "
                     + "resulting in a change of duties. For full safety, you should monitor head events and confirm the "
-                    + "dependent root in this response matches:\n\n"
-                    + " - event.previous_duty_dependent_root when compute_epoch_at_slot(event.slot) == epoch\n"
-                    + " - event.block otherwise\n\n"
-                    + "The dependent_root value is get_block_root_at_slot(state, compute_start_slot_at_epoch(epoch - 1) - 1) "
+                    + "dependent root in this response matches:\n"
+                    + "- event.previous_duty_dependent_root when `compute_epoch_at_slot(event.slot) == epoch`\n"
+                    + "- event.current_duty_dependent_root when `compute_epoch_at_slot(event.slot) + 1 == epoch`\n"
+                    + "- event.block otherwise\n\n"
+                    + "The dependent_root value is `get_block_root_at_slot(state, compute_start_slot_at_epoch(epoch - 1) - 1)` "
                     + "or the genesis block root in the case of underflow.")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .requestBodyType(BODY_INTEGER_LIST)

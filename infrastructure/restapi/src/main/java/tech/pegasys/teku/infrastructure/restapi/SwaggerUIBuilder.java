@@ -131,8 +131,8 @@ public class SwaggerUIBuilder {
     }
     if ("file".equals(url.getProtocol())) {
       try {
-        return Path.of(url.toURI()).toString();
-      } catch (final URISyntaxException e) {
+        return Path.of(url.toURI()).toRealPath().toString();
+      } catch (final URISyntaxException | IOException e) {
         throw new RuntimeException("Failed to resolve swagger-ui directory", e);
       }
     }
@@ -152,7 +152,9 @@ public class SwaggerUIBuilder {
     final String jarFilePath = URI.create(urlStr.substring("jar:".length(), bangIdx)).getPath();
     final String entryPrefix = urlStr.substring(bangIdx + 2);
 
-    final Path tempDir = Files.createTempDirectory("teku-swagger-ui-");
+    // toRealPath() resolves symlinks (e.g. /var -> /private/var on macOS) so that Javalin's
+    // alias detection does not reject files served from this directory.
+    final Path tempDir = Files.createTempDirectory("teku-swagger-ui-").toRealPath();
     // Register cleanup before extraction so the temp dir is removed even if extraction fails
     Runtime.getRuntime().addShutdownHook(new Thread(() -> deleteDirectory(tempDir)));
     try (final JarFile jar = new JarFile(jarFilePath)) {
