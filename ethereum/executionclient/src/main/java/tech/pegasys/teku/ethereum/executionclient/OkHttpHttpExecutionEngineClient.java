@@ -79,7 +79,8 @@ public class OkHttpHttpExecutionEngineClient extends OkHttpExecutionEngineClient
     final SafeFuture<Response<T>> future = new SafeFuture<>();
     final Call call;
     if (timeout.toMillis() != httpClient.callTimeoutMillis()) {
-      call = httpClient.newBuilder().callTimeout(timeout).build().newCall(httpRequest);
+      call =
+          httpClient.newBuilder().callTimeout(timeout).readTimeout(timeout).build().newCall(httpRequest);
     } else {
       call = httpClient.newCall(httpRequest);
     }
