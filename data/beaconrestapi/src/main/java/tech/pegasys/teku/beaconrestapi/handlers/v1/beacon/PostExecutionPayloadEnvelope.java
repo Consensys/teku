@@ -13,52 +13,88 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
-
-import java.util.List;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-
-import tech.pegasys.teku.api.NodeDataProvider;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.api.SyncDataProvider;
+import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 
 public class PostExecutionPayloadEnvelope extends RestApiEndpoint {
 
-    public static final String ROUTE = "/eth/v1/beacon/execution_payload_envelope";
-    private final NodeDataProvider nodeDataProvider;
+  public static final String ROUTE = "/eth/v1/beacon/execution_payload_envelope";
+  private final ValidatorDataProvider validatorDataProvider;
+  private final SyncDataProvider syncDataProvider;
 
-    public PostExecutionPayloadEnvelope(
-      final NodeDataProvider provider, final SchemaDefinitionCache schemaCache) {
-        super(createEndpointMetadata(schemaCache));
-        this.nodeDataProvider = provider;
-    }
+  public PostExecutionPayloadEnvelope(
+      final ValidatorDataProvider validatorDataProvider,
+      final SyncDataProvider syncDataProvider,
+      final SchemaDefinitionCache schemaCache) {
+    super(createEndpointMetadata(schemaCache));
+    this.validatorDataProvider = validatorDataProvider;
+    this.syncDataProvider = syncDataProvider;
+  }
 
-    private static EndpointMetadata createEndpointMetadata(final SchemaDefinitionCache schemaCache) {
-        return EndpointMetadata.post(ROUTE)
+  private static EndpointMetadata createEndpointMetadata(final SchemaDefinitionCache schemaCache) {
+    return EndpointMetadata.post(ROUTE)
         .operationId("publishExecutionPayloadEnvelope")
         .summary("Publish signed execution payload envelope")
-        .description("Instructs the beacon node to broadcast a signed execution payload envelope to the network,\n" + 
-                        "    to be gossiped for payload validation.")
-        .tags(TAG_BEACON)
-        .tags(TAG_VALIDATOR_REQUIRED)
-        .requestBodyType(DeserializableTypeDefinition.listOf(schemaCache.getSchemaDefinition(SpecMilestone.GLOAS).toVersionGloas().orElseThrow().getSignedExecutionPayloadEnvelopeSchema().getJsonTypeDefinition()))
+        .description(
+            "Instructs the beacon node to broadcast a signed execution payload envelope to the network, to be gossiped for payload validation.")
+        .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
+        .requestBodyType(
+            schemaCache
+                .getSchemaDefinition(SpecMilestone.GLOAS)
+                .toVersionGloas()
+                .orElseThrow()
+                .getSignedExecutionPayloadEnvelopeSchema()
+                .getJsonTypeDefinition())
         .response(SC_OK, "Success")
-        .response(SC_BAD_REQUEST, "Invalid request")
+        .response(SC_ACCEPTED, "Data has been broadcast but failed integration")
+        .response(
+            SC_SERVICE_UNAVAILABLE, "Beacon node is currently syncing.", HTTP_ERROR_RESPONSE_TYPE)
+        .withInternalErrorResponse()
         .build();
-    }
+  }
 
-    @Override
-    public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-        final List<SignedExecutionPayloadEnvelope> signedExecutionPayloadEnvelopes = request.getRequestBody();
+  @Override
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
+    if (syncDataProvider.isSyncing()) {
+      request.respondError(SC_SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE);
+      return;
     }
-    
+    final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope = request.getRequestBody();
+    final SafeFuture<PublishSignedExecutionPayloadResult> future =
+        validatorDataProvider.publishSignedExecutionPayload(signedExecutionPayloadEnvelope);
+    request.respondAsync(future.thenApply(this::processPublishSignedExecutionPayloadResult));
+  }
+
+  private AsyncApiResponse processPublishSignedExecutionPayloadResult(
+      final PublishSignedExecutionPayloadResult result) {
+    return result
+        .getRejectionReason()
+        .map(
+            rejectionReason -> {
+              if (result.isPublished()) {
+                return AsyncApiResponse.respondWithCode(SC_ACCEPTED);
+              }
+              return AsyncApiResponse.respondWithError(SC_INTERNAL_SERVER_ERROR, rejectionReason);
+            })
+        .orElse(AsyncApiResponse.respondWithCode(SC_OK));
+  }
 }
