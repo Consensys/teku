@@ -79,7 +79,7 @@ class OkHttpHttpExecutionEngineClientTest {
   }
 
   @Test
-  void createsNewClientWithCustomTimeout_whenTimeoutDiffers() throws Exception {
+  void createsNewClientCallWithCustomTimeout_whenTimeoutDiffers() throws Exception {
     // Set client default to 12s, but getPayloadV1 uses GET_PAYLOAD_TIMEOUT = 2s
     createClientWithCallTimeout(Duration.ofSeconds(12));
 
