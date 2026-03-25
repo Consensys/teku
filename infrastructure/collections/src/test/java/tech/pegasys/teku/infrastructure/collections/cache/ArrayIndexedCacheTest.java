@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.collections.cache;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
@@ -108,5 +109,24 @@ public class ArrayIndexedCacheTest {
     } finally {
       executor.shutdownNow();
     }
+  }
+
+  @Test
+  void shouldRejectNegativeIndices() {
+    final Cache<Integer, Integer> cache = new ArrayIndexedCache<>(Integer::intValue);
+
+    assertThatThrownBy(() -> cache.get(-1, value -> value))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("non-negative indices");
+  }
+
+  @Test
+  void shouldCapGrowthBeforeIntegerOverflow() {
+    assertThat(ArrayIndexedCache.calculateRequiredSize(16, 1_000_000)).isEqualTo(1_048_576);
+    assertThat(ArrayIndexedCache.calculateRequiredSize(1 << 29, 1 << 30))
+        .isEqualTo(Integer.MAX_VALUE - 8);
+    assertThatThrownBy(() -> ArrayIndexedCache.calculateRequiredSize(1 << 30, Integer.MAX_VALUE))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("too large");
   }
 }

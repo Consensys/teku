@@ -34,6 +34,7 @@ import java.util.function.ToIntFunction;
  */
 public final class ArrayIndexedCache<K, V> implements Cache<K, V> {
   private static final int DEFAULT_INITIAL_CACHE_SIZE = 16;
+  private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
   private final ToIntFunction<K> keyToIndex;
   private final int initialSize;
@@ -44,7 +45,7 @@ public final class ArrayIndexedCache<K, V> implements Cache<K, V> {
   }
 
   public ArrayIndexedCache(final int initialSize, final ToIntFunction<K> keyToIndex) {
-    this(keyToIndex, createArray(initialSize), initialSize);
+    this(keyToIndex, createArray(requireValidInitialSize(initialSize)), initialSize);
   }
 
   private ArrayIndexedCache(
@@ -58,13 +59,42 @@ public final class ArrayIndexedCache<K, V> implements Cache<K, V> {
     return new Object[size];
   }
 
+  private static int requireValidInitialSize(final int initialSize) {
+    validateIndex(initialSize);
+    if (initialSize > MAX_ARRAY_SIZE) {
+      throw new IllegalArgumentException(
+          "ArrayIndexedCache initial size is too large: " + initialSize);
+    }
+    return initialSize;
+  }
+
+  static int calculateRequiredSize(final int currentSize, final int index) {
+    validateIndex(index);
+    if (index >= MAX_ARRAY_SIZE) {
+      throw new IllegalArgumentException("ArrayIndexedCache index is too large: " + index);
+    }
+
+    int newSize = Math.max(currentSize, 1);
+    while (index >= newSize) {
+      if (newSize >= MAX_ARRAY_SIZE / 2) {
+        return MAX_ARRAY_SIZE;
+      }
+      newSize <<= 1;
+    }
+    return newSize;
+  }
+
+  private static void validateIndex(final int index) {
+    if (index < 0) {
+      throw new IllegalArgumentException(
+          "ArrayIndexedCache requires non-negative indices but got: " + index);
+    }
+  }
+
   private Object[] extend(final int index) {
     final Object[] valuesLocal = values;
-    int newSize = valuesLocal.length;
-    if (index >= newSize) {
-      while (index >= newSize) {
-        newSize <<= 1;
-      }
+    if (index >= valuesLocal.length) {
+      final int newSize = calculateRequiredSize(valuesLocal.length, index);
       final Object[] newValues = Arrays.copyOf(valuesLocal, newSize);
       values = newValues;
       return newValues;
@@ -74,6 +104,7 @@ public final class ArrayIndexedCache<K, V> implements Cache<K, V> {
 
   @SuppressWarnings("unchecked")
   private V getCachedValue(final int index) {
+    validateIndex(index);
     final Object[] valuesLocal = values;
     return index >= valuesLocal.length ? null : (V) valuesLocal[index];
   }

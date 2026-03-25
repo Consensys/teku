@@ -58,3 +58,4 @@ eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
 /teku.db
 node_modules
 .claude/
+agents.md
