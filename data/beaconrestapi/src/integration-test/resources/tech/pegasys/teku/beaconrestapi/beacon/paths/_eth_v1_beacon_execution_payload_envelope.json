@@ -1,0 +1,112 @@
+{
+    "post": {
+        "tags": [
+            "Beacon",
+            "ValidatorRequiredApi"
+        ],
+        "operationId": "publishExecutionPayloadEnvelope",
+        "summary": "Publish signed execution payload envelope",
+        "description": "Instructs the beacon node to broadcast a signed execution payload envelope to the network, to be gossiped for payload validation.",
+        "parameters": [
+            {
+                "name": "broadcast_validation",
+                "required": false,
+                "in": "query",
+                "schema": {
+                    "type": "string",
+                    "enum": [
+                        "NOT_REQUIRED",
+                        "EQUIVOCATION",
+                        "GOSSIP",
+                        "CONSENSUS",
+                        "CONSENSUS_AND_EQUIVOCATION"
+                    ]                }
+            },
+            {
+                "name": "Eth-Consensus-Version",
+                "required": true,
+                "in": "header",
+                "schema": {
+                    "type": "string",
+                    "enum": [
+                        "phase0",
+                        "altair",
+                        "bellatrix",
+                        "capella",
+                        "deneb",
+                        "electra",
+                        "fulu",
+                        "gloas",
+                        "heze"
+                    ]                }
+            }  
+        ],
+        "requestBody": {
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/SignedExecutionPayloadEnvelopeContents"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SignedExecutionPayloadEnvelope"
+                            }
+                        ]
+                    }
+                },
+                "application/octet-stream": {
+                    "schema": {
+                        "type": "string",
+                        "format": "binary"
+                    }
+                }
+            }
+        },
+        "responses": {
+            "200": {
+                "description": "The envelope was validated successfully and has been broadcast. It has also been integrated into the beacon node's database.",
+                "content": {}
+            },
+            "202": {
+                "description": "The envelope could not be integrated into the beacon node's database as it failed validation, but was successfully broadcast.",
+                "content": {}
+            },
+            "400": {
+                "description": "The SignedExecutionPayloadEnvelope object is invalid or broadcast validation failed",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "/components/schemas/HttpErrorResponse"
+                        },
+                        "example": {
+                            "code": 400,
+                            "message": "Invalid signed execution payload envelope"
+                        }
+                    }
+                }
+            },
+            "415": {
+                "description": "Unsupported media type",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "/components/schemas/HttpErrorResponse"
+                        }
+                    }
+                }
+            },
+            "500": {
+                "description": "Internal server error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "/components/schemas/HttpErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
