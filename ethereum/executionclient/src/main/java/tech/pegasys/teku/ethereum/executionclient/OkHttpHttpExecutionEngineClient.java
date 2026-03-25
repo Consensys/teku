@@ -79,8 +79,7 @@ public class OkHttpHttpExecutionEngineClient extends OkHttpExecutionEngineClient
     final SafeFuture<Response<T>> future = new SafeFuture<>();
     final Call call;
     if (timeout.toMillis() != httpClient.callTimeoutMillis()) {
-      call =
-          httpClient.newBuilder().callTimeout(timeout).readTimeout(timeout).build().newCall(httpRequest);
+      call = callWithCustomTimeout(timeout, httpRequest);
     } else {
       call = httpClient.newCall(httpRequest);
     }
@@ -139,5 +138,14 @@ public class OkHttpHttpExecutionEngineClient extends OkHttpExecutionEngineClient
         });
 
     return future;
+  }
+
+  private Call callWithCustomTimeout(final Duration timeout, final Request httpRequest) {
+    return httpClient
+        .newBuilder()
+        .callTimeout(timeout)
+        .readTimeout(timeout)
+        .build()
+        .newCall(httpRequest);
   }
 }
