@@ -1,112 +1,83 @@
 {
-    "post": {
-        "tags": [
-            "Beacon",
-            "ValidatorRequiredApi"
-        ],
-        "operationId": "publishExecutionPayloadEnvelope",
-        "summary": "Publish signed execution payload envelope",
-        "description": "Instructs the beacon node to broadcast a signed execution payload envelope to the network, to be gossiped for payload validation.",
-        "parameters": [
-            {
-                "name": "broadcast_validation",
-                "required": false,
-                "in": "query",
-                "schema": {
-                    "type": "string",
-                    "enum": [
-                        "NOT_REQUIRED",
-                        "EQUIVOCATION",
-                        "GOSSIP",
-                        "CONSENSUS",
-                        "CONSENSUS_AND_EQUIVOCATION"
-                    ]                }
-            },
-            {
-                "name": "Eth-Consensus-Version",
-                "required": true,
-                "in": "header",
-                "schema": {
-                    "type": "string",
-                    "enum": [
-                        "phase0",
-                        "altair",
-                        "bellatrix",
-                        "capella",
-                        "deneb",
-                        "electra",
-                        "fulu",
-                        "gloas",
-                        "heze"
-                    ]                }
-            }  
-        ],
-        "requestBody": {
-            "content": {
-                "application/json": {
-                    "schema": {
-                        "type": "object",
-                        "oneOf": [
-                            {
-                                "$ref": "#/components/schemas/SignedExecutionPayloadEnvelopeContents"
-                            },
-                            {
-                                "$ref": "#/components/schemas/SignedExecutionPayloadEnvelope"
-                            }
-                        ]
-                    }
-                },
-                "application/octet-stream": {
-                    "schema": {
-                        "type": "string",
-                        "format": "binary"
-                    }
-                }
-            }
+  "post" : {
+    "tags" : [ "Beacon", "Validator Required Api" ],
+    "operationId" : "publishExecutionPayloadEnvelope",
+    "summary" : "Publish signed execution payload envelope",
+    "description" : "Instructs the beacon node to broadcast a signed execution payload envelope to the network, to be gossiped for payload validation.",
+    "parameters" : [ {
+      "name" : "broadcast_validation",
+      "in" : "query",
+      "schema" : {
+        "type" : "string",
+        "description" : "Level of validation that must be applied to a block before it is broadcast. Possible values:\n- **`gossip`** (default): lightweight gossip checks only\n- **`consensus`**: full consensus checks, including validation of all signatures and   blocks fields _except_ for the execution payload transactions.\n- **`consensus_and_equivocation`**: the same as `consensus`, with an extra equivocation   check immediately before the block is broadcast. If the block is found to be an\n  equivocation it fails validation.\nIf the block fails the requested level of a validation a 400 status MUST be returned immediately and the block MUST NOT be broadcast to the network.\nIf validation succeeds, the block must still be fully verified before it is incorporated into the state and a 20x status is returned to the caller.",
+        "example" : "consensus_and_equivocation",
+        "format" : "string",
+        "enum" : [ "gossip", "consensus", "consensus_and_equivocation" ]
+      }
+    }, {
+      "name" : "Eth-Consensus-Version",
+      "required" : true,
+      "in" : "header",
+      "schema" : {
+        "type" : "string",
+        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu", "gloas", "heze" ],
+        "description" : "Version of the block being submitted, if using SSZ encoding."
+      }
+    } ],
+    "requestBody" : {
+      "content" : {
+        "application/octet-stream" : {
+          "schema" : {
+            "type" : "string",
+            "format" : "binary"
+          }
         },
-        "responses": {
-            "200": {
-                "description": "The envelope was validated successfully and has been broadcast. It has also been integrated into the beacon node's database.",
-                "content": {}
-            },
-            "202": {
-                "description": "The envelope could not be integrated into the beacon node's database as it failed validation, but was successfully broadcast.",
-                "content": {}
-            },
-            "400": {
-                "description": "The SignedExecutionPayloadEnvelope object is invalid or broadcast validation failed",
-                "content": {
-                    "application/json": {
-                        "schema": {
-                            "$ref": "/components/schemas/HttpErrorResponse"
-                        },
-                        "example": {
-                            "code": 400,
-                            "message": "Invalid signed execution payload envelope"
-                        }
-                    }
-                }
-            },
-            "415": {
-                "description": "Unsupported media type",
-                "content": {
-                    "application/json": {
-                        "schema": {
-                            "$ref": "/components/schemas/HttpErrorResponse"
-                        }
-                    }
-                }
-            },
-            "500": {
-                "description": "Internal server error",
-                "content": {
-                    "application/json": {
-                        "schema": {
-                            "$ref": "/components/schemas/HttpErrorResponse"
-                        }
-                    }
-                }
-            }
+        "application/json" : {
+          "schema" : {
+            "$ref" : "#/components/schemas/SignedExecutionPayloadEnvelope"
+          }
         }
+      }
+    },
+    "responses" : {
+      "415" : {
+        "description" : "Unsupported media type",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "200" : {
+        "description" : "The envelope was validated successfully and has been broadcast. It has also been integrated into the beacon node's database.",
+        "content" : { }
+      },
+      "202" : {
+        "description" : "The envelope could not be integrated into the beacon node's database as it failed validation, but was successfully broadcast.",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "The SignedExecutionPayloadEnvelope object is invalid or broadcast validation failed",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
     }
+  }
 }

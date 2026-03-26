@@ -19,11 +19,9 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -32,76 +30,61 @@ import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 
 public class PostExecutionPayloadEnvelopeTest extends AbstractMigratedBeaconHandlerTest {
 
-  @BeforeEach
-  void setup() {
-    setSpec(TestSpecFactory.createMinimalGloas());
-    setHandler(
-        new PostExecutionPayloadEnvelope(
-            validatorDataProvider, syncDataProvider, schemaDefinitionCache));
-  }
+    @BeforeEach
+    void setup() {
+        setSpec(TestSpecFactory.createMinimalGloas());
+        setHandler(
+                new PostExecutionPayloadEnvelope(
+                        validatorDataProvider, schemaDefinitionCache));
+    }
 
-  @Test
-  void shouldReturnOkIfSuccess() throws Exception {
-    final SignedExecutionPayloadEnvelope envelope =
-        dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
-    final PublishSignedExecutionPayloadResult successResult =
-        PublishSignedExecutionPayloadResult.success(envelope.getBeaconBlockRoot());
+    @Test
+    void shouldReturnOkIfSuccess() throws Exception {
+        final SignedExecutionPayloadEnvelope envelope = dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
+        final PublishSignedExecutionPayloadResult successResult = PublishSignedExecutionPayloadResult
+                .success(envelope.getBeaconBlockRoot());
 
-    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    request.setRequestBody(envelope);
-    when(validatorDataProvider.publishSignedExecutionPayload(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(successResult));
+        request.setRequestBody(envelope);
+        when(validatorDataProvider.publishSignedExecutionPayload(any(), any()))
+                .thenReturn(SafeFuture.completedFuture(successResult));
 
-    handler.handleRequest(request);
+        handler.handleRequest(request);
 
-    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isNull();
-  }
+        assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+        assertThat(request.getResponseBody()).isNull();
+    }
 
-  @Test
-  void shouldReturnAcceptedIfPublishedButRejected() throws Exception {
-    final SignedExecutionPayloadEnvelope envelope =
-        dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
-    final PublishSignedExecutionPayloadResult failResult =
-        PublishSignedExecutionPayloadResult.notImported(
-            envelope.getBeaconBlockRoot(), "Invalid payload");
+    @Test
+    void shouldReturnAcceptedIfPublishedButRejected() throws Exception {
+        final SignedExecutionPayloadEnvelope envelope = dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
+        final PublishSignedExecutionPayloadResult failResult = PublishSignedExecutionPayloadResult.notImported(
+                envelope.getBeaconBlockRoot(), "Invalid payload");
 
-    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    request.setRequestBody(envelope);
-    when(validatorDataProvider.publishSignedExecutionPayload(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(failResult));
+        request.setRequestBody(envelope);
+        when(validatorDataProvider.publishSignedExecutionPayload(any(), any()))
+                .thenReturn(SafeFuture.completedFuture(failResult));
 
-    handler.handleRequest(request);
+        handler.handleRequest(request);
 
-    assertThat(request.getResponseCode()).isEqualTo(SC_ACCEPTED);
-    assertThat(request.getResponseBody()).isNull();
-  }
+        assertThat(request.getResponseCode()).isEqualTo(SC_ACCEPTED);
+        assertThat(request.getResponseBody()).isNull();
+    }
 
-  @Test
-  void shouldReturnServerErrorIfRejectedAndNotPublished() throws Exception {
-    final SignedExecutionPayloadEnvelope envelope =
-        dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
-    final PublishSignedExecutionPayloadResult failResult =
-        PublishSignedExecutionPayloadResult.rejected(envelope.getBeaconBlockRoot(), "oopsy");
+    @Test
+    void shouldReturnServerErrorIfRejectedAndNotPublished() throws Exception {
+        final SignedExecutionPayloadEnvelope envelope = dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
+        final PublishSignedExecutionPayloadResult failResult = PublishSignedExecutionPayloadResult
+                .rejected(envelope.getBeaconBlockRoot(), "oopsy");
 
-    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    request.setRequestBody(envelope);
-    when(validatorDataProvider.publishSignedExecutionPayload(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(failResult));
+        request.setRequestBody(envelope);
+        when(validatorDataProvider.publishSignedExecutionPayload(any(), any()))
+                .thenReturn(SafeFuture.completedFuture(failResult));
 
-    handler.handleRequest(request);
+        handler.handleRequest(request);
 
-    assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
-    assertThat(request.getResponseBodyAsJson(handler))
-        .isEqualTo("{\"code\":500,\"message\":\"oopsy\"}");
-  }
+        assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
+        assertThat(request.getResponseBodyAsJson(handler))
+                .isEqualTo("{\"code\":500,\"message\":\"oopsy\"}");
+    }
 
-  @Test
-  void shouldReturnUnavailableIfSyncing() throws Exception {
-    when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
-
-    handler.handleRequest(request);
-
-    assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
-  }
 }
