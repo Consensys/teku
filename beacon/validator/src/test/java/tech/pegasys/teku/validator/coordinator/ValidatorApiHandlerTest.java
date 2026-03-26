@@ -516,8 +516,7 @@ class ValidatorApiHandlerTest {
         validatorApiHandler.getSyncCommitteeDuties(EPOCH, IntList.of(1));
     assertThat(result).isNotDone();
 
-    // The start of the sync committee period is prior to the fork block so we
-    // should use the
+    // The start of the sync committee period is prior to the fork block so we should use the
     // fork block to ensure we actually have sync committees available.
     verify(chainDataClient).getStateAtSlotExact(epochStartSlot);
   }
@@ -570,11 +569,9 @@ class ValidatorApiHandlerTest {
             BlockProductionPerformance.NOOP))
         .thenReturn(SafeFuture.completedFuture(blockContainerAndMetaData));
 
-    // even if passing a non-empty requestedBlinded and requestedBuilderBoostFactor
-    // isn't a valid
+    // even if passing a non-empty requestedBlinded and requestedBuilderBoostFactor isn't a valid
     // combination,
-    // we still want to check that all parameters are passed down the line to the
-    // block factory
+    // we still want to check that all parameters are passed down the line to the block factory
     SafeFuture<Optional<BlockContainerAndMetaData>> result =
         validatorApiHandler.createUnsignedBlock(
             newSlot, randaoReveal, Optional.empty(), Optional.of(ONE));
@@ -749,8 +746,7 @@ class ValidatorApiHandlerTest {
     assertThat(attestationData.getSlot()).isEqualTo(slot);
     final InOrder inOrder = inOrder(forkChoiceTrigger, chainDataClient);
 
-    // Ensure we prepare for attestation production prior to getting the block to
-    // attest to
+    // Ensure we prepare for attestation production prior to getting the block to attest to
     inOrder.verify(forkChoiceTrigger).prepareForAttestationProduction(slot);
     inOrder.verify(chainDataClient).getSignedBlockAndStateInEffectAtSlot(slot);
   }
@@ -771,8 +767,7 @@ class ValidatorApiHandlerTest {
   public void createAttestationData_shouldUseCorrectSourceWhenEpochTransitionRequired() {
     final UInt64 slot = spec.computeStartSlotAtEpoch(EPOCH);
     when(chainDataClient.getCurrentSlot()).thenReturn(slot);
-    // Slot is from before the current epoch, so we need to ensure we process the
-    // epoch transition
+    // Slot is from before the current epoch, so we need to ensure we process the epoch transition
     final UInt64 blockSlot = slot.minus(1);
 
     final BeaconState rightState = createStateWithActiveValidators(slot);
@@ -1062,8 +1057,7 @@ class ValidatorApiHandlerTest {
 
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
 
-    // for locally created blocks, the validation level should have been changed to
-    // EQUIVOCATION
+    // for locally created blocks, the validation level should have been changed to EQUIVOCATION
     verify(blockPublisher).sendSignedBlock(eq(block), eq(EQUIVOCATION), any());
   }
 
@@ -1120,10 +1114,8 @@ class ValidatorApiHandlerTest {
   void getValidatorIndices_shouldThrowExceptionWhenBestStateNotAvailable() {
     when(chainDataClient.getBestState()).thenReturn(Optional.empty());
 
-    // The validator client needs to be able to differentiate between the state not
-    // yet being loaded
-    // and the requested validators not existing so it doesn't skip scheduling
-    // duties.
+    // The validator client needs to be able to differentiate between the state not yet being loaded
+    // and the requested validators not existing so it doesn't skip scheduling duties.
     assertThatSafeFuture(
             validatorApiHandler.getValidatorIndices(List.of(dataStructureUtil.randomPublicKey())))
         .isCompletedExceptionallyWith(IllegalStateException.class);

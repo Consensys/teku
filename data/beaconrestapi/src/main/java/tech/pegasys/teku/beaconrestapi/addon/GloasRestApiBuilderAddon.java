@@ -49,9 +49,7 @@ public class GloasRestApiBuilderAddon implements RestApiBuilderAddon {
         .endpoint(new GetExecutionPayloadEnvelope(dataProvider, schemaCache))
         .endpoint(new GetPayloadAttestations(dataProvider, schemaCache))
         .endpoint(
-            new PostExecutionPayloadEnvelope(
-                dataProvider.getValidatorDataProvider(),
-                schemaCache))
+            new PostExecutionPayloadEnvelope(dataProvider.getValidatorDataProvider(), schemaCache))
         .endpoint(new GetExecutionPayloadBid(dataProvider, schemaCache))
         .endpoint(new PostPublishExecutionPayloadBid(dataProvider, schemaCache));
   }

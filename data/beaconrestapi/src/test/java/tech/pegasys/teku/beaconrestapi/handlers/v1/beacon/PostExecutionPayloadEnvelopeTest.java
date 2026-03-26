@@ -30,61 +30,62 @@ import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 
 public class PostExecutionPayloadEnvelopeTest extends AbstractMigratedBeaconHandlerTest {
 
-    @BeforeEach
-    void setup() {
-        setSpec(TestSpecFactory.createMinimalGloas());
-        setHandler(
-                new PostExecutionPayloadEnvelope(
-                        validatorDataProvider, schemaDefinitionCache));
-    }
+  @BeforeEach
+  void setup() {
+    setSpec(TestSpecFactory.createMinimalGloas());
+    setHandler(new PostExecutionPayloadEnvelope(validatorDataProvider, schemaDefinitionCache));
+  }
 
-    @Test
-    void shouldReturnOkIfSuccess() throws Exception {
-        final SignedExecutionPayloadEnvelope envelope = dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
-        final PublishSignedExecutionPayloadResult successResult = PublishSignedExecutionPayloadResult
-                .success(envelope.getBeaconBlockRoot());
+  @Test
+  void shouldReturnOkIfSuccess() throws Exception {
+    final SignedExecutionPayloadEnvelope envelope =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
+    final PublishSignedExecutionPayloadResult successResult =
+        PublishSignedExecutionPayloadResult.success(envelope.getBeaconBlockRoot());
 
-        request.setRequestBody(envelope);
-        when(validatorDataProvider.publishSignedExecutionPayload(any(), any()))
-                .thenReturn(SafeFuture.completedFuture(successResult));
+    request.setRequestBody(envelope);
+    when(validatorDataProvider.publishSignedExecutionPayload(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(successResult));
 
-        handler.handleRequest(request);
+    handler.handleRequest(request);
 
-        assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-        assertThat(request.getResponseBody()).isNull();
-    }
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isNull();
+  }
 
-    @Test
-    void shouldReturnAcceptedIfPublishedButRejected() throws Exception {
-        final SignedExecutionPayloadEnvelope envelope = dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
-        final PublishSignedExecutionPayloadResult failResult = PublishSignedExecutionPayloadResult.notImported(
-                envelope.getBeaconBlockRoot(), "Invalid payload");
+  @Test
+  void shouldReturnAcceptedIfPublishedButRejected() throws Exception {
+    final SignedExecutionPayloadEnvelope envelope =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
+    final PublishSignedExecutionPayloadResult failResult =
+        PublishSignedExecutionPayloadResult.notImported(
+            envelope.getBeaconBlockRoot(), "Invalid payload");
 
-        request.setRequestBody(envelope);
-        when(validatorDataProvider.publishSignedExecutionPayload(any(), any()))
-                .thenReturn(SafeFuture.completedFuture(failResult));
+    request.setRequestBody(envelope);
+    when(validatorDataProvider.publishSignedExecutionPayload(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(failResult));
 
-        handler.handleRequest(request);
+    handler.handleRequest(request);
 
-        assertThat(request.getResponseCode()).isEqualTo(SC_ACCEPTED);
-        assertThat(request.getResponseBody()).isNull();
-    }
+    assertThat(request.getResponseCode()).isEqualTo(SC_ACCEPTED);
+    assertThat(request.getResponseBody()).isNull();
+  }
 
-    @Test
-    void shouldReturnServerErrorIfRejectedAndNotPublished() throws Exception {
-        final SignedExecutionPayloadEnvelope envelope = dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
-        final PublishSignedExecutionPayloadResult failResult = PublishSignedExecutionPayloadResult
-                .rejected(envelope.getBeaconBlockRoot(), "oopsy");
+  @Test
+  void shouldReturnServerErrorIfRejectedAndNotPublished() throws Exception {
+    final SignedExecutionPayloadEnvelope envelope =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
+    final PublishSignedExecutionPayloadResult failResult =
+        PublishSignedExecutionPayloadResult.rejected(envelope.getBeaconBlockRoot(), "oopsy");
 
-        request.setRequestBody(envelope);
-        when(validatorDataProvider.publishSignedExecutionPayload(any(), any()))
-                .thenReturn(SafeFuture.completedFuture(failResult));
+    request.setRequestBody(envelope);
+    when(validatorDataProvider.publishSignedExecutionPayload(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(failResult));
 
-        handler.handleRequest(request);
+    handler.handleRequest(request);
 
-        assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
-        assertThat(request.getResponseBodyAsJson(handler))
-                .isEqualTo("{\"code\":500,\"message\":\"oopsy\"}");
-    }
-
+    assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
+    assertThat(request.getResponseBodyAsJson(handler))
+        .isEqualTo("{\"code\":500,\"message\":\"oopsy\"}");
+  }
 }

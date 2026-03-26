@@ -325,8 +325,8 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
    *
    * <p>Method expects already filtered input.
    *
-   * <p>See <a href=
-   * "https://github.com/ethereum/beacon-APIs/blob/master/apis/validator/register_validator.yaml">validator
+   * <p>See <a
+   * href="https://github.com/ethereum/beacon-APIs/blob/master/apis/validator/register_validator.yaml">validator
    * registration endpoint spec</a>
    */
   SafeFuture<Void> registerValidators(SszList<SignedValidatorRegistration> validatorRegistrations);

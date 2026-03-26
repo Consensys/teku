@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ETH_CONSENSUS_VERSION_TYPE;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BROADCAST_VALIDATION;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
@@ -20,7 +21,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
-import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ETH_CONSENSUS_VERSION_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
@@ -43,8 +43,7 @@ public class PostExecutionPayloadEnvelope extends RestApiEndpoint {
   private final ValidatorDataProvider validatorDataProvider;
 
   public PostExecutionPayloadEnvelope(
-      final ValidatorDataProvider validatorDataProvider,
-      final SchemaDefinitionCache schemaCache) {
+      final ValidatorDataProvider validatorDataProvider, final SchemaDefinitionCache schemaCache) {
     super(createEndpointMetadata(schemaCache));
     this.validatorDataProvider = validatorDataProvider;
   }
@@ -68,10 +67,11 @@ public class PostExecutionPayloadEnvelope extends RestApiEndpoint {
                 .getSignedExecutionPayloadEnvelopeSchema()
                 .getJsonTypeDefinition(),
             schemaCache
-                .getSchemaDefinition(SpecMilestone.GLOAS)
-                .toVersionGloas()
-                .orElseThrow()
-                .getSignedExecutionPayloadEnvelopeSchema()::sszDeserialize)
+                    .getSchemaDefinition(SpecMilestone.GLOAS)
+                    .toVersionGloas()
+                    .orElseThrow()
+                    .getSignedExecutionPayloadEnvelopeSchema()
+                ::sszDeserialize)
         .response(
             SC_OK,
             "The envelope was validated successfully and has been broadcast. It has also been integrated into the beacon node's database.")
@@ -90,11 +90,13 @@ public class PostExecutionPayloadEnvelope extends RestApiEndpoint {
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope = request.getRequestBody();
-    final Optional<BroadcastValidationLevel> broadcastValidationLevel = request
-        .getOptionalQueryParameter(PARAMETER_BROADCAST_VALIDATION)
-        .map(BroadcastValidationParameter::toInternal);
-    final SafeFuture<PublishSignedExecutionPayloadResult> future = validatorDataProvider.publishSignedExecutionPayload(
-        signedExecutionPayloadEnvelope, broadcastValidationLevel);
+    final Optional<BroadcastValidationLevel> broadcastValidationLevel =
+        request
+            .getOptionalQueryParameter(PARAMETER_BROADCAST_VALIDATION)
+            .map(BroadcastValidationParameter::toInternal);
+    final SafeFuture<PublishSignedExecutionPayloadResult> future =
+        validatorDataProvider.publishSignedExecutionPayload(
+            signedExecutionPayloadEnvelope, broadcastValidationLevel);
     request.respondAsync(future.thenApply(this::processPublishSignedExecutionPayloadResult));
   }
 

@@ -23,8 +23,8 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 
 /**
- * <a href=
- * "https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/builder.md#builder-activities">Builder
+ * <a
+ * href="https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/builder.md#builder-activities">Builder
  * activities</a>
  */
 public interface BuilderApiChannel {

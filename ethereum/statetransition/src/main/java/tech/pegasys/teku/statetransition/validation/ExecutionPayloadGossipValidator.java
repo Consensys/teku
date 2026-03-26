@@ -162,8 +162,7 @@ public class ExecutionPayloadGossipValidator {
   private Optional<InternalValidationResult> performPreBlockValidation(
       final ExecutionPayloadEnvelope envelope) {
     /*
-     * [IGNORE] The node has not seen another valid SignedExecutionPayloadEnvelope
-     * for this block root from this builder.
+     * [IGNORE] The node has not seen another valid SignedExecutionPayloadEnvelope for this block root from this builder.
      */
     if (seenPayloads.contains(envelope.getBlockRootAndBuilderIndex())) {
       return Optional.of(ignoreExecutionPayloadAlreadySeen(envelope));
@@ -186,8 +185,7 @@ public class ExecutionPayloadGossipValidator {
         gossipValidationHelper.getSlotForBlockRoot(envelope.getBeaconBlockRoot());
 
     /*
-     * [SAVE_FOR_FUTURE] The envelope's block root envelope.block_root has been seen
-     * (via gossip or non-gossip sources)
+     * [SAVE_FOR_FUTURE] The envelope's block root envelope.block_root has been seen (via gossip or non-gossip sources)
      * (a client MAY queue payload for processing once the block is retrieved)
      */
     if (maybeBeaconBlockSlot.isEmpty()) {
@@ -198,10 +196,8 @@ public class ExecutionPayloadGossipValidator {
     }
 
     /*
-     * [IGNORE] The envelope is from a slot greater than or equal to the latest
-     * finalized slot
-     * -- i.e. validate that envelope.slot >=
-     * compute_start_slot_at_epoch(store.finalized_checkpoint.epoch)
+     * [IGNORE] The envelope is from a slot greater than or equal to the latest finalized slot
+     * -- i.e. validate that envelope.slot >= compute_start_slot_at_epoch(store.finalized_checkpoint.epoch)
      */
     if (gossipValidationHelper.isBeforeFinalizedSlot(envelope.getSlot())) {
       LOG.trace(
@@ -244,8 +240,7 @@ public class ExecutionPayloadGossipValidator {
                 return SAVE_FOR_FUTURE;
               }
               /*
-               * [REJECT] signed_execution_payload_envelope.signature is valid with respect to
-               * the builder's public key
+               * [REJECT] signed_execution_payload_envelope.signature is valid with respect to the builder's public key
                */
               if (!isSignatureValid(envelope, maybeState.get())) {
                 LOG.trace("Invalid signed execution payload envelope signature. Rejecting");
