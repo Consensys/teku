@@ -38,7 +38,6 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
@@ -140,7 +139,7 @@ public class PoolFactory {
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
         FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
         maxQueueSize,
-            PayloadAttestationMessage::hashTreeRoot,
+        PayloadAttestationMessage::hashTreeRoot,
         payloadAttestation ->
             Collections.singletonList(payloadAttestation.getData().getBeaconBlockRoot()),
         payloadAttestation -> payloadAttestation.getData().getSlot());

@@ -1452,6 +1452,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
               spec, validator, pendingPayloadAttestations, metricsSystem);
       payloadAttestationPool = aggregatingPayloadAttestationPool;
       eventChannels.subscribe(SlotEventsChannel.class, aggregatingPayloadAttestationPool);
+      eventChannels.subscribe(
+          ReceivedExecutionPayloadEventsChannel.class, aggregatingPayloadAttestationPool);
     } else {
       payloadAttestationPool = PayloadAttestationPool.NOOP;
     }
