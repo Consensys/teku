@@ -55,13 +55,8 @@ public interface PayloadAttestationPool {
         }
 
         @Override
-        public List<PayloadAttestationMessage> getPayloadAttestationMessages() {
-          return List.of();
-        }
-
-        @Override
-        public List<PayloadAttestation> getAggregatedPayloadAttestations(
-            final Function<UInt64, IntList> ptcProvider) {
+        public List<PayloadAttestation> getPayloadAttestations(
+            final Function<UInt64, IntList> slotToPtc) {
           return List.of();
         }
       };
@@ -77,7 +72,5 @@ public interface PayloadAttestationPool {
   SszList<PayloadAttestation> getPayloadAttestationsForBlock(
       BeaconState blockSlotState, Bytes32 parentRoot);
 
-  List<PayloadAttestationMessage> getPayloadAttestationMessages();
-
-  List<PayloadAttestation> getAggregatedPayloadAttestations(Function<UInt64, IntList> ptcProvider);
+  List<PayloadAttestation> getPayloadAttestations(Function<UInt64, IntList> slotToPtc);
 }

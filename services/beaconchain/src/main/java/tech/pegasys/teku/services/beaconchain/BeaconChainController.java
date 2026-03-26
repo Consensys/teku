@@ -491,10 +491,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void startServices() {
     final RecentBlocksFetcher recentBlocksFetcher = syncService.getRecentBlocksFetcher();
     recentBlocksFetcher.subscribeBlockFetched(
-        (block) ->
+        block ->
             blockManager
                 .importBlock(block, RemoteOrigin.RPC)
-                .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult)
                 .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
     eventChannels.subscribe(ReceivedBlockEventsChannel.class, recentBlocksFetcher);
     final RecentBlobSidecarsFetcher recentBlobSidecarsFetcher =
@@ -511,10 +510,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
             LOG.debug("Received valid execution proof: {}", executionProof));
     final RecentExecutionPayloadsFetcher recentExecutionPayloadsFetcher =
         syncService.getRecentExecutionPayloadsFetcher();
+    recentExecutionPayloadsFetcher.subscribeExecutionPayloadFetched(
+        executionPayload ->
+            executionPayloadManager
+                .importExecutionPayload(executionPayload)
+                .finish(
+                    err ->
+                        LOG.error("Failed to process recently fetched execution payload.", err)));
     eventChannels.subscribe(
         ReceivedExecutionPayloadEventsChannel.class, recentExecutionPayloadsFetcher);
-    // TODO-GLOAS: configure usage of RecentExecutionPayloadsFetcher (importing payload/cancelling
-    // request) (not required for devnet-0)
 
     final Optional<Eth2Network> network = beaconConfig.eth2NetworkConfig().getEth2Network();
     if (network.isPresent() && network.get() == Eth2Network.EPHEMERY) {

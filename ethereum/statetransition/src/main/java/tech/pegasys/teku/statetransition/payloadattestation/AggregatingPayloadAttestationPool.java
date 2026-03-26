@@ -190,22 +190,14 @@ public class AggregatingPayloadAttestationPool
   }
 
   @Override
-  public List<PayloadAttestationMessage> getPayloadAttestationMessages() {
-    return List.copyOf(
-        payloadAttestationGroupByDataHash.values().stream()
-            .flatMap(group -> group.getPayloadAttestationMessages().stream())
-            .toList());
-  }
-
-  @Override
-  public List<PayloadAttestation> getAggregatedPayloadAttestations(
-      final Function<UInt64, IntList> ptcProvider) {
+  public List<PayloadAttestation> getPayloadAttestations(
+      final Function<UInt64, IntList> slotToPtc) {
     return payloadAttestationGroupByDataHash.values().stream()
         .filter(group -> group.size() > 0)
         .map(
             group ->
                 group.createAggregatedPayloadAttestation(
-                    ptcProvider.apply(group.getData().getSlot())))
+                    slotToPtc.apply(group.getData().getSlot())))
         .toList();
   }
 }
