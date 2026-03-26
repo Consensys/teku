@@ -57,5 +57,63 @@
         }
       }
     }
+  },
+  "post" : {
+    "tags" : [ "Beacon", "Validator Required Api" ],
+    "operationId" : "submitPoolPayloadAttestations",
+    "summary" : "Submit PayloadAttestation objects to node",
+    "description" : "Submit signed payload attestation messages to the beacon node to be validated and submitted if valid.\n\nThis endpoint does not protect against slashing.",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PayloadAttestationMessage"
+            }
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Payload attestations are stored in pool and broadcast on appropriate subnet",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "Errors with one or more payload attestations",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorListBadRequest"
+            }
+          }
+        }
+      },
+      "503" : {
+        "description" : "Service unavailable",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "204" : {
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "content" : { }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
   }
 }
