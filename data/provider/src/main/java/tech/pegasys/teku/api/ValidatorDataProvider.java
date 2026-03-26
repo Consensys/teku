@@ -241,8 +241,9 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
-      final SignedExecutionPayloadEnvelope envelope) {
-    return validatorApiChannel.publishSignedExecutionPayload(envelope);
+      final SignedExecutionPayloadEnvelope envelope,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return validatorApiChannel.publishSignedExecutionPayload(envelope, broadcastValidationLevel);
   }
 
   public SafeFuture<Void> registerValidators(

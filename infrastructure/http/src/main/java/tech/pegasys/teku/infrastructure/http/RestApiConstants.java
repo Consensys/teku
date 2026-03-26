@@ -127,6 +127,8 @@ public class RestApiConstants {
       """
       Level of validation that must be applied to a block before it is broadcast. \
       Possible values:
+      - **`not_required`**: no validation is performed
+      - **`equivocation`**: equivocation check only
       - **`gossip`** (default): lightweight gossip checks only
       - **`consensus`**: full consensus checks, including validation of all signatures and \
         blocks fields _except_ for the execution payload transactions.

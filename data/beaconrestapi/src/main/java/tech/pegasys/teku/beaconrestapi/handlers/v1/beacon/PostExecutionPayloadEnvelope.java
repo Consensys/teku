@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BROADCAST_VALIDATION;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -23,8 +24,10 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDAT
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Optional;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.BroadcastValidationParameter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
@@ -32,6 +35,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 
@@ -57,6 +61,7 @@ public class PostExecutionPayloadEnvelope extends RestApiEndpoint {
         .description(
             "Instructs the beacon node to broadcast a signed execution payload envelope to the network, to be gossiped for payload validation.")
         .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
+        .queryParam(PARAMETER_BROADCAST_VALIDATION)
         .requestBodyType(
             schemaCache
                 .getSchemaDefinition(SpecMilestone.GLOAS)
@@ -79,8 +84,13 @@ public class PostExecutionPayloadEnvelope extends RestApiEndpoint {
       return;
     }
     final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope = request.getRequestBody();
+    final Optional<BroadcastValidationLevel> broadcastValidationLevel =
+        request
+            .getOptionalQueryParameter(PARAMETER_BROADCAST_VALIDATION)
+            .map(BroadcastValidationParameter::toInternal);
     final SafeFuture<PublishSignedExecutionPayloadResult> future =
-        validatorDataProvider.publishSignedExecutionPayload(signedExecutionPayloadEnvelope);
+        validatorDataProvider.publishSignedExecutionPayload(
+            signedExecutionPayloadEnvelope, broadcastValidationLevel);
     request.respondAsync(future.thenApply(this::processPublishSignedExecutionPayloadResult));
   }
 

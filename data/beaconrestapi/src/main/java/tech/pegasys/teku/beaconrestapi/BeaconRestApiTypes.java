@@ -294,6 +294,8 @@ public class BeaconRestApiTypes {
 
   @SuppressWarnings("JavaCase")
   public enum BroadcastValidationParameter {
+    not_required,
+    equivocation,
     gossip,
     consensus,
     consensus_and_equivocation;

@@ -49,7 +49,7 @@ public class PostExecutionPayloadEnvelopeTest extends AbstractMigratedBeaconHand
 
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     request.setRequestBody(envelope);
-    when(validatorDataProvider.publishSignedExecutionPayload(any()))
+    when(validatorDataProvider.publishSignedExecutionPayload(any(), any()))
         .thenReturn(SafeFuture.completedFuture(successResult));
 
     handler.handleRequest(request);
@@ -68,7 +68,7 @@ public class PostExecutionPayloadEnvelopeTest extends AbstractMigratedBeaconHand
 
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     request.setRequestBody(envelope);
-    when(validatorDataProvider.publishSignedExecutionPayload(any()))
+    when(validatorDataProvider.publishSignedExecutionPayload(any(), any()))
         .thenReturn(SafeFuture.completedFuture(failResult));
 
     handler.handleRequest(request);
@@ -86,7 +86,7 @@ public class PostExecutionPayloadEnvelopeTest extends AbstractMigratedBeaconHand
 
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     request.setRequestBody(envelope);
-    when(validatorDataProvider.publishSignedExecutionPayload(any()))
+    when(validatorDataProvider.publishSignedExecutionPayload(any(), any()))
         .thenReturn(SafeFuture.completedFuture(failResult));
 
     handler.handleRequest(request);
