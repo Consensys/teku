@@ -1014,9 +1014,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
 
   @Override
   public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
-      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+      final SignedExecutionPayloadEnvelope signedExecutionPayload,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
     return executionPayloadPublisher
-        .publishSignedExecutionPayload(signedExecutionPayload)
+        .publishSignedExecutionPayload(signedExecutionPayload, broadcastValidationLevel)
         .exceptionally(
             ex -> {
               final String reason = getRootCauseMessage(ex);
