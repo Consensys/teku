@@ -30,6 +30,7 @@ public class SyncConfig {
 
   /** Aligned with {@link P2PConfig#DEFAULT_PEER_BLOCKS_RATE_LIMIT} */
   public static final int DEFAULT_MAX_RECENTLY_SAMPLED_BLOCKS = 64;
+
   public static final int DEFAULT_FORWARD_SYNC_MAX_BLOCKS_PER_MINUTE = 500;
 
   /** Aligned with {@link P2PConfig#DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT} */
