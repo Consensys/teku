@@ -794,7 +794,8 @@ class Store extends CacheableStore {
   @Override
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveSignedExecutionPayload(
       final Bytes32 blockRoot) {
-
+    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 we need a logic similar to
+    // blockProvider
     return SafeFuture.completedFuture(getExecutionPayloadIfAvailable(blockRoot));
   }
 

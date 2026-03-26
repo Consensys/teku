@@ -120,6 +120,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
@@ -371,6 +372,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile PerformanceTracker performanceTracker;
   protected volatile PendingPool<SignedBeaconBlock> pendingBlocks;
   protected volatile PendingPool<ValidatableAttestation> pendingAttestations;
+  protected volatile PendingPool<PayloadAttestationMessage> pendingPayloadAttestations;
   protected volatile BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   protected volatile DataColumnSidecarELManager dataColumnSidecarELManager;
   protected volatile Map<Bytes32, BlockImportResult> invalidBlockRoots;
@@ -494,6 +496,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         block ->
             blockManager
                 .importBlock(block, RemoteOrigin.RPC)
+                .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult)
                 .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
     eventChannels.subscribe(ReceivedBlockEventsChannel.class, recentBlocksFetcher);
     final RecentBlobSidecarsFetcher recentBlobSidecarsFetcher =
@@ -1441,8 +1444,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
       final PayloadAttestationMessageGossipValidator validator =
           new PayloadAttestationMessageGossipValidator(
               spec, gossipValidationHelper, invalidBlockRoots);
+      pendingPayloadAttestations =
+          poolFactory.createPendingPoolForPayloadAttestations(
+              spec, beaconConfig.eth2NetworkConfig().getPendingPayloadAttestationsMaxQueue());
       final AggregatingPayloadAttestationPool aggregatingPayloadAttestationPool =
-          new AggregatingPayloadAttestationPool(spec, validator, metricsSystem);
+          new AggregatingPayloadAttestationPool(
+              spec, validator, pendingPayloadAttestations, metricsSystem);
       payloadAttestationPool = aggregatingPayloadAttestationPool;
       eventChannels.subscribe(SlotEventsChannel.class, aggregatingPayloadAttestationPool);
     } else {

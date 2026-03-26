@@ -35,12 +35,15 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 class AggregatingPayloadAttestationPoolTest {
@@ -54,12 +57,16 @@ class AggregatingPayloadAttestationPoolTest {
 
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
+  private final PendingPool<PayloadAttestationMessage> pendingPayloadAttestations =
+      new PoolFactory(metricsSystem).createPendingPoolForPayloadAttestations(spec, 10_000);
+
   private final SchemaDefinitionsGloas schemaDefinitionsGloas =
       SchemaDefinitionsGloas.required(
           spec.forMilestone(SpecMilestone.GLOAS).getSchemaDefinitions());
 
   private final AggregatingPayloadAttestationPool payloadAttestationPool =
-      new AggregatingPayloadAttestationPool(spec, validator, metricsSystem);
+      new AggregatingPayloadAttestationPool(
+          spec, validator, pendingPayloadAttestations, metricsSystem);
 
   @BeforeEach
   public void setUp() {

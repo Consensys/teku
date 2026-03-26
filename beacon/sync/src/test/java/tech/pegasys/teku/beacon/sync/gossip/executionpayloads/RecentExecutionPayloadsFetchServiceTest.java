@@ -36,9 +36,11 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.util.PendingPool;
 
 class RecentExecutionPayloadsFetchServiceTest {
 
@@ -52,6 +54,10 @@ class RecentExecutionPayloadsFetchServiceTest {
   private final FetchTaskFactory fetchTaskFactory = mock(FetchTaskFactory.class);
 
   private final ForwardSync forwardSync = mock(ForwardSync.class);
+
+  @SuppressWarnings("unchecked")
+  private final PendingPool<PayloadAttestationMessage> pendingPayloadAttestationsPool =
+      mock(PendingPool.class);
 
   private final int maxConcurrentRequests = 2;
 
@@ -71,6 +77,7 @@ class RecentExecutionPayloadsFetchServiceTest {
             asyncRunner,
             maxConcurrentRequests,
             forwardSync,
+            pendingPayloadAttestationsPool,
             fetchTaskFactory,
             executionPayloadManager);
 

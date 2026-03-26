@@ -27,6 +27,9 @@ import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -44,12 +47,17 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.Bea
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
+import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadEventsChannel;
+import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class AggregatingPayloadAttestationPool
-    implements PayloadAttestationPool, SlotEventsChannel {
+    implements PayloadAttestationPool, SlotEventsChannel, ReceivedExecutionPayloadEventsChannel {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   /** The payload attestations are valid for 2 slots only */
   @VisibleForTesting static final long PAYLOAD_ATTESTATION_RETENTION_SLOTS = 2;
@@ -65,6 +73,7 @@ public class AggregatingPayloadAttestationPool
 
   private final Spec spec;
   private final PayloadAttestationMessageGossipValidator validator;
+  private final PendingPool<PayloadAttestationMessage> pendingPayloadAttestations;
   private final SettableGauge sizeGauge;
 
   private final AtomicInteger size = new AtomicInteger(0);
@@ -72,9 +81,11 @@ public class AggregatingPayloadAttestationPool
   public AggregatingPayloadAttestationPool(
       final Spec spec,
       final PayloadAttestationMessageGossipValidator validator,
+      final PendingPool<PayloadAttestationMessage> pendingPayloadAttestations,
       final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.validator = validator;
+    this.pendingPayloadAttestations = pendingPayloadAttestations;
     sizeGauge =
         SettableGauge.create(
             metricsSystem,
@@ -88,6 +99,24 @@ public class AggregatingPayloadAttestationPool
     final UInt64 firstPayloadAttestationSlotToKeep =
         slot.minusMinZero(PAYLOAD_ATTESTATION_RETENTION_SLOTS);
     removePayloadAttestationsPriorToSlot(firstPayloadAttestationSlotToKeep);
+    pendingPayloadAttestations.onSlot(slot);
+  }
+
+  @Override
+  public void onExecutionPayloadImported(final SignedExecutionPayloadEnvelope executionPayload) {
+    pendingPayloadAttestations
+        .getItemsDependingOn(executionPayload.getBeaconBlockRoot(), false)
+        .forEach(
+            attestation -> {
+              pendingPayloadAttestations.remove(attestation);
+              add(attestation, true)
+                  .finish(
+                      err ->
+                          LOG.error(
+                              "Failed to process pending payload attestation dependent on {}",
+                              executionPayload.getBeaconBlockRoot(),
+                              err));
+            });
   }
 
   private void removePayloadAttestationsPriorToSlot(final UInt64 slot) {
@@ -143,6 +172,12 @@ public class AggregatingPayloadAttestationPool
                 if (doAdd(payloadAttestationMessage)) {
                   updateSize(1);
                 }
+              }
+              if (result.isSaveForFuture()) {
+                LOG.trace(
+                    "Deferring payload attestation message {} for future processing",
+                    payloadAttestationMessage::hashTreeRoot);
+                pendingPayloadAttestations.add(payloadAttestationMessage);
               }
             });
   }

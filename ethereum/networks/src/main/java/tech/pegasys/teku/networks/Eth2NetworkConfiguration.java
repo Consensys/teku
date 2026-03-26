@@ -78,6 +78,9 @@ public class Eth2NetworkConfiguration {
   // on all subnets, you may receive and have to cache that number of messages
   public static final int DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS = 70_000;
 
+  // should fit payload attestations for an epoch given PTC size
+  public static final int DEFAULT_MAX_QUEUE_PENDING_PAYLOAD_ATTESTATIONS = 17_000;
+
   public static final boolean DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES = false;
 
   public static final boolean DEFAULT_ALLOW_SYNC_OUTSIDE_WEAK_SUBJECTIVITY_PERIOD = false;
@@ -159,6 +162,7 @@ public class Eth2NetworkConfiguration {
   private final int attestationWaitLimitMillis;
   private final boolean quartzSchedulerEnabled;
   private final int dataColumnSidecarExtensionRetentionEpochs;
+  private final int pendingPayloadAttestationsMaxQueue;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
@@ -199,7 +203,8 @@ public class Eth2NetworkConfiguration {
       final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
       final int attestationWaitLimitMillis,
       final int dataColumnSidecarExtensionRetentionEpochs,
-      final boolean quartzSchedulerEnabled) {
+      final boolean quartzSchedulerEnabled,
+      final int pendingPayloadAttestationsMaxQueue) {
     this.spec = spec;
     this.constants = constants;
     this.stateBoostrapConfig = stateBoostrapConfig;
@@ -245,6 +250,7 @@ public class Eth2NetworkConfiguration {
     this.attestationWaitLimitMillis = attestationWaitLimitMillis;
     this.quartzSchedulerEnabled = quartzSchedulerEnabled;
     this.dataColumnSidecarExtensionRetentionEpochs = dataColumnSidecarExtensionRetentionEpochs;
+    this.pendingPayloadAttestationsMaxQueue = pendingPayloadAttestationsMaxQueue;
 
     LOG.debug("Attestation wait time limit in ratchet: {} ms", attestationWaitLimitMillis);
 
@@ -411,6 +417,10 @@ public class Eth2NetworkConfiguration {
     return quartzSchedulerEnabled;
   }
 
+  public int getPendingPayloadAttestationsMaxQueue() {
+    return pendingPayloadAttestationsMaxQueue;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -556,6 +566,7 @@ public class Eth2NetworkConfiguration {
         DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_TOTAL_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS;
     private int attestationWaitLimitMillis = DEFAULT_ATTESTATION_WAIT_TIMEOUT_MILLIS;
     private boolean quartzSchedulerEnabled = DEFAULT_QUARTZ_SCHEDULER_ENABLED;
+    private OptionalInt pendingPayloadAttestationsMaxQueue = OptionalInt.empty();
 
     public void spec(final Spec spec) {
       this.spec = spec;
@@ -658,7 +669,9 @@ public class Eth2NetworkConfiguration {
           aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
           attestationWaitLimitMillis,
           dataColumnSidecarExtensionRetentionEpochs,
-          quartzSchedulerEnabled);
+          quartzSchedulerEnabled,
+          pendingPayloadAttestationsMaxQueue.orElse(
+              DEFAULT_MAX_QUEUE_PENDING_PAYLOAD_ATTESTATIONS));
     }
 
     private boolean resolvePrepareBlockProductionAbility(
@@ -1334,6 +1347,12 @@ public class Eth2NetworkConfiguration {
 
     public Builder pendingAttestationsMaxQueue(final int pendingAttestationsMaxQueue) {
       this.pendingAttestationsMaxQueue = OptionalInt.of(pendingAttestationsMaxQueue);
+      return this;
+    }
+
+    public Builder pendingPayloadAttestationsMaxQueue(
+        final int pendingPayloadAttestationsMaxQueue) {
+      this.pendingPayloadAttestationsMaxQueue = OptionalInt.of(pendingPayloadAttestationsMaxQueue);
       return this;
     }
 

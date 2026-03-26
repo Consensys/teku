@@ -24,8 +24,10 @@ import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetchService;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.util.PendingPool;
 
 public class RecentExecutionPayloadsFetchService
     extends AbstractFetchService<Bytes32, FetchExecutionPayloadTask, SignedExecutionPayloadEnvelope>
@@ -37,6 +39,7 @@ public class RecentExecutionPayloadsFetchService
       Subscribers.create(true);
 
   private final ForwardSync forwardSync;
+  private final PendingPool<PayloadAttestationMessage> pendingPayloadAttestationsPool;
   private final FetchTaskFactory fetchTaskFactory;
   private final ExecutionPayloadManager executionPayloadManager;
 
@@ -44,10 +47,12 @@ public class RecentExecutionPayloadsFetchService
       final AsyncRunner asyncRunner,
       final int maxConcurrentRequests,
       final ForwardSync forwardSync,
+      final PendingPool<PayloadAttestationMessage> pendingPayloadAttestationsPool,
       final FetchTaskFactory fetchTaskFactory,
       final ExecutionPayloadManager executionPayloadManager) {
     super(asyncRunner, maxConcurrentRequests);
     this.forwardSync = forwardSync;
+    this.pendingPayloadAttestationsPool = pendingPayloadAttestationsPool;
     this.fetchTaskFactory = fetchTaskFactory;
     this.executionPayloadManager = executionPayloadManager;
   }
@@ -55,6 +60,7 @@ public class RecentExecutionPayloadsFetchService
   public static RecentExecutionPayloadsFetchService create(
       final AsyncRunner asyncRunner,
       final ForwardSync forwardSync,
+      final PendingPool<PayloadAttestationMessage> pendingPayloadAttestationsPool,
       final FetchTaskFactory fetchTaskFactory,
       final ExecutionPayloadManager executionPayloadManager) {
     return new RecentExecutionPayloadsFetchService(
@@ -62,6 +68,7 @@ public class RecentExecutionPayloadsFetchService
         // same limit as blocks
         RecentBlocksFetchService.MAX_CONCURRENT_REQUESTS,
         forwardSync,
+        pendingPayloadAttestationsPool,
         fetchTaskFactory,
         executionPayloadManager);
   }
@@ -126,7 +133,11 @@ public class RecentExecutionPayloadsFetchService
     cancelRecentExecutionPayloadRequest(executionPayload.getBeaconBlockRoot());
   }
 
-  // TODO-GLOAS: configure subscribers who require fetching of execution payloads (not required for
-  // devnet-0)
-  private void setupSubscribers() {}
+  // TODO-GLOAS: potentially configure more subscribers if we end up having pending execution
+  // payloads pool
+  private void setupSubscribers() {
+    pendingPayloadAttestationsPool.subscribeRequiredBlockRoot(this::requestRecentExecutionPayload);
+    pendingPayloadAttestationsPool.subscribeRequiredBlockRootDropped(
+        this::cancelRecentExecutionPayloadRequest);
+  }
 }
