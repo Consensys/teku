@@ -18,6 +18,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
@@ -33,7 +34,8 @@ public interface ExecutionPayloadManager {
         @Override
         public SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
             final SignedExecutionPayloadEnvelope signedExecutionPayload,
-            final Optional<UInt64> arrivalTimestamp) {
+            final Optional<UInt64> arrivalTimestamp,
+            final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
         }
 
@@ -58,7 +60,9 @@ public interface ExecutionPayloadManager {
    * @return the gossip validation result
    */
   SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
-      SignedExecutionPayloadEnvelope signedExecutionPayload, Optional<UInt64> arrivalTimestamp);
+      SignedExecutionPayloadEnvelope signedExecutionPayload,
+      Optional<UInt64> arrivalTimestamp,
+      Optional<BroadcastValidationLevel> broadcastValidationLevel);
 
   /**
    * Imports execution payload via fork choice `on_execution_payload`
@@ -70,6 +74,14 @@ public interface ExecutionPayloadManager {
 
   default SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
-    return validateAndImportExecutionPayload(signedExecutionPayload, Optional.empty());
+    return validateAndImportExecutionPayload(
+        signedExecutionPayload, Optional.empty(), Optional.empty());
+  }
+
+  default SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
+      final SignedExecutionPayloadEnvelope signedExecutionPayload,
+      final Optional<UInt64> arrivalTimestamp) {
+    return validateAndImportExecutionPayload(
+        signedExecutionPayload, arrivalTimestamp, Optional.empty());
   }
 }
