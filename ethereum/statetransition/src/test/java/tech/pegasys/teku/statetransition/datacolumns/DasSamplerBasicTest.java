@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.Duration;
 import java.util.List;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -73,7 +74,7 @@ public class DasSamplerBasicTest {
   private CurrentSlotProvider currentSlotProvider;
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, SPEC);
 
-  private DasSamplerBasic sampler;
+  private DasSamplerBasicImpl sampler;
 
   @BeforeEach
   public void setUp() {
@@ -91,7 +92,7 @@ public class DasSamplerBasicTest {
     when(custody.onNewValidatedDataColumnSidecar(any(), any())).thenReturn(SafeFuture.COMPLETE);
 
     sampler =
-        new DasSamplerBasic(
+        new DasSamplerBasicImpl(
             SPEC,
             asyncRunner,
             currentSlotProvider,
@@ -100,7 +101,9 @@ public class DasSamplerBasicTest {
             retriever,
             custodyGroupCountManager,
             recentChainData,
-            true);
+            true,
+            new StubMetricsSystem(),
+            64);
   }
 
   @Test
