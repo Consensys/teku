@@ -417,9 +417,12 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
-      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+      final SignedExecutionPayloadEnvelope signedExecutionPayload,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
     return relayRequest(
-        apiChannel -> apiChannel.publishSignedExecutionPayload(signedExecutionPayload),
+        apiChannel ->
+            apiChannel.publishSignedExecutionPayload(
+                signedExecutionPayload, broadcastValidationLevel),
         BeaconNodeRequestLabels.PUBLISH_EXECUTION_PAYLOAD_METHOD);
   }
 

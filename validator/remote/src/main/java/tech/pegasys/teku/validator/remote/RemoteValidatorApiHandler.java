@@ -383,8 +383,12 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   @Override
   public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
-      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+      final SignedExecutionPayloadEnvelope signedExecutionPayload,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return sendRequest(
+        () ->
+            typeDefClient.publishSignedExecutionPayload(
+                signedExecutionPayload, broadcastValidationLevel));
   }
 
   private SafeFuture<Void> sendRequest(final ExceptionThrowingRunnable requestExecutor) {

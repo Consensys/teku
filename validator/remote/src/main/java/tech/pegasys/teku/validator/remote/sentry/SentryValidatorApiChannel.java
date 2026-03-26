@@ -297,9 +297,10 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
-      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+      final SignedExecutionPayloadEnvelope signedExecutionPayload,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
     return blockHandlerChannel
         .orElse(dutiesProviderChannel)
-        .publishSignedExecutionPayload(signedExecutionPayload);
+        .publishSignedExecutionPayload(signedExecutionPayload, broadcastValidationLevel);
   }
 }
