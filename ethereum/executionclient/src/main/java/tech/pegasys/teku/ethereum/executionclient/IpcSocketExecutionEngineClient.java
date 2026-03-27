@@ -93,7 +93,7 @@ public class IpcSocketExecutionEngineClient extends AbstractExecutionEngineClien
     asyncRunner
         .runAsync(
             () -> {
-              try (BufferedReader reader =
+              try (final BufferedReader reader =
                   new BufferedReader(
                       new InputStreamReader(
                           currentSocket.getInputStream(), StandardCharsets.UTF_8))) {
