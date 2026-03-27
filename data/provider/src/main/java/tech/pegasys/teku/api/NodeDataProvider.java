@@ -193,7 +193,9 @@ public class NodeDataProvider {
             .map(
                 slot ->
                     payloadAttestations.stream()
-                        .filter(a -> a.getData().getSlot().equals(slot))
+                        .filter(
+                            payloadAttestation ->
+                                payloadAttestation.getData().getSlot().equals(slot))
                         .toList())
             .orElse(payloadAttestations);
     final UInt64 slot =
