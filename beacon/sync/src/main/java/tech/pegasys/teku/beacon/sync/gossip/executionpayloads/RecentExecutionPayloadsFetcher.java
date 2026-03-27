@@ -21,9 +21,11 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.ServiceFacade;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadEventsChannel;
+import tech.pegasys.teku.statetransition.util.PendingPool;
 
 public interface RecentExecutionPayloadsFetcher
     extends ServiceFacade, ReceivedExecutionPayloadEventsChannel {
@@ -63,13 +65,18 @@ public interface RecentExecutionPayloadsFetcher
       final Spec spec,
       final AsyncRunner asyncRunner,
       final ForwardSyncService forwardSyncService,
+      final PendingPool<PayloadAttestationMessage> pendingPayloadAttestationsPool,
       final FetchTaskFactory fetchTaskFactory,
       final ExecutionPayloadManager executionPayloadManager) {
     final RecentExecutionPayloadsFetcher recentExecutionPayloadsFetcher;
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
       recentExecutionPayloadsFetcher =
           RecentExecutionPayloadsFetchService.create(
-              asyncRunner, forwardSyncService, fetchTaskFactory, executionPayloadManager);
+              asyncRunner,
+              forwardSyncService,
+              pendingPayloadAttestationsPool,
+              fetchTaskFactory,
+              executionPayloadManager);
     } else {
       recentExecutionPayloadsFetcher = RecentExecutionPayloadsFetcher.NOOP;
     }

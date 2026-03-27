@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -100,6 +101,33 @@ class AggregatingPayloadAttestationPoolTest {
 
     assertThat(getPoolSizeFromMetric()).isOne();
     assertThat(addedMessages).containsExactly(payloadAttestationMessage);
+  }
+
+  @Test
+  public void addingSaveForFutureMessageAddsToPendingPool() {
+
+    when(validator.validate(any()))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
+
+    final PayloadAttestationMessage payloadAttestationMessage =
+        dataStructureUtil.randomPayloadAttestationMessage();
+
+    pendingPayloadAttestations.onSlot(payloadAttestationMessage.getData().getSlot());
+    pendingPayloadAttestations.onNewFinalizedCheckpoint(
+        new Checkpoint(
+            spec.computeEpochAtSlot(payloadAttestationMessage.getData().getSlot()).minus(1),
+            dataStructureUtil.randomBytes32()),
+        false);
+
+    SafeFutureAssert.safeJoin(
+        payloadAttestationPool.addRemote(payloadAttestationMessage, Optional.empty()));
+
+    assertThat(getPoolSizeFromMetric()).isZero();
+    assertThat(pendingPayloadAttestations.size()).isOne();
+    assertThat(
+            pendingPayloadAttestations.getItemsDependingOn(
+                payloadAttestationMessage.getData().getBeaconBlockRoot(), true))
+        .containsExactly(payloadAttestationMessage);
   }
 
   @Test
