@@ -79,7 +79,7 @@ public class Eth2NetworkConfiguration {
   public static final int DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS = 70_000;
 
   // should fit payload attestations for an epoch given PTC size
-  public static final int DEFAULT_MAX_QUEUE_PENDING_PAYLOAD_ATTESTATIONS = 17_000;
+  public static final int DEFAULT_MAX_QUEUE_PENDING_PAYLOAD_ATTESTATIONS = 1000;
 
   public static final boolean DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES = false;
 
