@@ -43,8 +43,6 @@ public class ExecutionPayloadEnvelopeInvariants {
   }
 
   // Delegates to non-blinded extraction because both containers share identical SSZ fixed-part
-  // layout: payload/payload_header are both variable-size (same 4-byte offset), followed by the
-  // same fixed-size fields (builder_index, beacon_block_root, slot, state_root).
   public static UInt64 extractSignedBlindedExecutionPayloadEnvelopeSlot(final Bytes bytes) {
     return extractSignedExecutionPayloadEnvelopeSlot(bytes);
   }
