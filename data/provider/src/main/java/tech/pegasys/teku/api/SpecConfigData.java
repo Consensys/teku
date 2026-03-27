@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.api;
 
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -100,11 +102,13 @@ public class SpecConfigData {
   }
 
   private void addDeprecatedFields(final Map<String, Object> configAttributes) {
+    // #10499 - clean post gloas fork
     if (configAttributes.get("SECONDS_PER_SLOT") == null) {
       configAttributes.put(
           "SECONDS_PER_SLOT",
           ConfigProvider.formatValue(specConfig.getSlotDurationMillis() / 1000));
     }
+    // #10499 - clean post gloas fork
     if (configAttributes.get("MIN_EPOCHS_FOR_BLOCK_REQUESTS") == null) {
       configAttributes.put(
           "MIN_EPOCHS_FOR_BLOCK_REQUESTS",
@@ -113,24 +117,7 @@ public class SpecConfigData {
                   specConfig.getMinValidatorWithdrawabilityDelay(),
                   specConfig.getChurnLimitQuotient())));
     }
-    if (configAttributes.get("MAX_REQUEST_BLOB_SIDECARS") == null) {
-      final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(specConfig);
-      configAttributes.put(
-          "MAX_REQUEST_BLOB_SIDECARS",
-          ConfigProvider.formatValue(
-              DenebBuilder.computeMaxRequestBlobSidecars(
-                  specConfigDeneb.getMaxRequestBlocksDeneb(),
-                  specConfigDeneb.getDenebMaxBlobsPerBlock())));
-    }
-    if (configAttributes.get("MAX_REQUEST_BLOB_SIDECARS_ELECTRA") == null) {
-      final SpecConfigElectra specConfigElectra = SpecConfigElectra.required(specConfig);
-      configAttributes.put(
-          "MAX_REQUEST_BLOB_SIDECARS_ELECTRA",
-          ConfigProvider.formatValue(
-              ElectraBuilder.computeMaxRequestBlobSidecars(
-                  specConfigElectra.getMaxRequestBlocksDeneb(),
-                  specConfigElectra.getMaxBlobsPerBlock())));
-    }
+    // #10499 - clean post gloas fork
     if (configAttributes.get("ATTESTATION_SUBNET_PREFIX_BITS") == null) {
       configAttributes.put(
           "ATTESTATION_SUBNET_PREFIX_BITS",
@@ -139,11 +126,38 @@ public class SpecConfigData {
                   specConfig.getAttestationSubnetCount(),
                   specConfig.getAttestationSubnetExtraBits())));
     }
-    if (configAttributes.get("MAX_REQUEST_DATA_COLUMN_SIDECARS") == null) {
-      final SpecConfigFulu specConfigFulu = SpecConfigFulu.required(specConfig);
-      configAttributes.put(
-          "MAX_REQUEST_DATA_COLUMN_SIDECARS",
-          ConfigProvider.formatValue(specConfigFulu.getMaxRequestDataColumnSidecars()));
+    // #10499 - clean post gloas fork
+    if (specConfig.getDenebForkEpoch().isLessThan(FAR_FUTURE_EPOCH)) {
+      if (configAttributes.get("MAX_REQUEST_BLOB_SIDECARS") == null) {
+        final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(specConfig);
+        configAttributes.put(
+            "MAX_REQUEST_BLOB_SIDECARS",
+            ConfigProvider.formatValue(
+                DenebBuilder.computeMaxRequestBlobSidecars(
+                    specConfigDeneb.getMaxRequestBlocksDeneb(),
+                    specConfigDeneb.getDenebMaxBlobsPerBlock())));
+      }
+    }
+    // #10499 - clean post gloas fork
+    if (specConfig.getElectraForkEpoch().isLessThan(FAR_FUTURE_EPOCH)) {
+      if (configAttributes.get("MAX_REQUEST_BLOB_SIDECARS_ELECTRA") == null) {
+        final SpecConfigElectra specConfigElectra = SpecConfigElectra.required(specConfig);
+        configAttributes.put(
+            "MAX_REQUEST_BLOB_SIDECARS_ELECTRA",
+            ConfigProvider.formatValue(
+                ElectraBuilder.computeMaxRequestBlobSidecars(
+                    specConfigElectra.getMaxRequestBlocksDeneb(),
+                    specConfigElectra.getMaxBlobsPerBlock())));
+      }
+    }
+    // #10499 - clean post gloas fork
+    if (specConfig.getFuluForkEpoch().isLessThan(FAR_FUTURE_EPOCH)) {
+      if (configAttributes.get("MAX_REQUEST_DATA_COLUMN_SIDECARS") == null) {
+        final SpecConfigFulu specConfigFulu = SpecConfigFulu.required(specConfig);
+        configAttributes.put(
+            "MAX_REQUEST_DATA_COLUMN_SIDECARS",
+            ConfigProvider.formatValue(specConfigFulu.getMaxRequestDataColumnSidecars()));
+      }
     }
   }
 
