@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -154,6 +155,23 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   public Optional<BeaconState> getHotState(final Bytes32 root) {
     return db.get(schema.getColumnHotStatesByRoot(), root);
+  }
+
+  @Override
+  public Optional<SignedBlindedExecutionPayloadEnvelope> getHotBlindedExecutionPayloadEnvelope(
+      final Bytes32 root) {
+    return db.get(schema.getColumnHotBlindedExecutionPayloadEnvelopesByRoot(), root);
+  }
+
+  @Override
+  public Optional<Bytes> getHotBlindedExecutionPayloadEnvelopeAsSsz(final Bytes32 root) {
+    return db.getRaw(schema.getColumnHotBlindedExecutionPayloadEnvelopesByRoot(), root);
+  }
+
+  @Override
+  public Optional<SignedBlindedExecutionPayloadEnvelope>
+      getFinalizedBlindedExecutionPayloadEnvelope(final Bytes32 root) {
+    return db.get(schema.getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot(), root);
   }
 
   @Override
@@ -825,6 +843,16 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
+    public void addHotBlindedExecutionPayloadEnvelope(
+        final Bytes32 blockRoot,
+        final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope) {
+      transaction.put(
+          schema.getColumnHotBlindedExecutionPayloadEnvelopesByRoot(),
+          blockRoot,
+          signedBlindedExecutionPayloadEnvelope);
+    }
+
+    @Override
     public void addHotStateRoots(
         final Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap) {
       stateRootToSlotAndBlockRootMap.forEach(
@@ -850,6 +878,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
       transaction.delete(schema.getColumnHotBlocksByRoot(), blockRoot);
       transaction.delete(schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot);
       deleteHotState(blockRoot);
+      deleteHotBlindedExecutionPayloadEnvelope(blockRoot);
     }
 
     @Override
@@ -860,6 +889,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     @Override
     public void deleteHotState(final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnHotStatesByRoot(), blockRoot);
+    }
+
+    @Override
+    public void deleteHotBlindedExecutionPayloadEnvelope(final Bytes32 blockRoot) {
+      transaction.delete(schema.getColumnHotBlindedExecutionPayloadEnvelopesByRoot(), blockRoot);
     }
 
     @Override
@@ -935,6 +969,31 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
+    public void addFinalizedBlindedExecutionPayloadEnvelope(
+        final Bytes32 blockRoot,
+        final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope) {
+      transaction.put(
+          schema.getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot(),
+          blockRoot,
+          signedBlindedExecutionPayloadEnvelope);
+    }
+
+    @Override
+    public void addFinalizedBlindedExecutionPayloadEnvelopeRaw(
+        final Bytes32 blockRoot, final Bytes signedBlindedExecutionPayloadEnvelopeBytes) {
+      final KvStoreColumn<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+          columnFinalizedBlindedExecutionPayloadEnvelopesByRoot =
+              schema.getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot();
+      transaction.putRaw(
+          columnFinalizedBlindedExecutionPayloadEnvelopesByRoot,
+          Bytes.wrap(
+              columnFinalizedBlindedExecutionPayloadEnvelopesByRoot
+                  .getKeySerializer()
+                  .serialize(blockRoot)),
+          signedBlindedExecutionPayloadEnvelopeBytes);
+    }
+
+    @Override
     public void addNonCanonicalBlock(final SignedBeaconBlock block) {
       transaction.put(schema.getColumnNonCanonicalBlocksByRoot(), block.getRoot(), block);
     }
@@ -943,6 +1002,13 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     public void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnFinalizedBlocksBySlot(), slot);
       transaction.delete(schema.getColumnSlotsByFinalizedRoot(), blockRoot);
+      deleteFinalizedBlindedExecutionPayloadEnvelope(blockRoot);
+    }
+
+    @Override
+    public void deleteFinalizedBlindedExecutionPayloadEnvelope(final Bytes32 blockRoot) {
+      transaction.delete(
+          schema.getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot(), blockRoot);
     }
 
     @Override

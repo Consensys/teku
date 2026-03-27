@@ -81,6 +81,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.epbs.ExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelopeInvariants;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
@@ -129,6 +131,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
 public class Spec {
@@ -334,6 +337,18 @@ public class Spec {
     return getGenesisSpec().getSchemaDefinitions();
   }
 
+  public boolean supportsBlobSidecars() {
+    return isMilestoneSupported(DENEB);
+  }
+
+  public boolean supportsDataColumnSidecars() {
+    return isMilestoneSupported(FULU);
+  }
+
+  public boolean supportsExecutionPayloadEnvelopes() {
+    return isMilestoneSupported(GLOAS);
+  }
+
   public ForkSchedule getForkSchedule() {
     return forkSchedule;
   }
@@ -450,6 +465,16 @@ public class Spec {
         .getSchemaDefinitions()
         .getSignedBeaconBlockSchema()
         .sszDeserialize(serializedSignedBlock);
+  }
+
+  public SignedBlindedExecutionPayloadEnvelope deserializeSignedBlindedExecutionPayloadEnvelope(
+      final Bytes serializedSignedBlindedExecutionPayloadEnvelope) {
+    final UInt64 slot =
+        ExecutionPayloadEnvelopeInvariants.extractSignedBlindedExecutionPayloadEnvelopeSlot(
+            serializedSignedBlindedExecutionPayloadEnvelope);
+    return SchemaDefinitionsGloas.required(atSlot(slot).getSchemaDefinitions())
+        .getSignedBlindedExecutionPayloadEnvelopeSchema()
+        .sszDeserialize(serializedSignedBlindedExecutionPayloadEnvelope);
   }
 
   public SignedBlockContainer deserializeSignedBlockContainer(

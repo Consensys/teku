@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -62,6 +63,8 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   private static final KvStoreColumn<Bytes32, SlotAndBlockRoot> STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT =
       KvStoreColumn.create(5, BYTES32_SERIALIZER, SLOT_AND_BLOCK_ROOT_SERIALIZER);
   private final KvStoreColumn<Bytes32, BeaconState> hotStatesByRoot;
+  private final KvStoreColumn<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+      hotBlindedExecutionPayloadEnvelopesByRoot;
   private static final KvStoreColumn<Bytes32, BlockCheckpoints>
       HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT =
           KvStoreColumn.create(7, BYTES32_SERIALIZER, CHECKPOINT_EPOCHS_SERIALIZER);
@@ -107,6 +110,11 @@ public abstract class V6SchemaCombined implements SchemaCombined {
         KvStoreSerializer.createStateSerializer(spec);
     checkpointStates = KvStoreColumn.create(2, CHECKPOINT_SERIALIZER, stateSerializer);
     hotStatesByRoot = KvStoreColumn.create(6, BYTES32_SERIALIZER, stateSerializer);
+    hotBlindedExecutionPayloadEnvelopesByRoot =
+        KvStoreColumn.create(
+            8,
+            BYTES32_SERIALIZER,
+            KvStoreSerializer.createSignedBlindedExecutionPayloadEnvelopeSerializer(spec));
     latestFinalizedState = KvStoreVariable.create(5, stateSerializer);
 
     votes = KvStoreColumn.create(3, UINT64_SERIALIZER, VOTE_TRACKER_SERIALIZER);
@@ -155,6 +163,12 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   @Override
   public KvStoreColumn<Bytes32, BeaconState> getColumnHotStatesByRoot() {
     return hotStatesByRoot;
+  }
+
+  @Override
+  public KvStoreColumn<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+      getColumnHotBlindedExecutionPayloadEnvelopesByRoot() {
+    return hotBlindedExecutionPayloadEnvelopesByRoot;
   }
 
   @Override
@@ -246,9 +260,15 @@ public abstract class V6SchemaCombined implements SchemaCombined {
         .put("DEPOSITS_FROM_BLOCK_EVENTS", getColumnDepositsFromBlockEvents())
         .put("STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT", getColumnStateRootToSlotAndBlockRoot())
         .put("HOT_STATES_BY_ROOT", getColumnHotStatesByRoot())
+        .put(
+            "HOT_BLINDED_EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT",
+            getColumnHotBlindedExecutionPayloadEnvelopesByRoot())
         .put("HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT", getColumnHotBlockCheckpointEpochsByRoot())
         .put("SLOTS_BY_FINALIZED_ROOT", getColumnSlotsByFinalizedRoot())
         .put("FINALIZED_BLOCKS_BY_SLOT", getColumnFinalizedBlocksBySlot())
+        .put(
+            "FINALIZED_BLINDED_EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT",
+            getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot())
         .put("SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot())
         .put("NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot())
         .put("NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot())

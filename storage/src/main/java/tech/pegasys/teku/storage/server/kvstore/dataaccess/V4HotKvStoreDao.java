@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -93,6 +94,15 @@ public class V4HotKvStoreDao {
 
   public Optional<BeaconState> getHotState(final Bytes32 root) {
     return db.get(schema.getColumnHotStatesByRoot(), root);
+  }
+
+  public Optional<SignedBlindedExecutionPayloadEnvelope> getHotBlindedExecutionPayloadEnvelope(
+      final Bytes32 root) {
+    return db.get(schema.getColumnHotBlindedExecutionPayloadEnvelopesByRoot(), root);
+  }
+
+  public Optional<Bytes> getHotBlindedExecutionPayloadEnvelopeRaw(final Bytes32 root) {
+    return db.getRaw(schema.getColumnHotBlindedExecutionPayloadEnvelopesByRoot(), root);
   }
 
   @MustBeClosed
@@ -274,6 +284,16 @@ public class V4HotKvStoreDao {
     }
 
     @Override
+    public void addHotBlindedExecutionPayloadEnvelope(
+        final Bytes32 blockRoot,
+        final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope) {
+      transaction.put(
+          schema.getColumnHotBlindedExecutionPayloadEnvelopesByRoot(),
+          blockRoot,
+          signedBlindedExecutionPayloadEnvelope);
+    }
+
+    @Override
     public void addHotStateRoots(
         final Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap) {
       stateRootToSlotAndBlockRootMap.forEach(
@@ -299,6 +319,7 @@ public class V4HotKvStoreDao {
       transaction.delete(schema.getColumnHotBlocksByRoot(), blockRoot);
       transaction.delete(schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot);
       deleteHotState(blockRoot);
+      deleteHotBlindedExecutionPayloadEnvelope(blockRoot);
     }
 
     @Override
@@ -309,6 +330,11 @@ public class V4HotKvStoreDao {
     @Override
     public void deleteHotState(final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnHotStatesByRoot(), blockRoot);
+    }
+
+    @Override
+    public void deleteHotBlindedExecutionPayloadEnvelope(final Bytes32 blockRoot) {
+      transaction.delete(schema.getColumnHotBlindedExecutionPayloadEnvelopesByRoot(), blockRoot);
     }
 
     @Override

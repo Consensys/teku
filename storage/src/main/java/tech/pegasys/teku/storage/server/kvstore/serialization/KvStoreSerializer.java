@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -70,6 +71,11 @@ public interface KvStoreSerializer<T> {
 
   static KvStoreSerializer<SignedBeaconBlock> createSignedBlockSerializer(final Spec spec) {
     return new SignedBeaconBlockSerializer(spec);
+  }
+
+  static KvStoreSerializer<SignedBlindedExecutionPayloadEnvelope>
+      createSignedBlindedExecutionPayloadEnvelopeSerializer(final Spec spec) {
+    return new SignedBlindedExecutionPayloadEnvelopeSerializer(spec);
   }
 
   T deserialize(final byte[] data);

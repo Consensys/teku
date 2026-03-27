@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
@@ -43,6 +44,8 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
 
   private final KvStoreColumn<Bytes32, UInt64> slotsByFinalizedRoot;
   private final KvStoreColumn<UInt64, SignedBeaconBlock> finalizedBlocksBySlot;
+  private final KvStoreColumn<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+      finalizedBlindedExecutionPayloadEnvelopesByRoot;
   private final KvStoreColumn<Bytes32, SignedBeaconBlock> nonCanonicalBlocksByRoot;
   private final KvStoreColumn<Bytes32, UInt64> slotsByFinalizedStateRoot;
   private final KvStoreColumn<UInt64, Set<Bytes32>> nonCanonicalBlockRootsBySlot;
@@ -67,6 +70,11 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
             UINT64_SERIALIZER,
             KvStoreSerializer.createSignedBlockSerializer(spec),
             true);
+    finalizedBlindedExecutionPayloadEnvelopesByRoot =
+        KvStoreColumn.create(
+            finalizedOffset + 20,
+            BYTES32_SERIALIZER,
+            KvStoreSerializer.createSignedBlindedExecutionPayloadEnvelopeSerializer(spec));
     finalizedStatesBySlot =
         KvStoreColumn.create(
             finalizedOffset + 3,
@@ -144,6 +152,12 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
   }
 
   @Override
+  public KvStoreColumn<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+      getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot() {
+    return finalizedBlindedExecutionPayloadEnvelopesByRoot;
+  }
+
+  @Override
   public KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedStateRoot() {
     return slotsByFinalizedStateRoot;
   }
@@ -196,9 +210,15 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
         .put("DEPOSITS_FROM_BLOCK_EVENTS", getColumnDepositsFromBlockEvents())
         .put("STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT", getColumnStateRootToSlotAndBlockRoot())
         .put("HOT_STATES_BY_ROOT", getColumnHotStatesByRoot())
+        .put(
+            "HOT_BLINDED_EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT",
+            getColumnHotBlindedExecutionPayloadEnvelopesByRoot())
         .put("HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT", getColumnHotBlockCheckpointEpochsByRoot())
         .put("SLOTS_BY_FINALIZED_ROOT", getColumnSlotsByFinalizedRoot())
         .put("FINALIZED_BLOCKS_BY_SLOT", getColumnFinalizedBlocksBySlot())
+        .put(
+            "FINALIZED_BLINDED_EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT",
+            getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot())
         .put("FINALIZED_STATES_BY_SLOT", getColumnFinalizedStatesBySlot())
         .put("SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot())
         .put("NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot())

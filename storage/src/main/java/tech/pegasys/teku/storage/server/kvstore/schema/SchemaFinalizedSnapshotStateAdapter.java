@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
@@ -70,6 +71,9 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return ImmutableMap.<String, KvStoreColumn<?, ?>>builder()
         .put("SLOTS_BY_FINALIZED_ROOT", getColumnSlotsByFinalizedRoot())
         .put("FINALIZED_BLOCKS_BY_SLOT", getColumnFinalizedBlocksBySlot())
+        .put(
+            "FINALIZED_BLINDED_EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT",
+            getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot())
         .put("FINALIZED_STATES_BY_SLOT", getColumnFinalizedStatesBySlot())
         .put("SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot())
         .put("NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot())
@@ -110,6 +114,11 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
 
   public KvStoreColumn<UInt64, SignedBeaconBlock> getColumnFinalizedBlocksBySlot() {
     return delegate.getColumnFinalizedBlocksBySlot();
+  }
+
+  public KvStoreColumn<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+      getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot() {
+    return delegate.getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot();
   }
 
   public KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedStateRoot() {

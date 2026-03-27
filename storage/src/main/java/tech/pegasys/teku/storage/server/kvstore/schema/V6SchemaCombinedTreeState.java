@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer;
@@ -43,6 +44,8 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
 
   private final KvStoreColumn<Bytes32, UInt64> slotsByFinalizedRoot;
   private final KvStoreColumn<UInt64, SignedBeaconBlock> finalizedBlocksBySlot;
+  private final KvStoreColumn<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+      finalizedBlindedExecutionPayloadEnvelopesByRoot;
   private final KvStoreColumn<Bytes32, SignedBeaconBlock> nonCanonicalBlocksByRoot;
   private final KvStoreColumn<Bytes32, UInt64> slotsByFinalizedStateRoot;
   private final KvStoreColumn<UInt64, Set<Bytes32>> nonCanonicalBlockRootsBySlot;
@@ -81,6 +84,11 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
             V6_FINALIZED_OFFSET + 7,
             UINT64_SERIALIZER,
             KvStoreSerializer.createSignedBlockSerializer(spec));
+    finalizedBlindedExecutionPayloadEnvelopesByRoot =
+        KvStoreColumn.create(
+            finalizedOffset + 20,
+            BYTES32_SERIALIZER,
+            KvStoreSerializer.createSignedBlindedExecutionPayloadEnvelopeSerializer(spec));
     nonCanonicalBlocksByRoot =
         KvStoreColumn.create(
             V6_FINALIZED_OFFSET + 8,
@@ -138,6 +146,12 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   @Override
   public KvStoreColumn<UInt64, SignedBeaconBlock> getColumnFinalizedBlocksBySlot() {
     return finalizedBlocksBySlot;
+  }
+
+  @Override
+  public KvStoreColumn<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+      getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot() {
+    return finalizedBlindedExecutionPayloadEnvelopesByRoot;
   }
 
   @Override
@@ -215,9 +229,15 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
         .put("DEPOSITS_FROM_BLOCK_EVENTS", getColumnDepositsFromBlockEvents())
         .put("STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT", getColumnStateRootToSlotAndBlockRoot())
         .put("HOT_STATES_BY_ROOT", getColumnHotStatesByRoot())
+        .put(
+            "HOT_BLINDED_EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT",
+            getColumnHotBlindedExecutionPayloadEnvelopesByRoot())
         .put("HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT", getColumnHotBlockCheckpointEpochsByRoot())
         .put("SLOTS_BY_FINALIZED_ROOT", getColumnSlotsByFinalizedRoot())
         .put("FINALIZED_BLOCKS_BY_SLOT", getColumnFinalizedBlocksBySlot())
+        .put(
+            "FINALIZED_BLINDED_EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT",
+            getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot())
         .put("FINALIZED_STATE_ROOTS_BY_SLOT", getColumnFinalizedStateRootsBySlot())
         .put("FINALIZED_STATE_TREE_LEAVES", getColumnFinalizedStateMerkleTreeLeaves())
         .put("FINALIZED_STATE_TREE_BRANCHES", getColumnFinalizedStateMerkleTreeBranches())

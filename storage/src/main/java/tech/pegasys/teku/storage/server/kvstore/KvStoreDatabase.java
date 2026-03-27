@@ -59,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -1300,6 +1301,9 @@ public class KvStoreDatabase implements Database {
             update.getFinalizedChildToParentMap(),
             update.getFinalizedBlocks(),
             update.getFinalizedStates(),
+            update.isExecutionPayloadEnvelopesEnabled()
+                ? update.getFinalizedBlindedExecutionPayloadEnvelopesByBlockRoot()
+                : Map.of(),
             update.getDeletedHotBlocks(),
             update.isFinalizedOptimisticTransitionBlockRootSet(),
             update.getOptimisticTransitionBlockRoot());
@@ -1345,6 +1349,10 @@ public class KvStoreDatabase implements Database {
 
       updateHotBlocks(updater, update.getHotBlocks(), update.getDeletedHotBlocks().keySet());
       updater.addHotStates(update.getHotStates());
+      if (update.isExecutionPayloadEnvelopesEnabled()) {
+        updater.addHotBlindedExecutionPayloadEnvelopes(
+            update.getHotBlindedExecutionPayloadEnvelopesByBlockRoot());
+      }
 
       if (update.getStateRoots().size() > 0) {
         updater.addHotStateRoots(update.getStateRoots());
@@ -1396,6 +1404,8 @@ public class KvStoreDatabase implements Database {
       final Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
       final Map<Bytes32, BeaconState> finalizedStates,
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+          finalizedBlindedExecutionPayloadEnvelopesByBlockRoot,
       final Map<Bytes32, UInt64> deletedHotBlocksRootsWithSlot,
       final boolean isFinalizedOptimisticBlockRootSet,
       final Optional<Bytes32> finalizedOptimisticTransitionBlockRoot) {
@@ -1408,9 +1418,16 @@ public class KvStoreDatabase implements Database {
         updateFinalizedOptimisticTransitionBlock(
             isFinalizedOptimisticBlockRootSet, finalizedOptimisticTransitionBlockRoot);
     if (stateStorageMode.storesFinalizedStates()) {
-      updateFinalizedDataArchiveMode(finalizedChildToParentMap, finalizedBlocks, finalizedStates);
+      updateFinalizedDataArchiveMode(
+          finalizedChildToParentMap,
+          finalizedBlocks,
+          finalizedStates,
+          finalizedBlindedExecutionPayloadEnvelopesByBlockRoot);
     } else {
-      updateFinalizedDataPruneMode(finalizedChildToParentMap, finalizedBlocks);
+      updateFinalizedDataPruneMode(
+          finalizedChildToParentMap,
+          finalizedBlocks,
+          finalizedBlindedExecutionPayloadEnvelopesByBlockRoot);
     }
 
     storeNonCanonicalBlocks(deletedHotBlocksRootsWithSlot.keySet(), finalizedChildToParentMap);
@@ -1538,7 +1555,9 @@ public class KvStoreDatabase implements Database {
   private void updateFinalizedDataArchiveMode(
       final Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
-      final Map<Bytes32, BeaconState> finalizedStates) {
+      final Map<Bytes32, BeaconState> finalizedStates,
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+          finalizedBlindedExecutionPayloadEnvelopesByBlockRoot) {
 
     final Optional<Checkpoint> initialCheckpoint = dao.getAnchor();
     final Optional<Bytes32> initialBlockRoot = initialCheckpoint.map(Checkpoint::getRoot);
@@ -1567,6 +1586,9 @@ public class KvStoreDatabase implements Database {
           final Optional<UInt64> maybeBlockSlot =
               addFinalizedBlock(blockRoot, finalizedBlocks, updater, initialBlockRoot);
 
+          addFinalizedBlindedExecutionPayloadEnvelope(
+              blockRoot, finalizedBlindedExecutionPayloadEnvelopesByBlockRoot, updater);
+
           Optional.ofNullable(finalizedStates.get(blockRoot))
               .or(() -> getHotState(blockRoot))
               .ifPresent(
@@ -1590,7 +1612,9 @@ public class KvStoreDatabase implements Database {
 
   private void updateFinalizedDataPruneMode(
       final Map<Bytes32, Bytes32> finalizedChildToParentMap,
-      final Map<Bytes32, SignedBeaconBlock> finalizedBlocks) {
+      final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+          finalizedBlindedExecutionPayloadEnvelopesByBlockRoot) {
     final Optional<Bytes32> initialBlockRoot = dao.getAnchor().map(Checkpoint::getRoot);
 
     final List<Bytes32> finalizedRoots = new ArrayList<>(finalizedChildToParentMap.keySet());
@@ -1602,6 +1626,8 @@ public class KvStoreDatabase implements Database {
           final Bytes32 root = finalizedRoots.get(i);
 
           addFinalizedBlock(root, finalizedBlocks, updater, initialBlockRoot);
+          addFinalizedBlindedExecutionPayloadEnvelope(
+              root, finalizedBlindedExecutionPayloadEnvelopesByBlockRoot, updater);
 
           i++;
         }
@@ -1637,6 +1663,25 @@ public class KvStoreDatabase implements Database {
     }
 
     return Optional.empty();
+  }
+
+  private void addFinalizedBlindedExecutionPayloadEnvelope(
+      final Bytes32 blockRoot,
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+          finalizedBlindedExecutionPayloadEnvelopesByBlockRoot,
+      final FinalizedUpdater updater) {
+    final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope =
+        finalizedBlindedExecutionPayloadEnvelopesByBlockRoot.get(blockRoot);
+    if (signedBlindedExecutionPayloadEnvelope != null) {
+      updater.addFinalizedBlindedExecutionPayloadEnvelope(
+          blockRoot, signedBlindedExecutionPayloadEnvelope);
+      return;
+    }
+
+    final Optional<Bytes> hotBlindedExecutionPayloadEnvelopeBytes =
+        dao.getHotBlindedExecutionPayloadEnvelopeAsSsz(blockRoot);
+    hotBlindedExecutionPayloadEnvelopeBytes.ifPresent(
+        bytes -> updater.addFinalizedBlindedExecutionPayloadEnvelopeRaw(blockRoot, bytes));
   }
 
   private BeaconBlockSummary getLatestFinalizedBlockOrSummary() {

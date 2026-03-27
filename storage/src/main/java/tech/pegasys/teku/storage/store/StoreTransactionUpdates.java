@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.FinalizedChainData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
@@ -50,7 +51,12 @@ class StoreTransactionUpdates {
   private final Optional<UInt64> custodyGroupCount;
   private final boolean blobSidecarsEnabled;
   private final boolean dataColumnSidecarsEnabled;
+  private final boolean executionPayloadEnvelopesEnabled;
   private final Map<Bytes32, SignedExecutionPayloadAndState> hotExecutionPayloadAndStates;
+  private final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+      hotBlindedExecutionPayloadEnvelopesByBlockRoot;
+  private final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+      finalizedBlindedExecutionPayloadEnvelopesByBlockRoot;
 
   StoreTransactionUpdates(
       final StoreTransaction tx,
@@ -68,7 +74,12 @@ class StoreTransactionUpdates {
       final Optional<UInt64> custodyGroupCount,
       final boolean blobSidecarsEnabled,
       final boolean dataColumnSidecarsEnabled,
-      final Map<Bytes32, SignedExecutionPayloadAndState> hotExecutionPayloadAndStates) {
+      final boolean executionPayloadEnvelopesEnabled,
+      final Map<Bytes32, SignedExecutionPayloadAndState> hotExecutionPayloadAndStates,
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+          hotBlindedExecutionPayloadEnvelopesByBlockRoot,
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+          finalizedBlindedExecutionPayloadEnvelopesByBlockRoot) {
     checkNotNull(tx, "Transaction is required");
     checkNotNull(finalizedChainData, "Finalized data is required");
     checkNotNull(hotBlocks, "Hot blocks are required");
@@ -82,6 +93,12 @@ class StoreTransactionUpdates {
     checkNotNull(latestCanonicalBlockRoot, "Latest canonical block root is required");
     checkNotNull(custodyGroupCount, "Current custody group count is required");
     checkNotNull(hotExecutionPayloadAndStates, "Hot execution payload states are required");
+    checkNotNull(
+        hotBlindedExecutionPayloadEnvelopesByBlockRoot,
+        "Hot blinded execution payload envelopes are required");
+    checkNotNull(
+        finalizedBlindedExecutionPayloadEnvelopesByBlockRoot,
+        "Finalized blinded execution payload envelopes are required");
 
     this.tx = tx;
     this.finalizedChainData = finalizedChainData;
@@ -98,7 +115,12 @@ class StoreTransactionUpdates {
     this.custodyGroupCount = custodyGroupCount;
     this.blobSidecarsEnabled = blobSidecarsEnabled;
     this.dataColumnSidecarsEnabled = dataColumnSidecarsEnabled;
+    this.executionPayloadEnvelopesEnabled = executionPayloadEnvelopesEnabled;
     this.hotExecutionPayloadAndStates = hotExecutionPayloadAndStates;
+    this.hotBlindedExecutionPayloadEnvelopesByBlockRoot =
+        hotBlindedExecutionPayloadEnvelopesByBlockRoot;
+    this.finalizedBlindedExecutionPayloadEnvelopesByBlockRoot =
+        finalizedBlindedExecutionPayloadEnvelopesByBlockRoot;
   }
 
   public StorageUpdate createStorageUpdate() {
@@ -109,6 +131,8 @@ class StoreTransactionUpdates {
         tx.bestJustifiedCheckpoint,
         hotBlocks,
         hotStatesToPersist,
+        hotBlindedExecutionPayloadEnvelopesByBlockRoot,
+        finalizedBlindedExecutionPayloadEnvelopesByBlockRoot,
         blobSidecars,
         maybeEarliestBlobSidecarSlot,
         prunedHotBlockRoots,
@@ -118,7 +142,8 @@ class StoreTransactionUpdates {
         latestCanonicalBlockRoot,
         custodyGroupCount,
         blobSidecarsEnabled,
-        dataColumnSidecarsEnabled);
+        dataColumnSidecarsEnabled,
+        executionPayloadEnvelopesEnabled);
   }
 
   public void applyToStore(final Store store, final UpdateResult updateResult) {
