@@ -1,0 +1,23 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "dependencyDashboard": false,
+  "packageRules": [
+    {
+      "description": "1. Pin all GitHub Actions to sha256 digests by default",
+      "matchManagers": ["github-actions"],
+      "pinDigests": true
+    },
+    {
+      "description": "2. For trusted actions, allow updates",
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": [
+        "actions/**",
+        "consensys/github-actions/**"
+      ],
+      "pinDigests": true
+    }
+  ]
+}

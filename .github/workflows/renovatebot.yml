@@ -1,0 +1,23 @@
+name: renovatebot
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+jobs:
+  renovatebot-check:
+    runs-on: ubuntu-24.04
+    environment: security
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Run renovatebot
+        uses: ConsenSys/github-actions/renovatebot@0dbddeeb180c249e624dc1681c67f22325daedd5 # main
+        with:
+          GH_APP_ID: ${{ secrets.GH_APP_ID }}
+          GH_PRIVATE_KEY: ${{ secrets.GH_PRIVATE_KEY }}
+          GH_REPOSITORY: ${{ github.repository }}
