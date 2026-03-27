@@ -35,9 +35,11 @@ import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.signatures.SigningRootUtil;
+import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 
 public class ExecutionPayloadBidGossipValidator {
 
@@ -51,11 +53,15 @@ public class ExecutionPayloadBidGossipValidator {
   private final Map<SlotAndBlockHash, UInt64> highestBids =
       LimitedMap.createSynchronizedLRU(HIGHEST_BID_SET_SIZE);
 
+  private final ProposerPreferencesManager proposerPreferencesManager;
+
   public ExecutionPayloadBidGossipValidator(
       final Spec spec,
       final GossipValidationHelper gossipValidationHelper,
+      final ProposerPreferencesManager proposerPreferencesManager,
       final int minBidIncrementPercentage) {
     this.gossipValidationHelper = gossipValidationHelper;
+    this.proposerPreferencesManager = proposerPreferencesManager;
     this.minBidIncrementPercentage = minBidIncrementPercentage;
     signingRootUtil = new SigningRootUtil(spec);
   }
@@ -83,12 +89,37 @@ public class ExecutionPayloadBidGossipValidator {
           ignore("Bid must be for current or next slot but was for slot %s", bid.getSlot()));
     }
 
-    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10259
     /*
-     * [IGNORE] the SignedProposerPreferences where preferences.proposal_slot is equal to bid.slot has been seen.
-     * [REJECT] bid.fee_recipient matches the fee_recipient from the proposer's SignedProposerPreferences associated with bid.slot.
-     * [REJECT] bid.gas_limit matches the gas_limit from the proposer's SignedProposerPreferences associated with bid.slot.
+     * [IGNORE] the SignedProposerPreferences where preferences.proposal_slot is equal to
+     * bid.slot has been seen
      */
+    final Optional<ProposerPreferences> proposerPreferences =
+        proposerPreferencesManager.getProposerPreferences(bid.getSlot());
+    if (proposerPreferences.isEmpty()) {
+      return completedFuture(SAVE_FOR_FUTURE);
+    }
+
+    /*
+     * [REJECT] bid.fee_recipient matches the fee_recipient from the proposer's
+     * SignedProposerPreferences associated with bid.slot
+     */
+    if (!bid.getFeeRecipient().equals(proposerPreferences.get().getFeeRecipient())) {
+      return completedFuture(
+          reject(
+              "Bid fee_recipient %s does not match proposer preferences fee_recipient %s",
+              bid.getFeeRecipient(), proposerPreferences.get().getFeeRecipient()));
+    }
+
+    /*
+     * [REJECT] bid.gas_limit matches the gas_limit from the proposer's
+     * SignedProposerPreferences associated with bid.slot
+     */
+    if (!bid.getGasLimit().equals(proposerPreferences.get().getGasLimit())) {
+      return completedFuture(
+          reject(
+              "Bid gas_limit %s does not match proposer preferences gas_limit %s",
+              bid.getGasLimit(), proposerPreferences.get().getGasLimit()));
+    }
 
     /*
      * [IGNORE] this is the first signed bid seen with a valid signature from the given builder for this slot.

@@ -39,7 +39,7 @@ import tech.pegasys.teku.spec.signatures.SignerNotActiveException;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 
 public class DutyResult {
-  public static final DutyResult NO_OP = new DutyResult(0, 0, emptySet(), emptyMap(), List.of());
+  public static final DutyResult NOOP = new DutyResult(0, 0, emptySet(), emptyMap(), List.of());
   public static final DutyResult NODE_SYNCING =
       new DutyResult(0, 1, emptySet(), emptyMap(), List.of());
 
@@ -114,7 +114,7 @@ public class DutyResult {
                 futures.stream()
                     .map(future -> future.exceptionally(DutyResult::forError).getNow(null))
                     .reduce(DutyResult::combine)
-                    .orElse(NO_OP));
+                    .orElse(NOOP));
   }
 
   public DutyResult combine(final DutyResult other) {

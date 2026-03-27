@@ -66,7 +66,7 @@ class RecentChainDataTest {
   private static final Logger LOG = LogManager.getLogger();
   private final Spec spec =
       TestSpecFactory.createMinimalDeneb(
-          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SpecConfig genesisSpecConfig = spec.getGenesisSpecConfig();
   private StorageSystem storageSystem;
