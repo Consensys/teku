@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -224,14 +223,14 @@ public class AggregatingPayloadAttestationPool
   }
 
   @Override
-  public List<PayloadAttestation> getPayloadAttestations(
-      final Function<UInt64, IntList> slotToPtc) {
+  public List<PayloadAttestation> getPayloadAttestations(final BeaconState state) {
     return payloadAttestationGroupByDataHash.values().stream()
         .filter(group -> group.size() > 0)
         .map(
-            group ->
-                group.createAggregatedPayloadAttestation(
-                    slotToPtc.apply(group.getData().getSlot())))
+            group -> {
+              final IntList ptc = spec.getPtc(state, group.getData().getSlot());
+              return group.createAggregatedPayloadAttestation(ptc);
+            })
         .toList();
   }
 }

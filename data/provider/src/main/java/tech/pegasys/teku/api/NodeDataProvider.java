@@ -186,9 +186,7 @@ public class NodeDataProvider {
         recentChainData
             .getBestState()
             .map(SafeFuture::join)
-            .map(
-                state ->
-                    payloadAttestationPool.getPayloadAttestations(slot -> spec.getPtc(state, slot)))
+            .map(payloadAttestationPool::getPayloadAttestations)
             .orElse(List.of());
     final List<PayloadAttestation> filteredPayloadAttestations =
         maybeSlot

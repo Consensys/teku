@@ -13,10 +13,8 @@
 
 package tech.pegasys.teku.statetransition.payloadattestation;
 
-import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -55,8 +53,7 @@ public interface PayloadAttestationPool {
         }
 
         @Override
-        public List<PayloadAttestation> getPayloadAttestations(
-            final Function<UInt64, IntList> slotToPtc) {
+        public List<PayloadAttestation> getPayloadAttestations(final BeaconState state) {
           return List.of();
         }
       };
@@ -72,5 +69,5 @@ public interface PayloadAttestationPool {
   SszList<PayloadAttestation> getPayloadAttestationsForBlock(
       BeaconState blockSlotState, Bytes32 parentRoot);
 
-  List<PayloadAttestation> getPayloadAttestations(Function<UInt64, IntList> slotToPtc);
+  List<PayloadAttestation> getPayloadAttestations(BeaconState state);
 }
