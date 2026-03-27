@@ -22,6 +22,12 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.config.builder.DenebBuilder;
+import tech.pegasys.teku.spec.config.builder.ElectraBuilder;
+import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.constants.ValidatorConstants;
@@ -64,6 +70,8 @@ public class SpecConfigData {
     configAttributes.put("DOMAIN_APPLICATION_BUILDER", getDomainApplicationBuilder().toHexString());
     configAttributes.put("DOMAIN_BEACON_BUILDER", getDomainBeaconBuilder().toHexString());
     configAttributes.put("DOMAIN_PTC_ATTESTER", getDomainPtcAttester().toHexString());
+    addDeprecatedFields(configAttributes);
+
     configAttributes.put(
         "DOMAIN_PROPOSER_PREFERENCES", getDomainProposerPreferences().toHexString());
     configAttributes.put(
@@ -89,6 +97,54 @@ public class SpecConfigData {
         .ifPresent(subnetCount -> configAttributes.put("SYNC_COMMITTEE_SUBNET_COUNT", subnetCount));
 
     return configAttributes;
+  }
+
+  private void addDeprecatedFields(final Map<String, Object> configAttributes) {
+    if (configAttributes.get("SECONDS_PER_SLOT") == null) {
+      configAttributes.put(
+          "SECONDS_PER_SLOT",
+          ConfigProvider.formatValue(specConfig.getSlotDurationMillis() / 1000));
+    }
+    if (configAttributes.get("MIN_EPOCHS_FOR_BLOCK_REQUESTS") == null) {
+      configAttributes.put(
+          "MIN_EPOCHS_FOR_BLOCK_REQUESTS",
+          ConfigProvider.formatValue(
+              SpecConfigBuilder.computeMinEpochsForBlockRequests(
+                  specConfig.getMinValidatorWithdrawabilityDelay(),
+                  specConfig.getChurnLimitQuotient())));
+    }
+    if (configAttributes.get("MAX_REQUEST_BLOB_SIDECARS") == null) {
+      final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(specConfig);
+      configAttributes.put(
+          "MAX_REQUEST_BLOB_SIDECARS",
+          ConfigProvider.formatValue(
+              DenebBuilder.computeMaxRequestBlobSidecars(
+                  specConfigDeneb.getMaxRequestBlocksDeneb(),
+                  specConfigDeneb.getDenebMaxBlobsPerBlock())));
+    }
+    if (configAttributes.get("MAX_REQUEST_BLOB_SIDECARS_ELECTRA") == null) {
+      final SpecConfigElectra specConfigElectra = SpecConfigElectra.required(specConfig);
+      configAttributes.put(
+          "MAX_REQUEST_BLOB_SIDECARS_ELECTRA",
+          ConfigProvider.formatValue(
+              ElectraBuilder.computeMaxRequestBlobSidecars(
+                  specConfigElectra.getMaxRequestBlocksDeneb(),
+                  specConfigElectra.getMaxBlobsPerBlock())));
+    }
+    if (configAttributes.get("ATTESTATION_SUBNET_PREFIX_BITS") == null) {
+      configAttributes.put(
+          "ATTESTATION_SUBNET_PREFIX_BITS",
+          ConfigProvider.formatValue(
+              SpecConfigBuilder.computeAttestationSubnetPrefixBits(
+                  specConfig.getAttestationSubnetCount(),
+                  specConfig.getAttestationSubnetExtraBits())));
+    }
+    if (configAttributes.get("MAX_REQUEST_DATA_COLUMN_SIDECARS") == null) {
+      final SpecConfigFulu specConfigFulu = SpecConfigFulu.required(specConfig);
+      configAttributes.put(
+          "MAX_REQUEST_DATA_COLUMN_SIDECARS",
+          ConfigProvider.formatValue(specConfigFulu.getMaxRequestDataColumnSidecars()));
+    }
   }
 
   private Bytes getBlsWithdrawalPrefix() {
