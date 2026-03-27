@@ -303,11 +303,11 @@ class IpcSocketExecutionEngineClientTest {
     final Thread serverThread =
         new Thread(
             () -> {
-              try (SocketChannel clientChannel = serverChannel.accept()) {
-                final BufferedReader reader =
-                    new BufferedReader(
-                        new InputStreamReader(
-                            Channels.newInputStream(clientChannel), StandardCharsets.UTF_8));
+              try (SocketChannel clientChannel = serverChannel.accept();
+                  BufferedReader reader =
+                      new BufferedReader(
+                          new InputStreamReader(
+                              Channels.newInputStream(clientChannel), StandardCharsets.UTF_8))) {
                 final OutputStream out = Channels.newOutputStream(clientChannel);
                 handler.accept(reader, out);
               } catch (final Exception e) {
