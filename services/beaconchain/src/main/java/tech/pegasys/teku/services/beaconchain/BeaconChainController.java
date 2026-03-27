@@ -1451,9 +1451,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new AggregatingPayloadAttestationPool(
               spec, validator, pendingPayloadAttestations, metricsSystem);
       payloadAttestationPool = aggregatingPayloadAttestationPool;
-      eventChannels.subscribe(SlotEventsChannel.class, aggregatingPayloadAttestationPool);
-      eventChannels.subscribe(
-          ReceivedExecutionPayloadEventsChannel.class, aggregatingPayloadAttestationPool);
+      eventChannels
+          .subscribe(SlotEventsChannel.class, aggregatingPayloadAttestationPool)
+          .subscribe(ReceivedExecutionPayloadEventsChannel.class, aggregatingPayloadAttestationPool)
+          .subscribe(FinalizedCheckpointChannel.class, pendingPayloadAttestations);
     } else {
       payloadAttestationPool = PayloadAttestationPool.NOOP;
     }
@@ -1909,11 +1910,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
             aggregateValidator,
             signatureVerificationService,
             eventChannels.getPublisher(ActiveValidatorChannel.class, beaconAsyncRunner));
-
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationManager)
+        .subscribe(ReceivedBlockEventsChannel.class, attestationManager)
         .subscribe(FinalizedCheckpointChannel.class, pendingAttestations)
-        .subscribe(ReceivedBlockEventsChannel.class, attestationManager);
+        .subscribe(SlotEventsChannel.class, pendingAttestations);
   }
 
   protected void initSyncCommitteePools() {
