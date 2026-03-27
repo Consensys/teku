@@ -92,7 +92,7 @@ public class ExecutionPayloadGossipValidator {
 
               if (broadcastValidationLevel.isPresent()
                   && broadcastValidationLevel.get().equals(BroadcastValidationLevel.GOSSIP)) {
-                return SafeFuture.completedFuture(ACCEPT);
+                return SafeFuture.completedFuture(markAsSeen(ACCEPT, envelope));
               }
 
               return performWithStateValidation(signedExecutionPayloadEnvelope)

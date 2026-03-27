@@ -76,7 +76,7 @@ public class PublishSignedExecutionPayloadRequest extends AbstractTypeDefRequest
                     signedExecutionPayload.getBeaconBlockRoot()))
         .orElseGet(
             () ->
-                PublishSignedExecutionPayloadResult.rejected(
+                PublishSignedExecutionPayloadResult.notImported(
                     signedExecutionPayload.getBeaconBlockRoot(), "UNKNOWN"));
   }
 }
