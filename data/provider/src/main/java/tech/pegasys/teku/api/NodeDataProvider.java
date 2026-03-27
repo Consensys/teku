@@ -149,12 +149,9 @@ public class NodeDataProvider {
 
   private <T> UInt64 getSlot(
       final List<T> items, final Function<T, UInt64> itemToSlot, final Optional<UInt64> maybeSlot) {
-    return maybeSlot.orElseGet(
-        () ->
-            items.stream()
-                .findFirst()
-                .map(itemToSlot)
-                .orElseGet(() -> recentChainData.getCurrentSlot().orElse(UInt64.ZERO)));
+    return maybeSlot
+        .or(() -> items.stream().findFirst().map(itemToSlot))
+        .orElseGet(() -> recentChainData.getCurrentSlot().orElse(UInt64.ZERO));
   }
 
   public List<AttesterSlashing> getAttesterSlashings() {
