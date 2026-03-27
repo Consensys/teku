@@ -1913,8 +1913,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationManager)
         .subscribe(ReceivedBlockEventsChannel.class, attestationManager)
-        .subscribe(FinalizedCheckpointChannel.class, pendingAttestations)
-        .subscribe(SlotEventsChannel.class, pendingAttestations);
+        .subscribe(FinalizedCheckpointChannel.class, pendingAttestations);
   }
 
   protected void initSyncCommitteePools() {
