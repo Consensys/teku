@@ -235,4 +235,14 @@ public class ExecutionPayloadGossipValidatorTest {
                 "Already received execution payload envelope with block root %s from builder with index %s",
                 blockRoot, envelope.getBuilderIndex()));
   }
+
+  @TestTemplate
+  void shouldRejectIfSignatureIsInvalidWithGossipLevel() {
+    when(gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
+            any(), any(), any(), any()))
+        .thenReturn(false);
+    assertThatSafeFuture(
+            validator.validate(signedEnvelope, Optional.of(BroadcastValidationLevel.GOSSIP)))
+        .isCompletedWithValue(reject("Invalid signed execution payload envelope signature"));
+  }
 }

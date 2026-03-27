@@ -90,13 +90,18 @@ public class ExecutionPayloadGossipValidator {
                 return SafeFuture.completedFuture(maybeResult.get());
               }
 
-              if (broadcastValidationLevel.isPresent()
-                  && broadcastValidationLevel.get().equals(BroadcastValidationLevel.GOSSIP)) {
-                return SafeFuture.completedFuture(markAsSeen(ACCEPT, envelope));
-              }
-
               return performWithStateValidation(signedExecutionPayloadEnvelope)
-                  .thenApply(result -> markAsSeen(result, envelope));
+                  .thenApply(
+                      result -> {
+                        if (broadcastValidationLevel.isPresent()
+                            && broadcastValidationLevel
+                                .get()
+                                .equals(BroadcastValidationLevel.GOSSIP)
+                            && result.isAccept()) {
+                          return markAsSeen(ACCEPT, envelope);
+                        }
+                        return markAsSeen(result, envelope);
+                      });
             });
   }
 
