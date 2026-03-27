@@ -136,6 +136,7 @@ import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBun
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestation;
@@ -144,6 +145,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
@@ -3337,6 +3339,26 @@ public final class DataStructureUtil {
     return getGloasSchemaDefinitions()
         .getSignedExecutionPayloadEnvelopeSchema()
         .create(randomExecutionPayloadEnvelope(UInt64.valueOf(slot)), randomSignature());
+  }
+
+  public BlindedExecutionPayloadEnvelope randomBlindedExecutionPayloadEnvelope() {
+    return randomExecutionPayloadEnvelope()
+        .toBlindedExecutionPayloadEnvelope(getGloasSchemaDefinitions());
+  }
+
+  public BlindedExecutionPayloadEnvelope randomBlindedExecutionPayloadEnvelope(final UInt64 slot) {
+    return randomExecutionPayloadEnvelope(slot)
+        .toBlindedExecutionPayloadEnvelope(getGloasSchemaDefinitions());
+  }
+
+  public SignedBlindedExecutionPayloadEnvelope randomSignedBlindedExecutionPayloadEnvelope() {
+    return randomSignedBlindedExecutionPayloadEnvelope(randomSlot().longValue());
+  }
+
+  public SignedBlindedExecutionPayloadEnvelope randomSignedBlindedExecutionPayloadEnvelope(
+      final long slot) {
+    return randomSignedExecutionPayloadEnvelope(slot)
+        .toSignedBlindedExecutionPayloadEnvelope(getGloasSchemaDefinitions());
   }
 
   public SignedExecutionPayloadEnvelope randomSignedExecutionPayloadEnvelopeForBlock(
