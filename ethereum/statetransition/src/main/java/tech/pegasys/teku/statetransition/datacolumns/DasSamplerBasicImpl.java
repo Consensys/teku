@@ -204,8 +204,10 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
     final DataColumnSamplingTracker tracker;
     final boolean created;
     synchronized (this) {
-      makeRoomForNewTracker();
       created = !recentlySampledColumnsByRoot.containsKey(blockRoot);
+      if (created) {
+        makeRoomForNewTracker();
+      }
       tracker =
           recentlySampledColumnsByRoot.computeIfAbsent(
               blockRoot,
@@ -227,7 +229,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
     return tracker;
   }
 
-  private synchronized void makeRoomForNewTracker() {
+  private void makeRoomForNewTracker() {
     if (recentlySampledColumnsByRoot.size() < maxRecentlySampledBlocks) {
       return;
     }
