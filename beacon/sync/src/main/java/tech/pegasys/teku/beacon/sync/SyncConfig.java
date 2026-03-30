@@ -132,7 +132,7 @@ public class SyncConfig {
     private Integer forwardSyncMaxBlocksPerMinute = DEFAULT_FORWARD_SYNC_MAX_BLOCKS_PER_MINUTE;
     private Integer forwardSyncMaxBlobSidecarsPerMinute =
         DEFAULT_FORWARD_SYNC_MAX_BLOB_SIDECARS_PER_MINUTE;
-    private final Integer maxRecentlySampledBlocks = DEFAULT_MAX_RECENTLY_SAMPLED_BLOCKS;
+    private Integer maxRecentlySampledBlocks = DEFAULT_MAX_RECENTLY_SAMPLED_BLOCKS;
     private OptionalInt forwardSyncMaxDistanceFromHead = OptionalInt.empty();
 
     private Builder() {}
@@ -222,6 +222,12 @@ public class SyncConfig {
         final Boolean reconstructHistoricStatesEnabled) {
       checkNotNull(reconstructHistoricStatesEnabled);
       this.reconstructHistoricStatesEnabled = reconstructHistoricStatesEnabled;
+      return this;
+    }
+
+    public Builder maxRecentlySampledBlocks(final Integer maxRecentlySampledBlocks) {
+      checkNotNull(maxRecentlySampledBlocks);
+      this.maxRecentlySampledBlocks = maxRecentlySampledBlocks;
       return this;
     }
 
