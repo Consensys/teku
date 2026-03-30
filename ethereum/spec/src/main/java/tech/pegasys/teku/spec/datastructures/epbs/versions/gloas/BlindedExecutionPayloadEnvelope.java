@@ -24,22 +24,23 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.BlockRootAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
-public class ExecutionPayloadEnvelope
+public class BlindedExecutionPayloadEnvelope
     extends Container6<
-        ExecutionPayloadEnvelope,
-        ExecutionPayload,
+        BlindedExecutionPayloadEnvelope,
+        ExecutionPayloadHeader,
         ExecutionRequests,
         SszUInt64,
         SszBytes32,
         SszUInt64,
         SszBytes32> {
 
-  ExecutionPayloadEnvelope(
-      final ExecutionPayloadEnvelopeSchema schema,
-      final ExecutionPayload payload,
+  BlindedExecutionPayloadEnvelope(
+      final BlindedExecutionPayloadEnvelopeSchema schema,
+      final ExecutionPayloadHeader payloadHeader,
       final ExecutionRequests executionRequests,
       final UInt64 builderIndex,
       final Bytes32 beaconBlockRoot,
@@ -47,7 +48,7 @@ public class ExecutionPayloadEnvelope
       final Bytes32 stateRoot) {
     super(
         schema,
-        payload,
+        payloadHeader,
         executionRequests,
         SszUInt64.of(builderIndex),
         SszBytes32.of(beaconBlockRoot),
@@ -55,11 +56,12 @@ public class ExecutionPayloadEnvelope
         SszBytes32.of(stateRoot));
   }
 
-  ExecutionPayloadEnvelope(final ExecutionPayloadEnvelopeSchema type, final TreeNode backingNode) {
+  BlindedExecutionPayloadEnvelope(
+      final BlindedExecutionPayloadEnvelopeSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public ExecutionPayload getPayload() {
+  public ExecutionPayloadHeader getPayloadHeader() {
     return getField0();
   }
 
@@ -92,14 +94,14 @@ public class ExecutionPayloadEnvelope
   }
 
   @Override
-  public ExecutionPayloadEnvelopeSchema getSchema() {
-    return (ExecutionPayloadEnvelopeSchema) super.getSchema();
+  public BlindedExecutionPayloadEnvelopeSchema getSchema() {
+    return (BlindedExecutionPayloadEnvelopeSchema) super.getSchema();
   }
 
-  public ExecutionPayloadEnvelope copyWithNewStateRoot(final Bytes32 stateRoot) {
-    return new ExecutionPayloadEnvelope(
+  public BlindedExecutionPayloadEnvelope copyWithNewStateRoot(final Bytes32 stateRoot) {
+    return new BlindedExecutionPayloadEnvelope(
         getSchema(),
-        getPayload(),
+        getPayloadHeader(),
         getExecutionRequests(),
         getBuilderIndex(),
         getBeaconBlockRoot(),
@@ -107,23 +109,24 @@ public class ExecutionPayloadEnvelope
         stateRoot);
   }
 
-  public BlindedExecutionPayloadEnvelope toBlindedExecutionPayloadEnvelope(
-      final SchemaDefinitionsGloas schemaDefinitions) {
-    final BlindedExecutionPayloadEnvelope blindedExecutionPayloadEnvelope =
+  public ExecutionPayloadEnvelope unblind(
+      final SchemaDefinitionsGloas schemaDefinitions, final ExecutionPayload payload) {
+    checkState(
+        payload.hashTreeRoot().equals(getPayloadHeader().hashTreeRoot()),
+        "payloadHeader root in blinded execution payload envelope does not match provided executionPayload root");
+    final ExecutionPayloadEnvelope executionPayloadEnvelope =
         schemaDefinitions
-            .getBlindedExecutionPayloadEnvelopeSchema()
+            .getExecutionPayloadEnvelopeSchema()
             .create(
-                schemaDefinitions
-                    .getExecutionPayloadHeaderSchema()
-                    .createFromExecutionPayload(getPayload()),
+                payload,
                 getExecutionRequests(),
                 getBuilderIndex(),
                 getBeaconBlockRoot(),
                 getSlot(),
                 getStateRoot());
     checkState(
-        blindedExecutionPayloadEnvelope.hashTreeRoot().equals(hashTreeRoot()),
-        "blinded execution payload envelope root does not match original envelope root");
-    return blindedExecutionPayloadEnvelope;
+        executionPayloadEnvelope.hashTreeRoot().equals(hashTreeRoot()),
+        "unblinded execution payload envelope root does not match original envelope root");
+    return executionPayloadEnvelope;
   }
 }

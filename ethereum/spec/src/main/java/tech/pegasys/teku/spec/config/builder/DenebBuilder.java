@@ -147,6 +147,11 @@ public class DenebBuilder extends BaseForkBuilder
 
   // compute_max_request_blob_sidecars
   private Integer computeMaxRequestBlobSidecars() {
+    return computeMaxRequestBlobSidecars(maxRequestBlocksDeneb, maxBlobsPerBlock);
+  }
+
+  public static Integer computeMaxRequestBlobSidecars(
+      final Integer maxRequestBlocksDeneb, final Integer maxBlobsPerBlock) {
     return maxRequestBlocksDeneb * maxBlobsPerBlock;
   }
 
