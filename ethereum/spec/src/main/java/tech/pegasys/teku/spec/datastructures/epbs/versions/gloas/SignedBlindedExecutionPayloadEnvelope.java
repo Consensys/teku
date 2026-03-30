@@ -23,25 +23,27 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.BlockRootAndBuilderIndex;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
-public class SignedExecutionPayloadEnvelope
-    extends Container2<SignedExecutionPayloadEnvelope, ExecutionPayloadEnvelope, SszSignature> {
+public class SignedBlindedExecutionPayloadEnvelope
+    extends Container2<
+        SignedBlindedExecutionPayloadEnvelope, BlindedExecutionPayloadEnvelope, SszSignature> {
 
-  SignedExecutionPayloadEnvelope(
-      final SignedExecutionPayloadEnvelopeSchema schema,
-      final ExecutionPayloadEnvelope message,
+  SignedBlindedExecutionPayloadEnvelope(
+      final SignedBlindedExecutionPayloadEnvelopeSchema schema,
+      final BlindedExecutionPayloadEnvelope message,
       final BLSSignature signature) {
     super(schema, message, new SszSignature(signature));
   }
 
-  SignedExecutionPayloadEnvelope(
-      final SignedExecutionPayloadEnvelopeSchema type, final TreeNode backingNode) {
+  SignedBlindedExecutionPayloadEnvelope(
+      final SignedBlindedExecutionPayloadEnvelopeSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public ExecutionPayloadEnvelope getMessage() {
+  public BlindedExecutionPayloadEnvelope getMessage() {
     return getField0();
   }
 
@@ -50,8 +52,8 @@ public class SignedExecutionPayloadEnvelope
   }
 
   @Override
-  public SignedExecutionPayloadEnvelopeSchema getSchema() {
-    return (SignedExecutionPayloadEnvelopeSchema) super.getSchema();
+  public SignedBlindedExecutionPayloadEnvelopeSchema getSchema() {
+    return (SignedBlindedExecutionPayloadEnvelopeSchema) super.getSchema();
   }
 
   public UInt64 getSlot() {
@@ -75,16 +77,15 @@ public class SignedExecutionPayloadEnvelope
         getMessage().getSlot(), getMessage().getBeaconBlockRoot(), getMessage().getBuilderIndex());
   }
 
-  public SignedBlindedExecutionPayloadEnvelope toSignedBlindedExecutionPayloadEnvelope(
-      final SchemaDefinitionsGloas schemaDefinitions) {
-    final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope =
+  public SignedExecutionPayloadEnvelope unblind(
+      final SchemaDefinitionsGloas schemaDefinitions, final ExecutionPayload payload) {
+    final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope =
         schemaDefinitions
-            .getSignedBlindedExecutionPayloadEnvelopeSchema()
-            .create(
-                getMessage().toBlindedExecutionPayloadEnvelope(schemaDefinitions), getSignature());
+            .getSignedExecutionPayloadEnvelopeSchema()
+            .create(getMessage().unblind(schemaDefinitions, payload), getSignature());
     checkState(
-        signedBlindedExecutionPayloadEnvelope.hashTreeRoot().equals(hashTreeRoot()),
-        "blinded signed execution payload envelope root does not match original envelope root");
-    return signedBlindedExecutionPayloadEnvelope;
+        signedExecutionPayloadEnvelope.hashTreeRoot().equals(hashTreeRoot()),
+        "unblinded signed execution payload envelope root does not match original envelope root");
+    return signedExecutionPayloadEnvelope;
   }
 }

@@ -70,12 +70,7 @@ class OkHttpWebSocketExecutionEngineClientTest {
 
     engineClient =
         new OkHttpWebSocketExecutionEngineClient(
-            httpClient,
-            wsUrl,
-            eventLog,
-            timeProvider,
-            executionClientEventsPublisher,
-            OkHttpExecutionEngineClient.NON_CRITICAL_METHODS);
+            httpClient, wsUrl, eventLog, timeProvider, executionClientEventsPublisher);
   }
 
   @AfterEach
