@@ -39,7 +39,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 
-class OkHttpExecutionEngineClientTest {
+class OkHttpHttpExecutionEngineClientTest {
 
   private static final String VALID_JSONRPC_RESPONSE =
       "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":null}";
@@ -51,7 +51,7 @@ class OkHttpExecutionEngineClientTest {
       mock(ExecutionClientEventsChannel.class);
 
   private OkHttpClient spyOkHttpClient;
-  private OkHttpExecutionEngineClient engineClient;
+  private OkHttpHttpExecutionEngineClient engineClient;
 
   @BeforeEach
   void setUp() throws Exception {
@@ -79,7 +79,7 @@ class OkHttpExecutionEngineClientTest {
   }
 
   @Test
-  void createsNewClientWithCustomTimeout_whenTimeoutDiffers() throws Exception {
+  void createsNewClientCallWithCustomTimeout_whenTimeoutDiffers() throws Exception {
     // Set client default to 12s, but getPayloadV1 uses GET_PAYLOAD_TIMEOUT = 2s
     createClientWithCallTimeout(Duration.ofSeconds(12));
 
@@ -145,12 +145,11 @@ class OkHttpExecutionEngineClientTest {
     final OkHttpClient httpClient = new OkHttpClient.Builder().callTimeout(callTimeout).build();
     spyOkHttpClient = spy(httpClient);
     engineClient =
-        new OkHttpExecutionEngineClient(
+        new OkHttpHttpExecutionEngineClient(
             spyOkHttpClient,
             mockWebServer.url("/").toString(),
             eventLog,
             timeProvider,
-            executionClientEventsPublisher,
-            OkHttpExecutionEngineClient.NON_CRITICAL_METHODS);
+            executionClientEventsPublisher);
   }
 }

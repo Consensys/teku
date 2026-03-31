@@ -33,7 +33,7 @@ public class BuilderCircuitBreakerImplTest {
 
   private final Spec spec =
       TestSpecFactory.createMinimalBellatrix(
-          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
 
   private final BuilderCircuitBreakerImpl builderCircuitBreaker =
       new BuilderCircuitBreakerImpl(

@@ -62,6 +62,8 @@ public class Eth2NetworkConfiguration {
 
   public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = true;
 
+  public static final boolean DEFAULT_QUARTZ_SCHEDULER_ENABLED = true;
+
   public static final boolean DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED = true;
 
   public static final boolean DEFAULT_AGGREGATING_ATTESTATION_POOL_PROFILING_ENABLED = false;
@@ -154,6 +156,7 @@ public class Eth2NetworkConfiguration {
   private final int aggregatingAttestationPoolV2BlockAggregationTimeLimit;
   private final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit;
   private final int attestationWaitLimitMillis;
+  private final boolean quartzSchedulerEnabled;
   private final int dataColumnSidecarExtensionRetentionEpochs;
 
   private Eth2NetworkConfiguration(
@@ -194,7 +197,8 @@ public class Eth2NetworkConfiguration {
       final int aggregatingAttestationPoolV2BlockAggregationTimeLimit,
       final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
       final int attestationWaitLimitMillis,
-      final int dataColumnSidecarExtensionRetentionEpochs) {
+      final int dataColumnSidecarExtensionRetentionEpochs,
+      final boolean quartzSchedulerEnabled) {
     this.spec = spec;
     this.constants = constants;
     this.stateBoostrapConfig = stateBoostrapConfig;
@@ -238,6 +242,7 @@ public class Eth2NetworkConfiguration {
     this.aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit =
         aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit;
     this.attestationWaitLimitMillis = attestationWaitLimitMillis;
+    this.quartzSchedulerEnabled = quartzSchedulerEnabled;
     this.dataColumnSidecarExtensionRetentionEpochs = dataColumnSidecarExtensionRetentionEpochs;
 
     LOG.debug("Attestation wait time limit in ratchet: {} ms", attestationWaitLimitMillis);
@@ -401,6 +406,10 @@ public class Eth2NetworkConfiguration {
     return dataColumnSidecarExtensionRetentionEpochs;
   }
 
+  public boolean isQuartzSchedulerEnabled() {
+    return quartzSchedulerEnabled;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -453,7 +462,8 @@ public class Eth2NetworkConfiguration {
         && Objects.equals(totalTerminalDifficultyOverride, that.totalTerminalDifficultyOverride)
         && Objects.equals(terminalBlockHashEpochOverride, that.terminalBlockHashEpochOverride)
         && Objects.equals(eth2Network, that.eth2Network)
-        && Objects.equals(epochsStoreBlobs, that.epochsStoreBlobs);
+        && Objects.equals(epochsStoreBlobs, that.epochsStoreBlobs)
+        && quartzSchedulerEnabled == that.quartzSchedulerEnabled;
   }
 
   @Override
@@ -489,7 +499,8 @@ public class Eth2NetworkConfiguration {
         prepareBlockProductionEnabled,
         forkChoiceUpdatedAlwaysSendPayloadAttributes,
         rustKzgEnabled,
-        dataColumnSidecarExtensionRetentionEpochs);
+        dataColumnSidecarExtensionRetentionEpochs,
+        quartzSchedulerEnabled);
   }
 
   public static class Builder {
@@ -543,6 +554,7 @@ public class Eth2NetworkConfiguration {
     private int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit =
         DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_TOTAL_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS;
     private int attestationWaitLimitMillis = DEFAULT_ATTESTATION_WAIT_TIMEOUT_MILLIS;
+    private boolean quartzSchedulerEnabled = DEFAULT_QUARTZ_SCHEDULER_ENABLED;
 
     public void spec(final Spec spec) {
       this.spec = spec;
@@ -644,7 +656,8 @@ public class Eth2NetworkConfiguration {
           aggregatingAttestationPoolV2BlockAggregationTimeLimit,
           aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
           attestationWaitLimitMillis,
-          dataColumnSidecarExtensionRetentionEpochs);
+          dataColumnSidecarExtensionRetentionEpochs,
+          quartzSchedulerEnabled);
     }
 
     private boolean resolvePrepareBlockProductionAbility(
@@ -962,6 +975,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder rustKzgEnabled(final boolean rustKzgEnabled) {
       this.rustKzgEnabled = rustKzgEnabled;
+      return this;
+    }
+
+    public Builder quartzSchedulerEnabled(final boolean quartzSchedulerEnabled) {
+      this.quartzSchedulerEnabled = quartzSchedulerEnabled;
       return this;
     }
 

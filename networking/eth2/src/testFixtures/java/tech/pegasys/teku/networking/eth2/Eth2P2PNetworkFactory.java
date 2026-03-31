@@ -103,6 +103,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -173,6 +174,7 @@ public class Eth2P2PNetworkFactory {
     protected OperationProcessor<SignedExecutionPayloadEnvelope> executionPayloadProcessor;
     protected OperationProcessor<PayloadAttestationMessage> payloadAttestationMessageProcessor;
     protected OperationProcessor<SignedExecutionPayloadBid> executionPayloadBidProcessor;
+    protected OperationProcessor<SignedProposerPreferences> proposerPreferencesProcessor;
     protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
     protected VerifiedBlockAttestationsSubscriptionProvider
         verifiedBlockAttestationsSubscriptionProvider;
@@ -595,6 +597,7 @@ public class Eth2P2PNetworkFactory {
                 executionPayloadProcessor,
                 payloadAttestationMessageProcessor,
                 executionPayloadBidProcessor,
+                proposerPreferencesProcessor,
                 debugDataDumper,
                 DasGossipLogger.NOOP,
                 executionProofOperationProcessor,
@@ -705,6 +708,9 @@ public class Eth2P2PNetworkFactory {
       }
       if (executionPayloadBidProcessor == null) {
         executionPayloadBidProcessor = OperationProcessor.noop();
+      }
+      if (proposerPreferencesProcessor == null) {
+        proposerPreferencesProcessor = OperationProcessor.noop();
       }
       if (isSuperNodeSupplier == null) {
         isSuperNodeSupplier = () -> false;

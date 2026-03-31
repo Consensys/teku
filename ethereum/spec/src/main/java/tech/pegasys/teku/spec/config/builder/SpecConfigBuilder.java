@@ -233,6 +233,26 @@ public class SpecConfigBuilder {
       LOG.debug("Defaulting proposerReorgCutoffBps to {}", proposerReorgCutoffBps);
     }
 
+    if (minEpochsForBlockRequests == null
+        && minValidatorWithdrawabilityDelay != null
+        && churnLimitQuotient != null) {
+      final Integer newMinEpochsForBlockRequests = computeMinEpochsForBlockRequests();
+      LOG.debug(
+          "Setting minEpochsForBlockRequests to {} (was {})",
+          newMinEpochsForBlockRequests,
+          minEpochsForBlockRequests);
+      minEpochsForBlockRequests = newMinEpochsForBlockRequests;
+    }
+
+    if (attestationSubnetCount != null && attestationSubnetExtraBits != null) {
+      final Integer newAttestationSubnetPrefixBits = computeAttestationSubnetPrefixBits();
+      LOG.debug(
+          "Setting attestationSubnetPrefixBits to {} (was {})",
+          newAttestationSubnetPrefixBits,
+          attestationSubnetPrefixBits);
+      attestationSubnetPrefixBits = newAttestationSubnetPrefixBits;
+    }
+
     applyForkVersions();
     validate();
     final SpecConfigAndParent<SpecConfig> config =
@@ -934,6 +954,7 @@ public class SpecConfigBuilder {
     return this;
   }
 
+  @Deprecated
   public SpecConfigBuilder minEpochsForBlockRequests(final Integer minEpochsForBlockRequests) {
     this.minEpochsForBlockRequests = minEpochsForBlockRequests;
     return this;
@@ -965,6 +986,7 @@ public class SpecConfigBuilder {
     return this;
   }
 
+  @Deprecated
   public SpecConfigBuilder attestationSubnetCount(final Integer attestationSubnetCount) {
     this.attestationSubnetCount = attestationSubnetCount;
     return this;
@@ -975,6 +997,7 @@ public class SpecConfigBuilder {
     return this;
   }
 
+  @Deprecated
   public SpecConfigBuilder attestationSubnetPrefixBits(final Integer attestationSubnetPrefixBits) {
     this.attestationSubnetPrefixBits = attestationSubnetPrefixBits;
     return this;
@@ -1045,5 +1068,27 @@ public class SpecConfigBuilder {
   public SpecConfigBuilder hezeBuilder(final Consumer<HezeBuilder> consumer) {
     builderChain.withBuilder(HezeBuilder.class, consumer);
     return this;
+  }
+
+  // compute_min_epochs_for_block_requests
+  private Integer computeMinEpochsForBlockRequests() {
+    return computeMinEpochsForBlockRequests(minValidatorWithdrawabilityDelay, churnLimitQuotient);
+  }
+
+  // compute_attestation_subnet_prefix_bits
+  private Integer computeAttestationSubnetPrefixBits() {
+    return computeAttestationSubnetPrefixBits(attestationSubnetCount, attestationSubnetExtraBits);
+  }
+
+  public static Integer computeAttestationSubnetPrefixBits(
+      final Integer attestationSubnetCount, final Integer attestationSubnetExtraBits) {
+    return 32
+        - Integer.numberOfLeadingZeros(attestationSubnetCount - 1)
+        + attestationSubnetExtraBits;
+  }
+
+  public static Integer computeMinEpochsForBlockRequests(
+      final int minValidatorWithdrawabilityDelay, final int churnLimitQuotient) {
+    return minValidatorWithdrawabilityDelay + churnLimitQuotient / 2;
   }
 }

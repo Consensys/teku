@@ -62,7 +62,7 @@ public class ProfilingRun {
   public static Consumer<Object> blackHole = o -> {};
   private Spec spec =
       TestSpecFactory.createMainnetPhase0(
-          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
 
   private final MetricsSystem metricsSystem = new StubMetricsSystem();
   private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();

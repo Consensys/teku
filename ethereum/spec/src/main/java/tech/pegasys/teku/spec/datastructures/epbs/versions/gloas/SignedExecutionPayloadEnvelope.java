@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
@@ -22,6 +24,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.BlockRootAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class SignedExecutionPayloadEnvelope
     extends Container2<SignedExecutionPayloadEnvelope, ExecutionPayloadEnvelope, SszSignature> {
@@ -70,5 +73,18 @@ public class SignedExecutionPayloadEnvelope
   public String toLogString() {
     return LogFormatter.formatExecutionPayload(
         getMessage().getSlot(), getMessage().getBeaconBlockRoot(), getMessage().getBuilderIndex());
+  }
+
+  public SignedBlindedExecutionPayloadEnvelope toSignedBlindedExecutionPayloadEnvelope(
+      final SchemaDefinitionsGloas schemaDefinitions) {
+    final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope =
+        schemaDefinitions
+            .getSignedBlindedExecutionPayloadEnvelopeSchema()
+            .create(
+                getMessage().toBlindedExecutionPayloadEnvelope(schemaDefinitions), getSignature());
+    checkState(
+        signedBlindedExecutionPayloadEnvelope.hashTreeRoot().equals(hashTreeRoot()),
+        "blinded signed execution payload envelope root does not match original envelope root");
+    return signedBlindedExecutionPayloadEnvelope;
   }
 }

@@ -66,11 +66,11 @@ public class ProductionResult<T> {
   }
 
   public static <T> ProductionResult<T> noop(final BLSPublicKey validatorPublicKey) {
-    return new ProductionResult<>(Set.of(validatorPublicKey), DutyResult.NO_OP);
+    return new ProductionResult<>(Set.of(validatorPublicKey), DutyResult.NOOP);
   }
 
   public static <T> ProductionResult<T> noop(final Set<BLSPublicKey> validatorPublicKeys) {
-    return new ProductionResult<>(validatorPublicKeys, DutyResult.NO_OP);
+    return new ProductionResult<>(validatorPublicKeys, DutyResult.NOOP);
   }
 
   public static <T> SafeFuture<DutyResult> send(
@@ -120,7 +120,7 @@ public class ProductionResult<T> {
     return results.stream()
         .map(ProductionResult::getResult)
         .reduce(DutyResult::combine)
-        .orElse(DutyResult.NO_OP);
+        .orElse(DutyResult.NOOP);
   }
 
   public Set<BLSPublicKey> getValidatorPublicKeys() {

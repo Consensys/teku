@@ -50,6 +50,11 @@ public class DelegatingSpecConfigDeneb extends DelegatingSpecConfigCapella
   }
 
   @Override
+  public int getDenebMaxBlobsPerBlock() {
+    return specConfigDeneb.getDenebMaxBlobsPerBlock();
+  }
+
+  @Override
   public int getKzgCommitmentInclusionProofDepth() {
     return specConfigDeneb.getKzgCommitmentInclusionProofDepth();
   }

@@ -86,11 +86,11 @@ public class TestDefinition {
           default -> throw new IllegalArgumentException("Unknown fork: " + fork);
         };
     final BLSSignatureVerifier blsSignatureVerifier =
-        blsSignatureVerificationEnabled ? BLSSignatureVerifier.SIMPLE : BLSSignatureVerifier.NO_OP;
+        blsSignatureVerificationEnabled ? BLSSignatureVerifier.SIMPLE : BLSSignatureVerifier.NOOP;
     final Supplier<BatchSignatureVerifier> batchSignatureVerifierSupplier =
         blsSignatureVerificationEnabled
             ? BatchSignatureVerifierImpl::new
-            : () -> BatchSignatureVerifier.NO_OP;
+            : () -> BatchSignatureVerifier.NOOP;
     spec =
         TestSpecFactory.create(
             milestone,

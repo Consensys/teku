@@ -96,7 +96,7 @@ public class FuzzUtil {
         (BeaconBlockBodySchemaElectra<?>)
             specVersion.getSchemaDefinitions().getBeaconBlockBodySchema();
     initialize(disableBls);
-    this.signatureVerifier = disableBls ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE;
+    this.signatureVerifier = disableBls ? BLSSignatureVerifier.NOOP : BLSSignatureVerifier.SIMPLE;
 
     final PredicatesElectra predicates = new PredicatesElectra(spec.getGenesisSpecConfig());
     final SchemaDefinitionsFulu schemaDefinitionsFulu =

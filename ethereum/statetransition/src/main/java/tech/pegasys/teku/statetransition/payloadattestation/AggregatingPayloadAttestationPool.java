@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -25,6 +26,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -185,5 +187,25 @@ public class AggregatingPayloadAttestationPool
             payloadAttestationGroup ->
                 payloadAttestationGroup.createAggregatedPayloadAttestation(ptc))
         .collect(payloadAttestationsSchema.collector());
+  }
+
+  @Override
+  public List<PayloadAttestationMessage> getPayloadAttestationMessages() {
+    return List.copyOf(
+        payloadAttestationGroupByDataHash.values().stream()
+            .flatMap(group -> group.getPayloadAttestationMessages().stream())
+            .toList());
+  }
+
+  @Override
+  public List<PayloadAttestation> getAggregatedPayloadAttestations(
+      final Function<UInt64, IntList> ptcProvider) {
+    return payloadAttestationGroupByDataHash.values().stream()
+        .filter(group -> group.size() > 0)
+        .map(
+            group ->
+                group.createAggregatedPayloadAttestation(
+                    ptcProvider.apply(group.getData().getSlot())))
+        .toList();
   }
 }

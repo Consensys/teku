@@ -112,7 +112,7 @@ public class StateCachesTest {
                 stateAtSlot3,
                 blockAtSlot3.getMessage(),
                 IndexedAttestationCache.NOOP,
-                BLSSignatureVerifier.NO_OP,
+                BLSSignatureVerifier.NOOP,
                 Optional.empty());
 
     final UInt64 expectedRewards =
