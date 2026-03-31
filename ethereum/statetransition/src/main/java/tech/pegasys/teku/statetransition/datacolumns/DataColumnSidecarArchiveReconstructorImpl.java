@@ -199,6 +199,9 @@ public class DataColumnSidecarArchiveReconstructorImpl
       final List<DataColumnSidecar> sidecars, final List<List<KZGProof>> proofs) {
     final DataColumnSidecar firstSidecar = sidecars.getFirst();
     final int blobCount = firstSidecar.getColumn().size();
+    final BlobSchema blobSchema =
+        SchemaDefinitionsFulu.required(spec.atSlot(firstSidecar.getSlot()).getSchemaDefinitions())
+            .getBlobSchema();
     final List<BlobAndCellProofs> blobAndCellProofsList = new ArrayList<>();
     for (int i = 0; i < blobCount; i++) {
       final int blobIndex = i;
@@ -214,9 +217,6 @@ public class DataColumnSidecarArchiveReconstructorImpl
         blobProofs.add(proofs.get(j).get(blobIndex));
       }
 
-      final BlobSchema blobSchema =
-          SchemaDefinitionsFulu.required(spec.atSlot(firstSidecar.getSlot()).getSchemaDefinitions())
-              .getBlobSchema();
       final BlobAndCellProofs blobAndCellProofs =
           new BlobAndCellProofs(blobSchema.create(blob), blobProofs);
       blobAndCellProofsList.add(blobAndCellProofs);
