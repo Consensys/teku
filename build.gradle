@@ -46,10 +46,25 @@ ext.runGitCommand = { String... args ->
 
 ext.isGitCheckout = runGitCommand('rev-parse', '--git-dir') != null
 
-ext.gitCommitHash = { -> runGitCommand('rev-parse', 'HEAD') }
-ext.gitCommitHashShort = { -> runGitCommand('rev-parse', '--short', 'HEAD') }
+ext.gitCommitHash = {
+	->
+	def result = runGitCommand('rev-parse', 'HEAD')
+	if (result == null) throw new GradleException('Failed to resolve git commit hash')
+	return result
+}
+ext.gitCommitHashShort = {
+	->
+	def result = runGitCommand('rev-parse', '--short', 'HEAD')
+	if (result == null) throw new GradleException('Failed to resolve git commit hash')
+	return result
+}
 ext.gitDescribe = { -> runGitCommand('describe', '--tags') }
-ext.gitBranchName = { -> runGitCommand('rev-parse', '--abbrev-ref', 'HEAD') }
+ext.gitBranchName = {
+	->
+	def result = runGitCommand('rev-parse', '--abbrev-ref', 'HEAD')
+	if (result == null) throw new GradleException('Failed to resolve git branch name')
+	return result
+}
 
 rootProject.version = calculatePublishVersion()
 def specificVersion = calculateVersion()
@@ -1223,8 +1238,7 @@ def calculatePublishVersion() {
 		return 'develop'
 	}
 	def specificVersion = calculateVersion()
-	def branchName = gitBranchName()
-	def isReleaseBranch = branchName != null && branchName.startsWith('release-')
+	def isReleaseBranch = gitBranchName().startsWith('release-')
 	if (specificVersion.contains('+')) {
 		return isReleaseBranch ? "${specificVersion.substring(0, specificVersion.indexOf('+'))}+develop" : "develop"
 	}
@@ -1241,7 +1255,7 @@ def calculateVersion() {
 	}
 	String version = gitDescribe()
 	if (version == null) {
-		return "UNKNOWN+g${gitCommitHashShort() ?: 'unknown'}"
+		return "UNKNOWN+g${gitCommitHashShort()}"
 	}
 	def versionPattern = ~/^(?<lastVersion>.*)-(?<devVersion>[0-9]+-g[a-z0-9]+)$/
 	def matcher = version =~ versionPattern
@@ -1266,8 +1280,7 @@ tasks.register('buildPrintVersion') {
 
 def getCheckedOutGitCommitHash() {
 	def takeFromHash = 8
-	def hash = gitCommitHash()
-	return hash != null ? hash.take(takeFromHash) : 'UNKNOWN'
+	isGitCheckout ? gitCommitHash().take(takeFromHash) : 'UNKNOWN'
 }
 
 tasks.register('cloudsmithUpload') {
