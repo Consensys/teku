@@ -125,50 +125,21 @@ public class DataColumnSidecarArchiveReconstructorImpl
   }
 
   private SafeFuture<ReconstructionResult> createTask(final SignedBeaconBlock block) {
-    final DataColumnSidecarUtil dataColumnSidecarUtil =
-        spec.getDataColumnSidecarUtil(block.getSlot());
-    final MetricsHistogram.Timer timer = reconstructionTimeSeconds.startTimer();
-
     final List<UInt64> firstHalfOfIndices =
         Stream.iterate(UInt64.ZERO, UInt64::increment).limit(halfColumns).toList();
-    final SafeFuture<List<DataColumnSidecar>> dataColumnSidecars =
-        chainDataClient.getDataColumnSidecars(block.getSlot(), firstHalfOfIndices);
-    final SafeFuture<List<List<KZGProof>>> kzgProofs =
-        chainDataClient.getDataColumnSidecarProofs(block.getSlot());
+
+    final MetricsHistogram.Timer timer = reconstructionTimeSeconds.startTimer();
 
     return reconstructionAsyncRunner
         .runAsync(
             () ->
-                dataColumnSidecars.thenCombineAsync(
-                    kzgProofs,
-                    (sidecars, proofs) -> {
-                      if (sidecars.isEmpty() || proofs.isEmpty()) {
-                        return emptyResult();
-                      }
-
-                      final List<BlobAndCellProofs> blobAndCellProofsList =
-                          constructBlobAndCellProofsList(sidecars, proofs);
-
-                      final List<DataColumnSidecar> allDataColumnSidecars =
-                          dataColumnSidecarUtil.constructDataColumnSidecars(
-                              Optional.of(block.asHeader()),
-                              block.getSlotAndBlockRoot(),
-                              Optional.of(
-                                  dataColumnSidecarUtil.getKzgCommitments(block.getMessage())),
-                              dataColumnSidecarUtil.computeDataColumnKzgCommitmentsInclusionProof(
-                                  block.getMessage().getBody()),
-                              blobAndCellProofsList);
-
-                      return new ReconstructionResult(
-                          Stream.iterate(UInt64.valueOf(halfColumns), UInt64::increment)
-                              .limit(halfColumns)
-                              .collect(
-                                  Collectors.toMap(
-                                      index -> index,
-                                      index ->
-                                          Optional.of(
-                                              allDataColumnSidecars.get(index.intValue())))));
-                    }))
+                chainDataClient
+                    .getDataColumnSidecars(block.getSlot(), firstHalfOfIndices)
+                    .thenComposeCombined(
+                        chainDataClient.getDataColumnSidecarProofs(block.getSlot()),
+                        (sidecars, proofs) ->
+                            reconstructionAsyncRunner.runAsync(
+                                () -> reconstructDataColumnSidecar(block, sidecars, proofs))))
         .whenComplete(
             (result, error) -> {
               timer.closeUnchecked().run();
@@ -183,6 +154,38 @@ public class DataColumnSidecarArchiveReconstructorImpl
               LOG.error(ex.getMessage(), ex);
               return emptyResult();
             });
+  }
+
+  private ReconstructionResult reconstructDataColumnSidecar(
+      final SignedBeaconBlock block,
+      final List<DataColumnSidecar> sidecars,
+      final List<List<KZGProof>> proofs) {
+    if (sidecars.isEmpty() || proofs.isEmpty()) {
+      return emptyResult();
+    }
+
+    final List<BlobAndCellProofs> blobAndCellProofsList =
+        constructBlobAndCellProofsList(sidecars, proofs);
+
+    final DataColumnSidecarUtil dataColumnSidecarUtil =
+        spec.getDataColumnSidecarUtil(block.getSlot());
+
+    final List<DataColumnSidecar> allDataColumnSidecars =
+        dataColumnSidecarUtil.constructDataColumnSidecars(
+            Optional.of(block.asHeader()),
+            block.getSlotAndBlockRoot(),
+            Optional.of(dataColumnSidecarUtil.getKzgCommitments(block.getMessage())),
+            dataColumnSidecarUtil.computeDataColumnKzgCommitmentsInclusionProof(
+                block.getMessage().getBody()),
+            blobAndCellProofsList);
+
+    return new ReconstructionResult(
+        Stream.iterate(UInt64.valueOf(halfColumns), UInt64::increment)
+            .limit(halfColumns)
+            .collect(
+                Collectors.toMap(
+                    index -> index,
+                    index -> Optional.of(allDataColumnSidecars.get(index.intValue())))));
   }
 
   private List<BlobAndCellProofs> constructBlobAndCellProofsList(
