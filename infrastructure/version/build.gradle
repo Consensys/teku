@@ -1,9 +1,9 @@
 task generateGitProperties {
-	def commitHash = rootProject.ext.gitCommitHash()
-	if (commitHash == null) {
+	if (!rootProject.ext.isGitCheckout) {
 		logger.warn("Not building from a git checkout, skipping git.properties generation")
 		return
 	}
+	def commitHash = rootProject.ext.gitCommitHash()
 	def outputFile = layout.buildDirectory.file("resources/main/git.properties").get().asFile
 	outputs.file(outputFile)
 	doLast {
