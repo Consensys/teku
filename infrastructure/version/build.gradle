@@ -1,12 +1,13 @@
 task generateGitProperties {
-	if (!grgit) {
+	def commitHash = rootProject.ext.gitCommitHash()
+	if (commitHash == null) {
 		logger.warn("Not building from a git checkout, skipping git.properties generation")
 		return
 	}
 	def outputFile = layout.buildDirectory.file("resources/main/git.properties").get().asFile
 	outputs.file(outputFile)
 	doLast {
-		outputFile.text = "git.commit.id=${grgit.head().id}"
+		outputFile.text = "git.commit.id=${commitHash}"
 	}
 }
 
