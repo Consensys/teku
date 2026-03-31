@@ -32,14 +32,13 @@ plugins {
 // --- Git CLI helpers (replaces grgit plugin for worktree compatibility) ---
 ext.runGitCommand = { String... args ->
 	try {
-		def command = ['git'] + args.toList()
-		def process = command.execute(null, projectDir)
-		def stdout = new StringBuilder()
-		def stderr = new StringBuilder()
-		process.consumeProcessOutput(stdout, stderr)
-		process.waitFor()
-		if (process.exitValue() != 0) return null
-		return stdout.toString().trim()
+		def execResult = providers.exec {
+			commandLine(['git'] + args.toList())
+			workingDir = projectDir
+			ignoreExitValue = true
+		}
+		if (execResult.result.get().exitValue != 0) return null
+		return execResult.standardOutput.asText.get().trim()
 	} catch (Exception e) {
 		return null
 	}
