@@ -288,11 +288,8 @@ public class DataColumnSidecarArchiveReconstructorImpl
   }
 
   private int getNextTaskId() {
-    final int nextTaskId = this.nextTaskId.getAndIncrement();
-    if (this.nextTaskId.get() > (Integer.MAX_VALUE - 1000)) {
-      this.nextTaskId.set(0);
-    }
-    return nextTaskId;
+    return this.nextTaskId.getAndUpdate(
+        current -> current >= (Integer.MAX_VALUE - 1) ? 0 : current + 1);
   }
 
   record ReconstructionResult(Map<UInt64, Optional<DataColumnSidecar>> sidecars) {
