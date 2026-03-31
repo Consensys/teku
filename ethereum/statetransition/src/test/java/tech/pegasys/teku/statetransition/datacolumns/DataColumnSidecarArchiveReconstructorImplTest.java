@@ -46,8 +46,8 @@ import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
-import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.SidecarArchivePrunableChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -143,8 +143,7 @@ public class DataColumnSidecarArchiveReconstructorImplTest {
                 i ->
                     i == targetIndex.intValue()
                         ? expectedSidecar
-                        : dataStructureUtil.randomDataColumnSidecar(
-                            block, UInt64.valueOf(i)))
+                        : dataStructureUtil.randomDataColumnSidecar(block, UInt64.valueOf(i)))
             .toList();
 
     when(mockUtil.getKzgCommitments(any())).thenReturn(mock());
