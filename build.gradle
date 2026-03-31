@@ -59,6 +59,12 @@ ext.gitCommitHashShort = {
 	return result
 }
 ext.gitDescribe = { -> runGitCommand('describe', '--tags') }
+ext.gitLastCommitDate = {
+	->
+	def ts = runGitCommand('log', '-1', '--format=%ct')
+	if (ts == null) throw new GradleException('Failed to resolve git commit date')
+	return new Date(ts.toLong() * 1000)
+}
 ext.gitBranchName = {
 	->
 	def result = runGitCommand('rev-parse', '--abbrev-ref', 'HEAD')
@@ -1225,8 +1231,7 @@ def lastCommitDate() {
 	if (!isGitCheckout) {
 		return new Date()
 	}
-	def ts = runGitCommand('log', '-1', '--format=%ct')
-	return ts != null ? new Date(ts.toLong() * 1000) : new Date()
+	return gitLastCommitDate()
 }
 
 // Calculate the version that this build would be published under (if it is published)
