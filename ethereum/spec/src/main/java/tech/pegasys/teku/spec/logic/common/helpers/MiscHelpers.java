@@ -219,7 +219,7 @@ public class MiscHelpers {
   }
 
   public UInt64 getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(final UInt64 epoch) {
-    final UInt64 previousEpoch = epoch.compareTo(UInt64.ZERO) > 0 ? epoch.minus(UInt64.ONE) : epoch;
+    final UInt64 previousEpoch = epoch.minusMinZero(1);
     return computeStartSlotAtEpoch(previousEpoch);
   }
 
