@@ -17,8 +17,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -44,6 +46,7 @@ import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.SidecarArchivePrunableChannel;
@@ -111,22 +114,57 @@ public class DataColumnSidecarArchiveReconstructorImplTest {
 
   @TestTemplate
   public void shouldReconstructSecondHalfSidecars() {
+    final Spec spiedSpec = spy(spec);
+    final DataColumnSidecarUtil mockUtil = mock(DataColumnSidecarUtil.class);
+    doReturn(mockUtil).when(spiedSpec).getDataColumnSidecarUtil(any());
+
+    final DataColumnSidecarArchiveReconstructorImpl spiedReconstructor =
+        new DataColumnSidecarArchiveReconstructorImpl(
+            chainDataClient,
+            asyncRunner,
+            () -> true,
+            spiedSpec,
+            0,
+            sidecarArchivePrunableChannel,
+            metricsSystem,
+            timeProvider);
+
     final SignedBeaconBlock block = createBlockWithBlobs(UInt64.ONE);
     final List<DataColumnSidecar> firstHalfSidecars = createFirstHalfSidecars(block);
     final List<List<KZGProof>> secondHalfProofs = createSecondHalfProofs(block);
+
+    final UInt64 targetIndex = UInt64.valueOf(halfColumns);
+    final DataColumnSidecar expectedSidecar =
+        dataStructureUtil.randomDataColumnSidecar(block, targetIndex);
+    final int numberOfColumns = halfColumns * 2;
+    final List<DataColumnSidecar> allSidecars =
+        IntStream.range(0, numberOfColumns)
+            .mapToObj(
+                i ->
+                    i == targetIndex.intValue()
+                        ? expectedSidecar
+                        : dataStructureUtil.randomDataColumnSidecar(
+                            block, UInt64.valueOf(i)))
+            .toList();
+
+    when(mockUtil.getKzgCommitments(any())).thenReturn(mock());
+    when(mockUtil.computeDataColumnKzgCommitmentsInclusionProof(any()))
+        .thenReturn(Optional.empty());
+    when(mockUtil.constructDataColumnSidecars(any(), any(), any(), any(), anyList()))
+        .thenReturn(allSidecars);
 
     when(chainDataClient.getDataColumnSidecars(any(), anyList()))
         .thenReturn(SafeFuture.completedFuture(firstHalfSidecars));
     when(chainDataClient.getDataColumnSidecarProofs(any()))
         .thenReturn(SafeFuture.completedFuture(secondHalfProofs));
 
-    final int requestId = reconstructor.onRequest();
-    final UInt64 targetIndex = UInt64.valueOf(halfColumns);
+    final int requestId = spiedReconstructor.onRequest();
     final Optional<DataColumnSidecar> result =
-        reconstructor.reconstructDataColumnSidecar(block, targetIndex, requestId).join();
+        spiedReconstructor.reconstructDataColumnSidecar(block, targetIndex, requestId).join();
 
     assertThat(result).isPresent();
-    assertThat(result.get().getIndex()).isEqualTo(targetIndex);
+    assertThat(result.get()).isEqualTo(expectedSidecar);
+    verify(mockUtil).constructDataColumnSidecars(any(), any(), any(), any(), anyList());
   }
 
   @TestTemplate
