@@ -56,6 +56,8 @@ public class DataColumnSidecarArchiveReconstructorImpl
   private final CombinedChainDataClient chainDataClient;
   private final AsyncRunner reconstructionAsyncRunner;
   private final AtomicInteger nextTaskId = new AtomicInteger(0);
+  // Bounded by the number of concurrent in-flight RPC requests; cleanup is guaranteed by
+  // CompletionAwareResponseCallback which calls onRequestCompleted in finally blocks
   private final Map<Integer, Map<SlotAndBlockRoot, SafeFuture<ReconstructionResult>>> recoveryTasks;
   private final SpecConfigFulu specConfigFulu;
   private final int halfColumns;
