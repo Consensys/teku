@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -114,6 +116,11 @@ public class DataColumnSidecarArchiveReconstructorImpl
   @Override
   public SafeFuture<Optional<DataColumnSidecar>> reconstructDataColumnSidecar(
       final SignedBeaconBlock block, final UInt64 index, final int requestId) {
+    checkArgument(
+        index.isGreaterThanOrEqualTo(halfColumns),
+        "Only second-half column indices (>= %s) can be reconstructed, got %s",
+        halfColumns,
+        index);
     final Map<SlotAndBlockRoot, SafeFuture<ReconstructionResult>> slotAndBlockRootSafeFutureMap =
         recoveryTasks.computeIfAbsent(requestId, __ -> new ConcurrentHashMap<>());
     return slotAndBlockRootSafeFutureMap

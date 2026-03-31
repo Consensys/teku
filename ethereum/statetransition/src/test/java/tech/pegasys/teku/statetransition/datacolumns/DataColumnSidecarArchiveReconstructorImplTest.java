@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
@@ -129,19 +130,12 @@ public class DataColumnSidecarArchiveReconstructorImplTest {
   }
 
   @TestTemplate
-  public void shouldReturnEmptyForUnknownIndex() {
+  public void shouldRejectFirstHalfIndex() {
     final SignedBeaconBlock block = createBlockWithBlobs(UInt64.ONE);
-    when(chainDataClient.getDataColumnSidecars(any(), anyList()))
-        .thenReturn(SafeFuture.completedFuture(List.of()));
-    when(chainDataClient.getDataColumnSidecarProofs(any()))
-        .thenReturn(SafeFuture.completedFuture(List.of()));
-
     final int requestId = reconstructor.onRequest();
-    // Request an index from the first half — not in the reconstruction result
-    final Optional<DataColumnSidecar> result =
-        reconstructor.reconstructDataColumnSidecar(block, ZERO, requestId).join();
 
-    assertThat(result).isEmpty();
+    assertThatThrownBy(() -> reconstructor.reconstructDataColumnSidecar(block, ZERO, requestId))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @TestTemplate
