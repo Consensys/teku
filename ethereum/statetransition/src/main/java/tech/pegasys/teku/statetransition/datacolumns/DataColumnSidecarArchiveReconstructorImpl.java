@@ -160,8 +160,13 @@ public class DataColumnSidecarArchiveReconstructorImpl
       final SignedBeaconBlock block,
       final List<DataColumnSidecar> sidecars,
       final List<List<KZGProof>> proofs) {
-    if (sidecars.isEmpty() || proofs.isEmpty()) {
+    if (sidecars.size() != halfColumns || proofs.isEmpty()) {
       return emptyResult();
+    }
+    for (int i = 0; i < halfColumns; i++) {
+      if (!sidecars.get(i).getIndex().equals(UInt64.valueOf(i))) {
+        return emptyResult();
+      }
     }
 
     final List<BlobAndCellProofs> blobAndCellProofsList =
