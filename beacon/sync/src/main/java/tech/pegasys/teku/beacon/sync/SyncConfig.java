@@ -28,8 +28,10 @@ public class SyncConfig {
   public static final int DEFAULT_FORWARD_SYNC_BATCH_SIZE = 25;
   public static final int DEFAULT_FORWARD_SYNC_MAX_PENDING_BATCHES = 5;
 
-  /** Must be >= FORWARD_SYNC_BATCH_SIZE * FORWARD_SYNC_MAX_PENDING_BATCHES to avoid evicting
-   *  completed trackers before the sync pipeline imports them. */
+  /**
+   * Must be >= FORWARD_SYNC_BATCH_SIZE * FORWARD_SYNC_MAX_PENDING_BATCHES to avoid evicting
+   * completed trackers before the sync pipeline imports them.
+   */
   public static final int DEFAULT_MAX_RECENTLY_SAMPLED_BLOCKS = 128;
 
   public static final int DEFAULT_FORWARD_SYNC_MAX_BLOCKS_PER_MINUTE = 500;
