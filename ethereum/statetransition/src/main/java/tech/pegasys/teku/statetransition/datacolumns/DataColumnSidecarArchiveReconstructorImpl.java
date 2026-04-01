@@ -169,7 +169,7 @@ public class DataColumnSidecarArchiveReconstructorImpl
       final SignedBeaconBlock block,
       final List<DataColumnSidecar> sidecars,
       final List<List<KZGProof>> proofs) {
-    if (sidecars.size() != halfColumns || proofs.isEmpty()) {
+    if (sidecars.size() != halfColumns || proofs.size() != halfColumns) {
       return emptyResult();
     }
     for (int i = 0; i < halfColumns; i++) {
