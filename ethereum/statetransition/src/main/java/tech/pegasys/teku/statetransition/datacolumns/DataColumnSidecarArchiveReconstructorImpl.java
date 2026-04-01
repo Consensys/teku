@@ -61,7 +61,6 @@ public class DataColumnSidecarArchiveReconstructorImpl
   // Bounded by the number of concurrent in-flight RPC requests; cleanup is guaranteed by
   // CompletionAwareResponseCallback which calls onRequestCompleted in finally blocks
   private final Map<Integer, Map<SlotAndBlockRoot, SafeFuture<ReconstructionResult>>> recoveryTasks;
-  private final SpecConfigFulu specConfigFulu;
   private final int halfColumns;
 
   private final Supplier<Boolean> isSuperNodeSupplier;
@@ -88,9 +87,10 @@ public class DataColumnSidecarArchiveReconstructorImpl
     this.spec = spec;
     this.dataColumnSidecarExtensionRetentionEpochs =
         UInt64.valueOf(dataColumnSidecarExtensionRetentionEpochs);
-    this.specConfigFulu =
-        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
-    this.halfColumns = specConfigFulu.getNumberOfColumns() / 2;
+    this.halfColumns =
+        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
+                .getNumberOfColumns()
+            / 2;
     this.recoveryTasks = new ConcurrentHashMap<>();
     this.sidecarArchivePrunableChannel = sidecarArchivePrunableChannel;
     this.reconstructionTimeSeconds =
@@ -271,7 +271,7 @@ public class DataColumnSidecarArchiveReconstructorImpl
     final Map<SlotAndBlockRoot, SafeFuture<ReconstructionResult>> removed =
         recoveryTasks.remove(requestId);
     if (removed != null) {
-      LOG.debug("Request completed: {}, removing tasks ()", requestId);
+      LOG.debug("Request completed: {}, removing tasks ({})", requestId, removed.size());
     }
   }
 
