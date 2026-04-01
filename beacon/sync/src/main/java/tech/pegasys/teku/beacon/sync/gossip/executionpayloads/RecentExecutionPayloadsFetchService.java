@@ -126,7 +126,8 @@ public class RecentExecutionPayloadsFetchService
     cancelRecentExecutionPayloadRequest(executionPayload.getBeaconBlockRoot());
   }
 
-  // TODO-GLOAS: configure subscribers who require fetching of execution payloads (not required for
-  // devnet-0)
+  // TODO-GLOAS: configure subscribers to fetch execution payload in cases when payload attestation
+  // with payloadPresent true is received and we don't have the execution payload
+  // payloads pool
   private void setupSubscribers() {}
 }
