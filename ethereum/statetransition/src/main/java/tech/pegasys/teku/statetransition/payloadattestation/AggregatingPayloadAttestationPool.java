@@ -41,19 +41,19 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
-import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadEventsChannel;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class AggregatingPayloadAttestationPool
-    implements PayloadAttestationPool, SlotEventsChannel, ReceivedExecutionPayloadEventsChannel {
+    implements PayloadAttestationPool, SlotEventsChannel, ReceivedBlockEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -101,9 +101,12 @@ public class AggregatingPayloadAttestationPool
   }
 
   @Override
-  public void onExecutionPayloadImported(final SignedExecutionPayloadEnvelope executionPayload) {
+  public void onBlockValidated(final SignedBeaconBlock block) {}
+
+  @Override
+  public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
     pendingPayloadAttestations
-        .getItemsDependingOn(executionPayload.getBeaconBlockRoot(), false)
+        .getItemsDependingOn(block.getRoot(), false)
         .forEach(
             attestation -> {
               pendingPayloadAttestations.remove(attestation);
@@ -112,7 +115,7 @@ public class AggregatingPayloadAttestationPool
                       err ->
                           LOG.error(
                               "Failed to process pending payload attestation dependent on {}",
-                              executionPayload.getBeaconBlockRoot(),
+                              block.getRoot(),
                               err));
             });
   }

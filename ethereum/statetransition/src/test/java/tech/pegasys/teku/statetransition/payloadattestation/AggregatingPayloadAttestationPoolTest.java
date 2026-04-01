@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
@@ -104,19 +105,25 @@ class AggregatingPayloadAttestationPoolTest {
   }
 
   @Test
-  public void addingSaveForFutureMessageAddsToPendingPool() {
+  public void addingSaveForFutureMessageAddsToPendingPoolAndProcessesItOnBlockImported() {
 
     when(validator.validate(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
-    final PayloadAttestationMessage payloadAttestationMessage =
-        dataStructureUtil.randomPayloadAttestationMessage();
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
 
-    pendingPayloadAttestations.onSlot(payloadAttestationMessage.getData().getSlot());
+    final PayloadAttestationData data =
+        schemaDefinitionsGloas
+            .getPayloadAttestationDataSchema()
+            .create(block.getRoot(), block.getSlot(), true, true);
+
+    final PayloadAttestationMessage payloadAttestationMessage =
+        dataStructureUtil.randomPayloadAttestationMessage(data);
+
+    pendingPayloadAttestations.onSlot(block.getSlot());
     pendingPayloadAttestations.onNewFinalizedCheckpoint(
         new Checkpoint(
-            spec.computeEpochAtSlot(payloadAttestationMessage.getData().getSlot()).minus(1),
-            dataStructureUtil.randomBytes32()),
+            spec.computeEpochAtSlot(block.getSlot()).minus(1), dataStructureUtil.randomBytes32()),
         false);
 
     SafeFutureAssert.safeJoin(
@@ -124,10 +131,24 @@ class AggregatingPayloadAttestationPoolTest {
 
     assertThat(getPoolSizeFromMetric()).isZero();
     assertThat(pendingPayloadAttestations.size()).isOne();
-    assertThat(
-            pendingPayloadAttestations.getItemsDependingOn(
-                payloadAttestationMessage.getData().getBeaconBlockRoot(), true))
+    assertThat(pendingPayloadAttestations.getItemsDependingOn(block.getRoot(), true))
         .containsExactly(payloadAttestationMessage);
+
+    final List<PayloadAttestationMessage> addedMessages = new ArrayList<>();
+
+    payloadAttestationPool.subscribeOperationAdded(
+        (message, validationStatus, fromNetwork) -> addedMessages.add(message));
+
+    // payload attestation is accepted on next attempt
+    when(validator.validate(any()))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+
+    // pending payload attestation is processed on block import
+    payloadAttestationPool.onBlockImported(block, false);
+
+    assertThat(getPoolSizeFromMetric()).isOne();
+    assertThat(pendingPayloadAttestations.size()).isZero();
+    assertThat(addedMessages).containsExactly(payloadAttestationMessage);
   }
 
   @Test

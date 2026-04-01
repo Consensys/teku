@@ -73,7 +73,7 @@ public class NoOpPendingPool<T> extends PendingPool<T> {
   public void onSlot(final UInt64 slot) {}
 
   @Override
-  protected void prune(final UInt64 slotLimit) {}
+  protected synchronized void prune(final UInt64 slotLimit) {}
 
   @Override
   public void subscribeRequiredBlockRootDropped(
@@ -89,17 +89,17 @@ public class NoOpPendingPool<T> extends PendingPool<T> {
   }
 
   @Override
-  public Set<Bytes32> getAllRequiredBlockRoots() {
+  public synchronized Set<Bytes32> getAllRequiredBlockRoots() {
     return Collections.emptySet();
   }
 
   @Override
-  public Optional<T> get(final Bytes32 itemRoot) {
+  public synchronized Optional<T> get(final Bytes32 itemRoot) {
     return Optional.empty();
   }
 
   @Override
-  public boolean contains(final Bytes32 itemRoot) {
+  public synchronized boolean contains(final Bytes32 itemRoot) {
     return false;
   }
 
@@ -109,13 +109,13 @@ public class NoOpPendingPool<T> extends PendingPool<T> {
   }
 
   @Override
-  public int size() {
+  public synchronized int size() {
     return 0;
   }
 
   @Override
-  public void remove(final T item) {}
+  public synchronized void remove(final T item) {}
 
   @Override
-  public void add(final T item) {}
+  public synchronized void add(final T item) {}
 }

@@ -1453,7 +1453,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
       payloadAttestationPool = aggregatingPayloadAttestationPool;
       eventChannels
           .subscribe(SlotEventsChannel.class, aggregatingPayloadAttestationPool)
-          .subscribe(ReceivedExecutionPayloadEventsChannel.class, aggregatingPayloadAttestationPool)
+          .subscribe(ReceivedBlockEventsChannel.class, aggregatingPayloadAttestationPool)
           .subscribe(FinalizedCheckpointChannel.class, pendingPayloadAttestations);
     } else {
       pendingPayloadAttestations = poolFactory.createNoOpPendingPool(spec);
