@@ -78,10 +78,6 @@ public abstract class AbstractIgnoringFutureHistoricalSlot
     return currentSlot;
   }
 
-  protected UInt64 getLatestFinalizedSlot() {
-    return latestFinalizedSlot;
-  }
-
   protected boolean shouldIgnoreItemAtSlot(final UInt64 slot) {
     return isSlotTooOld(slot) || isSlotFromFarFuture(slot);
   }

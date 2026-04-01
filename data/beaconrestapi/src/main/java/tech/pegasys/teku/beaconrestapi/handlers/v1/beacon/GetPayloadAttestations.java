@@ -74,11 +74,11 @@ public class GetPayloadAttestations extends RestApiEndpoint {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
     final Optional<UInt64> slot =
         request.getOptionalQueryParameter(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION));
-    final ObjectAndMetaData<List<PayloadAttestation>> attestationsAndMetaData =
-        nodeDataProvider.getPayloadAttestations(slot);
+    final ObjectAndMetaData<List<PayloadAttestation>> payloadAttestationsAndMetaData =
+        nodeDataProvider.getPayloadAttestationsAndMetaData(slot);
     request.header(
-        HEADER_CONSENSUS_VERSION, attestationsAndMetaData.getMilestone().lowerCaseName());
-    request.respondOk(attestationsAndMetaData);
+        HEADER_CONSENSUS_VERSION, payloadAttestationsAndMetaData.getMilestone().lowerCaseName());
+    request.respondOk(payloadAttestationsAndMetaData);
   }
 
   private static SerializableTypeDefinition<ObjectAndMetaData<List<PayloadAttestation>>>
