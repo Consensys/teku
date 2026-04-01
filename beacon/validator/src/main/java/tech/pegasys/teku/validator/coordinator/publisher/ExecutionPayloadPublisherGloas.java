@@ -51,12 +51,6 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
 
   @Override
   public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
-      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
-    return publishSignedExecutionPayload(signedExecutionPayload, Optional.empty());
-  }
-
-  @Override
-  public SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload,
       final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
     return executionPayloadManager
@@ -66,6 +60,8 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
             result -> {
               final Bytes32 beaconBlockRoot = signedExecutionPayload.getBeaconBlockRoot();
               if (result.isAccept()) {
+                // we publish the execution payload (and data column sidecars) after passing gossip
+                // validation
                 publishExecutionPayloadAndDataColumnSidecars(
                     signedExecutionPayload,
                     executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload));

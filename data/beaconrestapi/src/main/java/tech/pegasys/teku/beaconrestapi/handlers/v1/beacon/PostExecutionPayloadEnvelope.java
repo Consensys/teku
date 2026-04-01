@@ -16,7 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ETH_CONSENSUS_VERSION_TYPE;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BROADCAST_VALIDATION;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
@@ -90,10 +90,18 @@ public class PostExecutionPayloadEnvelope extends RestApiEndpoint {
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope = request.getRequestBody();
-    final Optional<BroadcastValidationLevel> broadcastValidationLevel =
-        request
-            .getOptionalQueryParameter(PARAMETER_BROADCAST_VALIDATION)
-            .map(BroadcastValidationParameter::toInternal);
+    final Optional<BroadcastValidationLevel> broadcastValidationLevel;
+    try {
+      broadcastValidationLevel =
+          request
+              .getOptionalQueryParameter(PARAMETER_BROADCAST_VALIDATION)
+              .map(BroadcastValidationParameter::toInternal);
+    } catch (final IllegalArgumentException e) {
+      request.respondError(
+          SC_BAD_REQUEST, "Invalid value for broadcast_validation: " + e.getMessage());
+      return;
+    }
+
     final SafeFuture<PublishSignedExecutionPayloadResult> future =
         validatorDataProvider.publishSignedExecutionPayload(
             signedExecutionPayloadEnvelope, broadcastValidationLevel);
@@ -109,7 +117,7 @@ public class PostExecutionPayloadEnvelope extends RestApiEndpoint {
               if (result.isPublished()) {
                 return AsyncApiResponse.respondWithCode(SC_ACCEPTED);
               }
-              return AsyncApiResponse.respondWithError(SC_INTERNAL_SERVER_ERROR, rejectionReason);
+              return AsyncApiResponse.respondWithError(SC_BAD_REQUEST, rejectionReason);
             })
         .orElse(AsyncApiResponse.respondWithCode(SC_OK));
   }

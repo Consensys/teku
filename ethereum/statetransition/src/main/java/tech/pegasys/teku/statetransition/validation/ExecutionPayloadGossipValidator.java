@@ -86,6 +86,8 @@ public class ExecutionPayloadGossipValidator {
     return performWithBlockValidation(envelope)
         .thenCompose(
             maybeResult -> {
+              // TODO GLOAS - do extra gossip validation for consensus or consensus_and_equiv
+              // ocation
               if (maybeResult.isPresent()) {
                 return SafeFuture.completedFuture(maybeResult.get());
               }

@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -72,7 +72,7 @@ public class PostExecutionPayloadEnvelopeTest extends AbstractMigratedBeaconHand
   }
 
   @Test
-  void shouldReturnServerErrorIfRejectedAndNotPublished() throws Exception {
+  void shouldReturnBadRequestIfRejectedAndNotPublished() throws Exception {
     final SignedExecutionPayloadEnvelope envelope =
         dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
     final PublishSignedExecutionPayloadResult failResult =
@@ -84,8 +84,23 @@ public class PostExecutionPayloadEnvelopeTest extends AbstractMigratedBeaconHand
 
     handler.handleRequest(request);
 
-    assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
+    assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
     assertThat(request.getResponseBodyAsJson(handler))
-        .isEqualTo("{\"code\":500,\"message\":\"oopsy\"}");
+        .isEqualTo("{\"code\":400,\"message\":\"oopsy\"}");
+  }
+
+  @Test
+  void shouldReturnBadRequestIfInvalidBroadcastValidation() throws Exception {
+    final SignedExecutionPayloadEnvelope envelope =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
+
+    request.setRequestBody(envelope);
+    request.setOptionalQueryParameter("broadcast_validation", "invalid_value");
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(400);
+    assertThat(request.getResponseBodyAsJson(handler))
+        .contains("Invalid value for broadcast_validation");
   }
 }
