@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
+@SuppressWarnings("UnsynchronizedOverridesSynchronized")
 public class NoOpPendingPool<T> extends PendingPool<T> {
 
   public NoOpPendingPool(
