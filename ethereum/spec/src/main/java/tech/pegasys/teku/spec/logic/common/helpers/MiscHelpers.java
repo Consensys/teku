@@ -219,8 +219,8 @@ public class MiscHelpers {
   }
 
   public UInt64 getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(final UInt64 epoch) {
-    final UInt64 previousEpoch = epoch.minusMinZero(1);
-    return computeStartSlotAtEpoch(previousEpoch);
+    final UInt64 earliestQueryableEpoch = epoch.minusMinZero(specConfig.getMinSeedLookahead());
+    return computeStartSlotAtEpoch(earliestQueryableEpoch);
   }
 
   public IntList computeCommittee(

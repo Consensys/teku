@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
 
+  private final SpecConfigGloas configGloas;
   private final MiscHelpersGloas miscHelpersGloas;
   private final SchemaDefinitionsGloas schemaDefinitions;
 
@@ -72,8 +73,9 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
       final PredicatesGloas predicates,
       final MiscHelpersGloas miscHelpers) {
     super(config, predicates, miscHelpers);
-    this.schemaDefinitions = schemaDefinitions;
+    this.configGloas = config;
     this.miscHelpersGloas = miscHelpers;
+    this.schemaDefinitions = schemaDefinitions;
   }
 
   public UInt64 getPendingBalanceToWithdrawForBuilder(
@@ -154,12 +156,13 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
     UInt64.range(UInt64.ZERO, getCommitteeCountPerSlot(state, epoch))
         .forEach(
             i -> {
-              final IntList committee = getBeaconCommittee(state, slot, i);
+              // no validation (state within range) because we compute_ptc during epoch processing
+              // before we have set the next slot, but after we have reset the randao
+              final IntList committee = getBeaconCommitteeNoValidation(state, slot, i);
               indices.addAll(committee);
             });
-    return MiscHelpersGloas.required(miscHelpers)
-        .computeBalanceWeightedSelection(
-            state, indices, seed, SpecConfigGloas.required(config).getPtcSize(), false)
+    return miscHelpersGloas
+        .computeBalanceWeightedSelection(state, indices, seed, configGloas.getPtcSize(), false)
         .intStream()
         .mapToObj(index -> SszUInt64.of(UInt64.valueOf(index)))
         .collect(schemaDefinitions.getPtcWindowSchema().getPtcSchema().collector());
