@@ -152,10 +152,11 @@ public class DataColumnSidecarArchiveReconstructorImpl
         .whenComplete(
             (result, error) -> {
               timer.closeUnchecked().run();
-              if (error != null) {
-                reconstructionFailureCounter.inc();
-              } else {
+              if (error == null
+                  && result.sidecars().values().stream().anyMatch(Optional::isPresent)) {
                 reconstructionSuccessCounter.inc();
+              } else {
+                reconstructionFailureCounter.inc();
               }
             })
         .exceptionally(
