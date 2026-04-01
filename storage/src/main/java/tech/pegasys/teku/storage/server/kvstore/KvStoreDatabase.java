@@ -118,6 +118,7 @@ public class KvStoreDatabase implements Database {
   }
 
   public static Database createV4(
+      final MetricsSystem metricsSystem,
       final KvStoreAccessor hotDb,
       final KvStoreAccessor finalizedDb,
       final SchemaHotAdapter schemaHot,
@@ -133,7 +134,8 @@ public class KvStoreDatabase implements Database {
     final KvStoreCombinedDaoAdapter dao =
         new KvStoreCombinedDaoAdapter(
             hotDao,
-            new V4FinalizedKvStoreDao(finalizedDb, schemaFinalized, finalizedStateStorageLogic));
+            new V4FinalizedKvStoreDao(
+                metricsSystem, finalizedDb, schemaFinalized, finalizedStateStorageLogic));
     return new KvStoreDatabase(dao, stateStorageMode, storeNonCanonicalBlocks, spec);
   }
 
@@ -143,12 +145,19 @@ public class KvStoreDatabase implements Database {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
-      final Spec spec) {
+      final Spec spec,
+      final MetricsSystem metricsSystem) {
     final V4FinalizedStateSnapshotStorageLogic<SchemaCombinedSnapshotState>
         finalizedStateStorageLogic =
             new V4FinalizedStateSnapshotStorageLogic<>(stateStorageFrequency);
     return create(
-        db, schema, stateStorageMode, storeNonCanonicalBlocks, spec, finalizedStateStorageLogic);
+        db,
+        schema,
+        stateStorageMode,
+        storeNonCanonicalBlocks,
+        spec,
+        finalizedStateStorageLogic,
+        metricsSystem);
   }
 
   public static Database createWithStateTree(
@@ -162,7 +171,13 @@ public class KvStoreDatabase implements Database {
     final V4FinalizedStateStorageLogic<SchemaCombinedTreeState> finalizedStateStorageLogic =
         new V4FinalizedStateTreeStorageLogic(metricsSystem, spec, maxKnownNodeCacheSize);
     return create(
-        db, schema, stateStorageMode, storeNonCanonicalBlocks, spec, finalizedStateStorageLogic);
+        db,
+        schema,
+        stateStorageMode,
+        storeNonCanonicalBlocks,
+        spec,
+        finalizedStateStorageLogic,
+        metricsSystem);
   }
 
   private static <S extends SchemaCombined> KvStoreDatabase create(
@@ -171,9 +186,10 @@ public class KvStoreDatabase implements Database {
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final Spec spec,
-      final V4FinalizedStateStorageLogic<S> finalizedStateStorageLogic) {
+      final V4FinalizedStateStorageLogic<S> finalizedStateStorageLogic,
+      final MetricsSystem metricsSystem) {
     final CombinedKvStoreDao<S> dao =
-        new CombinedKvStoreDao<>(db, schema, finalizedStateStorageLogic);
+        new CombinedKvStoreDao<>(db, schema, finalizedStateStorageLogic, metricsSystem);
     return new KvStoreDatabase(dao, stateStorageMode, storeNonCanonicalBlocks, spec);
   }
 

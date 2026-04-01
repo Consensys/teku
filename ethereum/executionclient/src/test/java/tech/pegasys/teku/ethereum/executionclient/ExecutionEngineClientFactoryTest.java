@@ -19,16 +19,21 @@ import static org.mockito.Mockito.mock;
 
 import okhttp3.OkHttpClient;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 
-class OkHttpExecutionEngineClientFactoryTest {
+@DisabledOnOs(OS.WINDOWS)
+class ExecutionEngineClientFactoryTest {
 
   private final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+  private final AsyncRunner asyncRunner = mock(AsyncRunner.class);
   private final EventLogger eventLog = mock(EventLogger.class);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInMillis(1000);
   private final ExecutionClientEventsChannel executionClientEventsPublisher =
@@ -49,6 +54,19 @@ class OkHttpExecutionEngineClientFactoryTest {
   }
 
   @Test
+  void createsIpcClient_forFileEndpoint() {
+    final ExecutionEngineClient client = createClient("file:///tmp/foo.ipc");
+    assertThat(client).isInstanceOf(IpcSocketExecutionEngineClient.class);
+  }
+
+  @Test
+  void throwsException_forFileEndpointOnWindows() {
+    assertThatThrownBy(() -> createClient("file:///tmp/foo.ipc", false))
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessageContaining("not supported on Windows");
+  }
+
+  @Test
   void throwsException_forUnsupportedScheme() {
     assertThatThrownBy(() -> createClient("ftp://localhost:8551"))
         .isInstanceOf(InvalidConfigurationException.class)
@@ -64,12 +82,23 @@ class OkHttpExecutionEngineClientFactoryTest {
   }
 
   private ExecutionEngineClient createClient(final String endpoint) {
-    return OkHttpExecutionEngineClientFactory.create(
-        httpClient,
+    return ExecutionEngineClientFactory.create(
         endpoint,
-        eventLog,
         timeProvider,
+        eventLog,
         executionClientEventsPublisher,
-        OkHttpExecutionEngineClient.NON_CRITICAL_METHODS);
+        () -> httpClient,
+        () -> asyncRunner);
+  }
+
+  private ExecutionEngineClient createClient(final String endpoint, final boolean isUnix) {
+    return ExecutionEngineClientFactory.create(
+        endpoint,
+        timeProvider,
+        eventLog,
+        executionClientEventsPublisher,
+        () -> httpClient,
+        () -> asyncRunner,
+        isUnix);
   }
 }

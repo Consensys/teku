@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadBidGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.PayloadAttestationMessageGossipManager;
+import tech.pegasys.teku.networking.eth2.gossip.ProposerPreferencesGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -50,10 +52,12 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
   private final OperationProcessor<SignedExecutionPayloadEnvelope> executionPayloadProcessor;
   private final OperationProcessor<PayloadAttestationMessage> payloadAttestationMessageProcessor;
   private final OperationProcessor<SignedExecutionPayloadBid> executionPayloadBidProcessor;
+  private final OperationProcessor<SignedProposerPreferences> proposerPreferencesProcessor;
 
   private ExecutionPayloadGossipManager executionPayloadGossipManager;
   private PayloadAttestationMessageGossipManager payloadAttestationMessageGossipManager;
   private ExecutionPayloadBidGossipManager executionPayloadBidGossipManager;
+  private ProposerPreferencesGossipManager proposerPreferencesGossipManager;
 
   public GossipForkSubscriptionsGloas(
       final Fork fork,
@@ -81,6 +85,7 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
       final OperationProcessor<PayloadAttestationMessage>
           payloadAttestationMessageOperationProcessor,
       final OperationProcessor<SignedExecutionPayloadBid> executionPayloadBidOperationProcessor,
+      final OperationProcessor<SignedProposerPreferences> proposerPreferencesOperationProcessor,
       final DebugDataDumper debugDataDumper,
       final DasGossipLogger dasGossipLogger,
       final OperationProcessor<ExecutionProof> executionProcessorOperationProcessor,
@@ -113,6 +118,7 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
     this.executionPayloadProcessor = executionPayloadOperationProcessor;
     this.payloadAttestationMessageProcessor = payloadAttestationMessageOperationProcessor;
     this.executionPayloadBidProcessor = executionPayloadBidOperationProcessor;
+    this.proposerPreferencesProcessor = proposerPreferencesOperationProcessor;
   }
 
   @Override
@@ -121,6 +127,7 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
     addExecutionPayloadGossipManager(forkInfo, forkDigest);
     addPayloadAttestationMessageGossipManager(forkInfo, forkDigest);
     addExecutionPayloadBidGossipManager(forkInfo, forkDigest);
+    addProposerPreferencesGossipManager(forkInfo, forkDigest);
   }
 
   void addExecutionPayloadGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
@@ -171,6 +178,22 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
     addGossipManager(executionPayloadBidGossipManager);
   }
 
+  void addProposerPreferencesGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
+    this.proposerPreferencesGossipManager =
+        new ProposerPreferencesGossipManager(
+            spec,
+            recentChainData,
+            asyncRunner,
+            discoveryNetwork,
+            gossipEncoding,
+            forkInfo,
+            forkDigest,
+            proposerPreferencesProcessor,
+            spec.getNetworkingConfig(),
+            debugDataDumper);
+    addGossipManager(proposerPreferencesGossipManager);
+  }
+
   @Override
   public SafeFuture<Void> publishExecutionPayload(final SignedExecutionPayloadEnvelope message) {
     return executionPayloadGossipManager.publish(message);
@@ -184,5 +207,10 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
   @Override
   public void publishExecutionPayloadBid(final SignedExecutionPayloadBid message) {
     executionPayloadBidGossipManager.publish(message);
+  }
+
+  @Override
+  public void publishProposerPreferences(final SignedProposerPreferences message) {
+    proposerPreferencesGossipManager.publish(message);
   }
 }
