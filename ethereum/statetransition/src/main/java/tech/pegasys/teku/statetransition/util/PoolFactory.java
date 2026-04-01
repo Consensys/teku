@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -143,6 +144,19 @@ public class PoolFactory {
         payloadAttestation ->
             Collections.singletonList(payloadAttestation.getData().getBeaconBlockRoot()),
         payloadAttestation -> payloadAttestation.getData().getSlot());
+  }
+
+  public <T> PendingPool<T> createNoOpPendingPool(final Spec spec) {
+    return new NoOpPendingPool<>(
+        pendingPoolsSizeGauge,
+        "no_op",
+        spec,
+        UInt64.ZERO,
+        UInt64.ZERO,
+        0,
+        __ -> Bytes32.ZERO,
+        __ -> Collections.emptyList(),
+        __ -> UInt64.ZERO);
   }
 
   public BlockBlobSidecarsTrackersPoolImpl createPoolForBlockBlobSidecarsTrackers(

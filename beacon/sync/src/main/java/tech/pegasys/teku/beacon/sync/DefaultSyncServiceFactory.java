@@ -144,6 +144,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
             asyncRunner,
             pendingBlocks,
             pendingAttestations,
+            pendingPayloadAttestations,
             blockBlobSidecarsTrackersPool,
             forwardSyncService,
             fetchTaskFactory);
@@ -152,12 +153,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
             spec, asyncRunner, blockBlobSidecarsTrackersPool, forwardSyncService, fetchTaskFactory);
     final RecentExecutionPayloadsFetcher recentExecutionPayloadsFetcher =
         RecentExecutionPayloadsFetcher.create(
-            spec,
-            asyncRunner,
-            forwardSyncService,
-            pendingPayloadAttestations,
-            fetchTaskFactory,
-            executionPayloadManager);
+            spec, asyncRunner, forwardSyncService, fetchTaskFactory, executionPayloadManager);
 
     final SyncStateTracker syncStateTracker = createSyncStateTracker(forwardSyncService);
 
