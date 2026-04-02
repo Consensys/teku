@@ -35,12 +35,16 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 class AggregatingPayloadAttestationPoolTest {
@@ -54,12 +58,16 @@ class AggregatingPayloadAttestationPoolTest {
 
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
+  private final PendingPool<PayloadAttestationMessage> pendingPayloadAttestations =
+      new PoolFactory(metricsSystem).createPendingPoolForPayloadAttestations(spec, 10_000);
+
   private final SchemaDefinitionsGloas schemaDefinitionsGloas =
       SchemaDefinitionsGloas.required(
           spec.forMilestone(SpecMilestone.GLOAS).getSchemaDefinitions());
 
   private final AggregatingPayloadAttestationPool payloadAttestationPool =
-      new AggregatingPayloadAttestationPool(spec, validator, metricsSystem);
+      new AggregatingPayloadAttestationPool(
+          spec, validator, pendingPayloadAttestations, metricsSystem);
 
   @BeforeEach
   public void setUp() {
@@ -93,6 +101,53 @@ class AggregatingPayloadAttestationPoolTest {
     SafeFutureAssert.safeJoin(payloadAttestationPool.addLocal(payloadAttestationMessage));
 
     assertThat(getPoolSizeFromMetric()).isOne();
+    assertThat(addedMessages).containsExactly(payloadAttestationMessage);
+  }
+
+  @Test
+  public void addingSaveForFutureMessageAddsToPendingPoolAndProcessesItOnBlockImported() {
+
+    when(validator.validate(any()))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
+
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
+
+    final PayloadAttestationData data =
+        schemaDefinitionsGloas
+            .getPayloadAttestationDataSchema()
+            .create(block.getRoot(), block.getSlot(), true, true);
+
+    final PayloadAttestationMessage payloadAttestationMessage =
+        dataStructureUtil.randomPayloadAttestationMessage(data);
+
+    pendingPayloadAttestations.onSlot(block.getSlot());
+    pendingPayloadAttestations.onNewFinalizedCheckpoint(
+        new Checkpoint(
+            spec.computeEpochAtSlot(block.getSlot()).minus(1), dataStructureUtil.randomBytes32()),
+        false);
+
+    SafeFutureAssert.safeJoin(
+        payloadAttestationPool.addRemote(payloadAttestationMessage, Optional.empty()));
+
+    assertThat(getPoolSizeFromMetric()).isZero();
+    assertThat(pendingPayloadAttestations.size()).isOne();
+    assertThat(pendingPayloadAttestations.getItemsDependingOn(block.getRoot(), true))
+        .containsExactly(payloadAttestationMessage);
+
+    final List<PayloadAttestationMessage> addedMessages = new ArrayList<>();
+
+    payloadAttestationPool.subscribeOperationAdded(
+        (message, validationStatus, fromNetwork) -> addedMessages.add(message));
+
+    // payload attestation is accepted on next attempt
+    when(validator.validate(any()))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+
+    // pending payload attestation is processed on block import
+    payloadAttestationPool.onBlockImported(block, false);
+
+    assertThat(getPoolSizeFromMetric()).isOne();
+    assertThat(pendingPayloadAttestations.size()).isZero();
     assertThat(addedMessages).containsExactly(payloadAttestationMessage);
   }
 

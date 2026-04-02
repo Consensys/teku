@@ -3187,6 +3187,13 @@ public final class DataStructureUtil {
         .create(randomValidatorIndex(), randomPayloadAttestationData(), randomSignature());
   }
 
+  public PayloadAttestationMessage randomPayloadAttestationMessage(
+      final PayloadAttestationData data) {
+    return getGloasSchemaDefinitions()
+        .getPayloadAttestationMessageSchema()
+        .create(randomValidatorIndex(), data, randomSignature());
+  }
+
   public IndexedPayloadAttestation randomIndexedPayloadAttestation() {
     final IndexedPayloadAttestationSchema indexedPayloadAttestationSchema =
         getGloasSchemaDefinitions().getIndexedPayloadAttestationSchema();

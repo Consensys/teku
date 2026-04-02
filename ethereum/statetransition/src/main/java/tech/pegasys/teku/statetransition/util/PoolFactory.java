@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
@@ -127,6 +129,34 @@ public class PoolFactory {
         ValidatableAttestation::hashTreeRoot,
         ValidatableAttestation::getDependentBlockRoots,
         ValidatableAttestation::getEarliestSlotForForkChoiceProcessing);
+  }
+
+  public PendingPool<PayloadAttestationMessage> createPendingPoolForPayloadAttestations(
+      final Spec spec, final int maxQueueSize) {
+    return new PendingPool<>(
+        pendingPoolsSizeGauge,
+        "payload_attestations",
+        spec,
+        DEFAULT_HISTORICAL_SLOT_TOLERANCE,
+        FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
+        maxQueueSize,
+        PayloadAttestationMessage::hashTreeRoot,
+        payloadAttestation ->
+            Collections.singletonList(payloadAttestation.getData().getBeaconBlockRoot()),
+        payloadAttestation -> payloadAttestation.getData().getSlot());
+  }
+
+  public <T> PendingPool<T> createNoOpPendingPool(final Spec spec) {
+    return new NoOpPendingPool<>(
+        pendingPoolsSizeGauge,
+        "no_op",
+        spec,
+        UInt64.ZERO,
+        UInt64.ZERO,
+        0,
+        __ -> Bytes32.ZERO,
+        __ -> Collections.emptyList(),
+        __ -> UInt64.ZERO);
   }
 
   public BlockBlobSidecarsTrackersPoolImpl createPoolForBlockBlobSidecarsTrackers(
