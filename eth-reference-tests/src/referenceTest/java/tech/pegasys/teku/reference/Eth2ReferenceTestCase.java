@@ -54,19 +54,16 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(OperationsTestExecutor.OPERATIONS_TEST_TYPES)
           .putAll(SanityTests.SANITY_TEST_TYPES)
           .put("slashing-protection-interchange", new SlashingProtectionInterchangeTestExecutor())
-          .put("networking/gossip_voluntary_exit", new GossipVoluntaryExitTest())
-          .put("networking/gossip_proposer_slashing", new GossipProposerSlashingTest())
-          .put("networking/gossip_attester_slashing", new GossipAttesterSlashingTest())
           .put("light_client/single_merkle_proof", TestExecutor.IGNORE_TESTS)
           .put("light_client/sync", TestExecutor.IGNORE_TESTS)
           .put("light_client/update_ranking", TestExecutor.IGNORE_TESTS)
           .put("light_client/data_collection", TestExecutor.IGNORE_TESTS)
-          .put("networking/gossip_attester_slashing", TestExecutor.IGNORE_TESTS)
+          .put("networking/gossip_attester_slashing", new GossipAttesterSlashingTest())
           .put("networking/gossip_beacon_aggregate_and_proof", TestExecutor.IGNORE_TESTS)
           .put("networking/gossip_beacon_attestation", TestExecutor.IGNORE_TESTS)
           .put("networking/gossip_beacon_block", TestExecutor.IGNORE_TESTS)
-          .put("networking/gossip_proposer_slashing", TestExecutor.IGNORE_TESTS)
-          .put("networking/gossip_voluntary_exit", TestExecutor.IGNORE_TESTS)
+          .put("networking/gossip_proposer_slashing", new GossipProposerSlashingTest())
+          .put("networking/gossip_voluntary_exit", new GossipVoluntaryExitTest())
           .build();
 
   private static final ImmutableMap<String, TestExecutor> PHASE_0_TEST_TYPES =
