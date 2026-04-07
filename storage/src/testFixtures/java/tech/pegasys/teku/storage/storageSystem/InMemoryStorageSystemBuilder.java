@@ -37,7 +37,7 @@ public class InMemoryStorageSystemBuilder {
   private DatabaseVersion version = DatabaseVersion.DEFAULT_VERSION;
   private StateStorageMode storageMode = StateStorageMode.ARCHIVE;
   private StoreConfig storeConfig = StoreConfig.createDefault();
-  private int numberOfValidators = 3;
+  private int numberOfValidators = 32;
   private long stateStorageFrequency = 1L;
   private boolean storeNonCanonicalBlocks = false;
 

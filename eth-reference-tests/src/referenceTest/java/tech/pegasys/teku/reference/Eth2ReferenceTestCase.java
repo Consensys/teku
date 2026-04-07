@@ -61,6 +61,12 @@ public abstract class Eth2ReferenceTestCase {
           .put("light_client/sync", TestExecutor.IGNORE_TESTS)
           .put("light_client/update_ranking", TestExecutor.IGNORE_TESTS)
           .put("light_client/data_collection", TestExecutor.IGNORE_TESTS)
+          .put("networking/gossip_attester_slashing", TestExecutor.IGNORE_TESTS)
+          .put("networking/gossip_beacon_aggregate_and_proof", TestExecutor.IGNORE_TESTS)
+          .put("networking/gossip_beacon_attestation", TestExecutor.IGNORE_TESTS)
+          .put("networking/gossip_beacon_block", TestExecutor.IGNORE_TESTS)
+          .put("networking/gossip_proposer_slashing", TestExecutor.IGNORE_TESTS)
+          .put("networking/gossip_voluntary_exit", TestExecutor.IGNORE_TESTS)
           .build();
 
   private static final ImmutableMap<String, TestExecutor> PHASE_0_TEST_TYPES =
@@ -74,7 +80,6 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
           .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
           .putAll(RewardsTestExecutorAltair.REWARDS_TEST_TYPES)
-          .putAll(NetworkingTests.NETWORKING_TEST_TYPES)
           .build();
 
   private static final ImmutableMap<String, TestExecutor> BELLATRIX_TEST_TYPES =
@@ -82,7 +87,6 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
           .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
           .putAll(RewardsTestExecutorBellatrix.REWARDS_TEST_TYPES)
-          .putAll(NetworkingTests.NETWORKING_TEST_TYPES)
           .build();
 
   private static final ImmutableMap<String, TestExecutor> CAPELLA_TEST_TYPES =
@@ -90,7 +94,6 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
           .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
           .putAll(RewardsTestExecutorBellatrix.REWARDS_TEST_TYPES)
-          .putAll(NetworkingTests.NETWORKING_TEST_TYPES)
           .build();
 
   private static final ImmutableMap<String, TestExecutor> DENEB_TEST_TYPES =
@@ -99,7 +102,6 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
           .putAll(RewardsTestExecutorBellatrix.REWARDS_TEST_TYPES)
           .putAll(MerkleProofTests.MERKLE_PROOF_TEST_TYPES)
-          .putAll(NetworkingTests.NETWORKING_TEST_TYPES)
           .build();
 
   private static final ImmutableMap<String, TestExecutor> ELECTRA_TEST_TYPES =
@@ -108,7 +110,6 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
           .putAll(RewardsTestExecutorBellatrix.REWARDS_TEST_TYPES)
           .putAll(MerkleProofTests.MERKLE_PROOF_TEST_TYPES)
-          .putAll(NetworkingTests.NETWORKING_TEST_TYPES)
           .build();
 
   private static final ImmutableMap<String, TestExecutor> FULU_TEST_TYPES =

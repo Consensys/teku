@@ -23,12 +23,5 @@ public class NetworkingTests {
           .put(
               "networking/compute_columns_for_custody_group",
               new ComputeColumnsForCustodyGroupTestExecutor())
-          // TODO: Support gossip validation tests
-          .put("networking/gossip_attester_slashing", TestExecutor.IGNORE_TESTS)
-          .put("networking/gossip_beacon_aggregate_and_proof", TestExecutor.IGNORE_TESTS)
-          .put("networking/gossip_beacon_attestation", TestExecutor.IGNORE_TESTS)
-          .put("networking/gossip_beacon_block", TestExecutor.IGNORE_TESTS)
-          .put("networking/gossip_proposer_slashing", TestExecutor.IGNORE_TESTS)
-          .put("networking/gossip_voluntary_exit", TestExecutor.IGNORE_TESTS)
           .build();
 }
