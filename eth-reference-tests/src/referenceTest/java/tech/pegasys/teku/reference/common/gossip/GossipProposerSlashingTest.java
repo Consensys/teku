@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.reference.fulu.networking;
+package tech.pegasys.teku.reference.common.gossip;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.reference.BlsSetting.IGNORED;
@@ -30,16 +30,16 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.BlsSetting;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 
-public class GossipVoluntaryExitTest implements TestExecutor {
+public class GossipProposerSlashingTest implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
-    final GossipVoluntaryExitMetaData metaData =
-        loadYaml(testDefinition, "meta.yaml", GossipVoluntaryExitMetaData.class);
+    final GossipProposerSlashingMetaData metaData =
+        loadYaml(testDefinition, "meta.yaml", GossipProposerSlashingMetaData.class);
     final Spec spec = testDefinition.getSpec();
     final BeaconState state = loadStateFromSsz(testDefinition, "state.ssz_snappy");
     final BLSSignatureVerifier signatureVerifier =
@@ -47,50 +47,50 @@ public class GossipVoluntaryExitTest implements TestExecutor {
             ? BLSSignatureVerifier.NOOP
             : BLSSignatureVerifier.SIMPLE;
 
-    final Set<UInt64> seenValidators = new HashSet<>();
+    final Set<UInt64> seenProposers = new HashSet<>();
 
-    for (final GossipVoluntaryExitMetaData.Message message : metaData.getMessages()) {
-      final SignedVoluntaryExit exit =
+    for (final GossipProposerSlashingMetaData.Message message : metaData.getMessages()) {
+      final ProposerSlashing slashing =
           loadSsz(
-              testDefinition, message.getMessage() + ".ssz_snappy", SignedVoluntaryExit.SSZ_SCHEMA);
-      final UInt64 validatorIndex = exit.getMessage().getValidatorIndex();
+              testDefinition, message.getMessage() + ".ssz_snappy", ProposerSlashing.SSZ_SCHEMA);
+      final UInt64 proposerIndex = slashing.getHeader1().getMessage().getProposerIndex();
 
-      if (seenValidators.contains(validatorIndex)) {
+      if (seenProposers.contains(proposerIndex)) {
         assertThat(message.getExpected())
-            .describedAs("Expected ignore for already-seen validator %s", validatorIndex)
+            .describedAs("Expected ignore for already-seen proposer %s", proposerIndex)
             .isEqualTo("ignore");
       } else {
         final Optional<OperationInvalidReason> invalidReason =
-            spec.validateVoluntaryExit(state, exit);
+            spec.validateProposerSlashing(state, slashing);
         final boolean signatureValid =
             invalidReason.isEmpty()
-                && spec.verifyVoluntaryExitSignature(state, exit, signatureVerifier);
+                && spec.verifyProposerSlashingSignature(state, slashing, signatureVerifier);
         final boolean rejected = invalidReason.isPresent() || !signatureValid;
 
         switch (message.getExpected()) {
           case "valid" -> {
             assertThat(invalidReason)
-                .describedAs("Expected valid exit for validator %s", validatorIndex)
+                .describedAs("Expected valid slashing for proposer %s", proposerIndex)
                 .isEmpty();
             assertThat(signatureValid)
-                .describedAs("Expected valid signature for validator %s", validatorIndex)
+                .describedAs("Expected valid signature for proposer %s", proposerIndex)
                 .isTrue();
-            seenValidators.add(validatorIndex);
+            seenProposers.add(proposerIndex);
           }
           case "reject" ->
               assertThat(rejected)
-                  .describedAs("Expected reject for validator %s", validatorIndex)
+                  .describedAs("Expected reject for proposer %s", proposerIndex)
                   .isTrue();
           default ->
               throw new AssertionError(
-                  "Unexpected expected value: " + message.getExpected() + " for unseen validator");
+                  "Unexpected expected value: " + message.getExpected() + " for unseen proposer");
         }
       }
     }
   }
 
   @SuppressWarnings("unused")
-  private static class GossipVoluntaryExitMetaData {
+  private static class GossipProposerSlashingMetaData {
 
     @JsonProperty(value = "topic", required = true)
     private String topic;
@@ -107,10 +107,6 @@ public class GossipVoluntaryExitTest implements TestExecutor {
 
     public BlsSetting getBlsSetting() {
       return BlsSetting.forCode(blsSetting);
-    }
-
-    public String getTopic() {
-      return topic;
     }
 
     private static class Message {
@@ -130,10 +126,6 @@ public class GossipVoluntaryExitTest implements TestExecutor {
 
       public String getExpected() {
         return expected;
-      }
-
-      public String getReason() {
-        return reason;
       }
     }
   }
