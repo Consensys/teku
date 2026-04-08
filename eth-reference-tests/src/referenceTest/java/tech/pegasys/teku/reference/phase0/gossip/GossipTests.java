@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.reference.common.gossip;
+package tech.pegasys.teku.reference.phase0.gossip;
 
 import com.google.common.collect.ImmutableMap;
 import tech.pegasys.teku.reference.TestExecutor;
@@ -21,11 +21,11 @@ public class GossipTests {
 
   public static final ImmutableMap<String, TestExecutor> GOSSIP_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
-          .put("networking/gossip_attester_slashing", new GossipAttesterSlashingTest())
+          .put("networking/gossip_attester_slashing", new GossipAttesterSlashingTestExecutor())
           .put("networking/gossip_beacon_aggregate_and_proof", TestExecutor.IGNORE_TESTS)
           .put("networking/gossip_beacon_attestation", TestExecutor.IGNORE_TESTS)
           .put("networking/gossip_beacon_block", TestExecutor.IGNORE_TESTS)
-          .put("networking/gossip_proposer_slashing", new GossipProposerSlashingTest())
-          .put("networking/gossip_voluntary_exit", new GossipVoluntaryExitTest())
+          .put("networking/gossip_proposer_slashing", new GossipProposerSlashingTestExecutor())
+          .put("networking/gossip_voluntary_exit", new GossipVoluntaryExitTestExecutor())
           .build();
 }

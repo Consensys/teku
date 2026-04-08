@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.reference.common.gossip;
+package tech.pegasys.teku.reference.phase0.gossip;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.reference.BlsSetting.IGNORED;
@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 
-public class GossipProposerSlashingTest implements TestExecutor {
+public class GossipProposerSlashingTestExecutor implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
