@@ -113,7 +113,8 @@ public class InMemoryStorageSystemBuilder {
             .version(version)
             .storageMode(storageMode)
             .stateStorageFrequency(stateStorageFrequency)
-            .storeConfig(storeConfig);
+            .storeConfig(storeConfig)
+            .numberOfValidators(numberOfValidators);
 
     copy.unifiedDb = unifiedDb;
     copy.hotDb = hotDb;

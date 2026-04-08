@@ -92,7 +92,8 @@ public class FileBackedStorageSystemBuilder {
         .dataDir(dataDir)
         .storageMode(storageMode)
         .stateStorageFrequency(stateStorageFrequency)
-        .storeConfig(storeConfig);
+        .storeConfig(storeConfig)
+        .numberOfValidators(numberOfValidators);
   }
 
   private void validate() {
