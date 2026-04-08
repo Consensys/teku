@@ -17,8 +17,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.nio.file.Path;
+import java.util.List;
+import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
@@ -34,7 +37,7 @@ public class FileBackedStorageSystemBuilder {
   private DatabaseVersion version = DatabaseVersion.DEFAULT_VERSION;
   private StateStorageMode storageMode = StateStorageMode.ARCHIVE;
   private StoreConfig storeConfig = StoreConfig.createDefault();
-
+  private int numberOfValidators = 8;
   private Spec spec;
 
   // Version-dependent fields
@@ -56,13 +59,16 @@ public class FileBackedStorageSystemBuilder {
     final Database database = buildDatabase();
 
     validate();
+
+    final List<BLSKeyPair> validatorKeys =
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, numberOfValidators);
     return StorageSystem.create(
         database,
         createRestartSupplier(),
         storageMode,
         storeConfig,
         spec,
-        ChainBuilder.create(spec),
+        ChainBuilder.create(spec, validatorKeys),
         stateRebuildTimeoutSeconds);
   }
 
@@ -139,6 +145,11 @@ public class FileBackedStorageSystemBuilder {
   public FileBackedStorageSystemBuilder storeConfig(final StoreConfig storeConfig) {
     checkNotNull(storeConfig);
     this.storeConfig = storeConfig;
+    return this;
+  }
+
+  public FileBackedStorageSystemBuilder numberOfValidators(final int numberOfValidators) {
+    this.numberOfValidators = numberOfValidators;
     return this;
   }
 
