@@ -62,7 +62,6 @@ public abstract class Eth2ReferenceTestCase {
   private static final ImmutableMap<String, TestExecutor> PHASE_0_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .putAll(RewardsTestExecutorPhase0.REWARDS_TEST_TYPES)
-          .putAll(NetworkingTests.NETWORKING_TEST_TYPES)
           .build();
 
   private static final ImmutableMap<String, TestExecutor> ALTAIR_TEST_TYPES =

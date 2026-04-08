@@ -62,10 +62,10 @@ public class StorageSystemArgumentsProvider implements ArgumentsProvider {
                     (dataPath, spec) ->
                         InMemoryStorageSystemBuilder.create()
                             .specProvider(spec)
-                            .numberOfValidators(3)
                             .version(databaseVersion)
                             .storageMode(mode)
                             .stateStorageFrequency(storageFrequency)
+                            .numberOfValidators(3)
                             .build()));
           }
 
@@ -76,11 +76,11 @@ public class StorageSystemArgumentsProvider implements ArgumentsProvider {
                   (dataPath, spec) ->
                       FileBackedStorageSystemBuilder.create()
                           .specProvider(spec)
-                          .numberOfValidators(3)
                           .version(databaseVersion)
                           .dataDir(dataPath)
                           .storageMode(mode)
                           .stateStorageFrequency(storageFrequency)
+                          .numberOfValidators(3)
                           .build()));
         }
       }
