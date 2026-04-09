@@ -150,7 +150,6 @@ class OkHttpHttpExecutionEngineClientTest {
             mockWebServer.url("/").toString(),
             eventLog,
             timeProvider,
-            executionClientEventsPublisher,
-            OkHttpExecutionEngineClient.NON_CRITICAL_METHODS);
+            executionClientEventsPublisher);
   }
 }

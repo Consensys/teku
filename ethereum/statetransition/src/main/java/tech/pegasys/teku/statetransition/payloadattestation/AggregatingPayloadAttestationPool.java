@@ -26,7 +26,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -40,16 +41,21 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class AggregatingPayloadAttestationPool
-    implements PayloadAttestationPool, SlotEventsChannel {
+    implements PayloadAttestationPool, SlotEventsChannel, ReceivedBlockEventsChannel {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   /** The payload attestations are valid for 2 slots only */
   @VisibleForTesting static final long PAYLOAD_ATTESTATION_RETENTION_SLOTS = 2;
@@ -65,6 +71,7 @@ public class AggregatingPayloadAttestationPool
 
   private final Spec spec;
   private final PayloadAttestationMessageGossipValidator validator;
+  private final PendingPool<PayloadAttestationMessage> pendingPayloadAttestations;
   private final SettableGauge sizeGauge;
 
   private final AtomicInteger size = new AtomicInteger(0);
@@ -72,9 +79,11 @@ public class AggregatingPayloadAttestationPool
   public AggregatingPayloadAttestationPool(
       final Spec spec,
       final PayloadAttestationMessageGossipValidator validator,
+      final PendingPool<PayloadAttestationMessage> pendingPayloadAttestations,
       final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.validator = validator;
+    this.pendingPayloadAttestations = pendingPayloadAttestations;
     sizeGauge =
         SettableGauge.create(
             metricsSystem,
@@ -88,6 +97,27 @@ public class AggregatingPayloadAttestationPool
     final UInt64 firstPayloadAttestationSlotToKeep =
         slot.minusMinZero(PAYLOAD_ATTESTATION_RETENTION_SLOTS);
     removePayloadAttestationsPriorToSlot(firstPayloadAttestationSlotToKeep);
+    pendingPayloadAttestations.onSlot(slot);
+  }
+
+  @Override
+  public void onBlockValidated(final SignedBeaconBlock block) {}
+
+  @Override
+  public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
+    pendingPayloadAttestations
+        .getItemsDependingOn(block.getRoot(), false)
+        .forEach(
+            attestation -> {
+              pendingPayloadAttestations.remove(attestation);
+              add(attestation, true)
+                  .finish(
+                      err ->
+                          LOG.error(
+                              "Failed to process pending payload attestation dependent on {}",
+                              block.getRoot(),
+                              err));
+            });
   }
 
   private void removePayloadAttestationsPriorToSlot(final UInt64 slot) {
@@ -144,6 +174,12 @@ public class AggregatingPayloadAttestationPool
                   updateSize(1);
                 }
               }
+              if (result.isSaveForFuture()) {
+                LOG.trace(
+                    "Deferring payload attestation message {} for future processing",
+                    payloadAttestationMessage::hashTreeRoot);
+                pendingPayloadAttestations.add(payloadAttestationMessage);
+              }
             });
   }
 
@@ -190,22 +226,14 @@ public class AggregatingPayloadAttestationPool
   }
 
   @Override
-  public List<PayloadAttestationMessage> getPayloadAttestationMessages() {
-    return List.copyOf(
-        payloadAttestationGroupByDataHash.values().stream()
-            .flatMap(group -> group.getPayloadAttestationMessages().stream())
-            .toList());
-  }
-
-  @Override
-  public List<PayloadAttestation> getAggregatedPayloadAttestations(
-      final Function<UInt64, IntList> ptcProvider) {
+  public List<PayloadAttestation> getPayloadAttestations(final BeaconState state) {
     return payloadAttestationGroupByDataHash.values().stream()
         .filter(group -> group.size() > 0)
         .map(
-            group ->
-                group.createAggregatedPayloadAttestation(
-                    ptcProvider.apply(group.getData().getSlot())))
+            group -> {
+              final IntList ptc = spec.getPtc(state, group.getData().getSlot());
+              return group.createAggregatedPayloadAttestation(ptc);
+            })
         .toList();
   }
 }

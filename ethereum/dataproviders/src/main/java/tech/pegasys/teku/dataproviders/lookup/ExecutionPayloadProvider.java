@@ -31,11 +31,11 @@ public interface ExecutionPayloadProvider {
   ExecutionPayloadProvider NOOP = roots -> SafeFuture.completedFuture(Collections.emptyMap());
 
   static ExecutionPayloadProvider fromDynamicMap(
-      final Map<Bytes32, SignedExecutionPayloadEnvelope> payloadMap) {
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloadMap) {
     return roots ->
         SafeFuture.completedFuture(
             roots.stream()
-                .flatMap(root -> Optional.ofNullable(payloadMap.get(root)).stream())
+                .flatMap(root -> Optional.ofNullable(executionPayloadMap.get(root)).stream())
                 .collect(
                     Collectors.toMap(
                         SignedExecutionPayloadEnvelope::getBeaconBlockRoot, Function.identity())));
@@ -55,18 +55,18 @@ public interface ExecutionPayloadProvider {
       for (ExecutionPayloadProvider nextProvider : secondaryProviders) {
         result =
             result.thenCompose(
-                payloads -> {
+                executionPayloads -> {
                   final Set<Bytes32> remainingRoots =
-                      Sets.difference(blockRoots, payloads.keySet());
+                      Sets.difference(blockRoots, executionPayloads.keySet());
                   if (remainingRoots.isEmpty()) {
-                    return SafeFuture.completedFuture(payloads);
+                    return SafeFuture.completedFuture(executionPayloads);
                   }
                   return nextProvider
                       .getExecutionPayloads(remainingRoots)
                       .thenApply(
                           morePayloads -> {
-                            payloads.putAll(morePayloads);
-                            return payloads;
+                            executionPayloads.putAll(morePayloads);
+                            return executionPayloads;
                           });
                 });
       }

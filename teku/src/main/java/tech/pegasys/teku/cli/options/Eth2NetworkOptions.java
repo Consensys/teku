@@ -428,6 +428,15 @@ public class Eth2NetworkOptions {
   private int dataColumnSidecarExtensionRetentionEpochs =
       Eth2NetworkConfiguration.DEFAULT_DATA_COLUMN_SIDECAR_EXTENSION_RETENTION_EPOCHS;
 
+  @Option(
+      names = {"--Xnetwork-pending-payload-attestations-max-queue"},
+      hidden = true,
+      paramLabel = "<NUMBER>",
+      description = "Override the queue size for pending payload attestations",
+      converter = OptionalIntConverter.class,
+      arity = "1")
+  private OptionalInt pendingPayloadAttestationsMaxQueue = OptionalInt.empty();
+
   public Eth2NetworkConfiguration getNetworkConfiguration() {
     return createEth2NetworkConfig(builder -> {});
   }
@@ -581,6 +590,7 @@ public class Eth2NetworkOptions {
     asyncP2pMaxQueue.ifPresent(builder::asyncP2pMaxQueue);
     pendingAttestationsMaxQueue.ifPresent(builder::pendingAttestationsMaxQueue);
     asyncBeaconChainMaxQueue.ifPresent(builder::asyncBeaconChainMaxQueue);
+    pendingPayloadAttestationsMaxQueue.ifPresent(builder::pendingPayloadAttestationsMaxQueue);
   }
 
   private void implicitEpochDefault(

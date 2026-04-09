@@ -17,52 +17,56 @@ import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessa
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.net.ProtocolException;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.WebSocket;
-import okhttp3.WebSocketListener;
-import okio.ByteString;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.schema.JsonRpcRequest;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
-public class OkHttpWebSocketExecutionEngineClient extends AbstractExecutionEngineClient {
+public class IpcSocketExecutionEngineClient extends AbstractExecutionEngineClient {
+
+  public static final String IPC_READER_ASYNC_RUNNER_NAME = "ipcreader";
+  public static final int IPC_READER_MAX_THREADS = 1;
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final OkHttpClient httpClient;
-  private final Request wsRequest;
+  private final AsyncRunner asyncRunner;
+  private final UnixDomainSocketFactory socketFactory;
   private final ConcurrentHashMap<Long, SafeFuture<JsonNode>> pendingRequests =
       new ConcurrentHashMap<>();
   private final AtomicBoolean connected = new AtomicBoolean(false);
 
-  private volatile WebSocket webSocket;
+  private volatile Socket socket;
+  private volatile OutputStream outputStream;
 
-  OkHttpWebSocketExecutionEngineClient(
-      final OkHttpClient httpClient,
-      final String endpoint,
+  IpcSocketExecutionEngineClient(
+      final AsyncRunner asyncRunner,
+      final Path ipcPath,
       final EventLogger eventLog,
       final TimeProvider timeProvider,
       final ExecutionClientEventsChannel executionClientEventsPublisher) {
     super(eventLog, timeProvider, executionClientEventsPublisher);
-    this.httpClient = httpClient;
-    this.wsRequest = new Request.Builder().url(endpoint).build();
+    this.asyncRunner = asyncRunner;
+    this.socketFactory = new UnixDomainSocketFactory(ipcPath);
   }
 
-  private void ensureConnected() {
+  private void ensureConnected() throws IOException {
     if (connected.get()) {
       return;
     }
@@ -70,8 +74,86 @@ public class OkHttpWebSocketExecutionEngineClient extends AbstractExecutionEngin
       if (connected.get()) {
         return;
       }
-      webSocket = httpClient.newWebSocket(wsRequest, new JsonRpcWebSocketListener());
+      final Socket newSocket = socketFactory.createSocket();
+      try {
+        newSocket.connect(null);
+      } catch (final IOException e) {
+        newSocket.close();
+        throw e;
+      }
+      socket = newSocket;
+      outputStream = newSocket.getOutputStream();
       connected.set(true);
+      startReaderThread();
+    }
+  }
+
+  private void startReaderThread() {
+    final Socket currentSocket = this.socket;
+    asyncRunner
+        .runAsync(
+            () -> {
+              try (final BufferedReader reader =
+                  new BufferedReader(
+                      new InputStreamReader(
+                          currentSocket.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                  processResponse(line);
+                }
+              } catch (final Exception e) {
+                if (connected.get()) {
+                  LOG.warn("IPC reader error", e);
+                }
+              } finally {
+                handleDisconnect(currentSocket, new Exception("IPC connection closed"));
+              }
+            })
+        .finishError(LOG);
+  }
+
+  private void processResponse(final String line) {
+    try {
+      final JsonNode jsonResponse = objectMapper.readTree(line);
+      final JsonNode idNode = jsonResponse.get("id");
+      if (idNode == null || idNode.isNull()) {
+        LOG.warn("Received IPC message without id");
+        return;
+      }
+      final long id = idNode.asLong();
+      final SafeFuture<JsonNode> future = pendingRequests.remove(id);
+      if (future != null) {
+        future.complete(jsonResponse);
+      } else {
+        LOG.warn("Received IPC response for unknown request id: {}", id);
+      }
+    } catch (final Exception e) {
+      LOG.error("Error processing IPC message", e);
+    }
+  }
+
+  @SuppressWarnings("ReferenceComparison")
+  private void handleDisconnect(final Socket disconnectedSocket, final Throwable cause) {
+    synchronized (this) {
+      if (socket != disconnectedSocket) {
+        // Connection has already been replaced, close stale socket
+        closeSocket(disconnectedSocket);
+        return;
+      }
+      connected.set(false);
+      pendingRequests.forEach((id, future) -> future.completeExceptionally(cause));
+      pendingRequests.clear();
+      closeSocket(disconnectedSocket);
+    }
+  }
+
+  private void closeSocket(final Socket socketToClose) {
+    try {
+      if (socketToClose != null) {
+        socketToClose.close();
+      }
+    } catch (final IOException e) {
+      LOG.debug("Error closing IPC socket", e);
     }
   }
 
@@ -86,9 +168,9 @@ public class OkHttpWebSocketExecutionEngineClient extends AbstractExecutionEngin
     final JsonRpcRequest request = buildRequest(method, params);
     final long requestId = request.id();
 
-    final String requestBody;
+    final byte[] requestBytes;
     try {
-      requestBody = writeRequestAsString(request);
+      requestBytes = writeRequestAsByteArray(request);
     } catch (final Exception e) {
       handleError(isCritical, e, false);
       return SafeFuture.completedFuture(Response.fromErrorMessage(getMessageOrSimpleName(e)));
@@ -100,23 +182,21 @@ public class OkHttpWebSocketExecutionEngineClient extends AbstractExecutionEngin
       handleError(isCritical, e, false);
       return SafeFuture.completedFuture(Response.fromErrorMessage(getMessageOrSimpleName(e)));
     }
+
     final SafeFuture<JsonNode> jsonFuture = new SafeFuture<>();
     pendingRequests.put(requestId, jsonFuture);
 
     try {
-      final boolean sent = webSocket.send(requestBody);
-      // This branch is for expected errors like disconnected, not able to write to socket, etc (all
-      // handled by library)
-      if (!sent) {
-        pendingRequests.remove(requestId);
-        final String errorMsg = "Failed to send WebSocket message";
-        handleError(isCritical, new Exception(errorMsg), false);
-        return SafeFuture.completedFuture(Response.fromErrorMessage(errorMsg));
+      synchronized (this) {
+        outputStream.write(requestBytes);
+        outputStream.write('\n');
+        outputStream.flush();
       }
-    } catch (final Exception e) {
-      // This branch is unexpected so we are raising the error
+    } catch (final IOException e) {
       pendingRequests.remove(requestId);
-      return SafeFuture.failedFuture(e);
+      handleDisconnect(socket, e);
+      handleError(isCritical, e, false);
+      return SafeFuture.completedFuture(Response.fromErrorMessage(getMessageOrSimpleName(e)));
     }
 
     return jsonFuture
@@ -148,9 +228,7 @@ public class OkHttpWebSocketExecutionEngineClient extends AbstractExecutionEngin
         .exceptionally(
             throwable -> {
               pendingRequests.remove(requestId);
-              final boolean couldBeAuthError =
-                  ExceptionUtil.hasCause(throwable, ProtocolException.class);
-              handleError(isCritical, throwable, couldBeAuthError);
+              handleError(isCritical, throwable, false);
               return Response.fromErrorMessage(getMessageOrSimpleName(throwable));
             });
   }
@@ -159,63 +237,5 @@ public class OkHttpWebSocketExecutionEngineClient extends AbstractExecutionEngin
     final int code = errorNode.path("code").asInt();
     final String msg = errorNode.path("message").asText();
     return String.format("JSON-RPC error: %s (%d): %s", describeJsonRpcErrorCode(code), code, msg);
-  }
-
-  private class JsonRpcWebSocketListener extends WebSocketListener {
-
-    @Override
-    public void onMessage(final WebSocket ws, final String text) {
-      onMessageInternal(text.getBytes(StandardCharsets.UTF_8));
-    }
-
-    @Override
-    public void onMessage(final WebSocket ws, final ByteString bytes) {
-      onMessageInternal(bytes.toByteArray());
-    }
-
-    void onMessageInternal(final byte[] bytes) {
-      try {
-        final JsonNode jsonResponse = objectMapper.readTree(bytes);
-        final JsonNode idNode = jsonResponse.get("id");
-        if (idNode == null || idNode.isNull()) {
-          LOG.warn("Received WebSocket message without id");
-          return;
-        }
-        final long id = idNode.asLong();
-        final SafeFuture<JsonNode> future = pendingRequests.remove(id);
-        if (future != null) {
-          future.complete(jsonResponse);
-        } else {
-          LOG.warn("Received WebSocket response for unknown request id: {}", id);
-        }
-      } catch (final Exception e) {
-        LOG.error("Error processing WebSocket message", e);
-      }
-    }
-
-    @Override
-    public void onFailure(final WebSocket ws, final Throwable t, final okhttp3.Response response) {
-      LOG.warn("WebSocket connection failure", t);
-      handleDisconnect(t);
-    }
-
-    @Override
-    public void onClosing(final WebSocket ws, final int code, final String reason) {
-      ws.close(code, reason);
-    }
-
-    @Override
-    public void onClosed(final WebSocket ws, final int code, final String reason) {
-      LOG.debug("WebSocket connection closed: {} {}", code, reason);
-      handleDisconnect(new Exception("WebSocket closed: " + code + " " + reason));
-    }
-
-    private void handleDisconnect(final Throwable cause) {
-      synchronized (this) {
-        connected.set(false);
-        pendingRequests.forEach((id, future) -> future.completeExceptionally(cause));
-        pendingRequests.clear();
-      }
-    }
   }
 }
