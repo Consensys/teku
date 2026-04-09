@@ -14,30 +14,38 @@
 package tech.pegasys.teku.storage.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
+import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.bls.BLSKeyGenerator;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.UpdateResult;
-import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 
 public class StoreTransactionGloasTest extends AbstractStoreTest {
 
@@ -65,26 +73,23 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
   }
 
   @Test
-  public void commit_shouldAddHotBlindedExecutionPayloadEnvelopesToStorageUpdate() {
+  public void commit_shouldAddBlindedExecutionPayloadEnvelopesToStorageUpdate() {
     final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
     final SignedExecutionPayloadAndState executionPayloadAndState =
         chainBuilder.getExecutionPayloadAndStateAtSlot(blockAndState.getSlot()).orElseThrow();
-    final CapturingStorageUpdateChannel capturingStorageUpdateChannel =
-        new CapturingStorageUpdateChannel();
+    final StorageUpdateChannel channel = mock(StorageUpdateChannel.class);
+    when(channel.onStorageUpdate(any())).thenReturn(SafeFuture.completedFuture(UpdateResult.EMPTY));
 
-    final UpdatableStore.StoreTransaction tx =
-        store.startTransaction(capturingStorageUpdateChannel);
+    final UpdatableStore.StoreTransaction tx = store.startTransaction(channel);
     tx.putBlockAndState(blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
     tx.putExecutionPayloadAndState(
         executionPayloadAndState.executionPayload(), executionPayloadAndState.state());
 
     assertThat(tx.commit()).isCompleted();
-    assertThat(capturingStorageUpdateChannel.getLastStorageUpdate()).isNotNull();
-    assertThat(
-            capturingStorageUpdateChannel
-                .getLastStorageUpdate()
-                .getBlindedExecutionPayloadEnvelopesByBlockRoot())
+    final ArgumentCaptor<StorageUpdate> captor = ArgumentCaptor.forClass(StorageUpdate.class);
+    verify(channel).onStorageUpdate(captor.capture());
+    assertThat(captor.getValue().getBlindedExecutionPayloadEnvelopesByBlockRoot())
         .containsEntry(
             blockAndState.getRoot(),
             executionPayloadAndState
@@ -96,7 +101,7 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
   }
 
   @Test
-  public void commit_shouldAddAllHotBlindedExecutionPayloadEnvelopesToStorageUpdate() {
+  public void commit_shouldAddAllBlindedExecutionPayloadEnvelopesToStorageUpdate() {
     final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState firstBlockAndState = chainBuilder.generateNextBlock();
     final SignedBlockAndState secondBlockAndState = chainBuilder.generateNextBlock();
@@ -104,11 +109,10 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
         chainBuilder.getExecutionPayloadAndStateAtSlot(firstBlockAndState.getSlot()).orElseThrow();
     final SignedExecutionPayloadAndState secondExecutionPayloadAndState =
         chainBuilder.getExecutionPayloadAndStateAtSlot(secondBlockAndState.getSlot()).orElseThrow();
-    final CapturingStorageUpdateChannel capturingStorageUpdateChannel =
-        new CapturingStorageUpdateChannel();
+    final StorageUpdateChannel channel = mock(StorageUpdateChannel.class);
+    when(channel.onStorageUpdate(any())).thenReturn(SafeFuture.completedFuture(UpdateResult.EMPTY));
 
-    final UpdatableStore.StoreTransaction tx =
-        store.startTransaction(capturingStorageUpdateChannel);
+    final UpdatableStore.StoreTransaction tx = store.startTransaction(channel);
     tx.putBlockAndState(
         firstBlockAndState, spec.calculateBlockCheckpoints(firstBlockAndState.getState()));
     tx.putExecutionPayloadAndState(
@@ -119,54 +123,94 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
         secondExecutionPayloadAndState.executionPayload(), secondExecutionPayloadAndState.state());
 
     assertThat(tx.commit()).isCompleted();
-    assertThat(capturingStorageUpdateChannel.getLastStorageUpdate()).isNotNull();
-    assertThat(
-            capturingStorageUpdateChannel
-                .getLastStorageUpdate()
-                .getBlindedExecutionPayloadEnvelopesByBlockRoot())
+    final ArgumentCaptor<StorageUpdate> captor = ArgumentCaptor.forClass(StorageUpdate.class);
+    verify(channel).onStorageUpdate(captor.capture());
+    assertThat(captor.getValue().getBlindedExecutionPayloadEnvelopesByBlockRoot())
         .containsOnlyKeys(firstBlockAndState.getRoot(), secondBlockAndState.getRoot());
   }
 
-  private static class CapturingStorageUpdateChannel implements StorageUpdateChannel {
-    private StorageUpdate lastStorageUpdate;
+  @Test
+  public void commit_shouldRetainBlindedEnvelopesForBlocksFinalizedInSameTransaction() {
+    final List<BLSKeyPair> keys = BLSKeyGenerator.generateKeyPairs(16);
+    final ChainBuilder glaosCchainBuilder = ChainBuilder.create(spec, keys);
+    final SignedBlockAndState genesis = glaosCchainBuilder.generateGenesis();
+    final Checkpoint genesisCheckpoint = glaosCchainBuilder.getCurrentCheckpointForEpoch(0);
 
-    @Override
-    public SafeFuture<UpdateResult> onStorageUpdate(final StorageUpdate event) {
-      lastStorageUpdate = event;
-      return SafeFuture.completedFuture(UpdateResult.EMPTY);
-    }
+    final UpdatableStore store =
+        StoreBuilder.create()
+            .asyncRunner(SyncAsyncRunner.SYNC_RUNNER)
+            .metricsSystem(new StubMetricsSystem())
+            .specProvider(spec)
+            .blockProvider(roots -> SafeFuture.completedFuture(Collections.emptyMap()))
+            .earliestBlobSidecarSlotProvider(EarliestBlobSidecarSlotProvider.NOOP)
+            .stateProvider(StateAndBlockSummaryProvider.NOOP)
+            .anchor(Optional.empty())
+            .genesisTime(genesis.getState().getGenesisTime())
+            .time(genesis.getState().getGenesisTime())
+            .latestFinalized(AnchorPoint.create(spec, genesisCheckpoint, genesis))
+            .justifiedCheckpoint(genesisCheckpoint)
+            .bestJustifiedCheckpoint(genesisCheckpoint)
+            .blockInformation(
+                Map.of(
+                    genesis.getRoot(),
+                    new StoredBlockMetadata(
+                        genesis.getSlot(),
+                        genesis.getRoot(),
+                        genesis.getParentRoot(),
+                        genesis.getStateRoot(),
+                        genesis.getExecutionBlockNumber(),
+                        genesis.getExecutionBlockHash(),
+                        Optional.of(spec.calculateBlockCheckpoints(genesis.getState())))))
+            .storeConfig(StoreConfig.createDefault())
+            .votes(Collections.emptyMap())
+            .latestCanonicalBlockRoot(Optional.empty())
+            .build();
 
-    @Override
-    public SafeFuture<Void> onFinalizedBlocks(
-        final Collection<SignedBeaconBlock> finalizedBlocks,
-        final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
-        final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
-      return SafeFuture.COMPLETE;
-    }
+    // Generate blocks spanning 2 epochs so we can finalize epoch 1
+    final UInt64 epoch2Slot = spec.computeStartSlotAtEpoch(UInt64.valueOf(2));
+    glaosCchainBuilder.generateBlocksUpToSlot(epoch2Slot);
 
-    @Override
-    public SafeFuture<Void> onReconstructedFinalizedState(
-        final BeaconState finalizedState, final Bytes32 blockRoot) {
-      return SafeFuture.COMPLETE;
-    }
+    final StorageUpdateChannel channel = mock(StorageUpdateChannel.class);
+    when(channel.onStorageUpdate(any())).thenReturn(SafeFuture.completedFuture(UpdateResult.EMPTY));
 
-    @Override
-    public SafeFuture<Void> onWeakSubjectivityUpdate(
-        final WeakSubjectivityUpdate weakSubjectivityUpdate) {
-      return SafeFuture.COMPLETE;
-    }
+    final UpdatableStore.StoreTransaction tx = store.startTransaction(channel);
 
-    @Override
-    public SafeFuture<Void> onFinalizedDepositSnapshot(
-        final DepositTreeSnapshot depositTreeSnapshot) {
-      return SafeFuture.COMPLETE;
-    }
+    // Add all blocks and their execution payloads in the same transaction
+    glaosCchainBuilder
+        .streamBlocksAndStates(1, glaosCchainBuilder.getLatestSlot().longValue())
+        .forEach(
+            blockAndState -> {
+              tx.putBlockAndState(
+                  blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
+              glaosCchainBuilder
+                  .getExecutionPayloadAndStateAtSlot(blockAndState.getSlot())
+                  .ifPresent(
+                      epAndState ->
+                          tx.putExecutionPayloadAndState(
+                              epAndState.executionPayload(), epAndState.state()));
+            });
 
-    @Override
-    public void onChainInitialized(final AnchorPoint initialAnchor) {}
+    // Finalize at epoch 1 — blocks before this checkpoint will be pruned from hot
+    final Checkpoint finalizedCheckpoint =
+        glaosCchainBuilder.getCurrentCheckpointForEpoch(UInt64.valueOf(1));
+    tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
 
-    public StorageUpdate getLastStorageUpdate() {
-      return lastStorageUpdate;
-    }
+    assertThat(tx.commit()).isCompleted();
+    final ArgumentCaptor<StorageUpdate> captor = ArgumentCaptor.forClass(StorageUpdate.class);
+    verify(channel).onStorageUpdate(captor.capture());
+    final StorageUpdate storageUpdate = captor.getValue();
+
+    // Finalized blocks were pruned from hot, but their envelopes must still be present
+    final SignedBlockAndState finalizedBlockAndState =
+        glaosCchainBuilder.getBlockAndState(finalizedCheckpoint.getRoot()).orElseThrow();
+    glaosCchainBuilder
+        .streamBlocksAndStates(1, finalizedBlockAndState.getSlot().longValue())
+        .forEach(
+            blockAndState ->
+                assertThat(storageUpdate.getBlindedExecutionPayloadEnvelopesByBlockRoot())
+                    .describedAs(
+                        "Envelope for finalized block at slot %s should be present",
+                        blockAndState.getSlot())
+                    .containsKey(blockAndState.getRoot()));
   }
 }

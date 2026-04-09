@@ -106,7 +106,8 @@ class StoreTransactionUpdatesFactory {
                 createStoreTransactionUpdates(
                     Optional.empty(),
                     tx.clearFinalizedOptimisticTransitionPayload,
-                    Optional.empty()));
+                    Optional.empty(),
+                    createBlindedExecutionPayloadEnvelopesByBlockRoot()));
   }
 
   private StoreTransactionUpdates buildFinalizedUpdates(final Checkpoint finalizedCheckpoint) {
@@ -116,6 +117,10 @@ class StoreTransactionUpdatesFactory {
         collectFinalizedBlocks(tx, finalizedChildToParent);
     final Map<Bytes32, BeaconState> finalizedStates =
         collectFinalizedStates(tx, finalizedChildToParent);
+    // Collect blinded envelopes before pruning
+    final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+        blindedExecutionPayloadEnvelopesByBlockRoot =
+            createBlindedExecutionPayloadEnvelopesByBlockRoot();
     final FinalizedChainData.Builder finalizedChainDataBuilder = FinalizedChainData.builder();
     final boolean optimisticTransitionBlockRootSet;
     final Optional<Bytes32> optimisticTransitionBlockRoot;
@@ -156,7 +161,10 @@ class StoreTransactionUpdatesFactory {
                 .build());
 
     return createStoreTransactionUpdates(
-        finalizedChainData, optimisticTransitionBlockRootSet, optimisticTransitionBlockRoot);
+        finalizedChainData,
+        optimisticTransitionBlockRootSet,
+        optimisticTransitionBlockRoot,
+        blindedExecutionPayloadEnvelopesByBlockRoot);
   }
 
   /** Pull subset of hot states that sit at epoch boundaries to persist */
@@ -259,7 +267,9 @@ class StoreTransactionUpdatesFactory {
   private StoreTransactionUpdates createStoreTransactionUpdates(
       final Optional<FinalizedChainData> finalizedChainData,
       final boolean optimisticTransitionBlockRootSet,
-      final Optional<Bytes32> optimisticTransitionBlockRoot) {
+      final Optional<Bytes32> optimisticTransitionBlockRoot,
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+          blindedExecutionPayloadEnvelopesByBlockRoot) {
     return new StoreTransactionUpdates(
         tx,
         finalizedChainData,
@@ -278,7 +288,7 @@ class StoreTransactionUpdatesFactory {
         spec.supportsDataColumnSidecars(),
         executionPayloadEnvelopesEnabled,
         hotExecutionPayloadAndStates,
-        createBlindedExecutionPayloadEnvelopesByBlockRoot());
+        blindedExecutionPayloadEnvelopesByBlockRoot);
   }
 
   private Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
