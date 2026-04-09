@@ -17,18 +17,28 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 
 /** Centralizes the storage-layer milestone split for forkchoice models. */
 public class ForkChoiceModelFactory {
 
   private final ForkChoiceModel phase0Model = ForkChoiceModelPhase0.INSTANCE;
+  private final ForkChoiceModel gloasModel;
 
   public ForkChoiceModelFactory(final Spec spec) {
-    // Branch 04 lands the model seam with only the Phase0 behavior wired.
+    if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
+      gloasModel =
+          new ForkChoiceModelGloas(
+              SpecConfigGloas.required(spec.forMilestone(SpecMilestone.GLOAS).getConfig()));
+    } else {
+      gloasModel = phase0Model;
+    }
   }
 
   ForkChoiceModel forSlot(final UInt64 slot) {
+    // Branch 06 keeps the Gloas model dormant while the storage/rebuild pieces land.
     return phase0Model;
   }
 
@@ -50,5 +60,6 @@ public class ForkChoiceModelFactory {
 
   void onPrunedBlocks(final BlockNodeVariantsIndex blockNodeIndex) {
     phase0Model.onPrunedBlocks(blockNodeIndex);
+    gloasModel.onPrunedBlocks(blockNodeIndex);
   }
 }
