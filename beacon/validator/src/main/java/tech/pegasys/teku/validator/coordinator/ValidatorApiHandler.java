@@ -368,7 +368,8 @@ public final class ValidatorApiHandler implements ValidatorApiChannel, SlotEvent
       return SafeFuture.failedFuture(
           new IllegalArgumentException(
               String.format(
-                  "Ptc duties were requested %s epochs ahead, only 1 epoch in future is supported.",
+                  "Ptc duties were requested %s epochs ahead, PTC committee selection is only stable "
+                      + "within the context of the current and next epochs in the lookahead.",
                   epoch.minus(combinedChainDataClient.getCurrentEpoch()).toString())));
     }
     final UInt64 slot = spec.computeStartSlotAtEpoch(epoch.minusMinZero(1));

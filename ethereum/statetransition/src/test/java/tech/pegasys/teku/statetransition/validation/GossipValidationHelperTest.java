@@ -23,7 +23,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PROPOSER_LOOKAHEAD;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
@@ -345,11 +344,9 @@ public class GossipValidationHelperTest {
   @TestTemplate
   void
       currentFinalizedCheckpointIsAncestorOfBlock_shouldReturnInvalidForBlockThatDoesNotDescendFromFinalizedCheckpoint() {
-    List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(4);
-
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     final RecentChainData localRecentChainData = storageSystem.recentChainData();
-    final ChainBuilder chainBuilder = ChainBuilder.create(spec, validatorKeys);
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
     final ChainUpdater chainUpdater = new ChainUpdater(localRecentChainData, chainBuilder, spec);
 
     final GossipValidationHelper gossipValidationHelper =

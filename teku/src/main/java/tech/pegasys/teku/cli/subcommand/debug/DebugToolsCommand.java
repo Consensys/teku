@@ -171,8 +171,8 @@ public class DebugToolsCommand implements Runnable {
         ValidatorRestApi.create(
             spec,
             config,
-            ValidatorApiChannel.NO_OP,
-            new GenesisDataProvider(asyncRunner, ValidatorApiChannel.NO_OP),
+            ValidatorApiChannel.NOOP,
+            new GenesisDataProvider(asyncRunner, ValidatorApiChannel.NOOP),
             Optional.empty(),
             keyManager,
             dataDirLayout,

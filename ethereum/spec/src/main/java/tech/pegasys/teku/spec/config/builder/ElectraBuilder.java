@@ -230,7 +230,6 @@ public class ElectraBuilder extends BaseForkBuilder
     constants.put("maxPendingPartialsPerWithdrawalsSweep", maxPendingPartialsPerWithdrawalsSweep);
     constants.put("maxPendingDepositsPerEpoch", maxPendingDepositsPerEpoch);
     constants.put("maxBlobsPerBlockElectra", maxBlobsPerBlockElectra);
-    constants.put("maxRequestBlobSidecarsElectra", maxRequestBlobSidecarsElectra);
     constants.put("blobSidecarSubnetCountElectra", blobSidecarSubnetCountElectra);
 
     return constants;
@@ -238,6 +237,11 @@ public class ElectraBuilder extends BaseForkBuilder
 
   // compute_max_request_blob_sidecars
   private Integer computeMaxRequestBlobSidecars(final Integer maxRequestBlocksDeneb) {
+    return computeMaxRequestBlobSidecars(maxRequestBlocksDeneb, maxBlobsPerBlockElectra);
+  }
+
+  public static Integer computeMaxRequestBlobSidecars(
+      final Integer maxRequestBlocksDeneb, final Integer maxBlobsPerBlockElectra) {
     return maxRequestBlocksDeneb * maxBlobsPerBlockElectra;
   }
 

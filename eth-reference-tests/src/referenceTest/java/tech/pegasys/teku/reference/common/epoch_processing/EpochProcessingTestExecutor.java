@@ -90,6 +90,9 @@ public class EpochProcessingTestExecutor implements TestExecutor {
           .put(
               "epoch_processing/builder_pending_payments",
               new EpochProcessingTestExecutor(EpochOperation.BUILDER_PENDING_PAYMENTS))
+          .put(
+              "epoch_processing/ptc_window",
+              new EpochProcessingTestExecutor(EpochOperation.PTC_WINDOW))
           .build();
 
   private final EpochOperation operation;

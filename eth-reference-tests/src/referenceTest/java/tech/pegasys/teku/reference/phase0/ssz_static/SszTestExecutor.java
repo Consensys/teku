@@ -149,6 +149,11 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
           .put("ssz_static/LightClientSnapshot", IGNORE_TESTS)
           .put("ssz_static/LightClientUpdate", IGNORE_TESTS)
 
+          // TODO: Partial messages (not yet implemented)
+          .put("ssz_static/PartialDataColumnHeader", IGNORE_TESTS)
+          .put("ssz_static/PartialDataColumnPartsMetadata", IGNORE_TESTS)
+          .put("ssz_static/PartialDataColumnSidecar", IGNORE_TESTS)
+
           // Bellatrix types
           .put(
               "ssz_static/ExecutionPayloadHeader",

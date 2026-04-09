@@ -79,7 +79,7 @@ public abstract class TransitionBenchmark {
   public void init() throws Exception {
     spec =
         TestSpecFactory.createMainnetAltair(
-            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
     AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
 
     String blocksFile =

@@ -54,6 +54,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -148,6 +149,8 @@ public class SyncingNodeManager {
         poolFactory.createPendingPoolForBlocks(spec);
     final PendingPool<ValidatableAttestation> pendingAttestations =
         poolFactory.createPendingPoolForAttestations(spec, 10000);
+    final PendingPool<PayloadAttestationMessage> pendingPayloadAttestations =
+        poolFactory.createPendingPoolForPayloadAttestations(spec, 100);
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot, mock(SettableLabelledGauge.class), "blocks");
     final Map<Bytes32, BlockImportResult> invalidBlockRoots = LimitedMap.createSynchronizedLRU(500);
@@ -223,6 +226,7 @@ public class SyncingNodeManager {
             asyncRunner,
             pendingBlocks,
             pendingAttestations,
+            pendingPayloadAttestations,
             BlockBlobSidecarsTrackersPool.NOOP,
             syncService,
             fetchBlockTaskFactory);

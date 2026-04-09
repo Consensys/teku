@@ -81,6 +81,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.epbs.ExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -127,6 +128,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
@@ -186,6 +188,9 @@ public class Spec {
             specVersion -> {
               // inject ForkChoiceUtil dependencies
               switch (specVersion.getForkChoiceUtil()) {
+                case ForkChoiceUtilGloas forkChoiceUtilGloas ->
+                    forkChoiceUtilGloas.setDataColumnSidecarAvailabilityCheckerFactory(
+                        dataColumnSidecarAvailabilityCheckerFactory);
                 case ForkChoiceUtilFulu forkChoiceUtilFulu ->
                     forkChoiceUtilFulu.setDataColumnSidecarAvailabilityCheckerFactory(
                         dataColumnSidecarAvailabilityCheckerFactory);
@@ -1049,11 +1054,18 @@ public class Spec {
               blockSlotState,
               block.getMessage(),
               IndexedAttestationCache.NOOP,
-              BLSSignatureVerifier.NO_OP,
+              BLSSignatureVerifier.NOOP,
               Optional.empty());
     } catch (SlotProcessingException | EpochProcessingException | BlockProcessingException e) {
       throw new StateTransitionException(e);
     }
+  }
+
+  public BeaconState replayValidatedExecutionPayload(
+      final BeaconState blockState, final SignedExecutionPayloadEnvelope signedEnvelope)
+      throws StateTransitionException {
+    return getExecutionPayloadProcessor(blockState.getSlot())
+        .replayValidatedExecutionPayload(signedEnvelope, blockState);
   }
 
   public BlockCheckpoints calculateBlockCheckpoints(final BeaconState state) {

@@ -65,6 +65,7 @@ public class StorageSystemArgumentsProvider implements ArgumentsProvider {
                             .version(databaseVersion)
                             .storageMode(mode)
                             .stateStorageFrequency(storageFrequency)
+                            .numberOfValidators(3)
                             .build()));
           }
 
@@ -79,6 +80,7 @@ public class StorageSystemArgumentsProvider implements ArgumentsProvider {
                           .dataDir(dataPath)
                           .storageMode(mode)
                           .stateStorageFrequency(storageFrequency)
+                          .numberOfValidators(3)
                           .build()));
         }
       }

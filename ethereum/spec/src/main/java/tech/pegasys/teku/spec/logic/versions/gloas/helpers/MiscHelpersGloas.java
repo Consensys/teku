@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
@@ -133,6 +134,9 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
       final boolean shuffleIndices) {
     final int total = indices.size();
     checkArgument(total > 0, "Size of indices must be greater than 0");
+    final SszList<Validator> validators = state.getValidators();
+    final List<UInt64> effectiveBalances =
+        indices.intStream().mapToObj(index -> validators.get(index).getEffectiveBalance()).toList();
     final IntList selected = new IntArrayList();
     int i = 0;
     while (selected.size() < size) {
@@ -141,7 +145,7 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
         nextIndex = computeShuffledIndex(nextIndex, total, seed);
       }
       final int candidateIndex = indices.getInt(nextIndex);
-      if (computeBalanceWeightedAcceptance(state, candidateIndex, seed, i)) {
+      if (computeBalanceWeightedAcceptance(effectiveBalances.get(nextIndex), seed, i)) {
         selected.add(candidateIndex);
       }
       i++;
@@ -152,16 +156,15 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
   /**
    * compute_balance_weighted_acceptance
    *
-   * <p>Return whether to accept the selection of the validator ``index``, with probability
-   * proportional to its ``effective_balance``, and randomness given by ``seed`` and ``i``.
+   * <p>Return whether to accept the selection of a validator with the given ``effective_balance``,
+   * with probability proportional to its balance, and randomness given by ``seed`` and ``i``.
    */
   public boolean computeBalanceWeightedAcceptance(
-      final BeaconState state, final int index, final Bytes32 seed, final int i) {
+      final UInt64 effectiveBalance, final Bytes32 seed, final int i) {
     final Bytes32 randomBytes =
         Hash.sha256(Bytes.concatenate(seed, uint64ToBytes(Math.floorDiv(i, 16L))));
     final int offset = (i % 16) * 2;
     final UInt64 randomValue = bytesToUInt64(randomBytes.slice(offset, 2));
-    final UInt64 effectiveBalance = state.getValidators().get(index).getEffectiveBalance();
     return effectiveBalance
         .times(MAX_RANDOM_VALUE)
         .isGreaterThanOrEqualTo(
