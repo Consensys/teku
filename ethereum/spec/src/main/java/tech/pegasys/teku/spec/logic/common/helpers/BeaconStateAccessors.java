@@ -299,7 +299,7 @@ public abstract class BeaconStateAccessors {
     return getBeaconCommitteeNoValidation(state, slot, index);
   }
 
-  public IntList getBeaconCommitteeNoValidation(
+  protected IntList getBeaconCommitteeNoValidation(
       final BeaconState state, final UInt64 slot, final UInt64 index) {
     return BeaconStateCache.getTransitionCaches(state)
         .getBeaconCommittee()
