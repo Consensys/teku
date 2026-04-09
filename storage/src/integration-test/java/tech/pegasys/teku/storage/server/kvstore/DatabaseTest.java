@@ -679,7 +679,7 @@ public class DatabaseTest {
             false,
             true));
 
-    // Finalize
+    // Finalize. Envelope must not be deleted for canonical blocks.
     database.update(
         new StorageUpdate(
             Optional.empty(),
@@ -691,7 +691,7 @@ public class DatabaseTest {
             Map.of(),
             Map.of(),
             Optional.empty(),
-            Map.of(),
+            Map.of(genesisBlockAndState.getRoot(), genesisBlockAndState.getSlot()),
             Map.of(),
             false,
             Optional.empty(),
@@ -701,7 +701,7 @@ public class DatabaseTest {
             false,
             true));
 
-    // Envelope should still be present after finalization
+    // Envelope should still be present — canonical finalized blocks are not pruned
     assertThat(
             ((KvStoreDatabase) database)
                 .dao.getBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))

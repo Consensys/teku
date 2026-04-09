@@ -1306,9 +1306,12 @@ public class KvStoreDatabase implements Database {
             update.getOptimisticTransitionBlockRoot());
 
     if (update.isExecutionPayloadEnvelopesEnabled()) {
+      final Set<Bytes32> nonCanonicalPrunedRoots =
+          update.getDeletedHotBlocks().keySet().stream()
+              .filter(root -> !update.getFinalizedChildToParentMap().containsKey(root))
+              .collect(Collectors.toSet());
       updateBlindedExecutionPayloadEnvelopes(
-          update.getBlindedExecutionPayloadEnvelopesByBlockRoot(),
-          update.getDeletedHotBlocks().keySet());
+          update.getBlindedExecutionPayloadEnvelopesByBlockRoot(), nonCanonicalPrunedRoots);
     }
 
     if (update.isBlobSidecarsEnabled()) {
