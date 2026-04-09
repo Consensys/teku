@@ -562,11 +562,6 @@ public class ForkChoiceUtil {
     return AvailabilityChecker.NOOP;
   }
 
-  public AvailabilityChecker<?> createAvailabilityChecker(
-      final SignedExecutionPayloadEnvelope executionPayload) {
-    return AvailabilityChecker.NOOP;
-  }
-
   public boolean shouldNotifyForkChoiceUpdatedOnBlock() {
     return true;
   }
