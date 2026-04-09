@@ -19,7 +19,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 
 public class StoredBlockMetadata {
   private final UInt64 blockSlot;
@@ -29,6 +31,7 @@ public class StoredBlockMetadata {
   private final Optional<UInt64> executionBlockNumber;
   private final Optional<Bytes32> executionBlockHash;
   private final Optional<BlockCheckpoints> checkpointEpochs;
+  private final Optional<GloasForkChoiceRebuildData> gloasForkChoiceRebuildData;
 
   public StoredBlockMetadata(
       final UInt64 blockSlot,
@@ -38,6 +41,26 @@ public class StoredBlockMetadata {
       final Optional<UInt64> executionBlockNumber,
       final Optional<Bytes32> executionBlockHash,
       final Optional<BlockCheckpoints> checkpointEpochs) {
+    this(
+        blockSlot,
+        blockRoot,
+        parentRoot,
+        stateRoot,
+        executionBlockNumber,
+        executionBlockHash,
+        checkpointEpochs,
+        Optional.empty());
+  }
+
+  public StoredBlockMetadata(
+      final UInt64 blockSlot,
+      final Bytes32 blockRoot,
+      final Bytes32 parentRoot,
+      final Bytes32 stateRoot,
+      final Optional<UInt64> executionBlockNumber,
+      final Optional<Bytes32> executionBlockHash,
+      final Optional<BlockCheckpoints> checkpointEpochs,
+      final Optional<GloasForkChoiceRebuildData> gloasForkChoiceRebuildData) {
     this.blockSlot = blockSlot;
     this.blockRoot = blockRoot;
     this.parentRoot = parentRoot;
@@ -45,6 +68,7 @@ public class StoredBlockMetadata {
     this.executionBlockNumber = executionBlockNumber;
     this.executionBlockHash = executionBlockHash;
     this.checkpointEpochs = checkpointEpochs;
+    this.gloasForkChoiceRebuildData = gloasForkChoiceRebuildData;
   }
 
   public static StoredBlockMetadata fromBlockAndState(
@@ -57,7 +81,8 @@ public class StoredBlockMetadata {
         blockAndState.getStateRoot(),
         blockAndState.getExecutionBlockNumber(),
         blockAndState.getExecutionBlockHash(),
-        Optional.of(epochs));
+        Optional.of(epochs),
+        extractGloasForkChoiceRebuildData(blockAndState.getSignedBeaconBlock()));
   }
 
   public UInt64 getBlockSlot() {
@@ -88,6 +113,10 @@ public class StoredBlockMetadata {
     return checkpointEpochs;
   }
 
+  public Optional<GloasForkChoiceRebuildData> getGloasForkChoiceRebuildData() {
+    return gloasForkChoiceRebuildData;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -103,7 +132,8 @@ public class StoredBlockMetadata {
         && Objects.equals(stateRoot, that.stateRoot)
         && Objects.equals(executionBlockNumber, that.executionBlockNumber)
         && Objects.equals(executionBlockHash, that.executionBlockHash)
-        && Objects.equals(checkpointEpochs, that.checkpointEpochs);
+        && Objects.equals(checkpointEpochs, that.checkpointEpochs)
+        && Objects.equals(gloasForkChoiceRebuildData, that.gloasForkChoiceRebuildData);
   }
 
   @Override
@@ -115,6 +145,25 @@ public class StoredBlockMetadata {
         stateRoot,
         executionBlockNumber,
         executionBlockHash,
-        checkpointEpochs);
+        checkpointEpochs,
+        gloasForkChoiceRebuildData);
+  }
+
+  private static Optional<GloasForkChoiceRebuildData> extractGloasForkChoiceRebuildData(
+      final Optional<SignedBeaconBlock> maybeBlock) {
+    // TODO-GLOAS: populate payloadBlockNumber here once SignedExecutionPayloadEnvelope storage is
+    // persisted through the DB layer and available alongside StoredBlockMetadata creation.
+    return maybeBlock
+        .flatMap(
+            block ->
+                block
+                    .getMessage()
+                    .getBody()
+                    .getOptionalSignedExecutionPayloadBid()
+                    .map(SignedExecutionPayloadBid::getMessage))
+        .map(
+            bid ->
+                new GloasForkChoiceRebuildData(
+                    bid.getParentBlockHash(), bid.getBlockHash(), Optional.empty()));
   }
 }
