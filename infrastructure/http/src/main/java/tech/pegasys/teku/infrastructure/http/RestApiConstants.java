@@ -167,6 +167,7 @@ public class RestApiConstants {
   public static final String FINALIZED = "finalized";
   public static final String EXECUTION_PAYLOAD_BLINDED = "execution_payload_blinded";
   public static final String EXECUTION_PAYLOAD_VALUE = "execution_payload_value";
+  public static final String EXECUTION_PAYLOAD_INCLUDED = "execution_payload_included";
   public static final String CONSENSUS_BLOCK_VALUE = "consensus_block_value";
   public static final String TARGET_PEER_COUNT = "target_peer_count";
   public static final String TARGET_PEER_COUNT_DESCRIPTION =
@@ -188,6 +189,7 @@ public class RestApiConstants {
       "Skip verification of the `randao_reveal` value. Ignored in the Teku implementation.";
 
   public static final String BUILDER_BOOST_FACTOR = "builder_boost_factor";
+  public static final String INCLUDE_PAYLOAD = "include_payload";
   public static final String BUILDER_BOOST_FACTOR_DESCRIPTION =
       """
           Percentage multiplier to apply to the builder's payload value when choosing between a
@@ -224,6 +226,7 @@ public class RestApiConstants {
   public static final String HEADER_EXECUTION_PAYLOAD_BLINDED = "Eth-Execution-Payload-Blinded";
   public static final String HEADER_EXECUTION_PAYLOAD_VALUE = "Eth-Execution-Payload-Value";
   public static final String HEADER_CONSENSUS_BLOCK_VALUE = "Eth-Consensus-Block-Value";
+  public static final String HEADER_EXECUTION_PAYLOAD_INCLUDED = "Eth-Execution-Payload-Included";
   public static final String HEADER_CONTENT_DISPOSITION = "Content-Disposition";
   public static final String HEADER_CONTENT_ENCODING = "Content-Encoding";
 
