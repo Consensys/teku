@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.gloas.helpers;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -41,6 +42,7 @@ public class BeaconStateAccessorsGloasTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BeaconStateAccessorsGloas beaconStateAccessors =
       BeaconStateAccessorsGloas.required(spec.getGenesisSpec().beaconStateAccessors());
+  private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(16, spec);
 
   @Test
   void getBuilderIndex_shouldReturnBuilderIndex() {
@@ -161,5 +163,45 @@ public class BeaconStateAccessorsGloasTest {
     // Slashed validator should NOT appear in the newly computed proposer lookahead
     assertThat(newLookaheadProposers).doesNotContain(slashedIndex);
     assertThat(newLookaheadProposers).hasSize(slotsPerEpoch);
+  }
+
+  @Test
+  public void getNextSyncCommitteeIndices_shouldExcludeSlashedValidators() {
+    storageSystem.chainUpdater().initializeGenesis();
+    final BeaconState genesisState = storageSystem.getChainHead().getState();
+    final int slashedIndex = 0;
+    final BeaconState state =
+        genesisState.updated(
+            mutableState -> {
+              final Validator validator = mutableState.getValidators().get(slashedIndex);
+              mutableState.getValidators().set(slashedIndex, validator.withSlashed(true));
+            });
+
+    final IntList syncCommitteeIndices = beaconStateAccessors.getNextSyncCommitteeIndices(state);
+
+    assertThat(syncCommitteeIndices.size()).isGreaterThan(0);
+    assertThat(syncCommitteeIndices.contains(slashedIndex)).isFalse();
+  }
+
+  @Test
+  public void getNextSyncCommitteeIndices_shouldExcludeMultipleSlashedValidators() {
+    storageSystem.chainUpdater().initializeGenesis();
+    final BeaconState genesisState = storageSystem.getChainHead().getState();
+    final int[] slashedIndices = {0, 1, 2};
+    final BeaconState state =
+        genesisState.updated(
+            mutableState -> {
+              for (int idx : slashedIndices) {
+                final Validator validator = mutableState.getValidators().get(idx);
+                mutableState.getValidators().set(idx, validator.withSlashed(true));
+              }
+            });
+
+    final IntList syncCommitteeIndices = beaconStateAccessors.getNextSyncCommitteeIndices(state);
+
+    assertThat(syncCommitteeIndices.size()).isGreaterThan(0);
+    for (int slashedIdx : slashedIndices) {
+      assertThat(syncCommitteeIndices.contains(slashedIdx)).isFalse();
+    }
   }
 }

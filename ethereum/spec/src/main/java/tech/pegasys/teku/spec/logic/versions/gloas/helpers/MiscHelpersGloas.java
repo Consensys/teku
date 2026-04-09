@@ -145,6 +145,11 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
         nextIndex = computeShuffledIndex(nextIndex, total, seed);
       }
       final int candidateIndex = indices.getInt(nextIndex);
+      // [EIP-8045] Skip slashed validators
+      if (state.getValidators().get(candidateIndex).isSlashed()) {
+        i++;
+        continue;
+      }
       if (computeBalanceWeightedAcceptance(effectiveBalances.get(nextIndex), seed, i)) {
         selected.add(candidateIndex);
       }
