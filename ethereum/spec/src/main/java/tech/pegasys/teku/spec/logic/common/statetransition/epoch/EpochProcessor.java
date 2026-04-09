@@ -110,4 +110,6 @@ public interface EpochProcessor {
   void processProposerLookahead(MutableBeaconState state);
 
   void processBuilderPendingPayments(MutableBeaconState state);
+
+  void processPtcWindow(final MutableBeaconState state);
 }

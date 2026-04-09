@@ -21,6 +21,7 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Bea
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.LATEST_EXECUTION_PAYLOAD_BID;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.NEXT_WITHDRAWAL_BUILDER_INDEX;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PAYLOAD_EXPECTED_WITHDRAWALS;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PTC_WINDOW;
 
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszVector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64Vector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -80,6 +82,7 @@ public interface BeaconStateGloas extends BeaconStateFulu {
     addItems(stringBuilder, "builder_pending_withdrawals", state.getBuilderPendingWithdrawals());
     stringBuilder.add("latest_block_hash", state.getLatestBlockHash());
     stringBuilder.add("payload_expected_withdrawals", state.getPayloadExpectedWithdrawals());
+    stringBuilder.add("ptc_window", state.getPtcWindow());
   }
 
   @Override
@@ -135,6 +138,11 @@ public interface BeaconStateGloas extends BeaconStateFulu {
 
   default SszList<Withdrawal> getPayloadExpectedWithdrawals() {
     final int index = getSchema().getFieldIndex(PAYLOAD_EXPECTED_WITHDRAWALS);
+    return getAny(index);
+  }
+
+  default SszVector<SszUInt64Vector> getPtcWindow() {
+    final int index = getSchema().getFieldIndex(PTC_WINDOW);
     return getAny(index);
   }
 }

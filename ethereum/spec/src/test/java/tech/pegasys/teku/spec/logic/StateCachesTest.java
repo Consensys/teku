@@ -47,7 +47,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 public class StateCachesTest {
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  protected StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+  protected StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(3, spec);
   protected ChainBuilder chainBuilder = storageSystem.chainBuilder();
   protected ChainUpdater chainUpdater = storageSystem.chainUpdater();
 

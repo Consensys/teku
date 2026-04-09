@@ -615,7 +615,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/gloas/MutableBeaconStateGloas.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/gloas/MutableBeaconStateGloasImpl.java
   spec: |
-    <spec container="BeaconState" fork="gloas" hash="c33b0db2">
+    <spec container="BeaconState" fork="gloas" hash="cb308f9f">
     class BeaconState(Container):
         genesis_time: uint64
         genesis_validators_root: Root
@@ -672,6 +672,8 @@
         latest_block_hash: Hash32
         # [New in Gloas:EIP7732]
         payload_expected_withdrawals: List[Withdrawal, MAX_WITHDRAWALS_PER_PAYLOAD]
+        # [New in Gloas:EIP7732]
+        ptc_window: Vector[Vector[ValidatorIndex, PTC_SIZE], (2 + MIN_SEED_LOOKAHEAD) * SLOTS_PER_EPOCH]
     </spec>
 
 - name: BlobIdentifier#deneb
