@@ -111,13 +111,7 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<BeaconState> getHotState(Bytes32 root);
 
-  Optional<SignedBlindedExecutionPayloadEnvelope> getHotBlindedExecutionPayloadEnvelope(
-      Bytes32 root);
-
-  Optional<Bytes> getHotBlindedExecutionPayloadEnvelopeAsSsz(Bytes32 root);
-
-  Optional<SignedBlindedExecutionPayloadEnvelope> getFinalizedBlindedExecutionPayloadEnvelope(
-      Bytes32 root);
+  Optional<SignedBlindedExecutionPayloadEnvelope> getBlindedExecutionPayloadEnvelope(Bytes32 root);
 
   List<Bytes32> getStateRootsBeforeSlot(UInt64 slot);
 
@@ -245,17 +239,6 @@ public interface KvStoreCombinedDao extends AutoCloseable {
       states.forEach(this::addHotState);
     }
 
-    void addHotBlindedExecutionPayloadEnvelope(
-        Bytes32 blockRoot,
-        SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope);
-
-    default void addHotBlindedExecutionPayloadEnvelopes(
-        final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
-            hotBlindedExecutionPayloadEnvelopesByBlockRoot) {
-      hotBlindedExecutionPayloadEnvelopesByBlockRoot.forEach(
-          this::addHotBlindedExecutionPayloadEnvelope);
-    }
-
     void addVotes(Map<UInt64, VoteTracker> states);
 
     void addHotStateRoots(Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap);
@@ -263,8 +246,6 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     void pruneHotStateRoots(List<Bytes32> stateRoots);
 
     void deleteHotState(Bytes32 blockRoot);
-
-    void deleteHotBlindedExecutionPayloadEnvelope(Bytes32 blockRoot);
 
     void setFinalizedDepositSnapshot(DepositTreeSnapshot finalizedDepositSnapshot);
 
@@ -288,18 +269,15 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void addFinalizedBlockRaw(UInt64 slot, Bytes32 blockRoot, Bytes blockBytes);
 
-    void addFinalizedBlindedExecutionPayloadEnvelope(
+    void addBlindedExecutionPayloadEnvelope(
         Bytes32 blockRoot,
         SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope);
-
-    void addFinalizedBlindedExecutionPayloadEnvelopeRaw(
-        Bytes32 blockRoot, Bytes signedBlindedExecutionPayloadEnvelopeBytes);
 
     void addNonCanonicalBlock(final SignedBeaconBlock block);
 
     void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot);
 
-    void deleteFinalizedBlindedExecutionPayloadEnvelope(final Bytes32 blockRoot);
+    void deleteBlindedExecutionPayloadEnvelope(final Bytes32 blockRoot);
 
     void deleteNonCanonicalBlockOnly(final Bytes32 blockRoot);
 

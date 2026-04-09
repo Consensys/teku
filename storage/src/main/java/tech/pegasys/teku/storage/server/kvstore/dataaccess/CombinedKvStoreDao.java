@@ -158,20 +158,9 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public Optional<SignedBlindedExecutionPayloadEnvelope> getHotBlindedExecutionPayloadEnvelope(
+  public Optional<SignedBlindedExecutionPayloadEnvelope> getBlindedExecutionPayloadEnvelope(
       final Bytes32 root) {
-    return db.get(schema.getColumnHotBlindedExecutionPayloadEnvelopesByRoot(), root);
-  }
-
-  @Override
-  public Optional<Bytes> getHotBlindedExecutionPayloadEnvelopeAsSsz(final Bytes32 root) {
-    return db.getRaw(schema.getColumnHotBlindedExecutionPayloadEnvelopesByRoot(), root);
-  }
-
-  @Override
-  public Optional<SignedBlindedExecutionPayloadEnvelope>
-      getFinalizedBlindedExecutionPayloadEnvelope(final Bytes32 root) {
-    return db.get(schema.getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot(), root);
+    return db.get(schema.getColumnBlindedExecutionPayloadEnvelopesByRoot(), root);
   }
 
   @Override
@@ -843,16 +832,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void addHotBlindedExecutionPayloadEnvelope(
-        final Bytes32 blockRoot,
-        final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope) {
-      transaction.put(
-          schema.getColumnHotBlindedExecutionPayloadEnvelopesByRoot(),
-          blockRoot,
-          signedBlindedExecutionPayloadEnvelope);
-    }
-
-    @Override
     public void addHotStateRoots(
         final Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap) {
       stateRootToSlotAndBlockRootMap.forEach(
@@ -878,7 +857,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
       transaction.delete(schema.getColumnHotBlocksByRoot(), blockRoot);
       transaction.delete(schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot);
       deleteHotState(blockRoot);
-      deleteHotBlindedExecutionPayloadEnvelope(blockRoot);
     }
 
     @Override
@@ -889,11 +867,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     @Override
     public void deleteHotState(final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnHotStatesByRoot(), blockRoot);
-    }
-
-    @Override
-    public void deleteHotBlindedExecutionPayloadEnvelope(final Bytes32 blockRoot) {
-      transaction.delete(schema.getColumnHotBlindedExecutionPayloadEnvelopesByRoot(), blockRoot);
     }
 
     @Override
@@ -969,28 +942,13 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void addFinalizedBlindedExecutionPayloadEnvelope(
+    public void addBlindedExecutionPayloadEnvelope(
         final Bytes32 blockRoot,
         final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope) {
       transaction.put(
-          schema.getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot(),
+          schema.getColumnBlindedExecutionPayloadEnvelopesByRoot(),
           blockRoot,
           signedBlindedExecutionPayloadEnvelope);
-    }
-
-    @Override
-    public void addFinalizedBlindedExecutionPayloadEnvelopeRaw(
-        final Bytes32 blockRoot, final Bytes signedBlindedExecutionPayloadEnvelopeBytes) {
-      final KvStoreColumn<Bytes32, SignedBlindedExecutionPayloadEnvelope>
-          columnFinalizedBlindedExecutionPayloadEnvelopesByRoot =
-              schema.getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot();
-      transaction.putRaw(
-          columnFinalizedBlindedExecutionPayloadEnvelopesByRoot,
-          Bytes.wrap(
-              columnFinalizedBlindedExecutionPayloadEnvelopesByRoot
-                  .getKeySerializer()
-                  .serialize(blockRoot)),
-          signedBlindedExecutionPayloadEnvelopeBytes);
     }
 
     @Override
@@ -1002,13 +960,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     public void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnFinalizedBlocksBySlot(), slot);
       transaction.delete(schema.getColumnSlotsByFinalizedRoot(), blockRoot);
-      deleteFinalizedBlindedExecutionPayloadEnvelope(blockRoot);
+      deleteBlindedExecutionPayloadEnvelope(blockRoot);
     }
 
     @Override
-    public void deleteFinalizedBlindedExecutionPayloadEnvelope(final Bytes32 blockRoot) {
-      transaction.delete(
-          schema.getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot(), blockRoot);
+    public void deleteBlindedExecutionPayloadEnvelope(final Bytes32 blockRoot) {
+      transaction.delete(schema.getColumnBlindedExecutionPayloadEnvelopesByRoot(), blockRoot);
     }
 
     @Override

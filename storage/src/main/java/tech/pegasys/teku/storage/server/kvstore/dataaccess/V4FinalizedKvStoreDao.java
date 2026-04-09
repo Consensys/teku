@@ -283,9 +283,9 @@ public class V4FinalizedKvStoreDao {
         .flatMap(this::getFinalizedBlockAtSlot);
   }
 
-  public Optional<SignedBlindedExecutionPayloadEnvelope>
-      getFinalizedBlindedExecutionPayloadEnvelope(final Bytes32 root) {
-    return db.get(schema.getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot(), root);
+  public Optional<SignedBlindedExecutionPayloadEnvelope> getBlindedExecutionPayloadEnvelope(
+      final Bytes32 root) {
+    return db.get(schema.getColumnBlindedExecutionPayloadEnvelopesByRoot(), root);
   }
 
   @MustBeClosed
@@ -398,28 +398,13 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
-    public void addFinalizedBlindedExecutionPayloadEnvelope(
+    public void addBlindedExecutionPayloadEnvelope(
         final Bytes32 blockRoot,
         final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope) {
       transaction.put(
-          schema.getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot(),
+          schema.getColumnBlindedExecutionPayloadEnvelopesByRoot(),
           blockRoot,
           signedBlindedExecutionPayloadEnvelope);
-    }
-
-    @Override
-    public void addFinalizedBlindedExecutionPayloadEnvelopeRaw(
-        final Bytes32 blockRoot, final Bytes signedBlindedExecutionPayloadEnvelopeBytes) {
-      final KvStoreColumn<Bytes32, SignedBlindedExecutionPayloadEnvelope>
-          columnFinalizedBlindedExecutionPayloadEnvelopesByRoot =
-              schema.getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot();
-      transaction.putRaw(
-          columnFinalizedBlindedExecutionPayloadEnvelopesByRoot,
-          Bytes.wrap(
-              columnFinalizedBlindedExecutionPayloadEnvelopesByRoot
-                  .getKeySerializer()
-                  .serialize(blockRoot)),
-          signedBlindedExecutionPayloadEnvelopeBytes);
     }
 
     @Override
@@ -431,13 +416,12 @@ public class V4FinalizedKvStoreDao {
     public void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnFinalizedBlocksBySlot(), slot);
       transaction.delete(schema.getColumnSlotsByFinalizedRoot(), blockRoot);
-      deleteFinalizedBlindedExecutionPayloadEnvelope(blockRoot);
+      deleteBlindedExecutionPayloadEnvelope(blockRoot);
     }
 
     @Override
-    public void deleteFinalizedBlindedExecutionPayloadEnvelope(final Bytes32 blockRoot) {
-      transaction.delete(
-          schema.getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot(), blockRoot);
+    public void deleteBlindedExecutionPayloadEnvelope(final Bytes32 blockRoot) {
+      transaction.delete(schema.getColumnBlindedExecutionPayloadEnvelopesByRoot(), blockRoot);
     }
 
     @Override

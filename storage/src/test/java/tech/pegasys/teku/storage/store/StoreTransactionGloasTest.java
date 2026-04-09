@@ -84,7 +84,7 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
     assertThat(
             capturingStorageUpdateChannel
                 .getLastStorageUpdate()
-                .getHotBlindedExecutionPayloadEnvelopesByBlockRoot())
+                .getBlindedExecutionPayloadEnvelopesByBlockRoot())
         .containsEntry(
             blockAndState.getRoot(),
             executionPayloadAndState
@@ -123,7 +123,7 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
     assertThat(
             capturingStorageUpdateChannel
                 .getLastStorageUpdate()
-                .getHotBlindedExecutionPayloadEnvelopesByBlockRoot())
+                .getBlindedExecutionPayloadEnvelopesByBlockRoot())
         .containsOnlyKeys(firstBlockAndState.getRoot(), secondBlockAndState.getRoot());
   }
 

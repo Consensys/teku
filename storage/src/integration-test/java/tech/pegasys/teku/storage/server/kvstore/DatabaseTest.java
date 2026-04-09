@@ -257,7 +257,6 @@ public class DatabaseTest {
             Map.of(),
             Map.of(),
             Map.of(),
-            Map.of(),
             Optional.of(block1Sidecar0.getSlot()),
             Map.of(),
             Map.of(),
@@ -274,7 +273,6 @@ public class DatabaseTest {
             Optional.empty(),
             Optional.empty(),
             Optional.empty(),
-            Map.of(),
             Map.of(),
             Map.of(),
             Map.of(),
@@ -429,7 +427,6 @@ public class DatabaseTest {
             Map.of(),
             Map.of(),
             Map.of(),
-            Map.of(),
             Optional.empty(),
             Map.of(block1Sidecar0.getBlockRoot(), block1Sidecar0.getSlot()),
             Map.of(),
@@ -446,7 +443,6 @@ public class DatabaseTest {
             Optional.empty(),
             Optional.empty(),
             Optional.empty(),
-            Map.of(),
             Map.of(),
             Map.of(),
             Map.of(),
@@ -611,7 +607,7 @@ public class DatabaseTest {
   }
 
   @TestTemplate
-  public void shouldStoreHotBlindedExecutionPayloadEnvelope(final DatabaseContext context)
+  public void shouldStoreBlindedExecutionPayloadEnvelope(final DatabaseContext context)
       throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalGloas());
     initialize(context);
@@ -629,7 +625,6 @@ public class DatabaseTest {
             Map.of(),
             Map.of(blockAndState.getRoot(), signedBlindedExecutionPayloadEnvelope),
             Map.of(),
-            Map.of(),
             Optional.empty(),
             Map.of(),
             Map.of(),
@@ -643,124 +638,82 @@ public class DatabaseTest {
 
     assertThat(
             ((KvStoreDatabase) database)
-                .dao.getHotBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))
+                .dao.getBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))
         .contains(signedBlindedExecutionPayloadEnvelope);
   }
 
   @TestTemplate
-  public void shouldStoreFinalizedBlindedExecutionPayloadEnvelope(final DatabaseContext context)
+  public void shouldRetainBlindedExecutionPayloadEnvelopeAfterFinalization(
+      final DatabaseContext context) throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalGloas());
+    initialize(context);
+    final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
+    final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope =
+        getSignedBlindedExecutionPayloadEnvelope(blockAndState);
+    final FinalizedChainData finalizedChainData =
+        FinalizedChainData.builder()
+            .latestFinalized(AnchorPoint.fromInitialBlockAndState(spec, blockAndState))
+            .finalizedChildAndParent(
+                genesisBlockAndState.getRoot(), genesisBlockAndState.getParentRoot())
+            .build();
+
+    // Store envelope
+    database.update(
+        new StorageUpdate(
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Map.of(),
+            Map.of(),
+            Map.of(blockAndState.getRoot(), signedBlindedExecutionPayloadEnvelope),
+            Map.of(),
+            Optional.empty(),
+            Map.of(),
+            Map.of(),
+            false,
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            false,
+            true));
+
+    // Finalize
+    database.update(
+        new StorageUpdate(
+            Optional.empty(),
+            Optional.of(finalizedChainData),
+            Optional.empty(),
+            Optional.empty(),
+            Map.of(),
+            Map.of(),
+            Map.of(),
+            Map.of(),
+            Optional.empty(),
+            Map.of(),
+            Map.of(),
+            false,
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            true,
+            false,
+            true));
+
+    // Envelope should still be present after finalization
+    assertThat(
+            ((KvStoreDatabase) database)
+                .dao.getBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))
+        .contains(signedBlindedExecutionPayloadEnvelope);
+  }
+
+  @TestTemplate
+  public void shouldSkipMissingBlindedExecutionPayloadEnvelope(final DatabaseContext context)
       throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalGloas());
     initialize(context);
     final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
-    final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope =
-        getSignedBlindedExecutionPayloadEnvelope(blockAndState);
-    final FinalizedChainData finalizedChainData =
-        FinalizedChainData.builder()
-            .latestFinalized(AnchorPoint.fromInitialBlockAndState(spec, blockAndState))
-            .finalizedChildAndParent(
-                genesisBlockAndState.getRoot(), genesisBlockAndState.getParentRoot())
-            .build();
-
-    database.update(
-        new StorageUpdate(
-            Optional.empty(),
-            Optional.of(finalizedChainData),
-            Optional.empty(),
-            Optional.empty(),
-            Map.of(),
-            Map.of(),
-            Map.of(),
-            Map.of(blockAndState.getRoot(), signedBlindedExecutionPayloadEnvelope),
-            Map.of(),
-            Optional.empty(),
-            Map.of(),
-            Map.of(),
-            false,
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            true,
-            false,
-            true));
-
-    assertThat(
-            ((KvStoreDatabase) database)
-                .dao.getFinalizedBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))
-        .contains(signedBlindedExecutionPayloadEnvelope);
-  }
-
-  @TestTemplate
-  public void shouldMoveHotBlindedExecutionPayloadEnvelopeToFinalizedStorage(
-      final DatabaseContext context) throws IOException {
-    setupWithSpec(TestSpecFactory.createMinimalGloas());
-    initialize(context);
-    final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
-    final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope =
-        getSignedBlindedExecutionPayloadEnvelope(blockAndState);
-    final FinalizedChainData finalizedChainData =
-        FinalizedChainData.builder()
-            .latestFinalized(AnchorPoint.fromInitialBlockAndState(spec, blockAndState))
-            .finalizedChildAndParent(
-                genesisBlockAndState.getRoot(), genesisBlockAndState.getParentRoot())
-            .build();
-
-    database.update(
-        new StorageUpdate(
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Map.of(),
-            Map.of(),
-            Map.of(blockAndState.getRoot(), signedBlindedExecutionPayloadEnvelope),
-            Map.of(),
-            Map.of(),
-            Optional.empty(),
-            Map.of(),
-            Map.of(),
-            false,
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            true,
-            false,
-            true));
-
-    database.update(
-        new StorageUpdate(
-            Optional.empty(),
-            Optional.of(finalizedChainData),
-            Optional.empty(),
-            Optional.empty(),
-            Map.of(),
-            Map.of(),
-            Map.of(),
-            Map.of(),
-            Map.of(),
-            Optional.empty(),
-            Map.of(),
-            Map.of(),
-            false,
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            true,
-            false,
-            true));
-
-    assertThat(
-            ((KvStoreDatabase) database)
-                .dao.getFinalizedBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))
-        .contains(signedBlindedExecutionPayloadEnvelope);
-  }
-
-  @TestTemplate
-  public void shouldSkipMissingFinalizedBlindedExecutionPayloadEnvelope(
-      final DatabaseContext context) throws IOException {
-    setupWithSpec(TestSpecFactory.createMinimalGloas());
-    initialize(context);
-    final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
     final FinalizedChainData finalizedChainData =
         FinalizedChainData.builder()
             .latestFinalized(AnchorPoint.fromInitialBlockAndState(spec, blockAndState))
@@ -778,7 +731,6 @@ public class DatabaseTest {
             Map.of(),
             Map.of(),
             Map.of(),
-            Map.of(),
             Optional.empty(),
             Map.of(),
             Map.of(),
@@ -792,12 +744,12 @@ public class DatabaseTest {
 
     assertThat(
             ((KvStoreDatabase) database)
-                .dao.getFinalizedBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))
+                .dao.getBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))
         .isEmpty();
   }
 
   @TestTemplate
-  public void shouldDeleteHotBlindedExecutionPayloadEnvelopeWhenBlockIsPruned(
+  public void shouldDeleteBlindedExecutionPayloadEnvelopeWhenBlockIsPruned(
       final DatabaseContext context) throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalGloas());
     initialize(context);
@@ -805,7 +757,7 @@ public class DatabaseTest {
     final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope =
         getSignedBlindedExecutionPayloadEnvelope(blockAndState);
 
-    // Store envelope in hot storage
+    // Store envelope
     database.update(
         new StorageUpdate(
             Optional.empty(),
@@ -815,7 +767,6 @@ public class DatabaseTest {
             Map.of(),
             Map.of(),
             Map.of(blockAndState.getRoot(), signedBlindedExecutionPayloadEnvelope),
-            Map.of(),
             Map.of(),
             Optional.empty(),
             Map.of(),
@@ -828,20 +779,19 @@ public class DatabaseTest {
             false,
             true));
 
-    // Verify it's in hot storage
+    // Verify it's stored
     assertThat(
             ((KvStoreDatabase) database)
-                .dao.getHotBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))
+                .dao.getBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))
         .contains(signedBlindedExecutionPayloadEnvelope);
 
-    // Delete the hot block (simulates non-canonical pruning)
+    // Delete the block (simulates non-canonical pruning)
     database.update(
         new StorageUpdate(
             Optional.empty(),
             Optional.empty(),
             Optional.empty(),
             Optional.empty(),
-            Map.of(),
             Map.of(),
             Map.of(),
             Map.of(),
@@ -857,10 +807,10 @@ public class DatabaseTest {
             false,
             true));
 
-    // Verify envelope was removed from hot storage
+    // Verify envelope was removed
     assertThat(
             ((KvStoreDatabase) database)
-                .dao.getHotBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))
+                .dao.getBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))
         .isEmpty();
   }
 

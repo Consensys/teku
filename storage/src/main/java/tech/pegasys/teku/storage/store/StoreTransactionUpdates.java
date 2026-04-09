@@ -54,9 +54,7 @@ class StoreTransactionUpdates {
   private final boolean executionPayloadEnvelopesEnabled;
   private final Map<Bytes32, SignedExecutionPayloadAndState> hotExecutionPayloadAndStates;
   private final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
-      hotBlindedExecutionPayloadEnvelopesByBlockRoot;
-  private final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
-      finalizedBlindedExecutionPayloadEnvelopesByBlockRoot;
+      blindedExecutionPayloadEnvelopesByBlockRoot;
 
   StoreTransactionUpdates(
       final StoreTransaction tx,
@@ -77,9 +75,7 @@ class StoreTransactionUpdates {
       final boolean executionPayloadEnvelopesEnabled,
       final Map<Bytes32, SignedExecutionPayloadAndState> hotExecutionPayloadAndStates,
       final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
-          hotBlindedExecutionPayloadEnvelopesByBlockRoot,
-      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
-          finalizedBlindedExecutionPayloadEnvelopesByBlockRoot) {
+          blindedExecutionPayloadEnvelopesByBlockRoot) {
     checkNotNull(tx, "Transaction is required");
     checkNotNull(finalizedChainData, "Finalized data is required");
     checkNotNull(hotBlocks, "Hot blocks are required");
@@ -94,11 +90,8 @@ class StoreTransactionUpdates {
     checkNotNull(custodyGroupCount, "Current custody group count is required");
     checkNotNull(hotExecutionPayloadAndStates, "Hot execution payload states are required");
     checkNotNull(
-        hotBlindedExecutionPayloadEnvelopesByBlockRoot,
-        "Hot blinded execution payload envelopes are required");
-    checkNotNull(
-        finalizedBlindedExecutionPayloadEnvelopesByBlockRoot,
-        "Finalized blinded execution payload envelopes are required");
+        blindedExecutionPayloadEnvelopesByBlockRoot,
+        "Blinded execution payload envelopes are required");
 
     this.tx = tx;
     this.finalizedChainData = finalizedChainData;
@@ -117,10 +110,7 @@ class StoreTransactionUpdates {
     this.dataColumnSidecarsEnabled = dataColumnSidecarsEnabled;
     this.executionPayloadEnvelopesEnabled = executionPayloadEnvelopesEnabled;
     this.hotExecutionPayloadAndStates = hotExecutionPayloadAndStates;
-    this.hotBlindedExecutionPayloadEnvelopesByBlockRoot =
-        hotBlindedExecutionPayloadEnvelopesByBlockRoot;
-    this.finalizedBlindedExecutionPayloadEnvelopesByBlockRoot =
-        finalizedBlindedExecutionPayloadEnvelopesByBlockRoot;
+    this.blindedExecutionPayloadEnvelopesByBlockRoot = blindedExecutionPayloadEnvelopesByBlockRoot;
   }
 
   public StorageUpdate createStorageUpdate() {
@@ -131,8 +121,7 @@ class StoreTransactionUpdates {
         tx.bestJustifiedCheckpoint,
         hotBlocks,
         hotStatesToPersist,
-        hotBlindedExecutionPayloadEnvelopesByBlockRoot,
-        finalizedBlindedExecutionPayloadEnvelopesByBlockRoot,
+        blindedExecutionPayloadEnvelopesByBlockRoot,
         blobSidecars,
         maybeEarliestBlobSidecarSlot,
         prunedHotBlockRoots,

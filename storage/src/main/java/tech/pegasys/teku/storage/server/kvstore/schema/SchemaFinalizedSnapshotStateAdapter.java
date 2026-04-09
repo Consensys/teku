@@ -72,8 +72,8 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
         .put("SLOTS_BY_FINALIZED_ROOT", getColumnSlotsByFinalizedRoot())
         .put("FINALIZED_BLOCKS_BY_SLOT", getColumnFinalizedBlocksBySlot())
         .put(
-            "FINALIZED_BLINDED_EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT",
-            getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot())
+            "BLINDED_EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT",
+            getColumnBlindedExecutionPayloadEnvelopesByRoot())
         .put("FINALIZED_STATES_BY_SLOT", getColumnFinalizedStatesBySlot())
         .put("SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot())
         .put("NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot())
@@ -117,8 +117,8 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
   }
 
   public KvStoreColumn<Bytes32, SignedBlindedExecutionPayloadEnvelope>
-      getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot() {
-    return delegate.getColumnFinalizedBlindedExecutionPayloadEnvelopesByRoot();
+      getColumnBlindedExecutionPayloadEnvelopesByRoot() {
+    return delegate.getColumnBlindedExecutionPayloadEnvelopesByRoot();
   }
 
   public KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedStateRoot() {

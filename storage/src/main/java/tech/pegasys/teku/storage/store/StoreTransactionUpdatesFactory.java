@@ -106,8 +106,7 @@ class StoreTransactionUpdatesFactory {
                 createStoreTransactionUpdates(
                     Optional.empty(),
                     tx.clearFinalizedOptimisticTransitionPayload,
-                    Optional.empty(),
-                    Map.of()));
+                    Optional.empty()));
   }
 
   private StoreTransactionUpdates buildFinalizedUpdates(final Checkpoint finalizedCheckpoint) {
@@ -117,11 +116,6 @@ class StoreTransactionUpdatesFactory {
         collectFinalizedBlocks(tx, finalizedChildToParent);
     final Map<Bytes32, BeaconState> finalizedStates =
         collectFinalizedStates(tx, finalizedChildToParent);
-    final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
-        finalizedBlindedExecutionPayloadEnvelopesByBlockRoot =
-            collectFinalizedBlindedExecutionPayloadEnvelopesByBlockRoot(
-                tx, finalizedChildToParent.keySet());
-
     final FinalizedChainData.Builder finalizedChainDataBuilder = FinalizedChainData.builder();
     final boolean optimisticTransitionBlockRootSet;
     final Optional<Bytes32> optimisticTransitionBlockRoot;
@@ -162,10 +156,7 @@ class StoreTransactionUpdatesFactory {
                 .build());
 
     return createStoreTransactionUpdates(
-        finalizedChainData,
-        optimisticTransitionBlockRootSet,
-        optimisticTransitionBlockRoot,
-        finalizedBlindedExecutionPayloadEnvelopesByBlockRoot);
+        finalizedChainData, optimisticTransitionBlockRootSet, optimisticTransitionBlockRoot);
   }
 
   /** Pull subset of hot states that sit at epoch boundaries to persist */
@@ -228,27 +219,6 @@ class StoreTransactionUpdatesFactory {
     return states;
   }
 
-  private Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
-      collectFinalizedBlindedExecutionPayloadEnvelopesByBlockRoot(
-          final StoreTransaction tx, final Set<Bytes32> finalizedBlockRoots) {
-    return finalizedBlockRoots.stream()
-        .flatMap(
-            blockRoot ->
-                tx
-                    .getExecutionPayloadIfAvailable(blockRoot)
-                    .map(
-                        signedExecutionPayloadEnvelope ->
-                            Map.entry(
-                                blockRoot,
-                                signedExecutionPayloadEnvelope
-                                    .toSignedBlindedExecutionPayloadEnvelope(
-                                        SchemaDefinitionsGloas.required(
-                                            spec.atSlot(signedExecutionPayloadEnvelope.getSlot())
-                                                .getSchemaDefinitions()))))
-                    .stream())
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-  }
-
   private boolean shouldPrune(
       final BeaconBlockSummary finalizedBlock,
       final Bytes32 blockRoot,
@@ -289,9 +259,7 @@ class StoreTransactionUpdatesFactory {
   private StoreTransactionUpdates createStoreTransactionUpdates(
       final Optional<FinalizedChainData> finalizedChainData,
       final boolean optimisticTransitionBlockRootSet,
-      final Optional<Bytes32> optimisticTransitionBlockRoot,
-      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
-          finalizedBlindedExecutionPayloadEnvelopesByBlockRoot) {
+      final Optional<Bytes32> optimisticTransitionBlockRoot) {
     return new StoreTransactionUpdates(
         tx,
         finalizedChainData,
@@ -310,12 +278,11 @@ class StoreTransactionUpdatesFactory {
         spec.supportsDataColumnSidecars(),
         executionPayloadEnvelopesEnabled,
         hotExecutionPayloadAndStates,
-        createHotBlindedExecutionPayloadEnvelopesByBlockRoot(),
-        finalizedBlindedExecutionPayloadEnvelopesByBlockRoot);
+        createBlindedExecutionPayloadEnvelopesByBlockRoot());
   }
 
   private Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
-      createHotBlindedExecutionPayloadEnvelopesByBlockRoot() {
+      createBlindedExecutionPayloadEnvelopesByBlockRoot() {
     return hotExecutionPayloadAndStates.entrySet().stream()
         .map(
             entry ->

@@ -26,7 +26,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -65,11 +64,6 @@ public class SchemaHotAdapter implements Schema {
 
   public KvStoreColumn<Bytes32, BeaconState> getColumnHotStatesByRoot() {
     return delegate.getColumnHotStatesByRoot();
-  }
-
-  public KvStoreColumn<Bytes32, SignedBlindedExecutionPayloadEnvelope>
-      getColumnHotBlindedExecutionPayloadEnvelopesByRoot() {
-    return delegate.getColumnHotBlindedExecutionPayloadEnvelopesByRoot();
   }
 
   public KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes>
@@ -129,9 +123,6 @@ public class SchemaHotAdapter implements Schema {
         .put("DEPOSITS_FROM_BLOCK_EVENTS", getColumnDepositsFromBlockEvents())
         .put("STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT", getColumnStateRootToSlotAndBlockRoot())
         .put("HOT_STATES_BY_ROOT", getColumnHotStatesByRoot())
-        .put(
-            "HOT_BLINDED_EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT",
-            getColumnHotBlindedExecutionPayloadEnvelopesByRoot())
         .put("HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT", getColumnHotBlockCheckpointEpochsByRoot())
         .put(
             "BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX",
