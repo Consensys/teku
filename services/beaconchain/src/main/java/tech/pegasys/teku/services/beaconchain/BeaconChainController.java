@@ -107,17 +107,20 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerBlockManagerFactory;
+import tech.pegasys.teku.services.timer.QuartzTimerService;
 import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
@@ -195,9 +198,11 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.Sideca
 import tech.pegasys.teku.statetransition.datacolumns.util.SuperNodeSupplier;
 import tech.pegasys.teku.statetransition.execution.DefaultExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.DefaultExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.execution.DefaultProposerPreferencesManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager.RemoteBidOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadBidEventsChannel;
 import tech.pegasys.teku.statetransition.execution.ReceivedExecutionPayloadEventsChannel;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofGenerator;
@@ -242,6 +247,7 @@ import tech.pegasys.teku.statetransition.validation.ExecutionPayloadGossipValida
 import tech.pegasys.teku.statetransition.validation.ExecutionProofGossipValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.ProposerPreferencesGossipValidator;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.SignedBlsToExecutionChangeValidator;
 import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
@@ -366,6 +372,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile PerformanceTracker performanceTracker;
   protected volatile PendingPool<SignedBeaconBlock> pendingBlocks;
   protected volatile PendingPool<ValidatableAttestation> pendingAttestations;
+  protected volatile PendingPool<PayloadAttestationMessage> pendingPayloadAttestations;
   protected volatile BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   protected volatile DataColumnSidecarELManager dataColumnSidecarELManager;
   protected volatile Map<Bytes32, BlockImportResult> invalidBlockRoots;
@@ -383,6 +390,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile BlobSidecarGossipValidator blobSidecarValidator;
   protected volatile DataColumnSidecarGossipValidator dataColumnSidecarGossipValidator;
   protected volatile DataColumnSidecarManager dataColumnSidecarManager;
+  protected volatile ProposerPreferencesManager proposerPreferencesManager;
   protected volatile ExecutionPayloadBidManager executionPayloadBidManager;
   protected volatile ExecutionPayloadManager executionPayloadManager;
   protected volatile ExecutionProofManager executionProofManager;
@@ -405,7 +413,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile RewardCalculator rewardCalculator;
   protected UInt64 genesisTimeTracker = ZERO;
   protected BlockManager blockManager;
-  protected TimerService timerService;
+  protected Service timerService;
   protected PoolFactory poolFactory;
   protected SettableLabelledGauge futureItemsMetric;
   protected IntSupplier rejectedExecutionCountSupplier;
@@ -485,7 +493,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void startServices() {
     final RecentBlocksFetcher recentBlocksFetcher = syncService.getRecentBlocksFetcher();
     recentBlocksFetcher.subscribeBlockFetched(
-        (block) ->
+        block ->
             blockManager
                 .importBlock(block, RemoteOrigin.RPC)
                 .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult)
@@ -505,10 +513,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
             LOG.debug("Received valid execution proof: {}", executionProof));
     final RecentExecutionPayloadsFetcher recentExecutionPayloadsFetcher =
         syncService.getRecentExecutionPayloadsFetcher();
+    recentExecutionPayloadsFetcher.subscribeExecutionPayloadFetched(
+        executionPayload ->
+            executionPayloadManager
+                .importExecutionPayload(executionPayload)
+                .finish(
+                    err ->
+                        LOG.error("Failed to process recently fetched execution payload.", err)));
     eventChannels.subscribe(
         ReceivedExecutionPayloadEventsChannel.class, recentExecutionPayloadsFetcher);
-    // TODO-GLOAS: configure usage of RecentExecutionPayloadsFetcher (importing payload/cancelling
-    // request) (not required for devnet-0)
 
     final Optional<Eth2Network> network = beaconConfig.eth2NetworkConfig().getEth2Network();
     if (network.isPresent() && network.get() == Eth2Network.EPHEMERY) {
@@ -577,7 +590,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     coalescingChainHeadChannel =
         new CoalescingChainHeadChannel(
             eventChannels.getPublisher(ChainHeadChannel.class), EVENT_LOG);
-    timerService = new TimerService(this::onTick);
+    timerService =
+        beaconConfig.eth2NetworkConfig().isQuartzSchedulerEnabled()
+            ? new QuartzTimerService(this::onTick)
+            : new TimerService(this::onTick);
 
     final CombinedStorageChannel combinedStorageChannel =
         eventChannels.getPublisher(CombinedStorageChannel.class, beaconAsyncRunner);
@@ -689,6 +705,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initGenesisHandler();
     initAttestationManager();
     initBlockManager();
+    initProposerPreferencesManager();
     initExecutionPayloadBidManager();
     initExecutionPayloadManager();
     initSyncCommitteePools();
@@ -831,7 +848,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initBlobSidecarManager() {
-    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB) && !isSafeToDeactivateDenebFeatures()) {
       final FutureItems<BlobSidecar> futureBlobSidecars =
           FutureItems.create(BlobSidecar::getSlot, futureItemsMetric, "blob_sidecars");
 
@@ -881,12 +898,24 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
   }
 
+  protected void initProposerPreferencesManager() {
+    if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
+      final ProposerPreferencesGossipValidator proposerPreferencesGossipValidator =
+          new ProposerPreferencesGossipValidator(spec, gossipValidationHelper, recentChainData);
+      proposerPreferencesManager =
+          new DefaultProposerPreferencesManager(proposerPreferencesGossipValidator);
+    } else {
+      proposerPreferencesManager = ProposerPreferencesManager.NOOP;
+    }
+  }
+
   protected void initExecutionPayloadBidManager() {
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
       final ExecutionPayloadBidGossipValidator executionPayloadBidGossipValidator =
           new ExecutionPayloadBidGossipValidator(
               spec,
               gossipValidationHelper,
+              proposerPreferencesManager,
               beaconConfig.p2pConfig().getMinBidIncrementPercentage());
       final ReceivedExecutionPayloadBidEventsChannel
           receivedExecutionPayloadBidEventsChannelPublisher =
@@ -1247,7 +1276,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initBlockBlobSidecarsTrackersPool() {
     LOG.debug("BeaconChainController.initBlockBlobSidecarsTrackersPool()");
-    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB) && !isSafeToDeactivateDenebFeatures()) {
       final BlockImportChannel blockImportChannel =
           eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
       final BlobSidecarGossipChannel blobSidecarGossipChannel =
@@ -1415,11 +1444,19 @@ public class BeaconChainController extends Service implements BeaconChainControl
       final PayloadAttestationMessageGossipValidator validator =
           new PayloadAttestationMessageGossipValidator(
               spec, gossipValidationHelper, invalidBlockRoots);
+      pendingPayloadAttestations =
+          poolFactory.createPendingPoolForPayloadAttestations(
+              spec, beaconConfig.eth2NetworkConfig().getPendingPayloadAttestationsMaxQueue());
       final AggregatingPayloadAttestationPool aggregatingPayloadAttestationPool =
-          new AggregatingPayloadAttestationPool(spec, validator, metricsSystem);
+          new AggregatingPayloadAttestationPool(
+              spec, validator, pendingPayloadAttestations, metricsSystem);
       payloadAttestationPool = aggregatingPayloadAttestationPool;
-      eventChannels.subscribe(SlotEventsChannel.class, aggregatingPayloadAttestationPool);
+      eventChannels
+          .subscribe(SlotEventsChannel.class, aggregatingPayloadAttestationPool)
+          .subscribe(ReceivedBlockEventsChannel.class, aggregatingPayloadAttestationPool)
+          .subscribe(FinalizedCheckpointChannel.class, pendingPayloadAttestations);
     } else {
+      pendingPayloadAttestations = poolFactory.createNoOpPendingPool(spec);
       payloadAttestationPool = PayloadAttestationPool.NOOP;
     }
   }
@@ -1874,11 +1911,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             aggregateValidator,
             signatureVerificationService,
             eventChannels.getPublisher(ActiveValidatorChannel.class, beaconAsyncRunner));
-
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationManager)
-        .subscribe(FinalizedCheckpointChannel.class, pendingAttestations)
-        .subscribe(ReceivedBlockEventsChannel.class, attestationManager);
+        .subscribe(ReceivedBlockEventsChannel.class, attestationManager)
+        .subscribe(FinalizedCheckpointChannel.class, pendingAttestations);
   }
 
   protected void initSyncCommitteePools() {
@@ -1978,6 +2014,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedExecutionPayloadBidProcessor(
                 (signedBid, arrivalTimestamp) ->
                     executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.P2P))
+            .gossipedProposerPreferencesProcessor(
+                (signedProposerPreferences, arrivalTimestamp) ->
+                    proposerPreferencesManager.validateAndAddProposerPreferences(
+                        signedProposerPreferences))
             .gossipDasLogger(dasGossipLogger)
             .dataColumnSidecarArchiveReconstructor(dataColumnSidecarArchiveReconstructor)
             .reqRespDasLogger(dasReqRespLogger)
@@ -2189,6 +2229,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         executionPayloadManager,
         pendingBlocks,
         pendingAttestations,
+        pendingPayloadAttestations,
         blockBlobSidecarsTrackersPool,
         beaconConfig.eth2NetworkConfig().getStartupTargetPeerCount(),
         signatureVerificationService,
@@ -2486,6 +2527,24 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     slotProcessor.onTick(currentTimeMillis, performanceRecord);
     performanceRecord.ifPresent(TickProcessingPerformance::complete);
+  }
+
+  boolean isSafeToDeactivateDenebFeatures() {
+    if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
+      return false;
+    }
+    final UInt64 fuluForkEpoch = spec.getGenesisSpec().getConfig().getFuluForkEpoch();
+    final int minEpochsForBlobSidecarsRequests =
+        SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
+            .getMinEpochsForBlobSidecarsRequests();
+    return recentChainData
+        .getCurrentEpoch()
+        .map(
+            currentEpoch ->
+                currentEpoch
+                    .minusMinZero(fuluForkEpoch)
+                    .isGreaterThan(minEpochsForBlobSidecarsRequests))
+        .orElse(false);
   }
 
   @Override

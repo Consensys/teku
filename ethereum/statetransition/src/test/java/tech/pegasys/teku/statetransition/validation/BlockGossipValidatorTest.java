@@ -18,13 +18,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
-import java.util.List;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
-import tech.pegasys.teku.bls.BLSKeyGenerator;
-import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -181,7 +178,12 @@ public class BlockGossipValidatorTest {
     final SignedBeaconBlock signedBlock =
         storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
 
-    final UInt64 invalidProposerIndex = signedBlock.getMessage().getProposerIndex().plus(ONE);
+    final UInt64 invalidProposerIndex =
+        signedBlock
+            .getMessage()
+            .getProposerIndex()
+            .plus(ONE)
+            .mod(storageSystem.chainBuilder().getValidatorKeys().size());
 
     final BeaconBlock block =
         new BeaconBlock(
@@ -231,11 +233,10 @@ public class BlockGossipValidatorTest {
 
   @TestTemplate
   void shouldReturnInvalidForBlockThatDoesNotDescendFromFinalizedCheckpoint() {
-    List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(4);
 
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     final RecentChainData localRecentChainData = storageSystem.recentChainData();
-    final ChainBuilder chainBuilder = ChainBuilder.create(spec, validatorKeys);
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
     final ChainUpdater chainUpdater = new ChainUpdater(localRecentChainData, chainBuilder, spec);
 
     final BlockGossipValidator blockValidator =

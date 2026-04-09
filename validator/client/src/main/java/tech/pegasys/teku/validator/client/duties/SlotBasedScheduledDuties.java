@@ -103,7 +103,7 @@ public class SlotBasedScheduledDuties<P extends Duty, A extends Duty> implements
 
     final Duty duty = duties.remove(slot);
     if (duty == null) {
-      return SafeFuture.completedFuture(DutyResult.NO_OP);
+      return SafeFuture.completedFuture(DutyResult.NOOP);
     }
     return dutyFunction.apply(duty);
   }

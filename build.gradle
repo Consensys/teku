@@ -27,7 +27,49 @@ plugins {
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'net.ltgt.errorprone' version '4.3.0' apply false
 	id 'de.undercouch.download' version '5.6.0'
-	id 'org.ajoberstar.grgit' version '5.3.2'
+}
+
+// --- Git CLI helpers (replaces grgit plugin for worktree compatibility) ---
+ext.runGitCommand = { String... args ->
+	try {
+		def execResult = providers.exec {
+			commandLine(['git'] + args.toList())
+			workingDir = projectDir
+			ignoreExitValue = true
+		}
+		if (execResult.result.get().exitValue != 0) return null
+		return execResult.standardOutput.asText.get().trim()
+	} catch (Exception e) {
+		return null
+	}
+}
+
+ext.isGitCheckout = runGitCommand('rev-parse', '--git-dir') != null
+
+ext.gitCommitHash = {
+	->
+	def result = runGitCommand('rev-parse', 'HEAD')
+	if (result == null) throw new GradleException('Failed to resolve git commit hash')
+	return result
+}
+ext.gitCommitHashShort = {
+	->
+	def result = runGitCommand('rev-parse', '--short', 'HEAD')
+	if (result == null) throw new GradleException('Failed to resolve git commit hash')
+	return result
+}
+ext.gitDescribe = { -> runGitCommand('describe', '--tags') }
+ext.gitLastCommitDate = {
+	->
+	def ts = runGitCommand('log', '-1', '--format=%ct')
+	if (ts == null) throw new GradleException('Failed to resolve git commit date')
+	return new Date(ts.toLong() * 1000)
+}
+ext.gitBranchName = {
+	->
+	def result = runGitCommand('rev-parse', '--abbrev-ref', 'HEAD')
+	if (result == null) throw new GradleException('Failed to resolve git branch name')
+	return result
 }
 
 rootProject.version = calculatePublishVersion()
@@ -349,7 +391,7 @@ allprojects {
 }
 
 def nightly = System.getenv("NIGHTLY") != null
-def refTestVersion = nightly ? "nightly" : "v1.7.0-alpha.2"
+def refTestVersion = nightly ? "nightly" : "v1.7.0-alpha.4"
 def blsRefTestVersion = 'v0.1.2'
 def slashingProtectionInterchangeRefTestVersion = 'v5.3.0'
 def refTestBaseUrl = 'https://github.com/ethereum/consensus-specs/releases/download'
@@ -715,7 +757,7 @@ tasks.register('localDocker') {
 	def dockerBuildVersion = 'develop'
 	doLast {
 		def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
-		def commitHashTag = includeCommitHashInDockerTag ? '-' + grgit.head().getAbbreviatedId() : ''
+		def commitHashTag = includeCommitHashInDockerTag ? '-' + gitCommitHashShort() : ''
 		system.fs.copy {
 			from file("${projectDir}/docker/${dockerJdkVariants[0]}/Dockerfile")
 			into(dockerBuildDir)
@@ -737,7 +779,7 @@ tasks.register('localDocker') {
 tasks.register('localDockerClean') {
 	def dockerBuildVersion = 'develop'
 	def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
-	def commitHashTag = includeCommitHashInDockerTag ? '-' + grgit.head().getAbbreviatedId() : ''
+	def commitHashTag = includeCommitHashInDockerTag ? '-' + gitCommitHashShort() : ''
 	doLast {
 		system.executor.exec {
 			executable executableAndArg[0]
@@ -753,7 +795,7 @@ tasks.register('distDocker')  {
 	def dockerBuildVersion = 'develop'
 	doLast {
 		def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
-		def commitHashTag = includeCommitHashInDockerTag ? '-' + grgit.head().getAbbreviatedId() : ''
+		def commitHashTag = includeCommitHashInDockerTag ? '-' + gitCommitHashShort() : ''
 		for (def variant in dockerJdkVariants) {
 			system.fs.copy {
 				from file("${projectDir}/docker/${variant}/Dockerfile")
@@ -792,7 +834,7 @@ tasks.register('uploadDocker') {
 
 	doLast {
 		def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
-		def commitHashTag = includeCommitHashInDockerTag ? '-' + grgit.head().getAbbreviatedId() : ''
+		def commitHashTag = includeCommitHashInDockerTag ? '-' + gitCommitHashShort() : ''
 		for (def variant in dockerJdkVariants) {
 			def tags = ""
 			versionPrefixes.forEach { prefix -> tags += "-t ${dockerImage}:${prefix.trim()}-${variant}-${architecture}${commitHashTag} "}
@@ -841,7 +883,7 @@ tasks.register('manifestDocker') {
 
 	doLast {
 		def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
-		def commitHashTag = includeCommitHashInDockerTag ? '-' + grgit.head().getAbbreviatedId() : ''
+		def commitHashTag = includeCommitHashInDockerTag ? '-' + gitCommitHashShort() : ''
 		for (def variant in dockerJdkVariants) {
 			def tags = []
 			def cmd = ""
@@ -1186,10 +1228,10 @@ def buildTime() {
 
 // Get the date of the last git commit.
 def lastCommitDate() {
-	if (!grgit) {
+	if (!isGitCheckout) {
 		return new Date()
 	}
-	return grgit.log(maxCommits: 1).get(0).date
+	return gitLastCommitDate()
 }
 
 // Calculate the version that this build would be published under (if it is published)
@@ -1197,11 +1239,11 @@ def lastCommitDate() {
 // If this is on a release-* branch, use the most recent tag appended with +develop (e.g. 0.1.1-RC1+develop)
 // Otherwise, use develop
 def calculatePublishVersion() {
-	if (!grgit) {
+	if (!isGitCheckout) {
 		return 'develop'
 	}
 	def specificVersion = calculateVersion()
-	def isReleaseBranch = grgit.branch.current().name.startsWith('release-')
+	def isReleaseBranch = gitBranchName().startsWith('release-')
 	if (specificVersion.contains('+')) {
 		return isReleaseBranch ? "${specificVersion.substring(0, specificVersion.indexOf('+'))}+develop" : "develop"
 	}
@@ -1212,13 +1254,13 @@ def calculatePublishVersion() {
 // If this exact commit is tagged, use the tag
 // Otherwise use git describe --tags and replace the - after the tag with a +
 def calculateVersion() {
-	if (!grgit) {
+	if (!isGitCheckout) {
 		logger.warn("Not building from a git checkout. Version information will not be available. Building from a git checkout is strongly recommended.")
 		return 'UNKNOWN+develop'
 	}
-	String version = grgit.describe(tags: true)
+	String version = gitDescribe()
 	if (version == null) {
-		return "UNKNOWN+g${grgit.head().abbreviatedId}"
+		return "UNKNOWN+g${gitCommitHashShort()}"
 	}
 	def versionPattern = ~/^(?<lastVersion>.*)-(?<devVersion>[0-9]+-g[a-z0-9]+)$/
 	def matcher = version =~ versionPattern
@@ -1243,7 +1285,7 @@ tasks.register('buildPrintVersion') {
 
 def getCheckedOutGitCommitHash() {
 	def takeFromHash = 8
-	grgit ? grgit.head().id.take(takeFromHash) : 'UNKNOWN'
+	isGitCheckout ? gitCommitHash().take(takeFromHash) : 'UNKNOWN'
 }
 
 tasks.register('cloudsmithUpload') {

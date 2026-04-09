@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllSupportedMilestones;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_CONSENSUS_HEADER_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -55,14 +56,17 @@ public class GetBlock extends RestApiEndpoint {
         EndpointMetadata.get(ROUTE)
             .operationId("getBlockV2")
             .summary("Get block")
-            .description("Retrieves block details for given block id.")
+            .description(
+                "Retrieves block details for given block id. "
+                    + "Depending on `Accept` header it can be returned either as JSON or as bytes serialized by SSZ")
             .tags(TAG_BEACON)
             .pathParam(PARAMETER_BLOCK_ID)
             .response(
                 SC_OK,
                 "Request successful",
                 getResponseType(schemaDefinitionCache),
-                sszResponseType())
+                sszResponseType(),
+                ETH_CONSENSUS_HEADER_TYPE)
             .withNotFoundResponse()
             .withChainDataResponses()
             .build());

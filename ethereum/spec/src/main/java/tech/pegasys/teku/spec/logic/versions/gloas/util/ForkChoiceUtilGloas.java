@@ -19,10 +19,12 @@ import static tech.pegasys.teku.spec.datastructures.forkchoice.PayloadStatus.PAY
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -108,6 +110,33 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
   @Override
   public boolean shouldNotifyForkChoiceUpdatedOnBlock() {
     return false;
+  }
+
+  @Override
+  public SafeFuture<StateAndBlockSummary> retrieveNewChainHeadStateAndBlockSummary(
+      final Bytes32 root, final UInt64 chainHeadSlot, final ReadOnlyStore store) {
+    return store
+        .retrieveStateAndBlockSummary(root)
+        .thenApply(
+            maybeHead ->
+                maybeHead.orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            String.format(
+                                "Unable to update head block as of slot %s.  Block is unavailable: %s.",
+                                chainHeadSlot, root))))
+        // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 this is just a workaround
+        // for devnet-0, we may require a more proper implementation, when the complete fork
+        // choice is implemented
+        .thenApply(
+            stateAndBlockSummary ->
+                store
+                    .getExecutionPayloadStateIfAvailable(root)
+                    .map(
+                        executionPayloadState ->
+                            StateAndBlockSummary.create(
+                                stateAndBlockSummary.getBlockSummary(), executionPayloadState))
+                    .orElse(stateAndBlockSummary));
   }
 
   public boolean isBlockStatusFull(final ReadOnlyStore store, final BeaconBlock block) {

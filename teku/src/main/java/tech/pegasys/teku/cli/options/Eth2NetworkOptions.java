@@ -99,6 +99,17 @@ public class Eth2NetworkOptions {
   private String trustedSetup = null; // Depends on network configuration
 
   @Option(
+      names = {"--Xquartz-scheduler-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Use Quartz scheduler instead of ScheduledExecutorService for slot timing.",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean quartzSchedulerEnabled =
+      Eth2NetworkConfiguration.DEFAULT_QUARTZ_SCHEDULER_ENABLED;
+
+  @Option(
       names = {"--Xrust-kzg-enabled"},
       paramLabel = "<BOOLEAN>",
       description =
@@ -417,6 +428,15 @@ public class Eth2NetworkOptions {
   private int dataColumnSidecarExtensionRetentionEpochs =
       Eth2NetworkConfiguration.DEFAULT_DATA_COLUMN_SIDECAR_EXTENSION_RETENTION_EPOCHS;
 
+  @Option(
+      names = {"--Xnetwork-pending-payload-attestations-max-queue"},
+      hidden = true,
+      paramLabel = "<NUMBER>",
+      description = "Override the queue size for pending payload attestations",
+      converter = OptionalIntConverter.class,
+      arity = "1")
+  private OptionalInt pendingPayloadAttestationsMaxQueue = OptionalInt.empty();
+
   public Eth2NetworkConfiguration getNetworkConfiguration() {
     return createEth2NetworkConfig(builder -> {});
   }
@@ -562,13 +582,15 @@ public class Eth2NetworkOptions {
         .attestationWaitLimitMillis(attestationWaitlimitMillis)
         .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes)
         .rustKzgEnabled(rustKzgEnabled)
-        .dataColumnSidecarExtensionRetentionEpochs(dataColumnSidecarExtensionRetentionEpochs);
+        .dataColumnSidecarExtensionRetentionEpochs(dataColumnSidecarExtensionRetentionEpochs)
+        .quartzSchedulerEnabled(quartzSchedulerEnabled);
     kzgPrecompute.ifPresent(builder::kzgPrecompute);
     dataColumnSidecarRecoveryMaxDelayMillis.ifPresent(
         builder::dataColumnSidecarRecoveryMaxDelayMillis);
     asyncP2pMaxQueue.ifPresent(builder::asyncP2pMaxQueue);
     pendingAttestationsMaxQueue.ifPresent(builder::pendingAttestationsMaxQueue);
     asyncBeaconChainMaxQueue.ifPresent(builder::asyncBeaconChainMaxQueue);
+    pendingPayloadAttestationsMaxQueue.ifPresent(builder::pendingPayloadAttestationsMaxQueue);
   }
 
   private void implicitEpochDefault(
