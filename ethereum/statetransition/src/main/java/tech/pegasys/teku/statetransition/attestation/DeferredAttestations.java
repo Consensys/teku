@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.function.BiConsumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
@@ -68,9 +67,11 @@ public class DeferredAttestations {
     return Optional.ofNullable(deferredVoteUpdatesBySlot.get(slot));
   }
 
+  private record BlockRootAndPayload(Bytes32 blockRoot, boolean payloadPresent) {}
+
   public static class DeferredVoteUpdates implements DeferredVotes {
     private final UInt64 slot;
-    private final Map<Bytes32, Collection<UInt64>> votingIndicesByBlockRoot =
+    private final Map<BlockRootAndPayload, Collection<UInt64>> votingIndicesByBlockRootAndPayload =
         new ConcurrentHashMap<>();
 
     private DeferredVoteUpdates(final UInt64 slot) {
@@ -83,10 +84,12 @@ public class DeferredAttestations {
     }
 
     @Override
-    public void forEachDeferredVote(final BiConsumer<Bytes32, UInt64> consumer) {
-      votingIndicesByBlockRoot.forEach(
-          (blockRoot, indices) ->
-              indices.forEach(validatorIndex -> consumer.accept(blockRoot, validatorIndex)));
+    public void forEachDeferredVote(final DeferredVoteConsumer consumer) {
+      votingIndicesByBlockRootAndPayload.forEach(
+          (key, indices) ->
+              indices.forEach(
+                  validatorIndex ->
+                      consumer.accept(key.blockRoot(), validatorIndex, key.payloadPresent())));
     }
 
     private void addAttestation(final IndexedAttestation attestation) {
@@ -96,9 +99,11 @@ public class DeferredAttestations {
           slot,
           attestation.getData().getSlot());
       final Bytes32 blockRoot = attestation.getData().getBeaconBlockRoot();
+      final boolean payloadPresent = attestation.getData().getIndex().equals(UInt64.ONE);
+      final BlockRootAndPayload key = new BlockRootAndPayload(blockRoot, payloadPresent);
       final Collection<UInt64> attestingIndices =
-          votingIndicesByBlockRoot.computeIfAbsent(
-              blockRoot, __ -> newSetFromMap(new ConcurrentHashMap<>()));
+          votingIndicesByBlockRootAndPayload.computeIfAbsent(
+              key, __ -> newSetFromMap(new ConcurrentHashMap<>()));
       attestingIndices.addAll(attestation.getAttestingIndices().asListUnboxed());
     }
   }

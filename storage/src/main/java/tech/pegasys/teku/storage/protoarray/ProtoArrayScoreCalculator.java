@@ -113,7 +113,11 @@ class ProtoArrayScoreCalculator {
               vote.getNextRoot(),
               vote.getNextEpoch(),
               vote.isNextEquivocating(),
-              vote.isNextEquivocating());
+              vote.isNextEquivocating(),
+              vote.getNextSlot(),
+              vote.isNextPayloadPresent(),
+              vote.getNextSlot(),
+              vote.isNextPayloadPresent());
       store.putVote(validatorIndex, newVote);
     }
   }

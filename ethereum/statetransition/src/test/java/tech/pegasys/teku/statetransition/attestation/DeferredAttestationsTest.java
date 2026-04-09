@@ -98,7 +98,9 @@ class DeferredAttestationsTest {
         deferredAttestations.getDeferredVotesFromSlot(slot);
     assertThat(deferredVotes).isNotEmpty();
     final List<Pair<Bytes32, UInt64>> votes = new ArrayList<>();
-    deferredVotes.get().forEachDeferredVote((root, index) -> votes.add(Pair.of(root, index)));
+    deferredVotes
+        .get()
+        .forEachDeferredVote((root, index, payloadPresent) -> votes.add(Pair.of(root, index)));
     assertThat(votes).containsExactlyInAnyOrder(expected);
   }
 

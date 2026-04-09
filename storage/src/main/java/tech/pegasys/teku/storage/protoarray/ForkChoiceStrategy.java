@@ -140,6 +140,8 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   public void onAttestation(final VoteUpdater voteUpdater, final IndexedAttestation attestation) {
     votesLock.writeLock().lock();
     try {
+      final UInt64 attestationSlot = attestation.getData().getSlot();
+      final boolean payloadPresent = attestation.getData().getIndex().equals(UInt64.ONE);
       attestation
           .getAttestingIndices()
           .streamUnboxed()
@@ -149,7 +151,9 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
                       voteUpdater,
                       validatorIndex,
                       attestation.getData().getBeaconBlockRoot(),
-                      attestation.getData().getTarget().getEpoch()));
+                      attestation.getData().getTarget().getEpoch(),
+                      attestationSlot,
+                      payloadPresent));
     } finally {
       votesLock.writeLock().unlock();
     }
@@ -160,8 +164,9 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     votesLock.writeLock().lock();
     try {
       votes.forEachDeferredVote(
-          (blockRoot, validatorIndex) ->
-              processAttestation(voteUpdater, validatorIndex, blockRoot, targetEpoch));
+          (blockRoot, validatorIndex, payloadPresent) ->
+              processAttestation(
+                  voteUpdater, validatorIndex, blockRoot, targetEpoch, votes.getSlot(), payloadPresent));
     } finally {
       votesLock.writeLock().unlock();
     }
@@ -233,6 +238,16 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       final UInt64 validatorIndex,
       final Bytes32 blockRoot,
       final UInt64 targetEpoch) {
+    processAttestation(voteUpdater, validatorIndex, blockRoot, targetEpoch, UInt64.ZERO, false);
+  }
+
+  void processAttestation(
+      final VoteUpdater voteUpdater,
+      final UInt64 validatorIndex,
+      final Bytes32 blockRoot,
+      final UInt64 targetEpoch,
+      final UInt64 slot,
+      final boolean payloadPresent) {
     VoteTracker vote = voteUpdater.getVote(validatorIndex);
     // Not updating anything for equivocated validators
     if (vote.isEquivocating()) {
@@ -240,7 +255,17 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
 
     if (targetEpoch.isGreaterThan(vote.getNextEpoch()) || vote.equals(VoteTracker.DEFAULT)) {
-      VoteTracker newVote = new VoteTracker(vote.getCurrentRoot(), blockRoot, targetEpoch);
+      VoteTracker newVote =
+          new VoteTracker(
+              vote.getCurrentRoot(),
+              blockRoot,
+              targetEpoch,
+              false,
+              false,
+              slot,
+              payloadPresent,
+              vote.getCurrentSlot(),
+              vote.isCurrentPayloadPresent());
       voteUpdater.putVote(validatorIndex, newVote);
     }
   }
