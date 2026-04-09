@@ -70,11 +70,6 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
             UINT64_SERIALIZER,
             KvStoreSerializer.createSignedBlockSerializer(spec),
             true);
-    blindedExecutionPayloadEnvelopesByRoot =
-        KvStoreColumn.create(
-            finalizedOffset + 20,
-            BYTES32_SERIALIZER,
-            KvStoreSerializer.createSignedBlindedExecutionPayloadEnvelopeSerializer(spec));
     finalizedStatesBySlot =
         KvStoreColumn.create(
             finalizedOffset + 3,
@@ -117,6 +112,12 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
     dataColumnSidecarsProofsBySlot =
         KvStoreColumn.create(
             finalizedOffset + 17, UINT64_SERIALIZER, DATA_COLUMN_SIDECARS_PROOFS_SERIALIZER, true);
+
+    blindedExecutionPayloadEnvelopesByRoot =
+        KvStoreColumn.create(
+            finalizedOffset + 18,
+            BYTES32_SERIALIZER,
+            KvStoreSerializer.createSignedBlindedExecutionPayloadEnvelopeSerializer(spec));
 
     deletedColumnIds =
         List.of(

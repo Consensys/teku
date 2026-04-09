@@ -84,11 +84,6 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
             V6_FINALIZED_OFFSET + 7,
             UINT64_SERIALIZER,
             KvStoreSerializer.createSignedBlockSerializer(spec));
-    blindedExecutionPayloadEnvelopesByRoot =
-        KvStoreColumn.create(
-            finalizedOffset + 20,
-            BYTES32_SERIALIZER,
-            KvStoreSerializer.createSignedBlindedExecutionPayloadEnvelopeSerializer(spec));
     nonCanonicalBlocksByRoot =
         KvStoreColumn.create(
             V6_FINALIZED_OFFSET + 8,
@@ -113,6 +108,11 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
     dataColumnSidecarsProofsBySlot =
         KvStoreColumn.create(
             finalizedOffset + 19, UINT64_SERIALIZER, DATA_COLUMN_SIDECARS_PROOFS_SERIALIZER);
+    blindedExecutionPayloadEnvelopesByRoot =
+        KvStoreColumn.create(
+            finalizedOffset + 20,
+            BYTES32_SERIALIZER,
+            KvStoreSerializer.createSignedBlindedExecutionPayloadEnvelopeSerializer(spec));
     deletedColumnIds =
         List.of(
             asColumnId(finalizedOffset + 9),
