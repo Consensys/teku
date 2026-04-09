@@ -26,6 +26,7 @@ import tech.pegasys.teku.beacon.sync.fetch.FetchTaskFactory;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.MultipeerSyncService;
+import tech.pegasys.teku.beacon.sync.forward.multipeer.SyncReorgManager;
 import tech.pegasys.teku.beacon.sync.forward.singlepeer.SinglePeerSyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarsFetcher;
 import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetchService;
@@ -77,6 +78,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   private final PendingPool<ValidatableAttestation> pendingAttestations;
   private final PendingPool<PayloadAttestationMessage> pendingPayloadAttestations;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
+  private final SyncReorgManager syncReorgManager;
   private final int getStartupTargetPeerCount;
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final Duration startupTimeout;
@@ -101,6 +103,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
       final PendingPool<ValidatableAttestation> pendingAttestations,
       final PendingPool<PayloadAttestationMessage> pendingPayloadAttestations,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final SyncReorgManager syncReorgManager,
       final int getStartupTargetPeerCount,
       final SignatureVerificationService signatureVerifier,
       final Duration startupTimeout,
@@ -123,6 +126,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     this.pendingAttestations = pendingAttestations;
     this.pendingPayloadAttestations = pendingPayloadAttestations;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
+    this.syncReorgManager = syncReorgManager;
     this.getStartupTargetPeerCount = getStartupTargetPeerCount;
     this.signatureVerifier = signatureVerifier;
     this.startupTimeout = startupTimeout;
@@ -213,6 +217,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               blockBlobSidecarsTrackersPool,
               executionPayloadManager,
               syncPreImportBlockChannel,
+              syncReorgManager,
               syncConfig.getForwardSyncBatchSize(),
               syncConfig.getForwardSyncMaxPendingBatches(),
               syncConfig.getForwardSyncMaxBlocksPerMinute(),

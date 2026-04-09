@@ -35,6 +35,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.events.SyncPreImportBlockChannel;
+import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.BlocksImportedSubscriber;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.SyncProgress;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.Batch;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.StubBatchFactory;
@@ -660,6 +661,95 @@ class BatchSyncTest {
     batches.getImportResult(batch0).complete(IMPORTED_ALL_BLOCKS);
 
     assertBatchNotActive(batch0);
+  }
+
+  @Test
+  void shouldNotifyOnBlocksImported() {
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
+    final BlocksImportedSubscriber subscriber = mock(BlocksImportedSubscriber.class);
+
+    sync.subscribeToBlocksImportedEvent(subscriber);
+
+    final Batch batch0 = batches.get(0);
+    final Batch batch1 = batches.get(1);
+    batches.receiveBlocks(batch0, chainBuilder.generateBlockAtSlot(1).getBlock());
+    batches.receiveBlocks(
+        batch1, chainBuilder.generateBlockAtSlot(batch1.getFirstSlot()).getBlock());
+
+    assertBatchImported(batch0);
+    verifyNoInteractions(subscriber);
+    batches.getImportResult(batch0).complete(IMPORTED_ALL_BLOCKS);
+
+    verify(subscriber).onBlocksImported(batch0.getLastBlock().orElseThrow());
+    verifyNoMoreInteractions(subscriber);
+  }
+
+  @Test
+  void shouldNotNotifyOnBlocksImportedWhenImportFails() {
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
+    final BlocksImportedSubscriber subscriber = mock(BlocksImportedSubscriber.class);
+
+    sync.subscribeToBlocksImportedEvent(subscriber);
+
+    final Batch batch0 = batches.get(0);
+    final Batch batch1 = batches.get(1);
+    batches.receiveBlocks(batch0, chainBuilder.generateBlockAtSlot(1).getBlock());
+    batches.receiveBlocks(
+        batch1, chainBuilder.generateBlockAtSlot(batch1.getFirstSlot()).getBlock());
+
+    assertBatchImported(batch0);
+    batches.getImportResult(batch0).complete(IMPORT_FAILED);
+
+    verifyNoInteractions(subscriber);
+  }
+
+  @Test
+  void shouldNotNotifyOnBlocksImportedWhenExecutionClientOffline() {
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
+    final BlocksImportedSubscriber subscriber = mock(BlocksImportedSubscriber.class);
+
+    sync.subscribeToBlocksImportedEvent(subscriber);
+
+    final Batch batch0 = batches.get(0);
+    final Batch batch1 = batches.get(1);
+    batches.receiveBlocks(
+        batch0, chainBuilder.generateBlockAtSlot(batch0.getFirstSlot()).getBlock());
+    batches.receiveBlocks(
+        batch1, chainBuilder.generateBlockAtSlot(batch1.getFirstSlot()).getBlock());
+
+    assertBatchImported(batch0);
+    batches.getImportResult(batch0).complete(EXECUTION_CLIENT_OFFLINE);
+
+    verifyNoInteractions(subscriber);
+  }
+
+  @Test
+  void shouldNotNotifyOnBlocksImportedWhenSwitchingBranches() {
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
+    final BlocksImportedSubscriber subscriber = mock(BlocksImportedSubscriber.class);
+
+    sync.subscribeToBlocksImportedEvent(subscriber);
+
+    final Batch batch0 = batches.get(0);
+    final Batch batch1 = batches.get(1);
+    batches.receiveBlocks(batch0, chainBuilder.generateBlockAtSlot(1).getBlock());
+    batches.receiveBlocks(
+        batch1, chainBuilder.generateBlockAtSlot(batch1.getFirstSlot()).getBlock());
+
+    assertBatchImported(batch0);
+
+    // Switch to a shorter chain while batch0 is importing, forcing a restart
+    final Batch lastBatch = batches.get(batches.size() - 1);
+    targetChain =
+        chainWith(
+            new SlotAndBlockRoot(
+                lastBatch.getLastSlot().minus(1), dataStructureUtil.randomBytes32()),
+            syncSource);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
+
+    batches.getImportResult(batch0).complete(IMPORTED_ALL_BLOCKS);
+
+    verifyNoInteractions(subscriber);
   }
 
   @Test

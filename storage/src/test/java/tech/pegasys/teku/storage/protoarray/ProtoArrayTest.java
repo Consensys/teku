@@ -19,6 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.Collections;
 import java.util.List;
@@ -550,6 +551,67 @@ class ProtoArrayTest {
 
     // block2a is now the head due to weight
     assertHead(block2a);
+  }
+
+  @Test
+  void reorgWhileSyncing_shouldReorgIfWeightsAreCompatibleWithSyncingModeWhenNotInitialized() {
+    final Bytes32 block1 = dataStructureUtil.randomBytes32();
+    addValidBlock(1, block1, GENESIS_CHECKPOINT.getRoot());
+    addValidBlock(2, block2a, block1);
+    addValidBlock(2, block2b, block1);
+    addValidBlock(3, block3a, block2a);
+    addValidBlock(4, block4a, block3a);
+
+    protoArray.applyScoreChanges(computeDeltas(), ZERO, GENESIS_CHECKPOINT, GENESIS_CHECKPOINT);
+
+    // due to tie breaking block4a is the head
+    assertHead(block4a);
+
+    // setting chain a as the canonical chain via non-tip block
+    protoArray.reorgWhileSyncing(block4a, block2b, block1);
+
+    // block2a is now the head due to weight
+    assertHead(block2b);
+  }
+
+  @Test
+  void reorgWhileSyncing_shouldReorgIfWeightsAreCompatibleWithSyncingModeWhenInitialized() {
+    final Bytes32 block1 = dataStructureUtil.randomBytes32();
+    addValidBlock(1, block1, GENESIS_CHECKPOINT.getRoot());
+    addValidBlock(2, block2a, block1);
+    addValidBlock(2, block2b, block1);
+    addValidBlock(3, block3a, block2a);
+    addValidBlock(4, block4a, block3a);
+
+    protoArray.setInitialCanonicalBlockRoot(block2b);
+
+    assertHead(block2b);
+
+    protoArray.reorgWhileSyncing(block2b, block4a, GENESIS_CHECKPOINT.getRoot());
+
+    assertHead(block4a);
+  }
+
+  @Test
+  void reorgWhileSyncing_shouldNotReorgIfWeightsAreNotCompatibleWithSyncingMode() {
+    final Bytes32 block1 = dataStructureUtil.randomBytes32();
+    addValidBlock(1, block1, GENESIS_CHECKPOINT.getRoot());
+    addValidBlock(2, block2a, block1);
+    addValidBlock(2, block2b, block1);
+    addValidBlock(3, block3a, block2a);
+    addValidBlock(4, block4a, block3a);
+
+    // let's add 5 votes to block4a tip, so common ancestor at block1 will accumulate 5 votes too
+    protoArray.applyScoreChanges(
+        LongArrayList.of(0, 0, 0, 0, 0, 5), ZERO, GENESIS_CHECKPOINT, GENESIS_CHECKPOINT);
+
+    assertHead(block4a);
+    assertThat(protoArray.getProtoNode(block1).orElseThrow().getWeight())
+        .isEqualTo(UInt64.valueOf(5));
+
+    protoArray.reorgWhileSyncing(block4a, block2b, block1);
+
+    assertHead(block4a);
   }
 
   private void assertHead(final Bytes32 expectedBlockHash) {
