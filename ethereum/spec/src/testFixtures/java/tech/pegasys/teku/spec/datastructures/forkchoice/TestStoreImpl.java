@@ -447,6 +447,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     }
 
     @Override
+    public Optional<ForkChoiceNode> getAncestorNode(final Bytes32 blockRoot, final UInt64 slot) {
+      return getAncestor(blockRoot, slot).map(ForkChoiceNode::createBase);
+    }
+
+    @Override
     public Optional<SlotAndBlockRoot> findCommonAncestor(
         final Bytes32 blockRoot1, final Bytes32 blockRoot2) {
       throw new UnsupportedOperationException("Not implemented");
@@ -480,7 +485,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
                         executionPayload.map(ExecutionPayload::getBlockHash).orElse(Bytes32.ZERO),
                         ProtoNodeValidationStatus.VALID,
                         blockCheckpoints.get(root),
-                        UInt64.ZERO));
+                        UInt64.ZERO,
+                        ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING));
                 headsByRoot.remove(block.getParentRoot());
               });
       return new ArrayList<>(headsByRoot.values());
@@ -518,6 +524,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
 
     @Override
     public Optional<UInt64> getWeight(final Bytes32 blockRoot) {
+      throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public Optional<ForkChoicePayloadStatus> payloadStatus(final Bytes32 blockRoot) {
       throw new UnsupportedOperationException("Not implemented");
     }
   }

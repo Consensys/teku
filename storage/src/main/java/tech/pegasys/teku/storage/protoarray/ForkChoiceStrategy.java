@@ -33,6 +33,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -354,6 +356,17 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
+  public Optional<ForkChoicePayloadStatus> payloadStatus(final Bytes32 blockRoot) {
+    protoArrayLock.readLock().lock();
+    try {
+      return getProtoNode(blockRoot)
+          .map(__ -> ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
+  @Override
   public Optional<Bytes32> getAncestor(final Bytes32 blockRoot, final UInt64 slot) {
     protoArrayLock.readLock().lock();
     try {
@@ -377,6 +390,11 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     } finally {
       protoArrayLock.readLock().unlock();
     }
+  }
+
+  @Override
+  public Optional<ForkChoiceNode> getAncestorNode(final Bytes32 blockRoot, final UInt64 slot) {
+    return getAncestor(blockRoot, slot).map(ForkChoiceNode::createBase);
   }
 
   @Override

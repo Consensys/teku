@@ -27,6 +27,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -78,6 +80,11 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   }
 
   @Override
+  public Optional<ForkChoiceNode> getAncestorNode(final Bytes32 blockRoot, final UInt64 slot) {
+    return getAncestor(blockRoot, slot).map(ForkChoiceNode::createBase);
+  }
+
+  @Override
   public Optional<SlotAndBlockRoot> findCommonAncestor(
       final Bytes32 blockRoot1, final Bytes32 blockRoot2) {
     return Optional.empty();
@@ -111,7 +118,8 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
             blockAndState.getState().getFinalizedCheckpoint(),
             blockAndState.getState().getCurrentJustifiedCheckpoint(),
             blockAndState.getState().getFinalizedCheckpoint()),
-        UInt64.ZERO);
+        UInt64.ZERO,
+        ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
   }
 
   @Override
@@ -152,6 +160,11 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   public Optional<UInt64> getWeight(final Bytes32 blockRoot) {
     // We don't track weight so return 0 for all known blocks.
     return getBlock(blockRoot).map(block -> UInt64.ZERO);
+  }
+
+  @Override
+  public Optional<ForkChoicePayloadStatus> payloadStatus(final Bytes32 blockRoot) {
+    return getBlock(blockRoot).map(__ -> ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
   }
 
   private Optional<SignedBeaconBlock> getBlock(final Bytes32 root) {
