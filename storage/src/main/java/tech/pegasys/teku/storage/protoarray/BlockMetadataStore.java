@@ -20,17 +20,19 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public interface BlockMetadataStore {
 
   boolean contains(Bytes32 blockRoot);
 
-  void processHashesInChain(final Bytes32 head, NodeProcessor processor);
+  void processBeaconBlockChain(final Bytes32 head, BeaconBlockProcessor processor);
 
-  void processHashesInChainWhile(Bytes32 head, HaltableNodeProcessor nodeProcessor);
+  void processBeaconBlockChainWhile(
+      Bytes32 head, HaltableBeaconBlockProcessor beaconBlockProcessor);
 
-  void processAllInOrder(NodeProcessor nodeProcessor);
+  void processAllBeaconBlocksInOrder(BeaconBlockProcessor beaconBlockProcessor);
 
   Optional<UInt64> blockSlot(Bytes32 blockRoot);
 
@@ -40,14 +42,16 @@ public interface BlockMetadataStore {
 
   void applyUpdate(
       Collection<BlockAndCheckpoints> addedBlocks,
+      Collection<SignedExecutionPayloadAndState> executionPayloads,
       Collection<Bytes32> pulledUpBlocks,
       Map<Bytes32, UInt64> removedBlocks,
       Checkpoint finalizedCheckpoint);
 
-  interface HaltableNodeProcessor {
+  interface HaltableBeaconBlockProcessor {
 
-    static HaltableNodeProcessor fromNodeProcessor(final NodeProcessor processor) {
-      return (child, slot, parent, executionHash) -> {
+    static HaltableBeaconBlockProcessor fromBeaconBlockProcessor(
+        final BeaconBlockProcessor processor) {
+      return (child, slot, parent) -> {
         processor.process(child, slot, parent);
         return true;
       };
@@ -59,14 +63,12 @@ public interface BlockMetadataStore {
      * @param childRoot The child root
      * @param slot The child slot
      * @param parentRoot The parent root
-     * @param executionHash the child execution payload hash or {@link Bytes32#ZERO} if there is no
-     *     payload or it's the default payload.
      * @return True if processing should continue, false if processing should halt
      */
-    boolean process(Bytes32 childRoot, UInt64 slot, Bytes32 parentRoot, Bytes32 executionHash);
+    boolean process(Bytes32 childRoot, UInt64 slot, Bytes32 parentRoot);
   }
 
-  interface NodeProcessor {
+  interface BeaconBlockProcessor {
 
     /**
      * Process parent and child roots

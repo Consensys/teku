@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -408,8 +409,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     // There is no clean way to solve it unless we move to a fully transactional protoarray update.
     // Currently, the assumption is that any exception thrown by design is happening before any
     // update to protoarray, so it is correct to skip the transaction commit.
-    final Bytes32 headBlockRoot =
+    final ForkChoiceNode headNode =
         transaction.applyForkChoiceScoreChanges(
+            recentChainData.getCurrentSlot().orElseThrow(),
             recentChainData.getCurrentEpoch().orElseThrow(),
             finalizedCheckpoint,
             justifiedCheckpoint,
@@ -419,15 +421,15 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     try {
       recentChainData.updateHead(
-          headBlockRoot,
+          headNode.blockRoot(),
           nodeSlot.orElse(
               forkChoiceStrategy
-                  .blockSlot(headBlockRoot)
+                  .blockSlot(headNode.blockRoot())
                   .orElseThrow(
                       () ->
                           new IllegalStateException(
                               "Unable to retrieve the slot of fork choice head: "
-                                  + headBlockRoot))));
+                                  + headNode.blockRoot()))));
     } finally {
       // here we just make sure to commit, because protoarray has been updated. We just had an
       // exception while updating recentChainData which will become consistent again on the next
@@ -952,8 +954,20 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     // may cause us to reorg.
     final Checkpoint justifiedCheckpoint = recentChainData.getJustifiedCheckpoint().orElseThrow();
     final Checkpoint finalizedCheckpoint = recentChainData.getFinalizedCheckpoint().orElseThrow();
-    return forkChoiceStrategy.findHead(
-        recentChainData.getCurrentEpoch().orElseThrow(), justifiedCheckpoint, finalizedCheckpoint);
+    final ForkChoiceNode headNode =
+        forkChoiceStrategy.findHead(
+            recentChainData.getCurrentEpoch().orElseThrow(),
+            justifiedCheckpoint,
+            finalizedCheckpoint);
+    return new SlotAndBlockRoot(
+        forkChoiceStrategy
+            .blockSlot(headNode.blockRoot())
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Unable to retrieve the slot of fork choice head: "
+                            + headNode.blockRoot())),
+        headNode.blockRoot());
   }
 
   private void reportInvalidBlock(final SignedBeaconBlock block, final BlockImportResult result) {

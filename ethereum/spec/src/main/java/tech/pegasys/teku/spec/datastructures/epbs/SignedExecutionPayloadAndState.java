@@ -11,30 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.forkchoice;
+package tech.pegasys.teku.spec.datastructures.epbs;
 
-import java.util.List;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public interface VoteUpdater {
+/**
+ * Helper datastructure that holds a signed execution payload envelope with its corresponding state
+ */
+public record SignedExecutionPayloadAndState(
+    SignedExecutionPayloadEnvelope executionPayload, BeaconState state, boolean isOptimistic) {
+  public UInt64 getSlot() {
+    return executionPayload.getMessage().getSlot();
+  }
 
-  VoteTracker getVote(final UInt64 validatorIndex);
-
-  UInt64 getHighestVotedValidatorIndex();
-
-  void putVote(UInt64 validatorIndex, VoteTracker vote);
-
-  ForkChoiceNode applyForkChoiceScoreChanges(
-      UInt64 currentSlot,
-      UInt64 currentEpoch,
-      Checkpoint finalizedCheckpoint,
-      Checkpoint justifiedCheckpoint,
-      List<UInt64> justifiedCheckpointEffectiveBalances,
-      Optional<Bytes32> proposerBoostRoot,
-      UInt64 proposerScoreBoostAmount);
-
-  void commit();
+  public Bytes32 getBeaconBlockRoot() {
+    return executionPayload.getBeaconBlockRoot();
+  }
 }
