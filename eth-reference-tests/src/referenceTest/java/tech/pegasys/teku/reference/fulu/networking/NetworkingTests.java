@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableMap;
 import tech.pegasys.teku.reference.TestExecutor;
 
 public class NetworkingTests {
+
   public static final ImmutableMap<String, TestExecutor> NETWORKING_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .put("networking/get_custody_groups", new GetCustodyGroupsTestExecutor())

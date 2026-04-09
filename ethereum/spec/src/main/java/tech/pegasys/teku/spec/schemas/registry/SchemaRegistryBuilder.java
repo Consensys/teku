@@ -81,6 +81,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_DEPOSI
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_PARTIAL_WITHDRAWALS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PROPOSER_LOOKAHEAD_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PROPOSER_PREFERENCES_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PTC_WINDOW_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGATE_AND_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLINDED_BEACON_BLOCK_SCHEMA;
@@ -212,6 +213,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDepos
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal.PendingPartialWithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPaymentSchema;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingWithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.PtcWindowSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 
 public class SchemaRegistryBuilder {
@@ -306,6 +308,7 @@ public class SchemaRegistryBuilder {
         .addProvider(createExecutionPayloadAvailabilitySchemaProvider())
         .addProvider(createBuilderPendingPaymentsSchemaProvider())
         .addProvider(createBuilderPendingWithdrawalsSchemaProvider())
+        .addProvider(createPtcWindowSchemaProvider())
         .addProvider(createExecutionPayloadEnvelopesByRootRequestMessageSchemaProvider())
 
         // HEZE
@@ -1081,6 +1084,15 @@ public class SchemaRegistryBuilder {
                 SszListSchema.create(
                     registry.get(BUILDER_PENDING_WITHDRAWAL_SCHEMA),
                     SpecConfigGloas.required(specConfig).getBuilderPendingWithdrawalsLimit()))
+        .build();
+  }
+
+  private static SchemaProvider<?> createPtcWindowSchemaProvider() {
+    return providerBuilder(PTC_WINDOW_SCHEMA)
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                new PtcWindowSchema(SpecConfigGloas.required(specConfig)))
         .build();
   }
 

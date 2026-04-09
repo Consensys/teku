@@ -69,6 +69,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 class ForkChoiceNotifierTest {
 
+  private final int numberOfValidators = 3;
   private final InlineEventThread eventThread = new InlineEventThread();
   private final Spec spec =
       TestSpecFactory.createMinimalBellatrix(
@@ -105,7 +106,7 @@ class ForkChoiceNotifierTest {
       final boolean doNotInitializeWithDefaultFeeRecipient,
       final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes) {
     // initialize post-merge by default
-    storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    storageSystem = InMemoryStorageSystemBuilder.buildDefault(numberOfValidators, spec);
     recentChainData = storageSystem.recentChainData();
     metricsSystem = new StubMetricsSystem();
     proposersDataManager =
@@ -149,7 +150,7 @@ class ForkChoiceNotifierTest {
   }
 
   void reInitializePreMerge() {
-    storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    storageSystem = InMemoryStorageSystemBuilder.buildDefault(numberOfValidators, spec);
     recentChainData = storageSystem.recentChainData();
     metricsSystem = new StubMetricsSystem();
     proposersDataManager =

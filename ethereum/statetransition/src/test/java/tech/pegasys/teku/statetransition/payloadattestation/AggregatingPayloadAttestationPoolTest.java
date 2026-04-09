@@ -156,7 +156,9 @@ class AggregatingPayloadAttestationPoolTest {
     final UInt64 blockSlot = dataStructureUtil.randomSlot();
     final int validatorCount = 8192;
     final BeaconState state =
-        dataStructureUtil.randomBeaconStateWithActiveValidators(validatorCount, blockSlot);
+        dataStructureUtil.randomBeaconStateWithActiveValidatorsAndInitialisedPtcWindow(
+            validatorCount, blockSlot);
+
     final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
     final UInt64 slot = blockSlot.minusMinZero(1);
 
