@@ -772,6 +772,11 @@ public class ForkChoiceUtil {
     return parentExecutionRoot.isPresent() && !parentExecutionRoot.get().isZero();
   }
 
+  public boolean shouldUpdateVote(
+      final VoteTracker vote, final UInt64 targetEpoch, final UInt64 slot) {
+    return targetEpoch.isGreaterThan(miscHelpers.computeEpochAtSlot(vote.getNextSlot()))
+        || vote.equals(VoteTracker.DEFAULT);
+  }
   public boolean isHeadWeak(
       final ReadOnlyStore store, final Bytes32 root, final UInt64 reorgThreshold) {
     return store.isHeadWeak(root);

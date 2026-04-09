@@ -37,7 +37,6 @@ public class VoteTrackerSerializerTest {
         new VoteTracker(
             CURRENT_ROOT,
             NEXT_ROOT,
-            UInt64.ONE,
             true,
             false,
             UInt64.valueOf(42),
@@ -82,7 +81,6 @@ public class VoteTrackerSerializerTest {
             new VoteTracker(
                 CURRENT_ROOT,
                 NEXT_ROOT,
-                UInt64.valueOf(5),
                 false,
                 false,
                 UInt64.valueOf(160),
@@ -113,7 +111,6 @@ public class VoteTrackerSerializerTest {
             new VoteTracker(
                 CURRENT_ROOT,
                 NEXT_ROOT,
-                UInt64.valueOf(5),
                 true,
                 false,
                 UInt64.valueOf(160),

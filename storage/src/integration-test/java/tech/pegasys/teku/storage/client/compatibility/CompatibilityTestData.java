@@ -49,7 +49,6 @@ public class CompatibilityTestData {
   public static final int MAX_SLOT = 128;
   // Legacy on-disk test data stores epoch=1 for all votes. With minimal spec (SLOTS_PER_EPOCH=8),
   // epoch 1 converts to nextSlot=8.
-  private static final UInt64 LEGACY_NEXT_EPOCH = UInt64.ONE;
   private static final UInt64 LEGACY_NEXT_SLOT = UInt64.valueOf(8);
 
   public static final ImmutableMap<UInt64, VoteTracker> EXPECTED_VOTES =
@@ -59,7 +58,6 @@ public class CompatibilityTestData {
               new VoteTracker(
                   Bytes32.fromHexString("0x01"),
                   Bytes32.fromHexString("0x02"),
-                  LEGACY_NEXT_EPOCH,
                   false,
                   false,
                   LEGACY_NEXT_SLOT,
@@ -71,7 +69,6 @@ public class CompatibilityTestData {
               new VoteTracker(
                   Bytes32.fromHexString("0x03"),
                   Bytes32.fromHexString("0x04"),
-                  LEGACY_NEXT_EPOCH,
                   false,
                   false,
                   LEGACY_NEXT_SLOT,
@@ -83,7 +80,6 @@ public class CompatibilityTestData {
               new VoteTracker(
                   Bytes32.fromHexString("0x05"),
                   Bytes32.fromHexString("0x06"),
-                  LEGACY_NEXT_EPOCH,
                   false,
                   false,
                   LEGACY_NEXT_SLOT,
@@ -95,7 +91,6 @@ public class CompatibilityTestData {
               new VoteTracker(
                   Bytes32.fromHexString("0x07"),
                   Bytes32.fromHexString("0x08"),
-                  LEGACY_NEXT_EPOCH,
                   false,
                   false,
                   LEGACY_NEXT_SLOT,
@@ -107,7 +102,6 @@ public class CompatibilityTestData {
               new VoteTracker(
                   Bytes32.fromHexString("0x09"),
                   Bytes32.fromHexString("0x10"),
-                  LEGACY_NEXT_EPOCH,
                   false,
                   false,
                   LEGACY_NEXT_SLOT,
@@ -119,7 +113,6 @@ public class CompatibilityTestData {
               new VoteTracker(
                   Bytes32.fromHexString("0x11"),
                   Bytes32.fromHexString("0x12"),
-                  LEGACY_NEXT_EPOCH,
                   false,
                   false,
                   LEGACY_NEXT_SLOT,

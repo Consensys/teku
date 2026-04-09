@@ -18,26 +18,30 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+/**
+ * Teku representation of fork-choice latest-message state.
+ *
+ * <p>Gloas extends the spec's `LatestMessage` helper to track `slot` and `payload_present` instead
+ * of only target epoch. The corresponding Python definition lives in:
+ * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#modified-latestmessage
+ */
 public class VoteTracker {
 
   public static final VoteTracker DEFAULT = new VoteTracker(Bytes32.ZERO, Bytes32.ZERO);
 
   private final Bytes32 currentRoot;
   private final Bytes32 nextRoot;
-  private final UInt64 nextEpoch;
   private final boolean nextEquivocating;
   private final boolean currentEquivocating;
+
+  // Gloas: LatestMessage uses slot instead of epoch, and tracks payload_present
   private final UInt64 nextSlot;
   private final boolean nextPayloadPresent;
   private final UInt64 currentSlot;
   private final boolean currentPayloadPresent;
 
   public VoteTracker(final Bytes32 currentRoot, final Bytes32 nextRoot) {
-    this(currentRoot, nextRoot, UInt64.ZERO);
-  }
-
-  public VoteTracker(final Bytes32 currentRoot, final Bytes32 nextRoot, final UInt64 nextEpoch) {
-    this(currentRoot, nextRoot, nextEpoch, false, false);
+    this(currentRoot, nextRoot, false, false);
   }
 
   public VoteTracker(
@@ -48,7 +52,6 @@ public class VoteTracker {
     this(
         currentRoot,
         nextRoot,
-        UInt64.ZERO,
         nextEquivocating,
         currentEquivocating,
         UInt64.ZERO,
@@ -60,25 +63,6 @@ public class VoteTracker {
   public VoteTracker(
       final Bytes32 currentRoot,
       final Bytes32 nextRoot,
-      final UInt64 nextEpoch,
-      final boolean nextEquivocating,
-      final boolean currentEquivocating) {
-    this(
-        currentRoot,
-        nextRoot,
-        nextEpoch,
-        nextEquivocating,
-        currentEquivocating,
-        nextEpoch,
-        false,
-        UInt64.ZERO,
-        false);
-  }
-
-  public VoteTracker(
-      final Bytes32 currentRoot,
-      final Bytes32 nextRoot,
-      final UInt64 nextEpoch,
       final boolean nextEquivocating,
       final boolean currentEquivocating,
       final UInt64 nextSlot,
@@ -87,7 +71,6 @@ public class VoteTracker {
       final boolean currentPayloadPresent) {
     this.currentRoot = currentRoot;
     this.nextRoot = nextRoot;
-    this.nextEpoch = nextEpoch;
     this.nextEquivocating = nextEquivocating;
     this.currentEquivocating = currentEquivocating;
     this.nextSlot = nextSlot;
@@ -102,10 +85,6 @@ public class VoteTracker {
 
   public Bytes32 getNextRoot() {
     return nextRoot;
-  }
-
-  public UInt64 getNextEpoch() {
-    return nextEpoch;
   }
 
   public UInt64 getNextSlot() {
@@ -140,7 +119,6 @@ public class VoteTracker {
     return new VoteTracker(
         currentRoot,
         nextRoot,
-        nextEpoch,
         true,
         false,
         nextSlot,
@@ -164,7 +142,6 @@ public class VoteTracker {
         && currentPayloadPresent == that.currentPayloadPresent
         && Objects.equals(currentRoot, that.currentRoot)
         && Objects.equals(nextRoot, that.nextRoot)
-        && Objects.equals(nextEpoch, that.nextEpoch)
         && Objects.equals(nextSlot, that.nextSlot)
         && Objects.equals(currentSlot, that.currentSlot);
   }
@@ -174,7 +151,6 @@ public class VoteTracker {
     return Objects.hash(
         currentRoot,
         nextRoot,
-        nextEpoch,
         nextEquivocating,
         currentEquivocating,
         nextSlot,
@@ -188,7 +164,6 @@ public class VoteTracker {
     return MoreObjects.toStringHelper(this)
         .add("currentRoot", currentRoot)
         .add("nextRoot", nextRoot)
-        .add("nextEpoch", nextEpoch)
         .add("nextEquivocating", nextEquivocating)
         .add("currentEquivocating", currentEquivocating)
         .add("nextSlot", nextSlot)

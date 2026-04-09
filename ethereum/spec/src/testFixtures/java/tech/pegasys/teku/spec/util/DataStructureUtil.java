@@ -983,7 +983,7 @@ public final class DataStructureUtil {
   }
 
   public VoteTracker randomVoteTracker() {
-    return new VoteTracker(randomBytes32(), randomBytes32(), randomUInt64());
+    return new VoteTracker(randomBytes32(), randomBytes32());
   }
 
   public PendingAttestation randomPendingAttestation() {

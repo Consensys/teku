@@ -62,11 +62,9 @@ class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
             final boolean nextPayloadPresent = reader.readBoolean();
             final UInt64 currentSlot = UInt64.fromLongBits(reader.readUInt64());
             final boolean currentPayloadPresent = reader.readBoolean();
-            final UInt64 nextEpoch = nextSlot.dividedBy(slotsPerEpoch);
             return new VoteTracker(
                 currentRoot,
                 nextRoot,
-                nextEpoch,
                 nextEquivocating,
                 currentEquivocating,
                 nextSlot,
@@ -76,12 +74,12 @@ class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
           }
 
           // Legacy formats: convert epoch to slot
-          final UInt64 epoch = UInt64.fromLongBits(reader.readUInt64());
-          final UInt64 slot = epoch.times(slotsPerEpoch);
+          final long epoch = reader.readUInt64();
+          final UInt64 slot = UInt64.fromLongBits(epoch * slotsPerEpoch);
 
           if (reader.isComplete()) {
             return new VoteTracker(
-                currentRoot, nextRoot, epoch, false, false, slot, false, UInt64.ZERO, false);
+                currentRoot, nextRoot, false, false, slot, false, UInt64.ZERO, false);
           }
 
           final boolean nextEquivocating = reader.readBoolean();
@@ -89,7 +87,6 @@ class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
           return new VoteTracker(
               currentRoot,
               nextRoot,
-              epoch,
               nextEquivocating,
               currentEquivocating,
               slot,
