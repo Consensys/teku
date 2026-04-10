@@ -4745,7 +4745,7 @@
 
 - name: get_proposer_head#phase0
   sources:
-    - file: storage/src/main/java/tech/pegasys/teku/storage/client/LateBlockReorgLogic.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
       search: public Bytes32 getProposerHead(
   spec: |
     <spec fn="get_proposer_head" fork="phase0" hash="99e8fc05">
@@ -6204,8 +6204,8 @@
 
 - name: is_head_late#phase0
   sources:
-    - file: storage/src/main/java/tech/pegasys/teku/storage/client/LateBlockReorgLogic.java
-      search: public boolean isBlockLate(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public static boolean isHeadLate(
   spec: |
     <spec fn="is_head_late" fork="phase0" hash="e393dce6">
     def is_head_late(store: Store, head_root: Root) -> bool:
@@ -6504,7 +6504,7 @@
 
 - name: is_proposing_on_time#phase0
   sources:
-    - file: storage/src/main/java/tech/pegasys/teku/storage/client/LateBlockReorgLogic.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
       search: public boolean isProposingOnTime(
   spec: |
     <spec fn="is_proposing_on_time" fork="phase0" hash="dc5256b4">
@@ -10603,7 +10603,7 @@
 
 - name: should_override_forkchoice_update#bellatrix
   sources:
-    - file: storage/src/main/java/tech/pegasys/teku/storage/client/LateBlockReorgLogic.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
       search: public boolean shouldOverrideForkChoiceUpdate(
   spec: |
     <spec fn="should_override_forkchoice_update" fork="bellatrix" hash="c055d92a">
