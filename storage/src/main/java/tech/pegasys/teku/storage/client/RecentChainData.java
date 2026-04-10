@@ -37,6 +37,7 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -50,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceReorgContext;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -61,8 +63,11 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
+import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil.BlockTimeliness;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -78,7 +83,8 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreUpdateHandler;
 
 /** This class is the ChainStorage client-side logic */
-public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIsConnectedProvider {
+public abstract class RecentChainData
+    implements StoreUpdateHandler, ValidatorIsConnectedProvider, ForkChoiceReorgContext {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -110,8 +116,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
 
   private final SingleBlockProvider validatedBlockProvider;
   private final SingleBlobSidecarProvider validatedBlobSidecarProvider;
-
-  private final LateBlockReorgLogic lateBlockReorgLogic;
+  private final BlockTimelinessTracker blockTimelinessTracker;
 
   private final ValidatorIsConnectedProvider validatorIsConnectedProvider;
 
@@ -142,7 +147,6 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
     this.chainHeadChannel = chainHeadChannel;
     this.storageUpdateChannel = storageUpdateChannel;
     this.finalizedCheckpointChannel = finalizedCheckpointChannel;
-    this.lateBlockReorgLogic = new LateBlockReorgLogic(spec, this);
     reorgCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.BEACON,
@@ -150,6 +154,14 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
             "Total occurrences of reorganizations of the chain");
     this.validatorIsConnectedProvider = validatorIsConnectedProvider;
     this.spec = spec;
+    final int epochsForTimeliness =
+        Math.max(spec.getGenesisSpecConfig().getReorgMaxEpochsSinceFinalization(), 3);
+    this.blockTimelinessTracker =
+        new BlockTimelinessTracker(
+            spec,
+            this::getGenesisTimeMillis,
+            LimitedMap.createSynchronizedNatural(
+                spec.getGenesisSpec().getSlotsPerEpoch() * epochsForTimeliness));
   }
 
   public void subscribeStoreInitialized(final Runnable runnable) {
@@ -294,6 +306,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
     return true;
   }
 
+  @Override
   public UpdatableStore getStore() {
     return store;
   }
@@ -751,11 +764,20 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
   }
 
   public Bytes32 getProposerHead(final Bytes32 headRoot, final UInt64 slot) {
-    return lateBlockReorgLogic.getProposerHead(headRoot, slot);
+    return spec.atSlot(slot).getForkChoiceUtil().getProposerHead(this, headRoot, slot);
   }
 
   public boolean shouldOverrideForkChoiceUpdate(final Bytes32 headRoot) {
-    return lateBlockReorgLogic.shouldOverrideForkChoiceUpdate(headRoot);
+    final Optional<SignedBeaconBlock> maybeHead =
+        Optional.ofNullable(store)
+            .flatMap(currentStore -> currentStore.getBlockIfAvailable(headRoot));
+    if (maybeHead.isEmpty()) {
+      return false;
+    }
+    final UInt64 proposalSlot = maybeHead.orElseThrow().getSlot().increment();
+    return spec.atSlot(proposalSlot)
+        .getForkChoiceUtil()
+        .shouldOverrideForkChoiceUpdate(this, headRoot);
   }
 
   @Override
@@ -770,15 +792,26 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
 
   public void setBlockTimelinessFromArrivalTime(
       final SignedBeaconBlock block, final UInt64 arrivalTime) {
-    lateBlockReorgLogic.setBlockTimelinessFromArrivalTime(block, arrivalTime);
+    blockTimelinessTracker.setBlockTimelinessFromArrivalTime(block, arrivalTime);
   }
 
   public void setBlockTimelinessIfEmpty(final SignedBeaconBlock block) {
-    lateBlockReorgLogic.setBlockTimelinessFromArrivalTime(block, store.getTimeInMillis());
+    blockTimelinessTracker.setBlockTimelinessFromArrivalTime(block, store.getTimeInMillis());
+  }
+
+  @Override
+  public Optional<BlockTimeliness> getBlockTimeliness(final Bytes32 root) {
+    return blockTimelinessTracker.getBlockTimeliness(root);
   }
 
   public boolean isBlockLate(final Bytes32 root) {
-    return lateBlockReorgLogic.isBlockLate(root);
+    return blockTimelinessTracker.isBlockLate(root);
+  }
+
+  @Override
+  public BeaconState processSlots(final BeaconState state, final UInt64 slot)
+      throws SlotProcessingException, EpochProcessingException {
+    return spec.processSlots(state, slot);
   }
 
   public Optional<UInt64> getCustodyGroupCount() {
