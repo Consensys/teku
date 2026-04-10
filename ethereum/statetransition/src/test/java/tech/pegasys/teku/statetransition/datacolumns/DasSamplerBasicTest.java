@@ -39,6 +39,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -73,7 +74,7 @@ public class DasSamplerBasicTest {
   private CurrentSlotProvider currentSlotProvider;
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, SPEC);
 
-  private DasSamplerBasic sampler;
+  private DasSamplerBasicImpl sampler;
 
   @BeforeEach
   public void setUp() {
@@ -91,7 +92,7 @@ public class DasSamplerBasicTest {
     when(custody.onNewValidatedDataColumnSidecar(any(), any())).thenReturn(SafeFuture.COMPLETE);
 
     sampler =
-        new DasSamplerBasic(
+        new DasSamplerBasicImpl(
             SPEC,
             asyncRunner,
             currentSlotProvider,
@@ -100,7 +101,9 @@ public class DasSamplerBasicTest {
             retriever,
             custodyGroupCountManager,
             recentChainData,
-            true);
+            true,
+            new StubMetricsSystem(),
+            64);
   }
 
   @Test

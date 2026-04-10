@@ -322,6 +322,15 @@ public class P2POptions {
   private Integer forwardSyncMaxDistanceFromHead;
 
   @Option(
+      names = {"--Xp2p-max-recently-sampled-blocks"},
+      paramLabel = "<NUMBER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Maximum number recent blocks we should sample when syncing.",
+      hidden = true,
+      arity = "1")
+  private Integer maxRecentlySampledBlocks = SyncConfig.DEFAULT_MAX_RECENTLY_SAMPLED_BLOCKS;
+
+  @Option(
       names = {"--Xp2p-sync-blob-sidecars-rate-limit"},
       paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
@@ -795,7 +804,8 @@ public class P2POptions {
                     .forwardSyncMaxBlobSidecarsPerMinute(forwardSyncBlobSidecarsRateLimit)
                     .forwardSyncBatchSize(forwardSyncBatchSize)
                     .forwardSyncMaxPendingBatches(forwardSyncMaxPendingBatches)
-                    .forwardSyncMaxDistanceFromHead(forwardSyncMaxDistanceFromHead));
+                    .forwardSyncMaxDistanceFromHead(forwardSyncMaxDistanceFromHead)
+                    .maxRecentlySampledBlocks(maxRecentlySampledBlocks));
 
     if (subscribeAllSubnetsEnabled) {
       builder

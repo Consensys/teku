@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 
 public class RecentBlocksFetchService
@@ -44,6 +45,7 @@ public class RecentBlocksFetchService
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final FetchTaskFactory fetchTaskFactory;
   private final Subscribers<BlockSubscriber> blockSubscribers = Subscribers.create(true);
+  private final DasSamplerBasic dasBasicSampler;
 
   RecentBlocksFetchService(
       final AsyncRunner asyncRunner,
@@ -51,6 +53,7 @@ public class RecentBlocksFetchService
       final PendingPool<ValidatableAttestation> pendingAttestationsPool,
       final PendingPool<PayloadAttestationMessage> pendingPayloadAttestationsPool,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final DasSamplerBasic dasBasicSampler,
       final ForwardSync forwardSync,
       final FetchTaskFactory fetchTaskFactory,
       final int maxConcurrentRequests) {
@@ -60,6 +63,7 @@ public class RecentBlocksFetchService
     this.pendingAttestationsPool = pendingAttestationsPool;
     this.pendingPayloadAttestationsPool = pendingPayloadAttestationsPool;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
+    this.dasBasicSampler = dasBasicSampler;
     this.fetchTaskFactory = fetchTaskFactory;
   }
 
@@ -69,6 +73,7 @@ public class RecentBlocksFetchService
       final PendingPool<ValidatableAttestation> pendingAttestations,
       final PendingPool<PayloadAttestationMessage> pendingPayloadAttestations,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final DasSamplerBasic dasBasicSampler,
       final ForwardSync forwardSync,
       final FetchTaskFactory fetchTaskFactory) {
     return new RecentBlocksFetchService(
@@ -77,6 +82,7 @@ public class RecentBlocksFetchService
         pendingAttestations,
         pendingPayloadAttestations,
         blockBlobSidecarsTrackersPool,
+        dasBasicSampler,
         forwardSync,
         fetchTaskFactory,
         MAX_CONCURRENT_REQUESTS);
@@ -110,6 +116,10 @@ public class RecentBlocksFetchService
     }
     if (blockBlobSidecarsTrackersPool.containsBlock(blockRoot)) {
       // We already have this block, waiting for blobs
+      return;
+    }
+    if (dasBasicSampler.containsBlock(blockRoot)) {
+      // We already have this block in DAS sampler
       return;
     }
     final FetchBlockTask task = createTask(blockRoot);
