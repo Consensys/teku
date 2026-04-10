@@ -13,3 +13,4 @@
 ### Additions and Improvements
 
 ### Bug Fixes
+- Fixed automatic detection of local node IPv6 address
