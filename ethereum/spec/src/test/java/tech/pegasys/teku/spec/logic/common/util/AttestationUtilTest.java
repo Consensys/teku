@@ -150,11 +150,7 @@ class AttestationUtilTest {
     assertThat(validatableAttestation.isValidIndexedAttestation()).isTrue();
     assertThat(validatableAttestation.getIndexedAttestation()).isPresent();
     assertThat(validatableAttestation.getCommitteeShufflingSeed()).isPresent();
-    if (specContext.getSpecMilestone().isGreaterThanOrEqualTo(ELECTRA)) {
-      assertThat(validatableAttestation.getCommitteesSize()).contains(committeesSize);
-    } else {
-      assertThat(validatableAttestation.getCommitteesSize()).isEmpty();
-    }
+    assertThat(validatableAttestation.getCommitteesSize()).isEmpty();
 
     verify(asyncBLSSignatureVerifier).verify(anyList(), any(Bytes.class), any(BLSSignature.class));
   }
@@ -218,11 +214,7 @@ class AttestationUtilTest {
     assertThat(validatableAttestation.isValidIndexedAttestation()).isTrue();
     assertThat(validatableAttestation.getIndexedAttestation()).isPresent();
     assertThat(validatableAttestation.getCommitteeShufflingSeed()).isPresent();
-    if (specContext.getSpecMilestone().isGreaterThanOrEqualTo(ELECTRA)) {
-      assertThat(validatableAttestation.getCommitteesSize()).contains(committeesSize);
-    } else {
-      assertThat(validatableAttestation.getCommitteesSize()).isEmpty();
-    }
+    assertThat(validatableAttestation.getCommitteesSize()).isEmpty();
   }
 
   @TestTemplate
@@ -242,11 +234,7 @@ class AttestationUtilTest {
     assertThat(validatableAttestation.isValidIndexedAttestation()).isTrue();
     assertThat(validatableAttestation.getIndexedAttestation()).isPresent();
     assertThat(validatableAttestation.getCommitteeShufflingSeed()).isPresent();
-    if (specContext.getSpecMilestone().isGreaterThanOrEqualTo(ELECTRA)) {
-      assertThat(validatableAttestation.getCommitteesSize()).contains(committeesSize);
-    } else {
-      assertThat(validatableAttestation.getCommitteesSize()).isEmpty();
-    }
+    assertThat(validatableAttestation.getCommitteesSize()).isEmpty();
 
     verifyNoInteractions(miscHelpers, asyncBLSSignatureVerifier);
   }

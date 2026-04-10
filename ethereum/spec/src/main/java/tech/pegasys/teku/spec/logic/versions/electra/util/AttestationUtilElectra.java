@@ -166,7 +166,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
                     convertSingleAttestationToAggregated(state, singleAttestation);
 
                 attestation.convertToAggregatedFormatFromSingleAttestation(convertedAttestation);
-                attestation.saveCommitteeShufflingSeedAndCommitteesSize(state);
+                attestation.saveCommitteeShufflingSeed(state);
                 attestation.setIndexedAttestation(indexedAttestation);
                 attestation.setValidIndexedAttestation();
               }

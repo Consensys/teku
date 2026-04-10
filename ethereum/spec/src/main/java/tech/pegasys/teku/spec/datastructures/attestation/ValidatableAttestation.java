@@ -196,7 +196,7 @@ public class ValidatableAttestation {
     saveCommitteesSize(state);
   }
 
-  private void saveCommitteeShufflingSeed(final BeaconState state) {
+  public void saveCommitteeShufflingSeed(final BeaconState state) {
     if (committeeShufflingSeed.isPresent()) {
       return;
     }
