@@ -109,6 +109,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -1375,13 +1376,38 @@ class ValidatorApiHandlerTest {
         dataStructureUtil.randomSignedExecutionPayloadEnvelope(5);
     final PublishSignedExecutionPayloadResult publishResult =
         PublishSignedExecutionPayloadResult.success(signedExecutionPayload.getBeaconBlockRoot());
-    when(executionPayloadPublisher.publishSignedExecutionPayload(eq(signedExecutionPayload)))
+    when(executionPayloadPublisher.publishSignedExecutionPayload(
+            eq(signedExecutionPayload), eq(Optional.empty())))
         .thenReturn(SafeFuture.completedFuture(publishResult));
 
-    assertThat(validatorApiHandler.publishSignedExecutionPayload(signedExecutionPayload))
+    assertThat(
+            validatorApiHandler.publishSignedExecutionPayload(
+                signedExecutionPayload, Optional.empty()))
         .isCompletedWithValue(publishResult);
 
-    verify(executionPayloadPublisher).publishSignedExecutionPayload(signedExecutionPayload);
+    verify(executionPayloadPublisher)
+        .publishSignedExecutionPayload(signedExecutionPayload, Optional.empty());
+  }
+
+  @Test
+  public void publishSignedExecutionPayload_shouldPublishWithBroadcastValidationLevel() {
+    final SignedExecutionPayloadEnvelope signedExecutionPayload =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(5);
+    final PublishSignedExecutionPayloadResult publishResult =
+        PublishSignedExecutionPayloadResult.success(signedExecutionPayload.getBeaconBlockRoot());
+    final Optional<BroadcastValidationLevel> broadcastValidationLevel = Optional.of(GOSSIP);
+
+    when(executionPayloadPublisher.publishSignedExecutionPayload(
+            eq(signedExecutionPayload), eq(broadcastValidationLevel)))
+        .thenReturn(SafeFuture.completedFuture(publishResult));
+
+    assertThat(
+            validatorApiHandler.publishSignedExecutionPayload(
+                signedExecutionPayload, broadcastValidationLevel))
+        .isCompletedWithValue(publishResult);
+
+    verify(executionPayloadPublisher)
+        .publishSignedExecutionPayload(signedExecutionPayload, broadcastValidationLevel);
   }
 
   @Test
@@ -1391,13 +1417,17 @@ class ValidatorApiHandlerTest {
     final PublishSignedExecutionPayloadResult failedResult =
         PublishSignedExecutionPayloadResult.rejected(
             signedExecutionPayload.getBeaconBlockRoot(), "oopsy");
-    when(executionPayloadPublisher.publishSignedExecutionPayload(eq(signedExecutionPayload)))
+    when(executionPayloadPublisher.publishSignedExecutionPayload(
+            eq(signedExecutionPayload), eq(Optional.empty())))
         .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
 
-    assertThat(validatorApiHandler.publishSignedExecutionPayload(signedExecutionPayload))
+    assertThat(
+            validatorApiHandler.publishSignedExecutionPayload(
+                signedExecutionPayload, Optional.empty()))
         .isCompletedWithValue(failedResult);
 
-    verify(executionPayloadPublisher).publishSignedExecutionPayload(signedExecutionPayload);
+    verify(executionPayloadPublisher)
+        .publishSignedExecutionPayload(signedExecutionPayload, Optional.empty());
   }
 
   @Test

@@ -13,12 +13,15 @@
 
 package tech.pegasys.teku.validator.coordinator.publisher;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -65,7 +68,8 @@ class ExecutionPayloadPublisherGloasTest {
 
   @BeforeEach
   public void setUp() {
-    when(executionPayloadManager.validateAndImportExecutionPayload(signedExecutionPayload))
+    when(executionPayloadManager.validateAndImportExecutionPayload(
+            eq(signedExecutionPayload), eq(Optional.empty()), any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     when(executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload))
         .thenReturn(SafeFuture.completedFuture(dataColumnSidecars));
@@ -88,7 +92,8 @@ class ExecutionPayloadPublisherGloasTest {
 
   @Test
   public void publishSignedExecutionPayload_shouldReturnRejectedResultIfGossipValidationFails() {
-    when(executionPayloadManager.validateAndImportExecutionPayload(signedExecutionPayload))
+    when(executionPayloadManager.validateAndImportExecutionPayload(
+            eq(signedExecutionPayload), eq(Optional.empty()), any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("oopsy")));
     SafeFutureAssert.assertThatSafeFuture(
             executionPayloadPublisher.publishSignedExecutionPayload(signedExecutionPayload))

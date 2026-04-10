@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -221,5 +222,27 @@ public class ExecutionPayloadGossipValidatorTest {
         .thenReturn(true);
 
     assertThatSafeFuture(validator.validate(signedEnvelope)).isCompletedWithValue(ACCEPT);
+  }
+
+  @TestTemplate
+  void shouldIgnoreIfAlreadySeenWithGossipLevel() {
+    assertThatSafeFuture(
+            validator.validate(signedEnvelope, Optional.of(BroadcastValidationLevel.GOSSIP)))
+        .isCompletedWithValue(ACCEPT);
+    assertThatSafeFuture(validator.validate(signedEnvelope))
+        .isCompletedWithValue(
+            ignore(
+                "Already received execution payload envelope with block root %s from builder with index %s",
+                blockRoot, envelope.getBuilderIndex()));
+  }
+
+  @TestTemplate
+  void shouldRejectIfSignatureIsInvalidWithGossipLevel() {
+    when(gossipValidationHelper.isSignatureValidWithRespectToBuilderIndex(
+            any(), any(), any(), any()))
+        .thenReturn(false);
+    assertThatSafeFuture(
+            validator.validate(signedEnvelope, Optional.of(BroadcastValidationLevel.GOSSIP)))
+        .isCompletedWithValue(reject("Invalid signed execution payload envelope signature"));
   }
 }

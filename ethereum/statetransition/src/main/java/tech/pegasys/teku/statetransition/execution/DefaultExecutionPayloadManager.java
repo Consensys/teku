@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.BlockRootAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
@@ -77,13 +78,21 @@ public class DefaultExecutionPayloadManager
     return recentSeenExecutionPayloads.contains(beaconBlockRoot);
   }
 
+  @Override
+  public SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
+      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+    return validateAndImportExecutionPayload(
+        signedExecutionPayload, Optional.empty(), Optional.empty());
+  }
+
   @SuppressWarnings("FutureReturnValueIgnored")
   @Override
   public SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload,
-      final Optional<UInt64> arrivalTimestamp) {
+      final Optional<UInt64> arrivalTimestamp,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
     final SafeFuture<InternalValidationResult> validationResult =
-        executionPayloadGossipValidator.validate(signedExecutionPayload);
+        executionPayloadGossipValidator.validate(signedExecutionPayload, broadcastValidationLevel);
     validationResult.thenAccept(
         result -> {
           switch (result.code()) {

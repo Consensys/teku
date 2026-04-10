@@ -129,10 +129,10 @@ public class RestApiConstants {
       Possible values:
       - **`gossip`** (default): lightweight gossip checks only
       - **`consensus`**: full consensus checks, including validation of all signatures and \
-        blocks fields _except_ for the execution payload transactions.
+          blocks fields _except_ for the execution payload transactions.
       - **`consensus_and_equivocation`**: the same as `consensus`, with an extra equivocation \
-        check immediately before the block is broadcast. If the block is found to be an
-        equivocation it fails validation.
+          check immediately before the block is broadcast. If the block is found to be an
+          equivocation it fails validation.
       If the block fails the requested level of a validation a 400 status MUST be returned \
       immediately and the block MUST NOT be broadcast to the network.
       If validation succeeds, the block must still be fully verified before it is \

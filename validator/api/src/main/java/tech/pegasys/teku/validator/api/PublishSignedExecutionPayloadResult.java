@@ -37,6 +37,11 @@ public class PublishSignedExecutionPayloadResult {
     return new PublishSignedExecutionPayloadResult(beaconBlockRoot, Optional.empty(), true);
   }
 
+  public static PublishSignedExecutionPayloadResult notImported(
+      final Bytes32 beaconBlockRoot, final String reason) {
+    return new PublishSignedExecutionPayloadResult(beaconBlockRoot, Optional.of(reason), true);
+  }
+
   public static PublishSignedExecutionPayloadResult rejected(
       final Bytes32 beaconBlockRoot, final String reason) {
     return new PublishSignedExecutionPayloadResult(beaconBlockRoot, Optional.of(reason), false);
