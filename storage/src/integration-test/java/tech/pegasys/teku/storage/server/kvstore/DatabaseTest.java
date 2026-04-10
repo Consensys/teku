@@ -636,9 +636,7 @@ public class DatabaseTest {
             false,
             true));
 
-    assertThat(
-            ((KvStoreDatabase) database)
-                .dao.getBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))
+    assertThat(database.getBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))
         .contains(signedBlindedExecutionPayloadEnvelope);
   }
 
@@ -702,9 +700,7 @@ public class DatabaseTest {
             true));
 
     // Envelope should still be present — canonical finalized blocks are not pruned
-    assertThat(
-            ((KvStoreDatabase) database)
-                .dao.getBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))
+    assertThat(database.getBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))
         .contains(signedBlindedExecutionPayloadEnvelope);
   }
 
@@ -742,10 +738,7 @@ public class DatabaseTest {
             false,
             true));
 
-    assertThat(
-            ((KvStoreDatabase) database)
-                .dao.getBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))
-        .isEmpty();
+    assertThat(database.getBlindedExecutionPayloadEnvelope(blockAndState.getRoot())).isEmpty();
   }
 
   @TestTemplate
@@ -780,9 +773,7 @@ public class DatabaseTest {
             true));
 
     // Verify it's stored
-    assertThat(
-            ((KvStoreDatabase) database)
-                .dao.getBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))
+    assertThat(database.getBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))
         .contains(signedBlindedExecutionPayloadEnvelope);
 
     // Delete the block (simulates non-canonical pruning)
@@ -808,10 +799,7 @@ public class DatabaseTest {
             true));
 
     // Verify envelope was removed
-    assertThat(
-            ((KvStoreDatabase) database)
-                .dao.getBlindedExecutionPayloadEnvelope(blockAndState.getRoot()))
-        .isEmpty();
+    assertThat(database.getBlindedExecutionPayloadEnvelope(blockAndState.getRoot())).isEmpty();
   }
 
   private void commit(final StoreTransaction transaction) {

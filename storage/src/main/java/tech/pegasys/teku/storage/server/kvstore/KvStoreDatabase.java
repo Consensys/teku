@@ -281,6 +281,12 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public Optional<SignedBlindedExecutionPayloadEnvelope> getBlindedExecutionPayloadEnvelope(
+      final Bytes32 blockRoot) {
+    return dao.getBlindedExecutionPayloadEnvelope(blockRoot);
+  }
+
+  @Override
   public Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz() {
     return dao.streamHotBlocksAsSsz();
   }
