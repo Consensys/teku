@@ -107,9 +107,7 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
-import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
-import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
@@ -173,8 +171,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
 
   private final AttesterDutiesGenerator attesterDutiesGenerator;
   private final ExecutionProofManager executionProofManager;
-  private final ExecutionPayloadBidManager executionPayloadBidManager;
-  private final ProposerPreferencesManager proposerPreferencesManager;
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
@@ -202,9 +198,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final ExecutionPayloadManager executionPayloadManager,
       final ExecutionPayloadFactory executionPayloadFactory,
       final ExecutionPayloadPublisher executionPayloadPublisher,
-      final ExecutionPayloadBidManager executionPayloadBidManager,
-      final ExecutionProofManager executionProofManager,
-      final ProposerPreferencesManager proposerPreferencesManager) {
+      final ExecutionProofManager executionProofManager) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
@@ -232,8 +226,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     this.executionPayloadPublisher = executionPayloadPublisher;
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
     this.executionProofManager = executionProofManager;
-    this.executionPayloadBidManager = executionPayloadBidManager;
-    this.proposerPreferencesManager = proposerPreferencesManager;
   }
 
   @Override
@@ -947,21 +939,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   @Override
   public SafeFuture<Void> sendSignedProposerPreferences(
       final List<SignedProposerPreferences> signedProposerPreferences) {
-    return SafeFuture.collectAll(
-            signedProposerPreferences.stream().map(proposerPreferencesManager::addLocal))
-        .thenAccept(
-            results -> {
-              final List<String> errorMessages =
-                  results.stream()
-                      .filter(result -> result.isReject())
-                      .flatMap(result -> result.getDescription().stream())
-                      .toList();
-              if (!errorMessages.isEmpty()) {
-                LOG.warn(
-                    "Some proposer preferences were rejected: {}",
-                    String.join("; ", errorMessages));
-              }
-            });
+    return SafeFuture.COMPLETE;
   }
 
   @Override
@@ -1008,17 +986,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   @Override
   public SafeFuture<Void> publishSignedExecutionPayloadBid(
       final SignedExecutionPayloadBid signedExecutionPayloadBid) {
-    return executionPayloadBidManager
-        .validateAndAddBid(
-            signedExecutionPayloadBid, ExecutionPayloadBidManager.RemoteBidOrigin.BUILDER)
-        .thenAccept(
-            result -> {
-              if (!result.isAccept()) {
-                throw new IllegalArgumentException(
-                    "Invalid execution payload bid: "
-                        + result.getDescription().orElse("unknown reason"));
-              }
-            });
+    throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
   }
 
   @Override

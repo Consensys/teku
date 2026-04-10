@@ -264,9 +264,7 @@ public class ValidatorApiHandlerIntegrationTest {
               executionPayloadManager,
               executionPayloadFactory,
               executionPayloadPublisher,
-              ExecutionPayloadBidManager.NOOP,
-              ExecutionProofManager.NOOP,
-              proposerPreferencesManager);
+              ExecutionProofManager.NOOP);
     }
   }
 

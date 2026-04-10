@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import java.util.List;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
@@ -26,6 +29,8 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscrib
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -44,6 +49,11 @@ import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
 
 public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
+
+  private static final Logger LOG = LogManager.getLogger();
+
+  private final ExecutionPayloadBidManager executionPayloadBidManager;
+  private final ProposerPreferencesManager proposerPreferencesManager;
 
   public ValidatorApiHandlerGloas(
       final ChainDataProvider chainDataProvider,
@@ -99,9 +109,45 @@ public class ValidatorApiHandlerGloas extends ValidatorApiHandler {
         executionPayloadManager,
         executionPayloadFactory,
         executionPayloadPublisher,
-        executionPayloadBidManager,
-        executionProofManager,
-        proposerPreferencesManager);
+        executionProofManager);
+    this.executionPayloadBidManager = executionPayloadBidManager;
+    this.proposerPreferencesManager = proposerPreferencesManager;
+  }
+
+  @Override
+  public SafeFuture<Void> sendSignedProposerPreferences(
+      final List<SignedProposerPreferences> signedProposerPreferences) {
+    return SafeFuture.collectAll(
+            signedProposerPreferences.stream().map(proposerPreferencesManager::addLocal))
+        .thenAccept(
+            results -> {
+              final List<String> errorMessages =
+                  results.stream()
+                      .filter(result -> result.isReject())
+                      .flatMap(result -> result.getDescription().stream())
+                      .toList();
+              if (!errorMessages.isEmpty()) {
+                LOG.warn(
+                    "Some proposer preferences were rejected: {}",
+                    String.join("; ", errorMessages));
+              }
+            });
+  }
+
+  @Override
+  public SafeFuture<Void> publishSignedExecutionPayloadBid(
+      final SignedExecutionPayloadBid signedExecutionPayloadBid) {
+    return executionPayloadBidManager
+        .validateAndAddBid(
+            signedExecutionPayloadBid, ExecutionPayloadBidManager.RemoteBidOrigin.BUILDER)
+        .thenAccept(
+            result -> {
+              if (!result.isAccept()) {
+                throw new IllegalArgumentException(
+                    "Invalid execution payload bid: "
+                        + result.getDescription().orElse("unknown reason"));
+              }
+            });
   }
 
   @Override
