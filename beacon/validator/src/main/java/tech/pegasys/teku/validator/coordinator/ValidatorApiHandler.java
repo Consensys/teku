@@ -129,7 +129,7 @@ import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
 
-public final class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChannel {
+public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -150,7 +150,7 @@ public final class ValidatorApiHandler implements ValidatorApiChannel, SlotEvent
   private final ChainDataProvider chainDataProvider;
   private final NodeDataProvider nodeDataProvider;
   private final NetworkDataProvider networkDataProvider;
-  private final CombinedChainDataClient combinedChainDataClient;
+  protected final CombinedChainDataClient combinedChainDataClient;
   private final SyncStateProvider syncStateProvider;
   private final BlockFactory blockFactory;
   private final AggregatingAttestationPool attestationPool;
@@ -159,8 +159,8 @@ public final class ValidatorApiHandler implements ValidatorApiChannel, SlotEvent
   private final ActiveValidatorTracker activeValidatorTracker;
   private final DutyMetrics dutyMetrics;
   private final PerformanceTracker performanceTracker;
-  private final Spec spec;
-  private final ForkChoiceTrigger forkChoiceTrigger;
+  protected final Spec spec;
+  protected final ForkChoiceTrigger forkChoiceTrigger;
   private final SyncCommitteeMessagePool syncCommitteeMessagePool;
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
@@ -476,36 +476,12 @@ public final class ValidatorApiHandler implements ValidatorApiChannel, SlotEvent
         });
   }
 
-  private SafeFuture<Optional<BeaconState>> getStateForBlockProduction(
+  protected SafeFuture<Optional<BeaconState>> getStateForBlockProduction(
       final UInt64 slot, final BlockProductionPerformance productionPerformance) {
-    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10352 this is very simple and naïve
-    // state selection (possibly good enough for devnet-0) that needs to be revisited
-    final Optional<BeaconState> executionPayloadState =
-        getExecutionPayloadStateForBlockProduction(slot);
-    if (executionPayloadState.isPresent()) {
-      return SafeFuture.completedFuture(executionPayloadState);
-    }
     return combinedChainDataClient.getStateForBlockProduction(
         slot,
         forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled(),
         productionPerformance::lateBlockReorgPreparationCompleted);
-  }
-
-  private Optional<BeaconState> getExecutionPayloadStateForBlockProduction(final UInt64 slot) {
-    if (!combinedChainDataClient.isStoreAvailable()) {
-      return Optional.empty();
-    }
-    return combinedChainDataClient
-        .getRecentChainData()
-        .getBlockRootInEffectBySlot(slot)
-        .flatMap(
-            blockRoot ->
-                combinedChainDataClient
-                    .getStore()
-                    // no state will be present for slots before the Gloas fork (or if empty
-                    // after the Gloas fork)
-                    .getExecutionPayloadStateIfAvailable(blockRoot)
-                    .flatMap(state -> combinedChainDataClient.regenerateBeaconState(state, slot)));
   }
 
   private SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlockInternal(
@@ -655,20 +631,9 @@ public final class ValidatorApiHandler implements ValidatorApiChannel, SlotEvent
     return result;
   }
 
-  private int computeCommitteeIndexForAttestation(
+  protected int computeCommitteeIndexForAttestation(
       final UInt64 slot, final BeaconBlock block, final int committeeIndex) {
-    final boolean isBlockStatusFull =
-        spec.atSlot(slot)
-            .getForkChoiceUtil()
-            .toVersionGloas()
-            .map(
-                forkChoiceUtil ->
-                    forkChoiceUtil.isBlockStatusFull(combinedChainDataClient.getStore(), block))
-            .orElse(false);
-    return spec.atSlot(slot)
-        .getAttestationUtil()
-        .computeCommitteeIndexForAttestation(
-            slot, block.getSlot(), isBlockStatusFull, committeeIndex);
+    return committeeIndex;
   }
 
   private AttestationData createAttestationData(

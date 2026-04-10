@@ -126,7 +126,6 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
@@ -228,7 +227,6 @@ class ValidatorApiHandlerTest {
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(forkChoiceTrigger.prepareForBlockProduction(any(), any())).thenReturn(SafeFuture.COMPLETE);
     when(chainDataClient.isOptimisticBlock(any())).thenReturn(false);
-    when(chainDataClient.getStore()).thenReturn(mock(UpdatableStore.class));
     doAnswer(invocation -> SafeFuture.completedFuture(invocation.getArgument(0)))
         .when(blockFactory)
         .unblindSignedBlockIfBlinded(any(), any());

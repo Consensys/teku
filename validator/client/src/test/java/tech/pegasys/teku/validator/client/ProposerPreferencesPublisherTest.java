@@ -148,6 +148,32 @@ public class ProposerPreferencesPublisherTest {
   }
 
   @TestTemplate
+  void shouldNotPublishTwiceInStartupEpoch() {
+    // First call publishes at slot 0 of epoch 5
+    final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(5));
+    final UInt64 nextEpoch = spec.computeEpochAtSlot(firstSlotOfEpoch).plus(1);
+    final UInt64 nextEpochSlot = spec.computeStartSlotAtEpoch(nextEpoch);
+
+    when(validatorApiChannel.getProposerDuties(eq(nextEpoch), eq(true)))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    new ProposerDuties(
+                        dataStructureUtil.randomBytes32(),
+                        List.of(new ProposerDuty(publicKey, 42, nextEpochSlot)),
+                        false))));
+
+    publisher.onSlot(firstSlotOfEpoch);
+    verify(validatorApiChannel).sendSignedProposerPreferences(anyList());
+
+    // 3rd slot of same epoch should NOT trigger a second publish
+    final UInt64 thirdSlotOfSameEpoch = firstSlotOfEpoch.plus(2);
+    publisher.onSlot(thirdSlotOfSameEpoch);
+    // still only one invocation total
+    verify(validatorApiChannel).sendSignedProposerPreferences(anyList());
+  }
+
+  @TestTemplate
   void shouldNotPublishWhenNoDutiesForOurValidators() {
     final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(5));
     final UInt64 nextEpoch = UInt64.valueOf(6);

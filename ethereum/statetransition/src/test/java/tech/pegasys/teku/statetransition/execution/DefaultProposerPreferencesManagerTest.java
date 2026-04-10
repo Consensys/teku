@@ -65,8 +65,9 @@ public class DefaultProposerPreferencesManagerTest {
     when(gossipValidator.validate(signedProposerPreferences))
         .thenReturn(SafeFuture.completedFuture(ACCEPT));
 
-    safeJoin(manager.addLocal(signedProposerPreferences));
+    final InternalValidationResult result = safeJoin(manager.addLocal(signedProposerPreferences));
 
+    assertThat(result).isEqualTo(ACCEPT);
     assertThat(manager.getProposerPreferences(slot))
         .hasValue(signedProposerPreferences.getMessage());
   }
@@ -80,7 +81,9 @@ public class DefaultProposerPreferencesManagerTest {
     when(gossipValidator.validate(signedProposerPreferences))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("bad signature")));
 
-    safeJoin(manager.addLocal(signedProposerPreferences));
+    final InternalValidationResult result = safeJoin(manager.addLocal(signedProposerPreferences));
+
+    assertThat(result.isReject()).isTrue();
 
     assertThat(manager.getProposerPreferences(slot)).isEmpty();
   }
@@ -93,8 +96,9 @@ public class DefaultProposerPreferencesManagerTest {
     when(gossipValidator.validate(signedProposerPreferences))
         .thenReturn(SafeFuture.completedFuture(ACCEPT));
 
-    safeJoin(manager.addLocal(signedProposerPreferences));
+    final InternalValidationResult result = safeJoin(manager.addLocal(signedProposerPreferences));
 
+    assertThat(result).isEqualTo(ACCEPT);
     verify(subscriber).onOperationAdded(eq(signedProposerPreferences), eq(ACCEPT), eq(false));
   }
 
@@ -106,8 +110,9 @@ public class DefaultProposerPreferencesManagerTest {
     when(gossipValidator.validate(signedProposerPreferences))
         .thenReturn(SafeFuture.completedFuture(ACCEPT));
 
-    safeJoin(manager.addRemote(signedProposerPreferences));
+    final InternalValidationResult result = safeJoin(manager.addRemote(signedProposerPreferences));
 
+    assertThat(result).isEqualTo(ACCEPT);
     verify(subscriber).onOperationAdded(eq(signedProposerPreferences), eq(ACCEPT), eq(true));
   }
 
@@ -119,8 +124,9 @@ public class DefaultProposerPreferencesManagerTest {
     when(gossipValidator.validate(signedProposerPreferences))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("bad signature")));
 
-    safeJoin(manager.addLocal(signedProposerPreferences));
+    final InternalValidationResult result = safeJoin(manager.addLocal(signedProposerPreferences));
 
+    assertThat(result.isReject()).isTrue();
     verify(subscriber, never()).onOperationAdded(any(), any(), eq(false));
   }
 

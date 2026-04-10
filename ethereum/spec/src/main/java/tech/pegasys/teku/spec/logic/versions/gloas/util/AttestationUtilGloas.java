@@ -70,18 +70,6 @@ public class AttestationUtilGloas extends AttestationUtilElectra {
   }
 
   @Override
-  public int computeCommitteeIndexForAttestation(
-      final UInt64 slot,
-      final UInt64 blockSlot,
-      final boolean isBlockStatusFull,
-      final int committeeIndex) {
-    if (slot.equals(blockSlot)) {
-      return 0;
-    }
-    return isBlockStatusFull ? 1 : 0;
-  }
-
-  @Override
   public AttestationValidationResult validateCommitteeIndexValue(final UInt64 index) {
     // [REJECT] attestation.data.index < 2
     if (!index.isLessThan(2)) {

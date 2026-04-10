@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -49,6 +50,7 @@ public class ProposerPreferencesPublisher implements ValidatorTimingChannel {
   private final ForkProvider forkProvider;
   private final Spec spec;
   private final AtomicBoolean firstCallDone = new AtomicBoolean(false);
+  private final AtomicReference<UInt64> firstPublishEpoch = new AtomicReference<>();
 
   public ProposerPreferencesPublisher(
       final ValidatorApiChannel validatorApiChannel,
@@ -65,7 +67,15 @@ public class ProposerPreferencesPublisher implements ValidatorTimingChannel {
 
   @Override
   public void onSlot(final UInt64 slot) {
-    if (firstCallDone.compareAndSet(false, true) || isThirdSlotOfEpoch(slot)) {
+    if (firstCallDone.compareAndSet(false, true)) {
+      // On startup, publish immediately so preferences are available as soon as possible.
+      firstPublishEpoch.set(spec.computeEpochAtSlot(slot));
+      publishProposerPreferences(slot);
+    } else if (isThirdSlotOfEpoch(slot)
+        && !spec.computeEpochAtSlot(slot).equals(firstPublishEpoch.get())) {
+      // Publish at the 3rd slot of each epoch to spread load. The first slots are busy with
+      // block production and attestation duties. This is not a spec requirement. Skip the epoch
+      // where we already published on startup to avoid a redundant duplicate.
       publishProposerPreferences(slot);
     }
   }
@@ -82,9 +92,7 @@ public class ProposerPreferencesPublisher implements ValidatorTimingChannel {
               }
               return createAndSendProposerPreferences(maybeProposerDuties.get());
             })
-        .finish(
-            __ -> LOG.debug("Proposer preferences published successfully for epoch {}", nextEpoch),
-            error -> VALIDATOR_LOGGER.proposerPreferencesPublicationFailed(nextEpoch, error));
+        .finish(error -> VALIDATOR_LOGGER.proposerPreferencesPublicationFailed(nextEpoch, error));
   }
 
   private SafeFuture<Void> createAndSendProposerPreferences(final ProposerDuties proposerDuties) {
@@ -113,7 +121,13 @@ public class ProposerPreferencesPublisher implements ValidatorTimingChannel {
                             return SafeFuture.COMPLETE;
                           }
                           LOG.debug("Publishing {} proposer preferences", preferencesList.size());
-                          return validatorApiChannel.sendSignedProposerPreferences(preferencesList);
+                          return validatorApiChannel
+                              .sendSignedProposerPreferences(preferencesList)
+                              .thenPeek(
+                                  __ ->
+                                      LOG.debug(
+                                          "Proposer preferences published successfully for {} validators",
+                                          preferencesList.size()));
                         }));
   }
 

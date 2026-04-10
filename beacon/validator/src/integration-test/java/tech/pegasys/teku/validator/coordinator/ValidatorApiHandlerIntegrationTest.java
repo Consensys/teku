@@ -189,48 +189,85 @@ public class ValidatorApiHandlerIntegrationTest {
         .when(blockFactory)
         .createBlobSidecars(any());
 
-    handler =
-        new ValidatorApiHandler(
-            chainDataProvider,
-            nodeDataProvider,
-            networkDataProvider,
-            combinedChainDataClient,
-            syncStateProvider,
-            blockFactory,
-            attestationPool,
-            attestationManager,
-            attestationTopicSubscriber,
-            activeValidatorTracker,
-            dutyMetrics,
-            performanceTracker,
+    final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory =
+        new BlockProductionAndPublishingPerformanceFactory(
+            new SystemTimeProvider(), __ -> UInt64.ZERO, true, 0, 0, 0, 0, Optional.empty());
+    final MilestoneBasedBlockPublisher blockPublisher =
+        new MilestoneBasedBlockPublisher(
+            asyncRunner,
             specContext.getSpec(),
-            forkChoiceTrigger,
-            proposersDataManager,
-            syncCommitteeMessagePool,
-            syncCommitteeContributionPool,
-            syncCommitteeSubscriptionManager,
-            new BlockProductionAndPublishingPerformanceFactory(
-                new SystemTimeProvider(), __ -> UInt64.ZERO, true, 0, 0, 0, 0, Optional.empty()),
-            new MilestoneBasedBlockPublisher(
-                asyncRunner,
-                specContext.getSpec(),
-                blockFactory,
-                blockImportChannel,
-                blockGossipChannel,
-                blockBlobSidecarsTrackersPool,
-                blobSidecarGossipChannel,
-                dataColumnSidecarGossipChannel,
-                dutyMetrics,
-                CustodyGroupCountManager.NOOP,
-                OptionalInt.empty(),
-                P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED),
-            payloadAttestationPool,
-            executionPayloadManager,
-            executionPayloadFactory,
-            executionPayloadPublisher,
-            ExecutionPayloadBidManager.NOOP,
-            ExecutionProofManager.NOOP,
-            proposerPreferencesManager);
+            blockFactory,
+            blockImportChannel,
+            blockGossipChannel,
+            blockBlobSidecarsTrackersPool,
+            blobSidecarGossipChannel,
+            dataColumnSidecarGossipChannel,
+            dutyMetrics,
+            CustodyGroupCountManager.NOOP,
+            OptionalInt.empty(),
+            P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED);
+
+    if (specContext.getSpecMilestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      handler =
+          new ValidatorApiHandlerGloas(
+              chainDataProvider,
+              nodeDataProvider,
+              networkDataProvider,
+              combinedChainDataClient,
+              syncStateProvider,
+              blockFactory,
+              attestationPool,
+              attestationManager,
+              attestationTopicSubscriber,
+              activeValidatorTracker,
+              dutyMetrics,
+              performanceTracker,
+              specContext.getSpec(),
+              forkChoiceTrigger,
+              proposersDataManager,
+              syncCommitteeMessagePool,
+              syncCommitteeContributionPool,
+              syncCommitteeSubscriptionManager,
+              blockProductionPerformanceFactory,
+              blockPublisher,
+              payloadAttestationPool,
+              executionPayloadManager,
+              executionPayloadFactory,
+              executionPayloadPublisher,
+              ExecutionPayloadBidManager.NOOP,
+              ExecutionProofManager.NOOP,
+              proposerPreferencesManager);
+    } else {
+      handler =
+          new ValidatorApiHandler(
+              chainDataProvider,
+              nodeDataProvider,
+              networkDataProvider,
+              combinedChainDataClient,
+              syncStateProvider,
+              blockFactory,
+              attestationPool,
+              attestationManager,
+              attestationTopicSubscriber,
+              activeValidatorTracker,
+              dutyMetrics,
+              performanceTracker,
+              specContext.getSpec(),
+              forkChoiceTrigger,
+              proposersDataManager,
+              syncCommitteeMessagePool,
+              syncCommitteeContributionPool,
+              syncCommitteeSubscriptionManager,
+              blockProductionPerformanceFactory,
+              blockPublisher,
+              payloadAttestationPool,
+              executionPayloadManager,
+              executionPayloadFactory,
+              executionPayloadPublisher,
+              ExecutionPayloadBidManager.NOOP,
+              ExecutionProofManager.NOOP,
+              proposerPreferencesManager);
+    }
   }
 
   @TestTemplate
