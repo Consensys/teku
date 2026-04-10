@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -66,6 +67,9 @@ public interface Signer {
 
   SafeFuture<BLSSignature> signPayloadAttestationData(
       PayloadAttestationData payloadAttestationData, ForkInfo forkInfo);
+
+  SafeFuture<BLSSignature> signProposerPreferences(
+      ProposerPreferences proposerPreferences, ForkInfo forkInfo);
 
   default boolean isLocal() {
     return getSigningServiceUrl().isEmpty();

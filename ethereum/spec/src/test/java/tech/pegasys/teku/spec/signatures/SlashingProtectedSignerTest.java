@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -172,6 +173,16 @@ class SlashingProtectedSignerTest {
         .thenReturn(signatureFuture);
 
     assertThatSafeFuture(signer.signPayloadAttestationData(payloadAttestationData, forkInfo))
+        .isCompletedWithValue(signature);
+  }
+
+  @Test
+  void signProposerPreferences_shouldAlwaysSign() {
+    final ProposerPreferences proposerPreferences = dataStructureUtil.randomProposerPreferences();
+    when(delegate.signProposerPreferences(proposerPreferences, forkInfo))
+        .thenReturn(signatureFuture);
+
+    assertThatSafeFuture(signer.signProposerPreferences(proposerPreferences, forkInfo))
         .isCompletedWithValue(signature);
   }
 

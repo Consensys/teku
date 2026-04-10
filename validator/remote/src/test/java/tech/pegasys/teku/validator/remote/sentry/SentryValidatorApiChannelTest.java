@@ -439,6 +439,28 @@ class SentryValidatorApiChannelTest {
   }
 
   @Test
+  void sendSignedProposerPreferencesShouldUseBlockHandlerChannelWhenAvailable() {
+    sentryValidatorApiChannel.sendSignedProposerPreferences(Collections.emptyList());
+
+    verify(blockHandlerChannel).sendSignedProposerPreferences(eq(Collections.emptyList()));
+    verifyNoInteractions(dutiesProviderChannel);
+    verifyNoInteractions(attestationPublisherChannel);
+  }
+
+  @Test
+  void sendSignedProposerPreferencesShouldFallbackToDutiesProviderChannel() {
+    sentryValidatorApiChannel =
+        new SentryValidatorApiChannel(
+            dutiesProviderChannel, Optional.empty(), Optional.of(attestationPublisherChannel));
+
+    sentryValidatorApiChannel.sendSignedProposerPreferences(Collections.emptyList());
+
+    verify(dutiesProviderChannel).sendSignedProposerPreferences(eq(Collections.emptyList()));
+    verifyNoInteractions(blockHandlerChannel);
+    verifyNoInteractions(attestationPublisherChannel);
+  }
+
+  @Test
   void checkValidatorsDoppelgangerShouldUseDutiesChannelWhenAvailable() {
     final List<UInt64> validatorIndices =
         List.of(

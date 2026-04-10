@@ -18,6 +18,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
+import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public interface ProposerPreferencesManager {
@@ -25,7 +26,13 @@ public interface ProposerPreferencesManager {
   ProposerPreferencesManager NOOP =
       new ProposerPreferencesManager() {
         @Override
-        public SafeFuture<InternalValidationResult> validateAndAddProposerPreferences(
+        public SafeFuture<InternalValidationResult> addLocal(
+            final SignedProposerPreferences signedProposerPreferences) {
+          return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+        }
+
+        @Override
+        public SafeFuture<InternalValidationResult> addRemote(
             final SignedProposerPreferences signedProposerPreferences) {
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
         }
@@ -34,10 +41,19 @@ public interface ProposerPreferencesManager {
         public Optional<ProposerPreferences> getProposerPreferences(final UInt64 slot) {
           return Optional.empty();
         }
+
+        @Override
+        public void subscribeOperationAdded(
+            final OperationAddedSubscriber<SignedProposerPreferences> subscriber) {}
       };
 
-  SafeFuture<InternalValidationResult> validateAndAddProposerPreferences(
+  SafeFuture<InternalValidationResult> addLocal(
+      SignedProposerPreferences signedProposerPreferences);
+
+  SafeFuture<InternalValidationResult> addRemote(
       SignedProposerPreferences signedProposerPreferences);
 
   Optional<ProposerPreferences> getProposerPreferences(UInt64 slot);
+
+  void subscribeOperationAdded(OperationAddedSubscriber<SignedProposerPreferences> subscriber);
 }
