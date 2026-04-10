@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -154,6 +155,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   public Optional<BeaconState> getHotState(final Bytes32 root) {
     return db.get(schema.getColumnHotStatesByRoot(), root);
+  }
+
+  @Override
+  public Optional<SignedBlindedExecutionPayloadEnvelope> getBlindedExecutionPayloadEnvelope(
+      final Bytes32 root) {
+    return db.get(schema.getColumnBlindedExecutionPayloadEnvelopesByRoot(), root);
   }
 
   @Override
@@ -935,6 +942,16 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
+    public void addBlindedExecutionPayloadEnvelope(
+        final Bytes32 blockRoot,
+        final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope) {
+      transaction.put(
+          schema.getColumnBlindedExecutionPayloadEnvelopesByRoot(),
+          blockRoot,
+          signedBlindedExecutionPayloadEnvelope);
+    }
+
+    @Override
     public void addNonCanonicalBlock(final SignedBeaconBlock block) {
       transaction.put(schema.getColumnNonCanonicalBlocksByRoot(), block.getRoot(), block);
     }
@@ -943,6 +960,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     public void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnFinalizedBlocksBySlot(), slot);
       transaction.delete(schema.getColumnSlotsByFinalizedRoot(), blockRoot);
+      deleteBlindedExecutionPayloadEnvelope(blockRoot);
+    }
+
+    @Override
+    public void deleteBlindedExecutionPayloadEnvelope(final Bytes32 blockRoot) {
+      transaction.delete(schema.getColumnBlindedExecutionPayloadEnvelopesByRoot(), blockRoot);
     }
 
     @Override

@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -109,6 +110,12 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   @Override
   public Optional<BeaconState> getHotState(final Bytes32 root) {
     return hotDao.getHotState(root);
+  }
+
+  @Override
+  public Optional<SignedBlindedExecutionPayloadEnvelope> getBlindedExecutionPayloadEnvelope(
+      final Bytes32 root) {
+    return finalizedDao.getBlindedExecutionPayloadEnvelope(root);
   }
 
   @Override
@@ -621,6 +628,14 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
+    public void addBlindedExecutionPayloadEnvelope(
+        final Bytes32 blockRoot,
+        final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope) {
+      finalizedUpdater.addBlindedExecutionPayloadEnvelope(
+          blockRoot, signedBlindedExecutionPayloadEnvelope);
+    }
+
+    @Override
     public void addNonCanonicalBlock(final SignedBeaconBlock block) {
       finalizedUpdater.addNonCanonicalBlock(block);
     }
@@ -628,6 +643,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
       finalizedUpdater.deleteFinalizedBlock(slot, blockRoot);
+    }
+
+    @Override
+    public void deleteBlindedExecutionPayloadEnvelope(final Bytes32 blockRoot) {
+      finalizedUpdater.deleteBlindedExecutionPayloadEnvelope(blockRoot);
     }
 
     @Override

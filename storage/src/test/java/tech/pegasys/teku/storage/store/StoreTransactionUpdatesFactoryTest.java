@@ -14,36 +14,34 @@
 package tech.pegasys.teku.storage.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
-import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.UpdateResult;
-import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 
 class StoreTransactionUpdatesFactoryTest {
 
@@ -89,10 +87,11 @@ class StoreTransactionUpdatesFactoryTest {
     final UInt64 epoch3Slot = spec.computeStartSlotAtEpoch(UInt64.valueOf(3));
     chainBuilder.generateBlocksUpToSlot(epoch3Slot);
 
-    final CapturingStorageUpdateChannel capturingChannel = new CapturingStorageUpdateChannel();
+    final StorageUpdateChannel channel = mock(StorageUpdateChannel.class);
+    when(channel.onStorageUpdate(any())).thenReturn(SafeFuture.completedFuture(UpdateResult.EMPTY));
 
     // Start a transaction and add all blocks
-    final UpdatableStore.StoreTransaction tx = store.startTransaction(capturingChannel);
+    final UpdatableStore.StoreTransaction tx = store.startTransaction(channel);
     chainBuilder
         .streamBlocksAndStates(1, chainBuilder.getLatestSlot().longValue())
         .forEach(
@@ -108,8 +107,9 @@ class StoreTransactionUpdatesFactoryTest {
     tx.commit().join();
 
     // Verify we captured a storage update
-    assertThat(capturingChannel.getLastStorageUpdate()).isNotNull();
-    final StorageUpdate storageUpdate = capturingChannel.getLastStorageUpdate();
+    final ArgumentCaptor<StorageUpdate> captor = ArgumentCaptor.forClass(StorageUpdate.class);
+    verify(channel).onStorageUpdate(captor.capture());
+    final StorageUpdate storageUpdate = captor.getValue();
 
     // Get the finalized block
     final SignedBlockAndState finalizedBlockAndState =
@@ -135,49 +135,5 @@ class StoreTransactionUpdatesFactoryTest {
 
     // Also verify the pruned roots are actually recorded in the deleted hot blocks
     assertThat(storageUpdate.getDeletedHotBlocks().keySet()).containsAll(rootsThatShouldBePruned);
-  }
-
-  /** A StorageUpdateChannel that captures StorageUpdate for testing */
-  private static class CapturingStorageUpdateChannel implements StorageUpdateChannel {
-    private StorageUpdate lastStorageUpdate;
-
-    @Override
-    public SafeFuture<UpdateResult> onStorageUpdate(final StorageUpdate event) {
-      this.lastStorageUpdate = event;
-      return SafeFuture.completedFuture(UpdateResult.EMPTY);
-    }
-
-    @Override
-    public SafeFuture<Void> onFinalizedBlocks(
-        final Collection<SignedBeaconBlock> finalizedBlocks,
-        final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
-        final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
-      return SafeFuture.COMPLETE;
-    }
-
-    @Override
-    public SafeFuture<Void> onReconstructedFinalizedState(
-        final BeaconState finalizedState, final Bytes32 blockRoot) {
-      return SafeFuture.COMPLETE;
-    }
-
-    @Override
-    public SafeFuture<Void> onWeakSubjectivityUpdate(
-        final WeakSubjectivityUpdate weakSubjectivityUpdate) {
-      return SafeFuture.COMPLETE;
-    }
-
-    @Override
-    public SafeFuture<Void> onFinalizedDepositSnapshot(
-        final DepositTreeSnapshot depositTreeSnapshot) {
-      return SafeFuture.COMPLETE;
-    }
-
-    @Override
-    public void onChainInitialized(final AnchorPoint initialAnchor) {}
-
-    public StorageUpdate getLastStorageUpdate() {
-      return lastStorageUpdate;
-    }
   }
 }

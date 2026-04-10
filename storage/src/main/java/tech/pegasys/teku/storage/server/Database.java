@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -170,6 +171,9 @@ public interface Database extends AutoCloseable {
   Map<Bytes32, SignedBeaconBlock> getHotBlocks(final Set<Bytes32> blockRoots);
 
   Optional<SignedBeaconBlock> getHotBlock(final Bytes32 blockRoot);
+
+  Optional<SignedBlindedExecutionPayloadEnvelope> getBlindedExecutionPayloadEnvelope(
+      Bytes32 blockRoot);
 
   @MustBeClosed
   Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz();

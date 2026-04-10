@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -41,6 +42,8 @@ public class StorageUpdate {
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final Map<Bytes32, BlockAndCheckpoints> hotBlocks;
   private final Map<Bytes32, BeaconState> hotStates;
+  private final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+      blindedExecutionPayloadEnvelopesByBlockRoot;
   private final Map<Bytes32, UInt64> deletedHotBlocks;
   private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
   private final Optional<UInt64> maybeEarliestBlobSidecarSlot;
@@ -50,6 +53,7 @@ public class StorageUpdate {
   private final Optional<UInt64> custodyGroupCount;
   private final boolean blobSidecarsEnabled;
   private final boolean sidecarsEnabled;
+  private final boolean executionPayloadEnvelopesEnabled;
   private final boolean isEmpty;
 
   public StorageUpdate(
@@ -59,6 +63,8 @@ public class StorageUpdate {
       final Optional<Checkpoint> bestJustifiedCheckpoint,
       final Map<Bytes32, BlockAndCheckpoints> hotBlocks,
       final Map<Bytes32, BeaconState> hotStates,
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+          blindedExecutionPayloadEnvelopesByBlockRoot,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot,
       final Map<Bytes32, UInt64> deletedHotBlocks,
@@ -68,13 +74,15 @@ public class StorageUpdate {
       final Optional<Bytes32> latestCanonicalBlockRoot,
       final Optional<UInt64> custodyGroupCount,
       @NonUpdating final boolean blobSidecarsEnabled,
-      @NonUpdating final boolean sidecarsEnabled) {
+      @NonUpdating final boolean sidecarsEnabled,
+      @NonUpdating final boolean executionPayloadEnvelopesEnabled) {
     this.genesisTime = genesisTime;
     this.finalizedChainData = finalizedChainData;
     this.justifiedCheckpoint = justifiedCheckpoint;
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
     this.hotBlocks = hotBlocks;
     this.hotStates = hotStates;
+    this.blindedExecutionPayloadEnvelopesByBlockRoot = blindedExecutionPayloadEnvelopesByBlockRoot;
     this.blobSidecars = blobSidecars;
     this.maybeEarliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
     this.deletedHotBlocks = deletedHotBlocks;
@@ -85,6 +93,7 @@ public class StorageUpdate {
     this.custodyGroupCount = custodyGroupCount;
     this.blobSidecarsEnabled = blobSidecarsEnabled;
     this.sidecarsEnabled = sidecarsEnabled;
+    this.executionPayloadEnvelopesEnabled = executionPayloadEnvelopesEnabled;
     checkArgument(
         optimisticTransitionBlockRootSet || optimisticTransitionBlockRoot.isEmpty(),
         "Can't have optimisticTransitionBlockRoot present but not set");
@@ -96,6 +105,7 @@ public class StorageUpdate {
             && bestJustifiedCheckpoint.isEmpty()
             && hotBlocks.isEmpty()
             && hotStates.isEmpty()
+            && blindedExecutionPayloadEnvelopesByBlockRoot.isEmpty()
             && deletedHotBlocks.isEmpty()
             && stateRoots.isEmpty()
             && blobSidecars.isEmpty()
@@ -139,6 +149,11 @@ public class StorageUpdate {
 
   public Map<Bytes32, BeaconState> getHotStates() {
     return hotStates;
+  }
+
+  public Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+      getBlindedExecutionPayloadEnvelopesByBlockRoot() {
+    return blindedExecutionPayloadEnvelopesByBlockRoot;
   }
 
   public Map<Bytes32, UInt64> getDeletedHotBlocks() {
@@ -189,6 +204,10 @@ public class StorageUpdate {
 
   public boolean isSidecarsEnabled() {
     return sidecarsEnabled;
+  }
+
+  public boolean isExecutionPayloadEnvelopesEnabled() {
+    return executionPayloadEnvelopesEnabled;
   }
 
   @Retention(RetentionPolicy.RUNTIME)
