@@ -60,9 +60,14 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
+
     final GossipBeaconAttestationMetaData metaData =
         loadYaml(testDefinition, "meta.yaml", GossipBeaconAttestationMetaData.class);
-    final Spec spec = testDefinition.getSpec();
+    // Set up attestation validator
+    final boolean signatureVerificationDisabled = metaData.getBlsSetting() == BlsSetting.IGNORED;
+    final BLSSignatureVerifier blsVerifier =
+        signatureVerificationDisabled ? BLSSignatureVerifier.NOOP : BLSSignatureVerifier.SIMPLE;
+    final Spec spec = testDefinition.getSpec(!signatureVerificationDisabled);
     final BeaconState genesisState = loadStateFromSsz(testDefinition, "state.ssz_snappy");
     final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
@@ -127,11 +132,6 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
       }
     }
 
-    // Set up attestation validator
-    final BLSSignatureVerifier blsVerifier =
-        metaData.getBlsSetting() == BlsSetting.IGNORED
-            ? BLSSignatureVerifier.NOOP
-            : BLSSignatureVerifier.SIMPLE;
     final AttestationValidator attestationValidator =
         new AttestationValidator(
             spec,
