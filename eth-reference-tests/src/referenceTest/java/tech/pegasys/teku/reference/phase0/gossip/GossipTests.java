@@ -16,7 +16,6 @@ package tech.pegasys.teku.reference.phase0.gossip;
 import com.google.common.collect.ImmutableMap;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.reference.fulu.networking.GossipBeaconAttestationTestExecutor;
-import tech.pegasys.teku.reference.fulu.networking.GossipBeaconBlockTestExecutor;
 
 /** Executable gossip validations */
 public class GossipTests {

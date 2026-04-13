@@ -24,8 +24,6 @@ import tech.pegasys.teku.reference.altair.rewards.RewardsTestExecutorBellatrix;
 import tech.pegasys.teku.reference.common.epoch_processing.EpochProcessingTestExecutor;
 import tech.pegasys.teku.reference.common.operations.OperationsTestExecutor;
 import tech.pegasys.teku.reference.deneb.merkle_proof.MerkleProofTests;
-import tech.pegasys.teku.reference.fulu.networking.GossipBeaconAttestationTestExecutor;
-import tech.pegasys.teku.reference.fulu.networking.GossipBeaconBlockTestExecutor;
 import tech.pegasys.teku.reference.fulu.networking.NetworkingTests;
 import tech.pegasys.teku.reference.phase0.bls.BlsTests;
 import tech.pegasys.teku.reference.phase0.forkchoice.ForkChoiceTestExecutor;
