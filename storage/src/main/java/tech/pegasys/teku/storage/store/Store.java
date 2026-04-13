@@ -28,6 +28,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -133,6 +134,7 @@ class Store extends CacheableStore {
       final Spec spec,
       final int hotStatePersistenceFrequencyInEpochs,
       final BlockProvider blockProvider,
+      final ExecutionPayloadProvider unblindingExecutionPayloadProvider,
       final StateAndBlockSummaryProvider stateProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final CachingTaskQueue<Bytes32, StateAndBlockSummary> blockStates,
@@ -206,14 +208,10 @@ class Store extends CacheableStore {
     this.executionPayloadStates = executionPayloadStates;
     this.executionPayloads = executionPayloads;
 
-    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098
-    //  Execution payload envelopes are only kept in the bounded hot store and are not persisted to
-    //  the database. For chains longer than blockCacheSize, older execution payloads will be
-    //  unavailable during state regeneration, causing GLOAS block replay to fail. Once #10098 is
-    //  resolved, use ExecutionPayloadProvider.combined() to add a database-backed fallback (like
-    //  BlockProvider.combined does for blocks).
     this.executionPayloadProvider =
-        createExecutionPayloadProviderWhileLocked(this.executionPayloads);
+        ExecutionPayloadProvider.combined(
+            createExecutionPayloadProviderWhileLocked(this.executionPayloads),
+            unblindingExecutionPayloadProvider);
   }
 
   private BlockProvider createBlockProviderFromMapWhileLocked(
@@ -251,6 +249,7 @@ class Store extends CacheableStore {
       final MetricsSystem metricsSystem,
       final Spec spec,
       final BlockProvider blockProvider,
+      final ExecutionPayloadProvider executionPayloadProvider,
       final StateAndBlockSummaryProvider stateAndBlockProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final Optional<Checkpoint> initialCheckpoint,
@@ -295,6 +294,7 @@ class Store extends CacheableStore {
         spec,
         config.getHotStatePersistenceFrequencyInEpochs(),
         blockProvider,
+        executionPayloadProvider,
         stateAndBlockProvider,
         earliestBlobSidecarSlotProvider,
         blockStateTaskQueue,
@@ -321,6 +321,7 @@ class Store extends CacheableStore {
       final MetricsSystem metricsSystem,
       final Spec spec,
       final BlockProvider blockProvider,
+      final ExecutionPayloadProvider executionPayloadProvider,
       final StateAndBlockSummaryProvider stateAndBlockProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final Optional<Checkpoint> initialCheckpoint,
@@ -353,6 +354,7 @@ class Store extends CacheableStore {
         metricsSystem,
         spec,
         blockProvider,
+        executionPayloadProvider,
         stateAndBlockProvider,
         earliestBlobSidecarSlotProvider,
         initialCheckpoint,
@@ -773,8 +775,6 @@ class Store extends CacheableStore {
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(
       final SlotAndBlockRoot slotAndBlockRoot) {
-    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 implement caching similar to
-    // retrieveBlockState/retrieveCheckpointState
     return new StateAtSlotTask(
             spec,
             slotAndBlockRoot,
@@ -794,9 +794,9 @@ class Store extends CacheableStore {
   @Override
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveSignedExecutionPayload(
       final Bytes32 blockRoot) {
-    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 we need a logic similar to
-    // blockProvider
-    return SafeFuture.completedFuture(getExecutionPayloadIfAvailable(blockRoot));
+    return executionPayloadProvider
+        .getExecutionPayloads(Set.of(blockRoot))
+        .thenApply(result -> Optional.ofNullable(result.get(blockRoot)));
   }
 
   @Override
