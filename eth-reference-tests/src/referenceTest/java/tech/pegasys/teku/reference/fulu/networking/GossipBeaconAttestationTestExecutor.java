@@ -160,6 +160,8 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
             .describedAs("Expected ignore for already-seen attestation %s", message.getMessage())
             .isEqualTo("ignore");
         continue;
+      } else {
+        seenAttestationRoots.add(attestationRoot);
       }
 
       // Failed-block check: attestation votes for a block that failed validation
@@ -185,7 +187,6 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
                   "Expected attestation %s to be valid but got %s: %s",
                   message.getMessage(), result.code(), result.getDescription().orElse(""))
               .isEqualTo(ValidationResultCode.ACCEPT);
-          seenAttestationRoots.add(attestationRoot);
         }
         case "reject" ->
             assertThat(result.code())
