@@ -1824,7 +1824,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
               executionPayloadFactory,
               executionPayloadPublisher,
               executionPayloadBidManager,
-              executionProofManager);
+              executionProofManager,
+              proposerPreferencesManager);
     } else {
       this.validatorApiHandler =
           new ValidatorApiHandler(
@@ -2034,8 +2035,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.P2P))
             .gossipedProposerPreferencesProcessor(
                 (signedProposerPreferences, arrivalTimestamp) ->
-                    proposerPreferencesManager.validateAndAddProposerPreferences(
-                        signedProposerPreferences))
+                    proposerPreferencesManager.addRemote(signedProposerPreferences))
             .gossipDasLogger(dasGossipLogger)
             .dataColumnSidecarArchiveReconstructor(dataColumnSidecarArchiveReconstructor)
             .reqRespDasLogger(dasReqRespLogger)
@@ -2066,6 +2066,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishSignedBlsToExecutionChange));
     payloadAttestationPool.subscribeOperationAdded(
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishPayloadAttestationMessage));
+    proposerPreferencesManager.subscribeOperationAdded(
+        new LocalOperationAcceptedFilter<>(p2pNetwork::publishProposerPreferences));
 
     eventChannels.subscribe(
         CustodyGroupCountChannel.class,
