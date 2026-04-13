@@ -184,7 +184,7 @@ public class ForkChoiceUtil {
     final boolean isShufflingStableAndForkChoiceOk =
         isForkChoiceStableAndFinalizationOk(store, slot);
     final boolean isProposingOnTime = isProposingOnTime(store, slot);
-    final boolean isHeadLate = isHeadLate(context.getBlockTimeliness(headRoot).orElse(null));
+    final boolean isHeadLate = isHeadLate(context.getBlockTimeliness(headRoot));
     final Optional<SignedBeaconBlock> maybeHead = store.getBlockIfAvailable(headRoot);
     if (!isHeadLate
         || !isShufflingStableAndForkChoiceOk
@@ -211,7 +211,7 @@ public class ForkChoiceUtil {
       final ForkChoiceReorgContext context, final Bytes32 headRoot, final UInt64 headSlot) {
     final ReadOnlyStore store = context.getStore();
     final Optional<SignedBeaconBlock> maybeHead = store.getBlockIfAvailable(headRoot);
-    if (maybeHead.isEmpty() || !isHeadLate(context.getBlockTimeliness(headRoot).orElse(null))) {
+    if (maybeHead.isEmpty() || !isHeadLate(context.getBlockTimeliness(headRoot))) {
       return false;
     }
 
@@ -312,11 +312,8 @@ public class ForkChoiceUtil {
     return new BlockTimeliness(isTimely, false);
   }
 
-  public static boolean isHeadLate(final BlockTimeliness blockTimeliness) {
-    if (blockTimeliness == null) {
-      return false;
-    }
-    return !blockTimeliness.isTimelyAttestation;
+  public static boolean isHeadLate(final Optional<BlockTimeliness> blockTimeliness) {
+    return blockTimeliness.filter(timeliness -> !timeliness.isTimelyAttestation).isPresent();
   }
 
   private void maybeAddRoot(

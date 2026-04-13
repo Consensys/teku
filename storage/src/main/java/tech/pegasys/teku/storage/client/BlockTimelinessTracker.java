@@ -79,6 +79,6 @@ class BlockTimelinessTracker {
   }
 
   public boolean isBlockLate(final Bytes32 root) {
-    return ForkChoiceUtil.isHeadLate(blockTimeliness.get(root));
+    return ForkChoiceUtil.isHeadLate(Optional.ofNullable(blockTimeliness.get(root)));
   }
 }
