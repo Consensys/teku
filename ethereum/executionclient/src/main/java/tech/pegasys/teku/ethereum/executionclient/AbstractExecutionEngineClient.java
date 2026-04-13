@@ -83,6 +83,7 @@ public abstract class AbstractExecutionEngineClient implements ExecutionEngineCl
   protected static final Duration GET_CLIENT_VERSION_TIMEOUT = Duration.ofSeconds(1);
   protected static final Duration GET_BLOBS_TIMEOUT = Duration.ofSeconds(2);
   protected static final Duration GET_PAYLOAD_TIMEOUT = Duration.ofSeconds(2);
+  protected static final Duration GET_PAYLOAD_BODIES_TIMEOUT = Duration.ofSeconds(2);
 
   protected final EventLogger eventLog;
   protected final TimeProvider timeProvider;
@@ -350,7 +351,7 @@ public abstract class AbstractExecutionEngineClient implements ExecutionEngineCl
         objectMapper
             .getTypeFactory()
             .constructCollectionType(List.class, ExecutionPayloadBodyV2.class),
-        EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
+        GET_PAYLOAD_BODIES_TIMEOUT);
   }
 
   private SafeFuture<PowBlock> doEthBlockRequest(final String method, final List<Object> params) {
