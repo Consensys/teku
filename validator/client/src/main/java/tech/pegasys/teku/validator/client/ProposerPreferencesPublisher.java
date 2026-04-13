@@ -51,6 +51,7 @@ public class ProposerPreferencesPublisher implements ValidatorTimingChannel {
   private final Spec spec;
   private final AtomicBoolean firstCallDone = new AtomicBoolean(false);
   private final AtomicReference<UInt64> firstPublishEpoch = new AtomicReference<>();
+  private final AtomicReference<UInt64> lastSlot = new AtomicReference<>();
 
   public ProposerPreferencesPublisher(
       final ValidatorApiChannel validatorApiChannel,
@@ -67,6 +68,7 @@ public class ProposerPreferencesPublisher implements ValidatorTimingChannel {
 
   @Override
   public void onSlot(final UInt64 slot) {
+    lastSlot.set(slot);
     // Set the epoch before the first-call flag so any concurrent reader sees it
     firstPublishEpoch.compareAndSet(null, spec.computeEpochAtSlot(slot));
     if (firstCallDone.compareAndSet(false, true)) {
@@ -194,10 +196,18 @@ public class ProposerPreferencesPublisher implements ValidatorTimingChannel {
       final Bytes32 headBlockRoot) {}
 
   @Override
-  public void onPossibleMissedEvents() {}
+  public void onPossibleMissedEvents() {
+    republishProposerPreferences();
+  }
 
   @Override
-  public void onValidatorsAdded() {}
+  public void onValidatorsAdded() {
+    republishProposerPreferences();
+  }
+
+  private void republishProposerPreferences() {
+    Optional.ofNullable(lastSlot.get()).ifPresent(this::publishProposerPreferences);
+  }
 
   @Override
   public void onBlockProductionDue(final UInt64 slot) {}
