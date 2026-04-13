@@ -50,7 +50,6 @@ public class ProposerPreferencesPublisher implements ValidatorTimingChannel {
   private final ForkProvider forkProvider;
   private final Spec spec;
   private final AtomicBoolean firstCallDone = new AtomicBoolean(false);
-  private final AtomicReference<UInt64> firstPublishEpoch = new AtomicReference<>();
   private final AtomicReference<UInt64> lastSlot = new AtomicReference<>();
 
   public ProposerPreferencesPublisher(
@@ -69,16 +68,12 @@ public class ProposerPreferencesPublisher implements ValidatorTimingChannel {
   @Override
   public void onSlot(final UInt64 slot) {
     lastSlot.set(slot);
-    // Set the epoch before the first-call flag so any concurrent reader sees it
-    firstPublishEpoch.compareAndSet(null, spec.computeEpochAtSlot(slot));
-    if (firstCallDone.compareAndSet(false, true)) {
+    if (firstCallDone.compareAndSet(false, true) || isThirdSlotOfEpoch(slot)) {
       // On startup, publish immediately so preferences are available as soon as possible.
-      publishProposerPreferences(slot);
-    } else if (isThirdSlotOfEpoch(slot)
-        && !spec.computeEpochAtSlot(slot).equals(firstPublishEpoch.get())) {
-      // Publish at the 3rd slot of each epoch to spread load. The first slots are busy with
-      // block production and attestation duties. This is not a spec requirement. Skip the epoch
-      // where we already published on startup to avoid a redundant duplicate.
+      // Then publish at the 3rd slot of each epoch to spread load. This is not a spec requirement.
+      // If startup lands on slots 0-1, preferences may be sent twice in that epoch (once
+      // immediately, once at the 3rd slot). This is harmless because duplicates are ignored by the
+      // gossip validator and ensures a retry if the first attempt fails.
       publishProposerPreferences(slot);
     }
   }
