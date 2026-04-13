@@ -24,8 +24,9 @@ import tech.pegasys.teku.reference.altair.rewards.RewardsTestExecutorBellatrix;
 import tech.pegasys.teku.reference.common.epoch_processing.EpochProcessingTestExecutor;
 import tech.pegasys.teku.reference.common.operations.OperationsTestExecutor;
 import tech.pegasys.teku.reference.deneb.merkle_proof.MerkleProofTests;
-import tech.pegasys.teku.reference.fulu.network.NetworkingTests;
 import tech.pegasys.teku.reference.fulu.networking.GossipBeaconAttestationTestExecutor;
+import tech.pegasys.teku.reference.fulu.networking.GossipBeaconBlockTestExecutor;
+import tech.pegasys.teku.reference.fulu.networking.NetworkingTests;
 import tech.pegasys.teku.reference.phase0.bls.BlsTests;
 import tech.pegasys.teku.reference.phase0.forkchoice.ForkChoiceTestExecutor;
 import tech.pegasys.teku.reference.phase0.genesis.GenesisTests;
@@ -54,7 +55,6 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(SanityTests.SANITY_TEST_TYPES)
           .putAll(GossipTests.GOSSIP_TEST_TYPES)
           .put("slashing-protection-interchange", new SlashingProtectionInterchangeTestExecutor())
-          .put("networking/gossip_beacon_attestation", new GossipBeaconAttestationTestExecutor())
           .put("light_client/single_merkle_proof", TestExecutor.IGNORE_TESTS)
           .put("light_client/sync", TestExecutor.IGNORE_TESTS)
           .put("light_client/update_ranking", TestExecutor.IGNORE_TESTS)
