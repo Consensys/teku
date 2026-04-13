@@ -67,9 +67,10 @@ public class ProposerPreferencesPublisher implements ValidatorTimingChannel {
 
   @Override
   public void onSlot(final UInt64 slot) {
+    // Set the epoch before the first-call flag so any concurrent reader sees it
+    firstPublishEpoch.compareAndSet(null, spec.computeEpochAtSlot(slot));
     if (firstCallDone.compareAndSet(false, true)) {
       // On startup, publish immediately so preferences are available as soon as possible.
-      firstPublishEpoch.set(spec.computeEpochAtSlot(slot));
       publishProposerPreferences(slot);
     } else if (isThirdSlotOfEpoch(slot)
         && !spec.computeEpochAtSlot(slot).equals(firstPublishEpoch.get())) {
