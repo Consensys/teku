@@ -93,12 +93,13 @@ public class UnblindingExecutionPayloadProvider implements ExecutionPayloadProvi
       blockHashToBlockRoot.put(blockHash, blockRoot);
     }
 
+    final List<Bytes32> blockHashes = List.copyOf(blockHashToBlockRoot.keySet());
+
     return executionPayloadBodiesByHashProvider
-        .getExecutionPayloadBodiesByHash(List.copyOf(blockHashToBlockRoot.keySet()))
+        .getExecutionPayloadBodiesByHash(blockHashes)
         .thenApply(
             executionPayloadBodies -> {
               final Map<Bytes32, SignedExecutionPayloadEnvelope> result = new HashMap<>();
-              final List<Bytes32> blockHashes = List.copyOf(blockHashToBlockRoot.keySet());
               for (int i = 0; i < blockHashes.size(); i++) {
                 final ExecutionPayloadBody executionPayloadBody = executionPayloadBodies.get(i);
                 if (executionPayloadBody == null) {
