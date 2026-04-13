@@ -29,6 +29,7 @@ import tech.pegasys.teku.reference.fulu.networking.GossipBeaconAttestationTestEx
 import tech.pegasys.teku.reference.phase0.bls.BlsTests;
 import tech.pegasys.teku.reference.phase0.forkchoice.ForkChoiceTestExecutor;
 import tech.pegasys.teku.reference.phase0.genesis.GenesisTests;
+import tech.pegasys.teku.reference.phase0.gossip.GossipTests;
 import tech.pegasys.teku.reference.phase0.kzg.KzgTests;
 import tech.pegasys.teku.reference.phase0.rewards.RewardsTestExecutorPhase0;
 import tech.pegasys.teku.reference.phase0.sanity.SanityTests;
@@ -51,6 +52,7 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(SszGenericTests.SSZ_GENERIC_TEST_TYPES)
           .putAll(OperationsTestExecutor.OPERATIONS_TEST_TYPES)
           .putAll(SanityTests.SANITY_TEST_TYPES)
+          .putAll(GossipTests.GOSSIP_TEST_TYPES)
           .put("slashing-protection-interchange", new SlashingProtectionInterchangeTestExecutor())
           .put("networking/gossip_beacon_attestation", new GossipBeaconAttestationTestExecutor())
           .put("light_client/single_merkle_proof", TestExecutor.IGNORE_TESTS)

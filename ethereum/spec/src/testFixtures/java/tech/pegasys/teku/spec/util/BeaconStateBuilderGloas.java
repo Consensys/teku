@@ -75,6 +75,7 @@ public class BeaconStateBuilderGloas
   private SszList<BuilderPendingWithdrawal> builderPendingWithdrawals;
   private Bytes32 latestBlockHash;
   private SszList<Withdrawal> payloadExpectedWithdrawals;
+  private SszVector<SszUInt64Vector> ptcWindow;
 
   protected BeaconStateBuilderGloas(
       final SpecVersion spec,
@@ -125,6 +126,7 @@ public class BeaconStateBuilderGloas
     state.setBuilderPendingWithdrawals(builderPendingWithdrawals);
     state.setLatestBlockHash(latestBlockHash);
     state.setPayloadExpectedWithdrawals(payloadExpectedWithdrawals);
+    state.setPtcWindow(ptcWindow);
   }
 
   public static BeaconStateBuilderGloas create(
@@ -253,6 +255,12 @@ public class BeaconStateBuilderGloas
     return this;
   }
 
+  public BeaconStateBuilderGloas ptcWindow(final SszVector<SszUInt64Vector> ptcWindow) {
+    checkNotNull(ptcWindow);
+    this.ptcWindow = ptcWindow;
+    return this;
+  }
+
   private BeaconStateSchemaGloas getBeaconStateSchema() {
     return (BeaconStateSchemaGloas) spec.getSchemaDefinitions().getBeaconStateSchema();
   }
@@ -323,5 +331,6 @@ public class BeaconStateBuilderGloas
     this.latestBlockHash = Bytes32.ZERO;
     this.payloadExpectedWithdrawals =
         schema.getPayloadExpectedWithdrawalsSchema().createFromElements(List.of());
+    this.ptcWindow = schema.getPtcWindowSchema().createFromElements(List.of());
   }
 }

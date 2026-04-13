@@ -28,6 +28,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTEST
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PROPOSER_PREFERENCES_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PTC_WINDOW_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLINDED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
@@ -63,6 +64,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPending
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPaymentSchema;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingWithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.PtcWindowSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
@@ -85,6 +87,7 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
   private final SszBitvectorSchema<?> executionPayloadAvailabilitySchema;
   private final SszVectorSchema<BuilderPendingPayment, ?> builderPendingPaymentsSchema;
   private final SszListSchema<BuilderPendingWithdrawal, ?> builderPendingWithdrawalsSchema;
+  private final PtcWindowSchema ptcWindowSchema;
   private final ExecutionPayloadEnvelopesByRootRequestMessageSchema
       executionPayloadEnvelopesByRootRequestMessageSchema;
 
@@ -111,6 +114,7 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
         schemaRegistry.get(EXECUTION_PAYLOAD_AVAILABILITY_SCHEMA);
     this.builderPendingPaymentsSchema = schemaRegistry.get(BUILDER_PENDING_PAYMENTS_SCHEMA);
     this.builderPendingWithdrawalsSchema = schemaRegistry.get(BUILDER_PENDING_WITHDRAWALS_SCHEMA);
+    this.ptcWindowSchema = schemaRegistry.get(PTC_WINDOW_SCHEMA);
     this.executionPayloadEnvelopesByRootRequestMessageSchema =
         schemaRegistry.get(EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT_REQUEST_MESSAGE_SCHEMA);
   }
@@ -222,6 +226,10 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
 
   public SszListSchema<BuilderPendingWithdrawal, ?> getBuilderPendingWithdrawalsSchema() {
     return builderPendingWithdrawalsSchema;
+  }
+
+  public PtcWindowSchema getPtcWindowSchema() {
+    return ptcWindowSchema;
   }
 
   public ExecutionPayloadEnvelopesByRootRequestMessageSchema

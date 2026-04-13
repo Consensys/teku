@@ -1421,7 +1421,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getPtcDuties_shouldReturnDutiesAndSkipMissingValidators() {
-    final BeaconState state = createStateWithActiveValidators();
+    final BeaconState state = createStateWithActiveValidatorsAndInitialisedPtcWindow();
     when(chainDataClient.getStateAtSlotExact(previousEpochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
@@ -1503,8 +1503,16 @@ class ValidatorApiHandlerTest {
     return createStateWithActiveValidators(previousEpochStartSlot);
   }
 
+  private BeaconState createStateWithActiveValidatorsAndInitialisedPtcWindow() {
+    return createStateWithActiveValidatorsAndInitialisedPtcWindow(previousEpochStartSlot);
+  }
+
   private BeaconState createStateWithActiveValidators(final UInt64 slot) {
     return dataStructureUtil.randomBeaconStateWithActiveValidators(32, slot);
+  }
+
+  private BeaconState createStateWithActiveValidatorsAndInitialisedPtcWindow(final UInt64 slot) {
+    return dataStructureUtil.randomBeaconStateWithActiveValidatorsAndInitialisedPtcWindow(32, slot);
   }
 
   private void setupValidatorsState(

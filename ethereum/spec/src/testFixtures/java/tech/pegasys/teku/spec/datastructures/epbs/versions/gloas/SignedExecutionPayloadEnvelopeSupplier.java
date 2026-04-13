@@ -11,19 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.ssz.collections;
+package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 
-public interface SszUInt64Vector extends SszPrimitiveVector<UInt64, SszUInt64> {
+public class SignedExecutionPayloadEnvelopeSupplier
+    extends DataStructureUtilSupplier<SignedExecutionPayloadEnvelope> {
 
-  @Override
-  SszMutableUInt64Vector createWritableCopy();
-
-  default IntList toIntList() {
-    return IntArrayList.toList(streamUnboxed().mapToInt(UInt64::intValue));
+  public SignedExecutionPayloadEnvelopeSupplier() {
+    super(
+        dataStructureUtil ->
+            dataStructureUtil.randomSignedExecutionPayloadEnvelope(
+                dataStructureUtil.randomSlot().longValue()),
+        SpecMilestone.GLOAS);
   }
 }
