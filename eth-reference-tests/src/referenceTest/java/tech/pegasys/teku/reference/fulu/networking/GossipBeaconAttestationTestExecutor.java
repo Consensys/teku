@@ -129,9 +129,9 @@ public class GossipBeaconAttestationTestExecutor implements TestExecutor {
 
     // Set up attestation validator
     final BLSSignatureVerifier blsVerifier =
-        metaData.getBlsSetting() == BlsSetting.REQUIRED
-            ? BLSSignatureVerifier.SIMPLE
-            : BLSSignatureVerifier.NOOP;
+        metaData.getBlsSetting() == BlsSetting.IGNORED
+            ? BLSSignatureVerifier.NOOP
+            : BLSSignatureVerifier.SIMPLE;
     final AttestationValidator attestationValidator =
         new AttestationValidator(
             spec,
