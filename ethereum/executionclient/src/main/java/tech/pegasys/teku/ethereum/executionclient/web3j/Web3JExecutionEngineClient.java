@@ -30,6 +30,7 @@ import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadBodyV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
@@ -59,6 +60,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   private static final Duration GET_CLIENT_VERSION_TIMEOUT = Duration.ofSeconds(1);
   private static final Duration GET_BLOBS_TIMEOUT = Duration.ofSeconds(1);
   private static final Duration GET_PAYLOAD_TIMEOUT = Duration.ofSeconds(2);
+  private static final Duration GET_EXECUTION_PAYLOAD_BODIES_TIMEOUT = Duration.ofSeconds(2);
 
   private final Web3JClient web3JClient;
 
@@ -351,6 +353,19 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     return web3JClient.doRequest(web3jRequest, GET_BLOBS_TIMEOUT);
   }
 
+  @Override
+  public SafeFuture<Response<List<ExecutionPayloadBodyV2>>> getPayloadBodiesByHashV2(
+      final List<Bytes32> blockHashes) {
+    final List<String> blockHashHexes = blockHashes.stream().map(Bytes32::toHexString).toList();
+    final Request<?, GetPayloadBodiesByHashV2Web3jResponse> web3jRequest =
+        new Request<>(
+            "engine_getPayloadBodiesByHashV2",
+            list(blockHashHexes),
+            web3JClient.getWeb3jService(),
+            GetPayloadBodiesByHashV2Web3jResponse.class);
+    return web3JClient.doRequest(web3jRequest, GET_EXECUTION_PAYLOAD_BODIES_TIMEOUT);
+  }
+
   static class ExecutionPayloadV1Web3jResponse
       extends org.web3j.protocol.core.Response<ExecutionPayloadV1> {}
 
@@ -386,6 +401,9 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   static class GetBlobsVersionV2Web3jResponse
       extends org.web3j.protocol.core.Response<List<BlobAndProofV2>> {}
+
+  static class GetPayloadBodiesByHashV2Web3jResponse
+      extends org.web3j.protocol.core.Response<List<ExecutionPayloadBodyV2>> {}
 
   /**
    * Returns a list that supports null items.
