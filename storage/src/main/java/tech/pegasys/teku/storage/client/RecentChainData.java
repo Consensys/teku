@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
@@ -633,6 +634,13 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
       return EmptyStoreResults.EMPTY_SIGNED_BLOCK_FUTURE;
     }
     return store.retrieveSignedBlock(root);
+  }
+
+  public SafeFuture<Optional<SignedBlockAndState>> retrieveBlockAndState(final Bytes32 blockRoot) {
+    if (store == null) {
+      return EmptyStoreResults.EMPTY_SIGNED_BLOCK_AND_STATE_FUTURE;
+    }
+    return store.retrieveBlockAndState(blockRoot);
   }
 
   public Optional<SignedBeaconBlock> getRecentlyValidatedSignedBlockByRoot(final Bytes32 root) {

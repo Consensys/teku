@@ -105,6 +105,7 @@ class Store extends CacheableStore {
   private final BlockProvider blockProvider;
   private final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider;
   private final ForkChoiceStrategy forkChoiceStrategy;
+  private final ExecutionPayloadProvider executionPayloadProvider;
 
   private final Optional<Checkpoint> initialCheckpoint;
   private final CachingTaskQueue<Bytes32, StateAndBlockSummary> blockStates;
@@ -204,6 +205,15 @@ class Store extends CacheableStore {
 
     this.executionPayloadStates = executionPayloadStates;
     this.executionPayloads = executionPayloads;
+
+    // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098
+    //  Execution payload envelopes are only kept in the bounded hot store and are not persisted to
+    //  the database. For chains longer than blockCacheSize, older execution payloads will be
+    //  unavailable during state regeneration, causing GLOAS block replay to fail. Once #10098 is
+    //  resolved, use ExecutionPayloadProvider.combined() to add a database-backed fallback (like
+    //  BlockProvider.combined does for blocks).
+    this.executionPayloadProvider =
+        createExecutionPayloadProviderWhileLocked(this.executionPayloads);
   }
 
   private BlockProvider createBlockProviderFromMapWhileLocked(
@@ -221,21 +231,15 @@ class Store extends CacheableStore {
     };
   }
 
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098
-  //  Execution payload envelopes are only kept in the bounded hot store and are not persisted to
-  //  the database. For chains longer than blockCacheSize, older execution payloads will be
-  //  unavailable during state regeneration, causing GLOAS block replay to fail. Once #10098 is
-  //  resolved, use ExecutionPayloadProvider.combined() to add a database-backed fallback (like
-  //  BlockProvider.combined does for blocks).
   private ExecutionPayloadProvider createExecutionPayloadProviderWhileLocked(
-      final Map<Bytes32, SignedExecutionPayloadEnvelope> payloadMap) {
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloadMap) {
     return (roots) -> {
       readLock.lock();
       try {
         return SafeFuture.completedFuture(
             roots.stream()
-                .filter(payloadMap::containsKey)
-                .collect(Collectors.toMap(Function.identity(), payloadMap::get)));
+                .filter(executionPayloadMap::containsKey)
+                .collect(Collectors.toMap(Function.identity(), executionPayloadMap::get)));
       } finally {
         readLock.unlock();
       }
@@ -791,7 +795,7 @@ class Store extends CacheableStore {
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveSignedExecutionPayload(
       final Bytes32 blockRoot) {
     // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 we need a logic similar to
-    // blockProvider potentially
+    // blockProvider
     return SafeFuture.completedFuture(getExecutionPayloadIfAvailable(blockRoot));
   }
 
@@ -1091,7 +1095,7 @@ class Store extends CacheableStore {
                 blockRoot,
                 treeBuilder.build(),
                 blockProvider,
-                createExecutionPayloadProviderWhileLocked(executionPayloads),
+                executionPayloadProvider,
                 new StateRegenerationBaseSelector(
                     spec,
                     Optional.ofNullable(latestEpochBoundary.get()),

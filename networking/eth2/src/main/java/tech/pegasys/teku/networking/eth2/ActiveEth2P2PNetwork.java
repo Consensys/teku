@@ -47,6 +47,7 @@ import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -420,6 +421,12 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   public void publishPayloadAttestationMessage(
       final PayloadAttestationMessage payloadAttestationMessage) {
     gossipForkManager.publishPayloadAttestationMessage(payloadAttestationMessage);
+  }
+
+  @Override
+  public void publishProposerPreferences(
+      final SignedProposerPreferences signedProposerPreferences) {
+    gossipForkManager.publishProposerPreferences(signedProposerPreferences);
   }
 
   @VisibleForTesting

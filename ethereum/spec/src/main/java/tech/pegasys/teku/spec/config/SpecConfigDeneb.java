@@ -49,6 +49,11 @@ public interface SpecConfigDeneb extends SpecConfigCapella, NetworkingSpecConfig
 
   int getMaxBlobsPerBlock();
 
+  /** Returns the Deneb-native MAX_BLOBS_PER_BLOCK value, not overridden by later forks. */
+  default int getDenebMaxBlobsPerBlock() {
+    return getMaxBlobsPerBlock();
+  }
+
   int getKzgCommitmentInclusionProofDepth();
 
   int getEpochsStoreBlobs();

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.infrastructure.ssz.collections;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -20,4 +22,8 @@ public interface SszUInt64Vector extends SszPrimitiveVector<UInt64, SszUInt64> {
 
   @Override
   SszMutableUInt64Vector createWritableCopy();
+
+  default IntList toIntList() {
+    return IntArrayList.toList(streamUnboxed().mapToInt(UInt64::intValue));
+  }
 }

@@ -29,7 +29,6 @@ import java.math.BigInteger;
 import java.net.ConnectException;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -70,7 +69,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
-public abstract class OkHttpExecutionEngineClient implements ExecutionEngineClient {
+public abstract class AbstractExecutionEngineClient implements ExecutionEngineClient {
+
+  protected static final List<String> NON_CRITICAL_METHODS =
+      List.of("engine_exchangeCapabilities", "engine_getClientVersionV1", "engine_getBlobsV1");
 
   private static final int ERROR_REPEAT_DELAY_MILLIS = 30 * 1000;
   private static final int NO_ERROR_TIME = -1;
@@ -81,9 +83,6 @@ public abstract class OkHttpExecutionEngineClient implements ExecutionEngineClie
   protected static final Duration GET_BLOBS_TIMEOUT = Duration.ofSeconds(2);
   protected static final Duration GET_PAYLOAD_TIMEOUT = Duration.ofSeconds(2);
 
-  public static final List<String> NON_CRITICAL_METHODS =
-      List.of("engine_exchangeCapabilities", "engine_getClientVersionV1", "engine_getBlobsV1");
-
   protected final EventLogger eventLog;
   protected final TimeProvider timeProvider;
   protected final ExecutionClientEventsChannel executionClientEventsPublisher;
@@ -93,21 +92,24 @@ public abstract class OkHttpExecutionEngineClient implements ExecutionEngineClie
 
   private long lastErrorTime = STARTUP_LAST_ERROR_TIME;
 
-  protected OkHttpExecutionEngineClient(
+  protected AbstractExecutionEngineClient(
       final EventLogger eventLog,
       final TimeProvider timeProvider,
-      final ExecutionClientEventsChannel executionClientEventsPublisher,
-      final Collection<String> nonCriticalMethods) {
+      final ExecutionClientEventsChannel executionClientEventsPublisher) {
     this.eventLog = eventLog;
     this.timeProvider = timeProvider;
     this.executionClientEventsPublisher = executionClientEventsPublisher;
-    this.nonCriticalMethods = new HashSet<>(nonCriticalMethods);
+    this.nonCriticalMethods = new HashSet<>(NON_CRITICAL_METHODS);
     this.objectMapper =
         JsonMapper.builder()
             .addModule(new BlackbirdModule())
             .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .build();
+  }
+
+  protected boolean isCriticalMethod(final String methodName) {
+    return !nonCriticalMethods.contains(methodName);
   }
 
   @Override
@@ -340,7 +342,7 @@ public abstract class OkHttpExecutionEngineClient implements ExecutionEngineClie
   private SafeFuture<PowBlock> doEthBlockRequest(final String method, final List<Object> params) {
     return doRequest(method, params, EthBlockResult.class, EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT)
         .thenApply(Response::payload)
-        .thenApply(OkHttpExecutionEngineClient::ethBlockToPowBlock);
+        .thenApply(AbstractExecutionEngineClient::ethBlockToPowBlock);
   }
 
   private static PowBlock ethBlockToPowBlock(final EthBlockResult block) {

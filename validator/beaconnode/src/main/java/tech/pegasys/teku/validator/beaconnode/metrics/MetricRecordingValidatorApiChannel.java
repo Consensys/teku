@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -270,6 +271,14 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
     return countSendRequest(
         delegate.sendPayloadAttestationMessages(payloadAttestationMessages),
         BeaconNodeRequestLabels.SEND_PAYLOAD_ATTESTATION_MESSAGES_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Void> sendSignedProposerPreferences(
+      final List<SignedProposerPreferences> signedProposerPreferences) {
+    return countDataRequest(
+        delegate.sendSignedProposerPreferences(signedProposerPreferences),
+        BeaconNodeRequestLabels.SEND_PROPOSER_PREFERENCES_METHOD);
   }
 
   @Override
