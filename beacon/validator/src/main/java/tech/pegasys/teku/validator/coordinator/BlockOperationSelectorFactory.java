@@ -50,7 +50,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
@@ -94,8 +93,6 @@ public class BlockOperationSelectorFactory {
   private final OperationPool<SignedVoluntaryExit> voluntaryExitPool;
   private final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
   private final SyncCommitteeContributionPool contributionPool;
-
-  @SuppressWarnings("unused")
   private final PayloadAttestationPool payloadAttestationPool;
 
   private final DepositProvider depositProvider;
@@ -253,11 +250,8 @@ public class BlockOperationSelectorFactory {
 
       // Post-Gloas: Payload Attestations
       if (bodyBuilder.supportsPayloadAttestations()) {
-        // TODO-GLOAS: disable packing of payload attestations for devnet-0
         bodyBuilder.payloadAttestations(
-            BeaconBlockBodySchemaGloas.required(schemaDefinitions.getBeaconBlockBodySchema())
-                .getPayloadAttestationsSchema()
-                .of());
+            payloadAttestationPool.getPayloadAttestationsForBlock(blockSlotState, parentRoot));
       }
 
       return SafeFuture.allOfFailFast(setExecutionDataComplete, setExecutionPayloadBidComplete)
