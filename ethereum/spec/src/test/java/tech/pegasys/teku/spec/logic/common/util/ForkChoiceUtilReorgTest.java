@@ -21,8 +21,12 @@ import static org.mockito.Mockito.when;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -45,6 +49,29 @@ class ForkChoiceUtilReorgTest {
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final UInt64 slot = UInt64.ONE;
+
+  @ParameterizedTest
+  @MethodSource("isProposingOnTimeCases")
+  void isProposingOnTimeHandlesBoundaryConditions(
+      final long millisFromGenesis, final boolean expectedResult) {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withTimeInMillis(setup.genesisTimeMillis.plus(millisFromGenesis));
+
+    assertThat(setup.baseForkChoiceUtil.isProposingOnTime(setup.store, slot))
+        .isEqualTo(expectedResult);
+  }
+
+  @ParameterizedTest
+  @MethodSource("forkChoiceStabilityCases")
+  void isForkChoiceStableAndFinalizationOkHandlesBoundaryConditions(
+      final int slot, final boolean expectedResult) {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+
+    assertThat(
+            setup.baseForkChoiceUtil.isForkChoiceStableAndFinalizationOk(
+                setup.store, UInt64.valueOf(slot)))
+        .isEqualTo(expectedResult);
+  }
 
   @Test
   void getProposerHeadReturnsHeadWhenTimely() {
@@ -103,6 +130,71 @@ class ForkChoiceUtilReorgTest {
   }
 
   @Test
+  void shouldOverrideForkChoiceUpdateReturnsFalseWhenHeadBlockMissing() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
+
+    assertThat(
+            setup.harness.shouldOverrideForkChoiceUpdate(
+                setup.context,
+                setup.signedBlockAndState.getRoot(),
+                setup.signedBlockAndState.getSlot()))
+        .isFalse();
+  }
+
+  @Test
+  void shouldOverrideForkChoiceUpdateReturnsFalseWhenFfgIsNotCompetitive() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
+    setup.withCurrentSlot(UInt64.valueOf(2));
+    setup.withParentSlot(Optional.of(UInt64.ZERO));
+    setup.withFfgNotCompetitive();
+
+    assertThat(
+            setup.harness.shouldOverrideForkChoiceUpdate(
+                setup.context,
+                setup.signedBlockAndState.getRoot(),
+                setup.signedBlockAndState.getSlot()))
+        .isFalse();
+  }
+
+  @Test
+  void shouldOverrideForkChoiceUpdateReturnsFalseWhenParentSlotMissing() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
+    setup.withCurrentSlot(UInt64.valueOf(2));
+    setup.withFfgCompetitive();
+
+    assertThat(
+            setup.harness.shouldOverrideForkChoiceUpdate(
+                setup.context,
+                setup.signedBlockAndState.getRoot(),
+                setup.signedBlockAndState.getSlot()))
+        .isFalse();
+  }
+
+  @Test
+  void shouldOverrideForkChoiceUpdateReturnsFalseWhenParentStateMissing() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
+    setup.withCurrentSlot(UInt64.valueOf(2));
+    setup.withFfgCompetitive();
+    setup.withParentSlot(Optional.of(UInt64.ZERO));
+    setup.harness.headWeak = true;
+    setup.harness.parentStrong = true;
+
+    assertThat(
+            setup.harness.shouldOverrideForkChoiceUpdate(
+                setup.context,
+                setup.signedBlockAndState.getRoot(),
+                setup.signedBlockAndState.getSlot()))
+        .isFalse();
+  }
+
+  @Test
   void shouldOverrideForkChoiceUpdateReturnsTrueWhenAllChecksPass() {
     final ReorgTestSetup setup = new ReorgTestSetup();
     setup.withHeadBlock();
@@ -143,6 +235,31 @@ class ForkChoiceUtilReorgTest {
             setup.baseForkChoiceUtil.isParentStrong(
                 setup.store, setup.signedBlockAndState.getBlock(), UInt64.ONE))
         .isTrue();
+  }
+
+  private static Stream<Arguments> isProposingOnTimeCases() {
+    final Spec spec = TestSpecFactory.createMinimalBellatrix();
+    final ForkChoiceUtil forkChoiceUtil = spec.atSlot(UInt64.ONE).getForkChoiceUtil();
+    final int millisPerSlot = spec.getGenesisSpecConfig().getSlotDurationMillis();
+    final int proposerReorgCutoffMillis = forkChoiceUtil.getProposerReorgCutoffMillis();
+
+    return Stream.of(
+        Arguments.of((long) millisPerSlot - 500, true),
+        Arguments.of((long) millisPerSlot, true),
+        Arguments.of((long) millisPerSlot + proposerReorgCutoffMillis, true),
+        Arguments.of((long) millisPerSlot + proposerReorgCutoffMillis + 1, false),
+        Arguments.of((long) millisPerSlot + forkChoiceUtil.getAttestationDueMillis(), false));
+  }
+
+  private static Stream<Arguments> forkChoiceStabilityCases() {
+    return Stream.of(
+        Arguments.of(0, false),
+        Arguments.of(1, true),
+        Arguments.of(7, true),
+        Arguments.of(8, false),
+        Arguments.of(23, true),
+        Arguments.of(24, false),
+        Arguments.of(25, false));
   }
 
   private class ReorgTestSetup {
@@ -196,12 +313,20 @@ class ForkChoiceUtilReorgTest {
       when(store.isFfgCompetitive(any(), any())).thenReturn(Optional.of(true));
     }
 
+    private void withFfgNotCompetitive() {
+      when(store.isFfgCompetitive(any(), any())).thenReturn(Optional.of(false));
+    }
+
+    private void withTimeInMillis(final UInt64 currentTimeMillis) {
+      when(store.getTimeInMillis()).thenReturn(currentTimeMillis);
+      when(store.getTimeSeconds()).thenReturn(currentTimeMillis.dividedBy(1000));
+    }
+
     private void withCurrentSlot(final UInt64 currentSlot) {
       final UInt64 currentTimeMillis =
           genesisTimeMillis.plus(
               currentSlot.times(spec.getGenesisSpecConfig().getSlotDurationMillis()));
-      when(store.getTimeInMillis()).thenReturn(currentTimeMillis);
-      when(store.getTimeSeconds()).thenReturn(currentTimeMillis.dividedBy(1000));
+      withTimeInMillis(currentTimeMillis);
     }
   }
 

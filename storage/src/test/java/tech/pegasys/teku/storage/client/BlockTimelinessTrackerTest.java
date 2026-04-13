@@ -88,6 +88,19 @@ class BlockTimelinessTrackerTest {
   }
 
   @Test
+  void shouldReportLateBlockAtTimelinessLimit() {
+    final int timelinessLimit = spec.atSlot(slot).getForkChoiceUtil().getAttestationDueMillis();
+
+    tracker.setBlockTimelinessFromArrivalTime(
+        signedBlockAndState.getBlock(), computeTime(slot, timelinessLimit));
+
+    assertThat(tracker.getBlockTimeliness(signedBlockAndState.getRoot()))
+        .isPresent()
+        .hasValueSatisfying(timeliness -> assertThat(timeliness.isTimelyAttestation()).isFalse());
+    assertThat(tracker.isBlockLate(signedBlockAndState.getRoot())).isTrue();
+  }
+
+  @Test
   void shouldReturnEmptyForUnknownBlock() {
     assertThat(tracker.getBlockTimeliness(signedBlockAndState.getRoot())).isEmpty();
     assertThat(tracker.isBlockLate(signedBlockAndState.getRoot())).isFalse();
