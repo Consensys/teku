@@ -55,6 +55,5 @@ public interface ExecutionClientHandler {
   SafeFuture<List<BlobAndCellProofs>> engineGetBlobsV2(
       List<VersionedHash> blobVersionedHashes, UInt64 slot);
 
-  SafeFuture<List<ExecutionPayloadBody>> engineGetPayloadBodiesByHash(
-      List<Bytes32> blockHashes, UInt64 slot);
+  SafeFuture<List<ExecutionPayloadBody>> engineGetPayloadBodiesByHash(List<Bytes32> blockHashes);
 }

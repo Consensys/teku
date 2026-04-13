@@ -162,7 +162,7 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
 
   @Override
   public SafeFuture<List<ExecutionPayloadBody>> engineGetPayloadBodiesByHash(
-      final List<Bytes32> blockHashes, final UInt64 slot) {
+      final List<Bytes32> blockHashes) {
     return executionEngineClient
         .getPayloadBodiesByHashV2(blockHashes)
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)

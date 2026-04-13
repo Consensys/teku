@@ -96,7 +96,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
         @Override
         public SafeFuture<List<ExecutionPayloadBody>> engineGetPayloadBodiesByHash(
-            final List<Bytes32> blockHashes, final UInt64 slot) {
+            final List<Bytes32> blockHashes) {
           return SafeFuture.completedFuture(Collections.emptyList());
         }
 
@@ -145,8 +145,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
   SafeFuture<List<BlobAndCellProofs>> engineGetBlobAndCellProofsList(
       List<VersionedHash> blobVersionedHashes, UInt64 slot);
 
-  SafeFuture<List<ExecutionPayloadBody>> engineGetPayloadBodiesByHash(
-      List<Bytes32> blockHashes, UInt64 slot);
+  SafeFuture<List<ExecutionPayloadBody>> engineGetPayloadBodiesByHash(List<Bytes32> blockHashes);
 
   /**
    * This is low level method, use {@link

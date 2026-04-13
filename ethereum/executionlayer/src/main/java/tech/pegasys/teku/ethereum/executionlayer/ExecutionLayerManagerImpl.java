@@ -250,9 +250,9 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   @Override
   public SafeFuture<List<ExecutionPayloadBody>> engineGetPayloadBodiesByHash(
-      final List<Bytes32> blockHashes, final UInt64 slot) {
-    LOG.trace("calling engineGetPayloadBodiesByHash(blockHashes={}, slot={})", blockHashes, slot);
-    return executionClientHandler.engineGetPayloadBodiesByHash(blockHashes, slot);
+      final List<Bytes32> blockHashes) {
+    LOG.trace("calling engineGetPayloadBodiesByHash(blockHashes={})", blockHashes);
+    return executionClientHandler.engineGetPayloadBodiesByHash(blockHashes);
   }
 
   @Override

@@ -402,7 +402,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   @Override
   public SafeFuture<List<ExecutionPayloadBody>> engineGetPayloadBodiesByHash(
-      final List<Bytes32> blockHashes, final UInt64 slot) {
+      final List<Bytes32> blockHashes) {
     return SafeFuture.completedFuture(Collections.emptyList());
   }
 
