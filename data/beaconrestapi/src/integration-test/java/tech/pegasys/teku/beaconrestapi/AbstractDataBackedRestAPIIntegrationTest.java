@@ -80,6 +80,7 @@ import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
@@ -107,6 +108,7 @@ import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactory;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
+import tech.pegasys.teku.validator.coordinator.ValidatorApiHandlerGloas;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
@@ -179,8 +181,10 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final ExecutionPayloadPublisher executionPayloadPublisher =
       mock(ExecutionPayloadPublisher.class);
   protected final ExecutionPayloadBidManager executionPayloadBidManager =
-      ExecutionPayloadBidManager.NOOP;
+      mock(ExecutionPayloadBidManager.class);
   protected final ExecutionProofManager executionProofManager = mock(ExecutionProofManager.class);
+  protected final ProposerPreferencesManager proposerPreferencesManager =
+      mock(ProposerPreferencesManager.class);
   protected RewardCalculator rewardCalculator = mock(RewardCalculator.class);
 
   protected OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
@@ -317,33 +321,65 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected void startRestApiAtGenesisWithValidatorApiHandler(final SpecMilestone specMilestone) {
 
     setupStorage(StateStorageMode.ARCHIVE, false, specMilestone, true);
-    validatorApiHandler =
-        new ValidatorApiHandler(
-            chainDataProvider,
-            nodeDataProvider,
-            networkDataProvider,
-            storageSystem.combinedChainDataClient(),
-            syncStateProvider,
-            blockFactory,
-            attestationPool,
-            attestationManager,
-            attestationTopicSubscriber,
-            activeValidatorTracker,
-            dutyMetrics,
-            performanceTracker,
-            spec,
-            forkChoiceTrigger,
-            proposersDataManager,
-            syncCommitteeMessagePool,
-            syncCommitteeContributionPool,
-            syncCommitteeSubscriptionManager,
-            blockProductionAndPublishingFactory,
-            blockPublisher,
-            payloadAttestationPool,
-            executionPayloadManager,
-            executionPayloadFactory,
-            executionPayloadPublisher,
-            executionProofManager);
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      validatorApiHandler =
+          new ValidatorApiHandlerGloas(
+              chainDataProvider,
+              nodeDataProvider,
+              networkDataProvider,
+              storageSystem.combinedChainDataClient(),
+              syncStateProvider,
+              blockFactory,
+              attestationPool,
+              attestationManager,
+              attestationTopicSubscriber,
+              activeValidatorTracker,
+              dutyMetrics,
+              performanceTracker,
+              spec,
+              forkChoiceTrigger,
+              proposersDataManager,
+              syncCommitteeMessagePool,
+              syncCommitteeContributionPool,
+              syncCommitteeSubscriptionManager,
+              blockProductionAndPublishingFactory,
+              blockPublisher,
+              payloadAttestationPool,
+              executionPayloadManager,
+              executionPayloadFactory,
+              executionPayloadPublisher,
+              executionPayloadBidManager,
+              executionProofManager,
+              proposerPreferencesManager);
+    } else {
+      validatorApiHandler =
+          new ValidatorApiHandler(
+              chainDataProvider,
+              nodeDataProvider,
+              networkDataProvider,
+              storageSystem.combinedChainDataClient(),
+              syncStateProvider,
+              blockFactory,
+              attestationPool,
+              attestationManager,
+              attestationTopicSubscriber,
+              activeValidatorTracker,
+              dutyMetrics,
+              performanceTracker,
+              spec,
+              forkChoiceTrigger,
+              proposersDataManager,
+              syncCommitteeMessagePool,
+              syncCommitteeContributionPool,
+              syncCommitteeSubscriptionManager,
+              blockProductionAndPublishingFactory,
+              blockPublisher,
+              payloadAttestationPool,
+              executionPayloadManager,
+              executionPayloadFactory,
+              executionPayloadPublisher,
+              executionProofManager);
+    }
     validatorApiChannel = validatorApiHandler;
     chainUpdater.initializeGenesis();
     setupAndStartRestAPI();

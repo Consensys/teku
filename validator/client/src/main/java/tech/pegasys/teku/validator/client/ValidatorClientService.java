@@ -597,6 +597,12 @@ public class ValidatorClientService extends Service {
                   validators,
                   validatorIndexProvider));
       validatorTimingChannels.add(new PtcDutyScheduler(metricsSystem, payloadDutyLoader, spec));
+
+      proposerConfigManager.ifPresent(
+          configManager ->
+              validatorTimingChannels.add(
+                  new ProposerPreferencesPublisher(
+                      validatorApiChannel, validators, configManager, forkProvider, spec)));
     }
 
     addValidatorCountMetric(metricsSystem, validators);
