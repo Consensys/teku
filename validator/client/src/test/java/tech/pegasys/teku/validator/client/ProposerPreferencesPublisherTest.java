@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
@@ -36,6 +38,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -52,6 +55,7 @@ public class ProposerPreferencesPublisherTest {
   private Spec spec;
   private DataStructureUtil dataStructureUtil;
   private ProposerPreferencesPublisher publisher;
+  private OwnedValidators ownedValidators;
   private Signer signer;
   private Validator validator;
   private BLSPublicKey publicKey;
@@ -69,7 +73,7 @@ public class ProposerPreferencesPublisherTest {
     gasLimit = dataStructureUtil.randomUInt64();
     validator = new Validator(publicKey, signer, Optional::empty);
 
-    final OwnedValidators ownedValidators = new OwnedValidators(Map.of(publicKey, validator));
+    ownedValidators = new OwnedValidators(Map.of(publicKey, validator));
 
     publisher =
         new ProposerPreferencesPublisher(
@@ -226,6 +230,50 @@ public class ProposerPreferencesPublisherTest {
     publisher.onSlot(firstSlotOfEpoch);
 
     verify(validatorApiChannel, never()).sendSignedProposerPreferences(anyList());
+  }
+
+  @TestTemplate
+  void shouldPublishRemainingPreferencesWhenSigningFails() {
+    final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(5));
+    final UInt64 nextEpoch = UInt64.valueOf(6);
+    final UInt64 nextEpochSlot = spec.computeStartSlotAtEpoch(nextEpoch);
+
+    final int failingValidatorIndex = 99;
+    final int successfulValidatorIndex = 42;
+
+    final BLSPublicKey failingKey = dataStructureUtil.randomPublicKey();
+    final Signer failingSigner = mock(Signer.class);
+    final Validator failingValidator = new Validator(failingKey, failingSigner, Optional::empty);
+    ownedValidators.addValidator(failingValidator);
+
+    when(proposerConfigPropertiesProvider.getFeeRecipient(failingKey))
+        .thenReturn(Optional.of(dataStructureUtil.randomEth1Address()));
+    when(proposerConfigPropertiesProvider.getGasLimit(failingKey)).thenReturn(gasLimit);
+    when(failingSigner.signProposerPreferences(any(), any()))
+        .thenReturn(SafeFuture.failedFuture(new UnsupportedOperationException("not supported")));
+
+    when(validatorApiChannel.getProposerDuties(eq(nextEpoch), eq(true)))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    new ProposerDuties(
+                        dataStructureUtil.randomBytes32(),
+                        List.of(
+                            new ProposerDuty(failingKey, failingValidatorIndex, nextEpochSlot),
+                            new ProposerDuty(
+                                publicKey, successfulValidatorIndex, nextEpochSlot.plus(1))),
+                        false))));
+
+    publisher.onSlot(firstSlotOfEpoch);
+
+    @SuppressWarnings("unchecked")
+    final ArgumentCaptor<List<SignedProposerPreferences>> captor =
+        ArgumentCaptor.forClass(List.class);
+    verify(validatorApiChannel).sendSignedProposerPreferences(captor.capture());
+    final List<SignedProposerPreferences> published = captor.getValue();
+    assertThat(published).hasSize(1);
+    assertThat(published.getFirst().getMessage().getValidatorIndex())
+        .isEqualTo(UInt64.valueOf(successfulValidatorIndex));
   }
 
   @TestTemplate

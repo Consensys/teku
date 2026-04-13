@@ -168,7 +168,15 @@ public class ProposerPreferencesPublisher implements ValidatorTimingChannel {
                               Optional.of(
                                   schemaDefinitions
                                       .getSignedProposerPreferencesSchema()
-                                      .create(proposerPreferences, signature)));
+                                      .create(proposerPreferences, signature)))
+                      .exceptionally(
+                          error -> {
+                            LOG.warn(
+                                "Failed to sign proposer preferences for validator {}",
+                                duty.getPublicKey(),
+                                error);
+                            return Optional.empty();
+                          });
                 });
 
     return maybeFuture.orElse(SafeFuture.completedFuture(Optional.empty()));
