@@ -776,17 +776,10 @@ public abstract class RecentChainData
     return spec.atSlot(slot).getForkChoiceUtil().getProposerHead(this, headRoot, slot);
   }
 
-  public boolean shouldOverrideForkChoiceUpdate(final Bytes32 headRoot) {
-    final Optional<SignedBeaconBlock> maybeHead =
-        Optional.ofNullable(store)
-            .flatMap(currentStore -> currentStore.getBlockIfAvailable(headRoot));
-    if (maybeHead.isEmpty()) {
-      return false;
-    }
-    final UInt64 proposalSlot = maybeHead.orElseThrow().getSlot().increment();
-    return spec.atSlot(proposalSlot)
+  public boolean shouldOverrideForkChoiceUpdate(final Bytes32 headRoot, final UInt64 headSlot) {
+    return spec.atSlot(headSlot)
         .getForkChoiceUtil()
-        .shouldOverrideForkChoiceUpdate(this, headRoot);
+        .shouldOverrideForkChoiceUpdate(this, headRoot, headSlot);
   }
 
   @Override

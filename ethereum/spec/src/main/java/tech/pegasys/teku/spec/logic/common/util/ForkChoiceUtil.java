@@ -208,7 +208,7 @@ public class ForkChoiceUtil {
 
   /** Spec reference: should_override_forkchoice_update. */
   public boolean shouldOverrideForkChoiceUpdate(
-      final ForkChoiceReorgContext context, final Bytes32 headRoot) {
+      final ForkChoiceReorgContext context, final Bytes32 headRoot, final UInt64 headSlot) {
     final ReadOnlyStore store = context.getStore();
     final Optional<SignedBeaconBlock> maybeHead = store.getBlockIfAvailable(headRoot);
     if (maybeHead.isEmpty() || !isHeadLate(context.getBlockTimeliness(headRoot).orElse(null))) {
@@ -217,7 +217,7 @@ public class ForkChoiceUtil {
 
     final SignedBeaconBlock head = maybeHead.orElseThrow();
     final UInt64 currentSlot = getCurrentSlot(store);
-    final UInt64 proposalSlot = head.getSlot().increment();
+    final UInt64 proposalSlot = headSlot.increment();
     final boolean isShufflingStableAndForkChoiceOk =
         isForkChoiceStableAndFinalizationOk(store, proposalSlot);
     final boolean isFfgCompetitive = isFfgCompetitive(store, headRoot, head.getParentRoot());

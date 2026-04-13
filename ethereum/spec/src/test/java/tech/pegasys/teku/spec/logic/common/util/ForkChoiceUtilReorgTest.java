@@ -96,7 +96,9 @@ class ForkChoiceUtilReorgTest {
 
     assertThat(
             setup.harness.shouldOverrideForkChoiceUpdate(
-                setup.context, setup.signedBlockAndState.getRoot()))
+                setup.context,
+                setup.signedBlockAndState.getRoot(),
+                setup.signedBlockAndState.getSlot()))
         .isFalse();
   }
 
@@ -116,7 +118,9 @@ class ForkChoiceUtilReorgTest {
 
     assertThat(
             setup.harness.shouldOverrideForkChoiceUpdate(
-                setup.context, setup.signedBlockAndState.getRoot()))
+                setup.context,
+                setup.signedBlockAndState.getRoot(),
+                setup.signedBlockAndState.getSlot()))
         .isTrue();
   }
 
