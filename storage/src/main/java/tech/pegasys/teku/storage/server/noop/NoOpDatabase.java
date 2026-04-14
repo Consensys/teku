@@ -169,6 +169,12 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> getBlindedExecutionPayloadEnvelopes(
+      final Set<Bytes32> blockRoots) {
+    return Collections.emptyMap();
+  }
+
+  @Override
   public Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz() {
     return Stream.empty();
   }

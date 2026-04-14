@@ -31,6 +31,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
@@ -49,6 +50,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -62,7 +64,6 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -83,6 +84,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
   private static final Logger LOG = LogManager.getLogger();
 
   private final BlockProvider blockProvider;
+  private final ExecutionPayloadProvider executionPayloadProvider;
   private final StateAndBlockSummaryProvider stateProvider;
   private final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider;
   protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
@@ -120,6 +122,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
       final MetricsSystem metricsSystem,
       final StoreConfig storeConfig,
       final BlockProvider blockProvider,
+      final ExecutionPayloadProvider executionPayloadProvider,
       final SingleBlockProvider validatedBlockProvider,
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
       final StateAndBlockSummaryProvider stateProvider,
@@ -134,6 +137,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
     this.metricsSystem = metricsSystem;
     this.storeConfig = storeConfig;
     this.blockProvider = blockProvider;
+    this.executionPayloadProvider = executionPayloadProvider;
     this.stateProvider = stateProvider;
     this.validatedBlockProvider = validatedBlockProvider;
     this.validatedBlobSidecarProvider = validatedBlobSidecarProvider;
@@ -173,6 +177,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
             .metricsSystem(metricsSystem)
             .specProvider(spec)
             .blockProvider(blockProvider)
+            .executionPayloadProvider(executionPayloadProvider)
             .stateProvider(stateProvider)
             .earliestBlobSidecarSlotProvider(earliestBlobSidecarSlotProvider)
             .storeConfig(storeConfig)
@@ -352,10 +357,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
             "Unable to update head block as of slot {}. Unknown block: {}", currentSlot, root);
         return;
       }
-      final SpecVersion specVersion = spec.atSlot(currentSlot);
-      final ChainHead newChainHead =
-          createNewChainHead(
-              root, currentSlot, specVersion.getForkChoiceUtil(), maybeBlockData.get());
+      final ChainHead newChainHead = createNewChainHead(root, currentSlot, maybeBlockData.get());
       this.chainHead = Optional.of(newChainHead);
       final Optional<ReorgContext> optionalReorgContext =
           computeReorgContext(forkChoiceStrategy, originalChainHead, newChainHead);
@@ -366,7 +368,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
                       spec.computeEpochAtSlot(previousChainHead.getSlot())
                           .isLessThan(spec.computeEpochAtSlot(newChainHead.getSlot())))
               .orElse(false);
-      final BeaconStateUtil beaconStateUtil = specVersion.getBeaconStateUtil();
+      final BeaconStateUtil beaconStateUtil = spec.atSlot(currentSlot).getBeaconStateUtil();
 
       chainHeadChannel.chainHeadUpdated(
           newChainHead.getSlot(),
@@ -423,13 +425,19 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
   }
 
   private ChainHead createNewChainHead(
-      final Bytes32 root,
-      final UInt64 currentSlot,
-      final ForkChoiceUtil forkChoiceUtil,
-      final ProtoNodeData blockData) {
-    return ChainHead.create(
-        blockData,
-        forkChoiceUtil.retrieveNewChainHeadStateAndBlockSummary(root, currentSlot, store));
+      final Bytes32 root, final UInt64 currentSlot, final ProtoNodeData headBlockData) {
+    final SafeFuture<StateAndBlockSummary> headBlockAndState =
+        store
+            .retrieveStateAndBlockSummary(root)
+            .thenApply(
+                maybeHead ->
+                    maybeHead.orElseThrow(
+                        () ->
+                            new IllegalStateException(
+                                String.format(
+                                    "Unable to update head block as of slot %s.  Block is unavailable: %s.",
+                                    currentSlot, root))));
+    return ChainHead.create(headBlockData, headBlockAndState);
   }
 
   private Bytes32 getFinalizedBlockParentRoot() {

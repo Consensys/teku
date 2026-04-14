@@ -27,10 +27,10 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -562,22 +562,17 @@ public class ForkChoiceUtil {
     return AvailabilityChecker.NOOP;
   }
 
-  public boolean shouldNotifyForkChoiceUpdatedOnBlock() {
-    return true;
+  // Used for computing committee indices when producing attestations
+  public int computeCommitteeIndexForAttestation(
+      final UInt64 slot,
+      final BeaconBlock block,
+      final int committeeIndex,
+      final ReadOnlyStore store) {
+    return committeeIndex;
   }
 
-  public SafeFuture<StateAndBlockSummary> retrieveNewChainHeadStateAndBlockSummary(
-      final Bytes32 root, final UInt64 chainHeadSlot, final ReadOnlyStore store) {
-    return store
-        .retrieveStateAndBlockSummary(root)
-        .thenApply(
-            maybeHead ->
-                maybeHead.orElseThrow(
-                    () ->
-                        new IllegalStateException(
-                            String.format(
-                                "Unable to update head block as of slot %s.  Block is unavailable: %s.",
-                                chainHeadSlot, root))));
+  public boolean shouldNotifyForkChoiceUpdatedOnBlock() {
+    return true;
   }
 
   public Optional<ForkChoiceUtilDeneb> toVersionDeneb() {
