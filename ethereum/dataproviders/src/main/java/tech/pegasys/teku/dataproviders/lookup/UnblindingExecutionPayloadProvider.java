@@ -85,36 +85,43 @@ public class UnblindingExecutionPayloadProvider implements ExecutionPayloadProvi
       return SafeFuture.completedFuture(Map.of());
     }
 
-    // Collect block hashes from headers, mapped back to block roots
-    final Map<Bytes32, Bytes32> blockHashToBlockRoot = new HashMap<>();
-    for (final var entry : blindedExecutionPayloadEnvelopes.entrySet()) {
-      final Bytes32 blockRoot = entry.getKey();
-      final Bytes32 blockHash = entry.getValue().getMessage().getPayloadHeader().getBlockHash();
-      blockHashToBlockRoot.put(blockHash, blockRoot);
-    }
-
-    final List<Bytes32> blockHashes = List.copyOf(blockHashToBlockRoot.keySet());
+    // Collect unique block hashes to fetch from the EL
+    final List<Bytes32> blockHashes =
+        blindedExecutionPayloadEnvelopes.values().stream()
+            .map(env -> env.getMessage().getPayloadHeader().getBlockHash())
+            .distinct()
+            .toList();
 
     return executionPayloadBodiesByHashProvider
         .getExecutionPayloadBodiesByHash(blockHashes)
         .thenApply(
             executionPayloadBodies -> {
-              final Map<Bytes32, SignedExecutionPayloadEnvelope> result = new HashMap<>();
+              // index EL response by block hash
+              final Map<Bytes32, ExecutionPayloadBody> bodiesByHash = new HashMap<>();
               for (int i = 0; i < blockHashes.size(); i++) {
-                final ExecutionPayloadBody executionPayloadBody = executionPayloadBodies.get(i);
+                if (executionPayloadBodies.get(i) != null) {
+                  bodiesByHash.put(blockHashes.get(i), executionPayloadBodies.get(i));
+                }
+              }
+
+              final Map<Bytes32, SignedExecutionPayloadEnvelope> result = new HashMap<>();
+              for (final Map.Entry<Bytes32, SignedBlindedExecutionPayloadEnvelope> entry :
+                  blindedExecutionPayloadEnvelopes.entrySet()) {
+                final Bytes32 blockRoot = entry.getKey();
+                final SignedBlindedExecutionPayloadEnvelope blindedEnvelope = entry.getValue();
+                final Bytes32 blockHash =
+                    blindedEnvelope.getMessage().getPayloadHeader().getBlockHash();
+                final ExecutionPayloadBody executionPayloadBody = bodiesByHash.get(blockHash);
                 if (executionPayloadBody == null) {
                   LOG.warn(
-                      "EL returned null execution payload body for block hash {}, skipping unblinding",
-                      blockHashes.get(i));
+                      "No execution payload body available for block hash {}, skipping unblinding",
+                      blockHash);
                   continue;
                 }
-                final Bytes32 blockRoot = blockHashToBlockRoot.get(blockHashes.get(i));
-                final SignedBlindedExecutionPayloadEnvelope blindedEnvelope =
-                    blindedExecutionPayloadEnvelopes.get(blockRoot);
                 try {
-                  final SignedExecutionPayloadEnvelope unblinded =
-                      unblindExecutionPayloadEnvelope(blindedEnvelope, executionPayloadBody);
-                  result.put(blockRoot, unblinded);
+                  result.put(
+                      blockRoot,
+                      unblindExecutionPayloadEnvelope(blindedEnvelope, executionPayloadBody));
                 } catch (final Exception e) {
                   LOG.warn("Failed to unblind execution payload for block root {}", blockRoot, e);
                 }

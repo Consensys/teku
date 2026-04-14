@@ -113,6 +113,44 @@ class UnblindingExecutionPayloadProviderTest {
     assertThat(provider.getExecutionPayloads(Set.of(blockRoot))).isCompletedWithValue(Map.of());
   }
 
+  @Test
+  void shouldUnblindEquivocatingEnvelopes() {
+    final SignedExecutionPayloadEnvelope originalEnvelope =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
+
+    final SchemaDefinitionsGloas schemaDefinitions =
+        SchemaDefinitionsGloas.required(
+            spec.atSlot(originalEnvelope.getSlot()).getSchemaDefinitions());
+    final SignedBlindedExecutionPayloadEnvelope blindedEnvelope =
+        originalEnvelope.toSignedBlindedExecutionPayloadEnvelope(schemaDefinitions);
+
+    // Two different beacon block roots referencing the same execution payload (equivocation)
+    final Bytes32 blockRootA = dataStructureUtil.randomBytes32();
+    final Bytes32 blockRootB = dataStructureUtil.randomBytes32();
+
+    final ExecutionPayloadBody body =
+        toExecutionPayloadBody(originalEnvelope.getMessage().getPayload());
+
+    final UnblindingExecutionPayloadProvider provider =
+        new UnblindingExecutionPayloadProvider(
+            spec,
+            roots ->
+                SafeFuture.completedFuture(
+                    Map.of(blockRootA, blindedEnvelope, blockRootB, blindedEnvelope)),
+            blockHashes -> {
+              // Same execution block hash. The EL should only be asked for one unique hash
+              assertThat(blockHashes).hasSize(1);
+              return SafeFuture.completedFuture(List.of(body));
+            });
+
+    assertThat(provider.getExecutionPayloads(Set.of(blockRootA, blockRootB)))
+        .isCompletedWithValueMatching(
+            result ->
+                result.size() == 2
+                    && result.containsKey(blockRootA)
+                    && result.containsKey(blockRootB));
+  }
+
   private ExecutionPayloadBody toExecutionPayloadBody(final ExecutionPayload executionPayload) {
     final List<Bytes> transactions =
         executionPayload.getTransactions().stream().map(SszByteListImpl::getBytes).toList();
