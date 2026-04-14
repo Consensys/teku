@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
@@ -76,6 +77,21 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
     this.configGloas = config;
     this.miscHelpersGloas = miscHelpers;
     this.schemaDefinitions = schemaDefinitions;
+  }
+
+  /**
+   * get_beacon_proposer_indices
+   *
+   * <p>Return the proposer indices for the given {@code epoch}, excluding slashed validators.
+   */
+  @Override
+  public List<Integer> getBeaconProposerIndices(final BeaconState state, final UInt64 epoch) {
+    final IntList activeIndices = getActiveValidatorIndices(state, epoch);
+    final SszList<Validator> validators = state.getValidators();
+    final IntList indices =
+        IntList.of(activeIndices.intStream().filter(i -> !validators.get(i).isSlashed()).toArray());
+    final Bytes32 seed = getSeed(state, epoch, Domain.BEACON_PROPOSER);
+    return miscHelpers.computeProposerIndices(state, epoch, seed, indices);
   }
 
   public UInt64 getPendingBalanceToWithdrawForBuilder(
