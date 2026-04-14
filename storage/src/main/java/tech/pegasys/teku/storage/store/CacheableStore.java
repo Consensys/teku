@@ -52,6 +52,6 @@ public abstract class CacheableStore implements UpdatableStore {
 
   abstract void setVote(int index, VoteTracker voteTracker);
 
-  abstract void cacheExecutionPayload(
+  abstract void cacheExecutionPayloads(
       Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads);
 }

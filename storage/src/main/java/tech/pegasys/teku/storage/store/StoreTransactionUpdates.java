@@ -166,7 +166,7 @@ class StoreTransactionUpdates {
       store.cacheProposerBoostRoot(tx.proposerBoostRoot);
     }
 
-    store.cacheExecutionPayload(hotExecutionPayloads);
+    store.cacheExecutionPayloads(hotExecutionPayloads);
 
     store
         .getForkChoiceStrategy()

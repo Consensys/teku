@@ -901,7 +901,7 @@ class Store extends CacheableStore {
   }
 
   @Override
-  void cacheExecutionPayload(final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads) {
+  void cacheExecutionPayloads(final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads) {
     executionPayloads.values().stream()
         .sorted(Comparator.comparing(SignedExecutionPayloadEnvelope::getSlot))
         .forEach(
