@@ -131,7 +131,7 @@ class Store extends CacheableStore {
       final Spec spec,
       final int hotStatePersistenceFrequencyInEpochs,
       final BlockProvider blockProvider,
-      final ExecutionPayloadProvider unblindingExecutionPayloadProvider,
+      final ExecutionPayloadProvider executionPayloadProvider,
       final StateAndBlockSummaryProvider stateProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final CachingTaskQueue<Bytes32, StateAndBlockSummary> blockStates,
@@ -206,7 +206,7 @@ class Store extends CacheableStore {
     this.executionPayloadProvider =
         ExecutionPayloadProvider.combined(
             createExecutionPayloadProviderWhileLocked(this.executionPayloads),
-            unblindingExecutionPayloadProvider);
+            executionPayloadProvider);
   }
 
   private BlockProvider createBlockProviderFromMapWhileLocked(
@@ -901,7 +901,8 @@ class Store extends CacheableStore {
   }
 
   @Override
-  void cacheExecutionPayloads(final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads) {
+  void cacheExecutionPayloads(
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads) {
     executionPayloads.values().stream()
         .sorted(Comparator.comparing(SignedExecutionPayloadEnvelope::getSlot))
         .forEach(
