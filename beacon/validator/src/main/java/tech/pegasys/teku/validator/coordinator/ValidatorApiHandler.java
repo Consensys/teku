@@ -107,7 +107,10 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager.RemoteBidOrigin;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
@@ -168,9 +171,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private final ExecutionPayloadManager executionPayloadManager;
   private final ExecutionPayloadFactory executionPayloadFactory;
   private final ExecutionPayloadPublisher executionPayloadPublisher;
+  private final ExecutionPayloadBidManager executionPayloadBidManager;
+  private final ProposerPreferencesManager proposerPreferencesManager;
+  private final ExecutionProofManager executionProofManager;
 
   private final AttesterDutiesGenerator attesterDutiesGenerator;
-  private final ExecutionProofManager executionProofManager;
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
@@ -198,6 +203,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final ExecutionPayloadManager executionPayloadManager,
       final ExecutionPayloadFactory executionPayloadFactory,
       final ExecutionPayloadPublisher executionPayloadPublisher,
+      final ExecutionPayloadBidManager executionPayloadBidManager,
+      final ProposerPreferencesManager proposerPreferencesManager,
       final ExecutionProofManager executionProofManager) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
@@ -224,8 +231,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     this.executionPayloadManager = executionPayloadManager;
     this.executionPayloadFactory = executionPayloadFactory;
     this.executionPayloadPublisher = executionPayloadPublisher;
-    this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
+    this.executionPayloadBidManager = executionPayloadBidManager;
+    this.proposerPreferencesManager = proposerPreferencesManager;
     this.executionProofManager = executionProofManager;
+    this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
   }
 
   @Override
@@ -461,19 +470,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
           final SafeFuture<Optional<BeaconState>> state =
               forkChoiceTrigger
                   .prepareForBlockProduction(slot, productionPerformance)
-                  .thenCompose(___ -> getStateForBlockProduction(slot, productionPerformance))
+                  .thenCompose(
+                      ___ ->
+                          combinedChainDataClient.getStateForBlockProduction(
+                              slot,
+                              forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled(),
+                              productionPerformance::lateBlockReorgPreparationCompleted))
                   .thenPeek(___ -> productionPerformance.getState());
 
           return new BlockProductionPreparationContext(state, productionPerformance);
         });
-  }
-
-  protected SafeFuture<Optional<BeaconState>> getStateForBlockProduction(
-      final UInt64 slot, final BlockProductionPerformance productionPerformance) {
-    return combinedChainDataClient.getStateForBlockProduction(
-        slot,
-        forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled(),
-        productionPerformance::lateBlockReorgPreparationCompleted);
   }
 
   private SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlockInternal(
@@ -623,9 +629,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     return result;
   }
 
-  protected int computeCommitteeIndexForAttestation(
+  private int computeCommitteeIndexForAttestation(
       final UInt64 slot, final BeaconBlock block, final int committeeIndex) {
-    return committeeIndex;
+    return spec.atSlot(slot)
+        .getForkChoiceUtil()
+        .computeCommitteeIndexForAttestation(
+            slot, block, committeeIndex, combinedChainDataClient.getStore());
   }
 
   private AttestationData createAttestationData(
@@ -939,7 +948,21 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   @Override
   public SafeFuture<Void> sendSignedProposerPreferences(
       final List<SignedProposerPreferences> signedProposerPreferences) {
-    return SafeFuture.COMPLETE;
+    return SafeFuture.collectAll(
+            signedProposerPreferences.stream().map(proposerPreferencesManager::addLocal))
+        .thenAccept(
+            results -> {
+              final List<String> errorMessages =
+                  results.stream()
+                      .filter(InternalValidationResult::isReject)
+                      .flatMap(result -> result.getDescription().stream())
+                      .toList();
+              if (!errorMessages.isEmpty()) {
+                LOG.warn(
+                    "Some proposer preferences were rejected: {}",
+                    String.join("; ", errorMessages));
+              }
+            });
   }
 
   @Override
@@ -986,7 +1009,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   @Override
   public SafeFuture<Void> publishSignedExecutionPayloadBid(
       final SignedExecutionPayloadBid signedExecutionPayloadBid) {
-    throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
+    return executionPayloadBidManager
+        .validateAndAddBid(signedExecutionPayloadBid, RemoteBidOrigin.BUILDER)
+        .thenAccept(
+            result -> {
+              if (!result.isAccept()) {
+                throw new IllegalArgumentException(
+                    "Invalid execution payload bid: "
+                        + result.getDescription().orElse("unknown reason"));
+              }
+            });
   }
 
   @Override

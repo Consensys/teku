@@ -78,11 +78,11 @@ public class SignedBlindedExecutionPayloadEnvelope
   }
 
   public SignedExecutionPayloadEnvelope unblind(
-      final SchemaDefinitionsGloas schemaDefinitions, final ExecutionPayload payload) {
+      final SchemaDefinitionsGloas schemaDefinitions, final ExecutionPayload executionPayload) {
     final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope =
         schemaDefinitions
             .getSignedExecutionPayloadEnvelopeSchema()
-            .create(getMessage().unblind(schemaDefinitions, payload), getSignature());
+            .create(getMessage().unblind(schemaDefinitions, executionPayload), getSignature());
     checkState(
         signedExecutionPayloadEnvelope.hashTreeRoot().equals(hashTreeRoot()),
         "unblinded signed execution payload envelope root does not match original envelope root");
