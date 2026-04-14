@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.logic.versions.gloas.operations.validation.Volunta
 import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.AttestationUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.DataColumnSidecarUtilGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ValidatorsUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelpersGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -215,6 +216,9 @@ public class SpecLogicGloas extends AbstractSpecLogic {
             beaconStateMutators,
             executionRequestsDataCodec,
             executionRequestsProcessor);
+    final ForkChoiceUtil forkChoiceUtil =
+        new ForkChoiceUtilGloas(
+            config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtilFulu(schemaDefinitions, blockProcessor, config.getFuluForkEpoch());
 
