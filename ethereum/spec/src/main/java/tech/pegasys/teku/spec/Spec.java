@@ -79,7 +79,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.epbs.ExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelopeInvariants;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
@@ -987,7 +986,7 @@ public class Spec {
   }
 
   // Execution Payload Proposal
-  public SafeFuture<ExecutionPayloadAndState> createNewUnsignedExecutionPayload(
+  public SafeFuture<ExecutionPayloadEnvelope> createNewUnsignedExecutionPayload(
       final UInt64 proposalSlot,
       final UInt64 builderIndex,
       final BeaconBlockAndState blockAndState,
