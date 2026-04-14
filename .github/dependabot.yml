@@ -8,12 +8,20 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "09:00"
+    # wait 7 days for stability      
+    cooldown:
+      default-days: 7
+
+    # grouping: bundle updates into one PR rather than one at a time
+    groups:
+      java-dependencies:
+        patterns:
+          - "*" 
+        # Optional: exclude major versions so we can review these
+        # update-types:
+        #   - "minor"
+        #   - "patch"
+
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
-
-  # GitHub Actions updates
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"

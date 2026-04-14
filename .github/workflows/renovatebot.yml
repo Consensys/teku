@@ -1,6 +1,8 @@
 name: renovatebot
 
 on:
+  schedule:
+    - cron: "15 3 1 * *"
   push:
     branches:
       - master
