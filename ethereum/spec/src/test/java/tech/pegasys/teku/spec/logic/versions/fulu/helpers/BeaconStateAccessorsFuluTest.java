@@ -30,6 +30,8 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
@@ -137,6 +139,36 @@ public class BeaconStateAccessorsFuluTest {
                     blockAndState.getState(), UInt64.valueOf(slot)))
         .hasMessageContaining(
             "get_beacon_proposer_index is only used for requesting a slot in the current epoch (or next epoch in FULU)");
+  }
+
+  @Test
+  void getBeaconProposerIndices_shouldIncludeSlashedValidators() {
+    storageSystem.chainUpdater().initializeGenesis();
+    final BeaconState genesisState = storageSystem.getChainHead().getState();
+    final UInt64 epoch = UInt64.ZERO;
+
+    // Get proposer indices before slashing
+    final List<Integer> proposersBefore =
+        stateAccessorsFulu.getBeaconProposerIndices(genesisState, epoch);
+    assertThat(proposersBefore).isNotEmpty();
+
+    // Pick a validator that is selected as proposer
+    final int slashedIndex = proposersBefore.getFirst();
+
+    // Slash that validator
+    final BeaconState stateWithSlashedValidator =
+        genesisState.updated(
+            mutableState -> {
+              final Validator validator = mutableState.getValidators().get(slashedIndex);
+              mutableState.getValidators().set(slashedIndex, validator.withSlashed(true));
+            });
+
+    // Get proposer indices after slashing — Fulu does NOT exclude slashed validators
+    final List<Integer> proposersAfter =
+        stateAccessorsFulu.getBeaconProposerIndices(stateWithSlashedValidator, epoch);
+
+    // Slashed validator should still appear in the proposer list in Fulu
+    assertThat(proposersAfter).isEqualTo(proposersBefore);
   }
 
   private List<Integer> getProposerLookaheadFromState(final BeaconStateFulu beaconStateFulu) {

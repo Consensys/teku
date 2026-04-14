@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.gloas.helpers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -22,11 +23,14 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class BeaconStateAccessorsGloasTest {
 
@@ -79,5 +83,37 @@ public class BeaconStateAccessorsGloasTest {
     final Optional<BLSPublicKey> index =
         beaconStateAccessors.getBuilderPubKey(state, UInt64.valueOf(999));
     assertThat(index).isEmpty();
+  }
+
+  @Test
+  void getBeaconProposerIndices_shouldExcludeSlashedValidators() {
+    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(16, spec);
+    storageSystem.chainUpdater().initializeGenesis();
+    final BeaconState genesisState = storageSystem.getChainHead().getState();
+    final UInt64 epoch = UInt64.ZERO;
+
+    // Get proposer indices before slashing
+    final List<Integer> proposersBefore =
+        beaconStateAccessors.getBeaconProposerIndices(genesisState, epoch);
+    assertThat(proposersBefore).isNotEmpty();
+
+    // Pick a validator that is selected as proposer
+    final int slashedIndex = proposersBefore.getFirst();
+
+    // Slash that validator
+    final BeaconState stateWithSlashedValidator =
+        genesisState.updated(
+            mutableState -> {
+              final Validator validator = mutableState.getValidators().get(slashedIndex);
+              mutableState.getValidators().set(slashedIndex, validator.withSlashed(true));
+            });
+
+    // Get proposer indices after slashing
+    final List<Integer> proposersAfter =
+        beaconStateAccessors.getBeaconProposerIndices(stateWithSlashedValidator, epoch);
+
+    // Slashed validator should not appear in the proposer list
+    assertThat(proposersAfter).doesNotContain(slashedIndex);
+    assertThat(proposersAfter).hasSameSizeAs(proposersBefore);
   }
 }
