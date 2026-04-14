@@ -113,7 +113,9 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
@@ -162,6 +164,10 @@ class ValidatorApiHandlerTest {
       mock(ExecutionPayloadFactory.class);
   private final ExecutionPayloadPublisher executionPayloadPublisher =
       mock(ExecutionPayloadPublisher.class);
+  private final ExecutionPayloadBidManager executionPayloadBidManager =
+      mock(ExecutionPayloadBidManager.class);
+  private final ProposerPreferencesManager proposerPreferencesManager =
+      mock(ProposerPreferencesManager.class);
 
   private final SyncCommitteeMessagePool syncCommitteeMessagePool =
       mock(SyncCommitteeMessagePool.class);
@@ -215,6 +221,8 @@ class ValidatorApiHandlerTest {
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
+            executionPayloadBidManager,
+            proposerPreferencesManager,
             executionProofManager);
 
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
@@ -502,6 +510,8 @@ class ValidatorApiHandlerTest {
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
+            executionPayloadBidManager,
+            proposerPreferencesManager,
             executionProofManager);
     dataStructureUtil = new DataStructureUtil(spec);
     // Best state is still in Phase0
