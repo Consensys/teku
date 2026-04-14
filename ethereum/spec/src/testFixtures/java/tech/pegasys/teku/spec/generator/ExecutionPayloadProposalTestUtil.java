@@ -19,7 +19,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil.ExecutionPayloadProposalData;
@@ -34,59 +33,30 @@ public class ExecutionPayloadProposalTestUtil {
     this.spec = spec;
   }
 
-  public SafeFuture<SignedExecutionPayloadAndState> createExecutionPayload(
+  public SafeFuture<SignedExecutionPayloadEnvelope> createExecutionPayload(
       final Signer signer,
       final UInt64 newSlot,
       final BeaconBlockAndState blockAndState,
-      final ExecutionPayloadProposalData executionPayloadProposalData,
-      final boolean skipStateTransition) {
+      final ExecutionPayloadProposalData executionPayloadProposalData) {
     final SchemaDefinitionsGloas schemaDefinitions =
         SchemaDefinitionsGloas.required(spec.atSlot(newSlot).getSchemaDefinitions());
-    if (skipStateTransition) {
-      final ExecutionPayloadEnvelope executionPayload =
-          schemaDefinitions
-              .getExecutionPayloadEnvelopeSchema()
-              .create(
-                  executionPayloadProposalData.executionPayload(),
-                  executionPayloadProposalData.executionRequests(),
-                  BUILDER_INDEX_SELF_BUILD,
-                  blockAndState.getRoot(),
-                  newSlot,
-                  blockAndState.getState().hashTreeRoot());
-      // Sign execution payload and set signature
-      return signer
-          .signExecutionPayloadEnvelope(executionPayload, blockAndState.getState().getForkInfo())
-          .thenApply(
-              signature -> {
-                final SignedExecutionPayloadEnvelope signedExecutionPayload =
-                    schemaDefinitions
-                        .getSignedExecutionPayloadEnvelopeSchema()
-                        .create(executionPayload, signature);
-                return new SignedExecutionPayloadAndState(
-                    signedExecutionPayload, blockAndState.getState());
-              });
-    }
-    return spec.createNewUnsignedExecutionPayload(
-            newSlot,
-            BUILDER_INDEX_SELF_BUILD,
-            blockAndState,
-            SafeFuture.completedFuture(executionPayloadProposalData))
-        .thenCompose(
-            executionPayloadAndState -> {
-              // Sign execution payload and set signature
-              return signer
-                  .signExecutionPayloadEnvelope(
-                      executionPayloadAndState.executionPayload(),
-                      executionPayloadAndState.state().getForkInfo())
-                  .thenApply(
-                      signature -> {
-                        final SignedExecutionPayloadEnvelope signedExecutionPayload =
-                            schemaDefinitions
-                                .getSignedExecutionPayloadEnvelopeSchema()
-                                .create(executionPayloadAndState.executionPayload(), signature);
-                        return new SignedExecutionPayloadAndState(
-                            signedExecutionPayload, executionPayloadAndState.state());
-                      });
-            });
+    final ExecutionPayloadEnvelope executionPayload =
+        schemaDefinitions
+            .getExecutionPayloadEnvelopeSchema()
+            .create(
+                executionPayloadProposalData.executionPayload(),
+                executionPayloadProposalData.executionRequests(),
+                BUILDER_INDEX_SELF_BUILD,
+                blockAndState.getRoot(),
+                newSlot,
+                blockAndState.getState().hashTreeRoot());
+    // Sign execution payload and set signature
+    return signer
+        .signExecutionPayloadEnvelope(executionPayload, blockAndState.getState().getForkInfo())
+        .thenApply(
+            signature ->
+                schemaDefinitions
+                    .getSignedExecutionPayloadEnvelopeSchema()
+                    .create(executionPayload, signature));
   }
 }

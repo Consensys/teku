@@ -669,7 +669,7 @@ public abstract class RecentChainData
   }
 
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>>
-      retrieveSignedExecutionPayloadEnvelopeByBlockRoot(final Bytes32 beaconBlockRoot) {
+      retrieveSignedExecutionPayloadByBlockRoot(final Bytes32 beaconBlockRoot) {
     if (store == null) {
       return EmptyStoreResults.EMPTY_SIGNED_EXECUTION_PAYLOAD_ENVELOPE_FUTURE;
     }

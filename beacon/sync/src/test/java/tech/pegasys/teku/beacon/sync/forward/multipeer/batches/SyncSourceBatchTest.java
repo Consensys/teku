@@ -52,7 +52,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
-import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -393,8 +392,7 @@ public class SyncSourceBatchTest {
                 .toList());
     final Map<Bytes32, SignedExecutionPayloadEnvelope> expectedExecutionPayloadsByBlockRoot =
         chainBuilder
-            .streamExecutionPayloadsAndStates(gloasSlot, batch.getLastSlot().longValue())
-            .map(SignedExecutionPayloadAndState::executionPayload)
+            .streamExecutionPayloads(gloasSlot, batch.getLastSlot().longValue())
             .collect(
                 Collectors.toMap(
                     SignedExecutionPayloadEnvelope::getBeaconBlockRoot, Function.identity()));
@@ -455,8 +453,9 @@ public class SyncSourceBatchTest {
     batch.requestMoreBlocks(() -> {});
 
     receiveBlocks(batch, chainBuilder.getBlockAtSlot(batch.getLastSlot().longValue()));
-    receiveExecutionPayloads(
-        batch, chainBuilder.getExecutionPayloadAtSlot(batch.getLastSlot().longValue()));
+    chainBuilder
+        .getExecutionPayloadAtSlot(batch.getLastSlot())
+        .ifPresent(executionPayload -> receiveExecutionPayloads(batch, executionPayload));
 
     // batch should be reported as invalid
     verify(conflictResolutionStrategy).reportInvalidBatch(batch, getSyncSource(batch));
@@ -522,8 +521,7 @@ public class SyncSourceBatchTest {
     getSyncSource(batch)
         .receiveExecutionPayloadEnvelopes(
             chainBuilder
-                .streamExecutionPayloadsAndStates(fromSlot, toSlot)
-                .map(SignedExecutionPayloadAndState::executionPayload)
+                .streamExecutionPayloads(fromSlot, toSlot)
                 .filter(executionPayloadsFilter)
                 .toArray(SignedExecutionPayloadEnvelope[]::new));
   }

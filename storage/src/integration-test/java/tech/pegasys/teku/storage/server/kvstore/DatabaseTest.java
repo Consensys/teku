@@ -76,8 +76,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -808,14 +808,11 @@ public class DatabaseTest {
 
   private SignedBlindedExecutionPayloadEnvelope getSignedBlindedExecutionPayloadEnvelope(
       final SignedBlockAndState blockAndState) {
-    final SignedExecutionPayloadAndState signedExecutionPayloadAndState =
-        chainBuilder.getExecutionPayloadAndStateAtSlot(blockAndState.getSlot()).orElseThrow();
-    return signedExecutionPayloadAndState
-        .executionPayload()
-        .toSignedBlindedExecutionPayloadEnvelope(
-            SchemaDefinitionsGloas.required(
-                spec.atSlot(signedExecutionPayloadAndState.executionPayload().getSlot())
-                    .getSchemaDefinitions()));
+    final SignedExecutionPayloadEnvelope executionPayload =
+        chainBuilder.getExecutionPayloadAtSlot(blockAndState.getSlot()).orElseThrow();
+    return executionPayload.blind(
+        SchemaDefinitionsGloas.required(
+            spec.atSlot(executionPayload.getSlot()).getSchemaDefinitions()));
   }
 
   @TestTemplate

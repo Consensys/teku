@@ -17,12 +17,9 @@ import static com.google.common.base.Preconditions.checkState;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.epbs.BlockRootAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -62,19 +59,6 @@ public class SignedBlindedExecutionPayloadEnvelope
 
   public Bytes32 getBeaconBlockRoot() {
     return getMessage().getBeaconBlockRoot();
-  }
-
-  public SlotAndBlockRoot getSlotAndBlockRoot() {
-    return getMessage().getSlotAndBlockRoot();
-  }
-
-  public BlockRootAndBuilderIndex getBlockRootAndBuilderIndex() {
-    return getMessage().getBlockRootAndBuilderIndex();
-  }
-
-  public String toLogString() {
-    return LogFormatter.formatExecutionPayload(
-        getMessage().getSlot(), getMessage().getBeaconBlockRoot(), getMessage().getBuilderIndex());
   }
 
   public SignedExecutionPayloadEnvelope unblind(

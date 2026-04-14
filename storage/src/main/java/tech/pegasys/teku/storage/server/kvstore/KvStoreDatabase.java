@@ -1332,8 +1332,7 @@ public class KvStoreDatabase implements Database {
           update.getDeletedHotBlocks().keySet().stream()
               .filter(root -> !update.getFinalizedChildToParentMap().containsKey(root))
               .collect(Collectors.toSet());
-      updateBlindedExecutionPayloadEnvelopes(
-          update.getBlindedExecutionPayloadEnvelopesByBlockRoot(), nonCanonicalPrunedRoots);
+      updateBlindedExecutionPayloads(update.getBlindedExecutionPayloads(), nonCanonicalPrunedRoots);
     }
 
     if (update.isBlobSidecarsEnabled()) {
@@ -1671,16 +1670,14 @@ public class KvStoreDatabase implements Database {
     return Optional.empty();
   }
 
-  private void updateBlindedExecutionPayloadEnvelopes(
-      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
-          blindedExecutionPayloadEnvelopesByBlockRoot,
+  private void updateBlindedExecutionPayloads(
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads,
       final Set<Bytes32> prunedBlockRoots) {
-    if (blindedExecutionPayloadEnvelopesByBlockRoot.isEmpty() && prunedBlockRoots.isEmpty()) {
+    if (blindedExecutionPayloads.isEmpty() && prunedBlockRoots.isEmpty()) {
       return;
     }
     try (final FinalizedUpdater updater = finalizedUpdater()) {
-      blindedExecutionPayloadEnvelopesByBlockRoot.forEach(
-          updater::addBlindedExecutionPayloadEnvelope);
+      blindedExecutionPayloads.forEach(updater::addBlindedExecutionPayloadEnvelope);
       prunedBlockRoots.forEach(updater::deleteBlindedExecutionPayloadEnvelope);
       updater.commit();
     }

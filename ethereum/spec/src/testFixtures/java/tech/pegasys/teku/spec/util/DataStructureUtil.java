@@ -3362,13 +3362,7 @@ public final class DataStructureUtil {
   }
 
   public BlindedExecutionPayloadEnvelope randomBlindedExecutionPayloadEnvelope() {
-    return randomExecutionPayloadEnvelope()
-        .toBlindedExecutionPayloadEnvelope(getGloasSchemaDefinitions());
-  }
-
-  public BlindedExecutionPayloadEnvelope randomBlindedExecutionPayloadEnvelope(final UInt64 slot) {
-    return randomExecutionPayloadEnvelope(slot)
-        .toBlindedExecutionPayloadEnvelope(getGloasSchemaDefinitions());
+    return randomExecutionPayloadEnvelope().blind(getGloasSchemaDefinitions());
   }
 
   public SignedBlindedExecutionPayloadEnvelope randomSignedBlindedExecutionPayloadEnvelope() {
@@ -3377,8 +3371,7 @@ public final class DataStructureUtil {
 
   public SignedBlindedExecutionPayloadEnvelope randomSignedBlindedExecutionPayloadEnvelope(
       final long slot) {
-    return randomSignedExecutionPayloadEnvelope(slot)
-        .toSignedBlindedExecutionPayloadEnvelope(getGloasSchemaDefinitions());
+    return randomSignedExecutionPayloadEnvelope(slot).blind(getGloasSchemaDefinitions());
   }
 
   public SignedExecutionPayloadEnvelope randomSignedExecutionPayloadEnvelopeForBlock(

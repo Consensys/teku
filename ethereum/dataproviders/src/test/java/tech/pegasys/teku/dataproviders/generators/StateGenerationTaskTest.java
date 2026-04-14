@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -40,7 +41,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.spec.datastructures.state.BlockRootAndState;
@@ -130,18 +130,9 @@ class StateGenerationTaskTest {
     assertThat(result.join().orElseThrow().getSlot()).isEqualTo(UInt64.valueOf(5));
   }
 
-  /**
-   * Returns the expected block-and-state after regeneration. For GLOAS, state regeneration includes
-   * execution payload processing, so the expected state is the post-execution-payload state.
-   */
+  /** Returns the expected block-and-state after regeneration. */
   private SignedBlockAndState getExpectedBlockAndState(final int slot) {
-    final SignedBlockAndState blockAndState = chainBuilder.getBlockAndStateAtSlot(slot);
-    return chainBuilder
-        .getExecutionPayloadStateAtSlot(UInt64.valueOf(slot))
-        .map(
-            executionPayloadState ->
-                new SignedBlockAndState(blockAndState.getBlock(), executionPayloadState))
-        .orElse(blockAndState);
+    return chainBuilder.getBlockAndStateAtSlot(slot);
   }
 
   private void assertRequestedBlockRangeInclusive(final int fromSlot, final int toSlot) {
@@ -200,11 +191,10 @@ class StateGenerationTaskTest {
   private ExecutionPayloadProvider getExecutionPayloadProvider() {
     final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloadMap =
         chainBuilder
-            .streamExecutionPayloadsAndStates(0, chainBuilder.getLatestSlot().intValue())
+            .streamExecutionPayloads(0, chainBuilder.getLatestSlot().intValue())
             .collect(
                 Collectors.toMap(
-                    SignedExecutionPayloadAndState::getBeaconBlockRoot,
-                    SignedExecutionPayloadAndState::executionPayload));
+                    SignedExecutionPayloadEnvelope::getBeaconBlockRoot, Function.identity()));
     return ExecutionPayloadProvider.fromDynamicMap(executionPayloadMap);
   }
 
@@ -242,14 +232,6 @@ class StateGenerationTaskTest {
         SafeFuture.completedFuture(
             chainBuilder
                 .getBlockAndState(blockRoot)
-                .map(
-                    blockAndState ->
-                        chainBuilder
-                            .getExecutionPayloadStateAtSlot(blockAndState.getSlot())
-                            .map(
-                                epState ->
-                                    (StateAndBlockSummary)
-                                        new SignedBlockAndState(blockAndState.getBlock(), epState))
-                            .orElse(blockAndState)));
+                .map(blockAndState -> (StateAndBlockSummary) blockAndState));
   }
 }
