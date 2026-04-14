@@ -36,9 +36,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
@@ -312,14 +310,6 @@ public abstract class AttestationUtil {
 
   public abstract Attestation convertSingleAttestationToAggregated(
       BeaconState state, SingleAttestation singleAttestation);
-
-  public int computeCommitteeIndexForAttestation(
-      final UInt64 slot,
-      final BeaconBlock block,
-      final int committeeIndex,
-      final ReadOnlyStore store) {
-    return committeeIndex;
-  }
 
   public abstract AttestationValidationResult validateCommitteeIndexValue(UInt64 committeeIndex);
 
