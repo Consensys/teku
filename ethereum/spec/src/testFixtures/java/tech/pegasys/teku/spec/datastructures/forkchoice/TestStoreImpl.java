@@ -447,11 +447,6 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     }
 
     @Override
-    public Optional<ForkChoiceNode> getAncestorNode(final Bytes32 blockRoot, final UInt64 slot) {
-      return getAncestor(blockRoot, slot).map(ForkChoiceNode::createBase);
-    }
-
-    @Override
     public Optional<SlotAndBlockRoot> findCommonAncestor(
         final Bytes32 blockRoot1, final Bytes32 blockRoot2) {
       throw new UnsupportedOperationException("Not implemented");

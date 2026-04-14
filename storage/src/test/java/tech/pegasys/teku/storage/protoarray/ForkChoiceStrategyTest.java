@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
@@ -222,6 +223,20 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final ForkChoiceStrategy protoArrayStrategy = getProtoArray(storageSystem);
     assertThat(protoArrayStrategy.getAncestor(head.getRoot(), ancestor.getSlot()))
         .contains(ancestor.getRoot());
+  }
+
+  @Test
+  void getAncestorNode_returnsBaseNodeForKnownAncestor() {
+    final StorageSystem storageSystem = initStorageSystem();
+    storageSystem.chainUpdater().advanceChain(1);
+    final SignedBlockAndState ancestor = storageSystem.chainUpdater().advanceChain(2);
+    storageSystem.chainUpdater().advanceChain(3);
+    final SignedBlockAndState head = storageSystem.chainUpdater().advanceChain(5);
+    final ForkChoiceStrategy strategy = getProtoArray(storageSystem);
+
+    assertThat(strategy.getAncestorNode(head.getRoot(), ancestor.getSlot()))
+        .contains(
+            new ForkChoiceNode(ancestor.getRoot(), ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING));
   }
 
   @Test
@@ -459,6 +474,17 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                 .orElseThrow()
                 .executionBlockHash(block1.getRoot()))
         .isEqualTo(block1.getExecutionBlockHash());
+  }
+
+  @Test
+  void payloadStatus_shouldDefaultToPendingForKnownBlock() {
+    final StorageSystem storageSystem = initStorageSystem();
+    final SignedBlockAndState block = storageSystem.chainUpdater().addNewBestBlock();
+    final ForkChoiceStrategy strategy = getProtoArray(storageSystem);
+
+    assertThat(strategy.payloadStatus(block.getRoot()))
+        .contains(ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
+    assertThat(strategy.payloadStatus(dataStructureUtil.randomBytes32())).isEmpty();
   }
 
   @Test

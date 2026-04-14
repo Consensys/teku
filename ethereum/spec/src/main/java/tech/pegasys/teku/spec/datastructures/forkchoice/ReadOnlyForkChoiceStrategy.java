@@ -37,7 +37,9 @@ public interface ReadOnlyForkChoiceStrategy {
    * <p>This mirrors the Gloas {@code get_ancestor(...)} helper, which returns a full {@link
    * ForkChoiceNode} identity.
    */
-  Optional<ForkChoiceNode> getAncestorNode(Bytes32 blockRoot, UInt64 slot);
+  default Optional<ForkChoiceNode> getAncestorNode(final Bytes32 blockRoot, final UInt64 slot) {
+    return getAncestor(blockRoot, slot).map(ForkChoiceNode::createBase);
+  }
 
   Optional<SlotAndBlockRoot> findCommonAncestor(Bytes32 blockRoot1, Bytes32 blockRoot2);
 
