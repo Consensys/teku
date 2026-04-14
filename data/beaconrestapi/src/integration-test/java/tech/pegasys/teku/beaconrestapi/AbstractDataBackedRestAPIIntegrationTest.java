@@ -108,7 +108,6 @@ import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactory;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
-import tech.pegasys.teku.validator.coordinator.ValidatorApiHandlerGloas;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
@@ -321,65 +320,35 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected void startRestApiAtGenesisWithValidatorApiHandler(final SpecMilestone specMilestone) {
 
     setupStorage(StateStorageMode.ARCHIVE, false, specMilestone, true);
-    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
-      validatorApiHandler =
-          new ValidatorApiHandlerGloas(
-              chainDataProvider,
-              nodeDataProvider,
-              networkDataProvider,
-              storageSystem.combinedChainDataClient(),
-              syncStateProvider,
-              blockFactory,
-              attestationPool,
-              attestationManager,
-              attestationTopicSubscriber,
-              activeValidatorTracker,
-              dutyMetrics,
-              performanceTracker,
-              spec,
-              forkChoiceTrigger,
-              proposersDataManager,
-              syncCommitteeMessagePool,
-              syncCommitteeContributionPool,
-              syncCommitteeSubscriptionManager,
-              blockProductionAndPublishingFactory,
-              blockPublisher,
-              payloadAttestationPool,
-              executionPayloadManager,
-              executionPayloadFactory,
-              executionPayloadPublisher,
-              executionPayloadBidManager,
-              executionProofManager,
-              proposerPreferencesManager);
-    } else {
-      validatorApiHandler =
-          new ValidatorApiHandler(
-              chainDataProvider,
-              nodeDataProvider,
-              networkDataProvider,
-              storageSystem.combinedChainDataClient(),
-              syncStateProvider,
-              blockFactory,
-              attestationPool,
-              attestationManager,
-              attestationTopicSubscriber,
-              activeValidatorTracker,
-              dutyMetrics,
-              performanceTracker,
-              spec,
-              forkChoiceTrigger,
-              proposersDataManager,
-              syncCommitteeMessagePool,
-              syncCommitteeContributionPool,
-              syncCommitteeSubscriptionManager,
-              blockProductionAndPublishingFactory,
-              blockPublisher,
-              payloadAttestationPool,
-              executionPayloadManager,
-              executionPayloadFactory,
-              executionPayloadPublisher,
-              executionProofManager);
-    }
+    validatorApiHandler =
+        new ValidatorApiHandler(
+            chainDataProvider,
+            nodeDataProvider,
+            networkDataProvider,
+            storageSystem.combinedChainDataClient(),
+            syncStateProvider,
+            blockFactory,
+            attestationPool,
+            attestationManager,
+            attestationTopicSubscriber,
+            activeValidatorTracker,
+            dutyMetrics,
+            performanceTracker,
+            spec,
+            forkChoiceTrigger,
+            proposersDataManager,
+            syncCommitteeMessagePool,
+            syncCommitteeContributionPool,
+            syncCommitteeSubscriptionManager,
+            blockProductionAndPublishingFactory,
+            blockPublisher,
+            payloadAttestationPool,
+            executionPayloadManager,
+            executionPayloadFactory,
+            executionPayloadPublisher,
+            executionPayloadBidManager,
+            proposerPreferencesManager,
+            executionProofManager);
     validatorApiChannel = validatorApiHandler;
     chainUpdater.initializeGenesis();
     setupAndStartRestAPI();
