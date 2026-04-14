@@ -293,7 +293,13 @@ public class KvStoreDatabase implements Database {
         .flatMap(root -> dao.getBlindedExecutionPayloadEnvelope(root).stream())
         .collect(
             Collectors.toMap(
-                SignedBlindedExecutionPayloadEnvelope::getBeaconBlockRoot, Function.identity()));
+                SignedBlindedExecutionPayloadEnvelope::getBeaconBlockRoot,
+                Function.identity(),
+                (existing, duplicate) -> {
+                  throw new IllegalStateException(
+                      "Duplicate blinded execution payload envelope in DB for block root "
+                          + existing.getBeaconBlockRoot());
+                }));
   }
 
   @Override
