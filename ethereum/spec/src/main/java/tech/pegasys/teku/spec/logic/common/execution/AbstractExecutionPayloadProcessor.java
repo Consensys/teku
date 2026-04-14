@@ -53,6 +53,20 @@ public abstract class AbstractExecutionPayloadProcessor implements ExecutionPayl
     }
   }
 
+  @Override
+  public BeaconState replayValidatedExecutionPayload(
+      final SignedExecutionPayloadEnvelope signedEnvelope, final BeaconState blockState)
+      throws StateTransitionException {
+    try {
+      return blockState.updated(
+          mutableState ->
+              processUnsignedExecutionPayload(
+                  mutableState, signedEnvelope.getMessage(), Optional.empty()));
+    } catch (final ExecutionPayloadProcessingException e) {
+      throw new StateTransitionException(e);
+    }
+  }
+
   // process_execution_payload
   @Override
   public void processExecutionPayload(

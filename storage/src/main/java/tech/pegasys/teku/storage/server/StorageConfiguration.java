@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.Spec;
 
 public class StorageConfiguration {
   public static final boolean DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED = false;
+  public static final boolean DEFAULT_ROCKSDB_BLOB_DB_ENABLED = false;
   public static final int DEFAULT_STATE_REBUILD_TIMEOUT_SECONDS = 120;
   public static final long DEFAULT_STORAGE_FREQUENCY = 2048L;
   public static final int DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE = 100_000;
@@ -74,6 +75,7 @@ public class StorageConfiguration {
 
   private final int stateRebuildTimeoutSeconds;
   private final boolean forceClearDb;
+  private final boolean rocksdbBlobDbEnabled;
 
   private StorageConfiguration(
       final Eth1Address eth1DepositContract,
@@ -94,7 +96,8 @@ public class StorageConfiguration {
       final Duration statePruningInterval,
       final int statePruningLimit,
       final Spec spec,
-      final boolean forceClearDb) {
+      final boolean forceClearDb,
+      final boolean rocksdbBlobDbEnabled) {
     this.eth1DepositContract = eth1DepositContract;
     this.dataStorageMode = dataStorageMode;
     this.dataStorageFrequency = dataStorageFrequency;
@@ -114,6 +117,7 @@ public class StorageConfiguration {
     this.statePruningLimit = statePruningLimit;
     this.spec = spec;
     this.forceClearDb = forceClearDb;
+    this.rocksdbBlobDbEnabled = rocksdbBlobDbEnabled;
   }
 
   public static Builder builder() {
@@ -196,6 +200,10 @@ public class StorageConfiguration {
     return forceClearDb;
   }
 
+  public boolean isRocksdbBlobDbEnabled() {
+    return rocksdbBlobDbEnabled;
+  }
+
   public static final class Builder {
     private static final Logger LOG = LogManager.getLogger();
     private Eth1Address eth1DepositContract;
@@ -218,6 +226,7 @@ public class StorageConfiguration {
     private long retainedSlots = DEFAULT_STORAGE_RETAINED_SLOTS;
     private int statePruningLimit = DEFAULT_STATE_PRUNING_LIMIT;
     private boolean forceClearDb = false;
+    private boolean rocksdbBlobDbEnabled = DEFAULT_ROCKSDB_BLOB_DB_ENABLED;
 
     private Builder() {}
 
@@ -376,6 +385,11 @@ public class StorageConfiguration {
       return this;
     }
 
+    public Builder rocksdbBlobDbEnabled(final boolean rocksdbBlobDbEnabled) {
+      this.rocksdbBlobDbEnabled = rocksdbBlobDbEnabled;
+      return this;
+    }
+
     public StorageConfiguration build() {
       determineDataStorageMode();
       validateStatePruningConfiguration();
@@ -398,7 +412,8 @@ public class StorageConfiguration {
           statePruningInterval,
           statePruningLimit,
           spec,
-          forceClearDb);
+          forceClearDb,
+          rocksdbBlobDbEnabled);
     }
 
     private void determineDataStorageMode() {

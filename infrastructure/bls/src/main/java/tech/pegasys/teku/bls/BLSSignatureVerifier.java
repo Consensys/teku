@@ -43,7 +43,7 @@ public interface BLSSignatureVerifier {
         }
       };
 
-  BLSSignatureVerifier NO_OP =
+  BLSSignatureVerifier NOOP =
       new BLSSignatureVerifier() {
         @Override
         public boolean verify(

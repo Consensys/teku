@@ -1072,13 +1072,23 @@ public class SpecConfigBuilder {
 
   // compute_min_epochs_for_block_requests
   private Integer computeMinEpochsForBlockRequests() {
-    return minValidatorWithdrawabilityDelay + churnLimitQuotient / 2;
+    return computeMinEpochsForBlockRequests(minValidatorWithdrawabilityDelay, churnLimitQuotient);
   }
 
   // compute_attestation_subnet_prefix_bits
   private Integer computeAttestationSubnetPrefixBits() {
+    return computeAttestationSubnetPrefixBits(attestationSubnetCount, attestationSubnetExtraBits);
+  }
+
+  public static Integer computeAttestationSubnetPrefixBits(
+      final Integer attestationSubnetCount, final Integer attestationSubnetExtraBits) {
     return 32
         - Integer.numberOfLeadingZeros(attestationSubnetCount - 1)
         + attestationSubnetExtraBits;
+  }
+
+  public static Integer computeMinEpochsForBlockRequests(
+      final int minValidatorWithdrawabilityDelay, final int churnLimitQuotient) {
+    return minValidatorWithdrawabilityDelay + churnLimitQuotient / 2;
   }
 }

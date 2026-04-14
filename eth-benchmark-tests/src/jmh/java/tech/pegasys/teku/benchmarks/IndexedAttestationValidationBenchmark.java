@@ -65,7 +65,7 @@ public class IndexedAttestationValidationBenchmark {
             .sszDeserialize(Bytes.of(indexedAttestationBytes));
 
     fork = spec.getForkSchedule().getFork(spec.computeEpochAtSlot(beaconState.getSlot()));
-    asyncBLSSignatureVerifier = AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.NO_OP);
+    asyncBLSSignatureVerifier = AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.NOOP);
   }
 
   @Benchmark

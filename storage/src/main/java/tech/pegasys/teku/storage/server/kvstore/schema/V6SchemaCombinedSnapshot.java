@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
@@ -43,6 +44,8 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
 
   private final KvStoreColumn<Bytes32, UInt64> slotsByFinalizedRoot;
   private final KvStoreColumn<UInt64, SignedBeaconBlock> finalizedBlocksBySlot;
+  private final KvStoreColumn<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+      blindedExecutionPayloadEnvelopesByRoot;
   private final KvStoreColumn<Bytes32, SignedBeaconBlock> nonCanonicalBlocksByRoot;
   private final KvStoreColumn<Bytes32, UInt64> slotsByFinalizedStateRoot;
   private final KvStoreColumn<UInt64, Set<Bytes32>> nonCanonicalBlockRootsBySlot;
@@ -65,10 +68,14 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
         KvStoreColumn.create(
             finalizedOffset + 2,
             UINT64_SERIALIZER,
-            KvStoreSerializer.createSignedBlockSerializer(spec));
+            KvStoreSerializer.createSignedBlockSerializer(spec),
+            true);
     finalizedStatesBySlot =
         KvStoreColumn.create(
-            finalizedOffset + 3, UINT64_SERIALIZER, KvStoreSerializer.createStateSerializer(spec));
+            finalizedOffset + 3,
+            UINT64_SERIALIZER,
+            KvStoreSerializer.createStateSerializer(spec),
+            true);
     slotsByFinalizedStateRoot =
         KvStoreColumn.create(finalizedOffset + 4, BYTES32_SERIALIZER, UINT64_SERIALIZER);
     nonCanonicalBlocksByRoot =
@@ -82,7 +89,8 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
         KvStoreColumn.create(
             finalizedOffset + 12,
             SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX_KEY_SERIALIZER,
-            BYTES_SERIALIZER);
+            BYTES_SERIALIZER,
+            true);
 
     nonCanonicalBlobSidecarBySlotRootBlobIndex =
         KvStoreColumn.create(
@@ -92,7 +100,10 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
 
     sidecarByColumnSlotAndIdentifier =
         KvStoreColumn.create(
-            finalizedOffset + 14, COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER, BYTES_SERIALIZER);
+            finalizedOffset + 14,
+            COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER,
+            BYTES_SERIALIZER,
+            true);
 
     nonCanonicalSidecarByColumnSlotAndIdentifier =
         KvStoreColumn.create(
@@ -100,7 +111,13 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
 
     dataColumnSidecarsProofsBySlot =
         KvStoreColumn.create(
-            finalizedOffset + 17, UINT64_SERIALIZER, DATA_COLUMN_SIDECARS_PROOFS_SERIALIZER);
+            finalizedOffset + 17, UINT64_SERIALIZER, DATA_COLUMN_SIDECARS_PROOFS_SERIALIZER, true);
+
+    blindedExecutionPayloadEnvelopesByRoot =
+        KvStoreColumn.create(
+            finalizedOffset + 18,
+            BYTES32_SERIALIZER,
+            KvStoreSerializer.createSignedBlindedExecutionPayloadEnvelopeSerializer(spec));
 
     deletedColumnIds =
         List.of(
@@ -133,6 +150,12 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
   @Override
   public KvStoreColumn<UInt64, SignedBeaconBlock> getColumnFinalizedBlocksBySlot() {
     return finalizedBlocksBySlot;
+  }
+
+  @Override
+  public KvStoreColumn<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+      getColumnBlindedExecutionPayloadEnvelopesByRoot() {
+    return blindedExecutionPayloadEnvelopesByRoot;
   }
 
   @Override
@@ -191,6 +214,9 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
         .put("HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT", getColumnHotBlockCheckpointEpochsByRoot())
         .put("SLOTS_BY_FINALIZED_ROOT", getColumnSlotsByFinalizedRoot())
         .put("FINALIZED_BLOCKS_BY_SLOT", getColumnFinalizedBlocksBySlot())
+        .put(
+            "BLINDED_EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT",
+            getColumnBlindedExecutionPayloadEnvelopesByRoot())
         .put("FINALIZED_STATES_BY_SLOT", getColumnFinalizedStatesBySlot())
         .put("SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot())
         .put("NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot())

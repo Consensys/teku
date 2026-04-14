@@ -209,7 +209,6 @@ public class FuluBuilder extends BaseForkBuilder
     constants.put("fieldElementsPerExtBlob", fieldElementsPerExtBlob);
     constants.put("kzgCommitmentsInclusionProofDepth", kzgCommitmentsInclusionProofDepth);
     constants.put("minEpochsForDataColumnSidecarsRequests", minEpochsForDataColumnSidecarsRequests);
-    constants.put("maxRequestDataColumnSidecars", maxRequestDataColumnSidecars);
     constants.put("balancePerAdditionalCustodyGroup", balancePerAdditionalCustodyGroup);
 
     return constants;

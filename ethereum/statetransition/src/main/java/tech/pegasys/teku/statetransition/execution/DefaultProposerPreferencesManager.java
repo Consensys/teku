@@ -13,23 +13,27 @@
 
 package tech.pegasys.teku.statetransition.execution;
 
+import static tech.pegasys.teku.spec.config.Constants.MAX_SLOTS_TO_TRACK_PROPOSER_PREFERENCES;
+
 import java.util.Map;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
+import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ProposerPreferencesGossipValidator;
 
 public class DefaultProposerPreferencesManager implements ProposerPreferencesManager {
 
-  private static final int MAX_SLOTS_TO_TRACK = 64;
-
   private final ProposerPreferencesGossipValidator proposerPreferencesGossipValidator;
   private final Map<UInt64, ProposerPreferences> acceptedProposerPreferences =
-      LimitedMap.createSynchronizedLRU(MAX_SLOTS_TO_TRACK);
+      LimitedMap.createSynchronizedLRU(MAX_SLOTS_TO_TRACK_PROPOSER_PREFERENCES);
+  private final Subscribers<OperationAddedSubscriber<SignedProposerPreferences>> subscribers =
+      Subscribers.create(true);
 
   public DefaultProposerPreferencesManager(
       final ProposerPreferencesGossipValidator proposerPreferencesGossipValidator) {
@@ -37,8 +41,30 @@ public class DefaultProposerPreferencesManager implements ProposerPreferencesMan
   }
 
   @Override
-  public SafeFuture<InternalValidationResult> validateAndAddProposerPreferences(
+  public SafeFuture<InternalValidationResult> addLocal(
       final SignedProposerPreferences signedProposerPreferences) {
+    return validateAndAdd(signedProposerPreferences, false);
+  }
+
+  @Override
+  public SafeFuture<InternalValidationResult> addRemote(
+      final SignedProposerPreferences signedProposerPreferences) {
+    return validateAndAdd(signedProposerPreferences, true);
+  }
+
+  @Override
+  public Optional<ProposerPreferences> getProposerPreferences(final UInt64 slot) {
+    return Optional.ofNullable(acceptedProposerPreferences.get(slot));
+  }
+
+  @Override
+  public void subscribeOperationAdded(
+      final OperationAddedSubscriber<SignedProposerPreferences> subscriber) {
+    subscribers.subscribe(subscriber);
+  }
+
+  private SafeFuture<InternalValidationResult> validateAndAdd(
+      final SignedProposerPreferences signedProposerPreferences, final boolean fromNetwork) {
     return proposerPreferencesGossipValidator
         .validate(signedProposerPreferences)
         .thenApply(
@@ -47,13 +73,12 @@ public class DefaultProposerPreferencesManager implements ProposerPreferencesMan
                 acceptedProposerPreferences.put(
                     signedProposerPreferences.getMessage().getProposalSlot(),
                     signedProposerPreferences.getMessage());
+                subscribers.forEach(
+                    subscriber ->
+                        subscriber.onOperationAdded(
+                            signedProposerPreferences, result, fromNetwork));
               }
               return result;
             });
-  }
-
-  @Override
-  public Optional<ProposerPreferences> getProposerPreferences(final UInt64 slot) {
-    return Optional.ofNullable(acceptedProposerPreferences.get(slot));
   }
 }

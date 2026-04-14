@@ -88,6 +88,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -359,7 +360,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       return SafeFuture.failedFuture(
           new IllegalArgumentException(
               String.format(
-                  "Ptc duties were requested %s epochs ahead, only 1 epoch in future is supported.",
+                  "Ptc duties were requested %s epochs ahead, PTC committee selection is only stable "
+                      + "within the context of the current and next epochs in the lookahead.",
                   epoch.minus(combinedChainDataClient.getCurrentEpoch()).toString())));
     }
     final UInt64 slot = spec.computeStartSlotAtEpoch(epoch.minusMinZero(1));
@@ -932,6 +934,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     return SafeFuture.collectAll(
             payloadAttestationMessages.stream().map(payloadAttestationPool::addLocal))
         .thenApply(this::convertAttestationProcessingResultsToErrorList);
+  }
+
+  @Override
+  public SafeFuture<Void> sendSignedProposerPreferences(
+      final List<SignedProposerPreferences> signedProposerPreferences) {
+    return SafeFuture.COMPLETE;
   }
 
   @Override

@@ -159,7 +159,7 @@ public class BlockManagerTest {
 
     setupWithSpec(
         TestSpecFactory.createMinimalDeneb(
-            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP)));
+            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP)));
   }
 
   private void setupWithSpec(final Spec spec) {
@@ -836,8 +836,7 @@ public class BlockManagerTest {
     // If we start genesis with Deneb, 0 will be earliestBlobSidecarSlot, so started on epoch 1
     setupWithSpec(
         TestSpecFactory.createMinimalWithDenebForkEpoch(
-            UInt64.valueOf(1),
-            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP)));
+            UInt64.valueOf(1), builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP)));
     final UInt64 slotsPerEpoch = UInt64.valueOf(spec.slotsPerEpoch(UInt64.ZERO));
     incrementSlotTo(slotsPerEpoch);
 
@@ -939,8 +938,7 @@ public class BlockManagerTest {
   void onDeneb_shouldStoreEarliestBlobSidecarSlotCorrectlyWhenThereIsGap() {
     setupWithSpec(
         TestSpecFactory.createMinimalWithDenebForkEpoch(
-            UInt64.valueOf(1),
-            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP)));
+            UInt64.valueOf(1), builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP)));
     final UInt64 slotsPerEpoch = UInt64.valueOf(spec.slotsPerEpoch(UInt64.ZERO));
 
     currentSlot = currentSlot.plus(slotsPerEpoch.plus(2));
@@ -971,8 +969,7 @@ public class BlockManagerTest {
     // If we start genesis with Deneb, 0 will be earliestBlobSidecarSlot, so started on epoch 1
     setupWithSpec(
         TestSpecFactory.createMinimalWithDenebForkEpoch(
-            UInt64.valueOf(1),
-            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP)));
+            UInt64.valueOf(1), builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP)));
     final UInt64 slotsPerEpoch = UInt64.valueOf(spec.slotsPerEpoch(UInt64.ZERO));
     incrementSlotTo(slotsPerEpoch);
 
@@ -1005,8 +1002,7 @@ public class BlockManagerTest {
     // If we start genesis with Deneb, 0 will be earliestBlobSidecarSlot, so started on epoch 1
     setupWithSpec(
         TestSpecFactory.createMinimalWithDenebForkEpoch(
-            UInt64.valueOf(1),
-            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP)));
+            UInt64.valueOf(1), builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP)));
     final UInt64 slotsPerEpoch = UInt64.valueOf(spec.slotsPerEpoch(UInt64.ZERO));
     incrementSlotTo(slotsPerEpoch);
 

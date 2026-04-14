@@ -74,8 +74,7 @@ class SyncCommitteeProductionDutyTest {
   @Test
   void shouldReturnNoOpWhenNoValidatorsAssigned() {
     final SyncCommitteeProductionDuty duties = createDuty();
-    assertThat(duties.produceMessages(UInt64.ONE, blockRoot))
-        .isCompletedWithValue(DutyResult.NO_OP);
+    assertThat(duties.produceMessages(UInt64.ONE, blockRoot)).isCompletedWithValue(DutyResult.NOOP);
     verifyNoInteractions(validatorApiChannel);
   }
 

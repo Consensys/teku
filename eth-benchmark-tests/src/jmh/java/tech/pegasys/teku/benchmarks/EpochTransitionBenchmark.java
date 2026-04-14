@@ -101,8 +101,7 @@ public class EpochTransitionBenchmark {
 
     spec =
         TestSpecFactory.createMainnetAltair(
-            specConfigBuilder ->
-                specConfigBuilder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+            specConfigBuilder -> specConfigBuilder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
     asyncRunner = DelayedExecutorAsyncRunner.create();
     String blocksFile =
         "/blocks/blocks_epoch_"

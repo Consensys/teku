@@ -39,7 +39,7 @@ class ForkChoicePayloadExecutorGloasTest {
 
   private final Spec spec =
       TestSpecFactory.createMinimalGloas(
-          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SafeFuture<PayloadStatus> executionResult = new SafeFuture<>();
   private final ExecutionLayerChannel executionLayer = mock(ExecutionLayerChannel.class);

@@ -59,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -118,6 +119,7 @@ public class KvStoreDatabase implements Database {
   }
 
   public static Database createV4(
+      final MetricsSystem metricsSystem,
       final KvStoreAccessor hotDb,
       final KvStoreAccessor finalizedDb,
       final SchemaHotAdapter schemaHot,
@@ -133,7 +135,8 @@ public class KvStoreDatabase implements Database {
     final KvStoreCombinedDaoAdapter dao =
         new KvStoreCombinedDaoAdapter(
             hotDao,
-            new V4FinalizedKvStoreDao(finalizedDb, schemaFinalized, finalizedStateStorageLogic));
+            new V4FinalizedKvStoreDao(
+                metricsSystem, finalizedDb, schemaFinalized, finalizedStateStorageLogic));
     return new KvStoreDatabase(dao, stateStorageMode, storeNonCanonicalBlocks, spec);
   }
 
@@ -143,12 +146,19 @@ public class KvStoreDatabase implements Database {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
-      final Spec spec) {
+      final Spec spec,
+      final MetricsSystem metricsSystem) {
     final V4FinalizedStateSnapshotStorageLogic<SchemaCombinedSnapshotState>
         finalizedStateStorageLogic =
             new V4FinalizedStateSnapshotStorageLogic<>(stateStorageFrequency);
     return create(
-        db, schema, stateStorageMode, storeNonCanonicalBlocks, spec, finalizedStateStorageLogic);
+        db,
+        schema,
+        stateStorageMode,
+        storeNonCanonicalBlocks,
+        spec,
+        finalizedStateStorageLogic,
+        metricsSystem);
   }
 
   public static Database createWithStateTree(
@@ -162,7 +172,13 @@ public class KvStoreDatabase implements Database {
     final V4FinalizedStateStorageLogic<SchemaCombinedTreeState> finalizedStateStorageLogic =
         new V4FinalizedStateTreeStorageLogic(metricsSystem, spec, maxKnownNodeCacheSize);
     return create(
-        db, schema, stateStorageMode, storeNonCanonicalBlocks, spec, finalizedStateStorageLogic);
+        db,
+        schema,
+        stateStorageMode,
+        storeNonCanonicalBlocks,
+        spec,
+        finalizedStateStorageLogic,
+        metricsSystem);
   }
 
   private static <S extends SchemaCombined> KvStoreDatabase create(
@@ -171,9 +187,10 @@ public class KvStoreDatabase implements Database {
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final Spec spec,
-      final V4FinalizedStateStorageLogic<S> finalizedStateStorageLogic) {
+      final V4FinalizedStateStorageLogic<S> finalizedStateStorageLogic,
+      final MetricsSystem metricsSystem) {
     final CombinedKvStoreDao<S> dao =
-        new CombinedKvStoreDao<>(db, schema, finalizedStateStorageLogic);
+        new CombinedKvStoreDao<>(db, schema, finalizedStateStorageLogic, metricsSystem);
     return new KvStoreDatabase(dao, stateStorageMode, storeNonCanonicalBlocks, spec);
   }
 
@@ -261,6 +278,12 @@ public class KvStoreDatabase implements Database {
   @Override
   public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 blockRoot) {
     return dao.getHotBlock(blockRoot);
+  }
+
+  @Override
+  public Optional<SignedBlindedExecutionPayloadEnvelope> getBlindedExecutionPayloadEnvelope(
+      final Bytes32 blockRoot) {
+    return dao.getBlindedExecutionPayloadEnvelope(blockRoot);
   }
 
   @Override
@@ -1288,6 +1311,15 @@ public class KvStoreDatabase implements Database {
             update.isFinalizedOptimisticTransitionBlockRootSet(),
             update.getOptimisticTransitionBlockRoot());
 
+    if (update.isExecutionPayloadEnvelopesEnabled()) {
+      final Set<Bytes32> nonCanonicalPrunedRoots =
+          update.getDeletedHotBlocks().keySet().stream()
+              .filter(root -> !update.getFinalizedChildToParentMap().containsKey(root))
+              .collect(Collectors.toSet());
+      updateBlindedExecutionPayloadEnvelopes(
+          update.getBlindedExecutionPayloadEnvelopesByBlockRoot(), nonCanonicalPrunedRoots);
+    }
+
     if (update.isBlobSidecarsEnabled()) {
       removeNonCanonicalBlobSidecars(
           update.getDeletedHotBlocks(), update.getFinalizedChildToParentMap());
@@ -1621,6 +1653,21 @@ public class KvStoreDatabase implements Database {
     }
 
     return Optional.empty();
+  }
+
+  private void updateBlindedExecutionPayloadEnvelopes(
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+          blindedExecutionPayloadEnvelopesByBlockRoot,
+      final Set<Bytes32> prunedBlockRoots) {
+    if (blindedExecutionPayloadEnvelopesByBlockRoot.isEmpty() && prunedBlockRoots.isEmpty()) {
+      return;
+    }
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      blindedExecutionPayloadEnvelopesByBlockRoot.forEach(
+          updater::addBlindedExecutionPayloadEnvelope);
+      prunedBlockRoots.forEach(updater::deleteBlindedExecutionPayloadEnvelope);
+      updater.commit();
+    }
   }
 
   private BeaconBlockSummary getLatestFinalizedBlockOrSummary() {

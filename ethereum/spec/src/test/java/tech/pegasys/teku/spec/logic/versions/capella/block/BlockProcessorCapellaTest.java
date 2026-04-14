@@ -145,7 +145,7 @@ public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
 
     final BlockValidationResult validationResult =
         capellaBlockProcessor.verifyBlsToExecutionChangesPreProcessing(
-            state, blsToExecutionChangesListWithDuplicate, BLSSignatureVerifier.NO_OP);
+            state, blsToExecutionChangesListWithDuplicate, BLSSignatureVerifier.NOOP);
     assertThat(validationResult.isValid()).isFalse();
     assertThat(validationResult.getFailureReason())
         .contains("does not match withdrawal credentials");
@@ -192,7 +192,7 @@ public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
 
     final BlockValidationResult validationResult =
         capellaBlockProcessor.verifyBlsToExecutionChangesPreProcessing(
-            state, blsToExecutionChangesListWithDuplicate, BLSSignatureVerifier.NO_OP);
+            state, blsToExecutionChangesListWithDuplicate, BLSSignatureVerifier.NOOP);
     assertThat(validationResult.isValid()).isTrue();
   }
 
@@ -218,7 +218,7 @@ public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
 
     final BlockValidationResult validationResult =
         capellaBlockProcessor.verifyBlsToExecutionChangesPreProcessing(
-            state, blsToExecutionChangesListWithDuplicate, BLSSignatureVerifier.NO_OP);
+            state, blsToExecutionChangesListWithDuplicate, BLSSignatureVerifier.NOOP);
 
     assertThat(validationResult.isValid()).isFalse();
     assertThat(validationResult.getFailureReason())

@@ -84,7 +84,7 @@ public class PayloadAttestationProductionDuty implements Duty {
     LOG.trace("Creating payload attestations at slot {}", slot);
 
     if (validators.isEmpty()) {
-      return SafeFuture.completedFuture(DutyResult.NO_OP);
+      return SafeFuture.completedFuture(DutyResult.NOOP);
     }
 
     return forkProvider

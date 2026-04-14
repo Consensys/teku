@@ -16,14 +16,17 @@ package tech.pegasys.teku.dataproviders.generators;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.collect.Lists;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -38,6 +41,7 @@ class AsyncChainStateGenerator {
   private final Spec spec;
   private final HashTree blockTree;
   private final BlockProvider blockProvider;
+  private final ExecutionPayloadProvider executionPayloadProvider;
   private final StateProvider stateProvider;
   private final int blockBatchSize;
 
@@ -45,11 +49,13 @@ class AsyncChainStateGenerator {
       final Spec spec,
       final HashTree blockTree,
       final BlockProvider blockProvider,
+      final ExecutionPayloadProvider executionPayloadProvider,
       final StateProvider stateProvider,
       final int blockBatchSize) {
     this.spec = spec;
     this.blockTree = blockTree;
     this.blockProvider = blockProvider;
+    this.executionPayloadProvider = executionPayloadProvider;
     this.stateProvider = stateProvider;
     this.blockBatchSize = blockBatchSize;
   }
@@ -58,9 +64,15 @@ class AsyncChainStateGenerator {
       final Spec spec,
       final HashTree blockTree,
       final BlockProvider blockProvider,
+      final ExecutionPayloadProvider executionPayloadProvider,
       final StateProvider stateProvider) {
     return new AsyncChainStateGenerator(
-        spec, blockTree, blockProvider, stateProvider, DEFAULT_BLOCK_BATCH_SIZE);
+        spec,
+        blockTree,
+        blockProvider,
+        executionPayloadProvider,
+        stateProvider,
+        DEFAULT_BLOCK_BATCH_SIZE);
   }
 
   public SafeFuture<StateAndBlockSummary> generateTargetState(final Bytes32 targetRoot) {
@@ -148,10 +160,12 @@ class AsyncChainStateGenerator {
       final List<Bytes32> blockRoots, final BeaconState startState, final StateHandler handler) {
     checkArgument(startState != null, "Must provide start state");
     LOG.debug("Retrieve and process {} blocks", blockRoots.size());
+    final Set<Bytes32> blockRootSet = new HashSet<>(blockRoots);
     return blockProvider
         .getBlocks(blockRoots)
-        .thenApply(
-            blocks -> {
+        .thenCombine(
+            executionPayloadProvider.getExecutionPayloads(blockRootSet),
+            (blocks, executionPayloads) -> {
               final List<SignedBeaconBlock> chainBlocks =
                   blockRoots.stream().map(blocks::get).filter(Objects::nonNull).toList();
               if (chainBlocks.size() < blockRoots.size()) {
@@ -168,7 +182,8 @@ class AsyncChainStateGenerator {
               }
 
               final ChainStateGenerator chainStateGenerator =
-                  ChainStateGenerator.create(spec, chainBlocks, startState, true);
+                  ChainStateGenerator.create(
+                      spec, chainBlocks, startState, executionPayloads, true);
               final AtomicReference<BeaconState> lastState = new AtomicReference<>(null);
               chainStateGenerator.generateStates(
                   stateAndBlock -> {

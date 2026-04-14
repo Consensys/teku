@@ -107,8 +107,7 @@ public class OkHttpHttpExecutionEngineClientTest {
             "http://localhost:" + mockWebServer.getPort(),
             EVENT_LOG,
             timeProvider,
-            executionClientEventsPublisher,
-            OkHttpExecutionEngineClient.NON_CRITICAL_METHODS);
+            executionClientEventsPublisher);
   }
 
   @AfterEach

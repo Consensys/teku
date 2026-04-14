@@ -61,6 +61,7 @@ public class LevelDbDatabaseFactory {
             schemaFinalized.getAllVariables(),
             schemaFinalized.getDeletedVariableIds());
     return KvStoreDatabase.createV4(
+        metricsSystem,
         hotDb,
         finalizedDb,
         schemaHot,
@@ -90,7 +91,13 @@ public class LevelDbDatabaseFactory {
             schema.getDeletedVariableIds());
 
     return KvStoreDatabase.createWithStateSnapshots(
-        db, schema, stateStorageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
+        db,
+        schema,
+        stateStorageMode,
+        stateStorageFrequency,
+        storeNonCanonicalBlocks,
+        spec,
+        metricsSystem);
   }
 
   public static Database createLevelDbTree(

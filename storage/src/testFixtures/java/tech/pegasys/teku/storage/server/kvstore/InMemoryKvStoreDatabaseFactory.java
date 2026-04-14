@@ -35,6 +35,7 @@ public class InMemoryKvStoreDatabaseFactory {
     final SchemaHotAdapter schemaHot = combinedSchema.asSchemaHot();
     final SchemaFinalizedSnapshotStateAdapter schemaFinalized = combinedSchema.asSchemaFinalized();
     return KvStoreDatabase.createV4(
+        new StubMetricsSystem(),
         hotDb,
         coldDb,
         schemaHot,
@@ -53,7 +54,13 @@ public class InMemoryKvStoreDatabaseFactory {
       final Spec spec) {
     final V6SchemaCombinedSnapshot combinedSchema = V6SchemaCombinedSnapshot.createV6(spec);
     return KvStoreDatabase.createWithStateSnapshots(
-        db, combinedSchema, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
+        db,
+        combinedSchema,
+        storageMode,
+        stateStorageFrequency,
+        storeNonCanonicalBlocks,
+        spec,
+        new StubMetricsSystem());
   }
 
   public static Database createTree(

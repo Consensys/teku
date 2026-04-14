@@ -65,7 +65,7 @@ public class DataColumnSidecarGossipValidatorFuluTest
   @BeforeEach
   protected void setupForkSpecific() {
     final Spec spec =
-        createSpec(builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+        createSpec(builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
     this.dataStructureUtil = new DataStructureUtil(spec);
 
     this.dataColumnSidecarGossipValidator =

@@ -67,6 +67,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final Eth1Address eth1Address;
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
+  private final boolean rocksdbBlobDbEnabled;
   private final SyncDataAccessor dbSettingFileSyncDataAccessor;
   private final Optional<Eth2Network> maybeNetwork;
 
@@ -85,6 +86,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this.stateStorageFrequency = config.getDataStorageFrequency();
     this.eth1Address = config.getEth1DepositContract();
     this.storeNonCanonicalBlocks = config.isStoreNonCanonicalBlocksEnabled();
+    this.rocksdbBlobDbEnabled = config.isRocksdbBlobDbEnabled();
     this.spec = config.getSpec();
 
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
@@ -194,8 +196,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           maybeNetwork);
       return RocksDbDatabaseFactory.createV4(
           metricsSystem,
-          KvStoreConfiguration.v4Settings(dbDirectory.toPath()),
-          KvStoreConfiguration.v4Settings(v5ArchiveDirectory.toPath()),
+          KvStoreConfiguration.v4Settings(dbDirectory.toPath())
+              .withBlobDbEnabled(rocksdbBlobDbEnabled),
+          KvStoreConfiguration.v4Settings(v5ArchiveDirectory.toPath())
+              .withBlobDbEnabled(rocksdbBlobDbEnabled),
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
@@ -222,8 +226,14 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           maybeNetwork);
       return RocksDbDatabaseFactory.createV4(
           metricsSystem,
-          metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
-          metaData.getArchiveDbConfiguration().withDatabaseDir(v5ArchiveDirectory.toPath()),
+          metaData
+              .getHotDbConfiguration()
+              .withDatabaseDir(dbDirectory.toPath())
+              .withBlobDbEnabled(rocksdbBlobDbEnabled),
+          metaData
+              .getArchiveDbConfiguration()
+              .withDatabaseDir(v5ArchiveDirectory.toPath())
+              .withBlobDbEnabled(rocksdbBlobDbEnabled),
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
@@ -323,7 +333,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         spec.getGenesisSpecConfig().getDepositChainId(),
         maybeNetwork);
 
-    return metaData.getSingleDbConfiguration().getConfiguration();
+    return metaData
+        .getSingleDbConfiguration()
+        .getConfiguration()
+        .withBlobDbEnabled(rocksdbBlobDbEnabled);
   }
 
   private File getMetadataFile() {

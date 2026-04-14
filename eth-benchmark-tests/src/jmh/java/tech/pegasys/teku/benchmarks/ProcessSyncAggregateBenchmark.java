@@ -62,7 +62,7 @@ public class ProcessSyncAggregateBenchmark {
   public void init() throws Exception {
     spec =
         TestSpecFactory.createMainnetAltair(
-            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
 
     final List<BLSKeyPair> validatorKeys = KeyFileGenerator.readValidatorKeys(validatorsCount);
 
@@ -110,6 +110,6 @@ public class ProcessSyncAggregateBenchmark {
   public void processSyncAggregate() throws Exception {
     final BlockProcessor blockProcessor = spec.getGenesisSpec().getBlockProcessor();
     blockProcessor.processSyncAggregate(
-        state.createWritableCopy(), syncAggregates.next(), BLSSignatureVerifier.NO_OP);
+        state.createWritableCopy(), syncAggregates.next(), BLSSignatureVerifier.NOOP);
   }
 }

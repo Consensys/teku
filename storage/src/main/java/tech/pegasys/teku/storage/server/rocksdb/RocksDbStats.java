@@ -29,6 +29,7 @@ import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.Statistics;
 import org.rocksdb.TickerType;
+import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 
 /**
  * Taken from
@@ -121,6 +122,22 @@ public class RocksDbStats implements AutoCloseable {
     TickerType.NUMBER_RATE_LIMITER_DRAINS,
     TickerType.NUMBER_ITER_SKIP,
     TickerType.NUMBER_MULTIGET_KEYS_FOUND,
+    // Blob DB metrics for measuring blobdb performance improvements
+    TickerType.BLOB_DB_NUM_PUT,
+    TickerType.BLOB_DB_NUM_GET,
+    TickerType.BLOB_DB_BYTES_WRITTEN,
+    TickerType.BLOB_DB_BYTES_READ,
+    TickerType.BLOB_DB_BLOB_FILE_BYTES_READ,
+    TickerType.BLOB_DB_BLOB_FILE_BYTES_WRITTEN,
+    TickerType.BLOB_DB_GC_NUM_FILES,
+    TickerType.BLOB_DB_GC_NUM_NEW_FILES,
+    TickerType.BLOB_DB_GC_NUM_KEYS_RELOCATED,
+    TickerType.BLOB_DB_GC_BYTES_RELOCATED,
+    TickerType.BLOB_DB_CACHE_MISS,
+    TickerType.BLOB_DB_CACHE_HIT,
+    TickerType.BLOB_DB_CACHE_ADD,
+    TickerType.BLOB_DB_CACHE_BYTES_READ,
+    TickerType.BLOB_DB_CACHE_BYTES_WRITE,
   };
 
   // Histograms - treated as prometheus summaries
@@ -155,11 +172,16 @@ public class RocksDbStats implements AutoCloseable {
   private final Statistics stats;
   private final MetricsSystem metricsSystem;
   private final MetricCategory category;
+  private final KvStoreConfiguration configuration;
 
-  public RocksDbStats(final MetricsSystem metricsSystem, final MetricCategory category) {
+  public RocksDbStats(
+      final MetricsSystem metricsSystem,
+      final MetricCategory category,
+      final KvStoreConfiguration configuration) {
     this.stats = new Statistics();
     this.metricsSystem = metricsSystem;
     this.category = category;
+    this.configuration = configuration;
   }
 
   public Statistics getStats() {
@@ -177,6 +199,25 @@ public class RocksDbStats implements AutoCloseable {
         "current_size_all_mem_tables",
         "Current size of all RocksDB mem tables combined",
         () -> getLongProperty(database, "rocksdb.cur-size-all-mem-tables"));
+
+    // Blob DB size metrics for measuring space savings
+    if (configuration.blobDbEnabled()) {
+      metricsSystem.createLongGauge(
+          category,
+          "total_blob_file_size",
+          "Total size of all blob files in bytes",
+          () -> getLongProperty(database, "rocksdb.total-blob-file-size"));
+      metricsSystem.createLongGauge(
+          category,
+          "live_blob_file_size",
+          "Size of live blob files in bytes (excluding garbage)",
+          () -> getLongProperty(database, "rocksdb.live-blob-file-size"));
+      metricsSystem.createLongGauge(
+          category,
+          "num_blob_files",
+          "Number of blob files",
+          () -> getLongProperty(database, "rocksdb.num-blob-files"));
+    }
 
     for (final TickerType ticker : TICKERS) {
       final String promCounterName = ticker.name().toLowerCase(Locale.ROOT);

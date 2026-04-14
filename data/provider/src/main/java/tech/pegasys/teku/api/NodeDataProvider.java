@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -139,18 +141,17 @@ public class NodeDataProvider {
 
   private ObjectAndMetaData<List<Attestation>> lookupMetaData(
       final List<Attestation> attestations, final Optional<UInt64> maybeSlot) {
-    final UInt64 slot = getSlot(attestations, maybeSlot);
+    final UInt64 slot =
+        getSlot(attestations, attestation -> attestation.getData().getSlot(), maybeSlot);
     return new ObjectAndMetaData<>(
         attestations, spec.atSlot(slot).getMilestone(), false, false, false);
   }
 
-  private UInt64 getSlot(final List<Attestation> attestations, final Optional<UInt64> maybeSlot) {
-    return maybeSlot.orElseGet(
-        () ->
-            attestations.stream()
-                .findFirst()
-                .map(attestation -> attestation.getData().getSlot())
-                .orElseGet(() -> recentChainData.getCurrentSlot().orElse(UInt64.ZERO)));
+  private <T> UInt64 getSlot(
+      final List<T> items, final Function<T, UInt64> itemToSlot, final Optional<UInt64> maybeSlot) {
+    return maybeSlot
+        .or(() -> items.stream().findFirst().map(itemToSlot))
+        .orElseGet(() -> recentChainData.getCurrentSlot().orElse(UInt64.ZERO));
   }
 
   public List<AttesterSlashing> getAttesterSlashings() {
@@ -159,16 +160,13 @@ public class NodeDataProvider {
 
   public ObjectAndMetaData<List<AttesterSlashing>> getAttesterSlashingsAndMetaData() {
     final List<AttesterSlashing> attesterSlashings = new ArrayList<>(attesterSlashingPool.getAll());
-    final UInt64 slot = getSlot(attesterSlashings);
+    final UInt64 slot =
+        getSlot(
+            attesterSlashings,
+            attesterSlashing -> attesterSlashing.getAttestation1().getData().getSlot(),
+            Optional.empty());
     return new ObjectAndMetaData<>(
         attesterSlashings, spec.atSlot(slot).getMilestone(), false, false, false);
-  }
-
-  private UInt64 getSlot(final List<AttesterSlashing> attesterSlashings) {
-    return attesterSlashings.stream()
-        .findFirst()
-        .map(attesterSlashing -> attesterSlashing.getAttestation1().getData().getSlot())
-        .orElseGet(() -> recentChainData.getCurrentSlot().orElse(UInt64.ZERO));
   }
 
   public List<ProposerSlashing> getProposerSlashings() {
@@ -177,6 +175,33 @@ public class NodeDataProvider {
 
   public List<SignedVoluntaryExit> getVoluntaryExits() {
     return new ArrayList<>(voluntaryExitPool.getAll());
+  }
+
+  public ObjectAndMetaData<List<PayloadAttestation>> getPayloadAttestationsAndMetaData(
+      final Optional<UInt64> maybeSlot) {
+    final List<PayloadAttestation> payloadAttestations =
+        recentChainData
+            .getBestState()
+            .map(SafeFuture::join)
+            .map(payloadAttestationPool::getPayloadAttestations)
+            .orElse(List.of());
+    final List<PayloadAttestation> filteredPayloadAttestations =
+        maybeSlot
+            .map(
+                slot ->
+                    payloadAttestations.stream()
+                        .filter(
+                            payloadAttestation ->
+                                payloadAttestation.getData().getSlot().equals(slot))
+                        .toList())
+            .orElse(payloadAttestations);
+    final UInt64 slot =
+        getSlot(
+            filteredPayloadAttestations,
+            payloadAttestation -> payloadAttestation.getData().getSlot(),
+            maybeSlot);
+    return new ObjectAndMetaData<>(
+        filteredPayloadAttestations, spec.atSlot(slot).getMilestone(), false, false, false);
   }
 
   public SafeFuture<InternalValidationResult> postVoluntaryExit(final SignedVoluntaryExit exit) {

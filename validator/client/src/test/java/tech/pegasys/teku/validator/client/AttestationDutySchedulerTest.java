@@ -85,9 +85,9 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
                 Optional.of(
                     new AttesterDuties(false, dataStructureUtil.randomBytes32(), emptyList()))));
     when(scheduledDuties.performProductionDuty(any()))
-        .thenReturn(SafeFuture.completedFuture(DutyResult.NO_OP));
+        .thenReturn(SafeFuture.completedFuture(DutyResult.NOOP));
     when(scheduledDuties.performAggregationDuty(any()))
-        .thenReturn(SafeFuture.completedFuture(DutyResult.NO_OP));
+        .thenReturn(SafeFuture.completedFuture(DutyResult.NOOP));
   }
 
   @Test

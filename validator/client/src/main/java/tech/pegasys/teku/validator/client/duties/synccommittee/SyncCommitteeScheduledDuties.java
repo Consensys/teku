@@ -84,7 +84,7 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
     LOG.trace(
         "Performing sync committee duties at slot {}, {} assignments", slot, assignments.size());
     if (assignments.isEmpty()) {
-      return SafeFuture.completedFuture(DutyResult.NO_OP);
+      return SafeFuture.completedFuture(DutyResult.NOOP);
     }
     try {
       lastSignatureBlockRoot = chainHeadTracker.getCurrentChainHead(slot);
@@ -115,13 +115,13 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
   @Override
   public SafeFuture<DutyResult> performAggregationDuty(final UInt64 slot) {
     if (getAllValidatorKeys().isEmpty()) {
-      return SafeFuture.completedFuture(DutyResult.NO_OP);
+      return SafeFuture.completedFuture(DutyResult.NOOP);
     }
     if (lastSignatureSlot.isEmpty()
         || lastSignatureBlockRoot.isEmpty()
         || !lastSignatureSlot.get().equals(slot)) {
       validatorLogger.syncCommitteeAggregationSkipped(slot);
-      return SafeFuture.completedFuture(DutyResult.NO_OP);
+      return SafeFuture.completedFuture(DutyResult.NOOP);
     }
     return aggregationDuty.produceAggregates(slot, lastSignatureBlockRoot.get());
   }

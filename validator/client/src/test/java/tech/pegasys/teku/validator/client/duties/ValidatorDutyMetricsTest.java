@@ -73,7 +73,7 @@ class ValidatorDutyMetricsTest {
 
     assertThatSafeFuture(dutyResultSafeFuture).isNotDone();
 
-    dutyFuture.complete(DutyResult.NO_OP);
+    dutyFuture.complete(DutyResult.NOOP);
 
     assertThatSafeFuture(dutyResultSafeFuture).isCompleted();
 

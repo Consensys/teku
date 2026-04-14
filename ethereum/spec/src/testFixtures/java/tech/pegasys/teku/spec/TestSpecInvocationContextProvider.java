@@ -121,10 +121,10 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
         schemaDefinitions = null;
       } else {
         final BLSSignatureVerifier blsSignatureVerifier =
-            signatureVerifierNoop ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE;
+            signatureVerifierNoop ? BLSSignatureVerifier.NOOP : BLSSignatureVerifier.SIMPLE;
         final Supplier<BatchSignatureVerifier> batchSignatureVerifierSupplier =
             signatureVerifierNoop
-                ? () -> BatchSignatureVerifier.NO_OP
+                ? () -> BatchSignatureVerifier.NOOP
                 : BatchSignatureVerifierImpl::new;
         this.spec =
             TestSpecFactory.create(

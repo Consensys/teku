@@ -162,7 +162,7 @@ class AggregateAttestationValidatorTest {
   private void disableSignatureVerification() {
     validator =
         new AggregateAttestationValidator(
-            spec, attestationValidator, AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.NO_OP));
+            spec, attestationValidator, AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.NOOP));
   }
 
   @TestTemplate

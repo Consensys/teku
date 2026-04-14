@@ -63,7 +63,7 @@ class ValidatorOpenApiTest {
         ValidatorRestApi.create(
             spec,
             config,
-            ValidatorApiChannel.NO_OP,
+            ValidatorApiChannel.NOOP,
             genesisDataProvider,
             Optional.of(proposerConfigManager),
             keyManager,

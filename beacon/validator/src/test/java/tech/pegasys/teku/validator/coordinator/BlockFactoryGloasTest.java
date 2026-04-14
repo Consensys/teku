@@ -33,7 +33,7 @@ public class BlockFactoryGloasTest extends AbstractBlockFactoryTest {
 
   private final Spec spec =
       TestSpecFactory.createMinimalGloas(
-          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test

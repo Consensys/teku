@@ -44,7 +44,7 @@ class MergeTransitionBlockValidatorTest {
   private final Spec spec =
       TestSpecFactory.createMinimalBellatrix(
           b -> {
-            b.blsSignatureVerifier(BLSSignatureVerifier.NO_OP);
+            b.blsSignatureVerifier(BLSSignatureVerifier.NOOP);
             b.bellatrixBuilder(
                 bb ->
                     bb.terminalBlockHash(terminalBlockHash)

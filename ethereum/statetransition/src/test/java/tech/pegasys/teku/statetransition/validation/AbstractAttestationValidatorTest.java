@@ -73,7 +73,7 @@ abstract class AbstractAttestationValidatorTest {
   private static final Logger LOG = LogManager.getLogger();
 
   protected final Spec spec =
-      createSpec(builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+      createSpec(builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
   protected final AttestationSchema<?> attestationSchema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
   protected final StorageSystem storageSystem =

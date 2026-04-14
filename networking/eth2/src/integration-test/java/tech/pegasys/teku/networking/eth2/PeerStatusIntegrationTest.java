@@ -39,7 +39,7 @@ public class PeerStatusIntegrationTest {
   private static final int VALIDATOR_COUNT = 16;
   private final Spec spec =
       TestSpecFactory.createMinimalPhase0(
-          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NOOP));
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
   private final RpcEncoding rpcEncoding =
       RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
