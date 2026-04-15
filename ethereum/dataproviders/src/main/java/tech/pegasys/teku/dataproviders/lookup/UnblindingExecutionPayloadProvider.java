@@ -14,6 +14,7 @@
 package tech.pegasys.teku.dataproviders.lookup;
 
 import com.google.common.collect.Sets;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -102,7 +103,7 @@ public class UnblindingExecutionPayloadProvider implements ExecutionPayloadProvi
 
     final Set<Bytes32> cacheMisses = Sets.difference(blockRoots, result.keySet());
     if (cacheMisses.isEmpty()) {
-      return SafeFuture.completedFuture(result);
+      return SafeFuture.completedFuture(Collections.unmodifiableMap(result));
     }
 
     // Fetch and unblind remaining from DB and EL
@@ -113,7 +114,7 @@ public class UnblindingExecutionPayloadProvider implements ExecutionPayloadProvi
             newlyUnblinded -> {
               recentlyUnblindedEnvelopes.putAll(newlyUnblinded);
               result.putAll(newlyUnblinded);
-              return result;
+              return Collections.unmodifiableMap(result);
             });
   }
 
