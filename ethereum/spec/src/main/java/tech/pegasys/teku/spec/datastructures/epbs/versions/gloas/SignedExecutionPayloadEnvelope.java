@@ -75,16 +75,15 @@ public class SignedExecutionPayloadEnvelope
         getMessage().getSlot(), getMessage().getBeaconBlockRoot(), getMessage().getBuilderIndex());
   }
 
-  public SignedBlindedExecutionPayloadEnvelope toSignedBlindedExecutionPayloadEnvelope(
+  public SignedBlindedExecutionPayloadEnvelope blind(
       final SchemaDefinitionsGloas schemaDefinitions) {
-    final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope =
+    final SignedBlindedExecutionPayloadEnvelope blinded =
         schemaDefinitions
             .getSignedBlindedExecutionPayloadEnvelopeSchema()
-            .create(
-                getMessage().toBlindedExecutionPayloadEnvelope(schemaDefinitions), getSignature());
+            .create(getMessage().blind(schemaDefinitions), getSignature());
     checkState(
-        signedBlindedExecutionPayloadEnvelope.hashTreeRoot().equals(hashTreeRoot()),
-        "blinded signed execution payload envelope root does not match original envelope root");
-    return signedBlindedExecutionPayloadEnvelope;
+        blinded.hashTreeRoot().equals(hashTreeRoot()),
+        "The blinded root does not match the unblinded root");
+    return blinded;
   }
 }

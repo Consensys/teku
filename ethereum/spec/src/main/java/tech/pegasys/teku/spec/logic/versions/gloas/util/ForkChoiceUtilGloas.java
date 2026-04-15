@@ -22,8 +22,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -55,49 +53,13 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     return (ForkChoiceUtilGloas) forkChoiceUtil;
   }
 
-  // From Gloas, there are 3 states available in a given slot
-  // pre-state: State at the slot before block applied
-  // block-state: State at slot after consensus block applied
-  // execution-state: State at slot after consensus and execution has been applied
-  // The state to build on for the next slot is the best available of this list
-  // (execution-state > block-state > pre-state)
-  @Override
-  public SafeFuture<Optional<BeaconState>> retrievePreStateRequiredOnBlock(
-      final ReadOnlyStore store, final SignedBeaconBlock block) {
-    final Bytes32 parentRoot = block.getParentRoot();
-    // if the parent root is not in the proto array, no state would be available
-    if (!store.containsBlock(parentRoot)) {
-      return SafeFuture.completedFuture(Optional.empty());
-    }
-    final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(block.getSlot(), parentRoot);
-    return isParentNodeFull(store, block.getMessage().getBlock())
-        .thenCompose(
-            isParentNodeFull -> {
-              if (isParentNodeFull) {
-                return store
-                    .retrieveExecutionPayloadState(slotAndBlockRoot)
-                    .thenCompose(
-                        preState -> {
-                          if (preState.isEmpty()) {
-                            // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 not sure
-                            // about this fallback, but it's good enough for devnet-0 (handles edge
-                            // cases for reference tests where parent node is the AnchorState)
-                            return store.retrieveBlockState(slotAndBlockRoot);
-                          }
-                          return SafeFuture.completedFuture(preState);
-                        });
-              }
-              return store.retrieveBlockState(slotAndBlockRoot);
-            });
-  }
-
   @Override
   public void applyExecutionPayloadToStore(
       final MutableStore store,
       final SignedExecutionPayloadEnvelope signedEnvelope,
       final BeaconState postState) {
     // Add new execution payload to store
-    store.putExecutionPayloadAndState(signedEnvelope, postState);
+    store.putExecutionPayload(signedEnvelope);
   }
 
   @Override

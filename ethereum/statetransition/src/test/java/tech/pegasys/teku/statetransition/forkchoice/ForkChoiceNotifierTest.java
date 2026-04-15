@@ -256,7 +256,7 @@ class ForkChoiceNotifierTest {
 
     storageSystem.chainUpdater().setCurrentSlot(blockSlot);
 
-    when(recentChainData.shouldOverrideForkChoiceUpdate(any())).thenReturn(true);
+    when(recentChainData.shouldOverrideForkChoiceUpdate(any(), any())).thenReturn(true);
 
     notifyForkChoiceUpdatedVerifyNoNotification(forkChoiceState, Optional.of(blockSlot));
   }
@@ -286,7 +286,7 @@ class ForkChoiceNotifierTest {
 
     storageSystem.chainUpdater().setCurrentSlot(blockSlot);
 
-    when(recentChainData.shouldOverrideForkChoiceUpdate(any())).thenReturn(false);
+    when(recentChainData.shouldOverrideForkChoiceUpdate(any(), any())).thenReturn(false);
 
     notifyForkChoiceUpdated(forkChoiceState, Optional.of(blockSlot));
   }

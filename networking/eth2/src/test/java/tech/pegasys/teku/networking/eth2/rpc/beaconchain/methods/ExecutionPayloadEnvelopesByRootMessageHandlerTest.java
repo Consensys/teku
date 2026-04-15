@@ -41,7 +41,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage;
@@ -78,7 +77,7 @@ class ExecutionPayloadEnvelopesByRootMessageHandlerTest {
     when(peer.approveExecutionPayloadEnvelopesRequest(any(), anyLong()))
         .thenReturn(Optional.of(new RequestKey(ZERO, 42)));
     // Forward execution payload envelope requests from the mock to the ChainBuilder
-    when(recentChainData.retrieveSignedExecutionPayloadEnvelopeByBlockRoot(any()))
+    when(recentChainData.retrieveSignedExecutionPayloadByBlockRoot(any()))
         .thenAnswer(
             i -> SafeFuture.completedFuture(chainBuilder.getExecutionPayload(i.getArgument(0))));
     when(callback.respond(any())).thenReturn(SafeFuture.COMPLETE);
@@ -212,10 +211,7 @@ class ExecutionPayloadEnvelopesByRootMessageHandlerTest {
     final UInt64 latestSlot = chainBuilder.getLatestSlot();
     chainBuilder.generateBlocksUpToSlot(latestSlot.plus(chainSize));
 
-    return chainBuilder
-        .streamExecutionPayloadsAndStates(latestSlot.plus(1))
-        .map(SignedExecutionPayloadAndState::executionPayload)
-        .toList();
+    return chainBuilder.streamExecutionPayloads(latestSlot.plus(1)).toList();
   }
 
   private long getRequestCounterValueForLabel(final String label) {

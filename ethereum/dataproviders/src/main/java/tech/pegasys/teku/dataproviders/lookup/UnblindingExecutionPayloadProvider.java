@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.dataproviders.lookup;
 
+import com.google.common.collect.Sets;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +24,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BlindedExecutionPayloadEnvelope;
@@ -45,18 +48,33 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 public class UnblindingExecutionPayloadProvider implements ExecutionPayloadProvider {
 
   private static final Logger LOG = LogManager.getLogger();
+  private static final int DEFAULT_UNBLINDED_ENVELOPE_CACHE_SIZE = 32;
 
   private final Spec spec;
   private final BlindedExecutionPayloadEnvelopeProvider blindedExecutionPayloadEnvelopeProvider;
   private final ExecutionPayloadBodiesByHashProvider executionPayloadBodiesByHashProvider;
+  private final Map<Bytes32, SignedExecutionPayloadEnvelope> recentlyUnblindedEnvelopes;
 
   public UnblindingExecutionPayloadProvider(
       final Spec spec,
       final BlindedExecutionPayloadEnvelopeProvider blindedExecutionPayloadEnvelopeProvider,
       final ExecutionPayloadBodiesByHashProvider executionPayloadBodiesByHashProvider) {
+    this(
+        spec,
+        blindedExecutionPayloadEnvelopeProvider,
+        executionPayloadBodiesByHashProvider,
+        DEFAULT_UNBLINDED_ENVELOPE_CACHE_SIZE);
+  }
+
+  public UnblindingExecutionPayloadProvider(
+      final Spec spec,
+      final BlindedExecutionPayloadEnvelopeProvider blindedExecutionPayloadEnvelopeProvider,
+      final ExecutionPayloadBodiesByHashProvider executionPayloadBodiesByHashProvider,
+      final int cacheSize) {
     this.spec = spec;
     this.blindedExecutionPayloadEnvelopeProvider = blindedExecutionPayloadEnvelopeProvider;
     this.executionPayloadBodiesByHashProvider = executionPayloadBodiesByHashProvider;
+    this.recentlyUnblindedEnvelopes = LimitedMap.createSynchronizedLRU(cacheSize);
   }
 
   @FunctionalInterface
@@ -74,9 +92,30 @@ public class UnblindingExecutionPayloadProvider implements ExecutionPayloadProvi
   @Override
   public SafeFuture<Map<Bytes32, SignedExecutionPayloadEnvelope>> getExecutionPayloads(
       final Set<Bytes32> blockRoots) {
+    // Serve recently unblinded envelopes from cache
+    final Map<Bytes32, SignedExecutionPayloadEnvelope> result = new HashMap<>();
+    for (final Bytes32 root : blockRoots) {
+      final SignedExecutionPayloadEnvelope envelope = recentlyUnblindedEnvelopes.get(root);
+      if (envelope != null) {
+        result.put(root, envelope);
+      }
+    }
+
+    final Set<Bytes32> cacheMisses = Sets.difference(blockRoots, result.keySet());
+    if (cacheMisses.isEmpty()) {
+      return SafeFuture.completedFuture(Collections.unmodifiableMap(result));
+    }
+
+    // Fetch and unblind remaining from DB and EL
     return blindedExecutionPayloadEnvelopeProvider
-        .getBlindedExecutionPayloadEnvelopes(blockRoots)
-        .thenCompose(this::unblindExecutionPayloadEnvelopes);
+        .getBlindedExecutionPayloadEnvelopes(cacheMisses)
+        .thenCompose(this::unblindExecutionPayloadEnvelopes)
+        .thenApply(
+            newlyUnblinded -> {
+              recentlyUnblindedEnvelopes.putAll(newlyUnblinded);
+              result.putAll(newlyUnblinded);
+              return Collections.unmodifiableMap(result);
+            });
   }
 
   private SafeFuture<Map<Bytes32, SignedExecutionPayloadEnvelope>> unblindExecutionPayloadEnvelopes(
