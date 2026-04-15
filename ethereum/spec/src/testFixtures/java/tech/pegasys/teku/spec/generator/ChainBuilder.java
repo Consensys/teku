@@ -55,7 +55,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
@@ -114,9 +113,9 @@ public class ChainBuilder {
       new TreeMap<>();
   private final Map<Bytes32, List<DataColumnSidecar>> dataColumnSidecarsByHash = new HashMap<>();
   // Gloas
-  private final NavigableMap<UInt64, SignedExecutionPayloadAndState> executionPayloads =
+  private final NavigableMap<UInt64, SignedExecutionPayloadEnvelope> executionPayloads =
       new TreeMap<>();
-  private final Map<Bytes32, SignedExecutionPayloadAndState> executionPayloadsByHash =
+  private final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloadsByHash =
       new HashMap<>();
   private final BlockProposalTestUtil blockProposalTestUtil;
   private final ExecutionPayloadProposalTestUtil executionPayloadProposalTestUtil;
@@ -129,7 +128,7 @@ public class ChainBuilder {
       final Map<SlotAndBlockRoot, List<BlobSidecar>> existingBlobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot,
       final Map<SlotAndBlockRoot, List<DataColumnSidecar>> existingDataColumnSidecars,
-      final Map<UInt64, SignedExecutionPayloadAndState> existingExecutionPayloads) {
+      final Map<UInt64, SignedExecutionPayloadEnvelope> existingExecutionPayloads) {
     this.spec = spec;
     this.validatorKeys = validatorKeys;
     this.blobsUtil = new BlobsUtil(spec);
@@ -162,7 +161,7 @@ public class ChainBuilder {
     executionPayloads.putAll(existingExecutionPayloads);
     existingExecutionPayloads
         .values()
-        .forEach(e -> executionPayloadsByHash.put(e.executionPayload().getBeaconBlockRoot(), e));
+        .forEach(e -> executionPayloadsByHash.put(e.getBeaconBlockRoot(), e));
   }
 
   public static ChainBuilder create(final Spec spec) {
@@ -189,8 +188,7 @@ public class ChainBuilder {
   }
 
   public Optional<SignedExecutionPayloadEnvelope> getExecutionPayload(final Bytes32 blockRoot) {
-    return Optional.ofNullable(executionPayloadsByHash.get(blockRoot))
-        .map(SignedExecutionPayloadAndState::executionPayload);
+    return Optional.ofNullable(executionPayloadsByHash.get(blockRoot));
   }
 
   public List<BlobSidecar> getBlobSidecars(final Bytes32 blockRoot) {
@@ -299,21 +297,20 @@ public class ChainBuilder {
     return streamDataColumnSidecars(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot), columns);
   }
 
-  public Stream<SignedExecutionPayloadAndState> streamExecutionPayloadsAndStates(
-      final UInt64 fromSlot) {
-    return streamExecutionPayloadsAndStates(fromSlot, getLatestSlot());
+  public Stream<SignedExecutionPayloadEnvelope> streamExecutionPayloads(final UInt64 fromSlot) {
+    return streamExecutionPayloads(fromSlot, getLatestSlot());
   }
 
-  public Stream<SignedExecutionPayloadAndState> streamExecutionPayloadsAndStates(
+  public Stream<SignedExecutionPayloadEnvelope> streamExecutionPayloads(
       final long fromSlot, final long toSlot) {
-    return streamExecutionPayloadsAndStates(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot));
+    return streamExecutionPayloads(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot));
   }
 
-  public Stream<SignedExecutionPayloadAndState> streamExecutionPayloadsAndStates(
+  public Stream<SignedExecutionPayloadEnvelope> streamExecutionPayloads(
       final UInt64 fromSlot, final UInt64 toSlot) {
     return executionPayloads.values().stream()
-        .filter(b -> b.executionPayload().getMessage().getSlot().isGreaterThanOrEqualTo(fromSlot))
-        .filter(b -> b.executionPayload().getMessage().getSlot().isLessThanOrEqualTo(toSlot));
+        .filter(e -> e.getSlot().isGreaterThanOrEqualTo(fromSlot))
+        .filter(e -> e.getSlot().isLessThanOrEqualTo(toSlot));
   }
 
   public Stream<Map.Entry<SlotAndBlockRoot, List<DataColumnSidecar>>> streamDataColumnSidecars(
@@ -364,19 +361,8 @@ public class ChainBuilder {
     return resultToState(getBlockAndStateAtSlot(slot));
   }
 
-  public SignedExecutionPayloadEnvelope getExecutionPayloadAtSlot(final long slot) {
-    return Optional.ofNullable(executionPayloads.get(UInt64.valueOf(slot)))
-        .map(SignedExecutionPayloadAndState::executionPayload)
-        .orElse(null);
-  }
-
-  public Optional<SignedExecutionPayloadAndState> getExecutionPayloadAndStateAtSlot(
-      final UInt64 slot) {
+  public Optional<SignedExecutionPayloadEnvelope> getExecutionPayloadAtSlot(final UInt64 slot) {
     return Optional.ofNullable(executionPayloads.get(slot));
-  }
-
-  public Optional<BeaconState> getExecutionPayloadStateAtSlot(final UInt64 slot) {
-    return getExecutionPayloadAndStateAtSlot(slot).map(SignedExecutionPayloadAndState::state);
   }
 
   public SignedBlockAndState getLatestBlockAndStateAtSlot(final long slot) {
@@ -677,19 +663,14 @@ public class ChainBuilder {
     dataColumnSidecarsByHash.put(slotAndBlockRoot.getBlockRoot(), dataColumnSidecars);
   }
 
-  private void trackExecutionPayload(final SignedExecutionPayloadAndState executionPayload) {
-    executionPayloads.put(
-        executionPayload.executionPayload().getMessage().getSlot(), executionPayload);
-    executionPayloadsByHash.put(
-        executionPayload.executionPayload().getBeaconBlockRoot(), executionPayload);
+  private void trackExecutionPayload(final SignedExecutionPayloadEnvelope executionPayload) {
+    executionPayloads.put(executionPayload.getMessage().getSlot(), executionPayload);
+    executionPayloadsByHash.put(executionPayload.getBeaconBlockRoot(), executionPayload);
   }
 
   private SignedBlockAndState appendNewBlockToChain(final UInt64 slot, final BlockOptions options) {
     final SignedBlockAndState latestBlockAndState = getLatestBlockAndState();
-    final BeaconState preState =
-        // build on top of the execution payload state if an execution payload has been processed
-        getExecutionPayloadStateAtSlot(latestBlockAndState.getSlot())
-            .orElse(latestBlockAndState.getState());
+    final BeaconState preState = latestBlockAndState.getState();
     final Bytes32 parentRoot = latestBlockAndState.getBlock().getMessage().hashTreeRoot();
 
     int proposerIndex = blockProposalTestUtil.getProposerIndexForSlot(preState, slot);
@@ -752,15 +733,14 @@ public class ChainBuilder {
           blockProposalTestUtil.getExecutionPayloadProposalData(slot);
       if (!options.isWithholdExecutionPayloadEnabled()
           && executionPayloadProposalData.isPresent()) {
-        final SignedExecutionPayloadAndState nextExecutionPayloadAndState =
+        final SignedExecutionPayloadEnvelope nextExecutionPayload =
             safeJoin(
                 executionPayloadProposalTestUtil.createExecutionPayload(
                     signer,
                     slot,
                     nextBlockAndState.toUnsigned(),
-                    executionPayloadProposalData.get(),
-                    options.isSkipStateTransitionEnabled()));
-        trackExecutionPayload(nextExecutionPayloadAndState);
+                    executionPayloadProposalData.get()));
+        trackExecutionPayload(nextExecutionPayload);
       }
 
       return nextBlockAndState;

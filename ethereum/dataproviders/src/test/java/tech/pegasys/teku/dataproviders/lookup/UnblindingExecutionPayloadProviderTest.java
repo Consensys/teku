@@ -16,9 +16,11 @@ package tech.pegasys.teku.dataproviders.lookup;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -46,7 +48,7 @@ class UnblindingExecutionPayloadProviderTest {
     final Bytes32 blockRoot = originalExecutionPayloadEnvelope.getBeaconBlockRoot();
 
     final SignedBlindedExecutionPayloadEnvelope blindedExecutionPayloadEnvelope =
-        originalExecutionPayloadEnvelope.toSignedBlindedExecutionPayloadEnvelope(
+        originalExecutionPayloadEnvelope.blind(
             SchemaDefinitionsGloas.required(
                 spec.atSlot(originalExecutionPayloadEnvelope.getSlot()).getSchemaDefinitions()));
 
@@ -96,7 +98,7 @@ class UnblindingExecutionPayloadProviderTest {
     final Bytes32 blockRoot = originalEnvelope.getBeaconBlockRoot();
 
     final SignedBlindedExecutionPayloadEnvelope blindedEnvelope =
-        originalEnvelope.toSignedBlindedExecutionPayloadEnvelope(
+        originalEnvelope.blind(
             SchemaDefinitionsGloas.required(
                 spec.atSlot(originalEnvelope.getSlot()).getSchemaDefinitions()));
 
@@ -122,7 +124,7 @@ class UnblindingExecutionPayloadProviderTest {
         SchemaDefinitionsGloas.required(
             spec.atSlot(originalEnvelope.getSlot()).getSchemaDefinitions());
     final SignedBlindedExecutionPayloadEnvelope blindedEnvelope =
-        originalEnvelope.toSignedBlindedExecutionPayloadEnvelope(schemaDefinitions);
+        originalEnvelope.blind(schemaDefinitions);
 
     // Two different beacon block roots referencing the same execution payload (equivocation)
     final Bytes32 blockRootA = dataStructureUtil.randomBytes32();
@@ -149,6 +151,81 @@ class UnblindingExecutionPayloadProviderTest {
                 result.size() == 2
                     && result.containsKey(blockRootA)
                     && result.containsKey(blockRootB));
+  }
+
+  @Test
+  void shouldCacheUnblindedEnvelopesAndOnlyFetchMisses() {
+    final SignedExecutionPayloadEnvelope executionPayloadEnvelopeA =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
+    final SignedExecutionPayloadEnvelope executionPayloadEnvelopeB =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(2);
+    final Bytes32 blockRootA = executionPayloadEnvelopeA.getBeaconBlockRoot();
+    final Bytes32 blockRootB = executionPayloadEnvelopeB.getBeaconBlockRoot();
+
+    final SchemaDefinitionsGloas schemaDefinitionsGloas =
+        SchemaDefinitionsGloas.required(
+            spec.atSlot(executionPayloadEnvelopeA.getSlot()).getSchemaDefinitions());
+    final SignedBlindedExecutionPayloadEnvelope blindedExecutionPayloadEnvelopeA =
+        executionPayloadEnvelopeA.blind(schemaDefinitionsGloas);
+    final SignedBlindedExecutionPayloadEnvelope blindedExecutionPayloadEnvelopeB =
+        executionPayloadEnvelopeB.blind(schemaDefinitionsGloas);
+
+    final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> allBlinded =
+        Map.of(
+            blockRootA,
+            blindedExecutionPayloadEnvelopeA,
+            blockRootB,
+            blindedExecutionPayloadEnvelopeB);
+    final Map<Bytes32, ExecutionPayloadBody> allBodies =
+        Map.of(
+            executionPayloadEnvelopeA.getMessage().getPayload().getBlockHash(),
+            toExecutionPayloadBody(executionPayloadEnvelopeA.getMessage().getPayload()),
+            executionPayloadEnvelopeB.getMessage().getPayload().getBlockHash(),
+            toExecutionPayloadBody(executionPayloadEnvelopeB.getMessage().getPayload()));
+
+    final AtomicInteger blindedProviderCallCount = new AtomicInteger(0);
+    final AtomicInteger elCallCount = new AtomicInteger(0);
+
+    final UnblindingExecutionPayloadProvider provider =
+        new UnblindingExecutionPayloadProvider(
+            spec,
+            roots -> {
+              blindedProviderCallCount.incrementAndGet();
+              final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> result = new HashMap<>();
+              for (final Bytes32 root : roots) {
+                if (allBlinded.containsKey(root)) {
+                  result.put(root, allBlinded.get(root));
+                }
+              }
+              return SafeFuture.completedFuture(result);
+            },
+            blockHashes -> {
+              elCallCount.incrementAndGet();
+              final List<ExecutionPayloadBody> bodies =
+                  blockHashes.stream().map(allBodies::get).toList();
+              return SafeFuture.completedFuture(bodies);
+            });
+
+    // First call: fetch A, cache miss, should hit DB + EL
+    assertThat(provider.getExecutionPayloads(Set.of(blockRootA)))
+        .isCompletedWithValue(Map.of(blockRootA, executionPayloadEnvelopeA));
+    assertThat(blindedProviderCallCount.getAndSet(0)).isEqualTo(1);
+    assertThat(elCallCount.getAndSet(0)).isEqualTo(1);
+
+    // Second call: fetch A again, cache hit, no DB or EL call
+    assertThat(provider.getExecutionPayloads(Set.of(blockRootA)))
+        .isCompletedWithValue(Map.of(blockRootA, executionPayloadEnvelopeA));
+    assertThat(blindedProviderCallCount.getAndSet(0)).isEqualTo(0);
+    assertThat(elCallCount.getAndSet(0)).isEqualTo(0);
+
+    // Third call: fetch A (cached) + B (uncached), only B hits DB + EL
+    assertThat(provider.getExecutionPayloads(Set.of(blockRootA, blockRootB)))
+        .isCompletedWithValue(
+            Map.of(
+                blockRootA, executionPayloadEnvelopeA,
+                blockRootB, executionPayloadEnvelopeB));
+    assertThat(blindedProviderCallCount.getAndSet(0)).isEqualTo(1);
+    assertThat(elCallCount.getAndSet(0)).isEqualTo(1);
   }
 
   private ExecutionPayloadBody toExecutionPayloadBody(final ExecutionPayload executionPayload) {

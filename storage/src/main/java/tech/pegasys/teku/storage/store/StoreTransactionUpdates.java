@@ -26,8 +26,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.FinalizedChainData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
@@ -52,9 +52,8 @@ class StoreTransactionUpdates {
   private final boolean blobSidecarsEnabled;
   private final boolean dataColumnSidecarsEnabled;
   private final boolean executionPayloadEnvelopesEnabled;
-  private final Map<Bytes32, SignedExecutionPayloadAndState> hotExecutionPayloadAndStates;
-  private final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
-      blindedExecutionPayloadEnvelopesByBlockRoot;
+  private final Map<Bytes32, SignedExecutionPayloadEnvelope> hotExecutionPayloads;
+  private final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads;
 
   StoreTransactionUpdates(
       final StoreTransaction tx,
@@ -73,9 +72,8 @@ class StoreTransactionUpdates {
       final boolean blobSidecarsEnabled,
       final boolean dataColumnSidecarsEnabled,
       final boolean executionPayloadEnvelopesEnabled,
-      final Map<Bytes32, SignedExecutionPayloadAndState> hotExecutionPayloadAndStates,
-      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
-          blindedExecutionPayloadEnvelopesByBlockRoot) {
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> hotExecutionPayloads,
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads) {
     checkNotNull(tx, "Transaction is required");
     checkNotNull(finalizedChainData, "Finalized data is required");
     checkNotNull(hotBlocks, "Hot blocks are required");
@@ -88,10 +86,8 @@ class StoreTransactionUpdates {
     checkNotNull(optimisticTransitionBlockRoot, "Optimistic transition block root is required");
     checkNotNull(latestCanonicalBlockRoot, "Latest canonical block root is required");
     checkNotNull(custodyGroupCount, "Current custody group count is required");
-    checkNotNull(hotExecutionPayloadAndStates, "Hot execution payload states are required");
-    checkNotNull(
-        blindedExecutionPayloadEnvelopesByBlockRoot,
-        "Blinded execution payload envelopes are required");
+    checkNotNull(hotExecutionPayloads, "Hot execution payloads are required");
+    checkNotNull(blindedExecutionPayloads, "Blinded execution payloads are required");
 
     this.tx = tx;
     this.finalizedChainData = finalizedChainData;
@@ -109,8 +105,8 @@ class StoreTransactionUpdates {
     this.blobSidecarsEnabled = blobSidecarsEnabled;
     this.dataColumnSidecarsEnabled = dataColumnSidecarsEnabled;
     this.executionPayloadEnvelopesEnabled = executionPayloadEnvelopesEnabled;
-    this.hotExecutionPayloadAndStates = hotExecutionPayloadAndStates;
-    this.blindedExecutionPayloadEnvelopesByBlockRoot = blindedExecutionPayloadEnvelopesByBlockRoot;
+    this.hotExecutionPayloads = hotExecutionPayloads;
+    this.blindedExecutionPayloads = blindedExecutionPayloads;
   }
 
   public StorageUpdate createStorageUpdate() {
@@ -121,7 +117,7 @@ class StoreTransactionUpdates {
         tx.bestJustifiedCheckpoint,
         hotBlocks,
         hotStatesToPersist,
-        blindedExecutionPayloadEnvelopesByBlockRoot,
+        blindedExecutionPayloads,
         blobSidecars,
         maybeEarliestBlobSidecarSlot,
         prunedHotBlockRoots,
@@ -160,7 +156,7 @@ class StoreTransactionUpdates {
         .forEach(
             blockRoot -> {
               store.removeBlockAndState(blockRoot);
-              store.removeExecutionPayloadAndState(blockRoot);
+              store.removeExecutionPayload(blockRoot);
             });
 
     store.cleanupCheckpointStates(
@@ -170,7 +166,7 @@ class StoreTransactionUpdates {
       store.cacheProposerBoostRoot(tx.proposerBoostRoot);
     }
 
-    store.cacheExecutionPayloadAndStates(hotExecutionPayloadAndStates);
+    store.cacheExecutionPayloads(hotExecutionPayloads);
 
     store
         .getForkChoiceStrategy()

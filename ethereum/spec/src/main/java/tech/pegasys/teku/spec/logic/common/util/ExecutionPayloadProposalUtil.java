@@ -19,7 +19,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.spec.datastructures.epbs.ExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
@@ -45,7 +44,7 @@ public class ExecutionPayloadProposalUtil {
       ExecutionRequests executionRequests,
       SszList<SszKZGCommitment> kzgCommitments) {}
 
-  public SafeFuture<ExecutionPayloadAndState> createNewUnsignedExecutionPayload(
+  public SafeFuture<ExecutionPayloadEnvelope> createNewUnsignedExecutionPayload(
       final UInt64 proposalSlot,
       final UInt64 builderIndex,
       final BeaconBlockAndState blockAndState,
@@ -75,8 +74,7 @@ public class ExecutionPayloadProposalUtil {
                       state ->
                           executionPayloadProcessor.processUnsignedExecutionPayload(
                               state, executionPayload, Optional.empty()));
-          return new ExecutionPayloadAndState(
-              executionPayload.copyWithNewStateRoot(newState.hashTreeRoot()), newState);
+          return executionPayload.copyWithNewStateRoot(newState.hashTreeRoot());
         });
   }
 }

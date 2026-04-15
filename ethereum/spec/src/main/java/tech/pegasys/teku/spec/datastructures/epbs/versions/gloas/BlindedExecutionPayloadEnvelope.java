@@ -98,17 +98,6 @@ public class BlindedExecutionPayloadEnvelope
     return (BlindedExecutionPayloadEnvelopeSchema) super.getSchema();
   }
 
-  public BlindedExecutionPayloadEnvelope copyWithNewStateRoot(final Bytes32 stateRoot) {
-    return new BlindedExecutionPayloadEnvelope(
-        getSchema(),
-        getPayloadHeader(),
-        getExecutionRequests(),
-        getBuilderIndex(),
-        getBeaconBlockRoot(),
-        getSlot(),
-        stateRoot);
-  }
-
   public ExecutionPayloadEnvelope unblind(
       final SchemaDefinitionsGloas schemaDefinitions, final ExecutionPayload payload) {
     checkState(

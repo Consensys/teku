@@ -148,7 +148,6 @@ public class CombinedChainDataClient {
     if (!isStoreAvailable()) {
       return EXECUTION_PAYLOAD_NOT_AVAILABLE;
     }
-
     // Try to pull root from recent data
     return recentChainData
         .getBlockRootInEffectBySlot(slot, headBlockRoot)
@@ -617,7 +616,7 @@ public class CombinedChainDataClient {
 
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> getExecutionPayloadByBlockRoot(
       final Bytes32 blockRoot) {
-    return recentChainData.retrieveSignedExecutionPayloadEnvelopeByBlockRoot(blockRoot);
+    return recentChainData.retrieveSignedExecutionPayloadByBlockRoot(blockRoot);
   }
 
   public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobSidecarSlot() {
