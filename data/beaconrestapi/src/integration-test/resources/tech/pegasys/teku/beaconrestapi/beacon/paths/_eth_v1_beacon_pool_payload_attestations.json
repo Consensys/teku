@@ -60,11 +60,25 @@
   },
   "post" : {
     "tags" : [ "Beacon", "Validator Required Api" ],
-    "operationId" : "submitPoolPayloadAttestations",
+    "operationId" : "submitPayloadAttestationMessages",
     "summary" : "Submit PayloadAttestation objects to node",
-    "description" : "Submit signed payload attestation messages to the beacon node to be validated and submitted if valid.\n\nThis endpoint does not protect against slashing.",
+    "description" : "Submit signed payload attestation messages to the beacon node to be validated and submitted if valid.",
+    "parameters" : [ {
+      "name" : "Eth-Consensus-Version",
+      "in" : "header",
+      "schema" : {
+        "type" : "string",
+        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu", "gloas", "heze" ]
+      }
+    } ],
     "requestBody" : {
       "content" : {
+        "application/octet-stream" : {
+          "schema" : {
+            "type" : "string",
+            "format" : "binary"
+          }
+        },
         "application/json" : {
           "schema" : {
             "type" : "array",
@@ -76,6 +90,16 @@
       }
     },
     "responses" : {
+      "415" : {
+        "description" : "Unsupported media type",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
       "200" : {
         "description" : "Payload attestations are stored in pool and broadcast on appropriate subnet",
         "content" : { }

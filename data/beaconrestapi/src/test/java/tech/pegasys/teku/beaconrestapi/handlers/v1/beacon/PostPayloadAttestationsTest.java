@@ -19,18 +19,25 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRequestBodyFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.beaconrestapi.schema.ErrorListBadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.RestApiConstants;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.validator.api.SubmitDataError;
@@ -40,7 +47,7 @@ class PostPayloadAttestationsTest extends AbstractMigratedBeaconHandlerTest {
   @BeforeEach
   void setUp() {
     setSpec(TestSpecFactory.createMinimalGloas());
-    setHandler(new PostPayloadAttestations(validatorDataProvider, schemaDefinitionCache));
+    setHandler(new PostPayloadAttestations(validatorDataProvider, spec, schemaDefinitionCache));
   }
 
   @Test
@@ -72,6 +79,22 @@ class PostPayloadAttestationsTest extends AbstractMigratedBeaconHandlerTest {
 
     assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
     assertThat(request.getResponseBody()).isEqualTo(response);
+  }
+
+  @Test
+  void shouldReadJsonRequestBody() throws IOException {
+    final PayloadAttestationMessage message = dataStructureUtil.randomPayloadAttestationMessage();
+    final String json =
+        JsonUtil.serialize(
+            List.of(message),
+            DeserializableTypeDefinition.listOf(message.getSchema().getJsonTypeDefinition()));
+    final Object requestBody =
+        getRequestBodyFromMetadata(
+            handler,
+            Map.of(RestApiConstants.HEADER_CONSENSUS_VERSION, SpecMilestone.GLOAS.name()),
+            json);
+    assertThat(requestBody).isInstanceOf(List.class);
+    assertThat(((List<?>) requestBody).get(0)).isInstanceOf(PayloadAttestationMessage.class);
   }
 
   @Test
