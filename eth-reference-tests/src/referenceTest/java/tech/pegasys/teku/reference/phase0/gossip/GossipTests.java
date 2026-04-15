@@ -16,6 +16,7 @@ package tech.pegasys.teku.reference.phase0.gossip;
 import com.google.common.collect.ImmutableMap;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.reference.fulu.networking.GossipBeaconAttestationTestExecutor;
+import tech.pegasys.teku.reference.fulu.networking.GossipBeaconBlockTestExecutor;
 
 /** Executable gossip validations */
 public class GossipTests {
@@ -25,7 +26,7 @@ public class GossipTests {
           .put("networking/gossip_attester_slashing", new GossipAttesterSlashingTestExecutor())
           .put("networking/gossip_beacon_aggregate_and_proof", TestExecutor.IGNORE_TESTS)
           .put("networking/gossip_beacon_attestation", new GossipBeaconAttestationTestExecutor())
-          .put("networking/gossip_beacon_block", TestExecutor.IGNORE_TESTS)
+          .put("networking/gossip_beacon_block", new GossipBeaconBlockTestExecutor())
           .put("networking/gossip_proposer_slashing", new GossipProposerSlashingTestExecutor())
           .put("networking/gossip_voluntary_exit", new GossipVoluntaryExitTestExecutor())
           .build();
