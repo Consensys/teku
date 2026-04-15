@@ -70,8 +70,19 @@ class BlockTimelinessTracker {
     final int millisIntoSlot = arrivalTimeMillis.minusMinZero(slotStartTimeMillis).intValue();
 
     final ForkChoiceUtil forkChoiceUtil = spec.atSlot(computedSlot).getForkChoiceUtil();
-    return forkChoiceUtil.computeBlockTimeliness(
-        block.getMessage().getSlot(), computedSlot, millisIntoSlot);
+    final int timelinessLimit = forkChoiceUtil.getAttestationDueMillis();
+    final BlockTimeliness timeliness =
+        forkChoiceUtil.computeBlockTimeliness(
+            block.getMessage().getSlot(), computedSlot, millisIntoSlot);
+    LOG.debug(
+        "Block {}:{} arrived at {} ms into slot {}, timeliness limit is {} ms. result: {}",
+        root,
+        block.getSlot(),
+        millisIntoSlot,
+        computedSlot,
+        timelinessLimit,
+        timeliness.isTimelyAttestation());
+    return timeliness;
   }
 
   public Optional<BlockTimeliness> getBlockTimeliness(final Bytes32 root) {

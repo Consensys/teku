@@ -19,6 +19,8 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
 import javax.annotation.CheckReturnValue;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -57,6 +59,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 
 public class ForkChoiceUtil {
+  private static final Logger LOG = LogManager.getLogger();
 
   protected final SpecConfig specConfig;
   protected final BeaconStateAccessors beaconStateAccessors;
@@ -170,15 +173,23 @@ public class ForkChoiceUtil {
     final UInt64 slotStartTimeMillis =
         miscHelpers.computeTimeMillisAtSlot(store.getGenesisTimeMillis(), slot);
     final int timelinessLimit = getProposerReorgCutoffMillis();
-    return store
-        .getTimeInMillis()
-        .minusMinZero(slotStartTimeMillis)
-        .isLessThanOrEqualTo(timelinessLimit);
+    final UInt64 currentTimeMillis = store.getTimeInMillis();
+    final boolean isTimely =
+        currentTimeMillis.minusMinZero(slotStartTimeMillis).isLessThanOrEqualTo(timelinessLimit);
+    LOG.debug(
+        "Check ProposingOnTime for slot {}, slot start time is {} ms and current time is {} ms, limit is {} ms result: {}",
+        slot,
+        slotStartTimeMillis,
+        currentTimeMillis,
+        timelinessLimit,
+        isTimely);
+    return isTimely;
   }
 
   /** Spec reference: get_proposer_head. */
   public Bytes32 getProposerHead(
       final ForkChoiceReorgContext context, final Bytes32 headRoot, final UInt64 slot) {
+    LOG.debug("start getProposerHead");
     final ReadOnlyStore store = context.getStore();
     final boolean isProposerBoostActive = isProposerBoostActive(store, headRoot);
     final boolean isShufflingStableAndForkChoiceOk =
@@ -191,6 +202,13 @@ public class ForkChoiceUtil {
         || !isProposingOnTime
         || isProposerBoostActive
         || maybeHead.isEmpty()) {
+      LOG.debug(
+          "getProposerHead - return headRoot - isHeadLate {}, isForkChoiceStableAndFinalizationOk {}, isProposingOnTime {}, isProposerBoostActive {}, head.isEmpty {}",
+          isHeadLate,
+          isShufflingStableAndForkChoiceOk,
+          isProposingOnTime,
+          isProposerBoostActive,
+          maybeHead.isEmpty());
       return headRoot;
     }
 
@@ -198,12 +216,25 @@ public class ForkChoiceUtil {
     final boolean isFfgCompetitive = isFfgCompetitive(store, headRoot, head.getParentRoot());
     final boolean isSingleSlotReorg = isSingleSlotReorg(store, head, slot);
     if (!isFfgCompetitive || !isSingleSlotReorg) {
+      LOG.debug(
+          "getProposerHead - return headRoot - isFfgCompetitive {}, isSingleSlotReorg {}",
+          isFfgCompetitive,
+          isSingleSlotReorg);
       return headRoot;
     }
 
     final boolean isHeadWeak = isHeadWeak(store, headRoot, UInt64.ZERO);
     final boolean isParentStrong = isParentStrong(store, head, UInt64.ZERO);
-    return isHeadWeak && isParentStrong ? head.getParentRoot() : headRoot;
+    if (isHeadWeak && isParentStrong) {
+      LOG.debug("getProposerHead - return parentRoot - isHeadWeak true && isParentStrong true");
+      return head.getParentRoot();
+    }
+
+    LOG.debug(
+        "getProposerHead - return headRoot - isHeadWeak {}, isParentStrong {}",
+        isHeadWeak,
+        isParentStrong);
+    return headRoot;
   }
 
   /** Spec reference: should_override_forkchoice_update. */
@@ -211,7 +242,12 @@ public class ForkChoiceUtil {
       final ForkChoiceReorgContext context, final Bytes32 headRoot, final UInt64 headSlot) {
     final ReadOnlyStore store = context.getStore();
     final Optional<SignedBeaconBlock> maybeHead = store.getBlockIfAvailable(headRoot);
-    if (maybeHead.isEmpty() || !isHeadLate(context.getBlockTimeliness(headRoot))) {
+    if (maybeHead.isEmpty()) {
+      LOG.debug("shouldOverrideForkChoiceUpdate head - maybeHead empty.");
+      return false;
+    }
+    if (!isHeadLate(context.getBlockTimeliness(headRoot))) {
+      LOG.debug("shouldOverrideForkChoiceUpdate head - is not late.");
       return false;
     }
 
@@ -224,6 +260,11 @@ public class ForkChoiceUtil {
     final Optional<UInt64> maybeParentSlot =
         store.getForkChoiceStrategy().blockSlot(head.getParentRoot());
     if (!isShufflingStableAndForkChoiceOk || !isFfgCompetitive || maybeParentSlot.isEmpty()) {
+      LOG.debug(
+          "shouldOverrideForkChoiceUpdate isShufflingStableAndForkChoiceOk {}, isFfgCompetitive {}, maybeParentSlot {}",
+          isShufflingStableAndForkChoiceOk,
+          isFfgCompetitive,
+          maybeParentSlot);
       return false;
     }
 
@@ -247,21 +288,33 @@ public class ForkChoiceUtil {
             || (currentSlot.equals(proposalSlot) && isProposingOnTime);
     final boolean isSingleSlotReorg = isSingleSlotReorg(store, head, proposalSlot);
     if (!isSingleSlotReorg || !isCurrentTimeOk) {
+      LOG.debug(
+          "shouldOverrideForkChoiceUpdate isSingleSlotReorg {}, isCurrentTimeOk {}",
+          isSingleSlotReorg,
+          isCurrentTimeOk);
       return false;
     }
     if (currentSlot.isGreaterThan(head.getSlot())) {
       final boolean isHeadWeak = isHeadWeak(store, headRoot, UInt64.ZERO);
       final boolean isParentStrong = isParentStrong(store, head, UInt64.ZERO);
-      return isHeadWeak && isParentStrong;
+      if (!isHeadWeak || !isParentStrong) {
+        LOG.debug(
+            "shouldOverrideForkChoiceUpdate isHeadWeak {}, isParentStrong {}",
+            isHeadWeak,
+            isParentStrong);
+        return false;
+      }
     }
     return true;
   }
 
   boolean shouldOverrideFcuCheckProposerPreState(
       final ForkChoiceReorgContext context, final UInt64 proposalSlot, final Bytes32 parentRoot) {
+    LOG.debug("Need parent state");
     final Optional<BeaconState> maybeParentState =
         context.getStore().getBlockStateIfAvailable(parentRoot);
     if (maybeParentState.isEmpty()) {
+      LOG.debug("shouldOverrideForkChoice could not retrieve parent state from cache");
       return false;
     }
 
@@ -269,8 +322,14 @@ public class ForkChoiceUtil {
       final BeaconState proposerPreState =
           context.processSlots(maybeParentState.get(), proposalSlot);
       final int proposerIndex = getProposerIndex(proposerPreState, proposalSlot);
-      return context.isValidatorConnected(proposerIndex, proposalSlot);
+      if (!context.isValidatorConnected(proposerIndex, proposalSlot)) {
+        LOG.debug(
+            "shouldOverrideForkChoiceUpdate isValidatorConnected({}) {}, ", proposerIndex, false);
+        return false;
+      }
+      return true;
     } catch (SlotProcessingException | EpochProcessingException e) {
+      LOG.trace("Failed to process", e);
       return false;
     }
   }
