@@ -32,8 +32,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -56,8 +56,7 @@ class StoreTransactionUpdatesFactory {
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final AnchorPoint latestFinalized;
   private final Map<Bytes32, UInt64> prunedHotBlockRoots = new ConcurrentHashMap<>();
-  private final Map<Bytes32, SignedExecutionPayloadAndState> hotExecutionPayloadAndStates;
-  private final boolean executionPayloadEnvelopesEnabled;
+  private final Map<Bytes32, SignedExecutionPayloadEnvelope> hotExecutionPayloads;
 
   public StoreTransactionUpdatesFactory(
       final Spec spec,
@@ -80,8 +79,7 @@ class StoreTransactionUpdatesFactory {
     maybeEarliestBlobSidecarSlot = tx.maybeEarliestBlobSidecarTransactionSlot;
     maybeLatestCanonicalBlockRoot = tx.maybeLatestCanonicalBlockRoot;
     maybeCustodyGroupCount = tx.maybeCustodyGroupCount;
-    hotExecutionPayloadAndStates = new ConcurrentHashMap<>(tx.executionPayloadData);
-    executionPayloadEnvelopesEnabled = spec.supportsExecutionPayloadEnvelopes();
+    hotExecutionPayloads = new ConcurrentHashMap<>(tx.executionPayloadData);
   }
 
   public static StoreTransactionUpdates create(
@@ -107,7 +105,7 @@ class StoreTransactionUpdatesFactory {
                     Optional.empty(),
                     tx.clearFinalizedOptimisticTransitionPayload,
                     Optional.empty(),
-                    createBlindedExecutionPayloadEnvelopesByBlockRoot()));
+                    createBlindedExecutionPayloads()));
   }
 
   private StoreTransactionUpdates buildFinalizedUpdates(final Checkpoint finalizedCheckpoint) {
@@ -117,10 +115,9 @@ class StoreTransactionUpdatesFactory {
         collectFinalizedBlocks(tx, finalizedChildToParent);
     final Map<Bytes32, BeaconState> finalizedStates =
         collectFinalizedStates(tx, finalizedChildToParent);
-    // Collect blinded envelopes before pruning
-    final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
-        blindedExecutionPayloadEnvelopesByBlockRoot =
-            createBlindedExecutionPayloadEnvelopesByBlockRoot();
+    // Collect blinded execution payloads before pruning
+    final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads =
+        createBlindedExecutionPayloads();
     final FinalizedChainData.Builder finalizedChainDataBuilder = FinalizedChainData.builder();
     final boolean optimisticTransitionBlockRootSet;
     final Optional<Bytes32> optimisticTransitionBlockRoot;
@@ -148,7 +145,7 @@ class StoreTransactionUpdatesFactory {
             blockRoot -> {
               hotBlocks.remove(blockRoot);
               hotBlockAndStates.remove(blockRoot);
-              hotExecutionPayloadAndStates.remove(blockRoot);
+              hotExecutionPayloads.remove(blockRoot);
             });
 
     final Optional<FinalizedChainData> finalizedChainData =
@@ -164,7 +161,7 @@ class StoreTransactionUpdatesFactory {
         finalizedChainData,
         optimisticTransitionBlockRootSet,
         optimisticTransitionBlockRoot,
-        blindedExecutionPayloadEnvelopesByBlockRoot);
+        blindedExecutionPayloads);
   }
 
   /** Pull subset of hot states that sit at epoch boundaries to persist */
@@ -268,8 +265,7 @@ class StoreTransactionUpdatesFactory {
       final Optional<FinalizedChainData> finalizedChainData,
       final boolean optimisticTransitionBlockRootSet,
       final Optional<Bytes32> optimisticTransitionBlockRoot,
-      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
-          blindedExecutionPayloadEnvelopesByBlockRoot) {
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads) {
     return new StoreTransactionUpdates(
         tx,
         finalizedChainData,
@@ -286,25 +282,22 @@ class StoreTransactionUpdatesFactory {
         maybeCustodyGroupCount,
         spec.supportsBlobSidecars(),
         spec.supportsDataColumnSidecars(),
-        executionPayloadEnvelopesEnabled,
-        hotExecutionPayloadAndStates,
-        blindedExecutionPayloadEnvelopesByBlockRoot);
+        spec.supportsExecutionPayloadEnvelopes(),
+        hotExecutionPayloads,
+        blindedExecutionPayloads);
   }
 
-  private Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
-      createBlindedExecutionPayloadEnvelopesByBlockRoot() {
-    return hotExecutionPayloadAndStates.entrySet().stream()
+  private Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> createBlindedExecutionPayloads() {
+    return hotExecutionPayloads.entrySet().stream()
         .map(
-            entry ->
-                Map.entry(
-                    entry.getKey(),
-                    entry
-                        .getValue()
-                        .executionPayload()
-                        .toSignedBlindedExecutionPayloadEnvelope(
-                            SchemaDefinitionsGloas.required(
-                                spec.atSlot(entry.getValue().executionPayload().getSlot())
-                                    .getSchemaDefinitions()))))
+            entry -> {
+              final SignedExecutionPayloadEnvelope executionPayload = entry.getValue();
+              return Map.entry(
+                  entry.getKey(),
+                  executionPayload.blind(
+                      SchemaDefinitionsGloas.required(
+                          spec.atSlot(executionPayload.getSlot()).getSchemaDefinitions())));
+            })
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 }

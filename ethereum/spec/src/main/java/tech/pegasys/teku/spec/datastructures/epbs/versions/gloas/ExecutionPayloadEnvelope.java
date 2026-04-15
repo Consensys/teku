@@ -107,9 +107,8 @@ public class ExecutionPayloadEnvelope
         stateRoot);
   }
 
-  public BlindedExecutionPayloadEnvelope toBlindedExecutionPayloadEnvelope(
-      final SchemaDefinitionsGloas schemaDefinitions) {
-    final BlindedExecutionPayloadEnvelope blindedExecutionPayloadEnvelope =
+  public BlindedExecutionPayloadEnvelope blind(final SchemaDefinitionsGloas schemaDefinitions) {
+    final BlindedExecutionPayloadEnvelope blinded =
         schemaDefinitions
             .getBlindedExecutionPayloadEnvelopeSchema()
             .create(
@@ -122,8 +121,8 @@ public class ExecutionPayloadEnvelope
                 getSlot(),
                 getStateRoot());
     checkState(
-        blindedExecutionPayloadEnvelope.hashTreeRoot().equals(hashTreeRoot()),
-        "blinded execution payload envelope root does not match original envelope root");
-    return blindedExecutionPayloadEnvelope;
+        blinded.hashTreeRoot().equals(hashTreeRoot()),
+        "Blinded root does not match the unblinded root");
+    return blinded;
   }
 }
