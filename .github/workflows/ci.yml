@@ -622,22 +622,7 @@ jobs:
           stage_key: reference
 
   # DockerTags
-  # everything is a standard develop-jdk25/21; but we also add 'develop' to develop-jdk21
-  # develop = develop-jdk21
-  # develop-jdk25
-  publishDockerJDK21:
-    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
-    needs: [assemble, unitTests, integrationTests, propertyTests, acceptanceTests, referenceTests]
-    permissions:
-      actions: read
-      contents: read
-      id-token: write
-    uses: ./.github/workflows/publish-docker.yml
-    with:
-      assemble_run_id: ${{ github.run_id }}
-      jdk_version: jdk21
-      include_hash_in_docker: ${{ github.event_name == 'workflow_dispatch' && inputs.include_hash_in_docker || 'false' }}
-    secrets: inherit
+  # develop = develop-jdk25
 
   publishDockerJDK25:
     if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
@@ -650,6 +635,20 @@ jobs:
     with:
       assemble_run_id: ${{ github.run_id }}
       jdk_version: jdk25
+      include_hash_in_docker: ${{ github.event_name == 'workflow_dispatch' && inputs.include_hash_in_docker || 'false' }}
+    secrets: inherit
+
+  publishDockerJDK26:
+    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+    needs: [assemble, unitTests, integrationTests, propertyTests, acceptanceTests, referenceTests]
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/publish-docker.yml
+    with:
+      assemble_run_id: ${{ github.run_id }}
+      jdk_version: jdk26
       include_hash_in_docker: ${{ github.event_name == 'workflow_dispatch' && inputs.include_hash_in_docker || 'false' }}
     secrets: inherit
 
