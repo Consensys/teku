@@ -203,6 +203,34 @@ public class DataColumnSidecarSelectorFactoryTest {
   }
 
   @TestTemplate
+  public void blockRootSelector_shouldMarkDataColumnSidecarsOptimisticWhenChainHeadIsOptimistic()
+      throws ExecutionException, InterruptedException {
+    specContext.assumeFuluActive();
+    final ChainHead chainHead = mock(ChainHead.class);
+
+    when(chainHead.isOptimistic()).thenReturn(true);
+    when(chainHead.getRoot()).thenReturn(dataStructureUtil.randomBytes32());
+    when(client.getChainHead()).thenReturn(Optional.of(chainHead));
+    when(client.getFinalizedSlotByBlockRoot(block.getRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(client.getBlockByBlockRoot(block.getRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
+    when(client.getDataColumnSidecars(block.getSlot(), indices))
+        .thenReturn(SafeFuture.completedFuture(dataColumnSidecars));
+    when(client.isFinalized(block.getSlot())).thenReturn(false);
+    when(client.isOptimisticBlock(block.getRoot())).thenReturn(false);
+
+    final Optional<DataColumnSidecarsAndMetaData> result =
+        dataColumnSidecarSelectorFactory
+            .blockRootSelector(block.getRoot())
+            .getDataColumnSidecars(indices)
+            .get();
+
+    assertThat(result).isNotEmpty();
+    assertThat(result.get().isExecutionOptimistic()).isTrue();
+  }
+
+  @TestTemplate
   public void slotSelector_shouldGetDataColumnSidecarsFromFinalizedSlot()
       throws ExecutionException, InterruptedException {
     specContext.assumeFuluActive();

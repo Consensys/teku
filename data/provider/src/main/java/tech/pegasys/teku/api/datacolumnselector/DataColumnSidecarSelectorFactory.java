@@ -174,7 +174,11 @@ public class DataColumnSidecarSelectorFactory
     final Bytes32 blockRoot = slotAndBlockRoot.getBlockRoot();
     final Optional<ChainHead> maybeChainHead = client.getChainHead();
     final boolean isFinalized = client.isFinalized(slot);
-    final boolean isOptimistic = client.isOptimisticBlock(blockRoot);
+    final boolean isBlockOptimistic = client.isOptimisticBlock(blockRoot);
+    final boolean isOptimistic =
+        maybeChainHead
+            .map(chainHead -> chainHead.isOptimistic() || isBlockOptimistic)
+            .orElse(isBlockOptimistic);
     final boolean isCanonical =
         maybeChainHead
             .map(chainHead -> client.isCanonicalBlock(slot, blockRoot, chainHead.getRoot()))
