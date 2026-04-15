@@ -65,7 +65,7 @@ public class SlashingProtectedValidatorSource implements ValidatorSource {
     return addSlashingProtectedValidator(publicKey, delegateResult);
   }
 
-  AddValidatorResult addSlashingProtectedValidator(
+  private AddValidatorResult addSlashingProtectedValidator(
       final BLSPublicKey publicKey, final AddValidatorResult delegateResult) {
     if (delegateResult.getSigner().isEmpty()) {
       return delegateResult;
