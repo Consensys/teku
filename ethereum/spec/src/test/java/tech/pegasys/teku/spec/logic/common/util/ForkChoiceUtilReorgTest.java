@@ -86,6 +86,99 @@ class ForkChoiceUtilReorgTest {
   }
 
   @Test
+  void getProposerHeadReturnsHeadWhenProposerBoostIsActive() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
+    when(setup.store.getProposerBoostRoot())
+        .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
+
+    assertThat(
+            setup.harness.getProposerHead(
+                setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(2)))
+        .isEqualTo(setup.signedBlockAndState.getRoot());
+  }
+
+  @Test
+  void getProposerHeadReturnsHeadWhenShufflingIsNotStable() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
+
+    assertThat(
+            setup.harness.getProposerHead(
+                setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(8)))
+        .isEqualTo(setup.signedBlockAndState.getRoot());
+  }
+
+  @Test
+  void getProposerHeadReturnsHeadWhenHeadBlockIsMissing() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
+
+    assertThat(
+            setup.harness.getProposerHead(
+                setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(2)))
+        .isEqualTo(setup.signedBlockAndState.getRoot());
+  }
+
+  @Test
+  void getProposerHeadReturnsHeadWhenFinalizationIsNotOk() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
+
+    assertThat(
+            setup.harness.getProposerHead(
+                setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(25)))
+        .isEqualTo(setup.signedBlockAndState.getRoot());
+  }
+
+  @Test
+  void getProposerHeadReturnsHeadWhenFfgIsNotCompetitive() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
+    setup.withCurrentSlot(UInt64.ONE);
+    setup.withFfgNotCompetitive();
+    setup.withParentSlot(Optional.of(UInt64.ZERO));
+
+    assertThat(
+            setup.harness.getProposerHead(
+                setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(2)))
+        .isEqualTo(setup.signedBlockAndState.getRoot());
+  }
+
+  @Test
+  void getProposerHeadReturnsHeadWhenParentSlotIsMissing() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
+    setup.withCurrentSlot(UInt64.ONE);
+    setup.withFfgCompetitive();
+
+    assertThat(
+            setup.harness.getProposerHead(
+                setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(2)))
+        .isEqualTo(setup.signedBlockAndState.getRoot());
+  }
+
+  @Test
+  void getProposerHeadReturnsHeadWhenProposalSlotSkipsAhead() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
+    setup.withCurrentSlot(UInt64.ONE);
+    setup.withFfgCompetitive();
+    setup.withParentSlot(Optional.of(UInt64.ZERO));
+
+    assertThat(
+            setup.harness.getProposerHead(
+                setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(3)))
+        .isEqualTo(setup.signedBlockAndState.getRoot());
+  }
+
+  @Test
   void getProposerHeadReturnsParentWhenAllChecksPass() {
     final ReorgTestSetup setup = new ReorgTestSetup();
     setup.withHeadBlock();
@@ -100,6 +193,38 @@ class ForkChoiceUtilReorgTest {
             setup.harness.getProposerHead(
                 setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(2)))
         .isEqualTo(setup.signedBlockAndState.getParentRoot());
+  }
+
+  @Test
+  void getProposerHeadReturnsHeadWhenHeadIsStrong() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
+    setup.withCurrentSlot(UInt64.ONE);
+    setup.withFfgCompetitive();
+    setup.withParentSlot(Optional.of(UInt64.ZERO));
+    setup.harness.parentStrong = true;
+
+    assertThat(
+            setup.harness.getProposerHead(
+                setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(2)))
+        .isEqualTo(setup.signedBlockAndState.getRoot());
+  }
+
+  @Test
+  void getProposerHeadReturnsHeadWhenParentIsWeak() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
+    setup.withCurrentSlot(UInt64.ONE);
+    setup.withFfgCompetitive();
+    setup.withParentSlot(Optional.of(UInt64.ZERO));
+    setup.harness.headWeak = true;
+
+    assertThat(
+            setup.harness.getProposerHead(
+                setup.context, setup.signedBlockAndState.getRoot(), UInt64.valueOf(2)))
+        .isEqualTo(setup.signedBlockAndState.getRoot());
   }
 
   @Test
@@ -195,6 +320,26 @@ class ForkChoiceUtilReorgTest {
   }
 
   @Test
+  void shouldOverrideForkChoiceUpdateReturnsFalseWhenWeightChecksFail() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withHeadBlock();
+    setup.context.setBlockTimeliness(setup.signedBlockAndState.getRoot(), false);
+    setup.withCurrentSlot(UInt64.valueOf(2));
+    setup.withFfgCompetitive();
+    setup.withParentSlot(Optional.of(UInt64.ZERO));
+    when(setup.store.getBlockStateIfAvailable(any()))
+        .thenReturn(Optional.of(setup.signedBlockAndState.getState()));
+    setup.context.validatorConnected = true;
+
+    assertThat(
+            setup.harness.shouldOverrideForkChoiceUpdate(
+                setup.context,
+                setup.signedBlockAndState.getRoot(),
+                setup.signedBlockAndState.getSlot()))
+        .isFalse();
+  }
+
+  @Test
   void shouldOverrideForkChoiceUpdateReturnsTrueWhenAllChecksPass() {
     final ReorgTestSetup setup = new ReorgTestSetup();
     setup.withHeadBlock();
@@ -214,6 +359,128 @@ class ForkChoiceUtilReorgTest {
                 setup.signedBlockAndState.getRoot(),
                 setup.signedBlockAndState.getSlot()))
         .isTrue();
+  }
+
+  @Test
+  void shouldOverrideFcuCheckWeightsReturnsFalseForMultiSlotReorg() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withParentSlot(Optional.of(UInt64.ZERO));
+    setup.harness.headWeak = true;
+
+    assertThat(
+            setup.harness.shouldOverrideFcuCheckWeights(
+                setup.context,
+                setup.signedBlockAndState.getBlock(),
+                setup.signedBlockAndState.getRoot(),
+                UInt64.valueOf(3),
+                UInt64.valueOf(3)))
+        .isFalse();
+  }
+
+  @Test
+  void shouldOverrideFcuCheckWeightsReturnsTrueForWeakHeadAndStrongParent() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withParentSlot(Optional.of(UInt64.ZERO));
+    setup.harness.headWeak = true;
+    setup.harness.parentStrong = true;
+
+    assertThat(
+            setup.harness.shouldOverrideFcuCheckWeights(
+                setup.context,
+                setup.signedBlockAndState.getBlock(),
+                setup.signedBlockAndState.getRoot(),
+                UInt64.valueOf(2),
+                UInt64.valueOf(2)))
+        .isTrue();
+  }
+
+  @Test
+  void shouldOverrideFcuCheckWeightsReturnsFalseForStrongHead() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withParentSlot(Optional.of(UInt64.ZERO));
+    setup.harness.parentStrong = true;
+
+    assertThat(
+            setup.harness.shouldOverrideFcuCheckWeights(
+                setup.context,
+                setup.signedBlockAndState.getBlock(),
+                setup.signedBlockAndState.getRoot(),
+                UInt64.valueOf(2),
+                UInt64.valueOf(2)))
+        .isFalse();
+  }
+
+  @Test
+  void shouldOverrideFcuCheckWeightsReturnsFalseForWeakParent() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withParentSlot(Optional.of(UInt64.ZERO));
+    setup.harness.headWeak = true;
+
+    assertThat(
+            setup.harness.shouldOverrideFcuCheckWeights(
+                setup.context,
+                setup.signedBlockAndState.getBlock(),
+                setup.signedBlockAndState.getRoot(),
+                UInt64.valueOf(2),
+                UInt64.valueOf(2)))
+        .isFalse();
+  }
+
+  @Test
+  void shouldOverrideFcuCheckProposerPreStateReturnsFalseWhenStateIsMissing() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+
+    assertThat(
+            setup.harness.shouldOverrideFcuCheckProposerPreState(
+                setup.context, UInt64.valueOf(2), dataStructureUtil.randomBytes32()))
+        .isFalse();
+  }
+
+  @Test
+  void shouldOverrideFcuCheckProposerPreStateReturnsFalseWhenValidatorIsNotConnected() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    when(setup.store.getBlockStateIfAvailable(any()))
+        .thenReturn(Optional.of(setup.signedBlockAndState.getState()));
+    setup.context.validatorConnected = false;
+
+    assertThat(
+            setup.harness.shouldOverrideFcuCheckProposerPreState(
+                setup.context, UInt64.valueOf(2), dataStructureUtil.randomBytes32()))
+        .isFalse();
+  }
+
+  @Test
+  void shouldOverrideFcuCheckProposerPreStateReturnsTrueWhenValidatorIsConnected() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    when(setup.store.getBlockStateIfAvailable(any()))
+        .thenReturn(Optional.of(setup.signedBlockAndState.getState()));
+
+    assertThat(
+            setup.harness.shouldOverrideFcuCheckProposerPreState(
+                setup.context, UInt64.valueOf(2), dataStructureUtil.randomBytes32()))
+        .isTrue();
+  }
+
+  @Test
+  void isSingleSlotReorgReturnsTrueWhenParentAndProposalSlotsMatch() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withParentSlot(Optional.of(UInt64.ZERO));
+
+    assertThat(
+            setup.harness.isSingleSlotReorg(
+                setup.store, setup.signedBlockAndState.getBlock(), UInt64.valueOf(2)))
+        .isTrue();
+  }
+
+  @Test
+  void isSingleSlotReorgReturnsFalseWhenProposalSlotSkipsAhead() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withParentSlot(Optional.of(UInt64.ZERO));
+
+    assertThat(
+            setup.harness.isSingleSlotReorg(
+                setup.store, setup.signedBlockAndState.getBlock(), UInt64.valueOf(3)))
+        .isFalse();
   }
 
   @Test
