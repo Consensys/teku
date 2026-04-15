@@ -205,7 +205,7 @@ class Store extends CacheableStore {
 
     this.executionPayloadProvider =
         ExecutionPayloadProvider.combined(
-            createExecutionPayloadProviderWhileLocked(this.executionPayloads),
+            createExecutionPayloadProviderFromMapWhileLocked(this.executionPayloads),
             executionPayloadProvider);
   }
 
@@ -224,7 +224,7 @@ class Store extends CacheableStore {
     };
   }
 
-  private ExecutionPayloadProvider createExecutionPayloadProviderWhileLocked(
+  private ExecutionPayloadProvider createExecutionPayloadProviderFromMapWhileLocked(
       final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloadMap) {
     return (roots) -> {
       readLock.lock();
@@ -1060,7 +1060,6 @@ class Store extends CacheableStore {
                 blockRoot,
                 treeBuilder.build(),
                 blockProvider,
-                executionPayloadProvider,
                 new StateRegenerationBaseSelector(
                     spec,
                     Optional.ofNullable(latestEpochBoundary.get()),
