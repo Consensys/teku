@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -149,6 +150,42 @@ class UnblindingExecutionPayloadProviderTest {
                 result.size() == 2
                     && result.containsKey(blockRootA)
                     && result.containsKey(blockRootB));
+  }
+
+  @Test
+  void shouldServeCachedResultWithoutCallingElAgain() {
+    final SignedExecutionPayloadEnvelope originalEnvelope =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
+    final Bytes32 blockRoot = originalEnvelope.getBeaconBlockRoot();
+
+    final SignedBlindedExecutionPayloadEnvelope blindedEnvelope =
+        originalEnvelope.toSignedBlindedExecutionPayloadEnvelope(
+            SchemaDefinitionsGloas.required(
+                spec.atSlot(originalEnvelope.getSlot()).getSchemaDefinitions()));
+
+    final ExecutionPayloadBody body =
+        toExecutionPayloadBody(originalEnvelope.getMessage().getPayload());
+
+    final AtomicInteger elCallCount = new AtomicInteger(0);
+
+    final UnblindingExecutionPayloadProvider provider =
+        new UnblindingExecutionPayloadProvider(
+            spec,
+            roots -> SafeFuture.completedFuture(Map.of(blockRoot, blindedEnvelope)),
+            blockHashes -> {
+              elCallCount.incrementAndGet();
+              return SafeFuture.completedFuture(List.of(body));
+            });
+
+    // First call — should hit DB + EL
+    assertThat(provider.getExecutionPayloads(Set.of(blockRoot)))
+        .isCompletedWithValue(Map.of(blockRoot, originalEnvelope));
+    assertThat(elCallCount.get()).isEqualTo(1);
+
+    // Second call — should be served from cache, no EL call
+    assertThat(provider.getExecutionPayloads(Set.of(blockRoot)))
+        .isCompletedWithValue(Map.of(blockRoot, originalEnvelope));
+    assertThat(elCallCount.get()).isEqualTo(1);
   }
 
   private ExecutionPayloadBody toExecutionPayloadBody(final ExecutionPayload executionPayload) {
