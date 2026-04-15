@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -169,6 +170,48 @@ public class BeaconStateAccessorsFuluTest {
 
     // Slashed validator should still appear in the proposer list in Fulu
     assertThat(proposersAfter).isEqualTo(proposersBefore);
+  }
+
+  @Test
+  void processProposerLookahead_shouldIncludeSlashedValidatorsInLookahead() {
+    storageSystem.chainUpdater().initializeGenesis();
+    final BeaconState genesisState = storageSystem.getChainHead().getState();
+
+    final int slotsPerEpoch = specConfigFulu.getSlotsPerEpoch();
+    final int minSeedLookahead = specConfigFulu.getMinSeedLookahead();
+
+    // The epoch that processProposerLookahead will compute proposers for
+    final UInt64 targetEpoch =
+        stateAccessorsFulu.getCurrentEpoch(genesisState).plus(minSeedLookahead).plus(1);
+
+    // Find which validators would be selected as proposers for the target epoch
+    final List<Integer> expectedProposers =
+        stateAccessorsFulu.getBeaconProposerIndices(genesisState, targetEpoch);
+    final int slashedIndex = expectedProposers.getFirst();
+
+    // Slash that validator and run processProposerLookahead
+    final BeaconState stateAfterProcessing =
+        genesisState.updated(
+            mutableState -> {
+              final Validator validator = mutableState.getValidators().get(slashedIndex);
+              mutableState.getValidators().set(slashedIndex, validator.withSlashed(true));
+
+              final EpochProcessor epochProcessor = spec.getGenesisSpec().getEpochProcessor();
+              epochProcessor.processProposerLookahead(mutableState);
+            });
+
+    // Extract the last epoch of the proposer lookahead (the newly computed entries)
+    final BeaconStateFulu stateFulu = BeaconStateFulu.required(stateAfterProcessing);
+    final List<Integer> newLookaheadProposers =
+        stateFulu.getProposerLookahead().stream()
+            .skip(stateFulu.getProposerLookahead().size() - slotsPerEpoch)
+            .map(SszUInt64::get)
+            .map(UInt64::intValue)
+            .toList();
+
+    // Fulu does NOT exclude slashed validators — the proposer list should be unchanged
+    assertThat(newLookaheadProposers).isEqualTo(expectedProposers);
+    assertThat(newLookaheadProposers).contains(slashedIndex);
   }
 
   private List<Integer> getProposerLookaheadFromState(final BeaconStateFulu beaconStateFulu) {
