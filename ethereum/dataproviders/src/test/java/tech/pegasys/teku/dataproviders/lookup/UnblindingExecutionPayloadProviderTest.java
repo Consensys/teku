@@ -166,9 +166,9 @@ class UnblindingExecutionPayloadProviderTest {
         SchemaDefinitionsGloas.required(
             spec.atSlot(executionPayloadEnvelopeA.getSlot()).getSchemaDefinitions());
     final SignedBlindedExecutionPayloadEnvelope blindedExecutionPayloadEnvelopeA =
-        executionPayloadEnvelopeA.toSignedBlindedExecutionPayloadEnvelope(schemaDefinitionsGloas);
+        executionPayloadEnvelopeA.blind(schemaDefinitionsGloas);
     final SignedBlindedExecutionPayloadEnvelope blindedExecutionPayloadEnvelopeB =
-        executionPayloadEnvelopeB.toSignedBlindedExecutionPayloadEnvelope(schemaDefinitionsGloas);
+        executionPayloadEnvelopeB.blind(schemaDefinitionsGloas);
 
     final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> allBlinded =
         Map.of(
