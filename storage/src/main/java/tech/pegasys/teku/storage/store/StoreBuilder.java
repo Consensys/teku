@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -41,6 +42,7 @@ public class StoreBuilder {
   private MetricsSystem metricsSystem;
   private Spec spec;
   private BlockProvider blockProvider;
+  private ExecutionPayloadProvider executionPayloadProvider = ExecutionPayloadProvider.NOOP;
   private StateAndBlockSummaryProvider stateAndBlockProvider;
   private EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider;
   private Optional<Bytes32> latestCanonicalBlockRoot;
@@ -120,6 +122,7 @@ public class StoreBuilder {
           metricsSystem,
           spec,
           blockProvider,
+          executionPayloadProvider,
           stateAndBlockProvider,
           earliestBlobSidecarSlotProvider,
           anchor,
@@ -139,6 +142,7 @@ public class StoreBuilder {
         metricsSystem,
         spec,
         blockProvider,
+        executionPayloadProvider,
         stateAndBlockProvider,
         earliestBlobSidecarSlotProvider,
         anchor,
@@ -196,6 +200,13 @@ public class StoreBuilder {
   public StoreBuilder blockProvider(final BlockProvider blockProvider) {
     checkNotNull(blockProvider);
     this.blockProvider = blockProvider;
+    return this;
+  }
+
+  public StoreBuilder executionPayloadProvider(
+      final ExecutionPayloadProvider executionPayloadProvider) {
+    checkNotNull(executionPayloadProvider);
+    this.executionPayloadProvider = executionPayloadProvider;
     return this;
   }
 

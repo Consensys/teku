@@ -113,7 +113,9 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
@@ -123,6 +125,7 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
@@ -138,6 +141,7 @@ class ValidatorApiHandlerTest {
   private static final UInt64 PREVIOUS_EPOCH = EPOCH.minus(ONE);
 
   private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
+  private final UpdatableStore store = mock(UpdatableStore.class);
   private final SyncStateProvider syncStateProvider = mock(SyncStateProvider.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
@@ -162,6 +166,10 @@ class ValidatorApiHandlerTest {
       mock(ExecutionPayloadFactory.class);
   private final ExecutionPayloadPublisher executionPayloadPublisher =
       mock(ExecutionPayloadPublisher.class);
+  private final ExecutionPayloadBidManager executionPayloadBidManager =
+      mock(ExecutionPayloadBidManager.class);
+  private final ProposerPreferencesManager proposerPreferencesManager =
+      mock(ProposerPreferencesManager.class);
 
   private final SyncCommitteeMessagePool syncCommitteeMessagePool =
       mock(SyncCommitteeMessagePool.class);
@@ -215,8 +223,11 @@ class ValidatorApiHandlerTest {
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
+            executionPayloadBidManager,
+            proposerPreferencesManager,
             executionProofManager);
 
+    when(chainDataClient.getStore()).thenReturn(store);
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(forkChoiceTrigger.prepareForBlockProduction(any(), any())).thenReturn(SafeFuture.COMPLETE);
     when(chainDataClient.isOptimisticBlock(any())).thenReturn(false);
@@ -502,6 +513,8 @@ class ValidatorApiHandlerTest {
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
+            executionPayloadBidManager,
+            proposerPreferencesManager,
             executionProofManager);
     dataStructureUtil = new DataStructureUtil(spec);
     // Best state is still in Phase0
@@ -716,8 +729,6 @@ class ValidatorApiHandlerTest {
   public void createAttestationData_shouldCreateAttestation() {
     final UInt64 slot = spec.computeStartSlotAtEpoch(EPOCH).plus(ONE);
     when(chainDataClient.getCurrentSlot()).thenReturn(slot);
-
-    dataStructureUtil.randomBlockAndState(epochStartSlot);
     final SignedBlockAndState blockAndState =
         dataStructureUtil.randomSignedBlockAndState(epochStartSlot);
 
@@ -742,6 +753,7 @@ class ValidatorApiHandlerTest {
                 blockAndState.getState(),
                 blockAndState.getBlock().getMessage(),
                 UInt64.valueOf(committeeIndex)));
+    assertThat(attestationData.getIndex()).isEqualTo(ZERO);
     assertThat(attestationData.getSlot()).isEqualTo(slot);
     final InOrder inOrder = inOrder(forkChoiceTrigger, chainDataClient);
 
@@ -798,6 +810,7 @@ class ValidatorApiHandlerTest {
         .isEqualTo(
             spec.getGenericAttestationData(
                 slot, rightState, block.getMessage(), UInt64.valueOf(committeeIndex)));
+    assertThat(attestationData.getIndex()).isEqualTo(ZERO);
     assertThat(attestationData.getSlot()).isEqualTo(slot);
   }
 

@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionlayer;
 
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_FORK_CHOICE_UPDATED;
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_GET_PAYLOAD;
+import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_GET_PAYLOAD_BODIES_BY_HASH;
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_NEW_PAYLOAD;
 
 import java.util.Collections;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV3;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadBodiesByHashV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV3;
@@ -130,6 +132,9 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
     methods.put(ENGINE_NEW_PAYLOAD, new EngineNewPayloadV5(executionEngineClient));
     methods.put(ENGINE_GET_PAYLOAD, new EngineGetPayloadV5(executionEngineClient, spec));
     methods.put(ENGINE_FORK_CHOICE_UPDATED, new EngineForkChoiceUpdatedV3(executionEngineClient));
+    methods.put(
+        ENGINE_GET_PAYLOAD_BODIES_BY_HASH,
+        new EngineGetPayloadBodiesByHashV2(executionEngineClient));
 
     return methods;
   }

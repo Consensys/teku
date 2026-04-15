@@ -287,6 +287,22 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> getBlindedExecutionPayloadEnvelopes(
+      final Set<Bytes32> blockRoots) {
+    return blockRoots.stream()
+        .flatMap(root -> dao.getBlindedExecutionPayloadEnvelope(root).stream())
+        .collect(
+            Collectors.toMap(
+                SignedBlindedExecutionPayloadEnvelope::getBeaconBlockRoot,
+                Function.identity(),
+                (existing, duplicate) -> {
+                  throw new IllegalStateException(
+                      "Duplicate blinded execution payload envelope in DB for block root "
+                          + existing.getBeaconBlockRoot());
+                }));
+  }
+
+  @Override
   public Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz() {
     return dao.streamHotBlocksAsSsz();
   }
