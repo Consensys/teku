@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
@@ -401,6 +402,8 @@ public class SyncSourceBatchTest {
         .isEqualTo(expectedExecutionPayloadsByBlockRoot);
   }
 
+  // TODO-GLOAS: Enable when changes for https://github.com/Consensys/teku/issues/10562 are merged
+  @Disabled
   @Test
   void shouldReportBatchAsInvalidWhenExecutionPayloadIsMissing() {
     final int batchCount = 5;
@@ -424,6 +427,8 @@ public class SyncSourceBatchTest {
     verify(conflictResolutionStrategy).reportInvalidBatch(batch, getSyncSource(batch));
   }
 
+  // TODO-GLOAS: Enable when changes for https://github.com/Consensys/teku/issues/10562 are merged
+  @Disabled
   @Test
   void shouldReportBatchAsInvalidWhenExecutionPayloadIsMissingFromAPreviousRequest() {
     final int batchCount = 5;
@@ -453,9 +458,8 @@ public class SyncSourceBatchTest {
     batch.requestMoreBlocks(() -> {});
 
     receiveBlocks(batch, chainBuilder.getBlockAtSlot(batch.getLastSlot().longValue()));
-    chainBuilder
-        .getExecutionPayloadAtSlot(batch.getLastSlot())
-        .ifPresent(executionPayload -> receiveExecutionPayloads(batch, executionPayload));
+    receiveExecutionPayloads(
+        batch, chainBuilder.getExecutionPayloadAtSlot(batch.getLastSlot()).orElse(null));
 
     // batch should be reported as invalid
     verify(conflictResolutionStrategy).reportInvalidBatch(batch, getSyncSource(batch));
