@@ -250,6 +250,9 @@ jobs:
   ## Tests 
   unitTests:
     needs: assemble
+    permissions:
+      actions: read
+      contents: read
     uses: ./.github/workflows/matrix-tests-template.yml
     secrets: inherit  
     with:
@@ -289,6 +292,9 @@ jobs:
 
   integrationTests:
     needs: assemble
+    permissions:
+      actions: read
+      contents: read
     uses: ./.github/workflows/matrix-tests-template.yml
     secrets: inherit
     with:
@@ -328,6 +334,9 @@ jobs:
 
   propertyTests:
     needs: assemble
+    permissions:
+      actions: read
+      contents: read
     uses: ./.github/workflows/matrix-tests-template.yml
     secrets: inherit
     with:
@@ -367,6 +376,9 @@ jobs:
 
   acceptanceTests:
     needs: assemble
+    permissions:
+      actions: read
+      contents: read
     uses: ./.github/workflows/matrix-tests-template.yml
     secrets: inherit
     with:
