@@ -25,21 +25,27 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.beaconrestapi.schema.ErrorListBadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessageSchema;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
 class PostPayloadAttestationsTest extends AbstractMigratedBeaconHandlerTest {
@@ -95,6 +101,28 @@ class PostPayloadAttestationsTest extends AbstractMigratedBeaconHandlerTest {
             json);
     assertThat(requestBody).isInstanceOf(List.class);
     assertThat(((List<?>) requestBody).get(0)).isInstanceOf(PayloadAttestationMessage.class);
+  }
+
+  @Test
+  void shouldReadSszRequestBody() throws Exception {
+    final PayloadAttestationMessage message = dataStructureUtil.randomPayloadAttestationMessage();
+    final PayloadAttestationMessageSchema schema = message.getSchema();
+    final int ptcSize =
+        SpecConfigGloas.required(spec.forMilestone(SpecMilestone.GLOAS).getConfig()).getPtcSize();
+    final byte[] sszBytes =
+        SszListSchema.create(schema, ptcSize)
+            .createFromElements(List.of(message))
+            .sszSerialize()
+            .toArrayUnsafe();
+
+    final Object requestBody =
+        handler
+            .getMetadata()
+            .getRequestBody(
+                new ByteArrayInputStream(sszBytes), Optional.of(ContentTypes.OCTET_STREAM));
+
+    assertThat(requestBody).isInstanceOf(List.class);
+    assertThat(((List<?>) requestBody).getFirst()).isEqualTo(message);
   }
 
   @Test

@@ -90,16 +90,15 @@ public class PostPayloadAttestations extends RestApiEndpoint {
             schemaDefinitionCache.getSchemaDefinition(SpecMilestone.GLOAS));
     final PayloadAttestationMessageSchema payloadAttestationMessageSchema =
         schemaDefinitions.getPayloadAttestationMessageSchema();
-    final int maxPayloadAttestations =
-        SpecConfigGloas.required(spec.forMilestone(SpecMilestone.GLOAS).getConfig())
-            .getMaxPayloadAttestations();
+    final int ptcSize =
+        SpecConfigGloas.required(spec.forMilestone(SpecMilestone.GLOAS).getConfig()).getPtcSize();
 
     final OneOfArrayJsonRequestContentTypeDefinition.BodyTypeSelector<PayloadAttestationMessage>
         bodyTypeSelector = context -> payloadAttestationMessageSchema.getJsonTypeDefinition();
 
     final BiFunction<Bytes, Optional<String>, List<PayloadAttestationMessage>> octetStreamParser =
         (bytes, headerConsensusVersion) ->
-            SszListSchema.create(payloadAttestationMessageSchema, maxPayloadAttestations)
+            SszListSchema.create(payloadAttestationMessageSchema, ptcSize)
                 .sszDeserialize(bytes)
                 .asList();
 
