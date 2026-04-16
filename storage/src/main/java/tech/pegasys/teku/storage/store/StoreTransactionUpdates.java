@@ -26,13 +26,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.FinalizedChainData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.UpdateResult;
+import tech.pegasys.teku.storage.protoarray.ExecutionPayloadUpdate;
 
 class StoreTransactionUpdates {
   private final StoreTransaction tx;
@@ -53,7 +53,7 @@ class StoreTransactionUpdates {
   private final boolean blobSidecarsEnabled;
   private final boolean dataColumnSidecarsEnabled;
   private final boolean executionPayloadEnvelopesEnabled;
-  private final Map<Bytes32, SignedExecutionPayloadAndState> hotExecutionPayloadAndStates;
+  private final Map<Bytes32, ExecutionPayloadUpdate> hotExecutionPayloadAndStates;
   private final Map<Bytes32, SignedExecutionPayloadEnvelope> hotExecutionPayloads;
   private final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads;
 
@@ -74,7 +74,7 @@ class StoreTransactionUpdates {
       final boolean blobSidecarsEnabled,
       final boolean dataColumnSidecarsEnabled,
       final boolean executionPayloadEnvelopesEnabled,
-      final Map<Bytes32, SignedExecutionPayloadAndState> hotExecutionPayloadAndStates,
+      final Map<Bytes32, ExecutionPayloadUpdate> hotExecutionPayloadAndStates,
       final Map<Bytes32, SignedExecutionPayloadEnvelope> hotExecutionPayloads,
       final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads) {
     checkNotNull(tx, "Transaction is required");

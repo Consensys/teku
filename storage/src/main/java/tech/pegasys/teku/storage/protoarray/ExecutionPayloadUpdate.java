@@ -11,23 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.epbs;
+package tech.pegasys.teku.storage.protoarray;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-/**
- * Helper datastructure that holds a signed execution payload envelope with its corresponding state
- */
-public record SignedExecutionPayloadAndState(
-    SignedExecutionPayloadEnvelope executionPayload, BeaconState state, boolean isOptimistic) {
-  public UInt64 getSlot() {
-    return executionPayload.getMessage().getSlot();
-  }
-
-  public Bytes32 getBeaconBlockRoot() {
-    return executionPayload.getBeaconBlockRoot();
-  }
-}
+public record ExecutionPayloadUpdate(
+    SignedExecutionPayloadEnvelope executionPayload, boolean isOptimistic) {}

@@ -20,7 +20,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public interface BlockMetadataStore {
@@ -42,7 +41,7 @@ public interface BlockMetadataStore {
 
   void applyUpdate(
       Collection<BlockAndCheckpoints> addedBlocks,
-      Collection<SignedExecutionPayloadAndState> executionPayloads,
+      Collection<ExecutionPayloadUpdate> executionPayloads,
       Collection<Bytes32> pulledUpBlocks,
       Map<Bytes32, UInt64> removedBlocks,
       Checkpoint finalizedCheckpoint);

@@ -31,7 +31,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
@@ -664,7 +663,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   @Override
   public void applyUpdate(
       final Collection<BlockAndCheckpoints> newBlocks,
-      final Collection<SignedExecutionPayloadAndState> executionPayloads,
+      final Collection<ExecutionPayloadUpdate> executionPayloads,
       final Collection<Bytes32> pulledUpBlocks,
       final Map<Bytes32, UInt64> removedBlockRoots,
       final Checkpoint finalizedCheckpoint) {
@@ -683,16 +682,16 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
                       block.getExecutionBlockNumber(),
                       block.getExecutionBlockHash()));
       executionPayloads.forEach(
-          payloadAndState -> {
-            final var envelope = payloadAndState.executionPayload();
-            getForkChoiceModel(payloadAndState.getSlot())
+          executionPayloadUpdate -> {
+            final var envelope = executionPayloadUpdate.executionPayload();
+            getForkChoiceModel(envelope.getSlot())
                 .onExecutionPayload(
                     protoArray,
                     blockNodeIndex,
                     envelope.getBeaconBlockRoot(),
                     envelope.getMessage().getPayload().getBlockNumber(),
                     envelope.getMessage().getPayload().getBlockHash(),
-                    payloadAndState.isOptimistic());
+                    executionPayloadUpdate.isOptimistic());
             updateParentBestChildAndDescendantForBlockVariants(envelope.getBeaconBlockRoot());
           });
       removedBlockRoots.forEach(
