@@ -455,22 +455,6 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   }
 
   @Override
-  public Optional<ForkChoicePayloadStatus> payloadStatus(
-      final ProtoArray protoArray,
-      final BlockNodeVariantsIndex blockNodeIndex,
-      final Bytes32 blockRoot) {
-    // Compatibility read for block-root-only callers. This mirrors the best-available payload
-    // status without promoting it to a first-class "preferred node" abstraction.
-    if (blockNodeIndex.getFullNode(blockRoot).isPresent()) {
-      return Optional.of(ForkChoicePayloadStatus.PAYLOAD_STATUS_FULL);
-    }
-    if (blockNodeIndex.getEmptyNode(blockRoot).isPresent()) {
-      return Optional.of(ForkChoicePayloadStatus.PAYLOAD_STATUS_EMPTY);
-    }
-    return Optional.of(ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
-  }
-
-  @Override
   public void pullUpBlockCheckpoints(
       final ProtoArray protoArray,
       final BlockNodeVariantsIndex blockNodeIndex,
