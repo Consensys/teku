@@ -778,6 +778,7 @@ public class ForkChoiceUtil {
     return targetEpoch.isGreaterThan(miscHelpers.computeEpochAtSlot(vote.getNextSlot()))
         || vote.equals(VoteTracker.DEFAULT);
   }
+
   public boolean isHeadWeak(
       final ReadOnlyStore store, final Bytes32 root, final UInt64 reorgThreshold) {
     return store.isHeadWeak(root);

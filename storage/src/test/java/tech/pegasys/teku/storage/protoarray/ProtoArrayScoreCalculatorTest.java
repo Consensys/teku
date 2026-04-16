@@ -482,9 +482,7 @@ public class ProtoArrayScoreCalculatorTest {
 
     // Validator #0 is marked as equivocated
     VoteTracker vote = store.getVote(ZERO);
-    store.putVote(
-        ZERO,
-        new VoteTracker(vote.getNextRoot(), vote.getNextRoot(), true, true));
+    store.putVote(ZERO, new VoteTracker(vote.getNextRoot(), vote.getNextRoot(), true, true));
 
     List<Long> deltas =
         computeDeltas(
