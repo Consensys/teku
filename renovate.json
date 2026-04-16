@@ -3,7 +3,7 @@
   "extends": [
     "config:recommended"
   ],
-  "enabledManagers": ["github-actions"],
+  "enabledManagers": ["github-actions", "gradle"],
   "dependencyDashboard": false,
   "packageRules": [
     {
@@ -12,6 +12,12 @@
       "pinDigests": true,
       "minimumReleaseAge": "7 days",
       "groupName": "Renovatebot GHA Updates"
+    },
+    {
+      "description": "Group all Gradle dependency updates into a single PR",
+      "matchManagers": ["gradle"],
+      "minimumReleaseAge": "7 days",
+      "groupName": "Renovatebot Gradle Updates"
     }
   ]
 }
