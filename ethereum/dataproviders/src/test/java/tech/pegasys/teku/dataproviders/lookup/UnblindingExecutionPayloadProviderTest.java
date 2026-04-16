@@ -1,0 +1,166 @@
+/*
+ * Copyright Consensys Software Inc., 2026
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.dataproviders.lookup;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBody;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
+
+class UnblindingExecutionPayloadProviderTest {
+
+  private final Spec spec = TestSpecFactory.createMinimalGloas();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
+  @Test
+  void shouldUnblindExecutionPayloadEnvelope() {
+    final SignedExecutionPayloadEnvelope originalExecutionPayloadEnvelope =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
+    final Bytes32 blockRoot = originalExecutionPayloadEnvelope.getBeaconBlockRoot();
+
+    final SignedBlindedExecutionPayloadEnvelope blindedExecutionPayloadEnvelope =
+        originalExecutionPayloadEnvelope.toSignedBlindedExecutionPayloadEnvelope(
+            SchemaDefinitionsGloas.required(
+                spec.atSlot(originalExecutionPayloadEnvelope.getSlot()).getSchemaDefinitions()));
+
+    final ExecutionPayload fullExecutionPayload =
+        originalExecutionPayloadEnvelope.getMessage().getPayload();
+    final ExecutionPayloadBody executionPayloadBody = toExecutionPayloadBody(fullExecutionPayload);
+
+    final Bytes32 blockHash = fullExecutionPayload.getBlockHash();
+
+    final UnblindingExecutionPayloadProvider provider =
+        new UnblindingExecutionPayloadProvider(
+            spec,
+            roots -> SafeFuture.completedFuture(Map.of(blockRoot, blindedExecutionPayloadEnvelope)),
+            blockHashes -> {
+              assertThat(blockHashes).containsExactly(blockHash);
+              return SafeFuture.completedFuture(List.of(executionPayloadBody));
+            });
+
+    assertThat(provider.getExecutionPayloads(Set.of(blockRoot)))
+        .isCompletedWithValueMatching(
+            result ->
+                result.containsKey(blockRoot)
+                    && result
+                        .get(blockRoot)
+                        .hashTreeRoot()
+                        .equals(originalExecutionPayloadEnvelope.hashTreeRoot()));
+  }
+
+  @Test
+  void shouldReturnEmptyWhenNoBlindedEnvelopes() {
+    final UnblindingExecutionPayloadProvider provider =
+        new UnblindingExecutionPayloadProvider(
+            spec,
+            roots -> SafeFuture.completedFuture(Map.of()),
+            blockHashes -> {
+              throw new AssertionError("Should not call EL when no envelopes");
+            });
+
+    assertThat(provider.getExecutionPayloads(Set.of(dataStructureUtil.randomBytes32())))
+        .isCompletedWithValue(Map.of());
+  }
+
+  @Test
+  void shouldSkipWhenElReturnsNullBody() {
+    final SignedExecutionPayloadEnvelope originalEnvelope =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
+    final Bytes32 blockRoot = originalEnvelope.getBeaconBlockRoot();
+
+    final SignedBlindedExecutionPayloadEnvelope blindedEnvelope =
+        originalEnvelope.toSignedBlindedExecutionPayloadEnvelope(
+            SchemaDefinitionsGloas.required(
+                spec.atSlot(originalEnvelope.getSlot()).getSchemaDefinitions()));
+
+    final UnblindingExecutionPayloadProvider provider =
+        new UnblindingExecutionPayloadProvider(
+            spec,
+            roots -> SafeFuture.completedFuture(Map.of(blockRoot, blindedEnvelope)),
+            blockHashes -> {
+              final List<ExecutionPayloadBody> bodies = new ArrayList<>();
+              bodies.add(null);
+              return SafeFuture.completedFuture(bodies);
+            });
+
+    assertThat(provider.getExecutionPayloads(Set.of(blockRoot))).isCompletedWithValue(Map.of());
+  }
+
+  @Test
+  void shouldUnblindEquivocatingEnvelopes() {
+    final SignedExecutionPayloadEnvelope originalEnvelope =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(1);
+
+    final SchemaDefinitionsGloas schemaDefinitions =
+        SchemaDefinitionsGloas.required(
+            spec.atSlot(originalEnvelope.getSlot()).getSchemaDefinitions());
+    final SignedBlindedExecutionPayloadEnvelope blindedEnvelope =
+        originalEnvelope.toSignedBlindedExecutionPayloadEnvelope(schemaDefinitions);
+
+    // Two different beacon block roots referencing the same execution payload (equivocation)
+    final Bytes32 blockRootA = dataStructureUtil.randomBytes32();
+    final Bytes32 blockRootB = dataStructureUtil.randomBytes32();
+
+    final ExecutionPayloadBody body =
+        toExecutionPayloadBody(originalEnvelope.getMessage().getPayload());
+
+    final UnblindingExecutionPayloadProvider provider =
+        new UnblindingExecutionPayloadProvider(
+            spec,
+            roots ->
+                SafeFuture.completedFuture(
+                    Map.of(blockRootA, blindedEnvelope, blockRootB, blindedEnvelope)),
+            blockHashes -> {
+              // Same execution block hash. The EL should only be asked for one unique hash
+              assertThat(blockHashes).hasSize(1);
+              return SafeFuture.completedFuture(List.of(body));
+            });
+
+    assertThat(provider.getExecutionPayloads(Set.of(blockRootA, blockRootB)))
+        .isCompletedWithValueMatching(
+            result ->
+                result.size() == 2
+                    && result.containsKey(blockRootA)
+                    && result.containsKey(blockRootB));
+  }
+
+  private ExecutionPayloadBody toExecutionPayloadBody(final ExecutionPayload executionPayload) {
+    final List<Bytes> transactions =
+        executionPayload.getTransactions().stream().map(SszByteListImpl::getBytes).toList();
+    final List<ExecutionPayloadBody.EncodedWithdrawal> withdrawals =
+        ExecutionPayloadCapella.required(executionPayload).getWithdrawals().stream()
+            .map(
+                w ->
+                    new ExecutionPayloadBody.EncodedWithdrawal(
+                        w.getIndex(), w.getValidatorIndex(), w.getAddress(), w.getAmount()))
+            .toList();
+    return new ExecutionPayloadBody(transactions, withdrawals, Bytes.EMPTY);
+  }
+}

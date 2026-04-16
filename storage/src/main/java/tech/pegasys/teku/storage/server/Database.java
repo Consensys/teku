@@ -175,6 +175,9 @@ public interface Database extends AutoCloseable {
   Optional<SignedBlindedExecutionPayloadEnvelope> getBlindedExecutionPayloadEnvelope(
       Bytes32 blockRoot);
 
+  Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> getBlindedExecutionPayloadEnvelopes(
+      Set<Bytes32> blockRoots);
+
   @MustBeClosed
   Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz();
 

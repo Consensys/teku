@@ -158,11 +158,18 @@ public class CombinedChainDataClient {
                     .thenApply(
                         maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot))))
         .orElseGet(
-            () -> {
-              // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 query for an execution
-              // payload for a finalized slot from the  historical chain data
-              return SafeFuture.completedFuture(Optional.empty());
-            });
+            () ->
+                historicalChainData
+                    .getFinalizedBlockAtSlot(slot)
+                    .thenCompose(
+                        maybeBlock ->
+                            maybeBlock
+                                .map(
+                                    block ->
+                                        getExecutionPayloadByBlockRoot(block.getRoot())
+                                            .thenApply(
+                                                ep -> ep.filter(e -> e.getSlot().equals(slot))))
+                                .orElse(SafeFuture.completedFuture(Optional.empty()))));
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockInEffectAtSlot(final UInt64 slot) {
@@ -610,17 +617,7 @@ public class CombinedChainDataClient {
 
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> getExecutionPayloadByBlockRoot(
       final Bytes32 blockRoot) {
-    return recentChainData
-        .retrieveSignedExecutionPayloadEnvelopeByBlockRoot(blockRoot)
-        .thenCompose(
-            maybeExecutionPayload -> {
-              if (maybeExecutionPayload.isPresent()) {
-                return SafeFuture.completedFuture(maybeExecutionPayload);
-              }
-              // TODO-GLOAS: https://github.com/Consensys/teku/issues/10098 query for an execution
-              // payload by block root from the historical chain data
-              return SafeFuture.completedFuture(Optional.empty());
-            });
+    return recentChainData.retrieveSignedExecutionPayloadEnvelopeByBlockRoot(blockRoot);
   }
 
   public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobSidecarSlot() {
