@@ -8,7 +8,6 @@ on:
     types: [opened,closed,synchronize]
 
 permissions:
-  actions: write
   contents: write # 'write' = this repo itself, 'read' = remote repository
   pull-requests: write
   statuses: write

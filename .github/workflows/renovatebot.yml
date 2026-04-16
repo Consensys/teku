@@ -10,6 +10,8 @@ on:
       - '.github/workflows/**'
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   renovatebot-check:
     runs-on: ubuntu-24.04

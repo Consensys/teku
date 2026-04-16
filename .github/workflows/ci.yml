@@ -48,6 +48,8 @@ env:
   JAVA_TOOL_OPTIONS: -Xmx4096m
   GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=4 -Xmx4096m
 
+permissions: read-all
+
 jobs:
 
   spotless:
@@ -283,6 +285,10 @@ jobs:
     runs-on: ubuntu-24.04
     needs: unitTests
     if: always()
+    permissions:
+      contents: read
+      actions: read
+      checks: write
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/collate-junit-reports
@@ -324,6 +330,10 @@ jobs:
     runs-on: ubuntu-24.04
     needs: integrationTests
     if: always()
+    permissions:
+      contents: read
+      actions: read
+      checks: write
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/collate-junit-reports
@@ -365,6 +375,10 @@ jobs:
     runs-on: ubuntu-24.04
     needs: propertyTests
     if: always()
+    permissions:
+      contents: read
+      actions: read
+      checks: write
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/collate-junit-reports
@@ -406,6 +420,10 @@ jobs:
     runs-on: ubuntu-24.04
     needs: acceptanceTests
     if: always()
+    permissions:
+      contents: read
+      actions: read
+      checks: write
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/collate-junit-reports
@@ -566,6 +584,10 @@ jobs:
     runs-on: ubuntu-24.04
     needs: referenceTests
     if: always()
+    permissions:
+      contents: read
+      actions: read
+      checks: write
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/collate-junit-reports
