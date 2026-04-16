@@ -15,6 +15,7 @@ jobs:
   publishRelease:
     runs-on: ubuntu-24.04
     permissions:
+      actions: read
       contents: write  
     environment: publish
     steps:

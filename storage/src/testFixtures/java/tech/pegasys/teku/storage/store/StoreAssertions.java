@@ -60,7 +60,6 @@ public class StoreAssertions {
             "epochStatesCountGauge",
             "blobSidecars",
             "blobSidecarsBlocksCountGauge",
-            "executionPayloadStates",
             "executionPayloads",
             "executionPayloadProvider")
         .isEqualTo(expectedState);

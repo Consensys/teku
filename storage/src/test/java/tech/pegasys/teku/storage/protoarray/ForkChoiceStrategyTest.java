@@ -40,6 +40,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -224,6 +226,20 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   }
 
   @Test
+  void getAncestorNode_returnsBaseNodeForKnownAncestor() {
+    final StorageSystem storageSystem = initStorageSystem();
+    storageSystem.chainUpdater().advanceChain(1);
+    final SignedBlockAndState ancestor = storageSystem.chainUpdater().advanceChain(2);
+    storageSystem.chainUpdater().advanceChain(3);
+    final SignedBlockAndState head = storageSystem.chainUpdater().advanceChain(5);
+    final ForkChoiceStrategy strategy = getProtoArray(storageSystem);
+
+    assertThat(strategy.getAncestorNode(head.getRoot(), ancestor.getSlot()))
+        .contains(
+            new ForkChoiceNode(ancestor.getRoot(), ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING));
+  }
+
+  @Test
   void getChainHeads() {
     final StorageSystem storageSystem = initStorageSystem();
     final SignedBlockAndState head = storageSystem.chainUpdater().advanceChain(5);
@@ -240,7 +256,8 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                     head.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
                     ProtoNodeValidationStatus.VALID,
                     spec.calculateBlockCheckpoints(head.getState()),
-                    ZERO)));
+                    ZERO,
+                    ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING)));
   }
 
   @Test

@@ -42,8 +42,7 @@ public class StorageUpdate {
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final Map<Bytes32, BlockAndCheckpoints> hotBlocks;
   private final Map<Bytes32, BeaconState> hotStates;
-  private final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
-      blindedExecutionPayloadEnvelopesByBlockRoot;
+  private final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads;
   private final Map<Bytes32, UInt64> deletedHotBlocks;
   private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
   private final Optional<UInt64> maybeEarliestBlobSidecarSlot;
@@ -63,8 +62,7 @@ public class StorageUpdate {
       final Optional<Checkpoint> bestJustifiedCheckpoint,
       final Map<Bytes32, BlockAndCheckpoints> hotBlocks,
       final Map<Bytes32, BeaconState> hotStates,
-      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
-          blindedExecutionPayloadEnvelopesByBlockRoot,
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot,
       final Map<Bytes32, UInt64> deletedHotBlocks,
@@ -82,7 +80,7 @@ public class StorageUpdate {
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
     this.hotBlocks = hotBlocks;
     this.hotStates = hotStates;
-    this.blindedExecutionPayloadEnvelopesByBlockRoot = blindedExecutionPayloadEnvelopesByBlockRoot;
+    this.blindedExecutionPayloads = blindedExecutionPayloads;
     this.blobSidecars = blobSidecars;
     this.maybeEarliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
     this.deletedHotBlocks = deletedHotBlocks;
@@ -105,7 +103,7 @@ public class StorageUpdate {
             && bestJustifiedCheckpoint.isEmpty()
             && hotBlocks.isEmpty()
             && hotStates.isEmpty()
-            && blindedExecutionPayloadEnvelopesByBlockRoot.isEmpty()
+            && blindedExecutionPayloads.isEmpty()
             && deletedHotBlocks.isEmpty()
             && stateRoots.isEmpty()
             && blobSidecars.isEmpty()
@@ -151,9 +149,8 @@ public class StorageUpdate {
     return hotStates;
   }
 
-  public Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
-      getBlindedExecutionPayloadEnvelopesByBlockRoot() {
-    return blindedExecutionPayloadEnvelopesByBlockRoot;
+  public Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> getBlindedExecutionPayloads() {
+    return blindedExecutionPayloads;
   }
 
   public Map<Bytes32, UInt64> getDeletedHotBlocks() {

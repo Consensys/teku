@@ -37,11 +37,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -60,86 +58,62 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
   }
 
   @Test
-  public void getExecutionPayloadStateIfAvailable_fromTx() {
+  public void commit_shouldAddBlindedExecutionPayloadsToStorageUpdate() {
     final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
-    final Optional<SignedExecutionPayloadAndState> maybeExecutionPayloadAndState =
-        chainBuilder.getExecutionPayloadAndStateAtSlot(blockAndState.getSlot());
-    assertThat(maybeExecutionPayloadAndState).isPresent();
-    final SignedExecutionPayloadAndState executionPayloadAndState =
-        maybeExecutionPayloadAndState.get();
-    final UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
-    tx.putExecutionPayloadAndState(
-        executionPayloadAndState.executionPayload(), executionPayloadAndState.state());
-
-    final Optional<BeaconState> result =
-        tx.getExecutionPayloadStateIfAvailable(blockAndState.getRoot());
-    assertThat(result).hasValue(executionPayloadAndState.state());
-  }
-
-  @Test
-  public void commit_shouldAddBlindedExecutionPayloadEnvelopesToStorageUpdate() {
-    final UpdatableStore store = createGenesisStore();
-    final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
-    final SignedExecutionPayloadAndState executionPayloadAndState =
-        chainBuilder.getExecutionPayloadAndStateAtSlot(blockAndState.getSlot()).orElseThrow();
+    final SignedExecutionPayloadEnvelope executionPayload =
+        chainBuilder.getExecutionPayloadAtSlot(blockAndState.getSlot()).orElseThrow();
     final StorageUpdateChannel channel = mock(StorageUpdateChannel.class);
     when(channel.onStorageUpdate(any())).thenReturn(SafeFuture.completedFuture(UpdateResult.EMPTY));
 
     final UpdatableStore.StoreTransaction tx = store.startTransaction(channel);
     tx.putBlockAndState(blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
-    tx.putExecutionPayloadAndState(
-        executionPayloadAndState.executionPayload(), executionPayloadAndState.state());
+    tx.putExecutionPayload(executionPayload);
 
     assertThat(tx.commit()).isCompleted();
     final ArgumentCaptor<StorageUpdate> captor = ArgumentCaptor.forClass(StorageUpdate.class);
     verify(channel).onStorageUpdate(captor.capture());
-    assertThat(captor.getValue().getBlindedExecutionPayloadEnvelopesByBlockRoot())
+    assertThat(captor.getValue().getBlindedExecutionPayloads())
         .containsEntry(
             blockAndState.getRoot(),
-            executionPayloadAndState
-                .executionPayload()
-                .toSignedBlindedExecutionPayloadEnvelope(
-                    SchemaDefinitionsGloas.required(
-                        spec.atSlot(executionPayloadAndState.executionPayload().getSlot())
-                            .getSchemaDefinitions())));
+            executionPayload.blind(
+                SchemaDefinitionsGloas.required(
+                    spec.atSlot(executionPayload.getSlot()).getSchemaDefinitions())));
   }
 
   @Test
-  public void commit_shouldAddAllBlindedExecutionPayloadEnvelopesToStorageUpdate() {
+  public void commit_shouldAddAllBlindedExecutionPayloadsToStorageUpdate() {
     final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState firstBlockAndState = chainBuilder.generateNextBlock();
     final SignedBlockAndState secondBlockAndState = chainBuilder.generateNextBlock();
-    final SignedExecutionPayloadAndState firstExecutionPayloadAndState =
-        chainBuilder.getExecutionPayloadAndStateAtSlot(firstBlockAndState.getSlot()).orElseThrow();
-    final SignedExecutionPayloadAndState secondExecutionPayloadAndState =
-        chainBuilder.getExecutionPayloadAndStateAtSlot(secondBlockAndState.getSlot()).orElseThrow();
+    final SignedExecutionPayloadEnvelope firstExecutionPayload =
+        chainBuilder.getExecutionPayloadAtSlot(firstBlockAndState.getSlot()).orElseThrow();
+    final SignedExecutionPayloadEnvelope secondExecutionPayload =
+        chainBuilder.getExecutionPayloadAtSlot(secondBlockAndState.getSlot()).orElseThrow();
     final StorageUpdateChannel channel = mock(StorageUpdateChannel.class);
     when(channel.onStorageUpdate(any())).thenReturn(SafeFuture.completedFuture(UpdateResult.EMPTY));
 
     final UpdatableStore.StoreTransaction tx = store.startTransaction(channel);
     tx.putBlockAndState(
         firstBlockAndState, spec.calculateBlockCheckpoints(firstBlockAndState.getState()));
-    tx.putExecutionPayloadAndState(
-        firstExecutionPayloadAndState.executionPayload(), firstExecutionPayloadAndState.state());
+    tx.putExecutionPayload(firstExecutionPayload);
     tx.putBlockAndState(
         secondBlockAndState, spec.calculateBlockCheckpoints(secondBlockAndState.getState()));
-    tx.putExecutionPayloadAndState(
-        secondExecutionPayloadAndState.executionPayload(), secondExecutionPayloadAndState.state());
+    tx.putExecutionPayload(secondExecutionPayload);
 
     assertThat(tx.commit()).isCompleted();
     final ArgumentCaptor<StorageUpdate> captor = ArgumentCaptor.forClass(StorageUpdate.class);
     verify(channel).onStorageUpdate(captor.capture());
-    assertThat(captor.getValue().getBlindedExecutionPayloadEnvelopesByBlockRoot())
+    assertThat(captor.getValue().getBlindedExecutionPayloads())
         .containsOnlyKeys(firstBlockAndState.getRoot(), secondBlockAndState.getRoot());
   }
 
   @Test
   public void commit_shouldRetainBlindedEnvelopesForBlocksFinalizedInSameTransaction() {
     final List<BLSKeyPair> keys = BLSKeyGenerator.generateKeyPairs(16);
-    final ChainBuilder glaosCchainBuilder = ChainBuilder.create(spec, keys);
-    final SignedBlockAndState genesis = glaosCchainBuilder.generateGenesis();
-    final Checkpoint genesisCheckpoint = glaosCchainBuilder.getCurrentCheckpointForEpoch(0);
+    final ChainBuilder gloasChainBuilder = ChainBuilder.create(spec, keys);
+    final SignedBlockAndState genesis = gloasChainBuilder.generateGenesis();
+    final Checkpoint genesisCheckpoint = gloasChainBuilder.getCurrentCheckpointForEpoch(0);
 
     final UpdatableStore store =
         StoreBuilder.create()
@@ -173,7 +147,7 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
 
     // Generate blocks spanning 2 epochs so we can finalize epoch 1
     final UInt64 epoch2Slot = spec.computeStartSlotAtEpoch(UInt64.valueOf(2));
-    glaosCchainBuilder.generateBlocksUpToSlot(epoch2Slot);
+    gloasChainBuilder.generateBlocksUpToSlot(epoch2Slot);
 
     final StorageUpdateChannel channel = mock(StorageUpdateChannel.class);
     when(channel.onStorageUpdate(any())).thenReturn(SafeFuture.completedFuture(UpdateResult.EMPTY));
@@ -181,23 +155,20 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
     final UpdatableStore.StoreTransaction tx = store.startTransaction(channel);
 
     // Add all blocks and their execution payloads in the same transaction
-    glaosCchainBuilder
-        .streamBlocksAndStates(1, glaosCchainBuilder.getLatestSlot().longValue())
+    gloasChainBuilder
+        .streamBlocksAndStates(1, gloasChainBuilder.getLatestSlot().longValue())
         .forEach(
             blockAndState -> {
               tx.putBlockAndState(
                   blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
-              glaosCchainBuilder
-                  .getExecutionPayloadAndStateAtSlot(blockAndState.getSlot())
-                  .ifPresent(
-                      epAndState ->
-                          tx.putExecutionPayloadAndState(
-                              epAndState.executionPayload(), epAndState.state()));
+              gloasChainBuilder
+                  .getExecutionPayloadAtSlot(blockAndState.getSlot())
+                  .ifPresent(tx::putExecutionPayload);
             });
 
     // Finalize at epoch 1 — blocks before this checkpoint will be pruned from hot
     final Checkpoint finalizedCheckpoint =
-        glaosCchainBuilder.getCurrentCheckpointForEpoch(UInt64.valueOf(1));
+        gloasChainBuilder.getCurrentCheckpointForEpoch(UInt64.valueOf(1));
     tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
 
     assertThat(tx.commit()).isCompleted();
@@ -207,12 +178,12 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
 
     // Finalized blocks were pruned from hot, but their envelopes must still be present
     final SignedBlockAndState finalizedBlockAndState =
-        glaosCchainBuilder.getBlockAndState(finalizedCheckpoint.getRoot()).orElseThrow();
-    glaosCchainBuilder
+        gloasChainBuilder.getBlockAndState(finalizedCheckpoint.getRoot()).orElseThrow();
+    gloasChainBuilder
         .streamBlocksAndStates(1, finalizedBlockAndState.getSlot().longValue())
         .forEach(
             blockAndState ->
-                assertThat(storageUpdate.getBlindedExecutionPayloadEnvelopesByBlockRoot())
+                assertThat(storageUpdate.getBlindedExecutionPayloads())
                     .describedAs(
                         "Envelope for finalized block at slot %s should be present",
                         blockAndState.getSlot())
@@ -223,17 +194,16 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
   public void retrieveSignedExecutionPayload_fromHotStore() {
     final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
-    final SignedExecutionPayloadAndState executionPayloadAndState =
-        chainBuilder.getExecutionPayloadAndStateAtSlot(blockAndState.getSlot()).orElseThrow();
+    final SignedExecutionPayloadEnvelope executionPayload =
+        chainBuilder.getExecutionPayloadAtSlot(blockAndState.getSlot()).orElseThrow();
 
     final UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     tx.putBlockAndState(blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
-    tx.putExecutionPayloadAndState(
-        executionPayloadAndState.executionPayload(), executionPayloadAndState.state());
+    tx.putExecutionPayload(executionPayload);
     assertThat(tx.commit()).isCompleted();
 
     assertThat(store.retrieveSignedExecutionPayload(blockAndState.getRoot()))
-        .isCompletedWithValue(Optional.of(executionPayloadAndState.executionPayload()));
+        .isCompletedWithValue(Optional.of(executionPayload));
   }
 
   @Test
