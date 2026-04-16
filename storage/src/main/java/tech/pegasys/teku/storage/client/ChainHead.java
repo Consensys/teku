@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.client;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -48,15 +49,7 @@ public class ChainHead implements MinimalBeaconBlockSummary {
     this.stateAndBlockSummaryFuture = stateAndBlockSummaryFuture;
   }
 
-  public static ChainHead create(final ChainHead chainHead) {
-    return new ChainHead(
-        chainHead.blockData,
-        chainHead.executionPayloadBlockHash,
-        chainHead.isOptimistic,
-        chainHead.stateAndBlockSummaryFuture,
-        chainHead.getPayloadStatus());
-  }
-
+  @VisibleForTesting
   public static ChainHead create(final StateAndBlockSummary stateAndBlockSummary) {
     return new ChainHead(
         stateAndBlockSummary.getBlockSummary(),
@@ -66,6 +59,7 @@ public class ChainHead implements MinimalBeaconBlockSummary {
         ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
   }
 
+  @VisibleForTesting
   public static ChainHead create(final SignedBlockAndState blockAndState) {
     return new ChainHead(
         blockAndState.getBlockSummary(),
