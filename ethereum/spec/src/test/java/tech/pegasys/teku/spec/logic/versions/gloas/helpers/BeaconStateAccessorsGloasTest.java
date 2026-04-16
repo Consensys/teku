@@ -169,7 +169,9 @@ public class BeaconStateAccessorsGloasTest {
   public void getNextSyncCommitteeIndices_shouldExcludeSlashedValidators() {
     storageSystem.chainUpdater().initializeGenesis();
     final BeaconState genesisState = storageSystem.getChainHead().getState();
-    final int slashedIndex = 0;
+    // chosen based on simulation that helped figure index 1 was present in the selected sync
+    // committee for the next epoch
+    final int slashedIndex = 1;
     final BeaconState state =
         genesisState.updated(
             mutableState -> {
@@ -178,7 +180,7 @@ public class BeaconStateAccessorsGloasTest {
             });
 
     final IntList syncCommitteeIndices = beaconStateAccessors.getNextSyncCommitteeIndices(state);
-
+    System.out.println(syncCommitteeIndices);
     assertThat(syncCommitteeIndices.size()).isGreaterThan(0);
     assertThat(syncCommitteeIndices.contains(slashedIndex)).isFalse();
   }
@@ -187,7 +189,7 @@ public class BeaconStateAccessorsGloasTest {
   public void getNextSyncCommitteeIndices_shouldExcludeMultipleSlashedValidators() {
     storageSystem.chainUpdater().initializeGenesis();
     final BeaconState genesisState = storageSystem.getChainHead().getState();
-    final int[] slashedIndices = {0, 1, 2};
+    final int[] slashedIndices = {2, 3, 4};
     final BeaconState state =
         genesisState.updated(
             mutableState -> {
