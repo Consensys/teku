@@ -583,6 +583,10 @@ jobs:
   publishDockerJDK21:
     if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
     needs: [assemble, unitTests, integrationTests, propertyTests, acceptanceTests, referenceTests]
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
     uses: ./.github/workflows/publish-docker.yml
     with:
       assemble_run_id: ${{ github.run_id }}
@@ -593,6 +597,10 @@ jobs:
   publishDockerJDK25:
     if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
     needs: [assemble, unitTests, integrationTests, propertyTests, acceptanceTests, referenceTests]
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
     uses: ./.github/workflows/publish-docker.yml
     with:
       assemble_run_id: ${{ github.run_id }}
@@ -604,6 +612,9 @@ jobs:
   publishRelease:
     if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
     needs: [assemble, unitTests, integrationTests, propertyTests, acceptanceTests, referenceTests]
+    permissions:
+      actions: read
+      contents: write
     uses: ./.github/workflows/publish-release.yml
     with:
       assemble_run_id: ${{ github.run_id }}
