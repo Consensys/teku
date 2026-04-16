@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.store;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.dataproviders.generators.StateAtSlotTask.AsyncStateProvider.fromBlockAndState;
-import static tech.pegasys.teku.dataproviders.generators.StateAtSlotTask.AsyncStateProvider.fromExecutionPayloadAndState;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -120,6 +119,20 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     executionPayloadData.put(
         executionPayload.getBeaconBlockRoot(),
         new SignedExecutionPayloadAndState(executionPayload, state, isOptimistic));
+  }
+
+  @Override
+  public void putExecutionPayload(final SignedExecutionPayloadEnvelope executionPayload) {
+    final Bytes32 beaconBlockRoot = executionPayload.getBeaconBlockRoot();
+    final BeaconState state =
+        Optional.ofNullable(blockData.get(beaconBlockRoot))
+            .map(SignedBlockAndState::getState)
+            .or(() -> store.getBlockStateIfAvailable(beaconBlockRoot))
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Missing block state for execution payload " + beaconBlockRoot));
+    putExecutionPayloadAndState(executionPayload, state, false);
   }
 
   private boolean needToUpdateEarliestBlobSidecarSlot(
@@ -385,30 +398,6 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     return Optional.ofNullable(blockData.get(blockRoot))
         .map(SignedBlockAndState::getState)
         .or(() -> store.getBlockStateIfAvailable(blockRoot));
-  }
-
-  @Override
-  public SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(
-      final SlotAndBlockRoot slotAndBlockRoot) {
-    final SignedExecutionPayloadAndState inMemoryExecutionPayloadAndState =
-        executionPayloadData.get(slotAndBlockRoot.getBlockRoot());
-    if (inMemoryExecutionPayloadAndState != null) {
-      // Not executing the task via the task queue to avoid caching the result before the tx is
-      // committed
-      return new StateAtSlotTask(
-              spec,
-              slotAndBlockRoot,
-              fromExecutionPayloadAndState(inMemoryExecutionPayloadAndState))
-          .performTask();
-    }
-    return store.retrieveExecutionPayloadState(slotAndBlockRoot);
-  }
-
-  @Override
-  public Optional<BeaconState> getExecutionPayloadStateIfAvailable(final Bytes32 blockRoot) {
-    return Optional.ofNullable(executionPayloadData.get(blockRoot))
-        .map(SignedExecutionPayloadAndState::state)
-        .or(() -> store.getExecutionPayloadStateIfAvailable(blockRoot));
   }
 
   @Override

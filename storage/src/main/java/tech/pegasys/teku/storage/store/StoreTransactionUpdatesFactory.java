@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -56,6 +57,7 @@ class StoreTransactionUpdatesFactory {
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final AnchorPoint latestFinalized;
   private final Map<Bytes32, UInt64> prunedHotBlockRoots = new ConcurrentHashMap<>();
+  private final Map<Bytes32, SignedExecutionPayloadAndState> hotExecutionPayloadAndStates;
   private final Map<Bytes32, SignedExecutionPayloadEnvelope> hotExecutionPayloads;
 
   public StoreTransactionUpdatesFactory(
@@ -79,7 +81,12 @@ class StoreTransactionUpdatesFactory {
     maybeEarliestBlobSidecarSlot = tx.maybeEarliestBlobSidecarTransactionSlot;
     maybeLatestCanonicalBlockRoot = tx.maybeLatestCanonicalBlockRoot;
     maybeCustodyGroupCount = tx.maybeCustodyGroupCount;
-    hotExecutionPayloads = new ConcurrentHashMap<>(tx.executionPayloadData);
+    hotExecutionPayloadAndStates = new ConcurrentHashMap<>(tx.executionPayloadData);
+    hotExecutionPayloads =
+        hotExecutionPayloadAndStates.entrySet().stream()
+            .collect(
+                Collectors.toConcurrentMap(
+                    Map.Entry::getKey, entry -> entry.getValue().executionPayload()));
   }
 
   public static StoreTransactionUpdates create(
@@ -145,6 +152,7 @@ class StoreTransactionUpdatesFactory {
             blockRoot -> {
               hotBlocks.remove(blockRoot);
               hotBlockAndStates.remove(blockRoot);
+              hotExecutionPayloadAndStates.remove(blockRoot);
               hotExecutionPayloads.remove(blockRoot);
             });
 
@@ -283,6 +291,7 @@ class StoreTransactionUpdatesFactory {
         spec.supportsBlobSidecars(),
         spec.supportsDataColumnSidecars(),
         spec.supportsExecutionPayloadEnvelopes(),
+        hotExecutionPayloadAndStates,
         hotExecutionPayloads,
         blindedExecutionPayloads);
   }
