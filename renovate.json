@@ -3,7 +3,7 @@
   "extends": [
     "config:recommended"
   ],
-  "enabledManagers": ["github-actions", "gradle"],
+  "enabledManagers": ["github-actions", "gradle", "dockerfile"],
   "dependencyDashboard": false,
   "packageRules": [
     {
@@ -12,6 +12,12 @@
       "pinDigests": true,
       "minimumReleaseAge": "7 days",
       "groupName": "Renovatebot GHA Updates"
+    },
+    {
+      "description": "Group all Dockerfile base image updates into a single PR",
+      "matchManagers": ["dockerfile"],
+      "minimumReleaseAge": "7 days",
+      "groupName": "Renovatebot Dockerfile Updates"
     },
     {
       "description": "Group all Gradle dependency updates into a single PR",
