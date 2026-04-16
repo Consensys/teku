@@ -210,7 +210,8 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     permissions:
-      contents: write 
+      actions: read
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -254,7 +255,6 @@ jobs:
       actions: read
       contents: read
     uses: ./.github/workflows/matrix-tests-template.yml
-    secrets: inherit  
     with:
       assemble_output_run_id: ${{ github.run_id }}
       stage_name: Unit Tests
@@ -296,7 +296,6 @@ jobs:
       actions: read
       contents: read
     uses: ./.github/workflows/matrix-tests-template.yml
-    secrets: inherit
     with:
       assemble_output_run_id: ${{ github.run_id }}
       stage_name: Integration Tests
@@ -338,7 +337,6 @@ jobs:
       actions: read
       contents: read
     uses: ./.github/workflows/matrix-tests-template.yml
-    secrets: inherit
     with:
       assemble_output_run_id: ${{ github.run_id }}
       stage_name: Property Tests
@@ -380,7 +378,6 @@ jobs:
       actions: read
       contents: read
     uses: ./.github/workflows/matrix-tests-template.yml
-    secrets: inherit
     with:
       assemble_output_run_id: ${{ github.run_id }}
       stage_name: Acceptance Tests
