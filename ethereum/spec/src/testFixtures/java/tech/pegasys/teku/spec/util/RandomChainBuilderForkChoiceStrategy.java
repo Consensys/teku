@@ -156,11 +156,6 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
     return getBlock(blockRoot).map(block -> UInt64.ZERO);
   }
 
-  @Override
-  public Optional<ForkChoicePayloadStatus> payloadStatus(final Bytes32 blockRoot) {
-    return getBlock(blockRoot).map(__ -> ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
-  }
-
   private Optional<SignedBeaconBlock> getBlock(final Bytes32 root) {
     return chainBuilder
         .getBlock(root)

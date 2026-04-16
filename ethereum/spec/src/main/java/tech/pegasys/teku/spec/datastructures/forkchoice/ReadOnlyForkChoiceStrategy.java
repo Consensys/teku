@@ -95,6 +95,4 @@ public interface ReadOnlyForkChoiceStrategy {
   }
 
   Optional<UInt64> getWeight(Bytes32 blockRoot);
-
-  Optional<ForkChoicePayloadStatus> payloadStatus(Bytes32 blockRoot);
 }

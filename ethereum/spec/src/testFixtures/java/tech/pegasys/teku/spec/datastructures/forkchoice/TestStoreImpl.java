@@ -521,10 +521,5 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     public Optional<UInt64> getWeight(final Bytes32 blockRoot) {
       throw new UnsupportedOperationException("Not implemented");
     }
-
-    @Override
-    public Optional<ForkChoicePayloadStatus> payloadStatus(final Bytes32 blockRoot) {
-      throw new UnsupportedOperationException("Not implemented");
-    }
   }
 }

@@ -33,7 +33,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -349,18 +348,6 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     protoArrayLock.readLock().lock();
     try {
       return getProtoNode(blockRoot).map(ProtoNode::isOptimistic);
-    } finally {
-      protoArrayLock.readLock().unlock();
-    }
-  }
-
-  @Override
-  public Optional<ForkChoicePayloadStatus> payloadStatus(final Bytes32 blockRoot) {
-    protoArrayLock.readLock().lock();
-    try {
-      // TODO(gloas): return the payload status stored on the matching proto node once the
-      // three-state forkchoice tree is active. Pre-Gloas there is a single node per block root.
-      return getProtoNode(blockRoot).map(__ -> ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
     } finally {
       protoArrayLock.readLock().unlock();
     }

@@ -477,17 +477,6 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   }
 
   @Test
-  void payloadStatus_shouldDefaultToPendingForKnownBlock() {
-    final StorageSystem storageSystem = initStorageSystem();
-    final SignedBlockAndState block = storageSystem.chainUpdater().addNewBestBlock();
-    final ForkChoiceStrategy strategy = getProtoArray(storageSystem);
-
-    assertThat(strategy.payloadStatus(block.getRoot()))
-        .contains(ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
-    assertThat(strategy.payloadStatus(dataStructureUtil.randomBytes32())).isEmpty();
-  }
-
-  @Test
   void applyPendingVotes_shouldMarkEquivocation() {
     final StorageSystem storageSystem = initStorageSystem();
     final ForkChoiceStrategy strategy = getProtoArray(storageSystem);
