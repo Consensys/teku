@@ -60,14 +60,14 @@ public class ExecutionPayloadVerifierGloas implements ExecutionPayloadVerifier {
   public void verifyExecutionPayloadEnvelope(
       final SignedExecutionPayloadEnvelope signedEnvelope,
       final BeaconState state,
+      final BLSSignatureVerifier signatureVerifier,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws ExecutionPayloadVerificationException {
     final ExecutionPayloadEnvelope envelope = signedEnvelope.getMessage();
     final ExecutionPayload payload = envelope.getPayload();
 
     // Verify signature
-    if (!verifyExecutionPayloadEnvelopeSignature(
-        state, signedEnvelope, BLSSignatureVerifier.SIMPLE)) {
+    if (!verifyExecutionPayloadEnvelopeSignature(state, signedEnvelope, signatureVerifier)) {
       throw new ExecutionPayloadVerificationException(
           "Signature verification of the execution payload envelope failed");
     }

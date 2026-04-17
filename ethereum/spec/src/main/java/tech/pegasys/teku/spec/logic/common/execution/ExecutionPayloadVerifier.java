@@ -25,6 +25,7 @@ public interface ExecutionPayloadVerifier {
   void verifyExecutionPayloadEnvelope(
       SignedExecutionPayloadEnvelope signedEnvelope,
       BeaconState state,
+      BLSSignatureVerifier signatureVerifier,
       Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws ExecutionPayloadVerificationException;
 

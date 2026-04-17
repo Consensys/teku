@@ -134,7 +134,8 @@ public class DefaultOperationProcessor implements OperationProcessor {
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws ExecutionPayloadVerificationException {
     spec.getExecutionPayloadVerifier(state.getSlot())
-        .verifyExecutionPayloadEnvelope(signedEnvelope, state, payloadExecutor);
+        .verifyExecutionPayloadEnvelope(
+            signedEnvelope, state, BLSSignatureVerifier.SIMPLE, payloadExecutor);
   }
 
   @Override

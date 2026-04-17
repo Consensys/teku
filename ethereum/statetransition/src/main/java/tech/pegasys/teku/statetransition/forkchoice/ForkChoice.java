@@ -560,7 +560,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     // Verify the execution payload envelope
     try {
       spec.getExecutionPayloadVerifier(signedEnvelope.getSlot())
-          .verifyExecutionPayloadEnvelope(signedEnvelope, state, Optional.of(payloadExecutor));
+          .verifyExecutionPayloadEnvelope(
+              signedEnvelope, state, BLSSignatureVerifier.SIMPLE, Optional.of(payloadExecutor));
     } catch (final ExecutionPayloadVerificationException ex) {
       final ExecutionPayloadImportResult result =
           ExecutionPayloadImportResult.failedVerification(ex);
