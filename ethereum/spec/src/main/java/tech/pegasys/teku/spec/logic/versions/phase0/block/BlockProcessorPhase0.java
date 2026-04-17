@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.phase0.block;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -153,6 +154,14 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
       final MutableBeaconState state,
       final SszList<SignedBlsToExecutionChange> blsToExecutionChanges) {
     throw new UnsupportedOperationException("No BlsToExecutionChanges in phase0");
+  }
+
+  @Override
+  public void processParentExecutionPayload(
+      final MutableBeaconState state,
+      final BeaconBlock beaconBlock,
+      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier) {
+    throw new UnsupportedOperationException("No process_parent_execution_payload until Gloas");
   }
 
   @Override

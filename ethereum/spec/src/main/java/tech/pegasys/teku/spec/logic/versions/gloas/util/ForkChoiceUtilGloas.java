@@ -27,7 +27,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.PayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
@@ -55,9 +54,7 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
 
   @Override
   public void applyExecutionPayloadToStore(
-      final MutableStore store,
-      final SignedExecutionPayloadEnvelope signedEnvelope,
-      final BeaconState postState) {
+      final MutableStore store, final SignedExecutionPayloadEnvelope signedEnvelope) {
     // Add new execution payload to store
     store.putExecutionPayload(signedEnvelope);
   }
@@ -77,7 +74,7 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     if (slot.equals(block.getSlot())) {
       return 0;
     }
-    return isBlockStatusFull(store, block) ? 1 : 0;
+    return isPayloadVerified(store, block.getRoot()) ? 1 : 0;
   }
 
   @Override
@@ -85,8 +82,18 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     return false;
   }
 
-  public boolean isBlockStatusFull(final ReadOnlyStore store, final BeaconBlock block) {
-    return store.getExecutionPayloadIfAvailable(block.getRoot()).isPresent();
+  /**
+   * Return whether the execution payload envelope for the beacon block with root ``root`` has been
+   * locally delivered and verified via ``on_execution_payload_envelope``.
+   */
+  public boolean isPayloadVerified(final ReadOnlyStore store, final Bytes32 root) {
+    return store.getExecutionPayloadIfAvailable(root).isPresent();
+  }
+
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878
+  @SuppressWarnings("unused")
+  public boolean shouldExtendPayload(final ReadOnlyStore store, final Bytes32 root) {
+    return true;
   }
 
   @Override

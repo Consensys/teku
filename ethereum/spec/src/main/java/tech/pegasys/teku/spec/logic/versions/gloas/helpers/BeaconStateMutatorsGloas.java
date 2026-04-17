@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.Builder;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -78,6 +79,22 @@ public class BeaconStateMutatorsGloas extends BeaconStateMutatorsElectra {
             .getCurrentEpoch(state)
             .plus(specConfigGloas.getMinBuilderWithdrawabilityDelay());
     builders.set(builderIndex.intValue(), builder.copyWithNewWithdrawableEpoch(exitEpoch));
+  }
+
+  /** settle_builder_payment */
+  public void settleBuilderPayment(final MutableBeaconState state, final UInt64 paymentIndex) {
+    final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
+    checkArgument(
+        paymentIndex.isLessThan(stateGloas.getBuilderPendingPayments().size()),
+        "Payment index out of bounds");
+    final BuilderPendingPayment payment =
+        stateGloas.getBuilderPendingPayments().get(paymentIndex.intValue());
+    if (payment.getWithdrawal().getAmount().isGreaterThan(UInt64.ZERO)) {
+      stateGloas.getBuilderPendingWithdrawals().append(payment.getWithdrawal());
+    }
+    stateGloas
+        .getBuilderPendingPayments()
+        .set(paymentIndex.intValue(), payment.getSchema().getDefault());
   }
 
   public void addBuilderToRegistry(

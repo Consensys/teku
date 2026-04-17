@@ -17,7 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
-import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadProcessor;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadVerifier;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -238,7 +238,7 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
   }
 
   @Override
-  public Optional<ExecutionPayloadProcessor> getExecutionPayloadProcessor() {
+  public Optional<ExecutionPayloadVerifier> getExecutionPayloadVerifier() {
     return Optional.empty();
   }
 

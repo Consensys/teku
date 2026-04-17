@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -102,6 +103,7 @@ public class BlockProposalTestUtil {
       final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges,
       final Optional<SszList<SszKZGCommitment>> kzgCommitments,
       final Optional<SszList<PayloadAttestation>> payloadAttestations,
+      final Optional<ExecutionRequests> parentExecutionRequests,
       final boolean skipStateTransition)
       throws EpochProcessingException, SlotProcessingException {
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
@@ -123,7 +125,8 @@ public class BlockProposalTestUtil {
           executionPayload,
           blsToExecutionChanges,
           kzgCommitments,
-          payloadAttestations);
+          payloadAttestations,
+          parentExecutionRequests);
     }
     return createNewBlock(
         signer,
@@ -142,7 +145,8 @@ public class BlockProposalTestUtil {
         syncAggregate,
         blsToExecutionChanges,
         kzgCommitments,
-        payloadAttestations);
+        payloadAttestations,
+        parentExecutionRequests);
   }
 
   public SafeFuture<SignedBlockAndState> createBlockWithBlobs(
@@ -164,6 +168,7 @@ public class BlockProposalTestUtil {
       final BlobsUtil blobsUtil,
       final List<Blob> blobs,
       final Optional<SszList<PayloadAttestation>> payloadAttestations,
+      final Optional<ExecutionRequests> parentExecutionRequests,
       final boolean skipStateTransition)
       throws EpochProcessingException, SlotProcessingException {
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
@@ -196,7 +201,8 @@ public class BlockProposalTestUtil {
           executionPayload,
           blsToExecutionChanges,
           Optional.of(kzgCommitments),
-          payloadAttestations);
+          payloadAttestations,
+          parentExecutionRequests);
     } else {
       return createNewBlock(
           signer,
@@ -215,7 +221,8 @@ public class BlockProposalTestUtil {
           syncAggregate,
           blsToExecutionChanges,
           Optional.of(kzgCommitments),
-          payloadAttestations);
+          payloadAttestations,
+          parentExecutionRequests);
     }
   }
 
@@ -230,7 +237,14 @@ public class BlockProposalTestUtil {
   }
 
   public Optional<ExecutionPayloadProposalData> getExecutionPayloadProposalData(final UInt64 slot) {
-    return Optional.ofNullable(executionPayloadProposalDataCache.remove(slot));
+    return Optional.ofNullable(executionPayloadProposalDataCache.get(slot));
+  }
+
+  private ExecutionRequests getParentExecutionRequests(final UInt64 parentSlot) {
+    // cache entry no longer needed
+    return Optional.ofNullable(executionPayloadProposalDataCache.remove(parentSlot))
+        .map(ExecutionPayloadProposalData::executionRequests)
+        .orElseGet(dataStructureUtil::emptyExecutionRequests);
   }
 
   private SafeFuture<SignedBlockAndState> createNewBlock(
@@ -250,11 +264,11 @@ public class BlockProposalTestUtil {
       final Optional<SyncAggregate> syncAggregate,
       final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges,
       final Optional<SszList<SszKZGCommitment>> kzgCommitments,
-      final Optional<SszList<PayloadAttestation>> payloadAttestations)
+      final Optional<SszList<PayloadAttestation>> payloadAttestations,
+      final Optional<ExecutionRequests> parentExecutionRequests)
       throws EpochProcessingException, SlotProcessingException {
-
+    final UInt64 parentSlot = state.getSlot();
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
-
     final BeaconState blockSlotState = spec.processSlots(state, newSlot);
     final BLSSignature randaoReveal =
         signer.createRandaoReveal(newEpoch, blockSlotState.getForkInfo()).join();
@@ -317,6 +331,11 @@ public class BlockProposalTestUtil {
                 builder.payloadAttestations(
                     payloadAttestations.orElseGet(dataStructureUtil::emptyPayloadAttestations));
               }
+              if (builder.supportsParentExecutionRequests()) {
+                builder.parentExecutionRequests(
+                    parentExecutionRequests.orElseGet(
+                        () -> getParentExecutionRequests(parentSlot)));
+              }
               return SafeFuture.COMPLETE;
             },
             BlockProductionPerformance.NOOP)
@@ -349,13 +368,13 @@ public class BlockProposalTestUtil {
       final Optional<ExecutionPayload> executionPayload,
       final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges,
       final Optional<SszList<SszKZGCommitment>> kzgCommitments,
-      final Optional<SszList<PayloadAttestation>> payloadAttestations)
+      final Optional<SszList<PayloadAttestation>> payloadAttestations,
+      final Optional<ExecutionRequests> parentExecutionRequests)
       throws EpochProcessingException, SlotProcessingException {
-
+    final UInt64 parentSlot = state.getSlot();
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
     final BLSSignature randaoReveal =
         signer.createRandaoReveal(newEpoch, state.getForkInfo()).join();
-
     final BeaconState blockSlotState = spec.processSlots(state, newSlot);
 
     // Sign block and set block signature
@@ -414,6 +433,11 @@ public class BlockProposalTestUtil {
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(
                     payloadAttestations.orElseGet(dataStructureUtil::emptyPayloadAttestations));
+              }
+              if (builder.supportsParentExecutionRequests()) {
+                builder.parentExecutionRequests(
+                    parentExecutionRequests.orElseGet(
+                        () -> getParentExecutionRequests(parentSlot)));
               }
               return SafeFuture.COMPLETE;
             })
@@ -513,7 +537,8 @@ public class BlockProposalTestUtil {
                 newSlot,
                 UInt64.ZERO,
                 UInt64.ZERO,
-                executionPayloadProposalData.kzgCommitments());
+                executionPayloadProposalData.kzgCommitments(),
+                executionPayloadProposalData.executionRequests().hashTreeRoot());
     return schemaDefinitions
         .getSignedExecutionPayloadBidSchema()
         .create(bid, BLSSignature.infinity());

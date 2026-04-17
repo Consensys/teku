@@ -42,21 +42,6 @@ public class PredicatesGloas extends PredicatesElectra {
     super(specConfig);
   }
 
-  /**
-   * is_parent_block_full
-   *
-   * <p>*Note*: This function returns true if the last committed payload bid was fulfilled with a
-   * payload, which can only happen when both beacon block and payload were present. This function
-   * must be called on a beacon state before processing the execution payload bid in the block.
-   */
-  public boolean isParentBlockFull(final BeaconState state) {
-    final BeaconStateGloas beaconStateGloas = BeaconStateGloas.required(state);
-    return beaconStateGloas
-        .getLatestExecutionPayloadBid()
-        .getBlockHash()
-        .equals(beaconStateGloas.getLatestBlockHash());
-  }
-
   public boolean isBuilderIndex(final UInt64 validatorIndex) {
     return (validatorIndex.longValue() & BUILDER_INDEX_FLAG.longValue()) != 0;
   }

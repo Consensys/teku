@@ -419,7 +419,8 @@ public class BlockGossipValidatorTest {
                         originalExecutionPayloadBid.getSlot(),
                         originalExecutionPayloadBid.getValue(),
                         originalExecutionPayloadBid.getExecutionPayment(),
-                        originalExecutionPayloadBid.getBlobKzgCommitments()));
+                        originalExecutionPayloadBid.getBlobKzgCommitments(),
+                        originalExecutionPayloadBid.getExecutionRequestsRoot()));
     final BeaconStateGloas parentState =
         BeaconStateGloas.required(storageSystem.chainBuilder().getStateAtSlot(nextSlot.minus(ONE)));
     final Bytes32 expectedParentBlockHash = parentState.getLatestBlockHash();
@@ -459,7 +460,8 @@ public class BlockGossipValidatorTest {
                         originalExecutionPayloadBid.getSlot(),
                         originalExecutionPayloadBid.getValue(),
                         originalExecutionPayloadBid.getExecutionPayment(),
-                        originalExecutionPayloadBid.getBlobKzgCommitments()));
+                        originalExecutionPayloadBid.getBlobKzgCommitments(),
+                        originalExecutionPayloadBid.getExecutionRequestsRoot()));
 
     assertThat(blockGossipValidator.validate(invalidBlock, true))
         .isCompletedWithValueMatching(
@@ -500,6 +502,8 @@ public class BlockGossipValidatorTest {
                 originalBeaconBlockBody.getOptionalBlsToExecutionChanges().orElseThrow())
             .payloadAttestations(
                 originalBeaconBlockBody.getOptionalPayloadAttestations().orElseThrow())
+            .parentExecutionRequests(
+                originalBeaconBlockBody.getOptionalParentExecutionRequests().orElseThrow())
             .signedExecutionPayloadBid(modifiedSignedBid)
             .build();
 

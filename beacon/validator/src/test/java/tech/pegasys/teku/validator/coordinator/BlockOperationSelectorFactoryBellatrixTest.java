@@ -55,6 +55,7 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.SimpleOperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
@@ -135,6 +136,8 @@ class BlockOperationSelectorFactoryBellatrixTest {
       mock(ExecutionLayerBlockProductionManager.class);
   private final ExecutionPayloadBidManager executionPayloadBidManager =
       mock(ExecutionPayloadBidManager.class);
+  private final ExecutionPayloadManager executionPayloadManager =
+      mock(ExecutionPayloadManager.class);
 
   private final CapturingBeaconBlockBodyBuilder bodyBuilder =
       new CapturingBeaconBlockBodyBuilder(false, false) {
@@ -168,6 +171,7 @@ class BlockOperationSelectorFactoryBellatrixTest {
           forkChoiceNotifier,
           executionLayer,
           executionPayloadBidManager,
+          executionPayloadManager,
           metricsSystem,
           timeProvider);
   private ExecutionPayloadContext executionPayloadContext;

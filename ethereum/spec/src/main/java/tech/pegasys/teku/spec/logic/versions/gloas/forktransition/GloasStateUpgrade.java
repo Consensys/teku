@@ -106,7 +106,11 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                           UInt64.ZERO,
                           UInt64.ZERO,
                           UInt64.ZERO,
-                          schemaDefinitions.getBlobKzgCommitmentsSchema().of()));
+                          schemaDefinitions.getBlobKzgCommitmentsSchema().of(),
+                          schemaDefinitions
+                              .getExecutionRequestsSchema()
+                              .getDefault()
+                              .hashTreeRoot()));
 
               state.setNextWithdrawalIndex(preStateFulu.getNextWithdrawalIndex());
               state.setNextWithdrawalValidatorIndex(preStateFulu.getNextWithdrawalValidatorIndex());
