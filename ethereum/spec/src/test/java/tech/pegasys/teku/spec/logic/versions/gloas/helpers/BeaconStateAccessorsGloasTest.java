@@ -180,7 +180,6 @@ public class BeaconStateAccessorsGloasTest {
             });
 
     final IntList syncCommitteeIndices = beaconStateAccessors.getNextSyncCommitteeIndices(state);
-    System.out.println(syncCommitteeIndices);
     assertThat(syncCommitteeIndices.size()).isGreaterThan(0);
     assertThat(syncCommitteeIndices.contains(slashedIndex)).isFalse();
   }
