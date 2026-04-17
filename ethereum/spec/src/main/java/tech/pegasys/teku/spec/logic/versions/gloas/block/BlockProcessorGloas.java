@@ -140,8 +140,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     final ExecutionRequests requests = body.getParentExecutionRequests();
 
     // True if this block built on the parent's full payload
-    final boolean isParentBlockFull =
-        bid.getParentBlockHash().equals(parentBid.getParentBlockHash());
+    final boolean isParentBlockFull = bid.getParentBlockHash().equals(parentBid.getBlockHash());
 
     if (!isParentBlockFull) {
       // Parent was EMPTY -- no execution requests expected
