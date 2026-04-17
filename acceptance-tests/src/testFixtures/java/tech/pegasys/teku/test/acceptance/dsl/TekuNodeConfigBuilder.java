@@ -185,7 +185,7 @@ public class TekuNodeConfigBuilder {
   public TekuNodeConfigBuilder withHezeEpoch(final UInt64 hezeForkEpoch) {
     mustBe(NodeType.BEACON_NODE);
     LOG.debug("Xnetwork-heze-fork-epoch={}", hezeForkEpoch);
-    configMap.put("Xnetwork-gloas-heze-epoch", hezeForkEpoch.toString());
+    configMap.put("Xnetwork-heze-fork-epoch", hezeForkEpoch.toString());
     specConfigModifier =
         specConfigModifier.andThen(
             specConfigBuilder -> specConfigBuilder.hezeForkEpoch(hezeForkEpoch));
