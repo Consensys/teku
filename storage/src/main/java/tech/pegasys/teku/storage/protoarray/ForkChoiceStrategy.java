@@ -249,14 +249,15 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       final UInt64 validatorIndex,
       final Bytes32 blockRoot,
       final UInt64 targetEpoch) {
+    final UInt64 attestationSlot = spec.computeStartSlotAtEpoch(targetEpoch);
     processAttestation(
         voteUpdater,
         validatorIndex,
         blockRoot,
         targetEpoch,
-        UInt64.ZERO,
+        attestationSlot,
         false,
-        spec.atSlot(UInt64.ZERO).getForkChoiceUtil());
+        spec.atSlot(attestationSlot).getForkChoiceUtil());
   }
 
   void processAttestation(
@@ -264,7 +265,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       final UInt64 validatorIndex,
       final Bytes32 blockRoot,
       final UInt64 targetEpoch,
-      final UInt64 slot,
+      final UInt64 attestationSlot,
       final boolean fullPayloadHint,
       final ForkChoiceUtil forkChoiceUtil) {
     VoteTracker vote = voteUpdater.getVote(validatorIndex);
@@ -273,14 +274,14 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       return;
     }
 
-    if (forkChoiceUtil.shouldUpdateVote(vote, targetEpoch, slot)) {
+    if (forkChoiceUtil.shouldUpdateVote(vote, targetEpoch, attestationSlot)) {
       VoteTracker newVote =
           new VoteTracker(
               vote.getCurrentRoot(),
               blockRoot,
               false,
               false,
-              slot,
+              attestationSlot,
               fullPayloadHint,
               vote.getCurrentSlot(),
               vote.isCurrentFullPayloadHint());
