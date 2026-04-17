@@ -299,7 +299,7 @@ public class BlockProposalTestUtil {
                     executionPayload.orElseGet(
                         () ->
                             createExecutionPayload(
-                                parentSlot, newSlot, blockSlotState, transactions, terminalBlock)));
+                                newSlot, blockSlotState, transactions, terminalBlock)));
               }
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(
@@ -319,11 +319,7 @@ public class BlockProposalTestUtil {
                         executionPayload.orElseGet(
                             () ->
                                 createExecutionPayload(
-                                    parentSlot,
-                                    newSlot,
-                                    blockSlotState,
-                                    transactions,
-                                    terminalBlock)),
+                                    newSlot, blockSlotState, transactions, terminalBlock)),
                         dataStructureUtil.randomExecutionRequests(),
                         kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
                 executionPayloadProposalDataCache.put(newSlot, executionPayloadProposalData);
@@ -406,7 +402,7 @@ public class BlockProposalTestUtil {
                     executionPayload.orElseGet(
                         () ->
                             createExecutionPayload(
-                                parentSlot, newSlot, blockSlotState, transactions, terminalBlock)));
+                                newSlot, blockSlotState, transactions, terminalBlock)));
               }
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(
@@ -426,11 +422,7 @@ public class BlockProposalTestUtil {
                         executionPayload.orElseGet(
                             () ->
                                 createExecutionPayload(
-                                    parentSlot,
-                                    newSlot,
-                                    blockSlotState,
-                                    transactions,
-                                    terminalBlock)),
+                                    newSlot, blockSlotState, transactions, terminalBlock)),
                         dataStructureUtil.randomExecutionRequests(),
                         kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
                 executionPayloadProposalDataCache.put(newSlot, executionPayloadProposalData);
@@ -475,7 +467,6 @@ public class BlockProposalTestUtil {
   }
 
   private ExecutionPayload createExecutionPayload(
-      final UInt64 parentSlot,
       final UInt64 newSlot,
       final BeaconState state,
       final Optional<List<Bytes>> transactions,
@@ -492,16 +483,9 @@ public class BlockProposalTestUtil {
         BeaconStateBellatrix.required(state)
             .getLatestExecutionPayloadHeader()
             .map(ExecutionPayloadHeader::getBlockHash)
-            .or(
-                () ->
-                    getExecutionPayloadProposalData(parentSlot)
-                        .map(ExecutionPayloadProposalData::executionPayload)
-                        .map(ExecutionPayload::getBlockHash))
             .orElseGet(
                 () ->
-                    BeaconStateGloas.required(state)
-                        .getLatestExecutionPayloadBid()
-                        .getParentBlockHash());
+                    BeaconStateGloas.required(state).getLatestExecutionPayloadBid().getBlockHash());
 
     if (!currentExecutionPayloadBlockHash.isZero() && terminalBlock.isPresent()) {
       throw new IllegalArgumentException("Merge already happened, cannot set terminal block hash");
