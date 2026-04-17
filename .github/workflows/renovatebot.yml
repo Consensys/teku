@@ -2,7 +2,7 @@ name: renovatebot
 
 on:
   schedule:
-    - cron: "15 3 1 * *"
+    - cron: "15 3 14,28 * *"
   push:
     branches:
       - master
@@ -10,7 +10,8 @@ on:
       - '.github/workflows/**'
   workflow_dispatch:
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   renovatebot-check:
