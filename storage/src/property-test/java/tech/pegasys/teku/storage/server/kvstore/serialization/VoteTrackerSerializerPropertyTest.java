@@ -19,6 +19,7 @@ import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.constraints.Size;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 
 public class VoteTrackerSerializerPropertyTest {
@@ -29,9 +30,23 @@ public class VoteTrackerSerializerPropertyTest {
   @Property
   public void roundTrip(
       @ForAll @Size(32) final byte[] currentRootBytes,
-      @ForAll @Size(32) final byte[] nextRootBytes) {
+      @ForAll @Size(32) final byte[] nextRootBytes,
+      @ForAll final boolean nextEquivocating,
+      @ForAll final boolean currentEquivocating,
+      @ForAll final long nextSlot,
+      @ForAll final boolean nextFullPayloadHint,
+      @ForAll final long currentSlot,
+      @ForAll final boolean currentFullPayloadHint) {
     VoteTracker value =
-        new VoteTracker(Bytes32.wrap(currentRootBytes), Bytes32.wrap(nextRootBytes));
+        new VoteTracker(
+            Bytes32.wrap(currentRootBytes),
+            Bytes32.wrap(nextRootBytes),
+            nextEquivocating,
+            currentEquivocating,
+            UInt64.fromLongBits(nextSlot),
+            nextFullPayloadHint,
+            UInt64.fromLongBits(currentSlot),
+            currentFullPayloadHint);
     final byte[] serialized = serializer.serialize(value);
     final VoteTracker deserialized = serializer.deserialize(serialized);
     assertThat(deserialized).isEqualTo(value);

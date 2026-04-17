@@ -27,18 +27,21 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 //   currentRoot(32) | nextRoot(32) | epoch(8) | nextEquiv(1) | curEquiv(1)
 //
 // Gloas format (current, no epoch field):
-//   currentRoot(32) | nextRoot(32) | nextEquiv(1) | curEquiv(1) |
-//   nextSlot(8) | nextFullHint(1) | curSlot(8) | curFullHint(1)
+//   currentRoot(32) | nextRoot(32) | nextSlot(8) | sentinel(1) |
+//   nextEquiv(1) | curEquiv(1) | nextFullHint(1) | curSlot(8) | curFullHint(1)
 //
 // The legacy epoch field (uint64, 8 bytes) sits right after the two roots. In the Gloas
-// format the next byte after the roots is a boolean (equivocation flag). We use total data
-// length to distinguish the Gloas format from legacy formats.
+// format the next bytes after the roots are the slot and a non-boolean sentinel byte. We use
+// total data length to distinguish the Gloas format from legacy formats.
 class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
 
   // Size of the two root fields that are common to all formats
   private static final int ROOTS_SIZE = Bytes32.SIZE + Bytes32.SIZE;
+  private static final int LEGACY_SIZE = ROOTS_SIZE + 8;
+  private static final int LEGACY_WITH_EQUIVOCATION_SIZE = LEGACY_SIZE + 1 + 1;
+  private static final byte FORMAT_SENTINEL = (byte) 0xAA;
   // Size of the Gloas format written by serialize()
-  private static final int GLOAS_SIZE = ROOTS_SIZE + 1 + 1 + 8 + 1 + 8 + 1;
+  private static final int GLOAS_SIZE = ROOTS_SIZE + 8 + 1 + 1 + 1 + 1 + 8 + 1;
 
   private final int slotsPerEpoch;
 
@@ -48,6 +51,21 @@ class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
 
   @Override
   public VoteTracker deserialize(final byte[] data) {
+    if (data.length != LEGACY_SIZE
+        && data.length != LEGACY_WITH_EQUIVOCATION_SIZE
+        && data.length != GLOAS_SIZE) {
+      throw new IllegalArgumentException(
+          "Unsupported VoteTracker serialized length: "
+              + data.length
+              + " (expected "
+              + LEGACY_SIZE
+              + ", "
+              + LEGACY_WITH_EQUIVOCATION_SIZE
+              + ", or "
+              + GLOAS_SIZE
+              + ")");
+    }
+
     return SSZ.decode(
         Bytes.of(data),
         reader -> {
@@ -56,9 +74,15 @@ class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
 
           if (data.length == GLOAS_SIZE) {
             // Gloas format: no epoch field
+            final UInt64 nextSlot = UInt64.fromLongBits(reader.readUInt64());
+            final byte sentinel = reader.readFixedBytes(1).get(0);
+            if (sentinel != FORMAT_SENTINEL) {
+              throw new IllegalArgumentException(
+                  "VoteTracker format sentinel mismatch: expected 0xAA, got 0x"
+                      + String.format("%02X", sentinel & 0xFF));
+            }
             final boolean nextEquivocating = reader.readBoolean();
             final boolean currentEquivocating = reader.readBoolean();
-            final UInt64 nextSlot = UInt64.fromLongBits(reader.readUInt64());
             final boolean nextFullPayloadHint = reader.readBoolean();
             final UInt64 currentSlot = UInt64.fromLongBits(reader.readUInt64());
             final boolean currentFullPayloadHint = reader.readBoolean();
@@ -103,9 +127,10 @@ class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
             writer -> {
               writer.writeFixedBytes(value.getCurrentRoot());
               writer.writeFixedBytes(value.getNextRoot());
+              writer.writeUInt64(value.getNextSlot().longValue());
+              writer.writeFixedBytes(Bytes.of(FORMAT_SENTINEL));
               writer.writeBoolean(value.isNextEquivocating());
               writer.writeBoolean(value.isCurrentEquivocating());
-              writer.writeUInt64(value.getNextSlot().longValue());
               writer.writeBoolean(value.isNextFullPayloadHint());
               writer.writeUInt64(value.getCurrentSlot().longValue());
               writer.writeBoolean(value.isCurrentFullPayloadHint());

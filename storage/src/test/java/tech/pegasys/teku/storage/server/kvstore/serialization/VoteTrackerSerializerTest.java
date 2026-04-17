@@ -14,7 +14,9 @@
 package tech.pegasys.teku.storage.server.kvstore.serialization;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Test;
@@ -22,6 +24,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 
 public class VoteTrackerSerializerTest {
+  private static final byte FORMAT_SENTINEL = (byte) 0xAA;
 
   private static final Bytes32 CURRENT_ROOT =
       Bytes32.fromHexString("0x235bc3400c2839fd856a524871200bd5e362db615fc4565e1870ed9a2a936464");
@@ -43,21 +46,29 @@ public class VoteTrackerSerializerTest {
             true,
             UInt64.valueOf(10),
             false);
-    final VoteTracker deserialized = serializer.deserialize(serializer.serialize(vote));
+    final byte[] serialized = serializer.serialize(vote);
+    assertThat(serialized).hasSize(85);
+
+    final VoteTracker deserialized = serializer.deserialize(serialized);
     assertThat(deserialized).isEqualTo(vote);
   }
 
   @Test
   void roundTrip_gloasWithDefaultSlots() {
     final VoteTracker vote = new VoteTracker(CURRENT_ROOT, NEXT_ROOT, true, false);
-    final VoteTracker deserialized = serializer.deserialize(serializer.serialize(vote));
+    final byte[] serialized = serializer.serialize(vote);
+    assertThat(serialized).hasSize(85);
+
+    final VoteTracker deserialized = serializer.deserialize(serialized);
     assertThat(deserialized).isEqualTo(vote);
   }
 
   @Test
   void roundTrip_gloasDefault() {
-    final VoteTracker deserialized =
-        serializer.deserialize(serializer.serialize(VoteTracker.DEFAULT));
+    final byte[] serialized = serializer.serialize(VoteTracker.DEFAULT);
+    assertThat(serialized).hasSize(85);
+
+    final VoteTracker deserialized = serializer.deserialize(serialized);
     assertThat(deserialized).isEqualTo(VoteTracker.DEFAULT);
   }
 
@@ -117,5 +128,54 @@ public class VoteTrackerSerializerTest {
                 false,
                 UInt64.ZERO,
                 false));
+  }
+
+  @Test
+  void serialize_writesFormatSentinelAtByte72() {
+    final VoteTracker vote =
+        new VoteTracker(
+            CURRENT_ROOT,
+            NEXT_ROOT,
+            true,
+            false,
+            UInt64.valueOf(42),
+            true,
+            UInt64.valueOf(10),
+            false);
+
+    final byte[] serialized = serializer.serialize(vote);
+
+    assertThat(serialized).hasSize(85);
+    assertThat(serialized[72]).isEqualTo(FORMAT_SENTINEL);
+  }
+
+  @Test
+  void deserialize_rejectsMissingSentinel() {
+    final byte[] data =
+        SSZ.encode(
+                writer -> {
+                  writer.writeFixedBytes(CURRENT_ROOT);
+                  writer.writeFixedBytes(NEXT_ROOT);
+                  writer.writeUInt64(42L);
+                  writer.writeFixedBytes(Bytes.of((byte) 0x00));
+                  writer.writeBoolean(true);
+                  writer.writeBoolean(false);
+                  writer.writeBoolean(true);
+                  writer.writeUInt64(10L);
+                  writer.writeBoolean(false);
+                })
+            .toArrayUnsafe();
+
+    assertThat(data).hasSize(85);
+    assertThatThrownBy(() -> serializer.deserialize(data))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("VoteTracker format sentinel mismatch");
+  }
+
+  @Test
+  void deserialize_rejectsUnknownLength() {
+    assertThatThrownBy(() -> serializer.deserialize(new byte[84]))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Unsupported VoteTracker serialized length: 84");
   }
 }
