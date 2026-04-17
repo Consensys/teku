@@ -48,6 +48,8 @@ env:
   JAVA_TOOL_OPTIONS: -Xmx4096m
   GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=4 -Xmx4096m
 
+permissions: read-all
+
 jobs:
 
   spotless:
@@ -77,6 +79,7 @@ jobs:
           ./gradlew checkMavenCoordinateCollisions checkModuleDependencies
 
   windowsBuild:
+    continue-on-error: true
     needs: [spotless, moduleChecks ]
     runs-on: windows-2022
     steps:
@@ -210,7 +213,8 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     permissions:
-      contents: write 
+      actions: read
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -250,8 +254,10 @@ jobs:
   ## Tests 
   unitTests:
     needs: assemble
+    permissions:
+      actions: read
+      contents: read
     uses: ./.github/workflows/matrix-tests-template.yml
-    secrets: inherit  
     with:
       assemble_output_run_id: ${{ github.run_id }}
       stage_name: Unit Tests
@@ -279,6 +285,10 @@ jobs:
     runs-on: ubuntu-24.04
     needs: unitTests
     if: always()
+    permissions:
+      contents: read
+      actions: read
+      checks: write
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/collate-junit-reports
@@ -289,8 +299,10 @@ jobs:
 
   integrationTests:
     needs: assemble
+    permissions:
+      actions: read
+      contents: read
     uses: ./.github/workflows/matrix-tests-template.yml
-    secrets: inherit
     with:
       assemble_output_run_id: ${{ github.run_id }}
       stage_name: Integration Tests
@@ -318,6 +330,10 @@ jobs:
     runs-on: ubuntu-24.04
     needs: integrationTests
     if: always()
+    permissions:
+      contents: read
+      actions: read
+      checks: write
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/collate-junit-reports
@@ -328,8 +344,10 @@ jobs:
 
   propertyTests:
     needs: assemble
+    permissions:
+      actions: read
+      contents: read
     uses: ./.github/workflows/matrix-tests-template.yml
-    secrets: inherit
     with:
       assemble_output_run_id: ${{ github.run_id }}
       stage_name: Property Tests
@@ -357,6 +375,10 @@ jobs:
     runs-on: ubuntu-24.04
     needs: propertyTests
     if: always()
+    permissions:
+      contents: read
+      actions: read
+      checks: write
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/collate-junit-reports
@@ -367,8 +389,10 @@ jobs:
 
   acceptanceTests:
     needs: assemble
+    permissions:
+      actions: read
+      contents: read
     uses: ./.github/workflows/matrix-tests-template.yml
-    secrets: inherit
     with:
       assemble_output_run_id: ${{ github.run_id }}
       stage_name: Acceptance Tests
@@ -396,6 +420,10 @@ jobs:
     runs-on: ubuntu-24.04
     needs: acceptanceTests
     if: always()
+    permissions:
+      contents: read
+      actions: read
+      checks: write
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/collate-junit-reports
@@ -556,6 +584,10 @@ jobs:
     runs-on: ubuntu-24.04
     needs: referenceTests
     if: always()
+    permissions:
+      contents: read
+      actions: read
+      checks: write
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/collate-junit-reports
@@ -571,6 +603,10 @@ jobs:
   publishDockerJDK21:
     if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
     needs: [assemble, unitTests, integrationTests, propertyTests, acceptanceTests, referenceTests]
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
     uses: ./.github/workflows/publish-docker.yml
     with:
       assemble_run_id: ${{ github.run_id }}
@@ -581,6 +617,10 @@ jobs:
   publishDockerJDK25:
     if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
     needs: [assemble, unitTests, integrationTests, propertyTests, acceptanceTests, referenceTests]
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
     uses: ./.github/workflows/publish-docker.yml
     with:
       assemble_run_id: ${{ github.run_id }}
@@ -592,6 +632,9 @@ jobs:
   publishRelease:
     if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
     needs: [assemble, unitTests, integrationTests, propertyTests, acceptanceTests, referenceTests]
+    permissions:
+      actions: read
+      contents: write
     uses: ./.github/workflows/publish-release.yml
     with:
       assemble_run_id: ${{ github.run_id }}

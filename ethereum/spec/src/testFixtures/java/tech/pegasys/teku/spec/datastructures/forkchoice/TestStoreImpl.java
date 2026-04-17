@@ -480,7 +480,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
                         executionPayload.map(ExecutionPayload::getBlockHash).orElse(Bytes32.ZERO),
                         ProtoNodeValidationStatus.VALID,
                         blockCheckpoints.get(root),
-                        UInt64.ZERO));
+                        UInt64.ZERO,
+                        ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING));
                 headsByRoot.remove(block.getParentRoot());
               });
       return new ArrayList<>(headsByRoot.values());
