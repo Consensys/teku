@@ -90,11 +90,8 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
         BEACON,
         "das_recently_sampled_blocks_size",
         "DAS recently sampled blocks size",
-        () -> {
-          synchronized (this) {
-            return (long) recentlySampledColumnsByRoot.size();
-          }
-        });
+        recentlySampledColumnsByRoot::size
+        );
   }
 
   @VisibleForTesting
@@ -320,13 +317,19 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
               tracker -> {
                 if (tracker.slot().isLessThan(firstNonFinalizedSlot)
                     || recentChainData.containsBlock(tracker.blockRoot())) {
+                  // Outdated
                   if (!tracker.completionFuture().isDone()) {
+                    // make sure the future releases any pending waiters
                     tracker
                         .completionFuture()
                         .completeExceptionally(
                             new RuntimeException("DAS sampling expired while slot finalized"));
+                    // Slot less than finalized slot, but we didn't complete DA check, means it's
+                    // probably orphaned block with data never available - we must prune this
+                    // RecentChainData contains block, but we are here - shouldn't happen
                     return true;
                   }
+                  // cleanup only if fully sampled
                   return tracker.fullySampled().get();
                 }
                 return false;
