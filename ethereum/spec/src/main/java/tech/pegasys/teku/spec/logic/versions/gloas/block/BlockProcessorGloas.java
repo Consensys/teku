@@ -194,18 +194,18 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
                       parentBid.getFeeRecipient(),
                       parentBid.getValue(),
                       parentBid.getBuilderIndex()));
-
-      // Update parent payload availability and latest block hash
-      final SszBitvector currentPayloadAvailability = state.getExecutionPayloadAvailability();
-      final BitSet newPayloadAvailability = currentPayloadAvailability.getAsBitSet();
-      newPayloadAvailability.set(
-          parentSlot.mod(specConfig.getSlotsPerHistoricalRoot()).intValue(), true);
-      state.setExecutionPayloadAvailability(
-          currentPayloadAvailability
-              .getSchema()
-              .wrapBitSet(currentPayloadAvailability.size(), newPayloadAvailability));
-      state.setLatestBlockHash(parentBid.getBlockHash());
     }
+
+    // Update parent payload availability and latest block hash
+    final SszBitvector currentPayloadAvailability = state.getExecutionPayloadAvailability();
+    final BitSet newPayloadAvailability = currentPayloadAvailability.getAsBitSet();
+    newPayloadAvailability.set(
+        parentSlot.mod(specConfig.getSlotsPerHistoricalRoot()).intValue(), true);
+    state.setExecutionPayloadAvailability(
+        currentPayloadAvailability
+            .getSchema()
+            .wrapBitSet(currentPayloadAvailability.size(), newPayloadAvailability));
+    state.setLatestBlockHash(parentBid.getBlockHash());
   }
 
   // process_withdrawals with only state as a parameter

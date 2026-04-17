@@ -219,7 +219,7 @@ public class GenesisGenerator {
               .createFromElements(builderPendingPayments));
       stateGloas.setBuilderPendingWithdrawals(
           schemaDefinitionsGloas.getBuilderPendingWithdrawalsSchema().of());
-      stateGloas.setLatestBlockHash(eth1BlockHash);
+      stateGloas.setLatestBlockHash(Bytes32.ZERO);
       stateGloas.setPayloadExpectedWithdrawals(
           schemaDefinitionsGloas.getExecutionPayloadSchema().getWithdrawalsSchemaRequired().of());
       stateGloas.setPtcWindow(accessorsGloas.initializePtcWindow(state));

@@ -26,7 +26,6 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
@@ -36,7 +35,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
@@ -47,11 +45,9 @@ import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 
 public abstract class AbstractStoreTest {
-  private final List<BLSKeyPair> validatorKeys =
-      new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 3);
   protected final Spec spec = getSpec();
   protected final StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
-  protected final ChainBuilder chainBuilder = ChainBuilder.create(spec, validatorKeys);
+  protected final ChainBuilder chainBuilder = ChainBuilder.create(spec);
 
   protected final StoreConfig defaultStoreConfig = StoreConfig.createDefault();
 
