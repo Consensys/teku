@@ -61,7 +61,7 @@ public class ReferenceTestFinder {
               if (!testsPath.toFile().exists()) {
                 return Stream.empty();
               }
-              // TODO-GLOAS: temporarily don't run Gloas refence tests until we merge all
+              // TODO-GLOAS: temporarily don't run Gloas reference tests until we merge all
               // v1.7.0-alpha.5 changes
               if (fork.equals(TestFork.GLOAS)) {
                 return Stream.empty();
