@@ -142,8 +142,9 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     votesLock.writeLock().lock();
     try {
       final UInt64 attestationSlot = attestation.getData().getSlot();
-      final boolean payloadPresent = attestation.getData().getIndex().equals(UInt64.ONE);
       final ForkChoiceUtil forkChoiceUtil = spec.atSlot(attestationSlot).getForkChoiceUtil();
+      final boolean fullPayloadHint =
+          forkChoiceUtil.getFullPayloadVoteHint(attestation.getData().getIndex());
       attestation
           .getAttestingIndices()
           .streamUnboxed()
@@ -155,7 +156,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
                       attestation.getData().getBeaconBlockRoot(),
                       attestation.getData().getTarget().getEpoch(),
                       attestationSlot,
-                      payloadPresent,
+                      fullPayloadHint,
                       forkChoiceUtil));
     } finally {
       votesLock.writeLock().unlock();
@@ -168,14 +169,14 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     votesLock.writeLock().lock();
     try {
       votes.forEachDeferredVote(
-          (blockRoot, validatorIndex, payloadPresent) ->
+          (blockRoot, validatorIndex, fullPayloadHint) ->
               processAttestation(
                   voteUpdater,
                   validatorIndex,
                   blockRoot,
                   targetEpoch,
                   votes.getSlot(),
-                  payloadPresent,
+                  fullPayloadHint,
                   forkChoiceUtil));
     } finally {
       votesLock.writeLock().unlock();
@@ -264,7 +265,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       final Bytes32 blockRoot,
       final UInt64 targetEpoch,
       final UInt64 slot,
-      final boolean payloadPresent,
+      final boolean fullPayloadHint,
       final ForkChoiceUtil forkChoiceUtil) {
     VoteTracker vote = voteUpdater.getVote(validatorIndex);
     // Not updating anything for equivocated validators
@@ -280,9 +281,9 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
               false,
               false,
               slot,
-              payloadPresent,
+              fullPayloadHint,
               vote.getCurrentSlot(),
-              vote.isCurrentPayloadPresent());
+              vote.isCurrentFullPayloadHint());
       voteUpdater.putVote(validatorIndex, newVote);
     }
   }

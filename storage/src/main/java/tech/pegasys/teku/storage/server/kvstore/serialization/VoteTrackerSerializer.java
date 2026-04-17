@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 //
 // Gloas format (current, no epoch field):
 //   currentRoot(32) | nextRoot(32) | nextEquiv(1) | curEquiv(1) |
-//   nextSlot(8) | nextPP(1) | curSlot(8) | curPP(1)
+//   nextSlot(8) | nextFullHint(1) | curSlot(8) | curFullHint(1)
 //
 // The legacy epoch field (uint64, 8 bytes) sits right after the two roots. In the Gloas
 // format the next byte after the roots is a boolean (equivocation flag). We use total data
@@ -59,18 +59,18 @@ class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
             final boolean nextEquivocating = reader.readBoolean();
             final boolean currentEquivocating = reader.readBoolean();
             final UInt64 nextSlot = UInt64.fromLongBits(reader.readUInt64());
-            final boolean nextPayloadPresent = reader.readBoolean();
+            final boolean nextFullPayloadHint = reader.readBoolean();
             final UInt64 currentSlot = UInt64.fromLongBits(reader.readUInt64());
-            final boolean currentPayloadPresent = reader.readBoolean();
+            final boolean currentFullPayloadHint = reader.readBoolean();
             return new VoteTracker(
                 currentRoot,
                 nextRoot,
                 nextEquivocating,
                 currentEquivocating,
                 nextSlot,
-                nextPayloadPresent,
+                nextFullPayloadHint,
                 currentSlot,
-                currentPayloadPresent);
+                currentFullPayloadHint);
           }
 
           // Legacy formats: convert epoch to slot
@@ -106,9 +106,9 @@ class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
               writer.writeBoolean(value.isNextEquivocating());
               writer.writeBoolean(value.isCurrentEquivocating());
               writer.writeUInt64(value.getNextSlot().longValue());
-              writer.writeBoolean(value.isNextPayloadPresent());
+              writer.writeBoolean(value.isNextFullPayloadHint());
               writer.writeUInt64(value.getCurrentSlot().longValue());
-              writer.writeBoolean(value.isCurrentPayloadPresent());
+              writer.writeBoolean(value.isCurrentFullPayloadHint());
             });
     return bytes.toArrayUnsafe();
   }

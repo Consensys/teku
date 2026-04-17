@@ -114,9 +114,9 @@ class ProtoArrayScoreCalculator {
               vote.isNextEquivocating(),
               vote.isNextEquivocating(),
               vote.getNextSlot(),
-              vote.isNextPayloadPresent(),
+              vote.isNextFullPayloadHint(),
               vote.getNextSlot(),
-              vote.isNextPayloadPresent());
+              vote.isNextFullPayloadHint());
       store.putVote(validatorIndex, newVote);
     }
   }

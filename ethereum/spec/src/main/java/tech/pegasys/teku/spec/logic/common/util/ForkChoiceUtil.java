@@ -779,6 +779,17 @@ public class ForkChoiceUtil {
         || vote.equals(VoteTracker.DEFAULT);
   }
 
+  /**
+   * Extracts the forkchoice-side FULL-node hint from attestation data.
+   *
+   * <p>Pre-Gloas forks do not carry payload-status information in attestations, so the default is
+   * always false. Gloas overrides this to interpret the attestation index as the EMPTY/FULL hint,
+   * while still leaving the final PENDING/EMPTY/FULL resolution to later forkchoice logic.
+   */
+  public boolean getFullPayloadVoteHint(final UInt64 attestationIndex) {
+    return false;
+  }
+
   public boolean isHeadWeak(
       final ReadOnlyStore store, final Bytes32 root, final UInt64 reorgThreshold) {
     return store.isHeadWeak(root);

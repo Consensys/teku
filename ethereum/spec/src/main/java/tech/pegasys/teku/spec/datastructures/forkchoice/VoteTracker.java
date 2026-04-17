@@ -21,8 +21,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 /**
  * Teku representation of fork-choice latest-message state.
  *
- * <p>Gloas extends the spec's `LatestMessage` helper to track `slot` and `payload_present` instead
- * of only target epoch. The corresponding Python definition lives in:
+ * <p>Gloas extends the spec's `LatestMessage` helper to track `slot` and a forkchoice hint for
+ * whether a later-slot attestation prefers the FULL node. The corresponding Python definition lives
+ * in:
  * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#modified-latestmessage
  */
 public class VoteTracker {
@@ -34,11 +35,11 @@ public class VoteTracker {
   private final boolean nextEquivocating;
   private final boolean currentEquivocating;
 
-  // Gloas: LatestMessage uses slot instead of epoch, and tracks payload_present
+  // Gloas: LatestMessage uses slot instead of epoch, and tracks a FULL-node vote hint
   private final UInt64 nextSlot;
-  private final boolean nextPayloadPresent;
+  private final boolean nextFullPayloadHint;
   private final UInt64 currentSlot;
-  private final boolean currentPayloadPresent;
+  private final boolean currentFullPayloadHint;
 
   public VoteTracker(final Bytes32 currentRoot, final Bytes32 nextRoot) {
     this(currentRoot, nextRoot, false, false);
@@ -66,17 +67,17 @@ public class VoteTracker {
       final boolean nextEquivocating,
       final boolean currentEquivocating,
       final UInt64 nextSlot,
-      final boolean nextPayloadPresent,
+      final boolean nextFullPayloadHint,
       final UInt64 currentSlot,
-      final boolean currentPayloadPresent) {
+      final boolean currentFullPayloadHint) {
     this.currentRoot = currentRoot;
     this.nextRoot = nextRoot;
     this.nextEquivocating = nextEquivocating;
     this.currentEquivocating = currentEquivocating;
     this.nextSlot = nextSlot;
-    this.nextPayloadPresent = nextPayloadPresent;
+    this.nextFullPayloadHint = nextFullPayloadHint;
     this.currentSlot = currentSlot;
-    this.currentPayloadPresent = currentPayloadPresent;
+    this.currentFullPayloadHint = currentFullPayloadHint;
   }
 
   public Bytes32 getCurrentRoot() {
@@ -91,16 +92,16 @@ public class VoteTracker {
     return nextSlot;
   }
 
-  public boolean isNextPayloadPresent() {
-    return nextPayloadPresent;
+  public boolean isNextFullPayloadHint() {
+    return nextFullPayloadHint;
   }
 
   public UInt64 getCurrentSlot() {
     return currentSlot;
   }
 
-  public boolean isCurrentPayloadPresent() {
-    return currentPayloadPresent;
+  public boolean isCurrentFullPayloadHint() {
+    return currentFullPayloadHint;
   }
 
   public boolean isNextEquivocating() {
@@ -122,9 +123,9 @@ public class VoteTracker {
         true,
         false,
         nextSlot,
-        nextPayloadPresent,
+        nextFullPayloadHint,
         currentSlot,
-        currentPayloadPresent);
+        currentFullPayloadHint);
   }
 
   @Override
@@ -138,8 +139,8 @@ public class VoteTracker {
     VoteTracker that = (VoteTracker) o;
     return nextEquivocating == that.nextEquivocating
         && currentEquivocating == that.currentEquivocating
-        && nextPayloadPresent == that.nextPayloadPresent
-        && currentPayloadPresent == that.currentPayloadPresent
+        && nextFullPayloadHint == that.nextFullPayloadHint
+        && currentFullPayloadHint == that.currentFullPayloadHint
         && Objects.equals(currentRoot, that.currentRoot)
         && Objects.equals(nextRoot, that.nextRoot)
         && Objects.equals(nextSlot, that.nextSlot)
@@ -154,9 +155,9 @@ public class VoteTracker {
         nextEquivocating,
         currentEquivocating,
         nextSlot,
-        nextPayloadPresent,
+        nextFullPayloadHint,
         currentSlot,
-        currentPayloadPresent);
+        currentFullPayloadHint);
   }
 
   @Override
@@ -167,9 +168,9 @@ public class VoteTracker {
         .add("nextEquivocating", nextEquivocating)
         .add("currentEquivocating", currentEquivocating)
         .add("nextSlot", nextSlot)
-        .add("nextPayloadPresent", nextPayloadPresent)
+        .add("nextFullPayloadHint", nextFullPayloadHint)
         .add("currentSlot", currentSlot)
-        .add("currentPayloadPresent", currentPayloadPresent)
+        .add("currentFullPayloadHint", currentFullPayloadHint)
         .toString();
   }
 }
