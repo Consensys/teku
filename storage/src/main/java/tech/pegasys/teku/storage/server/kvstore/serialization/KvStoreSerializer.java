@@ -53,8 +53,8 @@ public interface KvStoreSerializer<T> {
   KvStoreSerializer<CompressedBranchInfo> COMPRESSED_BRANCH_INFO_KV_STORE_SERIALIZER =
       new CompressedBranchInfoSerializer();
 
-  static KvStoreSerializer<VoteTracker> createVoteTrackerSerializer(final int slotsPerEpoch) {
-    return new VoteTrackerSerializer(slotsPerEpoch);
+  static KvStoreSerializer<VoteTracker> createVoteTrackerSerializer(final Spec spec) {
+    return new VoteTrackerSerializer(spec);
   }
 
   KvStoreSerializer<Void> VOID_SERIALIZER = new VoidSerializer();

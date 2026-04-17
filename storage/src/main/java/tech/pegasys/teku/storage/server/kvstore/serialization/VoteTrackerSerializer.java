@@ -14,10 +14,13 @@
 package tech.pegasys.teku.storage.server.kvstore.serialization;
 
 import java.util.Objects;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 
 // Serialization formats (detected by presence/absence of epoch field):
@@ -26,27 +29,33 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 //   currentRoot(32) | nextRoot(32) | epoch(8)
 //   currentRoot(32) | nextRoot(32) | epoch(8) | nextEquiv(1) | curEquiv(1)
 //
-// Gloas format (current, no epoch field):
-//   currentRoot(32) | nextRoot(32) | nextSlot(8) | sentinel(1) |
+// Gloas format (used only once vote rows reach Gloas slots):
+//   currentRoot(32) | nextRoot(32) | nextSlot(8) |
 //   nextEquiv(1) | curEquiv(1) | nextFullHint(1) | curSlot(8) | curFullHint(1)
 //
-// The legacy epoch field (uint64, 8 bytes) sits right after the two roots. In the Gloas
-// format the next bytes after the roots are the slot and a non-boolean sentinel byte. We use
-// total data length to distinguish the Gloas format from legacy formats.
+// Before Gloas activation we intentionally keep writing the legacy epoch-based format so
+// rollback remains possible. Once votes actually carry Gloas-era slots, we switch to the
+// slot-aware format because old binaries are already protocol-incompatible at the fork boundary.
 class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
 
   // Size of the two root fields that are common to all formats
   private static final int ROOTS_SIZE = Bytes32.SIZE + Bytes32.SIZE;
   private static final int LEGACY_SIZE = ROOTS_SIZE + 8;
   private static final int LEGACY_WITH_EQUIVOCATION_SIZE = LEGACY_SIZE + 1 + 1;
-  private static final byte FORMAT_SENTINEL = (byte) 0xAA;
   // Size of the Gloas format written by serialize()
-  private static final int GLOAS_SIZE = ROOTS_SIZE + 8 + 1 + 1 + 1 + 1 + 8 + 1;
+  private static final int GLOAS_SIZE = ROOTS_SIZE + 8 + 1 + 1 + 1 + 8 + 1;
 
+  private final Optional<UInt64> gloasStartSlot;
   private final int slotsPerEpoch;
 
-  VoteTrackerSerializer(final int slotsPerEpoch) {
-    this.slotsPerEpoch = slotsPerEpoch;
+  VoteTrackerSerializer(final Spec spec) {
+    this.slotsPerEpoch = spec.getGenesisSpecConfig().getSlotsPerEpoch();
+    this.gloasStartSlot =
+        spec.isMilestoneSupported(SpecMilestone.GLOAS)
+            ? Optional.of(
+                spec.computeStartSlotAtEpoch(
+                    spec.getForkSchedule().getFork(SpecMilestone.GLOAS).getEpoch()))
+            : Optional.empty();
   }
 
   @Override
@@ -75,12 +84,6 @@ class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
           if (data.length == GLOAS_SIZE) {
             // Gloas format: no epoch field
             final UInt64 nextSlot = UInt64.fromLongBits(reader.readUInt64());
-            final byte sentinel = reader.readFixedBytes(1).get(0);
-            if (sentinel != FORMAT_SENTINEL) {
-              throw new IllegalArgumentException(
-                  "VoteTracker format sentinel mismatch: expected 0xAA, got 0x"
-                      + String.format("%02X", sentinel & 0xFF));
-            }
             final boolean nextEquivocating = reader.readBoolean();
             final boolean currentEquivocating = reader.readBoolean();
             final boolean nextFullPayloadHint = reader.readBoolean();
@@ -122,13 +125,16 @@ class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
 
   @Override
   public byte[] serialize(final VoteTracker value) {
+    if (!shouldUseGloasFormat(value)) {
+      return serializeLegacy(value);
+    }
+
     Bytes bytes =
         SSZ.encode(
             writer -> {
               writer.writeFixedBytes(value.getCurrentRoot());
               writer.writeFixedBytes(value.getNextRoot());
               writer.writeUInt64(value.getNextSlot().longValue());
-              writer.writeFixedBytes(Bytes.of(FORMAT_SENTINEL));
               writer.writeBoolean(value.isNextEquivocating());
               writer.writeBoolean(value.isCurrentEquivocating());
               writer.writeBoolean(value.isNextFullPayloadHint());
@@ -136,6 +142,31 @@ class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
               writer.writeBoolean(value.isCurrentFullPayloadHint());
             });
     return bytes.toArrayUnsafe();
+  }
+
+  private byte[] serializeLegacy(final VoteTracker value) {
+    final UInt64 epoch = value.getNextSlot().dividedBy(slotsPerEpoch);
+    return SSZ.encode(
+            writer -> {
+              writer.writeFixedBytes(value.getCurrentRoot());
+              writer.writeFixedBytes(value.getNextRoot());
+              writer.writeUInt64(epoch.longValue());
+              writer.writeBoolean(value.isNextEquivocating());
+              writer.writeBoolean(value.isCurrentEquivocating());
+            })
+        .toArrayUnsafe();
+  }
+
+  private boolean shouldUseGloasFormat(final VoteTracker value) {
+    if (value.isNextFullPayloadHint() || value.isCurrentFullPayloadHint()) {
+      return true;
+    }
+    return gloasStartSlot
+        .map(
+            startSlot ->
+                value.getNextSlot().isGreaterThanOrEqualTo(startSlot)
+                    || value.getCurrentSlot().isGreaterThanOrEqualTo(startSlot))
+        .orElse(false);
   }
 
   @Override
@@ -146,11 +177,13 @@ class VoteTrackerSerializer implements KvStoreSerializer<VoteTracker> {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    return slotsPerEpoch == ((VoteTrackerSerializer) o).slotsPerEpoch;
+    final VoteTrackerSerializer that = (VoteTrackerSerializer) o;
+    return slotsPerEpoch == that.slotsPerEpoch
+        && Objects.equals(gloasStartSlot, that.gloasStartSlot);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(slotsPerEpoch);
+    return Objects.hash(gloasStartSlot, slotsPerEpoch);
   }
 }

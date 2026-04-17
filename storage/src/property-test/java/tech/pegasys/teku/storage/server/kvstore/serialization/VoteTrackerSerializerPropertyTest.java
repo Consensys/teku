@@ -20,15 +20,16 @@ import net.jqwik.api.Property;
 import net.jqwik.api.constraints.Size;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 
 public class VoteTrackerSerializerPropertyTest {
 
-  private final KvStoreSerializer<VoteTracker> serializer =
-      KvStoreSerializer.createVoteTrackerSerializer(32);
+  private static final KvStoreSerializer<VoteTracker> SERIALIZER =
+      KvStoreSerializer.createVoteTrackerSerializer(TestSpecFactory.createMinimalGloas());
 
   @Property
-  public void roundTrip(
+  void roundTripGloasAtGenesisIsExact(
       @ForAll @Size(32) final byte[] currentRootBytes,
       @ForAll @Size(32) final byte[] nextRootBytes,
       @ForAll final boolean nextEquivocating,
@@ -37,7 +38,7 @@ public class VoteTrackerSerializerPropertyTest {
       @ForAll final boolean nextFullPayloadHint,
       @ForAll final long currentSlot,
       @ForAll final boolean currentFullPayloadHint) {
-    VoteTracker value =
+    final VoteTracker value =
         new VoteTracker(
             Bytes32.wrap(currentRootBytes),
             Bytes32.wrap(nextRootBytes),
@@ -47,8 +48,8 @@ public class VoteTrackerSerializerPropertyTest {
             nextFullPayloadHint,
             UInt64.fromLongBits(currentSlot),
             currentFullPayloadHint);
-    final byte[] serialized = serializer.serialize(value);
-    final VoteTracker deserialized = serializer.deserialize(serialized);
+    final byte[] serialized = SERIALIZER.serialize(value);
+    final VoteTracker deserialized = SERIALIZER.deserialize(serialized);
     assertThat(deserialized).isEqualTo(value);
   }
 }

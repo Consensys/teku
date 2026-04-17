@@ -29,7 +29,7 @@ public class VoteTrackerSerialize {
 
   private static final Spec spec = TestSpecFactory.createDefault();
   private static final KvStoreSerializer<VoteTracker> serializer =
-      KvStoreSerializer.createVoteTrackerSerializer(spec.getGenesisSpecConfig().getSlotsPerEpoch());
+      KvStoreSerializer.createVoteTrackerSerializer(spec);
   private static final VoteTracker votes = new DataStructureUtil(spec).randomVoteTracker();
   private static final Bytes votesSerialized = Bytes.wrap(serializer.serialize(votes));
 

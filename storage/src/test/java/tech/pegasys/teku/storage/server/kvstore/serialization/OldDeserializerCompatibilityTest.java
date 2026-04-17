@@ -13,44 +13,47 @@
 
 package tech.pegasys.teku.storage.server.kvstore.serialization;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.InvalidSSZTypeException;
 import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 
-class OldDeserializerCrashTest {
+class OldDeserializerCompatibilityTest {
 
   private static final Bytes32 CURRENT_ROOT =
       Bytes32.fromHexString("0x235bc3400c2839fd856a524871200bd5e362db615fc4565e1870ed9a2a936464");
   private static final Bytes32 NEXT_ROOT =
       Bytes32.fromHexString("0x367cbd40ac7318427aadb97345a91fa2e965daf3158d7f1846f1306305f41bef");
+  private static final Spec SPEC =
+      TestSpecFactory.createMinimalWithGloasForkEpoch(UInt64.valueOf(2));
 
-  private final VoteTrackerSerializer newSerializer = new VoteTrackerSerializer(32);
+  private final VoteTrackerSerializer newSerializer = new VoteTrackerSerializer(SPEC);
   private final OldVoteTrackerDeserializer oldDeserializer = new OldVoteTrackerDeserializer();
 
   @Test
-  void oldDeserializerShouldCrashOnNewFormat() {
+  void oldDeserializerShouldReadPreGloasFormat() {
     final VoteTracker vote =
         new VoteTracker(
             CURRENT_ROOT,
             NEXT_ROOT,
             true,
             false,
-            UInt64.valueOf(42),
-            true,
-            UInt64.valueOf(10),
+            UInt64.valueOf(9),
+            false,
+            UInt64.valueOf(8),
             false);
 
     final byte[] serialized = newSerializer.serialize(vote);
 
-    assertThatThrownBy(() -> oldDeserializer.deserialize(serialized))
-        .isInstanceOf(InvalidSSZTypeException.class)
-        .hasMessageContaining("decoded value is not a boolean");
+    assertThat(serialized).hasSize(74);
+    assertThat(oldDeserializer.deserialize(serialized))
+        .isEqualTo(new LegacyVoteTracker(CURRENT_ROOT, NEXT_ROOT, UInt64.ONE, true, false));
   }
 
   private static class OldVoteTrackerDeserializer {

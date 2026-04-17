@@ -110,10 +110,7 @@ public abstract class V6SchemaCombined implements SchemaCombined {
 
     votes =
         KvStoreColumn.create(
-            3,
-            UINT64_SERIALIZER,
-            KvStoreSerializer.createVoteTrackerSerializer(
-                spec.getGenesisSpecConfig().getSlotsPerEpoch()));
+            3, UINT64_SERIALIZER, KvStoreSerializer.createVoteTrackerSerializer(spec));
 
     optimisticTransitionBlockSlot = KvStoreVariable.create(finalizedOffset + 1, UINT64_SERIALIZER);
     earliestBlobSidecarSlot = KvStoreVariable.create(finalizedOffset + 2, UINT64_SERIALIZER);
