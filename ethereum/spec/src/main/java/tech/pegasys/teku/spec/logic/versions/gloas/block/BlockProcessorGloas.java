@@ -15,13 +15,11 @@ package tech.pegasys.teku.spec.logic.versions.gloas.block;
 
 import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
 
-import java.util.BitSet;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
@@ -197,14 +195,10 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     }
 
     // Update parent payload availability and latest block hash
-    final SszBitvector currentPayloadAvailability = state.getExecutionPayloadAvailability();
-    final BitSet newPayloadAvailability = currentPayloadAvailability.getAsBitSet();
-    newPayloadAvailability.set(
-        parentSlot.mod(specConfig.getSlotsPerHistoricalRoot()).intValue(), true);
     state.setExecutionPayloadAvailability(
-        currentPayloadAvailability
-            .getSchema()
-            .wrapBitSet(currentPayloadAvailability.size(), newPayloadAvailability));
+        state
+            .getExecutionPayloadAvailability()
+            .withBit(parentSlot.mod(specConfig.getSlotsPerHistoricalRoot()).intValue()));
     state.setLatestBlockHash(parentBid.getBlockHash());
   }
 
