@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -111,7 +112,8 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
             blockAndState.getState().getFinalizedCheckpoint(),
             blockAndState.getState().getCurrentJustifiedCheckpoint(),
             blockAndState.getState().getFinalizedCheckpoint()),
-        UInt64.ZERO);
+        UInt64.ZERO,
+        ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
   }
 
   @Override

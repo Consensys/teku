@@ -21,6 +21,8 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
 import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadBodyV2;
+import tech.pegasys.teku.ethereum.executionclient.schema.WithdrawalV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -29,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
@@ -155,6 +158,36 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
                               : blobAndProofV1.asInternalBlobAndProof(blobSchema))
                   .toList();
             });
+  }
+
+  @Override
+  public SafeFuture<List<ExecutionPayloadBody>> engineGetPayloadBodiesByHash(
+      final List<Bytes32> blockHashes) {
+    return executionEngineClient
+        .getPayloadBodiesByHashV2(blockHashes)
+        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
+        .thenApply(
+            response ->
+                response.stream()
+                    .map(body -> body == null ? null : toInternalExecutionPayloadBody(body))
+                    .toList());
+  }
+
+  private static ExecutionPayloadBody toInternalExecutionPayloadBody(
+      final ExecutionPayloadBodyV2 body) {
+    return new ExecutionPayloadBody(
+        body.transactions,
+        body.withdrawals == null
+            ? null
+            : body.withdrawals.stream()
+                .map(ExecutionClientHandlerImpl::toInternalWithdrawal)
+                .toList(),
+        body.blockAccessList);
+  }
+
+  private static ExecutionPayloadBody.EncodedWithdrawal toInternalWithdrawal(final WithdrawalV1 w) {
+    return new ExecutionPayloadBody.EncodedWithdrawal(
+        w.index, w.validatorIndex, w.address, w.amount);
   }
 
   @Override

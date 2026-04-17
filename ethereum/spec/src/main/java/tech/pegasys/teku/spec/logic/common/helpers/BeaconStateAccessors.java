@@ -296,7 +296,11 @@ public abstract class BeaconStateAccessors {
       final BeaconState state, final UInt64 slot, final UInt64 index) {
     // Make sure state is within range of the slot being queried
     validateStateForCommitteeQuery(state, slot);
+    return getBeaconCommitteeNoValidation(state, slot, index);
+  }
 
+  protected IntList getBeaconCommitteeNoValidation(
+      final BeaconState state, final UInt64 slot, final UInt64 index) {
     return BeaconStateCache.getTransitionCaches(state)
         .getBeaconCommittee()
         .get(
@@ -341,7 +345,7 @@ public abstract class BeaconStateAccessors {
   public void validateStateForCommitteeQuery(final BeaconState state, final UInt64 slot) {
     final UInt64 oldestQueryableSlot =
         miscHelpers.getEarliestQueryableSlotForBeaconCommitteeAtTargetSlot(slot);
-    if (state.getSlot().compareTo(oldestQueryableSlot) < 0) {
+    if (state.getSlot().isLessThan(oldestQueryableSlot)) {
       throw new StateTooOldException(state.getSlot(), oldestQueryableSlot);
     }
   }

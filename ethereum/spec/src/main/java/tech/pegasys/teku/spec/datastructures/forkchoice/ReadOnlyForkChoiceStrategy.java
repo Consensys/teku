@@ -31,10 +31,29 @@ public interface ReadOnlyForkChoiceStrategy {
 
   Optional<Bytes32> getAncestor(Bytes32 blockRoot, UInt64 slot);
 
+  /**
+   * Walks the parent chain from blockRoot to find the ancestor node at the given slot.
+   *
+   * <p>This mirrors the Gloas {@code get_ancestor(...)} helper, which returns a full {@link
+   * ForkChoiceNode} identity.
+   */
+  default Optional<ForkChoiceNode> getAncestorNode(final Bytes32 blockRoot, final UInt64 slot) {
+    return getAncestor(blockRoot, slot).map(ForkChoiceNode::createBase);
+  }
+
   Optional<SlotAndBlockRoot> findCommonAncestor(Bytes32 blockRoot1, Bytes32 blockRoot2);
 
   List<Bytes32> getBlockRootsAtSlot(UInt64 slot);
 
+  /**
+   * Returns the current terminal fork-choice heads.
+   *
+   * <p>This is a node-facing API. In pre-Gloas it returns the base block nodes. In the Gloas
+   * three-state tree it may return EMPTY/FULL nodes for the same block root, because those are the
+   * actual candidate heads selected by the modified {@code get_head(...)} spec logic.
+   * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#modified-get_head
+   * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-get_node_children
+   */
   default List<ProtoNodeData> getChainHeads() {
     return getChainHeads(false);
   }
@@ -52,6 +71,28 @@ public interface ReadOnlyForkChoiceStrategy {
   boolean isFullyValidated(final Bytes32 blockRoot);
 
   Optional<ProtoNodeData> getBlockData(Bytes32 blockRoot);
+
+  default Optional<ProtoNodeData> getNodeData(final ForkChoiceNode node) {
+    return getBlockData(node.blockRoot(), node.payloadStatus());
+  }
+
+  /**
+   * Gets block data for a specific node identity (blockRoot + payloadStatus). In the Gloas
+   * three-state tree, the same blockRoot may have multiple nodes (PENDING, EMPTY, FULL). This
+   * method resolves to the correct node based on the payload status.
+   *
+   * <p>This is the read-side mirror of the Gloas spec helpers that distinguish the canonical block
+   * root from the EMPTY/FULL child returned by `get_node_children(...)` and selected by
+   * `get_head(...)`:
+   * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#new-get_node_children
+   * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md#modified-get_head
+   *
+   * <p>Default: delegates to {@link #getBlockData(Bytes32)}, ignoring payloadStatus.
+   */
+  default Optional<ProtoNodeData> getBlockData(
+      final Bytes32 blockRoot, final ForkChoicePayloadStatus payloadStatus) {
+    return getBlockData(blockRoot);
+  }
 
   Optional<UInt64> getWeight(Bytes32 blockRoot);
 }

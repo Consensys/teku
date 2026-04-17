@@ -1,0 +1,316 @@
+/*
+ * Copyright Consensys Software Inc., 2026
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.validator.client;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestTemplate;
+import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuty;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
+import tech.pegasys.teku.spec.signatures.Signer;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.client.loader.OwnedValidators;
+
+@TestSpecContext(milestone = SpecMilestone.GLOAS)
+public class ProposerPreferencesPublisherTest {
+
+  private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
+  private final ProposerConfigPropertiesProvider proposerConfigPropertiesProvider =
+      mock(ProposerConfigPropertiesProvider.class);
+  private final ForkProvider forkProvider = mock(ForkProvider.class);
+
+  private Spec spec;
+  private DataStructureUtil dataStructureUtil;
+  private ProposerPreferencesPublisher publisher;
+  private OwnedValidators ownedValidators;
+  private Signer signer;
+  private Validator validator;
+  private BLSPublicKey publicKey;
+  private Eth1Address feeRecipient;
+  private UInt64 gasLimit;
+
+  @BeforeEach
+  void setUp(final SpecContext specContext) {
+    spec = specContext.getSpec();
+    dataStructureUtil = specContext.getDataStructureUtil();
+
+    signer = mock(Signer.class);
+    publicKey = dataStructureUtil.randomPublicKey();
+    feeRecipient = dataStructureUtil.randomEth1Address();
+    gasLimit = dataStructureUtil.randomUInt64();
+    validator = new Validator(publicKey, signer, Optional::empty);
+
+    ownedValidators = new OwnedValidators(Map.of(publicKey, validator));
+
+    publisher =
+        new ProposerPreferencesPublisher(
+            validatorApiChannel,
+            ownedValidators,
+            proposerConfigPropertiesProvider,
+            forkProvider,
+            spec);
+
+    when(proposerConfigPropertiesProvider.getFeeRecipient(publicKey))
+        .thenReturn(Optional.of(feeRecipient));
+    when(proposerConfigPropertiesProvider.getGasLimit(publicKey)).thenReturn(gasLimit);
+    when(forkProvider.getForkInfo(any()))
+        .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomForkInfo()));
+    when(signer.signProposerPreferences(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomSignature()));
+    when(validatorApiChannel.sendSignedProposerPreferences(anyList()))
+        .thenReturn(SafeFuture.COMPLETE);
+    when(validatorApiChannel.getProposerDuties(any(), eq(true)))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+  }
+
+  @TestTemplate
+  void shouldPublishOnFirstCall() {
+    final UInt64 anySlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(5)).plus(1);
+    final UInt64 nextEpoch = spec.computeEpochAtSlot(anySlot).plus(1);
+    final UInt64 nextEpochSlot = spec.computeStartSlotAtEpoch(nextEpoch);
+
+    when(validatorApiChannel.getProposerDuties(eq(nextEpoch), eq(true)))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    new ProposerDuties(
+                        dataStructureUtil.randomBytes32(),
+                        List.of(new ProposerDuty(publicKey, 42, nextEpochSlot)),
+                        false))));
+
+    publisher.onSlot(anySlot);
+
+    verify(validatorApiChannel).sendSignedProposerPreferences(anyList());
+  }
+
+  @TestTemplate
+  void shouldPublishAtThirdSlotOfEpoch() {
+    // Consume first call
+    publisher.onSlot(UInt64.ZERO);
+
+    final UInt64 thirdSlotOfEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(5)).plus(2);
+    final UInt64 nextEpoch = spec.computeEpochAtSlot(thirdSlotOfEpoch).plus(1);
+    final UInt64 nextEpochSlot = spec.computeStartSlotAtEpoch(nextEpoch);
+
+    when(validatorApiChannel.getProposerDuties(eq(nextEpoch), eq(true)))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    new ProposerDuties(
+                        dataStructureUtil.randomBytes32(),
+                        List.of(new ProposerDuty(publicKey, 42, nextEpochSlot)),
+                        false))));
+
+    publisher.onSlot(thirdSlotOfEpoch);
+
+    verify(validatorApiChannel).sendSignedProposerPreferences(anyList());
+  }
+
+  @TestTemplate
+  void shouldNotPublishAtNonThirdSlotOfEpoch() {
+    // Consume first call
+    publisher.onSlot(UInt64.ZERO);
+
+    final UInt64 fourthSlotOfEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(5)).plus(3);
+
+    publisher.onSlot(fourthSlotOfEpoch);
+
+    verify(validatorApiChannel, never()).sendSignedProposerPreferences(anyList());
+  }
+
+  @TestTemplate
+  void shouldNotPublishWhenNoDutiesForOurValidators() {
+    final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(5));
+    final UInt64 nextEpoch = UInt64.valueOf(6);
+    final UInt64 nextEpochSlot = spec.computeStartSlotAtEpoch(nextEpoch);
+
+    final BLSPublicKey otherKey = dataStructureUtil.randomPublicKey();
+    when(validatorApiChannel.getProposerDuties(eq(nextEpoch), eq(true)))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    new ProposerDuties(
+                        dataStructureUtil.randomBytes32(),
+                        List.of(new ProposerDuty(otherKey, 99, nextEpochSlot)),
+                        false))));
+
+    publisher.onSlot(firstSlotOfEpoch);
+
+    verify(validatorApiChannel, never()).sendSignedProposerPreferences(anyList());
+  }
+
+  @TestTemplate
+  void shouldNotPublishWhenProposerDutiesUnavailable() {
+    final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(5));
+    final UInt64 nextEpoch = UInt64.valueOf(6);
+
+    when(validatorApiChannel.getProposerDuties(eq(nextEpoch), eq(true)))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    publisher.onSlot(firstSlotOfEpoch);
+
+    verify(validatorApiChannel, never()).sendSignedProposerPreferences(anyList());
+  }
+
+  @TestTemplate
+  void shouldNotPublishWhenFeeRecipientNotConfigured() {
+    final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(5));
+    final UInt64 nextEpoch = UInt64.valueOf(6);
+    final UInt64 nextEpochSlot = spec.computeStartSlotAtEpoch(nextEpoch);
+
+    when(proposerConfigPropertiesProvider.getFeeRecipient(publicKey)).thenReturn(Optional.empty());
+    when(validatorApiChannel.getProposerDuties(eq(nextEpoch), eq(true)))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    new ProposerDuties(
+                        dataStructureUtil.randomBytes32(),
+                        List.of(new ProposerDuty(publicKey, 42, nextEpochSlot)),
+                        false))));
+
+    publisher.onSlot(firstSlotOfEpoch);
+
+    verify(validatorApiChannel, never()).sendSignedProposerPreferences(anyList());
+  }
+
+  @TestTemplate
+  void shouldPublishRemainingPreferencesWhenSigningFails() {
+    final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(5));
+    final UInt64 nextEpoch = UInt64.valueOf(6);
+    final UInt64 nextEpochSlot = spec.computeStartSlotAtEpoch(nextEpoch);
+
+    final int failingValidatorIndex = 99;
+    final int successfulValidatorIndex = 42;
+
+    final BLSPublicKey failingKey = dataStructureUtil.randomPublicKey();
+    final Signer failingSigner = mock(Signer.class);
+    final Validator failingValidator = new Validator(failingKey, failingSigner, Optional::empty);
+    ownedValidators.addValidator(failingValidator);
+
+    when(proposerConfigPropertiesProvider.getFeeRecipient(failingKey))
+        .thenReturn(Optional.of(dataStructureUtil.randomEth1Address()));
+    when(proposerConfigPropertiesProvider.getGasLimit(failingKey)).thenReturn(gasLimit);
+    when(failingSigner.signProposerPreferences(any(), any()))
+        .thenReturn(SafeFuture.failedFuture(new UnsupportedOperationException("not supported")));
+
+    when(validatorApiChannel.getProposerDuties(eq(nextEpoch), eq(true)))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    new ProposerDuties(
+                        dataStructureUtil.randomBytes32(),
+                        List.of(
+                            new ProposerDuty(failingKey, failingValidatorIndex, nextEpochSlot),
+                            new ProposerDuty(
+                                publicKey, successfulValidatorIndex, nextEpochSlot.plus(1))),
+                        false))));
+
+    publisher.onSlot(firstSlotOfEpoch);
+
+    @SuppressWarnings("unchecked")
+    final ArgumentCaptor<List<SignedProposerPreferences>> captor =
+        ArgumentCaptor.forClass(List.class);
+    verify(validatorApiChannel).sendSignedProposerPreferences(captor.capture());
+    final List<SignedProposerPreferences> published = captor.getValue();
+    assertThat(published).hasSize(1);
+    assertThat(published.getFirst().getMessage().getValidatorIndex())
+        .isEqualTo(UInt64.valueOf(successfulValidatorIndex));
+  }
+
+  @TestTemplate
+  void shouldRepublishOnPossibleMissedEvents() {
+    final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(5));
+    final UInt64 nextEpoch = UInt64.valueOf(6);
+    final UInt64 nextEpochSlot = spec.computeStartSlotAtEpoch(nextEpoch);
+
+    when(validatorApiChannel.getProposerDuties(eq(nextEpoch), eq(true)))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    new ProposerDuties(
+                        dataStructureUtil.randomBytes32(),
+                        List.of(new ProposerDuty(publicKey, 42, nextEpochSlot)),
+                        false))));
+
+    publisher.onSlot(firstSlotOfEpoch);
+    verify(validatorApiChannel).sendSignedProposerPreferences(anyList());
+
+    publisher.onPossibleMissedEvents();
+    verify(validatorApiChannel, times(2)).sendSignedProposerPreferences(anyList());
+  }
+
+  @TestTemplate
+  void shouldRepublishOnValidatorsAdded() {
+    final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(5));
+    final UInt64 nextEpoch = UInt64.valueOf(6);
+    final UInt64 nextEpochSlot = spec.computeStartSlotAtEpoch(nextEpoch);
+
+    when(validatorApiChannel.getProposerDuties(eq(nextEpoch), eq(true)))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    new ProposerDuties(
+                        dataStructureUtil.randomBytes32(),
+                        List.of(new ProposerDuty(publicKey, 42, nextEpochSlot)),
+                        false))));
+
+    publisher.onSlot(firstSlotOfEpoch);
+    verify(validatorApiChannel).sendSignedProposerPreferences(anyList());
+
+    publisher.onValidatorsAdded();
+    verify(validatorApiChannel, times(2)).sendSignedProposerPreferences(anyList());
+  }
+
+  @TestTemplate
+  void shouldNotRepublishOnMissedEventsBeforeFirstSlot() {
+    publisher.onPossibleMissedEvents();
+    verify(validatorApiChannel, never()).getProposerDuties(any(), anyBoolean());
+  }
+
+  @TestTemplate
+  void shouldHandleApiFailureGracefully() {
+    final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(5));
+    final UInt64 nextEpoch = UInt64.valueOf(6);
+
+    when(validatorApiChannel.getProposerDuties(eq(nextEpoch), eq(true)))
+        .thenReturn(SafeFuture.failedFuture(new RuntimeException("API error")));
+
+    // Should not throw
+    publisher.onSlot(firstSlotOfEpoch);
+  }
+}

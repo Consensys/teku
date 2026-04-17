@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
@@ -94,6 +95,12 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
+        public SafeFuture<List<ExecutionPayloadBody>> engineGetPayloadBodiesByHash(
+            final List<Bytes32> blockHashes) {
+          return SafeFuture.completedFuture(Collections.emptyList());
+        }
+
+        @Override
         public SafeFuture<Void> builderRegisterValidators(
             final SszList<SignedValidatorRegistration> signedValidatorRegistrations,
             final UInt64 slot) {
@@ -137,6 +144,8 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
   SafeFuture<List<BlobAndCellProofs>> engineGetBlobAndCellProofsList(
       List<VersionedHash> blobVersionedHashes, UInt64 slot);
+
+  SafeFuture<List<ExecutionPayloadBody>> engineGetPayloadBodiesByHash(List<Bytes32> blockHashes);
 
   /**
    * This is low level method, use {@link

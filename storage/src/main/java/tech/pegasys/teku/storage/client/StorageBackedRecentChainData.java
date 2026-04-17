@@ -23,6 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
@@ -43,6 +44,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 public class StorageBackedRecentChainData extends RecentChainData {
   private static final Logger LOG = LogManager.getLogger();
   private final BlockProvider blockProvider;
+  private final ExecutionPayloadProvider executionPayloadProvider;
   private final StateAndBlockSummaryProvider stateProvider;
   private final StorageQueryChannel storageQueryChannel;
   private final StoreConfig storeConfig;
@@ -53,6 +55,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final StoreConfig storeConfig,
       final SingleBlockProvider validatedBlockProvider,
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
+      final ExecutionPayloadProvider executionPayloadProvider,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
@@ -65,6 +68,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
         metricsSystem,
         storeConfig,
         storageQueryChannel::getHotBlocksByRoot,
+        executionPayloadProvider,
         validatedBlockProvider,
         validatedBlobSidecarProvider,
         storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot,
@@ -78,6 +82,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
     this.storeConfig = storeConfig;
     this.storageQueryChannel = storageQueryChannel;
     this.blockProvider = storageQueryChannel::getHotBlocksByRoot;
+    this.executionPayloadProvider = executionPayloadProvider;
     this.stateProvider = storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot;
   }
 
@@ -87,6 +92,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final AsyncRunner asyncRunner,
       final SingleBlockProvider validatedBlockProvider,
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
+      final ExecutionPayloadProvider executionPayloadProvider,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
@@ -101,6 +107,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             storeConfig,
             validatedBlockProvider,
             validatedBlobSidecarProvider,
+            executionPayloadProvider,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -119,6 +126,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final StoreConfig storeConfig,
       final SingleBlockProvider validatedBlockProvider,
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
+      final ExecutionPayloadProvider executionPayloadProvider,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
@@ -133,6 +141,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             storeConfig,
             validatedBlockProvider,
             validatedBlobSidecarProvider,
+            executionPayloadProvider,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -173,6 +182,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
                   .onDiskStoreData(data)
                   .asyncRunner(asyncRunner)
                   .blockProvider(blockProvider)
+                  .executionPayloadProvider(executionPayloadProvider)
                   .stateProvider(stateProvider)
                   .storeConfig(storeConfig)
                   .build();

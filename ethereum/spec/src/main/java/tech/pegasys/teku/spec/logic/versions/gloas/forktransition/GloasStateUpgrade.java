@@ -150,6 +150,7 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                       .getExecutionPayloadSchema()
                       .getWithdrawalsSchemaRequired()
                       .of());
+              state.setPtcWindow(beaconStateAccessors.initializePtcWindow(preState));
 
               onboardBuildersFromPendingDeposits(state);
             });

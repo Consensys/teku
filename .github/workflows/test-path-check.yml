@@ -1,6 +1,9 @@
 name: "Test Path Check"
 on: [push, pull_request]
 
+permissions:
+  contents: read
+
 jobs:
   check:
     name: "Check"

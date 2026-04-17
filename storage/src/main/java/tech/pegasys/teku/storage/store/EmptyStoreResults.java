@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -33,6 +34,9 @@ public abstract class EmptyStoreResults {
 
   public static final SafeFuture<Optional<BeaconState>> EMPTY_STATE_FUTURE =
       SafeFuture.completedFuture(Optional.empty());
+
+  public static final SafeFuture<Optional<SignedBlockAndState>>
+      EMPTY_SIGNED_BLOCK_AND_STATE_FUTURE = SafeFuture.completedFuture(Optional.empty());
 
   public static final SafeFuture<Optional<StateAndBlockSummary>>
       EMPTY_STATE_AND_BLOCK_SUMMARY_FUTURE = SafeFuture.completedFuture(Optional.empty());

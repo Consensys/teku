@@ -1,0 +1,35 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "enabledManagers": ["github-actions", "gradle", "gradle-wrapper", "dockerfile"],
+  "dependencyDashboard": false,
+  "packageRules": [
+    {
+      "description": "Pin all GitHub Actions to SHA digests",
+      "matchManagers": ["github-actions"],
+      "pinDigests": true,
+      "minimumReleaseAge": "7 days",
+      "groupName": "Renovatebot GHA Updates"
+    },
+    {
+      "description": "Group all Dockerfile base image updates into a single PR",
+      "matchManagers": ["dockerfile"],
+      "minimumReleaseAge": "7 days",
+      "groupName": "Renovatebot Dockerfile Updates"
+    },
+    {
+      "description": "Group all Gradle wrapper updates into a single PR",
+      "matchManagers": ["gradle-wrapper"],
+      "minimumReleaseAge": "7 days",
+      "groupName": "Renovatebot Gradle Wrapper Updates"
+    },
+    {
+      "description": "Group all Gradle dependency updates into a single PR",
+      "matchManagers": ["gradle"],
+      "minimumReleaseAge": "7 days",
+      "groupName": "Renovatebot Gradle Updates"
+    }
+  ]
+}

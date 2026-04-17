@@ -20,6 +20,7 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Bea
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.LATEST_EXECUTION_PAYLOAD_BID;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.NEXT_WITHDRAWAL_BUILDER_INDEX;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PAYLOAD_EXPECTED_WITHDRAWALS;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PTC_WINDOW;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -28,6 +29,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableVector;
 import tech.pegasys.teku.infrastructure.ssz.SszVector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64Vector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -124,5 +126,16 @@ public interface MutableBeaconStateGloas extends MutableBeaconStateFulu, BeaconS
   default void setPayloadExpectedWithdrawals(final SszList<Withdrawal> payloadExpectedWithdrawals) {
     final int fieldIndex = getSchema().getFieldIndex(PAYLOAD_EXPECTED_WITHDRAWALS);
     set(fieldIndex, payloadExpectedWithdrawals);
+  }
+
+  @Override
+  default SszMutableVector<SszUInt64Vector> getPtcWindow() {
+    final int index = getSchema().getFieldIndex(PTC_WINDOW);
+    return getAnyByRef(index);
+  }
+
+  default void setPtcWindow(final SszVector<SszUInt64Vector> ptcWindow) {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.PTC_WINDOW);
+    set(fieldIndex, ptcWindow);
   }
 }

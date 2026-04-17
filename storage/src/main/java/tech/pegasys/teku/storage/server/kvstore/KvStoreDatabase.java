@@ -59,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -277,6 +278,28 @@ public class KvStoreDatabase implements Database {
   @Override
   public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 blockRoot) {
     return dao.getHotBlock(blockRoot);
+  }
+
+  @Override
+  public Optional<SignedBlindedExecutionPayloadEnvelope> getBlindedExecutionPayloadEnvelope(
+      final Bytes32 blockRoot) {
+    return dao.getBlindedExecutionPayloadEnvelope(blockRoot);
+  }
+
+  @Override
+  public Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> getBlindedExecutionPayloadEnvelopes(
+      final Set<Bytes32> blockRoots) {
+    return blockRoots.stream()
+        .flatMap(root -> dao.getBlindedExecutionPayloadEnvelope(root).stream())
+        .collect(
+            Collectors.toMap(
+                SignedBlindedExecutionPayloadEnvelope::getBeaconBlockRoot,
+                Function.identity(),
+                (existing, duplicate) -> {
+                  throw new IllegalStateException(
+                      "Duplicate blinded execution payload envelope in DB for block root "
+                          + existing.getBeaconBlockRoot());
+                }));
   }
 
   @Override
@@ -1304,6 +1327,14 @@ public class KvStoreDatabase implements Database {
             update.isFinalizedOptimisticTransitionBlockRootSet(),
             update.getOptimisticTransitionBlockRoot());
 
+    if (update.isExecutionPayloadEnvelopesEnabled()) {
+      final Set<Bytes32> nonCanonicalPrunedRoots =
+          update.getDeletedHotBlocks().keySet().stream()
+              .filter(root -> !update.getFinalizedChildToParentMap().containsKey(root))
+              .collect(Collectors.toSet());
+      updateBlindedExecutionPayloads(update.getBlindedExecutionPayloads(), nonCanonicalPrunedRoots);
+    }
+
     if (update.isBlobSidecarsEnabled()) {
       removeNonCanonicalBlobSidecars(
           update.getDeletedHotBlocks(), update.getFinalizedChildToParentMap());
@@ -1637,6 +1668,19 @@ public class KvStoreDatabase implements Database {
     }
 
     return Optional.empty();
+  }
+
+  private void updateBlindedExecutionPayloads(
+      final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope> blindedExecutionPayloads,
+      final Set<Bytes32> prunedBlockRoots) {
+    if (blindedExecutionPayloads.isEmpty() && prunedBlockRoots.isEmpty()) {
+      return;
+    }
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      blindedExecutionPayloads.forEach(updater::addBlindedExecutionPayloadEnvelope);
+      prunedBlockRoots.forEach(updater::deleteBlindedExecutionPayloadEnvelope);
+      updater.commit();
+    }
   }
 
   private BeaconBlockSummary getLatestFinalizedBlockOrSummary() {

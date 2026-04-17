@@ -26,52 +26,44 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.TestTemplate;
+import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
-import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecContext;
-import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.spec.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 
-@TestSpecContext(milestone = {SpecMilestone.PHASE0, SpecMilestone.GLOAS})
 class StateGenerationTaskTest {
 
   private static final int REPLAY_TOLERANCE_TO_AVOID_LOADING_IN_EPOCHS = 0;
-  private Spec spec;
-  private ChainBuilder chainBuilder;
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
   private TrackingBlockProvider blockProvider;
 
   @BeforeEach
-  void setUp(final SpecContext specContext) {
-    spec = specContext.getSpec();
-    chainBuilder = ChainBuilder.create(spec);
+  void setUp() {
     chainBuilder.generateGenesis();
     blockProvider = new TrackingBlockProvider(getBlockProvider());
   }
 
-  @TestTemplate
+  @Test
   void performTask_shouldRegenerateState() {
     chainBuilder.generateBlocksUpToSlot(3);
     final StateGenerationTask task = createTask(0, 3);
     final SafeFuture<Optional<StateAndBlockSummary>> result = task.performTask();
-    assertThatSafeFuture(result).isCompletedWithOptionalContaining(getExpectedBlockAndState(3));
+    assertThatSafeFuture(result)
+        .isCompletedWithOptionalContaining(chainBuilder.getBlockAndStateAtSlot(3));
     assertRequestedBlockRangeInclusive(1, 3);
   }
 
-  @TestTemplate
+  @Test
   void performTask_shouldLoadStateFromLatestEpochBoundary() {
     chainBuilder.generateBlocksUpToSlot(5);
     final SignedBeaconBlock epochBoundaryBlock = chainBuilder.getBlockAtSlot(3);
@@ -81,23 +73,26 @@ class StateGenerationTaskTest {
     final StateGenerationTask task = createTask(1, 5, epochBoundaryRoot);
     final SafeFuture<Optional<StateAndBlockSummary>> result = task.performTask();
 
-    assertThatSafeFuture(result).isCompletedWithOptionalContaining(getExpectedBlockAndState(5));
+    assertThatSafeFuture(result)
+        .isCompletedWithOptionalContaining(chainBuilder.getBlockAndStateAtSlot(5));
     assertRequestedBlockRangeInclusive(4, 5);
   }
 
-  @TestTemplate
+  @Test
   void rebase_shouldStartFromMoreRecentState() {
     chainBuilder.generateBlocksUpToSlot(5);
 
     final StateGenerationTask originalTask = createTask(0, 5);
 
-    final StateGenerationTask rebasedTask = originalTask.rebase(getExpectedBlockAndState(4));
+    final StateGenerationTask rebasedTask =
+        originalTask.rebase(chainBuilder.getBlockAndStateAtSlot(4));
     final SafeFuture<Optional<StateAndBlockSummary>> result = rebasedTask.performTask();
-    assertThatSafeFuture(result).isCompletedWithOptionalContaining(getExpectedBlockAndState(5));
+    assertThatSafeFuture(result)
+        .isCompletedWithOptionalContaining(chainBuilder.getBlockAndStateAtSlot(5));
     assertRequestedBlockRangeInclusive(5, 5);
   }
 
-  @TestTemplate
+  @Test
   void streamIntermediateSteps_shouldStreamParentBlocksUpToInitialStartingPoint() {
     chainBuilder.generateBlocksUpToSlot(5);
 
@@ -111,37 +106,6 @@ class StateGenerationTaskTest {
     final StateGenerationTask task = createTask(3, 5);
     final Stream<Bytes32> intermediateSteps = task.streamIntermediateSteps();
     assertThat(intermediateSteps).containsExactlyElementsOf(expectedIntermediateSteps);
-  }
-
-  @TestTemplate
-  void performTask_shouldReplayExecutionPayloadsDuringMultiBlockRegeneration(
-      final SpecContext specContext) {
-    specContext.assumeGloasActive();
-    chainBuilder.generateBlocksUpToSlot(5);
-
-    // Replaying 5 blocks from genesis would fail with "Bid is not for the right parent block"
-    // without execution payload replay, because latestBlockHash goes stale
-    final StateGenerationTask task =
-        createTask(0, 5, Optional.empty(), getExecutionPayloadProvider());
-
-    final SafeFuture<Optional<StateAndBlockSummary>> result = task.performTask();
-    assertThat(result).isCompleted();
-    assertThat(result.join()).isPresent();
-    assertThat(result.join().orElseThrow().getSlot()).isEqualTo(UInt64.valueOf(5));
-  }
-
-  /**
-   * Returns the expected block-and-state after regeneration. For GLOAS, state regeneration includes
-   * execution payload processing, so the expected state is the post-execution-payload state.
-   */
-  private SignedBlockAndState getExpectedBlockAndState(final int slot) {
-    final SignedBlockAndState blockAndState = chainBuilder.getBlockAndStateAtSlot(slot);
-    return chainBuilder
-        .getExecutionPayloadStateAtSlot(UInt64.valueOf(slot))
-        .map(
-            executionPayloadState ->
-                new SignedBlockAndState(blockAndState.getBlock(), executionPayloadState))
-        .orElse(blockAndState);
   }
 
   private void assertRequestedBlockRangeInclusive(final int fromSlot, final int toSlot) {
@@ -159,14 +123,6 @@ class StateGenerationTaskTest {
 
   private StateGenerationTask createTask(
       final int startSlot, final int endSlot, final Optional<SlotAndBlockRoot> epochBoundaryRoot) {
-    return createTask(startSlot, endSlot, epochBoundaryRoot, getExecutionPayloadProvider());
-  }
-
-  private StateGenerationTask createTask(
-      final int startSlot,
-      final int endSlot,
-      final Optional<SlotAndBlockRoot> epochBoundaryRoot,
-      final ExecutionPayloadProvider executionPayloadProvider) {
     final SignedBlockAndState startBlockAndState = chainBuilder.getBlockAndStateAtSlot(startSlot);
     final SignedBeaconBlock endBlock = chainBuilder.getBlockAtSlot(endSlot);
     final HashTree.Builder treeBuilder =
@@ -184,7 +140,6 @@ class StateGenerationTaskTest {
         endBlock.getRoot(),
         tree,
         blockProvider,
-        executionPayloadProvider,
         new StateRegenerationBaseSelector(
             spec,
             epochBoundaryRoot,
@@ -195,17 +150,6 @@ class StateGenerationTaskTest {
             getStateAndBlockProvider(),
             Optional.empty(),
             REPLAY_TOLERANCE_TO_AVOID_LOADING_IN_EPOCHS));
-  }
-
-  private ExecutionPayloadProvider getExecutionPayloadProvider() {
-    final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloadMap =
-        chainBuilder
-            .streamExecutionPayloadsAndStates(0, chainBuilder.getLatestSlot().intValue())
-            .collect(
-                Collectors.toMap(
-                    SignedExecutionPayloadAndState::getBeaconBlockRoot,
-                    SignedExecutionPayloadAndState::executionPayload));
-    return ExecutionPayloadProvider.fromDynamicMap(executionPayloadMap);
   }
 
   private static class TrackingBlockProvider implements BlockProvider {
@@ -227,7 +171,7 @@ class StateGenerationTaskTest {
     }
   }
 
-  private BlockProvider getBlockProvider() {
+  public BlockProvider getBlockProvider() {
     return BlockProvider.fromDynamicMap(
         () ->
             chainBuilder
@@ -237,19 +181,8 @@ class StateGenerationTaskTest {
                         StateAndBlockSummary::getRoot, SignedBlockAndState::getBlock)));
   }
 
-  private StateAndBlockSummaryProvider getStateAndBlockProvider() {
+  public StateAndBlockSummaryProvider getStateAndBlockProvider() {
     return blockRoot ->
-        SafeFuture.completedFuture(
-            chainBuilder
-                .getBlockAndState(blockRoot)
-                .map(
-                    blockAndState ->
-                        chainBuilder
-                            .getExecutionPayloadStateAtSlot(blockAndState.getSlot())
-                            .map(
-                                epState ->
-                                    (StateAndBlockSummary)
-                                        new SignedBlockAndState(blockAndState.getBlock(), epState))
-                            .orElse(blockAndState)));
+        SafeFuture.completedFuture(chainBuilder.getBlockAndState(blockRoot).map(a -> a));
   }
 }

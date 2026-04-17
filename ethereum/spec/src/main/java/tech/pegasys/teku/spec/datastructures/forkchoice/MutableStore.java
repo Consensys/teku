@@ -69,13 +69,11 @@ public interface MutableStore extends ReadOnlyStore {
   }
 
   /**
-   * Stores the corresponding data for this execution payload
+   * Stores recent execution payload
    *
    * @param executionPayload Execution payload
-   * @param state Corresponding state
    */
-  void putExecutionPayloadAndState(
-      SignedExecutionPayloadEnvelope executionPayload, BeaconState state);
+  void putExecutionPayload(SignedExecutionPayloadEnvelope executionPayload);
 
   void putStateRoot(Bytes32 stateRoot, SlotAndBlockRoot slotAndBlockRoot);
 
