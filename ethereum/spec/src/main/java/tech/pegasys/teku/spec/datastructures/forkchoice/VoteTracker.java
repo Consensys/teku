@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.forkchoice;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
@@ -41,10 +42,12 @@ public class VoteTracker {
   private final UInt64 currentSlot;
   private final boolean currentFullPayloadHint;
 
+  @VisibleForTesting
   public VoteTracker(final Bytes32 currentRoot, final Bytes32 nextRoot) {
     this(currentRoot, nextRoot, false, false);
   }
 
+  @VisibleForTesting
   public VoteTracker(
       final Bytes32 currentRoot,
       final Bytes32 nextRoot,
