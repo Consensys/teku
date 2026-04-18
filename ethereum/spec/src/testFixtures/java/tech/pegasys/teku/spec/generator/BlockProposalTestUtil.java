@@ -241,8 +241,7 @@ public class BlockProposalTestUtil {
   }
 
   private ExecutionRequests getParentExecutionRequests(final UInt64 parentSlot) {
-    // cache entry no longer needed
-    return Optional.ofNullable(executionPayloadProposalDataCache.remove(parentSlot))
+    return Optional.ofNullable(executionPayloadProposalDataCache.get(parentSlot))
         .map(ExecutionPayloadProposalData::executionRequests)
         .orElseGet(dataStructureUtil::emptyExecutionRequests);
   }
