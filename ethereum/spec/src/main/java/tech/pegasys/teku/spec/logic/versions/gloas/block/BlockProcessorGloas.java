@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_B
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -137,10 +138,10 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     final ExecutionPayloadBid parentBid = stateGloas.getLatestExecutionPayloadBid();
     final ExecutionRequests requests = body.getParentExecutionRequests();
 
-    // True if this block built on the parent's full payload
-    final boolean isParentBlockFull = bid.getParentBlockHash().equals(parentBid.getBlockHash());
+    final boolean isGenesisBlock = parentBid.getBlockHash().equals(Bytes32.ZERO);
+    final boolean isParentBlockEmpty = !bid.getParentBlockHash().equals(parentBid.getBlockHash());
 
-    if (!isParentBlockFull) {
+    if (isGenesisBlock || isParentBlockEmpty) {
       // Parent was EMPTY -- no execution requests expected
       if (!requests.equals(schemaDefinitionsGloas.getExecutionRequestsSchema().getDefault())) {
         throw new BlockProcessingException(

@@ -191,7 +191,7 @@ public class GenesisGenerator {
               .create(
                   Bytes32.ZERO,
                   Bytes32.ZERO,
-                  eth1BlockHash,
+                  Bytes32.ZERO,
                   Bytes32.ZERO,
                   Bytes20.ZERO,
                   UInt64.ZERO,

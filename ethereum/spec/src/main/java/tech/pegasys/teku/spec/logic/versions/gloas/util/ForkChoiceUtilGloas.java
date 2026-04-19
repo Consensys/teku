@@ -121,7 +121,7 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
               if (parentBlock.isEmpty()) {
                 throw new IllegalStateException("Parent block not found: " + block.getParentRoot());
               }
-              final Optional<Bytes32> messageBlockHash =
+              final Optional<Bytes32> maybeMessageBlockHash =
                   parentBlock
                       .get()
                       .getBody()
@@ -131,7 +131,12 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
                               bodyGloas.getSignedExecutionPayloadBid().getMessage().getBlockHash());
               // if the parent block is pre-Gloas, we'd use the block state, there would be no
               // payload state
-              if (messageBlockHash.isEmpty()) {
+              if (maybeMessageBlockHash.isEmpty()) {
+                return PAYLOAD_STATUS_EMPTY;
+              }
+              final Bytes32 messageBlockHash = maybeMessageBlockHash.get();
+              //  Check for uninitialized genesis block hash
+              if (messageBlockHash.equals(Bytes32.ZERO)) {
                 return PAYLOAD_STATUS_EMPTY;
               }
               final Bytes32 parentBlockHash =
@@ -139,7 +144,7 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
                       .getSignedExecutionPayloadBid()
                       .getMessage()
                       .getParentBlockHash();
-              return parentBlockHash.equals(messageBlockHash.get())
+              return parentBlockHash.equals(messageBlockHash)
                   ? PayloadStatus.PAYLOAD_STATUS_FULL
                   : PAYLOAD_STATUS_EMPTY;
             });
