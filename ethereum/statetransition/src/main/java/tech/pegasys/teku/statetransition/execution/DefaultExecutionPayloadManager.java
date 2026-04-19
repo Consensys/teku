@@ -163,8 +163,7 @@ public class DefaultExecutionPayloadManager
     final ForkChoiceUtilGloas forkChoiceUtil =
         ForkChoiceUtilGloas.required(specVersion.getForkChoiceUtil());
     final UpdatableStore store = recentChainData.getStore();
-    if (!forkChoiceUtil.isPayloadVerified(store, parentRoot)
-        || !forkChoiceUtil.shouldExtendPayload(store, parentRoot)) {
+    if (!forkChoiceUtil.shouldExtendPayload(store, parentRoot)) {
       return SchemaDefinitionsGloas.required(specVersion.getSchemaDefinitions())
           .getExecutionRequestsSchema()
           .getDefault();

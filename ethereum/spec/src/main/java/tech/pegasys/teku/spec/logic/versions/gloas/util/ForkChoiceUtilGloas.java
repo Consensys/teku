@@ -93,7 +93,7 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
   // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878
   @SuppressWarnings("unused")
   public boolean shouldExtendPayload(final ReadOnlyStore store, final Bytes32 root) {
-    return true;
+    return isPayloadVerified(store, root);
   }
 
   @Override
