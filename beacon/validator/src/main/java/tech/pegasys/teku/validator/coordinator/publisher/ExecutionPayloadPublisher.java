@@ -13,19 +13,27 @@
 
 package tech.pegasys.teku.validator.coordinator.publisher;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.validator.api.PublishSignedExecutionPayloadResult;
 
 /** Used to publish execution payload and data column sidecars */
 public interface ExecutionPayloadPublisher {
 
   ExecutionPayloadPublisher NOOP =
-      signedExecutionPayload ->
+      (signedExecutionPayload, broadcastValidationLevel) ->
           SafeFuture.completedFuture(
               PublishSignedExecutionPayloadResult.success(
                   signedExecutionPayload.getBeaconBlockRoot()));
 
+  default SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+    return publishSignedExecutionPayload(signedExecutionPayload, Optional.empty());
+  }
+
   SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
-      SignedExecutionPayloadEnvelope signedExecutionPayload);
+      SignedExecutionPayloadEnvelope signedExecutionPayload,
+      Optional<BroadcastValidationLevel> broadcastValidationLevel);
 }

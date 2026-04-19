@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 
 /**
  * <a
@@ -37,6 +38,12 @@ public interface BuilderApiChannel {
   SafeFuture<Optional<ExecutionPayloadEnvelope>> createUnsignedExecutionPayload(
       UInt64 slot, UInt64 builderIndex);
 
+  default SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
+      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+    return publishSignedExecutionPayload(signedExecutionPayload, Optional.empty());
+  }
+
   SafeFuture<PublishSignedExecutionPayloadResult> publishSignedExecutionPayload(
-      SignedExecutionPayloadEnvelope signedExecutionPayload);
+      SignedExecutionPayloadEnvelope signedExecutionPayload,
+      Optional<BroadcastValidationLevel> broadcastValidationLevel);
 }

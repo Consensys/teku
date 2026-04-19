@@ -19,6 +19,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -66,13 +67,14 @@ class DefaultExecutionPayloadManagerTest {
 
   @Test
   public void shouldValidateAndImport() {
-    when(executionPayloadGossipValidator.validate(signedExecutionPayload))
+    when(executionPayloadGossipValidator.validate(signedExecutionPayload, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     when(forkChoice.onExecutionPayload(signedExecutionPayload, executionLayer))
         .thenReturn(SafeFuture.completedFuture(successfulImportResult));
 
     final SafeFuture<InternalValidationResult> resultFuture =
-        executionPayloadManager.validateAndImportExecutionPayload(signedExecutionPayload);
+        executionPayloadManager.validateAndImportExecutionPayload(
+            signedExecutionPayload, Optional.empty(), Optional.empty());
 
     try (final LogCaptor logCaptor = LogCaptor.forClass(DefaultExecutionPayloadManager.class)) {
       asyncRunner.executeDueActions();
@@ -94,11 +96,12 @@ class DefaultExecutionPayloadManagerTest {
   @Test
   public void shouldNotImportIfValidationFails() {
     final InternalValidationResult rejectedResult = InternalValidationResult.reject("oopsy");
-    when(executionPayloadGossipValidator.validate(signedExecutionPayload))
+    when(executionPayloadGossipValidator.validate(signedExecutionPayload, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(rejectedResult));
 
     final SafeFuture<InternalValidationResult> resultFuture =
-        executionPayloadManager.validateAndImportExecutionPayload(signedExecutionPayload);
+        executionPayloadManager.validateAndImportExecutionPayload(
+            signedExecutionPayload, Optional.empty(), Optional.empty());
 
     asyncRunner.executeDueActions();
 
@@ -114,7 +117,7 @@ class DefaultExecutionPayloadManagerTest {
 
   @Test
   public void shouldHandleInternalErrorsWhileImporting() {
-    when(executionPayloadGossipValidator.validate(signedExecutionPayload))
+    when(executionPayloadGossipValidator.validate(signedExecutionPayload, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     final IllegalStateException exception = new IllegalStateException("oopsy");
@@ -123,7 +126,8 @@ class DefaultExecutionPayloadManagerTest {
         .thenThrow(exception);
 
     final SafeFuture<InternalValidationResult> resultFuture =
-        executionPayloadManager.validateAndImportExecutionPayload(signedExecutionPayload);
+        executionPayloadManager.validateAndImportExecutionPayload(
+            signedExecutionPayload, Optional.empty(), Optional.empty());
 
     try (final LogCaptor logCaptor = LogCaptor.forClass(DefaultExecutionPayloadManager.class)) {
       asyncRunner.executeDueActions();
@@ -144,7 +148,7 @@ class DefaultExecutionPayloadManagerTest {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(42);
     final SignedExecutionPayloadEnvelope signedExecutionPayload =
         dataStructureUtil.randomSignedExecutionPayloadEnvelopeForBlock(block);
-    when(executionPayloadGossipValidator.validate(signedExecutionPayload))
+    when(executionPayloadGossipValidator.validate(signedExecutionPayload, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
     when(forkChoice.onExecutionPayload(signedExecutionPayload, executionLayer))
         .thenReturn(SafeFuture.completedFuture(successfulImportResult));
@@ -156,7 +160,7 @@ class DefaultExecutionPayloadManagerTest {
     asyncRunner.executeDueActions();
     verifyNoInteractions(forkChoice, receivedExecutionPayloadEventsChannelPublisher);
 
-    when(executionPayloadGossipValidator.validate(signedExecutionPayload))
+    when(executionPayloadGossipValidator.validate(signedExecutionPayload, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     executionPayloadManager.onBlockImported(block, false);
 
