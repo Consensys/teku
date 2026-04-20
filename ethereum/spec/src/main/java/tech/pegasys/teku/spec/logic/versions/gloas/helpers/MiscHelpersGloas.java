@@ -139,10 +139,12 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
         indices.intStream().mapToObj(index -> validators.get(index).getEffectiveBalance()).toList();
     final IntList selected = new IntArrayList();
     int i = 0;
-    final Bytes32 randomBytes =
-        Hash.sha256(Bytes.concatenate(seed, uint64ToBytes(Math.floorDiv(i, 16L))));
+    Bytes32 randomBytes = Bytes32.ZERO;
     while (selected.size() < size) {
       final int offset = (i % 16) * 2;
+      if (offset == 0) {
+        randomBytes = Hash.sha256(Bytes.concatenate(seed, uint64ToBytes(Math.floorDiv(i, 16L))));
+      }
       int nextIndex = i % total;
       if (shuffleIndices) {
         nextIndex = computeShuffledIndex(nextIndex, total, seed);
