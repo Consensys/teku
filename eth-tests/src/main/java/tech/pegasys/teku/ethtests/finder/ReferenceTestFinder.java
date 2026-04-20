@@ -75,17 +75,11 @@ public class ReferenceTestFinder {
                       new PyspecTestFinder(
                           List.of(),
                           List.of(
-                              // TODO: https://github.com/Consensys/teku/issues/10578
-                              "phase0 - mainnet - networking/gossip_beacon_block - gossip_beacon_block__reject_slot_not_higher_than_parent",
-                              "phase0 - minimal - networking/gossip_beacon_attestation - gossip_beacon_attestation__ignore_slot_too_old",
-                              "phase0 - minimal - networking/gossip_beacon_block - gossip_beacon_block__ignore_parent_not_seen",
-                              "phase0 - mainnet - networking/gossip_beacon_attestation - gossip_beacon_attestation__ignore_finalized_not_ancestor",
                               // TODO-GLOAS: Limit what tests we run for Gloas while it is
                               // under development. This is temporary and should be removed once we
                               // are up-to-date with Gloas specs (see
                               // https://github.com/Consensys/teku-internal/issues/221)
-                              "gloas - mainnet - fork_choice",
-                              "gloas - minimal - fork_choice")),
+                              "gloas - mainnet - fork_choice", "gloas - minimal - fork_choice")),
                       new MerkleProofTestFinder())
                   .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
             });
