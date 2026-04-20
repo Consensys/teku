@@ -41,7 +41,7 @@ public class BootnodeModeAcceptanceTest extends AcceptanceTestBase {
     // Because we are using a fixed key, we expect a consistent ENR
     final String expectedENR =
         "enr:-Iu4QBXgximgzUBm87l9hAqgT3xNK3DLj6NjgEUBuYtk8_d8QK2_nLeS2l37Eb1"
-                +"-scVYqSHXEh1nYles9ZZa5nrvbggBgmlkgnY0gmlwhKwSAAKJc2VjcDI1NmsxoQLAvwqYDpQL10o51b3KEd9fKM5DOOkZ8O8mpPugtCmKWIN0Y3CCIyiDdWRwgiMo";
+            + "-scVYqSHXEh1nYles9ZZa5nrvbggBgmlkgnY0gmlwhKwSAAKJc2VjcDI1NmsxoQLAvwqYDpQL10o51b3KEd9fKM5DOOkZ8O8mpPugtCmKWIN0Y3CCIyiDdWRwgiMo";
 
     bootnode.start();
     bootnode.waitForDiscoveryStarted();
