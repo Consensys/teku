@@ -49,7 +49,7 @@ public class RecentExecutionPayloadsFetchService
   private final PayloadAttestationPool payloadAttestationPool;
   private final PendingPool<PayloadAttestationMessage> pendingPayloadAttestationsPool;
   private final Set<Bytes32> executionPayloadsRequestedDuringSync =
-      LimitedSet.createSynchronized(MAX_DEFERRED_REPLAY_REQUESTS);
+      LimitedSet.createSynchronizedIterable(MAX_DEFERRED_REPLAY_REQUESTS);
 
   RecentExecutionPayloadsFetchService(
       final AsyncRunner asyncRunner,
