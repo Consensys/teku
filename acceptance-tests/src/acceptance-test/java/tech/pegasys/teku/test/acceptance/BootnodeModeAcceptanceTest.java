@@ -38,13 +38,13 @@ public class BootnodeModeAcceptanceTest extends AcceptanceTestBase {
             .build();
     final TekuBootnodeNode bootnode = createBootnode(tekuNodeConfig);
 
-    // Because we are using a fixed key, we expect a consistent ENR
-    final String expectedENR =
-        "enr:-Iu4QBXgximgzUBm87l9hAqgT3xNK3DLj6NjgEUBuYtk8_d8QK2_nLeS2l37Eb1"
-            + "-scVYqSHXEh1nYles9ZZa5nrvbggBgmlkgnY0gmlwhKwSAAKJc2VjcDI1NmsxoQLAvwqYDpQL10o51b3KEd9fKM5DOOkZ8O8mpPugtCmKWIN0Y3CCIyiDdWRwgiMo";
+    // The secp256k1 public key portion of the ENR is deterministic for a fixed private key,
+    // while the rest (IP, signature) can vary with the container's network environment.
+    final String expectedPubKeyEncoding =
+        "c2VjcDI1NmsxoQLAvwqYDpQL10o51b3KEd9fKM5DOOkZ8O8mpPugtCmKWI";
 
     bootnode.start();
     bootnode.waitForDiscoveryStarted();
-    bootnode.waitForNodeENR(expectedENR);
+    bootnode.waitForNodeENRContaining(expectedPubKeyEncoding);
   }
 }
