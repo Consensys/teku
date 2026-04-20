@@ -16,12 +16,11 @@ package tech.pegasys.teku.ethtests.finder;
 import static tech.pegasys.teku.ethtests.finder.ReferenceTestFinder.unchecked;
 
 import com.google.errorprone.annotations.MustBeClosed;
-import tech.pegasys.teku.ethtests.TestFork;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
+import tech.pegasys.teku.ethtests.TestFork;
 
 @SuppressWarnings("MustBeClosedChecker")
 public class SszTestFinder implements TestFinder {
