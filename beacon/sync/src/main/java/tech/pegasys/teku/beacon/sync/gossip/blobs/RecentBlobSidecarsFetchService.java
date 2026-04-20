@@ -59,7 +59,8 @@ public class RecentBlobSidecarsFetchService
       final FetchTaskFactory fetchTaskFactory,
       final Spec spec) {
     final int maxConcurrentRequests =
-        DEFAULT_MAX_CONCURRENT_REQUESTS * spec.getMaxBlobsPerBlockForHighestMilestone().orElse(1);
+        DEFAULT_MAX_CONCURRENT_BLOCKS_REQUESTS
+            * spec.getMaxBlobsPerBlockForHighestMilestone().orElse(1);
     return new RecentBlobSidecarsFetchService(
         asyncRunner,
         blockBlobSidecarsTrackersPool,

@@ -77,7 +77,7 @@ public class RecentBlocksFetchService
         blockBlobSidecarsTrackersPool,
         forwardSync,
         fetchTaskFactory,
-        DEFAULT_MAX_CONCURRENT_REQUESTS);
+        DEFAULT_MAX_CONCURRENT_BLOCKS_REQUESTS);
   }
 
   @Override

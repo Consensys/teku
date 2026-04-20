@@ -76,7 +76,7 @@ public class RecentExecutionPayloadsFetchService
       final PendingPool<PayloadAttestationMessage> pendingPayloadAttestationsPool) {
     return new RecentExecutionPayloadsFetchService(
         asyncRunner,
-        DEFAULT_MAX_CONCURRENT_REQUESTS,
+        DEFAULT_MAX_CONCURRENT_BLOCKS_REQUESTS,
         forwardSync,
         fetchTaskFactory,
         executionPayloadManager,
