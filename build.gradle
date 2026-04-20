@@ -1,6 +1,6 @@
 import com.github.jk1.license.filter.LicenseBundleNormalizer
 import groovy.json.JsonSlurper
-import tech.pegasys.internal.license.reporter.GroupedLicenseHtmlRenderer
+import io.consensys.protocols.license.reporter.GroupedLicenseHtmlRenderer
 import tech.pegasys.teku.depcheck.DepCheckPlugin
 
 import java.text.SimpleDateFormat
@@ -10,20 +10,16 @@ import static tech.pegasys.teku.repackage.Repackage.repackage
 buildscript {
 	repositories {
 		mavenCentral()
-		maven {
-			url = "https://artifacts.consensys.net/public/maven/maven/"
-			content { includeGroupByRegex('tech\\.pegasys\\..*')}
-		}
 	}
 	dependencies {
-		classpath 'tech.pegasys.internal.license.reporter:license-reporter:1.1.1'
+		classpath 'io.consensys.protocols:license-reporter:1.2.0'
 	}
 }
 
 plugins {
 	id 'com.diffplug.spotless' version '7.2.1'
 	id 'com.github.ben-manes.versions' version '0.53.0'
-	id 'com.github.jk1.dependency-license-report' version '3.1.1'
+	id 'com.github.jk1.dependency-license-report' version '3.1.2'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'net.ltgt.errorprone' version '4.3.0' apply false
 	id 'de.undercouch.download' version '5.6.0'
@@ -606,7 +602,7 @@ if (project.hasProperty('enableLicenseReport')) {
 licenseReport {
 	projects = project.subprojects
 	configurations = ['runtimeClasspath']
-	outputDir = "${buildDir}/reports/licenses"
+	outputDir = layout.buildDirectory.dir("reports/licenses").get().asFile.absolutePath
 	// These jars don't have machine readable license information
 	excludes = [
 		'org.junit:junit-bom',
