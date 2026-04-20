@@ -69,10 +69,6 @@ public class BeaconStateMutatorsGloas extends BeaconStateMutatorsElectra {
   public void initiateBuilderExit(final MutableBeaconState state, final UInt64 builderIndex) {
     final SszMutableList<Builder> builders = MutableBeaconStateGloas.required(state).getBuilders();
     final Builder builder = builders.get(builderIndex.intValue());
-    // Return if builder already initiated exit
-    if (!builder.getWithdrawableEpoch().equals(FAR_FUTURE_EPOCH)) {
-      return;
-    }
     // Set builder exit epoch
     final UInt64 exitEpoch =
         beaconStateAccessorsGloas
