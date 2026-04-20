@@ -114,7 +114,8 @@ public class DefaultExecutionPayloadBidManagerTest {
         schemaDefinitions
             .getExecutionPayloadBidSchema()
             .createLocalSelfBuiltBid(
-                state.getLatestExecutionPayloadBid().getBlockHash(),
+                // should_extend_payload returns false
+                state.getLatestExecutionPayloadBid().getParentBlockHash(),
                 state.getLatestBlockHeader().getRoot(),
                 state.getSlot(),
                 executionPayload,
