@@ -20,12 +20,15 @@ import tech.pegasys.teku.beacon.sync.fetch.FetchExecutionPayloadTask;
 import tech.pegasys.teku.beacon.sync.fetch.FetchTaskFactory;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.gossip.AbstractFetchService;
-import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetchService;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
+import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class RecentExecutionPayloadsFetchService
     extends AbstractFetchService<Bytes32, FetchExecutionPayloadTask, SignedExecutionPayloadEnvelope>
@@ -33,37 +36,48 @@ public class RecentExecutionPayloadsFetchService
 
   private static final Logger LOG = LogManager.getLogger();
 
+  public static final int MAX_CONCURRENT_REQUESTS = 3;
+
   private final Subscribers<ExecutionPayloadSubscriber> executionPayloadSubscribers =
       Subscribers.create(true);
 
   private final ForwardSync forwardSync;
   private final FetchTaskFactory fetchTaskFactory;
   private final ExecutionPayloadManager executionPayloadManager;
+  private final PayloadAttestationPool payloadAttestationPool;
+  private final PendingPool<PayloadAttestationMessage> pendingPayloadAttestationsPool;
 
   RecentExecutionPayloadsFetchService(
       final AsyncRunner asyncRunner,
       final int maxConcurrentRequests,
       final ForwardSync forwardSync,
       final FetchTaskFactory fetchTaskFactory,
-      final ExecutionPayloadManager executionPayloadManager) {
+      final ExecutionPayloadManager executionPayloadManager,
+      final PayloadAttestationPool payloadAttestationPool,
+      final PendingPool<PayloadAttestationMessage> pendingPayloadAttestationsPool) {
     super(asyncRunner, maxConcurrentRequests);
     this.forwardSync = forwardSync;
     this.fetchTaskFactory = fetchTaskFactory;
     this.executionPayloadManager = executionPayloadManager;
+    this.payloadAttestationPool = payloadAttestationPool;
+    this.pendingPayloadAttestationsPool = pendingPayloadAttestationsPool;
   }
 
   public static RecentExecutionPayloadsFetchService create(
       final AsyncRunner asyncRunner,
       final ForwardSync forwardSync,
       final FetchTaskFactory fetchTaskFactory,
-      final ExecutionPayloadManager executionPayloadManager) {
+      final ExecutionPayloadManager executionPayloadManager,
+      final PayloadAttestationPool payloadAttestationPool,
+      final PendingPool<PayloadAttestationMessage> pendingPayloadAttestationsPool) {
     return new RecentExecutionPayloadsFetchService(
         asyncRunner,
-        // same limit as blocks
-        RecentBlocksFetchService.MAX_CONCURRENT_REQUESTS,
+        MAX_CONCURRENT_REQUESTS,
         forwardSync,
         fetchTaskFactory,
-        executionPayloadManager);
+        executionPayloadManager,
+        payloadAttestationPool,
+        pendingPayloadAttestationsPool);
   }
 
   @Override
@@ -126,8 +140,19 @@ public class RecentExecutionPayloadsFetchService
     cancelRecentExecutionPayloadRequest(executionPayload.getBeaconBlockRoot());
   }
 
-  // TODO-GLOAS: configure subscribers to fetch execution payload in cases when payload attestation
-  // with payloadPresent true is received and we don't have the execution payload
-  // payloads pool
-  private void setupSubscribers() {}
+  private void setupSubscribers() {
+    payloadAttestationPool.subscribeOperationAdded(this::onPayloadAttestationAdded);
+    pendingPayloadAttestationsPool.subscribeRequiredBlockRootDropped(
+        this::cancelRecentExecutionPayloadRequest);
+  }
+
+  private void onPayloadAttestationAdded(
+      final PayloadAttestationMessage payloadAttestationMessage,
+      final InternalValidationResult validationStatus,
+      final boolean fromNetwork) {
+    if (!payloadAttestationMessage.getData().isPayloadPresent()) {
+      return;
+    }
+    requestRecentExecutionPayload(payloadAttestationMessage.getData().getBeaconBlockRoot());
+  }
 }
