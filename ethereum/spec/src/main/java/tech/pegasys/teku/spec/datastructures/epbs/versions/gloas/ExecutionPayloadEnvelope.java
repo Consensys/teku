@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 import static com.google.common.base.Preconditions.checkState;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container5;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -25,31 +25,25 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.BlockRootAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionPayloadGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class ExecutionPayloadEnvelope
-    extends Container5<
-        ExecutionPayloadEnvelope,
-        ExecutionPayload,
-        ExecutionRequests,
-        SszUInt64,
-        SszBytes32,
-        SszUInt64> {
+    extends Container4<
+        ExecutionPayloadEnvelope, ExecutionPayload, ExecutionRequests, SszUInt64, SszBytes32> {
 
   ExecutionPayloadEnvelope(
       final ExecutionPayloadEnvelopeSchema schema,
       final ExecutionPayload payload,
       final ExecutionRequests executionRequests,
       final UInt64 builderIndex,
-      final Bytes32 beaconBlockRoot,
-      final UInt64 slot) {
+      final Bytes32 beaconBlockRoot) {
     super(
         schema,
         payload,
         executionRequests,
         SszUInt64.of(builderIndex),
-        SszBytes32.of(beaconBlockRoot),
-        SszUInt64.of(slot));
+        SszBytes32.of(beaconBlockRoot));
   }
 
   ExecutionPayloadEnvelope(final ExecutionPayloadEnvelopeSchema type, final TreeNode backingNode) {
@@ -73,7 +67,7 @@ public class ExecutionPayloadEnvelope
   }
 
   public UInt64 getSlot() {
-    return getField4().get();
+    return ExecutionPayloadGloas.required(getPayload()).getSlotNumber();
   }
 
   public SlotAndBlockRoot getSlotAndBlockRoot() {
@@ -99,8 +93,7 @@ public class ExecutionPayloadEnvelope
                     .createFromExecutionPayload(getPayload()),
                 getExecutionRequests(),
                 getBuilderIndex(),
-                getBeaconBlockRoot(),
-                getSlot());
+                getBeaconBlockRoot());
     checkState(
         blinded.hashTreeRoot().equals(hashTreeRoot()),
         "Blinded root does not match the unblinded root");

@@ -92,25 +92,7 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
               // New in Gloas
               final Bytes32 latestBlockHash =
                   preStateFulu.getLatestExecutionPayloadHeaderRequired().getBlockHash();
-              state.setLatestExecutionPayloadBid(
-                  schemaDefinitions
-                      .getExecutionPayloadBidSchema()
-                      .create(
-                          Bytes32.ZERO,
-                          Bytes32.ZERO,
-                          latestBlockHash,
-                          Bytes32.ZERO,
-                          Bytes20.ZERO,
-                          UInt64.ZERO,
-                          UInt64.ZERO,
-                          UInt64.ZERO,
-                          UInt64.ZERO,
-                          UInt64.ZERO,
-                          schemaDefinitions.getBlobKzgCommitmentsSchema().of(),
-                          schemaDefinitions
-                              .getExecutionRequestsSchema()
-                              .getDefault()
-                              .hashTreeRoot()));
+              state.setLatestBlockHash(latestBlockHash);
 
               state.setNextWithdrawalIndex(preStateFulu.getNextWithdrawalIndex());
               state.setNextWithdrawalValidatorIndex(preStateFulu.getNextWithdrawalValidatorIndex());
@@ -148,7 +130,25 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                       .createFromElements(builderPendingPayments));
               state.setBuilderPendingWithdrawals(
                   schemaDefinitions.getBuilderPendingWithdrawalsSchema().of());
-              state.setLatestBlockHash(latestBlockHash);
+              state.setLatestExecutionPayloadBid(
+                  schemaDefinitions
+                      .getExecutionPayloadBidSchema()
+                      .create(
+                          Bytes32.ZERO,
+                          Bytes32.ZERO,
+                          latestBlockHash,
+                          Bytes32.ZERO,
+                          Bytes20.ZERO,
+                          UInt64.ZERO,
+                          UInt64.ZERO,
+                          UInt64.ZERO,
+                          UInt64.ZERO,
+                          UInt64.ZERO,
+                          schemaDefinitions.getBlobKzgCommitmentsSchema().of(),
+                          schemaDefinitions
+                              .getExecutionRequestsSchema()
+                              .getDefault()
+                              .hashTreeRoot()));
               state.setPayloadExpectedWithdrawals(
                   schemaDefinitions
                       .getExecutionPayloadSchema()

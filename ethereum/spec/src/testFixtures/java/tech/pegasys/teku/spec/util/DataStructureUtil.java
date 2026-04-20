@@ -797,7 +797,10 @@ public final class DataStructureUtil {
                       .transactions(randomExecutionPayloadTransactions())
                       .withdrawals(this::randomExecutionPayloadWithdrawals)
                       .blobGasUsed(this::randomUInt64)
-                      .excessBlobGas(this::randomUInt64);
+                      .excessBlobGas(this::randomUInt64)
+                      .blockAccessList(
+                          () -> randomBytes(specConfigBellatrix.getMaxBytesPerTransaction()))
+                      .slotNumber(() -> slot);
               builderModifier.accept(executionPayloadBuilder);
             });
   }
@@ -3353,25 +3356,23 @@ public final class DataStructureUtil {
     return getGloasSchemaDefinitions()
         .getExecutionPayloadEnvelopeSchema()
         .create(
-            randomExecutionPayload(),
+            randomExecutionPayload(block.getSlot()),
             randomExecutionRequests(),
             BeaconBlockBodyGloas.required(block.getMessage().getBody())
                 .getSignedExecutionPayloadBid()
                 .getMessage()
                 .getBuilderIndex(),
-            block.getRoot(),
-            block.getSlot());
+            block.getRoot());
   }
 
   public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope(final UInt64 slot) {
     return getGloasSchemaDefinitions()
         .getExecutionPayloadEnvelopeSchema()
         .create(
-            randomExecutionPayload(),
+            randomExecutionPayload(slot),
             randomExecutionRequests(),
             randomBuilderIndex(),
-            randomBytes32(),
-            slot);
+            randomBytes32());
   }
 
   public SignedExecutionPayloadEnvelope randomSignedExecutionPayloadEnvelope(final long slot) {

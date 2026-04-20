@@ -4,7 +4,7 @@
   "required" : [ "payload", "execution_requests", "builder_index", "beacon_block_root", "slot" ],
   "properties" : {
     "payload" : {
-      "$ref" : "#/components/schemas/ExecutionPayloadDeneb"
+      "$ref" : "#/components/schemas/ExecutionPayloadGloas"
     },
     "execution_requests" : {
       "$ref" : "#/components/schemas/ExecutionRequestsElectra"

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.dataproviders.lookup;
 
+import static com.google.common.base.MoreObjects.firstNonNull;
+
 import com.google.common.collect.Sets;
 import java.util.Collections;
 import java.util.HashMap;
@@ -209,8 +211,7 @@ public class UnblindingExecutionPayloadProvider implements ExecutionPayloadProvi
                 .withdrawals(() -> toWithdrawals(body, slot))
                 .blobGasUsed(() -> getBlobGasUsed(header))
                 .excessBlobGas(() -> getExcessBlobGas(header))
-                .blockAccessList(
-                    () -> body.blockAccessList() != null ? body.blockAccessList() : Bytes.EMPTY)
+                .blockAccessList(() -> firstNonNull(body.blockAccessList(), Bytes.EMPTY))
                 .slotNumber(() -> slot));
   }
 

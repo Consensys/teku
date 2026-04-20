@@ -74,7 +74,7 @@ public class GloasExecutionClientHandlerTest extends ExecutionHandlerClientTest 
     final GetPayloadV5Response responseData =
         new GetPayloadV5Response(
             ExecutionPayloadV4.fromInternalExecutionPayload(
-                dataStructureUtil.randomExecutionPayload(slot), slot),
+                dataStructureUtil.randomExecutionPayload(slot)),
             UInt256.MAX_VALUE,
             BlobsBundleV2.fromInternalBlobsBundle(dataStructureUtil.randomBlobsBundle()),
             true,
@@ -107,8 +107,7 @@ public class GloasExecutionClientHandlerTest extends ExecutionHandlerClientTest 
     final NewPayloadRequest newPayloadRequest =
         new NewPayloadRequest(
             payload, versionedHashes, parentBeaconBlockRoot, encodedExecutionRequests);
-    final ExecutionPayloadV4 payloadV4 =
-        ExecutionPayloadV4.fromInternalExecutionPayload(payload, slot);
+    final ExecutionPayloadV4 payloadV4 = ExecutionPayloadV4.fromInternalExecutionPayload(payload);
     final PayloadStatusV1 responseData =
         new PayloadStatusV1(
             ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), null);
