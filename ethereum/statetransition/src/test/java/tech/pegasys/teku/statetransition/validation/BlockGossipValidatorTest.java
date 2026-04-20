@@ -37,7 +37,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyBuilderGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
@@ -393,14 +392,15 @@ public class BlockGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldRejectBlockWithIncorrectExecutionPayloadBidParentHash(final SpecContext specContext) {
+  void shouldRejectBlockWithNotValidatedExecutionPayloadBidParentHash(
+      final SpecContext specContext) {
     specContext.assumeGloasActive();
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     final SignedBlockAndState signedBlockAndState =
         storageSystem.chainBuilder().generateBlockAtSlot(nextSlot);
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
-    final Bytes32 badParentBlockHash = Bytes32.random();
+    final Bytes32 notValidatedParentBlockHash = Bytes32.random();
 
     final SignedBeaconBlock invalidBlock =
         createBlockWithModifiedExecutionPayloadBid(
@@ -409,7 +409,7 @@ public class BlockGossipValidatorTest {
                 originalExecutionPayloadBid
                     .getSchema()
                     .create(
-                        badParentBlockHash,
+                        notValidatedParentBlockHash,
                         originalExecutionPayloadBid.getParentBlockRoot(),
                         originalExecutionPayloadBid.getBlockHash(),
                         originalExecutionPayloadBid.getPrevRandao(),
@@ -419,17 +419,15 @@ public class BlockGossipValidatorTest {
                         originalExecutionPayloadBid.getSlot(),
                         originalExecutionPayloadBid.getValue(),
                         originalExecutionPayloadBid.getExecutionPayment(),
-                        originalExecutionPayloadBid.getBlobKzgCommitments()));
-    final BeaconStateGloas parentState =
-        BeaconStateGloas.required(storageSystem.chainBuilder().getStateAtSlot(nextSlot.minus(ONE)));
-    final Bytes32 expectedParentBlockHash = parentState.getLatestBlockHash();
+                        originalExecutionPayloadBid.getBlobKzgCommitments(),
+                        originalExecutionPayloadBid.getExecutionRequestsRoot()));
     assertThat(blockGossipValidator.validate(invalidBlock, true))
         .isCompletedWithValueMatching(
             result ->
                 result.equals(
                     InternalValidationResult.reject(
-                        "Execution payload bid has invalid parent block hash %s, expecting %s",
-                        badParentBlockHash, expectedParentBlockHash)));
+                        "The parent block hash %s from the bid is not present or hasn't been passed validation",
+                        notValidatedParentBlockHash)));
   }
 
   @TestTemplate
@@ -459,7 +457,8 @@ public class BlockGossipValidatorTest {
                         originalExecutionPayloadBid.getSlot(),
                         originalExecutionPayloadBid.getValue(),
                         originalExecutionPayloadBid.getExecutionPayment(),
-                        originalExecutionPayloadBid.getBlobKzgCommitments()));
+                        originalExecutionPayloadBid.getBlobKzgCommitments(),
+                        originalExecutionPayloadBid.getExecutionRequestsRoot()));
 
     assertThat(blockGossipValidator.validate(invalidBlock, true))
         .isCompletedWithValueMatching(
@@ -500,6 +499,8 @@ public class BlockGossipValidatorTest {
                 originalBeaconBlockBody.getOptionalBlsToExecutionChanges().orElseThrow())
             .payloadAttestations(
                 originalBeaconBlockBody.getOptionalPayloadAttestations().orElseThrow())
+            .parentExecutionRequests(
+                originalBeaconBlockBody.getOptionalParentExecutionRequests().orElseThrow())
             .signedExecutionPayloadBid(modifiedSignedBid)
             .build();
 

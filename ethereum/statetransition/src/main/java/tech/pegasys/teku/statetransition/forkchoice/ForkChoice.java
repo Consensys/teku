@@ -65,6 +65,7 @@ import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.St
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadVerificationException;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
@@ -212,7 +213,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return forkChoiceLateBlockReorgEnabled;
   }
 
-  /** Import a block to the store. */
+  /** on_block */
   public SafeFuture<BlockImportResult> onBlock(
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance,
@@ -234,15 +235,15 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                     forkChoiceUtil));
   }
 
-  /** Import an execution payload to the store. */
-  public SafeFuture<ExecutionPayloadImportResult> onExecutionPayload(
+  /** on_execution_payload_envelope */
+  public SafeFuture<ExecutionPayloadImportResult> onExecutionPayloadEnvelope(
       final SignedExecutionPayloadEnvelope signedEnvelope,
       final ExecutionLayerChannel executionLayer) {
     return recentChainData
         .retrieveBlockAndState(signedEnvelope.getBeaconBlockRoot())
         .thenCompose(
             maybeBlockAndState ->
-                onExecutionPayload(signedEnvelope, maybeBlockAndState, executionLayer));
+                onExecutionPayloadEnvelope(signedEnvelope, maybeBlockAndState, executionLayer));
   }
 
   public SafeFuture<AttestationProcessingResult> onAttestation(
@@ -532,11 +533,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   /**
-   * Import an execution payload to the store. The supplied {@code blockAndState} must contain the
-   * block and post-state after processing the block whose root is the beacon block root of the
-   * execution payload
+   * Import an execution payload envelope to the store. The supplied {@code blockAndState} must
+   * contain the block and post-state after processing the block whose root is the beacon block root
+   * of the execution payload
    */
-  private SafeFuture<ExecutionPayloadImportResult> onExecutionPayload(
+  private SafeFuture<ExecutionPayloadImportResult> onExecutionPayloadEnvelope(
       final SignedExecutionPayloadEnvelope signedEnvelope,
       final Optional<SignedBlockAndState> blockAndState,
       final ExecutionLayerChannel executionLayer) {
@@ -545,26 +546,25 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           ExecutionPayloadImportResult.FAILED_UNKNOWN_BEACON_BLOCK_ROOT);
     }
 
-    final SignedBeaconBlock signedBeaconBlock = blockAndState.get().getBlock();
-    final BeaconState blockState = blockAndState.get().getState();
+    final SignedBeaconBlock block = blockAndState.get().getBlock();
+    final BeaconState state = blockAndState.get().getState();
 
     final ForkChoiceUtil forkChoiceUtil = spec.atSlot(signedEnvelope.getSlot()).getForkChoiceUtil();
 
     final AvailabilityChecker<?> availabilityChecker =
-        forkChoiceUtil.createAvailabilityChecker(signedBeaconBlock);
+        forkChoiceUtil.createAvailabilityChecker(block);
     availabilityChecker.initiateDataAvailabilityCheck();
     final ForkChoicePayloadExecutorGloas payloadExecutor =
         ForkChoicePayloadExecutorGloas.create(signedEnvelope, executionLayer);
 
-    final BeaconState postState;
+    // Verify the execution payload envelope
     try {
-      postState =
-          spec.getExecutionPayloadProcessor(signedEnvelope.getSlot())
-              .processAndVerifyExecutionPayload(
-                  signedEnvelope, blockState, Optional.of(payloadExecutor));
-    } catch (final StateTransitionException ex) {
+      spec.getExecutionPayloadVerifier(signedEnvelope.getSlot())
+          .verifyExecutionPayloadEnvelope(
+              signedEnvelope, state, BLSSignatureVerifier.SIMPLE, Optional.of(payloadExecutor));
+    } catch (final ExecutionPayloadVerificationException ex) {
       final ExecutionPayloadImportResult result =
-          ExecutionPayloadImportResult.failedStateTransition(ex);
+          ExecutionPayloadImportResult.failedVerification(ex);
       reportInvalidExecutionPayload(signedEnvelope, result);
       return SafeFuture.completedFuture(result);
     }
@@ -586,12 +586,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .thenCombineAsync(
             dataAndValidationResultFuture,
             (payloadResult, dataAndValidationResult) ->
-                importExecutionPayloadAndState(
-                    signedEnvelope,
-                    forkChoiceUtil,
-                    postState,
-                    payloadResult,
-                    dataAndValidationResult),
+                importExecutionPayload(
+                    signedEnvelope, forkChoiceUtil, payloadResult, dataAndValidationResult),
             forkChoiceExecutor);
   }
 
@@ -715,19 +711,16 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return result;
   }
 
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878 it requires potentially more
-  // validations and more interactions with the store (e.g. onExecutionPayloadResult)
-  private ExecutionPayloadImportResult importExecutionPayloadAndState(
+  private ExecutionPayloadImportResult importExecutionPayload(
       final SignedExecutionPayloadEnvelope signedEnvelope,
       final ForkChoiceUtil forkChoiceUtil,
-      final BeaconState postState,
       final PayloadValidationResult payloadResult,
       final DataAndValidationResult<?> dataAndValidationResult) {
     final PayloadStatus payloadStatus = payloadResult.getStatus();
 
     if (payloadStatus.hasInvalidStatus()) {
       final ExecutionPayloadImportResult result =
-          ExecutionPayloadImportResult.failedStateTransition(
+          ExecutionPayloadImportResult.failedVerification(
               new IllegalStateException(
                   "Invalid ExecutionPayload: "
                       + payloadStatus.getValidationError().orElse("No reason provided")));
@@ -758,7 +751,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
 
-    forkChoiceUtil.applyExecutionPayloadToStore(transaction, signedEnvelope, postState);
+    forkChoiceUtil.applyExecutionPayloadToStore(transaction, signedEnvelope);
 
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();

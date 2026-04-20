@@ -941,7 +941,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new DefaultExecutionPayloadBidManager(
               spec,
               executionPayloadBidGossipValidator,
-              receivedExecutionPayloadBidEventsChannelPublisher);
+              receivedExecutionPayloadBidEventsChannelPublisher,
+              recentChainData);
     } else {
       executionPayloadBidManager = ExecutionPayloadBidManager.NOOP;
     }
@@ -955,11 +956,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
           eventChannels.getPublisher(ReceivedExecutionPayloadEventsChannel.class);
       final DefaultExecutionPayloadManager executionPayloadManager =
           new DefaultExecutionPayloadManager(
+              spec,
               beaconAsyncRunner,
               executionPayloadGossipValidator,
               forkChoice,
               executionLayer,
-              receivedExecutionPayloadEventsChannelPublisher);
+              receivedExecutionPayloadEventsChannelPublisher,
+              recentChainData);
       eventChannels.subscribe(ReceivedBlockEventsChannel.class, executionPayloadManager);
       this.executionPayloadManager = executionPayloadManager;
     } else {
@@ -1717,6 +1720,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 forkChoiceNotifier,
                 executionLayerBlockProductionManager,
                 executionPayloadBidManager,
+                executionPayloadManager,
                 metricsSystem,
                 timeProvider));
     SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =

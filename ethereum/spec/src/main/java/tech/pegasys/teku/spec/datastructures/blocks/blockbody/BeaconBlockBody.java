@@ -104,6 +104,10 @@ public interface BeaconBlockBody extends SszContainer {
     return Optional.empty();
   }
 
+  default Optional<ExecutionRequests> getOptionalParentExecutionRequests() {
+    return Optional.empty();
+  }
+
   default boolean isBlinded() {
     return false;
   }

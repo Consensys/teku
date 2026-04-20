@@ -19,13 +19,17 @@ import static tech.pegasys.teku.spec.config.SpecConfigElectra.UNSET_DEPOSIT_REQU
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -43,12 +47,17 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.MutableBeaconStateFulu;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateSchemaGloas;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class GenesisGenerator {
 
@@ -132,12 +141,11 @@ public class GenesisGenerator {
       BeaconStateElectra.required(state)
           .getPendingDeposits()
           .forEach(
-              pendingDeposit -> {
-                mutatorsElectra.increaseBalance(
-                    state,
-                    keyCache.getInt(pendingDeposit.getPublicKey()),
-                    pendingDeposit.getAmount());
-              });
+              pendingDeposit ->
+                  mutatorsElectra.increaseBalance(
+                      state,
+                      keyCache.getInt(pendingDeposit.getPublicKey()),
+                      pendingDeposit.getAmount()));
       MutableBeaconStateElectra.required(state)
           .setPendingDeposits(
               schemaDefinitionsElectra.getPendingDepositsSchema().createFromElements(List.of()));
@@ -164,6 +172,57 @@ public class GenesisGenerator {
       MutableBeaconStateFulu.required(state)
           .setProposerLookahead(
               schemaDefinitionsFulu.getProposerLookaheadSchema().of(proposerLookahead));
+    }
+
+    // Process Gloas
+    if (genesisSpec.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+
+      final SchemaDefinitionsGloas schemaDefinitionsGloas =
+          SchemaDefinitionsGloas.required(genesisSpec.getSchemaDefinitions());
+
+      final BeaconStateAccessorsGloas accessorsGloas =
+          BeaconStateAccessorsGloas.required(genesisSpec.beaconStateAccessors());
+
+      final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
+
+      stateGloas.setLatestExecutionPayloadBid(
+          schemaDefinitionsGloas
+              .getExecutionPayloadBidSchema()
+              .create(
+                  Bytes32.ZERO,
+                  Bytes32.ZERO,
+                  Bytes32.ZERO,
+                  Bytes32.ZERO,
+                  Bytes20.ZERO,
+                  UInt64.ZERO,
+                  UInt64.ZERO,
+                  UInt64.ZERO,
+                  UInt64.ZERO,
+                  UInt64.ZERO,
+                  schemaDefinitionsGloas.getBlobKzgCommitmentsSchema().of(),
+                  schemaDefinitionsGloas.getExecutionRequestsSchema().getDefault().hashTreeRoot()));
+      stateGloas.setBuilders(
+          BeaconStateSchemaGloas.required(state.getBeaconStateSchema()).getBuildersSchema().of());
+      stateGloas.setNextWithdrawalBuilderIndex(UInt64.ZERO);
+      final SszBitvector executionPayloadAvailability =
+          schemaDefinitionsGloas
+              .getExecutionPayloadAvailabilitySchema()
+              .ofBits(IntStream.range(0, specConfig.getSlotsPerHistoricalRoot()).toArray());
+      stateGloas.setExecutionPayloadAvailability(executionPayloadAvailability);
+      final List<BuilderPendingPayment> builderPendingPayments =
+          Collections.nCopies(
+              2 * specConfig.getSlotsPerEpoch(),
+              schemaDefinitionsGloas.getBuilderPendingPaymentSchema().getDefault());
+      stateGloas.setBuilderPendingPayments(
+          schemaDefinitionsGloas
+              .getBuilderPendingPaymentsSchema()
+              .createFromElements(builderPendingPayments));
+      stateGloas.setBuilderPendingWithdrawals(
+          schemaDefinitionsGloas.getBuilderPendingWithdrawalsSchema().of());
+      stateGloas.setLatestBlockHash(Bytes32.ZERO);
+      stateGloas.setPayloadExpectedWithdrawals(
+          schemaDefinitionsGloas.getExecutionPayloadSchema().getWithdrawalsSchemaRequired().of());
+      stateGloas.setPtcWindow(accessorsGloas.initializePtcWindow(state));
     }
   }
 

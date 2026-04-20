@@ -150,9 +150,14 @@ public class DatabaseTest {
   }
 
   private void setupWithSpec(final Spec spec) throws IOException {
+    setupWithSpec(spec, VALIDATOR_KEYS);
+  }
+
+  private void setupWithSpec(final Spec spec, final List<BLSKeyPair> validatorKeys)
+      throws IOException {
     this.spec = spec;
     this.dataStructureUtil = new DataStructureUtil(spec);
-    this.chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
+    this.chainBuilder = ChainBuilder.create(spec, validatorKeys);
     this.chainProperties = new ChainProperties(spec);
     final Path blobsArchive = Files.createTempDirectory("blobs");
     tmpDirectories.add(blobsArchive.toFile());
@@ -609,7 +614,7 @@ public class DatabaseTest {
   @TestTemplate
   public void shouldStoreBlindedExecutionPayloadEnvelope(final DatabaseContext context)
       throws IOException {
-    setupWithSpec(TestSpecFactory.createMinimalGloas());
+    setupWithSpec(TestSpecFactory.createMinimalGloas(), BLSKeyGenerator.generateKeyPairs(8));
     initialize(context);
     final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
     final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope =
@@ -643,7 +648,7 @@ public class DatabaseTest {
   @TestTemplate
   public void shouldRetainBlindedExecutionPayloadEnvelopeAfterFinalization(
       final DatabaseContext context) throws IOException {
-    setupWithSpec(TestSpecFactory.createMinimalGloas());
+    setupWithSpec(TestSpecFactory.createMinimalGloas(), BLSKeyGenerator.generateKeyPairs(8));
     initialize(context);
     final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
     final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope =
@@ -707,7 +712,7 @@ public class DatabaseTest {
   @TestTemplate
   public void shouldSkipMissingBlindedExecutionPayloadEnvelope(final DatabaseContext context)
       throws IOException {
-    setupWithSpec(TestSpecFactory.createMinimalGloas());
+    setupWithSpec(TestSpecFactory.createMinimalGloas(), BLSKeyGenerator.generateKeyPairs(8));
     initialize(context);
     final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
     final FinalizedChainData finalizedChainData =
@@ -744,7 +749,7 @@ public class DatabaseTest {
   @TestTemplate
   public void shouldDeleteBlindedExecutionPayloadEnvelopeWhenBlockIsPruned(
       final DatabaseContext context) throws IOException {
-    setupWithSpec(TestSpecFactory.createMinimalGloas());
+    setupWithSpec(TestSpecFactory.createMinimalGloas(), BLSKeyGenerator.generateKeyPairs(8));
     initialize(context);
     final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
     final SignedBlindedExecutionPayloadEnvelope signedBlindedExecutionPayloadEnvelope =

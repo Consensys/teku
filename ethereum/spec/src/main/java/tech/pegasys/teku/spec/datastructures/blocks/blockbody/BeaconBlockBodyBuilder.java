@@ -95,5 +95,11 @@ public interface BeaconBlockBodyBuilder {
 
   BeaconBlockBodyBuilder payloadAttestations(SszList<PayloadAttestation> payloadAttestations);
 
+  default Boolean supportsParentExecutionRequests() {
+    return false;
+  }
+
+  BeaconBlockBodyBuilder parentExecutionRequests(ExecutionRequests parentExecutionRequests);
+
   BeaconBlockBody build();
 }

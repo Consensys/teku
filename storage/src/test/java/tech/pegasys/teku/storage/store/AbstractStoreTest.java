@@ -47,9 +47,8 @@ import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 
 public abstract class AbstractStoreTest {
-  private final List<BLSKeyPair> validatorKeys =
-      new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 3);
   protected final Spec spec = getSpec();
+  private final List<BLSKeyPair> validatorKeys = getValidatorKeys();
   protected final StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
   protected final ChainBuilder chainBuilder = ChainBuilder.create(spec, validatorKeys);
 
@@ -59,6 +58,10 @@ public abstract class AbstractStoreTest {
 
   protected Spec getSpec() {
     return TestSpecFactory.createMinimalDeneb();
+  }
+
+  protected List<BLSKeyPair> getValidatorKeys() {
+    return new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 3);
   }
 
   protected void processChainWithLimitedCache(

@@ -37,10 +37,11 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadVerificationException;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.ExecutionPayloadProcessingException;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 
 public class DefaultOperationProcessor implements OperationProcessor {
@@ -127,14 +128,14 @@ public class DefaultOperationProcessor implements OperationProcessor {
   }
 
   @Override
-  public void processExecutionPayload(
-      final MutableBeaconState state,
+  public void verifyExecutionPayloadEnvelope(
+      final BeaconState state,
       final SignedExecutionPayloadEnvelope signedEnvelope,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
-      throws ExecutionPayloadProcessingException {
-    spec.getExecutionPayloadProcessor(state.getSlot())
-        .processExecutionPayload(
-            signedEnvelope, state, BLSSignatureVerifier.SIMPLE, payloadExecutor, true);
+      throws ExecutionPayloadVerificationException {
+    spec.getExecutionPayloadVerifier(state.getSlot())
+        .verifyExecutionPayloadEnvelope(
+            signedEnvelope, state, BLSSignatureVerifier.SIMPLE, payloadExecutor);
   }
 
   @Override
