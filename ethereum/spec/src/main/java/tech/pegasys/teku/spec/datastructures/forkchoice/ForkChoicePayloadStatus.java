@@ -11,11 +11,26 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.epbs;
+package tech.pegasys.teku.spec.datastructures.forkchoice;
 
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+/**
+ * Possible status of a payload in the fork-choice
+ *
+ * <p>Spec reference:
+ * https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md
+ */
+public enum ForkChoicePayloadStatus {
+  PAYLOAD_STATUS_EMPTY(0),
+  PAYLOAD_STATUS_FULL(1),
+  PAYLOAD_STATUS_PENDING(2);
 
-/** Helper datastructure that holds an unsigned execution payload with its corresponding state */
-public record ExecutionPayloadAndState(
-    ExecutionPayloadEnvelope executionPayload, BeaconState state) {}
+  private final int value;
+
+  ForkChoicePayloadStatus(final int value) {
+    this.value = value;
+  }
+
+  public int getValue() {
+    return value;
+  }
+}

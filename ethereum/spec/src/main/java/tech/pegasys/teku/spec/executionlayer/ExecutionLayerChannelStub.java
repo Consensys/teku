@@ -60,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
@@ -396,6 +397,12 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   @Override
   public SafeFuture<List<BlobAndCellProofs>> engineGetBlobAndCellProofsList(
       final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
+    return SafeFuture.completedFuture(Collections.emptyList());
+  }
+
+  @Override
+  public SafeFuture<List<ExecutionPayloadBody>> engineGetPayloadBodiesByHash(
+      final List<Bytes32> blockHashes) {
     return SafeFuture.completedFuture(Collections.emptyList());
   }
 

@@ -59,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
@@ -70,13 +71,16 @@ import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.execution.ProposerPreferencesManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -87,7 +91,7 @@ import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTra
 import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPublisher;
 
-@TestSpecContext(milestone = {SpecMilestone.PHASE0, SpecMilestone.DENEB})
+@TestSpecContext(milestone = {SpecMilestone.PHASE0, SpecMilestone.DENEB, SpecMilestone.GLOAS})
 public class ValidatorApiHandlerIntegrationTest {
   private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
 
@@ -126,6 +130,10 @@ public class ValidatorApiHandlerIntegrationTest {
       mock(ExecutionPayloadFactory.class);
   private final ExecutionPayloadPublisher executionPayloadPublisher =
       mock(ExecutionPayloadPublisher.class);
+  private final ExecutionPayloadBidManager executionPayloadBidManager =
+      mock(ExecutionPayloadBidManager.class);
+  private final ProposerPreferencesManager proposerPreferencesManager =
+      mock(ProposerPreferencesManager.class);
   private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
   private final SyncCommitteeMessagePool syncCommitteeMessagePool =
       mock(SyncCommitteeMessagePool.class);
@@ -183,6 +191,23 @@ public class ValidatorApiHandlerIntegrationTest {
         .when(blockFactory)
         .createBlobSidecars(any());
 
+    final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory =
+        new BlockProductionAndPublishingPerformanceFactory(
+            new SystemTimeProvider(), __ -> UInt64.ZERO, true, 0, 0, 0, 0, Optional.empty());
+    final MilestoneBasedBlockPublisher blockPublisher =
+        new MilestoneBasedBlockPublisher(
+            asyncRunner,
+            specContext.getSpec(),
+            blockFactory,
+            blockImportChannel,
+            blockGossipChannel,
+            blockBlobSidecarsTrackersPool,
+            blobSidecarGossipChannel,
+            dataColumnSidecarGossipChannel,
+            dutyMetrics,
+            CustodyGroupCountManager.NOOP,
+            OptionalInt.empty(),
+            P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED);
     handler =
         new ValidatorApiHandler(
             chainDataProvider,
@@ -203,25 +228,14 @@ public class ValidatorApiHandlerIntegrationTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
-            new BlockProductionAndPublishingPerformanceFactory(
-                new SystemTimeProvider(), __ -> UInt64.ZERO, true, 0, 0, 0, 0, Optional.empty()),
-            new MilestoneBasedBlockPublisher(
-                asyncRunner,
-                specContext.getSpec(),
-                blockFactory,
-                blockImportChannel,
-                blockGossipChannel,
-                blockBlobSidecarsTrackersPool,
-                blobSidecarGossipChannel,
-                dataColumnSidecarGossipChannel,
-                dutyMetrics,
-                CustodyGroupCountManager.NOOP,
-                OptionalInt.empty(),
-                P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED),
+            blockProductionPerformanceFactory,
+            blockPublisher,
             payloadAttestationPool,
             executionPayloadManager,
             executionPayloadFactory,
             executionPayloadPublisher,
+            executionPayloadBidManager,
+            proposerPreferencesManager,
             ExecutionProofManager.NOOP);
   }
 
@@ -304,6 +318,22 @@ public class ValidatorApiHandlerIntegrationTest {
     }
     verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block, NOT_REQUIRED);
+  }
+
+  @TestTemplate
+  void sendSignedProposerPreferences_shouldDelegateToManager(final SpecContext specContext) {
+    specContext.assumeGloasActive();
+    final SignedProposerPreferences signedProposerPreferences =
+        specContext.getDataStructureUtil().randomSignedProposerPreferences();
+
+    when(proposerPreferencesManager.addLocal(any()))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+
+    final SafeFuture<Void> result =
+        handler.sendSignedProposerPreferences(List.of(signedProposerPreferences));
+
+    assertThat(result).isCompleted();
+    verify(proposerPreferencesManager).addLocal(signedProposerPreferences);
   }
 
   private SafeFuture<BlockImportAndBroadcastValidationResults> prepareBlockImportResult(

@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -196,6 +197,12 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
         }
 
         @Override
+        public SafeFuture<Void> sendSignedProposerPreferences(
+            final List<SignedProposerPreferences> signedProposerPreferences) {
+          return SafeFuture.COMPLETE;
+        }
+
+        @Override
         public SafeFuture<Void> prepareBeaconProposer(
             final Collection<BeaconPreparableProposer> beaconPreparableProposers) {
           return SafeFuture.COMPLETE;
@@ -313,6 +320,9 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
 
   SafeFuture<List<SubmitDataError>> sendPayloadAttestationMessages(
       List<PayloadAttestationMessage> payloadAttestationMessages);
+
+  SafeFuture<Void> sendSignedProposerPreferences(
+      List<SignedProposerPreferences> signedProposerPreferences);
 
   SafeFuture<Void> prepareBeaconProposer(
       Collection<BeaconPreparableProposer> beaconPreparableProposers);

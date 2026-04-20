@@ -17,12 +17,9 @@ import static com.google.common.base.Preconditions.checkState;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.epbs.BlockRootAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -64,25 +61,12 @@ public class SignedBlindedExecutionPayloadEnvelope
     return getMessage().getBeaconBlockRoot();
   }
 
-  public SlotAndBlockRoot getSlotAndBlockRoot() {
-    return getMessage().getSlotAndBlockRoot();
-  }
-
-  public BlockRootAndBuilderIndex getBlockRootAndBuilderIndex() {
-    return getMessage().getBlockRootAndBuilderIndex();
-  }
-
-  public String toLogString() {
-    return LogFormatter.formatExecutionPayload(
-        getMessage().getSlot(), getMessage().getBeaconBlockRoot(), getMessage().getBuilderIndex());
-  }
-
   public SignedExecutionPayloadEnvelope unblind(
-      final SchemaDefinitionsGloas schemaDefinitions, final ExecutionPayload payload) {
+      final SchemaDefinitionsGloas schemaDefinitions, final ExecutionPayload executionPayload) {
     final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope =
         schemaDefinitions
             .getSignedExecutionPayloadEnvelopeSchema()
-            .create(getMessage().unblind(schemaDefinitions, payload), getSignature());
+            .create(getMessage().unblind(schemaDefinitions, executionPayload), getSignature());
     checkState(
         signedExecutionPayloadEnvelope.hashTreeRoot().equals(hashTreeRoot()),
         "unblinded signed execution payload envelope root does not match original envelope root");

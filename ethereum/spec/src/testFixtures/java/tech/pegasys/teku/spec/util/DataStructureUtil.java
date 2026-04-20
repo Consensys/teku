@@ -217,6 +217,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
@@ -236,6 +237,7 @@ import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -2093,6 +2095,17 @@ public final class DataStructureUtil {
             });
   }
 
+  public BeaconState randomBeaconStateWithActiveValidatorsAndInitialisedPtcWindow(
+      final int validatorCount, final UInt64 slot) {
+    return randomBeaconStateWithActiveValidators(validatorCount, slot)
+        .updated(
+            state ->
+                MutableBeaconStateGloas.required(state)
+                    .setPtcWindow(
+                        BeaconStateAccessorsGloas.required(spec.atSlot(slot).beaconStateAccessors())
+                            .initializePtcWindow(state)));
+  }
+
   public AbstractBeaconStateBuilder<
           ? extends BeaconState,
           ? extends MutableBeaconState,
@@ -3187,6 +3200,13 @@ public final class DataStructureUtil {
         .create(randomValidatorIndex(), randomPayloadAttestationData(), randomSignature());
   }
 
+  public PayloadAttestationMessage randomPayloadAttestationMessage(
+      final PayloadAttestationData data) {
+    return getGloasSchemaDefinitions()
+        .getPayloadAttestationMessageSchema()
+        .create(randomValidatorIndex(), data, randomSignature());
+  }
+
   public IndexedPayloadAttestation randomIndexedPayloadAttestation() {
     final IndexedPayloadAttestationSchema indexedPayloadAttestationSchema =
         getGloasSchemaDefinitions().getIndexedPayloadAttestationSchema();
@@ -3342,13 +3362,7 @@ public final class DataStructureUtil {
   }
 
   public BlindedExecutionPayloadEnvelope randomBlindedExecutionPayloadEnvelope() {
-    return randomExecutionPayloadEnvelope()
-        .toBlindedExecutionPayloadEnvelope(getGloasSchemaDefinitions());
-  }
-
-  public BlindedExecutionPayloadEnvelope randomBlindedExecutionPayloadEnvelope(final UInt64 slot) {
-    return randomExecutionPayloadEnvelope(slot)
-        .toBlindedExecutionPayloadEnvelope(getGloasSchemaDefinitions());
+    return randomExecutionPayloadEnvelope().blind(getGloasSchemaDefinitions());
   }
 
   public SignedBlindedExecutionPayloadEnvelope randomSignedBlindedExecutionPayloadEnvelope() {
@@ -3357,8 +3371,7 @@ public final class DataStructureUtil {
 
   public SignedBlindedExecutionPayloadEnvelope randomSignedBlindedExecutionPayloadEnvelope(
       final long slot) {
-    return randomSignedExecutionPayloadEnvelope(slot)
-        .toSignedBlindedExecutionPayloadEnvelope(getGloasSchemaDefinitions());
+    return randomSignedExecutionPayloadEnvelope(slot).blind(getGloasSchemaDefinitions());
   }
 
   public SignedExecutionPayloadEnvelope randomSignedExecutionPayloadEnvelopeForBlock(

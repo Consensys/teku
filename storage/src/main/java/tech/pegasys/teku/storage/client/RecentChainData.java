@@ -31,12 +31,14 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -47,8 +49,11 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceReorgContext;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -60,8 +65,10 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
+import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil.BlockTimeliness;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -77,11 +84,13 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreUpdateHandler;
 
 /** This class is the ChainStorage client-side logic */
-public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIsConnectedProvider {
+public abstract class RecentChainData
+    implements StoreUpdateHandler, ValidatorIsConnectedProvider, ForkChoiceReorgContext {
 
   private static final Logger LOG = LogManager.getLogger();
 
   private final BlockProvider blockProvider;
+  private final ExecutionPayloadProvider executionPayloadProvider;
   private final StateAndBlockSummaryProvider stateProvider;
   private final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider;
   protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
@@ -109,8 +118,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
 
   private final SingleBlockProvider validatedBlockProvider;
   private final SingleBlobSidecarProvider validatedBlobSidecarProvider;
-
-  private final LateBlockReorgLogic lateBlockReorgLogic;
+  private final BlockTimelinessTracker blockTimelinessTracker;
 
   private final ValidatorIsConnectedProvider validatorIsConnectedProvider;
 
@@ -119,6 +127,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
       final MetricsSystem metricsSystem,
       final StoreConfig storeConfig,
       final BlockProvider blockProvider,
+      final ExecutionPayloadProvider executionPayloadProvider,
       final SingleBlockProvider validatedBlockProvider,
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
       final StateAndBlockSummaryProvider stateProvider,
@@ -133,6 +142,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
     this.metricsSystem = metricsSystem;
     this.storeConfig = storeConfig;
     this.blockProvider = blockProvider;
+    this.executionPayloadProvider = executionPayloadProvider;
     this.stateProvider = stateProvider;
     this.validatedBlockProvider = validatedBlockProvider;
     this.validatedBlobSidecarProvider = validatedBlobSidecarProvider;
@@ -141,7 +151,6 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
     this.chainHeadChannel = chainHeadChannel;
     this.storageUpdateChannel = storageUpdateChannel;
     this.finalizedCheckpointChannel = finalizedCheckpointChannel;
-    this.lateBlockReorgLogic = new LateBlockReorgLogic(spec, this);
     reorgCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.BEACON,
@@ -149,6 +158,14 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
             "Total occurrences of reorganizations of the chain");
     this.validatorIsConnectedProvider = validatorIsConnectedProvider;
     this.spec = spec;
+    final int epochsForTimeliness =
+        Math.max(spec.getGenesisSpecConfig().getReorgMaxEpochsSinceFinalization(), 3);
+    this.blockTimelinessTracker =
+        new BlockTimelinessTracker(
+            spec,
+            this::getGenesisTimeMillis,
+            LimitedMap.createSynchronizedNatural(
+                spec.getGenesisSpec().getSlotsPerEpoch() * epochsForTimeliness));
   }
 
   public void subscribeStoreInitialized(final Runnable runnable) {
@@ -172,6 +189,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
             .metricsSystem(metricsSystem)
             .specProvider(spec)
             .blockProvider(blockProvider)
+            .executionPayloadProvider(executionPayloadProvider)
             .stateProvider(stateProvider)
             .earliestBlobSidecarSlotProvider(earliestBlobSidecarSlotProvider)
             .storeConfig(storeConfig)
@@ -293,6 +311,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
     return true;
   }
 
+  @Override
   public UpdatableStore getStore() {
     return store;
   }
@@ -351,10 +370,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
             "Unable to update head block as of slot {}. Unknown block: {}", currentSlot, root);
         return;
       }
-      final SpecVersion specVersion = spec.atSlot(currentSlot);
-      final ChainHead newChainHead =
-          createNewChainHead(
-              root, currentSlot, specVersion.getForkChoiceUtil(), maybeBlockData.get());
+      final ChainHead newChainHead = createNewChainHead(root, currentSlot, maybeBlockData.get());
       this.chainHead = Optional.of(newChainHead);
       final Optional<ReorgContext> optionalReorgContext =
           computeReorgContext(forkChoiceStrategy, originalChainHead, newChainHead);
@@ -365,7 +381,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
                       spec.computeEpochAtSlot(previousChainHead.getSlot())
                           .isLessThan(spec.computeEpochAtSlot(newChainHead.getSlot())))
               .orElse(false);
-      final BeaconStateUtil beaconStateUtil = specVersion.getBeaconStateUtil();
+      final BeaconStateUtil beaconStateUtil = spec.atSlot(currentSlot).getBeaconStateUtil();
 
       chainHeadChannel.chainHeadUpdated(
           newChainHead.getSlot(),
@@ -422,13 +438,19 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
   }
 
   private ChainHead createNewChainHead(
-      final Bytes32 root,
-      final UInt64 currentSlot,
-      final ForkChoiceUtil forkChoiceUtil,
-      final ProtoNodeData blockData) {
-    return ChainHead.create(
-        blockData,
-        forkChoiceUtil.retrieveNewChainHeadStateAndBlockSummary(root, currentSlot, store));
+      final Bytes32 root, final UInt64 currentSlot, final ProtoNodeData headBlockData) {
+    final SafeFuture<StateAndBlockSummary> headBlockAndState =
+        store
+            .retrieveStateAndBlockSummary(root)
+            .thenApply(
+                maybeHead ->
+                    maybeHead.orElseThrow(
+                        () ->
+                            new IllegalStateException(
+                                String.format(
+                                    "Unable to update head block as of slot %s.  Block is unavailable: %s.",
+                                    currentSlot, root))));
+    return ChainHead.create(headBlockData, headBlockAndState);
   }
 
   private Bytes32 getFinalizedBlockParentRoot() {
@@ -635,12 +657,19 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
     return store.retrieveSignedBlock(root);
   }
 
+  public SafeFuture<Optional<SignedBlockAndState>> retrieveBlockAndState(final Bytes32 blockRoot) {
+    if (store == null) {
+      return EmptyStoreResults.EMPTY_SIGNED_BLOCK_AND_STATE_FUTURE;
+    }
+    return store.retrieveBlockAndState(blockRoot);
+  }
+
   public Optional<SignedBeaconBlock> getRecentlyValidatedSignedBlockByRoot(final Bytes32 root) {
     return validatedBlockProvider.getBlock(root);
   }
 
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>>
-      retrieveSignedExecutionPayloadEnvelopeByBlockRoot(final Bytes32 beaconBlockRoot) {
+      retrieveSignedExecutionPayloadByBlockRoot(final Bytes32 beaconBlockRoot) {
     if (store == null) {
       return EmptyStoreResults.EMPTY_SIGNED_EXECUTION_PAYLOAD_ENVELOPE_FUTURE;
     }
@@ -743,11 +772,13 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
   }
 
   public Bytes32 getProposerHead(final Bytes32 headRoot, final UInt64 slot) {
-    return lateBlockReorgLogic.getProposerHead(headRoot, slot);
+    return spec.atSlot(slot).getForkChoiceUtil().getProposerHead(this, headRoot, slot);
   }
 
-  public boolean shouldOverrideForkChoiceUpdate(final Bytes32 headRoot) {
-    return lateBlockReorgLogic.shouldOverrideForkChoiceUpdate(headRoot);
+  public boolean shouldOverrideForkChoiceUpdate(final Bytes32 headRoot, final UInt64 headSlot) {
+    return spec.atSlot(headSlot)
+        .getForkChoiceUtil()
+        .shouldOverrideForkChoiceUpdate(this, headRoot, headSlot);
   }
 
   @Override
@@ -762,15 +793,26 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
 
   public void setBlockTimelinessFromArrivalTime(
       final SignedBeaconBlock block, final UInt64 arrivalTime) {
-    lateBlockReorgLogic.setBlockTimelinessFromArrivalTime(block, arrivalTime);
+    blockTimelinessTracker.setBlockTimelinessFromArrivalTime(block, arrivalTime);
   }
 
   public void setBlockTimelinessIfEmpty(final SignedBeaconBlock block) {
-    lateBlockReorgLogic.setBlockTimelinessFromArrivalTime(block, store.getTimeInMillis());
+    blockTimelinessTracker.setBlockTimelinessFromArrivalTime(block, store.getTimeInMillis());
+  }
+
+  @Override
+  public Optional<BlockTimeliness> getBlockTimeliness(final Bytes32 root) {
+    return blockTimelinessTracker.getBlockTimeliness(root);
   }
 
   public boolean isBlockLate(final Bytes32 root) {
-    return lateBlockReorgLogic.isBlockLate(root);
+    return blockTimelinessTracker.isBlockLate(root);
+  }
+
+  @Override
+  public BeaconState processSlots(final BeaconState state, final UInt64 slot)
+      throws SlotProcessingException, EpochProcessingException {
+    return spec.processSlots(state, slot);
   }
 
   public Optional<UInt64> getCustodyGroupCount() {

@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -40,6 +41,7 @@ public class RecentBlocksFetchService
   private final ForwardSync forwardSync;
   private final PendingPool<SignedBeaconBlock> pendingBlockPool;
   private final PendingPool<ValidatableAttestation> pendingAttestationsPool;
+  private final PendingPool<PayloadAttestationMessage> pendingPayloadAttestationsPool;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final FetchTaskFactory fetchTaskFactory;
   private final Subscribers<BlockSubscriber> blockSubscribers = Subscribers.create(true);
@@ -49,6 +51,7 @@ public class RecentBlocksFetchService
       final AsyncRunner asyncRunner,
       final PendingPool<SignedBeaconBlock> pendingBlockPool,
       final PendingPool<ValidatableAttestation> pendingAttestationsPool,
+      final PendingPool<PayloadAttestationMessage> pendingPayloadAttestationsPool,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final DasSamplerBasic dasBasicSampler,
       final ForwardSync forwardSync,
@@ -58,6 +61,7 @@ public class RecentBlocksFetchService
     this.forwardSync = forwardSync;
     this.pendingBlockPool = pendingBlockPool;
     this.pendingAttestationsPool = pendingAttestationsPool;
+    this.pendingPayloadAttestationsPool = pendingPayloadAttestationsPool;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.dasBasicSampler = dasBasicSampler;
     this.fetchTaskFactory = fetchTaskFactory;
@@ -67,6 +71,7 @@ public class RecentBlocksFetchService
       final AsyncRunner asyncRunner,
       final PendingPool<SignedBeaconBlock> pendingBlocksPool,
       final PendingPool<ValidatableAttestation> pendingAttestations,
+      final PendingPool<PayloadAttestationMessage> pendingPayloadAttestations,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final DasSamplerBasic dasBasicSampler,
       final ForwardSync forwardSync,
@@ -75,6 +80,7 @@ public class RecentBlocksFetchService
         asyncRunner,
         pendingBlocksPool,
         pendingAttestations,
+        pendingPayloadAttestations,
         blockBlobSidecarsTrackersPool,
         dasBasicSampler,
         forwardSync,
@@ -159,6 +165,9 @@ public class RecentBlocksFetchService
     pendingBlockPool.subscribeRequiredBlockRootDropped(this::cancelRecentBlockRequest);
     blockBlobSidecarsTrackersPool.subscribeRequiredBlockRoot(this::requestRecentBlock);
     blockBlobSidecarsTrackersPool.subscribeRequiredBlockRootDropped(this::cancelRecentBlockRequest);
+    pendingPayloadAttestationsPool.subscribeRequiredBlockRoot(this::requestRecentBlock);
+    pendingPayloadAttestationsPool.subscribeRequiredBlockRootDropped(
+        this::cancelRecentBlockRequest);
     forwardSync.subscribeToSyncChanges(this::onSyncStatusChanged);
   }
 

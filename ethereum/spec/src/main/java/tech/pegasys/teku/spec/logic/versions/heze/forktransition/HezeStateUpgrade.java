@@ -84,6 +84,7 @@ public class HezeStateUpgrade implements StateUpgrade<BeaconStateGloas> {
               state.setBuilderPendingWithdrawals(preStateGloas.getBuilderPendingWithdrawals());
               state.setLatestBlockHash(preStateGloas.getLatestBlockHash());
               state.setPayloadExpectedWithdrawals(preStateGloas.getPayloadExpectedWithdrawals());
+              state.setPtcWindow(preStateGloas.getPtcWindow());
             });
   }
 }

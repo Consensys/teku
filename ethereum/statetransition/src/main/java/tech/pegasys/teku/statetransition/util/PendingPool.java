@@ -77,7 +77,11 @@ public class PendingPool<T> extends AbstractIgnoringFutureHistoricalSlot {
     this.requiredBlockRootsFunction = requiredBlockRootsFunction;
     this.targetSlotFunction = targetSlotFunction;
     this.sizeGauge = sizeGauge;
-    sizeGauge.set(0, itemType); // Init the label so it appears in metrics immediately
+    initMetricsLabel(); // Init the label so it appears in metrics immediately
+  }
+
+  public void initMetricsLabel() {
+    sizeGauge.set(0, itemType);
   }
 
   public synchronized void add(final T item) {

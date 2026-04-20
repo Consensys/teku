@@ -39,6 +39,7 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
@@ -75,6 +76,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   private final ExecutionPayloadManager executionPayloadManager;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final PendingPool<ValidatableAttestation> pendingAttestations;
+  private final PendingPool<PayloadAttestationMessage> pendingPayloadAttestations;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final DasSamplerBasic dasSamplerBasic;
   private final int getStartupTargetPeerCount;
@@ -99,6 +101,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
       final ExecutionPayloadManager executionPayloadManager,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final PendingPool<ValidatableAttestation> pendingAttestations,
+      final PendingPool<PayloadAttestationMessage> pendingPayloadAttestations,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final DasSamplerBasic dasSamplerBasic,
       final int getStartupTargetPeerCount,
@@ -121,6 +124,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     this.executionPayloadManager = executionPayloadManager;
     this.pendingBlocks = pendingBlocks;
     this.pendingAttestations = pendingAttestations;
+    this.pendingPayloadAttestations = pendingPayloadAttestations;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.dasSamplerBasic = dasSamplerBasic;
     this.getStartupTargetPeerCount = getStartupTargetPeerCount;
@@ -144,6 +148,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
             asyncRunner,
             pendingBlocks,
             pendingAttestations,
+            pendingPayloadAttestations,
             blockBlobSidecarsTrackersPool,
             dasSamplerBasic,
             forwardSyncService,
