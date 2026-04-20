@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beacon.sync.gossip.executionpayloads;
 
+import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -22,6 +23,7 @@ import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.gossip.AbstractFetchService;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
@@ -36,7 +38,7 @@ public class RecentExecutionPayloadsFetchService
 
   private static final Logger LOG = LogManager.getLogger();
 
-  public static final int MAX_CONCURRENT_REQUESTS = 3;
+  private static final int MAX_DEFERRED_REPLAY_REQUESTS = 1024;
 
   private final Subscribers<ExecutionPayloadSubscriber> executionPayloadSubscribers =
       Subscribers.create(true);
@@ -46,6 +48,8 @@ public class RecentExecutionPayloadsFetchService
   private final ExecutionPayloadManager executionPayloadManager;
   private final PayloadAttestationPool payloadAttestationPool;
   private final PendingPool<PayloadAttestationMessage> pendingPayloadAttestationsPool;
+  private final Set<Bytes32> executionPayloadsRequestedDuringSync =
+      LimitedSet.createSynchronized(MAX_DEFERRED_REPLAY_REQUESTS);
 
   RecentExecutionPayloadsFetchService(
       final AsyncRunner asyncRunner,
@@ -72,7 +76,7 @@ public class RecentExecutionPayloadsFetchService
       final PendingPool<PayloadAttestationMessage> pendingPayloadAttestationsPool) {
     return new RecentExecutionPayloadsFetchService(
         asyncRunner,
-        MAX_CONCURRENT_REQUESTS,
+        DEFAULT_MAX_CONCURRENT_REQUESTS,
         forwardSync,
         fetchTaskFactory,
         executionPayloadManager,
@@ -113,7 +117,8 @@ public class RecentExecutionPayloadsFetchService
   @Override
   public void requestRecentExecutionPayload(final Bytes32 beaconBlockRoot) {
     if (forwardSync.isSyncActive()) {
-      // Forward sync already in progress, assume it will fetch any missing execution payloads
+      // Forward sync is in progress, remember the request so we can replay it once sync stops
+      executionPayloadsRequestedDuringSync.add(beaconBlockRoot);
       return;
     }
     if (executionPayloadManager.isExecutionPayloadRecentlySeen(beaconBlockRoot)) {
@@ -132,6 +137,7 @@ public class RecentExecutionPayloadsFetchService
 
   @Override
   public void cancelRecentExecutionPayloadRequest(final Bytes32 beaconBlockRoot) {
+    executionPayloadsRequestedDuringSync.remove(beaconBlockRoot);
     cancelRequest(beaconBlockRoot);
   }
 
@@ -144,6 +150,16 @@ public class RecentExecutionPayloadsFetchService
     payloadAttestationPool.subscribeOperationAdded(this::onPayloadAttestationAdded);
     pendingPayloadAttestationsPool.subscribeRequiredBlockRootDropped(
         this::cancelRecentExecutionPayloadRequest);
+    forwardSync.subscribeToSyncChanges(this::onSyncStatusChanged);
+  }
+
+  private void onSyncStatusChanged(final boolean syncActive) {
+    if (syncActive) {
+      return;
+    }
+    final Set<Bytes32> toReplay = Set.copyOf(executionPayloadsRequestedDuringSync);
+    executionPayloadsRequestedDuringSync.clear();
+    toReplay.forEach(this::requestRecentExecutionPayload);
   }
 
   private void onPayloadAttestationAdded(

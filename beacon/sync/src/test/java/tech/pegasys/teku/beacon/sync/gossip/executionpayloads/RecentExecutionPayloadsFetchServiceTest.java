@@ -33,6 +33,7 @@ import tech.pegasys.teku.beacon.sync.fetch.FetchResult;
 import tech.pegasys.teku.beacon.sync.fetch.FetchResult.Status;
 import tech.pegasys.teku.beacon.sync.fetch.FetchTaskFactory;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
+import tech.pegasys.teku.beacon.sync.forward.ForwardSync.SyncSubscriber;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.spec.Spec;
@@ -290,12 +291,50 @@ class RecentExecutionPayloadsFetchServiceTest {
   }
 
   @Test
+  void onSyncStopped_replaysRequestsMadeDuringSync() {
+    assertThat(recentExecutionPayloadsFetchService.start()).isCompleted();
+    when(forwardSync.isSyncActive()).thenReturn(true);
+
+    final Bytes32 firstRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 secondRoot = dataStructureUtil.randomBytes32();
+    recentExecutionPayloadsFetchService.requestRecentExecutionPayload(firstRoot);
+    recentExecutionPayloadsFetchService.requestRecentExecutionPayload(secondRoot);
+    assertTaskCounts(0, 0, 0);
+
+    when(forwardSync.isSyncActive()).thenReturn(false);
+    captureSyncSubscriber().onSyncingChange(false);
+
+    assertTaskCounts(2, 2, 0);
+  }
+
+  @Test
+  void onSyncStopped_doesNotReplayCanceledRequests() {
+    assertThat(recentExecutionPayloadsFetchService.start()).isCompleted();
+    when(forwardSync.isSyncActive()).thenReturn(true);
+
+    final Bytes32 beaconBlockRoot = dataStructureUtil.randomBytes32();
+    recentExecutionPayloadsFetchService.requestRecentExecutionPayload(beaconBlockRoot);
+    recentExecutionPayloadsFetchService.cancelRecentExecutionPayloadRequest(beaconBlockRoot);
+
+    when(forwardSync.isSyncActive()).thenReturn(false);
+    captureSyncSubscriber().onSyncingChange(false);
+
+    assertTaskCounts(0, 0, 0);
+  }
+
+  @Test
   void shouldNotFetchBlocksWhileForwardSyncIsInProgress() {
     when(forwardSync.isSyncActive()).thenReturn(true);
 
     recentExecutionPayloadsFetchService.requestRecentExecutionPayload(
         dataStructureUtil.randomBytes32());
     assertTaskCounts(0, 0, 0);
+  }
+
+  private SyncSubscriber captureSyncSubscriber() {
+    final ArgumentCaptor<SyncSubscriber> captor = ArgumentCaptor.forClass(SyncSubscriber.class);
+    verify(forwardSync).subscribeToSyncChanges(captor.capture());
+    return captor.getValue();
   }
 
   @SuppressWarnings("unchecked")
