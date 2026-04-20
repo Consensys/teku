@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container6;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -23,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.BlockRootAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class ExecutionPayloadEnvelope
     extends Container6<
@@ -102,5 +105,24 @@ public class ExecutionPayloadEnvelope
         getBeaconBlockRoot(),
         getSlot(),
         stateRoot);
+  }
+
+  public BlindedExecutionPayloadEnvelope blind(final SchemaDefinitionsGloas schemaDefinitions) {
+    final BlindedExecutionPayloadEnvelope blinded =
+        schemaDefinitions
+            .getBlindedExecutionPayloadEnvelopeSchema()
+            .create(
+                schemaDefinitions
+                    .getExecutionPayloadHeaderSchema()
+                    .createFromExecutionPayload(getPayload()),
+                getExecutionRequests(),
+                getBuilderIndex(),
+                getBeaconBlockRoot(),
+                getSlot(),
+                getStateRoot());
+    checkState(
+        blinded.hashTreeRoot().equals(hashTreeRoot()),
+        "Blinded root does not match the unblinded root");
+    return blinded;
   }
 }

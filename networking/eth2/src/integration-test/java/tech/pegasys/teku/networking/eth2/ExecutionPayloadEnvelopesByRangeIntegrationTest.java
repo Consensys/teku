@@ -29,7 +29,6 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 
 @TestSpecContext(milestone = {GLOAS})
@@ -54,11 +53,7 @@ public class ExecutionPayloadEnvelopesByRangeIntegrationTest
 
     // grab expected execution payload envelopes from storage
     final List<SignedExecutionPayloadEnvelope> expectedExecutionPayloadEnvelopes =
-        peerStorage
-            .chainBuilder()
-            .streamExecutionPayloadsAndStates(UInt64.ZERO)
-            .map(SignedExecutionPayloadAndState::executionPayload)
-            .toList();
+        peerStorage.chainBuilder().streamExecutionPayloads(UInt64.ZERO).toList();
 
     assertThat(expectedExecutionPayloadEnvelopes).hasSize(3);
 

@@ -11,17 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.reference.fulu.network;
+package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 
-import com.google.common.collect.ImmutableMap;
-import tech.pegasys.teku.reference.TestExecutor;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class NetworkingTests {
-  public static final ImmutableMap<String, TestExecutor> NETWORKING_TEST_TYPES =
-      ImmutableMap.<String, TestExecutor>builder()
-          .put("networking/get_custody_groups", new GetCustodyGroupsTestExecutor())
-          .put(
-              "networking/compute_columns_for_custody_group",
-              new ComputeColumnsForCustodyGroupTestExecutor())
-          .build();
+public class SignedBlindedExecutionPayloadEnvelopeSupplier
+    extends DataStructureUtilSupplier<SignedBlindedExecutionPayloadEnvelope> {
+
+  public SignedBlindedExecutionPayloadEnvelopeSupplier() {
+    super(DataStructureUtil::randomSignedBlindedExecutionPayloadEnvelope, SpecMilestone.GLOAS);
+  }
 }

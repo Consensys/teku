@@ -96,7 +96,7 @@ public class ExecutionPayloadEnvelopesByRootMessageHandler
           future.thenCompose(
               __ ->
                   recentChainData
-                      .retrieveSignedExecutionPayloadEnvelopeByBlockRoot(beaconBlockRoot.get())
+                      .retrieveSignedExecutionPayloadByBlockRoot(beaconBlockRoot.get())
                       .thenCompose(
                           maybeExecutionPayloadEnvelope ->
                               maybeExecutionPayloadEnvelope

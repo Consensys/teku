@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
@@ -70,6 +72,7 @@ class StoreTest extends AbstractStoreTest {
                     new StubMetricsSystem(),
                     spec,
                     blockProviderFromChainBuilder(),
+                    ExecutionPayloadProvider.NOOP,
                     StateAndBlockSummaryProvider.NOOP,
                     EarliestBlobSidecarSlotProvider.NOOP,
                     Optional.empty(),
@@ -422,7 +425,8 @@ class StoreTest extends AbstractStoreTest {
             Bytes32.random(),
             ProtoNodeValidationStatus.VALID,
             headCheckpoint,
-            UInt64.ZERO);
+            UInt64.ZERO,
+            ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
     final ProtoNodeData parentNodeData =
         new ProtoNodeData(
             UInt64.ZERO,
@@ -433,7 +437,8 @@ class StoreTest extends AbstractStoreTest {
             Bytes32.random(),
             ProtoNodeValidationStatus.VALID,
             parentCheckpoint,
-            UInt64.ZERO);
+            UInt64.ZERO,
+            ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
     when(dummyForkChoiceStrategy.getBlockData(root)).thenReturn(Optional.of(protoNodeData));
     when(dummyForkChoiceStrategy.getBlockData(parentRoot)).thenReturn(Optional.of(parentNodeData));
   }
@@ -452,7 +457,8 @@ class StoreTest extends AbstractStoreTest {
             Bytes32.random(),
             ProtoNodeValidationStatus.VALID,
             null,
-            headValue);
+            headValue,
+            ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
     final ProtoNodeData parentNodeData =
         new ProtoNodeData(
             UInt64.ZERO,
@@ -463,7 +469,8 @@ class StoreTest extends AbstractStoreTest {
             Bytes32.random(),
             ProtoNodeValidationStatus.VALID,
             null,
-            parentValue);
+            parentValue,
+            ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING);
     when(dummyForkChoiceStrategy.getBlockData(root)).thenReturn(Optional.of(protoNodeData));
     when(dummyForkChoiceStrategy.getBlockData(parentRoot)).thenReturn(Optional.of(parentNodeData));
   }

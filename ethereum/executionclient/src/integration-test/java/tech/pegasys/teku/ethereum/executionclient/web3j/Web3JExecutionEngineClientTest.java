@@ -55,12 +55,14 @@ import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadBodyV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.WithdrawalV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -452,6 +454,51 @@ public class Web3JExecutionEngineClientTest {
     assertThat(requestData.get("params"))
         .asInstanceOf(LIST)
         .containsExactly(blobVersionedHashes.stream().map(VersionedHash::toHexString).toList());
+  }
+
+  @TestTemplate
+  @SuppressWarnings("unchecked")
+  public void getPayloadBodiesByHashV2_shouldBuildRequestAndResponseSuccessfully()
+      throws Exception {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(CAPELLA);
+    final Bytes32 blockHash1 = dataStructureUtil.randomBytes32();
+    final Bytes32 blockHash2 = dataStructureUtil.randomBytes32();
+
+    final List<Bytes> transactions =
+        List.of(dataStructureUtil.randomBytes(100), dataStructureUtil.randomBytes(200));
+    final WithdrawalV1 withdrawal =
+        new WithdrawalV1(
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomBytes20(),
+            dataStructureUtil.randomUInt64());
+    final Bytes blockAccessList = dataStructureUtil.randomBytes(64);
+    final ExecutionPayloadBodyV2 body =
+        new ExecutionPayloadBodyV2(transactions, List.of(withdrawal), blockAccessList);
+
+    final String bodyJson = objectMapper.writeValueAsString(body);
+    final String bodyResponse =
+        "{\"jsonrpc\": \"2.0\", \"id\": 0, \"result\": [" + bodyJson + ", null]}";
+
+    mockSuccessfulResponse(bodyResponse);
+
+    final SafeFuture<Response<List<ExecutionPayloadBodyV2>>> futureResponse =
+        eeClient.getPayloadBodiesByHashV2(List.of(blockHash1, blockHash2));
+
+    assertThat(futureResponse)
+        .succeedsWithin(1, TimeUnit.SECONDS)
+        .satisfies(
+            response -> {
+              assertThat(response.payload()).hasSize(2);
+              assertThat(response.payload().get(0)).isEqualTo(body);
+              assertThat(response.payload().get(1)).isNull();
+            });
+
+    final Map<String, Object> requestData = takeRequest();
+    verifyJsonRpcMethodCall(requestData, "engine_getPayloadBodiesByHashV2");
+    assertThat(requestData.get("params"))
+        .asInstanceOf(LIST)
+        .containsExactly(List.of(blockHash1.toHexString(), blockHash2.toHexString()));
   }
 
   private void mockSuccessfulResponse(final String responseBody) {

@@ -14,6 +14,8 @@
 package tech.pegasys.teku.services.executionlayer;
 
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.ethereum.executionclient.IpcSocketExecutionEngineClient.IPC_READER_ASYNC_RUNNER_NAME;
+import static tech.pegasys.teku.ethereum.executionclient.IpcSocketExecutionEngineClient.IPC_READER_MAX_THREADS;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.spec.config.Constants.BUILDER_CALL_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.EL_ENGINE_BLOCK_EXECUTION_TIMEOUT;
@@ -22,6 +24,7 @@ import com.google.common.base.Splitter;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,9 +33,8 @@ import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClientFactory;
 import tech.pegasys.teku.ethereum.executionclient.OkHttpClientCreator;
-import tech.pegasys.teku.ethereum.executionclient.OkHttpExecutionEngineClient;
-import tech.pegasys.teku.ethereum.executionclient.OkHttpExecutionEngineClientFactory;
 import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClientProvider;
 import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
@@ -147,15 +149,18 @@ public class ExecutionLayerService extends Service {
                 config.getEngineJwtSecretFile(),
                 config.getEngineJwtClaimId(),
                 beaconDataDirectory);
-        final OkHttpClient okHttpClient = OkHttpClientCreator.create(LOG, jwtConfig, timeProvider);
+        final Supplier<OkHttpClient> okHttpClientSupplier =
+            () -> OkHttpClientCreator.create(LOG, jwtConfig, timeProvider);
         final ExecutionEngineClient newEngineApiClient =
-            OkHttpExecutionEngineClientFactory.create(
-                okHttpClient,
+            ExecutionEngineClientFactory.create(
                 config.getEngineEndpoint(),
-                EVENT_LOG,
                 timeProvider,
+                EVENT_LOG,
                 executionClientEventsPublisher,
-                OkHttpExecutionEngineClient.NON_CRITICAL_METHODS);
+                okHttpClientSupplier,
+                () ->
+                    serviceConfig.createAsyncRunner(
+                        IPC_READER_ASYNC_RUNNER_NAME, IPC_READER_MAX_THREADS));
         executionLayerManager =
             createRealExecutionLayerManager(
                 serviceConfig,

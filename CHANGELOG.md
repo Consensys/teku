@@ -1,7 +1,9 @@
 # Changelog
 
 ## Upcoming Breaking Changes
- 
+
+ * Teku will be moving to Java JDK 25 in a future release.
+
 ## Current Releases
 
 ## Unreleased Changes
@@ -10,9 +12,6 @@
 
 ### Additions and Improvements
 
-- Implemented PostPtcDuties rest api endpoint (gloas api).
-- Added `/eth/v2/node/version` endpoint to retrieve structured version information for both beacon node and execution client.
-- Added deprecation warning on startup for any leveldb database types.
-- Increased default timeout of Engine API Get Payload requests to 2 seconds.
-
 ### Bug Fixes
+ - Fixed a scenario where keys added via validator-api that rely on external signer are not slashing protected locally until the node is restarted. 
+   To work around this issue, users should either keep slashing protection enabled on the external signer or restart the node after calling the add api. 

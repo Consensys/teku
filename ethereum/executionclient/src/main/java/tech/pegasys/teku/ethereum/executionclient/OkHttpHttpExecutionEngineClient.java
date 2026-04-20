@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Collection;
 import java.util.List;
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -35,21 +34,20 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
-public class OkHttpHttpExecutionEngineClient extends OkHttpExecutionEngineClient {
+public class OkHttpHttpExecutionEngineClient extends AbstractExecutionEngineClient {
 
   private static final MediaType JSON_MEDIA_TYPE = MediaType.get("application/json");
 
   private final OkHttpClient httpClient;
   private final HttpUrl endpointUrl;
 
-  public OkHttpHttpExecutionEngineClient(
+  OkHttpHttpExecutionEngineClient(
       final OkHttpClient httpClient,
       final String endpoint,
       final EventLogger eventLog,
       final TimeProvider timeProvider,
-      final ExecutionClientEventsChannel executionClientEventsPublisher,
-      final Collection<String> nonCriticalMethods) {
-    super(eventLog, timeProvider, executionClientEventsPublisher, nonCriticalMethods);
+      final ExecutionClientEventsChannel executionClientEventsPublisher) {
+    super(eventLog, timeProvider, executionClientEventsPublisher);
     this.httpClient = httpClient;
     this.endpointUrl = HttpUrl.get(endpoint);
   }
@@ -60,7 +58,7 @@ public class OkHttpHttpExecutionEngineClient extends OkHttpExecutionEngineClient
       final List<Object> params,
       final JavaType resultType,
       final Duration timeout) {
-    final boolean isCritical = !nonCriticalMethods.contains(method);
+    final boolean isCritical = isCriticalMethod(method);
 
     final byte[] requestBodyBytes;
     try {

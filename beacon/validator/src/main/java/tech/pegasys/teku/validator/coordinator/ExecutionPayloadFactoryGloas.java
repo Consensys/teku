@@ -23,7 +23,6 @@ import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.spec.datastructures.epbs.ExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
@@ -64,8 +63,7 @@ public class ExecutionPayloadFactoryGloas implements ExecutionPayloadFactory {
                             .createFromBlobsBundle(
                                 getPayloadResponse.getBlobsBundle().orElseThrow())));
     return spec.createNewUnsignedExecutionPayload(
-            proposalSlot, builderIndex, blockAndState, executionPayloadProposalDataFuture)
-        .thenApply(ExecutionPayloadAndState::executionPayload);
+        proposalSlot, builderIndex, blockAndState, executionPayloadProposalDataFuture);
   }
 
   @Override

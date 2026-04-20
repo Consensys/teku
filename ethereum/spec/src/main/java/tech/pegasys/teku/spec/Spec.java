@@ -79,9 +79,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.epbs.ExecutionPayloadAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelopeInvariants;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -128,7 +128,9 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
 public class Spec {
@@ -187,6 +189,9 @@ public class Spec {
             specVersion -> {
               // inject ForkChoiceUtil dependencies
               switch (specVersion.getForkChoiceUtil()) {
+                case ForkChoiceUtilGloas forkChoiceUtilGloas ->
+                    forkChoiceUtilGloas.setDataColumnSidecarAvailabilityCheckerFactory(
+                        dataColumnSidecarAvailabilityCheckerFactory);
                 case ForkChoiceUtilFulu forkChoiceUtilFulu ->
                     forkChoiceUtilFulu.setDataColumnSidecarAvailabilityCheckerFactory(
                         dataColumnSidecarAvailabilityCheckerFactory);
@@ -334,6 +339,18 @@ public class Spec {
     return getGenesisSpec().getSchemaDefinitions();
   }
 
+  public boolean supportsBlobSidecars() {
+    return isMilestoneSupported(DENEB);
+  }
+
+  public boolean supportsDataColumnSidecars() {
+    return isMilestoneSupported(FULU);
+  }
+
+  public boolean supportsExecutionPayloadEnvelopes() {
+    return isMilestoneSupported(GLOAS);
+  }
+
   public ForkSchedule getForkSchedule() {
     return forkSchedule;
   }
@@ -450,6 +467,16 @@ public class Spec {
         .getSchemaDefinitions()
         .getSignedBeaconBlockSchema()
         .sszDeserialize(serializedSignedBlock);
+  }
+
+  public SignedBlindedExecutionPayloadEnvelope deserializeSignedBlindedExecutionPayloadEnvelope(
+      final Bytes serializedSignedBlindedExecutionPayloadEnvelope) {
+    final UInt64 slot =
+        ExecutionPayloadEnvelopeInvariants.extractSignedBlindedExecutionPayloadEnvelopeSlot(
+            serializedSignedBlindedExecutionPayloadEnvelope);
+    return SchemaDefinitionsGloas.required(atSlot(slot).getSchemaDefinitions())
+        .getSignedBlindedExecutionPayloadEnvelopeSchema()
+        .sszDeserialize(serializedSignedBlindedExecutionPayloadEnvelope);
   }
 
   public SignedBlockContainer deserializeSignedBlockContainer(
@@ -958,7 +985,7 @@ public class Spec {
   }
 
   // Execution Payload Proposal
-  public SafeFuture<ExecutionPayloadAndState> createNewUnsignedExecutionPayload(
+  public SafeFuture<ExecutionPayloadEnvelope> createNewUnsignedExecutionPayload(
       final UInt64 proposalSlot,
       final UInt64 builderIndex,
       final BeaconBlockAndState blockAndState,
@@ -1055,13 +1082,6 @@ public class Spec {
     } catch (SlotProcessingException | EpochProcessingException | BlockProcessingException e) {
       throw new StateTransitionException(e);
     }
-  }
-
-  public BeaconState replayValidatedExecutionPayload(
-      final BeaconState blockState, final SignedExecutionPayloadEnvelope signedEnvelope)
-      throws StateTransitionException {
-    return getExecutionPayloadProcessor(blockState.getSlot())
-        .replayValidatedExecutionPayload(signedEnvelope, blockState);
   }
 
   public BlockCheckpoints calculateBlockCheckpoints(final BeaconState state) {

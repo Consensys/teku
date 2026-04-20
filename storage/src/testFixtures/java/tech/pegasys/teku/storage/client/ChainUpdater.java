@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.epbs.SignedExecutionPayloadAndState;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -207,7 +207,7 @@ public class ChainUpdater {
             block -> {
               saveBlock(block);
               otherChain
-                  .getExecutionPayloadAndStateAtSlot(block.getSlot())
+                  .getExecutionPayloadAtSlot(block.getSlot())
                   .ifPresent(this::saveExecutionPayload);
             });
     updateBestBlock(otherChain.getLatestBlockAndState());
@@ -220,7 +220,7 @@ public class ChainUpdater {
             block -> {
               saveBlock(block);
               otherChain
-                  .getExecutionPayloadAndStateAtSlot(block.getSlot())
+                  .getExecutionPayloadAtSlot(block.getSlot())
                   .ifPresent(this::saveExecutionPayload);
             });
     updateBestBlock(otherChain.getLatestBlockAndStateAtSlot(slot));
@@ -292,7 +292,7 @@ public class ChainUpdater {
       saveBlock(block, blobSidecars);
     }
     chainBuilder.getDataColumnSidecars(block.getRoot()).forEach(dataColumnSidecarPersister);
-    chainBuilder.getExecutionPayloadAndStateAtSlot(slot).ifPresent(this::saveExecutionPayload);
+    chainBuilder.getExecutionPayloadAtSlot(slot).ifPresent(this::saveExecutionPayload);
     return block;
   }
 
@@ -358,9 +358,9 @@ public class ChainUpdater {
     }
   }
 
-  public void saveExecutionPayload(final SignedExecutionPayloadAndState executionPayload) {
+  public void saveExecutionPayload(final SignedExecutionPayloadEnvelope executionPayload) {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.putExecutionPayloadAndState(executionPayload.executionPayload(), executionPayload.state());
+    tx.putExecutionPayload(executionPayload);
     assertThat(tx.commit()).isCompleted();
   }
 

@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.net.ProtocolException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -40,7 +39,7 @@ import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
-public class OkHttpWebSocketExecutionEngineClient extends OkHttpExecutionEngineClient {
+public class OkHttpWebSocketExecutionEngineClient extends AbstractExecutionEngineClient {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -52,14 +51,13 @@ public class OkHttpWebSocketExecutionEngineClient extends OkHttpExecutionEngineC
 
   private volatile WebSocket webSocket;
 
-  public OkHttpWebSocketExecutionEngineClient(
+  OkHttpWebSocketExecutionEngineClient(
       final OkHttpClient httpClient,
       final String endpoint,
       final EventLogger eventLog,
       final TimeProvider timeProvider,
-      final ExecutionClientEventsChannel executionClientEventsPublisher,
-      final Collection<String> nonCriticalMethods) {
-    super(eventLog, timeProvider, executionClientEventsPublisher, nonCriticalMethods);
+      final ExecutionClientEventsChannel executionClientEventsPublisher) {
+    super(eventLog, timeProvider, executionClientEventsPublisher);
     this.httpClient = httpClient;
     this.wsRequest = new Request.Builder().url(endpoint).build();
   }
@@ -83,7 +81,7 @@ public class OkHttpWebSocketExecutionEngineClient extends OkHttpExecutionEngineC
       final List<Object> params,
       final JavaType resultType,
       final Duration timeout) {
-    final boolean isCritical = !nonCriticalMethods.contains(method);
+    final boolean isCritical = isCriticalMethod(method);
 
     final JsonRpcRequest request = buildRequest(method, params);
     final long requestId = request.id();

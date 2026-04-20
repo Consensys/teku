@@ -11,23 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.epbs;
+package tech.pegasys.teku.spec.datastructures.forkchoice;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil.BlockTimeliness;
 
-/**
- * Helper datastructure that holds a signed execution payload envelope with its corresponding state
- */
-public record SignedExecutionPayloadAndState(
-    SignedExecutionPayloadEnvelope executionPayload, BeaconState state) {
-  public UInt64 getSlot() {
-    return executionPayload.getMessage().getSlot();
-  }
+/** Read-only runtime context for proposer reorg evaluation. */
+public interface ForkChoiceReorgContext {
 
-  public Bytes32 getBeaconBlockRoot() {
-    return executionPayload.getBeaconBlockRoot();
-  }
+  ReadOnlyStore getStore();
+
+  Optional<BlockTimeliness> getBlockTimeliness(Bytes32 root);
+
+  boolean isValidatorConnected(int validatorIndex, UInt64 slot);
+
+  BeaconState processSlots(BeaconState state, UInt64 slot)
+      throws SlotProcessingException, EpochProcessingException;
 }
