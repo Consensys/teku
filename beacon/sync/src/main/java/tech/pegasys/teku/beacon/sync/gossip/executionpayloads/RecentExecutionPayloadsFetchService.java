@@ -157,9 +157,10 @@ public class RecentExecutionPayloadsFetchService
     if (syncActive) {
       return;
     }
-    final Set<Bytes32> toReplay = Set.copyOf(executionPayloadsRequestedDuringSync);
+    final Set<Bytes32> executionPayloadRequestsToReplay =
+        Set.copyOf(executionPayloadsRequestedDuringSync);
     executionPayloadsRequestedDuringSync.clear();
-    toReplay.forEach(this::requestRecentExecutionPayload);
+    executionPayloadRequestsToReplay.forEach(this::requestRecentExecutionPayload);
   }
 
   private void onPayloadAttestationAdded(
