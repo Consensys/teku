@@ -139,7 +139,6 @@ public class ProtoArray {
       final UInt64 executionBlockNumber,
       final Bytes32 executionBlockHash,
       final boolean optimisticallyProcessed) {
-    LOG.info("Adding node {} optimistic: {}", nodeIdentity, optimisticallyProcessed);
     if (indices.contains(nodeIdentity)) {
       return;
     }
