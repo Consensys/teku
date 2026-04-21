@@ -26,16 +26,23 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.BlockRootAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
+import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class DefaultExecutionPayloadManager
     implements ExecutionPayloadManager, ReceivedBlockEventsChannel {
@@ -51,25 +58,31 @@ public class DefaultExecutionPayloadManager
   private final Map<BlockRootAndBuilderIndex, SignedExecutionPayloadEnvelope>
       executionPayloadsSavedForFutureProcessing = LimitedMap.createSynchronizedLRU(32);
 
+  private final Spec spec;
   private final AsyncRunner asyncRunner;
   private final ExecutionPayloadGossipValidator executionPayloadGossipValidator;
   private final ForkChoice forkChoice;
   private final ExecutionLayerChannel executionLayer;
   private final ReceivedExecutionPayloadEventsChannel
       receivedExecutionPayloadEventsChannelPublisher;
+  private final RecentChainData recentChainData;
 
   public DefaultExecutionPayloadManager(
+      final Spec spec,
       final AsyncRunner asyncRunner,
       final ExecutionPayloadGossipValidator executionPayloadGossipValidator,
       final ForkChoice forkChoice,
       final ExecutionLayerChannel executionLayer,
-      final ReceivedExecutionPayloadEventsChannel receivedExecutionPayloadEventsChannelPublisher) {
+      final ReceivedExecutionPayloadEventsChannel receivedExecutionPayloadEventsChannelPublisher,
+      final RecentChainData recentChainData) {
+    this.spec = spec;
     this.asyncRunner = asyncRunner;
     this.executionPayloadGossipValidator = executionPayloadGossipValidator;
     this.forkChoice = forkChoice;
     this.executionLayer = executionLayer;
     this.receivedExecutionPayloadEventsChannelPublisher =
         receivedExecutionPayloadEventsChannelPublisher;
+    this.recentChainData = recentChainData;
   }
 
   @Override
@@ -114,7 +127,8 @@ public class DefaultExecutionPayloadManager
   public SafeFuture<ExecutionPayloadImportResult> importExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
     return asyncRunner
-        .runAsync(() -> forkChoice.onExecutionPayload(signedExecutionPayload, executionLayer))
+        .runAsync(
+            () -> forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
         .thenPeek(
             result -> {
               if (result.isSuccessful()) {
@@ -140,6 +154,30 @@ public class DefaultExecutionPayloadManager
               LOG.error(internalErrorMessage, ex);
               return ExecutionPayloadImportResult.internalError(ex);
             });
+  }
+
+  @Override
+  public ExecutionRequests getParentExecutionRequestsForBlock(
+      final UInt64 slot, final Bytes32 parentRoot) {
+    final SpecVersion specVersion = spec.atSlot(slot);
+    final ForkChoiceUtilGloas forkChoiceUtil =
+        ForkChoiceUtilGloas.required(specVersion.getForkChoiceUtil());
+    final UpdatableStore store = recentChainData.getStore();
+    if (!forkChoiceUtil.shouldExtendPayload(store, parentRoot)) {
+      return SchemaDefinitionsGloas.required(specVersion.getSchemaDefinitions())
+          .getExecutionRequestsSchema()
+          .getDefault();
+    }
+    return store
+        .getExecutionPayloadIfAvailable(parentRoot)
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    String.format(
+                        "Execution Payload is not available for parent root %s during block production for slot %s",
+                        parentRoot, slot)))
+        .getMessage()
+        .getExecutionRequests();
   }
 
   @Override

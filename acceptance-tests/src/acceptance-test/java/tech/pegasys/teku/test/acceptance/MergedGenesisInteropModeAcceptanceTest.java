@@ -98,7 +98,10 @@ public class MergedGenesisInteropModeAcceptanceTest extends AcceptanceTestBase {
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
       tekuNodeConfigBuilder.withGloasEpoch(UInt64.ZERO);
     }
-    if (specMilestone.isGreaterThan(SpecMilestone.GLOAS)) {
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.HEZE)) {
+      tekuNodeConfigBuilder.withHezeEpoch(UInt64.ZERO);
+    }
+    if (specMilestone.isGreaterThan(SpecMilestone.HEZE)) {
       fail("Milestone %s not used on merged genesis interop test", specMilestone);
     }
 

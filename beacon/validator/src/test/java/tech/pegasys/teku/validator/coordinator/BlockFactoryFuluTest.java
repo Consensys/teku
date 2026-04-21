@@ -196,6 +196,7 @@ public class BlockFactoryFuluTest extends AbstractBlockFactoryTest {
             forkChoiceNotifier,
             executionLayer,
             executionPayloadBidManager,
+            executionPayloadManager,
             metricsSystem,
             timeProvider));
   }

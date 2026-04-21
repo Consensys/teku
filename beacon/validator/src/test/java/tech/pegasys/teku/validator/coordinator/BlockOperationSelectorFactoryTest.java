@@ -88,6 +88,7 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.SimpleOperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
@@ -170,6 +171,8 @@ class BlockOperationSelectorFactoryTest {
       mock(ExecutionLayerBlockProductionManager.class);
   private final ExecutionPayloadBidManager executionPayloadBidManager =
       mock(ExecutionPayloadBidManager.class);
+  private final ExecutionPayloadManager executionPayloadManager =
+      mock(ExecutionPayloadManager.class);
 
   private final CapturingBeaconBlockBodyBuilder bodyBuilder =
       new CapturingBeaconBlockBodyBuilder(false, false);
@@ -193,6 +196,7 @@ class BlockOperationSelectorFactoryTest {
           forkChoiceNotifier,
           executionLayer,
           executionPayloadBidManager,
+          executionPayloadManager,
           metricsSystem,
           timeProvider);
   private ExecutionPayloadContext executionPayloadContext;
@@ -1053,6 +1057,12 @@ class BlockOperationSelectorFactoryTest {
     @Override
     public BeaconBlockBodyBuilder payloadAttestations(
         final SszList<PayloadAttestation> payloadAttestations) {
+      return this;
+    }
+
+    @Override
+    public BeaconBlockBodyBuilder parentExecutionRequests(
+        final ExecutionRequests parentExecutionRequests) {
       return this;
     }
 

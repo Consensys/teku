@@ -24,6 +24,7 @@ import static tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAl
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -361,6 +362,15 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final SszList<SignedBlsToExecutionChange> blsToExecutionChanges)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No BlsToExecutionChanges in Altair.");
+  }
+
+  @Override
+  public void processParentExecutionPayload(
+      final MutableBeaconState state,
+      final BeaconBlock beaconBlock,
+      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier)
+      throws BlockProcessingException {
+    throw new UnsupportedOperationException("No process_parent_execution_payload until Gloas");
   }
 
   @Override

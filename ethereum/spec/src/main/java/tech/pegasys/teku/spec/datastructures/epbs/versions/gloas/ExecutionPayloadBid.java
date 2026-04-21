@@ -18,7 +18,7 @@ import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container11;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container12;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.SlotAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public class ExecutionPayloadBid
-    extends Container11<
+    extends Container12<
         ExecutionPayloadBid,
         SszBytes32,
         SszBytes32,
@@ -39,7 +39,8 @@ public class ExecutionPayloadBid
         SszUInt64,
         SszUInt64,
         SszUInt64,
-        SszList<SszKZGCommitment>> {
+        SszList<SszKZGCommitment>,
+        SszBytes32> {
 
   protected ExecutionPayloadBid(
       final ExecutionPayloadBidSchema schema,
@@ -53,7 +54,8 @@ public class ExecutionPayloadBid
       final UInt64 slot,
       final UInt64 value,
       final UInt64 executionPayment,
-      final SszList<SszKZGCommitment> blobKzgCommitments) {
+      final SszList<SszKZGCommitment> blobKzgCommitments,
+      final Bytes32 executionRequestsRoot) {
     super(
         schema,
         SszBytes32.of(parentBlockHash),
@@ -66,7 +68,8 @@ public class ExecutionPayloadBid
         SszUInt64.of(slot),
         SszUInt64.of(value),
         SszUInt64.of(executionPayment),
-        blobKzgCommitments);
+        blobKzgCommitments,
+        SszBytes32.of(executionRequestsRoot));
   }
 
   protected ExecutionPayloadBid(
@@ -116,6 +119,10 @@ public class ExecutionPayloadBid
 
   public SszList<SszKZGCommitment> getBlobKzgCommitments() {
     return getField10();
+  }
+
+  public Bytes32 getExecutionRequestsRoot() {
+    return getField11().get();
   }
 
   public SlotAndBuilderIndex getSlotAndBuilderIndex() {

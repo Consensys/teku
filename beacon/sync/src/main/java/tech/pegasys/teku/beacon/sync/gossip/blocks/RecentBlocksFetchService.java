@@ -35,8 +35,6 @@ public class RecentBlocksFetchService
 
   private static final Logger LOG = LogManager.getLogger();
 
-  public static final int MAX_CONCURRENT_REQUESTS = 3;
-
   private final ForwardSync forwardSync;
   private final PendingPool<SignedBeaconBlock> pendingBlockPool;
   private final PendingPool<ValidatableAttestation> pendingAttestationsPool;
@@ -79,7 +77,7 @@ public class RecentBlocksFetchService
         blockBlobSidecarsTrackersPool,
         forwardSync,
         fetchTaskFactory,
-        MAX_CONCURRENT_REQUESTS);
+        DEFAULT_MAX_CONCURRENT_BLOCKS_REQUESTS);
   }
 
   @Override
