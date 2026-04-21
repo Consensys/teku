@@ -61,8 +61,8 @@ import tech.pegasys.teku.beacon.sync.gossip.executionpayloads.RecentExecutionPay
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.beaconrestapi.JsonTypeDefinitionBeaconRestApi;
 import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadProvider;
-import tech.pegasys.teku.dataproviders.lookup.UnblindingExecutionPayloadProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.UnblindingExecutionPayloadProvider;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
@@ -611,11 +611,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final ExecutionPayloadProvider executionPayloadProvider =
         createExecutionPayloadProvider(storageQueryChannel);
 
-
     final SingleBlockProvider singleBlockProviderResolver =
         new SingleBlockProviderResolver(
-                        (blockRoot) -> blockBlobSidecarsTrackersPool.getBlock(blockRoot),
-                        (blockRoot) -> dasSamplerBasic.getBlock(blockRoot));
+            (blockRoot) -> blockBlobSidecarsTrackersPool.getBlock(blockRoot),
+            (blockRoot) -> dasSamplerBasic.getBlock(blockRoot));
 
     // Init other services
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
