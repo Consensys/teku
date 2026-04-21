@@ -34,12 +34,14 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV3;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV4;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadBodiesByHashV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV4;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV5;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV6;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV2;
@@ -272,8 +274,8 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
   private static Stream<Arguments> gloasMethods() {
     return Stream.of(
         arguments(ENGINE_NEW_PAYLOAD, EngineNewPayloadV5.class),
-        arguments(ENGINE_GET_PAYLOAD, EngineGetPayloadV5.class),
-        arguments(ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV3.class),
+        arguments(ENGINE_GET_PAYLOAD, EngineGetPayloadV6.class),
+        arguments(ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV4.class),
         arguments(ENGINE_GET_PAYLOAD_BODIES_BY_HASH, EngineGetPayloadBodiesByHashV2.class));
   }
 
@@ -295,19 +297,21 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
 
     assertThat(capabilities)
         .containsExactlyInAnyOrder(
-            "engine_newPayloadV1",
-            "engine_getPayloadV1",
-            "engine_forkchoiceUpdatedV1",
-            "engine_newPayloadV2",
-            "engine_getPayloadV2",
-            "engine_forkchoiceUpdatedV2",
-            "engine_newPayloadV3",
             "engine_getPayloadV3",
-            "engine_forkchoiceUpdatedV3",
-            "engine_newPayloadV4",
-            "engine_getPayloadV4",
             "engine_newPayloadV5",
+            "engine_getPayloadV4",
+            "engine_getPayloadV1",
+            "engine_newPayloadV3",
+            "engine_getPayloadV2",
+            "engine_newPayloadV4",
             "engine_getPayloadV5",
-            "engine_getPayloadBodiesByHashV2");
+            "engine_getPayloadV6",
+            "engine_newPayloadV1",
+            "engine_newPayloadV2",
+            "engine_getPayloadBodiesByHashV2",
+            "engine_forkchoiceUpdatedV1",
+            "engine_forkchoiceUpdatedV2",
+            "engine_forkchoiceUpdatedV3",
+            "engine_forkchoiceUpdatedV4");
   }
 }

@@ -152,6 +152,17 @@ public class ExecutionPayloadHeaderBuilderBellatrix implements ExecutionPayloadH
     return this;
   }
 
+  @Override
+  public ExecutionPayloadHeaderBuilder blockAccessListRoot(
+      final Supplier<Bytes32> blockAccessListRootSupplier) {
+    return this;
+  }
+
+  @Override
+  public ExecutionPayloadHeaderBuilder slotNumber(final Supplier<UInt64> slotNumberSupplier) {
+    return this;
+  }
+
   protected void validateSchema() {
     checkNotNull(schema, "schema must be specified");
   }

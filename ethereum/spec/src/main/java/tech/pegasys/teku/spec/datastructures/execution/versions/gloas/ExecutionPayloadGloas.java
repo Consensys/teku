@@ -11,31 +11,32 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.execution.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.execution.versions.gloas;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
 
-public interface ExecutionPayloadDeneb extends ExecutionPayloadCapella {
+public interface ExecutionPayloadGloas extends ExecutionPayloadDeneb {
 
-  static ExecutionPayloadDeneb required(final ExecutionPayload payload) {
+  static ExecutionPayloadGloas required(final ExecutionPayload payload) {
     return payload
-        .toVersionDeneb()
+        .toVersionGloas()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Expected Deneb execution payload but got "
+                    "Expected Gloas execution payload but got "
                         + payload.getClass().getSimpleName()));
   }
 
-  UInt64 getBlobGasUsed();
+  SszByteList getBlockAccessList();
 
-  UInt64 getExcessBlobGas();
+  UInt64 getSlotNumber();
 
   @Override
-  default Optional<ExecutionPayloadDeneb> toVersionDeneb() {
+  default Optional<ExecutionPayloadGloas> toVersionGloas() {
     return Optional.of(this);
   }
 }

@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
+import tech.pegasys.teku.ethtests.TestFork;
 
 @SuppressWarnings("MustBeClosedChecker")
 public class SszTestFinder implements TestFinder {
@@ -45,6 +46,13 @@ public class SszTestFinder implements TestFinder {
   private static Stream<TestDefinition> findSszStaticTests(
       final String fork, final String config, final Path phase0Tests, final Path testCategoryDir)
       throws IOException {
+    // TODO-GLOAS: we extend ExecutionPayloadHeader internally in Teku in order to blind execution
+    // payload envelopes, these tests will be deprecated in the future version of the
+    // consensus-specs
+    if (fork.equals(TestFork.GLOAS)
+        && testCategoryDir.getFileName().toString().contains("ExecutionPayloadHeader")) {
+      return Stream.empty();
+    }
     final String testType = phase0Tests.relativize(testCategoryDir).toString();
     return Files.walk(testCategoryDir)
         .filter(path -> path.resolve("serialized.ssz_snappy").toFile().exists())

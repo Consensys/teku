@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -770,6 +771,23 @@ public class ForkChoiceUtil {
     return parentExecutionRoot.isPresent() && !parentExecutionRoot.get().isZero();
   }
 
+  public boolean shouldUpdateVote(
+      final VoteTracker vote, final UInt64 targetEpoch, final UInt64 slot) {
+    return targetEpoch.isGreaterThan(miscHelpers.computeEpochAtSlot(vote.getNextSlot()))
+        || vote.equals(VoteTracker.DEFAULT);
+  }
+
+  /**
+   * Extracts the forkchoice-side FULL-node hint from attestation data.
+   *
+   * <p>Pre-Gloas forks do not carry payload-status information in attestations, so the default is
+   * always false. Gloas overrides this to interpret the attestation index as the EMPTY/FULL hint,
+   * while still leaving the final PENDING/EMPTY/FULL resolution to later forkchoice logic.
+   */
+  public boolean getFullPayloadVoteHint(final UInt64 attestationIndex) {
+    return false;
+  }
+
   public boolean isHeadWeak(
       final ReadOnlyStore store, final Bytes32 root, final UInt64 reorgThreshold) {
     return store.isHeadWeak(root);
@@ -785,7 +803,12 @@ public class ForkChoiceUtil {
     return beaconStateAccessors.getBeaconProposerIndex(proposerPreState);
   }
 
-  public AvailabilityChecker<?> createAvailabilityChecker(final SignedBeaconBlock block) {
+  public AvailabilityChecker<?> createAvailabilityCheckerOnBlock(final SignedBeaconBlock block) {
+    return AvailabilityChecker.NOOP;
+  }
+
+  public AvailabilityChecker<?> createAvailabilityCheckerOnExecutionPayloadEnvelope(
+      final SignedBeaconBlock block) {
     return AvailabilityChecker.NOOP;
   }
 

@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
+import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 
 public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoiceStrategy {
   private static final Logger LOG = LogManager.getLogger();
@@ -140,6 +141,10 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   public void onAttestation(final VoteUpdater voteUpdater, final IndexedAttestation attestation) {
     votesLock.writeLock().lock();
     try {
+      final UInt64 attestationSlot = attestation.getData().getSlot();
+      final ForkChoiceUtil forkChoiceUtil = spec.atSlot(attestationSlot).getForkChoiceUtil();
+      final boolean fullPayloadHint =
+          forkChoiceUtil.getFullPayloadVoteHint(attestation.getData().getIndex());
       attestation
           .getAttestingIndices()
           .streamUnboxed()
@@ -149,7 +154,10 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
                       voteUpdater,
                       validatorIndex,
                       attestation.getData().getBeaconBlockRoot(),
-                      attestation.getData().getTarget().getEpoch()));
+                      attestation.getData().getTarget().getEpoch(),
+                      attestationSlot,
+                      fullPayloadHint,
+                      forkChoiceUtil));
     } finally {
       votesLock.writeLock().unlock();
     }
@@ -157,11 +165,19 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
 
   public void applyDeferredAttestations(final VoteUpdater voteUpdater, final DeferredVotes votes) {
     final UInt64 targetEpoch = spec.computeEpochAtSlot(votes.getSlot());
+    final ForkChoiceUtil forkChoiceUtil = spec.atSlot(votes.getSlot()).getForkChoiceUtil();
     votesLock.writeLock().lock();
     try {
       votes.forEachDeferredVote(
-          (blockRoot, validatorIndex) ->
-              processAttestation(voteUpdater, validatorIndex, blockRoot, targetEpoch));
+          (blockRoot, validatorIndex, fullPayloadHint) ->
+              processAttestation(
+                  voteUpdater,
+                  validatorIndex,
+                  blockRoot,
+                  targetEpoch,
+                  votes.getSlot(),
+                  fullPayloadHint,
+                  forkChoiceUtil));
     } finally {
       votesLock.writeLock().unlock();
     }
@@ -233,14 +249,42 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       final UInt64 validatorIndex,
       final Bytes32 blockRoot,
       final UInt64 targetEpoch) {
+    final UInt64 attestationSlot = spec.computeStartSlotAtEpoch(targetEpoch);
+    processAttestation(
+        voteUpdater,
+        validatorIndex,
+        blockRoot,
+        targetEpoch,
+        attestationSlot,
+        false,
+        spec.atSlot(attestationSlot).getForkChoiceUtil());
+  }
+
+  void processAttestation(
+      final VoteUpdater voteUpdater,
+      final UInt64 validatorIndex,
+      final Bytes32 blockRoot,
+      final UInt64 targetEpoch,
+      final UInt64 attestationSlot,
+      final boolean fullPayloadHint,
+      final ForkChoiceUtil forkChoiceUtil) {
     VoteTracker vote = voteUpdater.getVote(validatorIndex);
     // Not updating anything for equivocated validators
     if (vote.isEquivocating()) {
       return;
     }
 
-    if (targetEpoch.isGreaterThan(vote.getNextEpoch()) || vote.equals(VoteTracker.DEFAULT)) {
-      VoteTracker newVote = new VoteTracker(vote.getCurrentRoot(), blockRoot, targetEpoch);
+    if (forkChoiceUtil.shouldUpdateVote(vote, targetEpoch, attestationSlot)) {
+      VoteTracker newVote =
+          new VoteTracker(
+              vote.getCurrentRoot(),
+              blockRoot,
+              false,
+              false,
+              attestationSlot,
+              fullPayloadHint,
+              vote.getCurrentSlot(),
+              vote.isCurrentFullPayloadHint());
       voteUpdater.putVote(validatorIndex, newVote);
     }
   }

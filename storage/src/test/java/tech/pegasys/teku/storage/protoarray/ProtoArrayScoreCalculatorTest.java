@@ -83,7 +83,7 @@ public class ProtoArrayScoreCalculatorTest {
     for (int i = 0; i < validatorCount; i++) {
       indices.put(getHash(i), i);
       VoteTracker vote = store.getVote(UInt64.valueOf(i));
-      VoteTracker newVote = new VoteTracker(vote.getCurrentRoot(), getHash(0), vote.getNextEpoch());
+      VoteTracker newVote = new VoteTracker(vote.getCurrentRoot(), getHash(0));
       store.putVote(UInt64.valueOf(i), newVote);
       oldBalances.add(balance);
       newBalances.add(balance);
@@ -124,7 +124,7 @@ public class ProtoArrayScoreCalculatorTest {
     for (int i = 0; i < validatorCount; i++) {
       indices.put(getHash(i), i);
       VoteTracker vote = store.getVote(UInt64.valueOf(i));
-      VoteTracker newVote = new VoteTracker(vote.getCurrentRoot(), getHash(i), vote.getNextEpoch());
+      VoteTracker newVote = new VoteTracker(vote.getCurrentRoot(), getHash(i));
       store.putVote(UInt64.valueOf(i), newVote);
       oldBalances.add(balance);
       newBalances.add(balance);
@@ -156,8 +156,7 @@ public class ProtoArrayScoreCalculatorTest {
 
     for (int i = 0; i < validatorCount; i++) {
       indices.put(getHash(i), i);
-      VoteTracker vote = store.getVote(UInt64.valueOf(i));
-      VoteTracker newVote = new VoteTracker(getHash(0), getHash(1), vote.getNextEpoch());
+      VoteTracker newVote = new VoteTracker(getHash(0), getHash(1));
       store.putVote(UInt64.valueOf(i), newVote);
       oldBalances.add(balance);
       newBalances.add(balance);
@@ -207,14 +206,11 @@ public class ProtoArrayScoreCalculatorTest {
     newBalances = Collections.nCopies(2, balance);
 
     // One validator moves their vote from the block to the zero hash.
-    VoteTracker validator1vote = store.getVote(UInt64.valueOf(0));
-    VoteTracker newVote1 = new VoteTracker(getHash(1), Bytes32.ZERO, validator1vote.getNextEpoch());
+    VoteTracker newVote1 = new VoteTracker(getHash(1), Bytes32.ZERO);
     store.putVote(UInt64.valueOf(0), newVote1);
 
     // One validator moves their vote from the block to something outside the tree.
-    VoteTracker validator2vote = store.getVote(UInt64.valueOf(1));
-    VoteTracker newVote2 =
-        new VoteTracker(getHash(1), getHash(1337), validator2vote.getNextEpoch());
+    VoteTracker newVote2 = new VoteTracker(getHash(1), getHash(1337));
     store.putVote(UInt64.valueOf(1), newVote2);
 
     List<Long> deltas =
@@ -246,8 +242,7 @@ public class ProtoArrayScoreCalculatorTest {
 
     for (int i = 0; i < validatorCount; i++) {
       indices.put(getHash(i), i);
-      VoteTracker vote = store.getVote(UInt64.valueOf(i));
-      VoteTracker newVote = new VoteTracker(getHash(0), getHash(1), vote.getNextEpoch());
+      VoteTracker newVote = new VoteTracker(getHash(0), getHash(1));
       store.putVote(UInt64.valueOf(i), newVote);
       oldBalances.add(oldBalance);
       newBalances.add(newBalance);
@@ -299,8 +294,7 @@ public class ProtoArrayScoreCalculatorTest {
 
     // Both validators move votes from block 1 to block 2.
     for (int i = 0; i < 2; i++) {
-      VoteTracker vote = store.getVote(UInt64.valueOf(i));
-      VoteTracker newVote = new VoteTracker(getHash(1), getHash(2), vote.getNextEpoch());
+      VoteTracker newVote = new VoteTracker(getHash(1), getHash(2));
       store.putVote(UInt64.valueOf(i), newVote);
     }
 
@@ -342,8 +336,7 @@ public class ProtoArrayScoreCalculatorTest {
 
     // Both validators move votes from block 1 to block 2.
     for (int i = 0; i < 2; i++) {
-      VoteTracker vote = store.getVote(UInt64.valueOf(i));
-      VoteTracker newVote = new VoteTracker(getHash(1), getHash(2), vote.getNextEpoch());
+      VoteTracker newVote = new VoteTracker(getHash(1), getHash(2));
       store.putVote(UInt64.valueOf(i), newVote);
     }
 
@@ -483,15 +476,13 @@ public class ProtoArrayScoreCalculatorTest {
     // Both validators votes for block.
     for (int i = 0; i < 2; i++) {
       VoteTracker vote = store.getVote(UInt64.valueOf(i));
-      VoteTracker newVote = new VoteTracker(vote.getCurrentRoot(), getHash(1), vote.getNextEpoch());
+      VoteTracker newVote = new VoteTracker(vote.getCurrentRoot(), getHash(1));
       store.putVote(UInt64.valueOf(i), newVote);
     }
 
     // Validator #0 is marked as equivocated
     VoteTracker vote = store.getVote(ZERO);
-    store.putVote(
-        ZERO,
-        new VoteTracker(vote.getNextRoot(), vote.getNextRoot(), vote.getNextEpoch(), true, true));
+    store.putVote(ZERO, new VoteTracker(vote.getNextRoot(), vote.getNextRoot(), true, true));
 
     List<Long> deltas =
         computeDeltas(
@@ -534,8 +525,7 @@ public class ProtoArrayScoreCalculatorTest {
 
     // Both validators moves vote to the last block.
     for (int i = 0; i < 2; i++) {
-      VoteTracker vote = store.getVote(UInt64.valueOf(i));
-      VoteTracker newVote = new VoteTracker(getHash(2), getHash(3), vote.getNextEpoch());
+      VoteTracker newVote = new VoteTracker(getHash(2), getHash(3));
       store.putVote(UInt64.valueOf(i), newVote);
     }
 

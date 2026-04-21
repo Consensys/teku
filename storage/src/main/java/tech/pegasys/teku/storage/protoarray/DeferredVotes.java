@@ -13,12 +13,17 @@
 
 package tech.pegasys.teku.storage.protoarray;
 
-import java.util.function.BiConsumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface DeferredVotes {
   UInt64 getSlot();
 
-  void forEachDeferredVote(BiConsumer<Bytes32, UInt64> consumer);
+  /** Consumer for deferred votes: (blockRoot, validatorIndex, fullPayloadHint). */
+  @FunctionalInterface
+  interface DeferredVoteConsumer {
+    void accept(Bytes32 blockRoot, UInt64 validatorIndex, boolean fullPayloadHint);
+  }
+
+  void forEachDeferredVote(DeferredVoteConsumer consumer);
 }
