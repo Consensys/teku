@@ -803,7 +803,12 @@ public class ForkChoiceUtil {
     return beaconStateAccessors.getBeaconProposerIndex(proposerPreState);
   }
 
-  public AvailabilityChecker<?> createAvailabilityChecker(final SignedBeaconBlock block) {
+  public AvailabilityChecker<?> createAvailabilityCheckerOnBlock(final SignedBeaconBlock block) {
+    return AvailabilityChecker.NOOP;
+  }
+
+  public AvailabilityChecker<?> createAvailabilityCheckerOnExecutionPayloadEnvelope(
+      final SignedBeaconBlock block) {
     return AvailabilityChecker.NOOP;
   }
 

@@ -470,7 +470,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         IndexedAttestationCache.capturing();
 
     final AvailabilityChecker<?> availabilityChecker =
-        forkChoiceUtil.createAvailabilityChecker(block);
+        forkChoiceUtil.createAvailabilityCheckerOnBlock(block);
 
     availabilityChecker.initiateDataAvailabilityCheck();
 
@@ -559,7 +559,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final ForkChoiceUtil forkChoiceUtil = spec.atSlot(signedEnvelope.getSlot()).getForkChoiceUtil();
 
     final AvailabilityChecker<?> availabilityChecker =
-        forkChoiceUtil.createAvailabilityChecker(block);
+        forkChoiceUtil.createAvailabilityCheckerOnExecutionPayloadEnvelope(block);
     availabilityChecker.initiateDataAvailabilityCheck();
     final ForkChoicePayloadExecutorGloas payloadExecutor =
         ForkChoicePayloadExecutorGloas.create(signedEnvelope, executionLayer);
