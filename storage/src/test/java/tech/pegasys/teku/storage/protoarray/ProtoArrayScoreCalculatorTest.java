@@ -80,7 +80,7 @@ public class ProtoArrayScoreCalculatorTest {
         newBoostAmount,
         createProtoArray(),
         blockNodeIndex,
-        ForkChoiceModelDefault.INSTANCE);
+        ForkChoiceModelPhase0.INSTANCE);
   }
 
   @Test

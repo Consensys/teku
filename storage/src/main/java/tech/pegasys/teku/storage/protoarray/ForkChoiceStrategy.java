@@ -492,7 +492,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   public void processExecutionPayload(final SignedExecutionPayloadEnvelope signedEnvelope) {
-    // Branch 04 keeps the default model active only, so execution-payload-only node expansion
+    // Branch 04 keeps the Phase0 model active only, so execution-payload-only node expansion
     // remains dormant until the later Gloas-specific branches.
   }
 

@@ -23,12 +23,12 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 
-/** Pre-Gloas single-node-per-block model. */
-class ForkChoiceModelDefault implements ForkChoiceModel {
+/** Phase0 single-node-per-block model used across the pre-Gloas milestones. */
+class ForkChoiceModelPhase0 implements ForkChoiceModel {
 
-  static final ForkChoiceModelDefault INSTANCE = new ForkChoiceModelDefault();
+  static final ForkChoiceModelPhase0 INSTANCE = new ForkChoiceModelPhase0();
 
-  private ForkChoiceModelDefault() {}
+  private ForkChoiceModelPhase0() {}
 
   @Override
   public void processBlock(

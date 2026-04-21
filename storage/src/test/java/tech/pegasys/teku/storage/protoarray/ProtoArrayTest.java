@@ -576,7 +576,7 @@ class ProtoArrayTest {
   }
 
   private void applyScoreChanges() {
-    applyScoreChanges(ForkChoiceModelDefault.INSTANCE, UInt64.valueOf(5), Optional.empty());
+    applyScoreChanges(ForkChoiceModelPhase0.INSTANCE, UInt64.valueOf(5), Optional.empty());
   }
 
   private void applyScoreChanges(
@@ -648,7 +648,7 @@ class ProtoArrayTest {
         UInt64.ZERO,
         protoArray.protoArray(),
         protoArray.blockNodeIndex(),
-        ForkChoiceModelDefault.INSTANCE);
+        ForkChoiceModelPhase0.INSTANCE);
   }
 
   private static class TestProtoArrayFacade {
@@ -656,7 +656,7 @@ class ProtoArrayTest {
     private final BlockNodeVariantsIndex blockNodeIndex = new BlockNodeVariantsIndex();
     private HeadSelectionContext lastHeadSelectionContext =
         new HeadSelectionContext(
-            ForkChoiceModelDefault.INSTANCE, blockNodeIndex, UInt64.ZERO, Optional.empty());
+            ForkChoiceModelPhase0.INSTANCE, blockNodeIndex, UInt64.ZERO, Optional.empty());
 
     private TestProtoArrayFacade(final ProtoArray protoArray) {
       this.protoArray = protoArray;
@@ -724,7 +724,7 @@ class ProtoArrayTest {
           ForkChoiceNode.createBase(blockRoot),
           latestValidHash,
           new HeadSelectionContext(
-              ForkChoiceModelDefault.INSTANCE, blockNodeIndex, UInt64.ZERO, Optional.empty()));
+              ForkChoiceModelPhase0.INSTANCE, blockNodeIndex, UInt64.ZERO, Optional.empty()));
       pruneRemovedProjections();
     }
 
@@ -742,7 +742,7 @@ class ProtoArrayTest {
           ForkChoiceNode.createBase(blockRoot),
           latestValidHash,
           new HeadSelectionContext(
-              ForkChoiceModelDefault.INSTANCE, blockNodeIndex, UInt64.ZERO, Optional.empty()));
+              ForkChoiceModelPhase0.INSTANCE, blockNodeIndex, UInt64.ZERO, Optional.empty()));
       pruneRemovedProjections();
     }
 

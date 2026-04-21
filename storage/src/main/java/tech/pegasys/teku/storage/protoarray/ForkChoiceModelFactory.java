@@ -22,14 +22,14 @@ import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 /** Centralizes the storage-layer milestone split for forkchoice models. */
 public class ForkChoiceModelFactory {
 
-  private final ForkChoiceModel defaultModel = ForkChoiceModelDefault.INSTANCE;
+  private final ForkChoiceModel phase0Model = ForkChoiceModelPhase0.INSTANCE;
 
   public ForkChoiceModelFactory(final Spec spec) {
-    // Branch 04 lands the model seam with only the default behavior wired.
+    // Branch 04 lands the model seam with only the Phase0 behavior wired.
   }
 
   ForkChoiceModel forSlot(final UInt64 slot) {
-    return defaultModel;
+    return phase0Model;
   }
 
   public HeadSelectionContext createHeadSelectionContext(
@@ -49,6 +49,6 @@ public class ForkChoiceModelFactory {
   }
 
   void onPrunedBlocks(final BlockNodeVariantsIndex blockNodeIndex) {
-    defaultModel.onPrunedBlocks(blockNodeIndex);
+    phase0Model.onPrunedBlocks(blockNodeIndex);
   }
 }
