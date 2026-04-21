@@ -252,6 +252,7 @@ public final class DataStructureUtil {
 
   private static final int MAX_EP_RANDOM_TRANSACTIONS = 10;
   private static final int MAX_EP_RANDOM_TRANSACTIONS_SIZE = 32;
+  private static final int MAX_EP_BLOCK_ACCESS_LIST_SIZE = 32;
 
   private static final int MAX_EP_RANDOM_WITHDRAWALS = 4;
   private static final int MAX_EP_RANDOM_DEPOSIT_REQUESTS = 4;
@@ -800,8 +801,7 @@ public final class DataStructureUtil {
                       .withdrawals(this::randomExecutionPayloadWithdrawals)
                       .blobGasUsed(this::randomUInt64)
                       .excessBlobGas(this::randomUInt64)
-                      .blockAccessList(
-                          () -> randomBytes(specConfigBellatrix.getMaxBytesPerTransaction()))
+                      .blockAccessList(() -> randomBytes(MAX_EP_BLOCK_ACCESS_LIST_SIZE))
                       .slotNumber(() -> slot);
               builderModifier.accept(executionPayloadBuilder);
             });
