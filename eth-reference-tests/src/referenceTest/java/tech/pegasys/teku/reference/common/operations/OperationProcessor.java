@@ -31,9 +31,10 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadVerificationException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.ExecutionPayloadProcessingException;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 
 public interface OperationProcessor {
@@ -65,11 +66,11 @@ public interface OperationProcessor {
       throws BlockProcessingException;
 
   // >= Gloas
-  void processExecutionPayload(
-      MutableBeaconState state,
+  void verifyExecutionPayloadEnvelope(
+      BeaconState state,
       SignedExecutionPayloadEnvelope signedEnvelope,
       Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
-      throws ExecutionPayloadProcessingException;
+      throws ExecutionPayloadVerificationException;
 
   void processBlsToExecutionChange(
       MutableBeaconState state, SignedBlsToExecutionChange blsToExecutionChange)

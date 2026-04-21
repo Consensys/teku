@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -145,7 +144,6 @@ class ExecutionPayloadFactoryGloasTest {
     assertThat(executionPayload.getBuilderIndex()).isEqualTo(builderIndex);
     assertThat(executionPayload.getBeaconBlockRoot()).isEqualTo(blockAndState.getRoot());
     assertThat(executionPayload.getSlot()).isEqualTo(slot);
-    assertThat(executionPayload.getStateRoot()).isNotEqualTo(Bytes32.ZERO);
   }
 
   private void prepareValidGetPayloadResponse(final BeaconBlockAndState blockAndState) {

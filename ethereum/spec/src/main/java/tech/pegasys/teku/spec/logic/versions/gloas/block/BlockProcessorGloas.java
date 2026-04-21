@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_B
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -25,12 +26,14 @@ import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -40,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.gloas.BuilderPendingPayment;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
@@ -48,8 +52,8 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
-import tech.pegasys.teku.spec.logic.versions.electra.execution.ExecutionRequestsProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.block.BlockProcessorFulu;
+import tech.pegasys.teku.spec.logic.versions.gloas.execution.ExecutionRequestsProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateMutatorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
@@ -82,7 +86,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       final SchemaDefinitionsGloas schemaDefinitions,
       final WithdrawalsHelpersGloas withdrawalsHelpers,
       final ExecutionRequestsDataCodec executionRequestsDataCodec,
-      final ExecutionRequestsProcessorElectra executionRequestsProcessor) {
+      final ExecutionRequestsProcessorGloas executionRequestsProcessor) {
     super(
         specConfig,
         predicates,
@@ -111,10 +115,92 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
   public void executionProcessing(
       final MutableBeaconState genericState,
       final BeaconBlock beaconBlock,
-      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
+      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
+    safelyProcess(
+        () ->
+            processParentExecutionPayload(genericState, beaconBlock, validatorExitContextSupplier));
     processWithdrawals(genericState, Optional.empty());
     safelyProcess(() -> processExecutionPayloadBid(genericState, beaconBlock));
+  }
+
+  // process_parent_execution_payload
+  @Override
+  public void processParentExecutionPayload(
+      final MutableBeaconState state,
+      final BeaconBlock beaconBlock,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
+      throws BlockProcessingException {
+    final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
+    final BeaconBlockBodyGloas body = BeaconBlockBodyGloas.required(beaconBlock.getBody());
+    final ExecutionPayloadBid bid = body.getSignedExecutionPayloadBid().getMessage();
+    final ExecutionPayloadBid parentBid = stateGloas.getLatestExecutionPayloadBid();
+    final ExecutionRequests requests = body.getParentExecutionRequests();
+
+    final boolean isGenesisBlock = parentBid.getBlockHash().equals(Bytes32.ZERO);
+    final boolean isParentBlockEmpty = !bid.getParentBlockHash().equals(parentBid.getBlockHash());
+
+    if (isGenesisBlock || isParentBlockEmpty) {
+      // Parent was EMPTY -- no execution requests expected
+      if (!requests.equals(schemaDefinitionsGloas.getExecutionRequestsSchema().getDefault())) {
+        throw new BlockProcessingException(
+            "No execution requests were expected for an EMPTY parent");
+      }
+      return;
+    }
+
+    // Parent was FULL -- verify the bid commitment and apply the payload
+    if (!requests.hashTreeRoot().equals(parentBid.getExecutionRequestsRoot())) {
+      throw new BlockProcessingException(
+          "The execution requests root in the latest committed bid does not match the parent execution requests in the block");
+    }
+
+    applyParentExecutionPayload(stateGloas, parentBid, requests, validatorExitContextSupplier);
+  }
+
+  // apply_parent_execution_payload
+  protected void applyParentExecutionPayload(
+      final MutableBeaconStateGloas state,
+      final ExecutionPayloadBid parentBid,
+      final ExecutionRequests requests,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
+    final UInt64 parentSlot = parentBid.getSlot();
+    final UInt64 parentEpoch = miscHelpers.computeEpochAtSlot(parentSlot);
+
+    // Process execution requests from parent's payload. The execution requests are processed at
+    // state.slot (child's slot), not the parent's slot.
+    executionRequestsProcessor.processDepositRequests(state, requests.getDeposits());
+    executionRequestsProcessor.processWithdrawalRequests(
+        state, requests.getWithdrawals(), validatorExitContextSupplier);
+    executionRequestsProcessor.processConsolidationRequests(state, requests.getConsolidations());
+
+    // Settle the builder payment
+    if (parentEpoch.equals(beaconStateAccessors.getCurrentEpoch(state))) {
+      final UInt64 paymentIndex =
+          parentSlot.mod(specConfig.getSlotsPerEpoch()).plus(specConfig.getSlotsPerEpoch());
+      beaconStateMutatorsGloas.settleBuilderPayment(state, paymentIndex);
+    } else if (parentEpoch.equals(beaconStateAccessors.getPreviousEpoch(state))) {
+      final UInt64 paymentIndex = parentSlot.mod(specConfig.getSlotsPerEpoch());
+      beaconStateMutatorsGloas.settleBuilderPayment(state, paymentIndex);
+    } else if (parentBid.getValue().isGreaterThan(UInt64.ZERO)) {
+      state
+          .getBuilderPendingWithdrawals()
+          .append(
+              schemaDefinitionsGloas
+                  .getBuilderPendingWithdrawalSchema()
+                  .create(
+                      parentBid.getFeeRecipient(),
+                      parentBid.getValue(),
+                      parentBid.getBuilderIndex()));
+    }
+
+    // Update parent payload availability and latest block hash
+    state.setExecutionPayloadAvailability(
+        state
+            .getExecutionPayloadAvailability()
+            .withBit(parentSlot.mod(specConfig.getSlotsPerHistoricalRoot()).intValue()));
+    state.setLatestBlockHash(parentBid.getBlockHash());
   }
 
   // process_withdrawals with only state as a parameter

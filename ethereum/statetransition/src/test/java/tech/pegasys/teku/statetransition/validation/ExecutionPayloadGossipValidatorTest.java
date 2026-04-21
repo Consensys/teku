@@ -77,7 +77,10 @@ public class ExecutionPayloadGossipValidatorTest {
     final SignedExecutionPayloadBid matchingBid =
         dataStructureUtil.randomSignedExecutionPayloadBid(
             dataStructureUtil.randomExecutionPayloadBid(
-                slot, envelope.getBuilderIndex(), envelope.getPayload().getBlockHash()));
+                slot,
+                envelope.getBuilderIndex(),
+                envelope.getPayload().getBlockHash(),
+                envelope.getExecutionRequests().hashTreeRoot()));
     beaconBlock =
         dataStructureUtil.randomBeaconBlock(
             slot,
@@ -155,7 +158,10 @@ public class ExecutionPayloadGossipValidatorTest {
     final SignedExecutionPayloadBid mismatchedBid =
         dataStructureUtil.randomSignedExecutionPayloadBid(
             dataStructureUtil.randomExecutionPayloadBid(
-                slot, envelope.getBuilderIndex().plus(1), envelope.getPayload().getBlockHash()));
+                slot,
+                envelope.getBuilderIndex().plus(1),
+                envelope.getPayload().getBlockHash(),
+                envelope.getExecutionRequests().hashTreeRoot()));
     final BeaconBlock blockWithMismatchedBid =
         dataStructureUtil.randomBeaconBlock(
             slot,
@@ -176,7 +182,10 @@ public class ExecutionPayloadGossipValidatorTest {
     final SignedExecutionPayloadBid mismatchedBid =
         dataStructureUtil.randomSignedExecutionPayloadBid(
             dataStructureUtil.randomExecutionPayloadBid(
-                slot, envelope.getBuilderIndex(), dataStructureUtil.randomBytes32()));
+                slot,
+                envelope.getBuilderIndex(),
+                dataStructureUtil.randomBytes32(),
+                envelope.getExecutionRequests().hashTreeRoot()));
     final BeaconBlock blockWithMismatchedBid =
         dataStructureUtil.randomBeaconBlock(
             slot,
@@ -190,6 +199,31 @@ public class ExecutionPayloadGossipValidatorTest {
             reject(
                 "Invalid payload block hash. Execution Payload Envelope had %s but ExecutionPayload Bid had %s",
                 envelope.getPayload().getBlockHash(), mismatchedBid.getMessage().getBlockHash()));
+  }
+
+  @TestTemplate
+  void shouldRejectIfExecutionRequestsMismatch() {
+    final SignedExecutionPayloadBid mismatchedBid =
+        dataStructureUtil.randomSignedExecutionPayloadBid(
+            dataStructureUtil.randomExecutionPayloadBid(
+                slot,
+                envelope.getBuilderIndex(),
+                envelope.getPayload().getBlockHash(),
+                dataStructureUtil.randomBytes32()));
+    final BeaconBlock blockWithMismatchedBid =
+        dataStructureUtil.randomBeaconBlock(
+            slot,
+            dataStructureUtil.randomBeaconBlockBody(
+                builder -> builder.signedExecutionPayloadBid(mismatchedBid)));
+    when(gossipValidationHelper.retrieveBlockByRoot(blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockWithMismatchedBid)));
+
+    assertThatSafeFuture(validator.validate(signedEnvelope))
+        .isCompletedWithValue(
+            reject(
+                "Invalid execution requests. Execution Payload Envelope had execution requests root of %s but ExecutionPayload Bid had %s",
+                envelope.getExecutionRequests().hashTreeRoot(),
+                mismatchedBid.getMessage().getExecutionRequestsRoot()));
   }
 
   @TestTemplate

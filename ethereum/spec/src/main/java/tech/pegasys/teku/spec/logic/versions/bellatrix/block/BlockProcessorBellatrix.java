@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.bellatrix.block;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -94,14 +95,17 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
           "The received block has no execution payload, and cannot be processed.");
     }
 
+    final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier =
+        getValidatorExitContextSupplier(state);
+
     processBlockHeader(state, block);
     if (miscHelpersBellatrix.isExecutionEnabled(genericState, block)) {
-      executionProcessing(genericState, block, payloadExecutor);
+      executionProcessing(genericState, block, payloadExecutor, validatorExitContextSupplier);
     }
     processRandaoNoValidation(state, block.getBody());
     processEth1Data(state, block.getBody());
     processOperationsNoValidation(
-        state, block.getBody(), indexedAttestationCache, getValidatorExitContextSupplier(state));
+        state, block.getBody(), indexedAttestationCache, validatorExitContextSupplier);
     processSyncAggregate(
         state, blockBody.getOptionalSyncAggregate().orElseThrow(), signatureVerifier);
   }
@@ -109,7 +113,8 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
   public void executionProcessing(
       final MutableBeaconState genericState,
       final BeaconBlock beaconBlock,
-      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
+      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
     processExecutionPayload(genericState, beaconBlock.getBody(), payloadExecutor);
   }

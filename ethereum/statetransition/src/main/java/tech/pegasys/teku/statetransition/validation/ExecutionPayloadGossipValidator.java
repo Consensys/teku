@@ -144,6 +144,23 @@ public class ExecutionPayloadGossipValidator {
                         "Invalid payload block hash. Execution Payload Envelope had %s but ExecutionPayload Bid had %s",
                         payloadBlockHash, bidBlockHash));
               }
+
+              /*
+               * [REJECT] hash_tree_root(envelope.execution_requests) == bid.execution_requests_root
+               */
+              final Bytes32 executionRequestsRoot = envelope.getExecutionRequests().hashTreeRoot();
+              final Bytes32 bidExecutionRequestsRoot = bid.getExecutionRequestsRoot();
+              if (!executionRequestsRoot.equals(bid.getExecutionRequestsRoot())) {
+                LOG.trace(
+                    "Invalid execution requests. Envelope had execution requests root of {} but bid had {}. Rejecting the execution payload envelope",
+                    executionRequestsRoot,
+                    bidExecutionRequestsRoot);
+                return Optional.of(
+                    reject(
+                        "Invalid execution requests. Execution Payload Envelope had execution requests root of %s but ExecutionPayload Bid had %s",
+                        executionRequestsRoot, bidExecutionRequestsRoot));
+              }
+
               return Optional.empty();
             });
   }

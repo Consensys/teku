@@ -16,7 +16,6 @@ package tech.pegasys.teku.test.acceptance.dsl;
 import static com.google.common.base.Preconditions.checkArgument;
 import static io.libp2p.crypto.keys.Secp256k1Kt.unmarshalSecp256k1PrivateKey;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.test.acceptance.dsl.Node.DATA_PATH;
 import static tech.pegasys.teku.test.acceptance.dsl.Node.JWT_SECRET_FILE_PATH;
 import static tech.pegasys.teku.test.acceptance.dsl.Node.METRICS_PORT;
@@ -61,7 +60,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
@@ -184,14 +182,13 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
-  public TekuNodeConfigBuilder withTrustedSetupFromClasspath(final String trustedSetup)
-      throws Exception {
+  public TekuNodeConfigBuilder withHezeEpoch(final UInt64 hezeForkEpoch) {
     mustBe(NodeType.BEACON_NODE);
-    LOG.debug("Xtrusted-setup={}", TRUSTED_SETUP_FILE);
-    configMap.put("Xtrusted-setup", TRUSTED_SETUP_FILE);
-    final URL trustedSetupResource = Eth2NetworkConfiguration.class.getResource(trustedSetup);
-    assertThat(trustedSetupResource).isNotNull();
-    configFileMap.put(copyToTmpFile(trustedSetupResource), TRUSTED_SETUP_FILE);
+    LOG.debug("Xnetwork-heze-fork-epoch={}", hezeForkEpoch);
+    configMap.put("Xnetwork-heze-fork-epoch", hezeForkEpoch.toString());
+    specConfigModifier =
+        specConfigModifier.andThen(
+            specConfigBuilder -> specConfigBuilder.hezeForkEpoch(hezeForkEpoch));
     return this;
   }
 

@@ -62,7 +62,7 @@ public class PeerSync {
   private static final List<ExecutionPayloadImportResult.FailureReason>
       BAD_EXECUTION_PAYLOAD_FAILURE_REASONS =
           List.of(
-              ExecutionPayloadImportResult.FailureReason.FAILED_STATE_TRANSITION,
+              ExecutionPayloadImportResult.FailureReason.FAILED_VERIFICATION,
               ExecutionPayloadImportResult.FailureReason.UNKNOWN_BEACON_BLOCK_ROOT,
               ExecutionPayloadImportResult.FailureReason.FAILED_DATA_AVAILABILITY_CHECK_INVALID);
 

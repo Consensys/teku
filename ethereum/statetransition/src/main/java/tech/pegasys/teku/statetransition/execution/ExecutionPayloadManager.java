@@ -18,6 +18,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
@@ -43,6 +44,12 @@ public interface ExecutionPayloadManager {
           return SafeFuture.completedFuture(
               ExecutionPayloadImportResult.successful(signedExecutionPayload));
         }
+
+        @Override
+        public ExecutionRequests getParentExecutionRequestsForBlock(
+            final UInt64 slot, final Bytes32 parentRoot) {
+          return null;
+        }
       };
 
   /**
@@ -67,6 +74,9 @@ public interface ExecutionPayloadManager {
    */
   SafeFuture<ExecutionPayloadImportResult> importExecutionPayload(
       SignedExecutionPayloadEnvelope signedExecutionPayload);
+
+  /** Retrieves parent execution requests (used in block production) */
+  ExecutionRequests getParentExecutionRequestsForBlock(UInt64 slot, Bytes32 parentRoot);
 
   default SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {

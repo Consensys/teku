@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas;
 
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQUESTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA;
@@ -22,7 +23,7 @@ import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema12;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema13;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -52,7 +54,7 @@ import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 
 public class BeaconBlockBodySchemaGloasImpl
-    extends ContainerSchema12<
+    extends ContainerSchema13<
         BeaconBlockBodyGloasImpl,
         SszSignature,
         Eth1Data,
@@ -65,7 +67,8 @@ public class BeaconBlockBodySchemaGloasImpl
         SyncAggregate,
         SszList<SignedBlsToExecutionChange>,
         SignedExecutionPayloadBid,
-        SszList<PayloadAttestation>>
+        SszList<PayloadAttestation>,
+        ExecutionRequests>
     implements BeaconBlockBodySchemaGloas<BeaconBlockBodyGloasImpl> {
 
   protected BeaconBlockBodySchemaGloasImpl(
@@ -81,7 +84,8 @@ public class BeaconBlockBodySchemaGloasImpl
       final NamedSchema<SyncAggregate> syncAggregateSchema,
       final NamedSchema<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
       final NamedSchema<SignedExecutionPayloadBid> signedExecutionPayloadBid,
-      final NamedSchema<SszList<PayloadAttestation>> payloadAttestations) {
+      final NamedSchema<SszList<PayloadAttestation>> payloadAttestations,
+      final NamedSchema<ExecutionRequests> executionRequests) {
     super(
         containerName,
         randaoRevealSchema,
@@ -95,7 +99,8 @@ public class BeaconBlockBodySchemaGloasImpl
         syncAggregateSchema,
         blsToExecutionChange,
         signedExecutionPayloadBid,
-        payloadAttestations);
+        payloadAttestations,
+        executionRequests);
   }
 
   public static BeaconBlockBodySchemaGloasImpl create(
@@ -142,7 +147,10 @@ public class BeaconBlockBodySchemaGloasImpl
             BlockBodyFields.PAYLOAD_ATTESTATIONS,
             SszListSchema.create(
                 schemaRegistry.get(PAYLOAD_ATTESTATION_SCHEMA),
-                specConfig.getMaxPayloadAttestations())));
+                specConfig.getMaxPayloadAttestations())),
+        namedSchema(
+            BlockBodyFields.PARENT_EXECUTION_REQUESTS,
+            schemaRegistry.get(EXECUTION_REQUESTS_SCHEMA)));
   }
 
   @Override
@@ -241,5 +249,11 @@ public class BeaconBlockBodySchemaGloasImpl
   public SszListSchema<PayloadAttestation, ?> getPayloadAttestationsSchema() {
     return (SszListSchema<PayloadAttestation, ?>)
         getChildSchema(getFieldIndex(BlockBodyFields.PAYLOAD_ATTESTATIONS));
+  }
+
+  @Override
+  public ExecutionRequestsSchema getParentExecutionRequestsSchema() {
+    return (ExecutionRequestsSchema)
+        getChildSchema(getFieldIndex(BlockBodyFields.PARENT_EXECUTION_REQUESTS));
   }
 }

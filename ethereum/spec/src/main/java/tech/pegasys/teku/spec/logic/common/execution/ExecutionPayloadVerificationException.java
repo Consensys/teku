@@ -11,11 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.common.statetransition.exceptions;
+package tech.pegasys.teku.spec.logic.common.execution;
 
-public final class ExecutionPayloadProcessingException extends Exception {
-
-  public ExecutionPayloadProcessingException(final String err) {
+public class ExecutionPayloadVerificationException extends Exception {
+  public ExecutionPayloadVerificationException(final String err) {
     super(err);
   }
 }

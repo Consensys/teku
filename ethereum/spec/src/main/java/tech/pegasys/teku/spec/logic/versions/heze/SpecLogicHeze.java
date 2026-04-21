@@ -18,7 +18,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigHeze;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
-import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadProcessor;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadVerifier;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
@@ -37,7 +37,7 @@ import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.Opera
 import tech.pegasys.teku.spec.logic.versions.fulu.util.BlindBlockUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.BlockProposalUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.block.BlockProcessorGloas;
-import tech.pegasys.teku.spec.logic.versions.gloas.execution.ExecutionPayloadProcessorGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.execution.ExecutionPayloadVerifierGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.execution.ExecutionRequestsProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateMutatorsGloas;
@@ -60,7 +60,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
   private final Optional<LightClientUtil> lightClientUtil;
   private final Optional<WithdrawalsHelpers> withdrawalsHelpers;
   private final Optional<ExecutionRequestsProcessor> executionRequestsProcessor;
-  private final Optional<ExecutionPayloadProcessor> executionPayloadProcessor;
+  private final Optional<ExecutionPayloadVerifier> executionPayloadVerifier;
   private final Optional<ExecutionPayloadProposalUtil> executionPayloadProposalUtil;
   private final Optional<DataColumnSidecarUtil> dataColumnSidecarUtil;
 
@@ -79,7 +79,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
       final WithdrawalsHelpersGloas withdrawalsHelpers,
       final ExecutionRequestsProcessorGloas executionRequestsProcessor,
       final BlockProcessorGloas blockProcessor,
-      final ExecutionPayloadProcessorGloas executionPayloadProcessor,
+      final ExecutionPayloadVerifierGloas executionPayloadVerifier,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
       final BlindBlockUtilFulu blindBlockUtil,
@@ -109,7 +109,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
     this.lightClientUtil = Optional.of(lightClientUtil);
     this.executionRequestsProcessor = Optional.of(executionRequestsProcessor);
     this.withdrawalsHelpers = Optional.of(withdrawalsHelpers);
-    this.executionPayloadProcessor = Optional.of(executionPayloadProcessor);
+    this.executionPayloadVerifier = Optional.of(executionPayloadVerifier);
     this.executionPayloadProposalUtil = Optional.of(executionPayloadProposalUtil);
     this.dataColumnSidecarUtil = Optional.of(dataColumnSidecarUtil);
   }
@@ -205,15 +205,9 @@ public class SpecLogicHeze extends AbstractSpecLogic {
             withdrawalsHelpers,
             executionRequestsDataCodec,
             executionRequestsProcessor);
-    final ExecutionPayloadProcessorGloas executionPayloadProcessor =
-        new ExecutionPayloadProcessorGloas(
-            config,
-            schemaDefinitions,
-            miscHelpers,
-            beaconStateAccessors,
-            beaconStateMutators,
-            executionRequestsDataCodec,
-            executionRequestsProcessor);
+    final ExecutionPayloadVerifierGloas executionPayloadVerifier =
+        new ExecutionPayloadVerifierGloas(
+            miscHelpers, beaconStateAccessors, executionRequestsDataCodec);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtilGloas(
             config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
@@ -223,7 +217,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
     final BlindBlockUtilFulu blindBlockUtil = new BlindBlockUtilFulu(schemaDefinitions);
 
     final ExecutionPayloadProposalUtil executionPayloadProposalUtil =
-        new ExecutionPayloadProposalUtil(schemaDefinitions, executionPayloadProcessor);
+        new ExecutionPayloadProposalUtil(schemaDefinitions);
 
     // State upgrade
     final HezeStateUpgrade stateUpgrade =
@@ -247,7 +241,7 @@ public class SpecLogicHeze extends AbstractSpecLogic {
         withdrawalsHelpers,
         executionRequestsProcessor,
         blockProcessor,
-        executionPayloadProcessor,
+        executionPayloadVerifier,
         forkChoiceUtil,
         blockProposalUtil,
         blindBlockUtil,
@@ -284,8 +278,8 @@ public class SpecLogicHeze extends AbstractSpecLogic {
   }
 
   @Override
-  public Optional<ExecutionPayloadProcessor> getExecutionPayloadProcessor() {
-    return executionPayloadProcessor;
+  public Optional<ExecutionPayloadVerifier> getExecutionPayloadVerifier() {
+    return executionPayloadVerifier;
   }
 
   @Override
