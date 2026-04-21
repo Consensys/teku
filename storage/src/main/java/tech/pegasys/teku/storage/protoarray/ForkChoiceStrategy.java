@@ -96,7 +96,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
                     .getBlockIfAvailable(blockRoot)
                     .map(SignedBeaconBlock::getSlot)
                     .map(this::getForkChoiceModel))
-        .orElse(ForkChoiceModelDefault.INSTANCE);
+        .orElse(ForkChoiceModelPhase0.INSTANCE);
   }
 
   public static ForkChoiceStrategy initialize(final Spec spec, final ProtoArray protoArray) {
