@@ -157,11 +157,6 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     return store.getExecutionPayloadIfAvailable(root).isPresent();
   }
 
-  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878
-  public boolean shouldExtendPayload(final ReadOnlyStore store, final Bytes32 root) {
-    return isPayloadVerified(store, root);
-  }
-
   @Override
   public Optional<ForkChoiceUtilGloas> toVersionGloas() {
     return Optional.of(this);
