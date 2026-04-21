@@ -14,10 +14,12 @@
 package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOB_KZG_COMMITMENTS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BUILDER_INDEX;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXECUTION_PAYMENT;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXECUTION_REQUESTS_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.GAS_LIMIT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.PARENT_BLOCK_HASH;
@@ -31,7 +33,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema11;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema12;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -40,13 +42,11 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSche
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class ExecutionPayloadBidSchema
-    extends ContainerSchema11<
+    extends ContainerSchema12<
         ExecutionPayloadBid,
         SszBytes32,
         SszBytes32,
@@ -58,7 +58,8 @@ public class ExecutionPayloadBidSchema
         SszUInt64,
         SszUInt64,
         SszUInt64,
-        SszList<SszKZGCommitment>> {
+        SszList<SszKZGCommitment>,
+        SszBytes32> {
 
   public ExecutionPayloadBidSchema(final SchemaRegistry schemaRegistry) {
     super(
@@ -73,7 +74,8 @@ public class ExecutionPayloadBidSchema
         namedSchema(SLOT, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(VALUE, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(EXECUTION_PAYMENT, SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema(BLOB_KZG_COMMITMENTS, schemaRegistry.get(BLOB_KZG_COMMITMENTS_SCHEMA)));
+        namedSchema(BLOB_KZG_COMMITMENTS, schemaRegistry.get(BLOB_KZG_COMMITMENTS_SCHEMA)),
+        namedSchema(EXECUTION_REQUESTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA));
   }
 
   public ExecutionPayloadBid create(
@@ -87,7 +89,8 @@ public class ExecutionPayloadBidSchema
       final UInt64 slot,
       final UInt64 value,
       final UInt64 executionPayment,
-      final SszList<SszKZGCommitment> blobKzgCommitments) {
+      final SszList<SszKZGCommitment> blobKzgCommitments,
+      final Bytes32 executionRequestsRoot) {
     return new ExecutionPayloadBid(
         this,
         parentBlockHash,
@@ -100,7 +103,8 @@ public class ExecutionPayloadBidSchema
         slot,
         value,
         executionPayment,
-        blobKzgCommitments);
+        blobKzgCommitments,
+        executionRequestsRoot);
   }
 
   @Override
@@ -109,25 +113,28 @@ public class ExecutionPayloadBidSchema
   }
 
   public ExecutionPayloadBid createLocalSelfBuiltBid(
-      final UInt64 builderIndex,
+      final Bytes32 parentBlockHash,
+      final Bytes32 parentBlockRoot,
       final UInt64 slot,
-      final BeaconState state,
       final ExecutionPayload executionPayload,
-      final SszList<SszKZGCommitment> blobKzgCommitments) {
+      final SszList<SszKZGCommitment> blobKzgCommitments,
+      final Bytes32 executionRequestsRoot) {
     return new ExecutionPayloadBid(
         this,
-        BeaconStateGloas.required(state).getLatestBlockHash(),
-        state.getLatestBlockHeader().getRoot(),
+        parentBlockHash,
+        parentBlockRoot,
         executionPayload.getBlockHash(),
         executionPayload.getPrevRandao(),
         executionPayload.getFeeRecipient(),
         executionPayload.getGasLimit(),
-        builderIndex,
+        // For self-builds, use `BUILDER_INDEX_SELF_BUILD`
+        BUILDER_INDEX_SELF_BUILD,
         slot,
         // amount and execution_payment must be zero for self-build blocks
         ZERO,
         ZERO,
-        blobKzgCommitments);
+        blobKzgCommitments,
+        executionRequestsRoot);
   }
 
   @SuppressWarnings("unchecked")

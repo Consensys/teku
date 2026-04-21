@@ -81,6 +81,7 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -102,6 +103,7 @@ public class BlockOperationSelectorFactory {
   private final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager;
   private final MetricsHistogram dataColumnSidecarComputationTimeSeconds;
   private final ExecutionPayloadBidManager executionPayloadBidManager;
+  private final ExecutionPayloadManager executionPayloadManager;
 
   public BlockOperationSelectorFactory(
       final Spec spec,
@@ -118,6 +120,7 @@ public class BlockOperationSelectorFactory {
       final ForkChoiceNotifier forkChoiceNotifier,
       final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager,
       final ExecutionPayloadBidManager executionPayloadBidManager,
+      final ExecutionPayloadManager executionPayloadManager,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider) {
     this.spec = spec;
@@ -134,6 +137,7 @@ public class BlockOperationSelectorFactory {
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.executionLayerBlockProductionManager = executionLayerBlockProductionManager;
     this.executionPayloadBidManager = executionPayloadBidManager;
+    this.executionPayloadManager = executionPayloadManager;
     this.dataColumnSidecarComputationTimeSeconds =
         DATA_COLUMN_SIDECAR_COMPUTATION_HISTOGRAM.apply(metricsSystem, timeProvider);
   }
@@ -248,10 +252,15 @@ public class BlockOperationSelectorFactory {
             blsToExecutionChangePool.getItemsForBlock(blockSlotState));
       }
 
-      // Post-Gloas: Payload Attestations
+      // Post-Gloas: Payload Attestations, Parent Execution Requests
       if (bodyBuilder.supportsPayloadAttestations()) {
         bodyBuilder.payloadAttestations(
             payloadAttestationPool.getPayloadAttestationsForBlock(blockSlotState, parentRoot));
+      }
+      if (bodyBuilder.supportsParentExecutionRequests()) {
+        bodyBuilder.parentExecutionRequests(
+            executionPayloadManager.getParentExecutionRequestsForBlock(
+                blockSlotState.getSlot(), parentRoot));
       }
 
       return SafeFuture.allOfFailFast(setExecutionDataComplete, setExecutionPayloadBidComplete)

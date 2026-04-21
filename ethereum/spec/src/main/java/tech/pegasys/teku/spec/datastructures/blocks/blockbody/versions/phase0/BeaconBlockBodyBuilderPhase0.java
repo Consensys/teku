@@ -154,7 +154,14 @@ public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
   @Override
   public BeaconBlockBodyBuilder payloadAttestations(
       final SszList<PayloadAttestation> payloadAttestations) {
-    // No PayloadAttestation in phase 0
+    // No PayloadAttestations in phase 0
+    return this;
+  }
+
+  @Override
+  public BeaconBlockBodyBuilder parentExecutionRequests(
+      final ExecutionRequests parentExecutionRequests) {
+    // No ParentExecutionRequests in phase 0
     return this;
   }
 

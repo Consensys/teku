@@ -23,12 +23,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyBuilderElectra;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderGloas extends BeaconBlockBodyBuilderElectra {
 
   private SignedExecutionPayloadBid signedExecutionPayloadBid;
   private SszList<PayloadAttestation> payloadAttestations;
+  private ExecutionRequests parentExecutionRequests;
 
   public BeaconBlockBodyBuilderGloas(
       final BeaconBlockBodySchema<? extends BeaconBlockBodyGloas> schema) {
@@ -75,6 +77,18 @@ public class BeaconBlockBodyBuilderGloas extends BeaconBlockBodyBuilderElectra {
   }
 
   @Override
+  public Boolean supportsParentExecutionRequests() {
+    return true;
+  }
+
+  @Override
+  public BeaconBlockBodyBuilder parentExecutionRequests(
+      final ExecutionRequests parentExecutionRequests) {
+    this.parentExecutionRequests = parentExecutionRequests;
+    return this;
+  }
+
+  @Override
   protected void validate() {
     // skipping super.validate() because fields were removed
     // old fields
@@ -91,6 +105,7 @@ public class BeaconBlockBodyBuilderGloas extends BeaconBlockBodyBuilderElectra {
     // new fields
     checkNotNull(signedExecutionPayloadBid, "signedExecutionPayloadBid must be specified");
     checkNotNull(payloadAttestations, "payloadAttestations must be specified");
+    checkNotNull(parentExecutionRequests, "parentExecutionRequests must be specified");
   }
 
   @Override
@@ -117,6 +132,7 @@ public class BeaconBlockBodyBuilderGloas extends BeaconBlockBodyBuilderElectra {
         syncAggregate,
         getBlsToExecutionChanges(),
         signedExecutionPayloadBid,
-        payloadAttestations);
+        payloadAttestations,
+        parentExecutionRequests);
   }
 }

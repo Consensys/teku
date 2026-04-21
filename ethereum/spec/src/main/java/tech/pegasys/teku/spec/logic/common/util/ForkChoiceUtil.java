@@ -628,9 +628,7 @@ public class ForkChoiceUtil {
   }
 
   public void applyExecutionPayloadToStore(
-      final MutableStore store,
-      final SignedExecutionPayloadEnvelope signedEnvelope,
-      final BeaconState postState) {
+      final MutableStore store, final SignedExecutionPayloadEnvelope signedEnvelope) {
     // NO-OP until Gloas
   }
 

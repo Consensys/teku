@@ -112,6 +112,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put("fork_choice/should_override_forkchoice_update", new ForkChoiceTestExecutor())
           .put("fork_choice/get_proposer_head", new ForkChoiceTestExecutor("basic_is_parent_root"))
           .put("fork_choice/deposit_with_reorg", new ForkChoiceTestExecutor())
+          // TODO-GLOAS: implement on_execution_payload_envelope reference tests
+          .put("fork_choice/on_execution_payload_envelope", IGNORE_TESTS)
           // Fork choice generated test types
           .put("fork_choice_compliance/block_weight_test", new ForkChoiceTestExecutor())
           .put("fork_choice_compliance/block_tree_test", new ForkChoiceTestExecutor())

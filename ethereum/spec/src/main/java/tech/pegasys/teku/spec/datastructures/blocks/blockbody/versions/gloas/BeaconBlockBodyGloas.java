@@ -41,6 +41,8 @@ public interface BeaconBlockBodyGloas extends BeaconBlockBodyElectra {
 
   SszList<PayloadAttestation> getPayloadAttestations();
 
+  ExecutionRequests getParentExecutionRequests();
+
   @Override
   default Optional<ExecutionPayload> getOptionalExecutionPayload() {
     return Optional.empty();
@@ -59,6 +61,11 @@ public interface BeaconBlockBodyGloas extends BeaconBlockBodyElectra {
   @Override
   default Optional<SszList<PayloadAttestation>> getOptionalPayloadAttestations() {
     return Optional.of(getPayloadAttestations());
+  }
+
+  @Override
+  default Optional<ExecutionRequests> getOptionalParentExecutionRequests() {
+    return Optional.of(getParentExecutionRequests());
   }
 
   @Override

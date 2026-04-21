@@ -106,7 +106,7 @@ import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
 import tech.pegasys.teku.spec.logic.StateTransition;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
-import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadProcessor;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadVerifier;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
@@ -1160,15 +1160,15 @@ public class Spec {
             () -> new IllegalStateException("DataColumnSidecarUtil not available at slot " + slot));
   }
 
-  // Execution Payload Processor Utils
+  // Execution Payload Verifier Utils
 
-  public ExecutionPayloadProcessor getExecutionPayloadProcessor(final UInt64 slot) {
+  public ExecutionPayloadVerifier getExecutionPayloadVerifier(final UInt64 slot) {
     return atSlot(slot)
-        .getExecutionPayloadProcessor()
+        .getExecutionPayloadVerifier()
         .orElseThrow(
             () ->
                 new IllegalStateException(
-                    "Attempting to use execution payload processor when spec does not have execution payload processor"));
+                    "Attempting to use execution payload verifier when spec does not have execution payload verifier"));
   }
 
   // Validator Utils

@@ -139,38 +139,26 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
         indices.intStream().mapToObj(index -> validators.get(index).getEffectiveBalance()).toList();
     final IntList selected = new IntArrayList();
     int i = 0;
+    Bytes32 randomBytes = Bytes32.ZERO;
     while (selected.size() < size) {
+      final int offset = (i % 16) * 2;
+      if (offset == 0) {
+        randomBytes = Hash.sha256(Bytes.concatenate(seed, uint64ToBytes(Math.floorDiv(i, 16L))));
+      }
       int nextIndex = i % total;
       if (shuffleIndices) {
         nextIndex = computeShuffledIndex(nextIndex, total, seed);
       }
-      final int candidateIndex = indices.getInt(nextIndex);
-      if (computeBalanceWeightedAcceptance(effectiveBalances.get(nextIndex), seed, i)) {
-        selected.add(candidateIndex);
+      final UInt64 weight = effectiveBalances.get(nextIndex).times(MAX_RANDOM_VALUE);
+      final UInt64 randomValue = bytesToUInt64(randomBytes.slice(offset, 2));
+      final UInt64 threshold =
+          SpecConfigElectra.required(specConfig).getMaxEffectiveBalanceElectra().times(randomValue);
+      if (weight.isGreaterThanOrEqualTo(threshold)) {
+        selected.add(indices.getInt(nextIndex));
       }
       i++;
     }
     return selected;
-  }
-
-  /**
-   * compute_balance_weighted_acceptance
-   *
-   * <p>Return whether to accept the selection of a validator with the given ``effective_balance``,
-   * with probability proportional to its balance, and randomness given by ``seed`` and ``i``.
-   */
-  public boolean computeBalanceWeightedAcceptance(
-      final UInt64 effectiveBalance, final Bytes32 seed, final int i) {
-    final Bytes32 randomBytes =
-        Hash.sha256(Bytes.concatenate(seed, uint64ToBytes(Math.floorDiv(i, 16L))));
-    final int offset = (i % 16) * 2;
-    final UInt64 randomValue = bytesToUInt64(randomBytes.slice(offset, 2));
-    return effectiveBalance
-        .times(MAX_RANDOM_VALUE)
-        .isGreaterThanOrEqualTo(
-            SpecConfigElectra.required(specConfig)
-                .getMaxEffectiveBalanceElectra()
-                .times(randomValue));
   }
 
   public List<DataColumnSidecar> constructDataColumnSidecars(

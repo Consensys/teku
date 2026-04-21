@@ -185,8 +185,12 @@ public class NetworkConfig {
               }
             }
             case IP_V6 -> {
-              // IPv6 (include site local or unique local addresses)
-              if (inetAddress.isSiteLocalAddress() || isUniqueLocalAddress(inetAddress)) {
+              // IPv6: accept non-loopback, non-link-local addresses.
+              // Unlike IPv4 where only private (site-local) addresses are selected,
+              // IPv6 commonly uses global unicast addresses (no NAT), so we accept
+              // global unicast (2000::/3), unique local (fc00::/7), and site local
+              // (fec0::/10) addresses.
+              if (!inetAddress.isLoopbackAddress() && !inetAddress.isLinkLocalAddress()) {
                 return inetAddress.getHostAddress();
               }
             }
@@ -199,13 +203,6 @@ public class NetworkConfig {
     }
     throw new UnknownHostException(
         String.format("Unable to determine local %s Address", ipVersion.getName()));
-  }
-
-  private boolean isUniqueLocalAddress(final InetAddress inetAddress) {
-    // Check the first byte to determine if it's in the fc00::/7 range
-    // Unique local IPv6 addresses start with 0xfc or 0xfd
-    final int firstByte = inetAddress.getAddress()[0] & 0xff; // Convert to unsigned
-    return (firstByte == 0xfc || firstByte == 0xfd);
   }
 
   public static class Builder {

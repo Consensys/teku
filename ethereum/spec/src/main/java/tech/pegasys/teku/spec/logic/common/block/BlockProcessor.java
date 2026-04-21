@@ -162,6 +162,12 @@ public interface BlockProcessor {
       MutableBeaconState state, SszList<SignedBlsToExecutionChange> blsToExecutionChanges)
       throws BlockProcessingException;
 
+  void processParentExecutionPayload(
+      MutableBeaconState state,
+      BeaconBlock beaconBlock,
+      Supplier<ValidatorExitContext> validatorExitContextSupplier)
+      throws BlockProcessingException;
+
   void processWithdrawals(
       MutableBeaconState state, Optional<ExecutionPayloadSummary> payloadSummary)
       throws BlockProcessingException;

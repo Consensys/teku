@@ -56,11 +56,11 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadVerificationException;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.ExecutionPayloadProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
@@ -274,7 +274,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       final OperationProcessor processor,
       final BeaconState preState) {
     assertThatThrownBy(() -> applyOperation(testDefinition, processor, preState))
-        .isInstanceOfAny(BlockProcessingException.class, ExecutionPayloadProcessingException.class);
+        .isInstanceOfAny(
+            BlockProcessingException.class, ExecutionPayloadVerificationException.class);
   }
 
   private BeaconState applyOperation(
@@ -353,7 +354,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
                   "signed_envelope.ssz_snappy",
                   SchemaDefinitionsGloas.required(schemaDefinitions)
                       .getSignedExecutionPayloadEnvelopeSchema());
-          processor.processExecutionPayload(
+          processor.verifyExecutionPayloadEnvelope(
               state,
               signedEnvelope,
               Optional.of(

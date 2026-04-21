@@ -74,7 +74,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   private final BeaconStateAccessorsElectra beaconStateAccessorsElectra;
   private final SchemaDefinitionsElectra schemaDefinitionsElectra;
   private final ExecutionRequestsDataCodec executionRequestsDataCodec;
-  private final ExecutionRequestsProcessor executionRequestsProcessor;
+  protected final ExecutionRequestsProcessor executionRequestsProcessor;
 
   public BlockProcessorElectra(
       final SpecConfigElectra specConfig,

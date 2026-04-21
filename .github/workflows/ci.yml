@@ -126,11 +126,11 @@ jobs:
           echo "run_id=${{ github.run_id }}" >> $GITHUB_OUTPUT
           echo "build_date=$(date --rfc-3339=date)" >> $GITHUB_OUTPUT
           echo "vcs_ref=${{ github.sha }}" >> $GITHUB_OUTPUT
+      - name: Prepare
+        uses: ./.github/actions/prepare
       - name: Determine Teku version
         id: projectDetails
         uses: ./.github/actions/get-project-version
-      - name: Prepare
-        uses: ./.github/actions/prepare
       - name: Assemble
         shell: bash      
         run: |

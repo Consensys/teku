@@ -46,6 +46,7 @@ import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -74,6 +75,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   private final BlockImporter blockImporter;
   private final BlobSidecarManager blobSidecarManager;
   private final ExecutionPayloadManager executionPayloadManager;
+  private final PayloadAttestationPool payloadAttestationPool;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final PendingPool<ValidatableAttestation> pendingAttestations;
   private final PendingPool<PayloadAttestationMessage> pendingPayloadAttestations;
@@ -99,6 +101,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
       final BlockImporter blockImporter,
       final BlobSidecarManager blobSidecarManager,
       final ExecutionPayloadManager executionPayloadManager,
+      final PayloadAttestationPool payloadAttestationPool,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final PendingPool<ValidatableAttestation> pendingAttestations,
       final PendingPool<PayloadAttestationMessage> pendingPayloadAttestations,
@@ -122,6 +125,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     this.blockImporter = blockImporter;
     this.blobSidecarManager = blobSidecarManager;
     this.executionPayloadManager = executionPayloadManager;
+    this.payloadAttestationPool = payloadAttestationPool;
     this.pendingBlocks = pendingBlocks;
     this.pendingAttestations = pendingAttestations;
     this.pendingPayloadAttestations = pendingPayloadAttestations;
@@ -158,7 +162,13 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
             spec, asyncRunner, blockBlobSidecarsTrackersPool, forwardSyncService, fetchTaskFactory);
     final RecentExecutionPayloadsFetcher recentExecutionPayloadsFetcher =
         RecentExecutionPayloadsFetcher.create(
-            spec, asyncRunner, forwardSyncService, fetchTaskFactory, executionPayloadManager);
+            spec,
+            asyncRunner,
+            forwardSyncService,
+            fetchTaskFactory,
+            executionPayloadManager,
+            payloadAttestationPool,
+            pendingPayloadAttestations);
 
     final SyncStateTracker syncStateTracker = createSyncStateTracker(forwardSyncService);
 

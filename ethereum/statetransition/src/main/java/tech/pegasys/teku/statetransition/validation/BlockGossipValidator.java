@@ -39,7 +39,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.signatures.SigningRootUtil;
@@ -238,25 +237,15 @@ public class BlockGossipValidator {
     if (maybeSignedExecutionPayloadBid.isPresent()) {
       final ExecutionPayloadBid executionPayloadBid =
           maybeSignedExecutionPayloadBid.get().getMessage();
-      final Optional<BeaconStateGloas> maybeParentStateGloas = parentState.toVersionGloas();
       /*
        * If execution_payload verification of block's execution payload parent by an execution node is complete:
        * [REJECT] The block's execution payload parent (defined by bid.parent_block_hash) passes all validation
        */
-
-      // Verify that the bid is for the right parent execution block.
-      // The first block after Gloas activates will have a Fulu parent state and hence we could skip
-      // the parent block hash check.
-      // The block's execution payload parent should have been already verified to perform this
-      // check.
-      if (maybeParentStateGloas.isPresent()
-          && !executionPayloadBid
-              .getParentBlockHash()
-              .equals(maybeParentStateGloas.get().getLatestBlockHash())) {
+      if (!gossipValidationHelper.isBlockHashKnown(
+          executionPayloadBid.getParentBlockHash(), block.getParentRoot())) {
         return reject(
-            "Execution payload bid has invalid parent block hash %s, expecting %s",
-            executionPayloadBid.getParentBlockHash(),
-            maybeParentStateGloas.get().getLatestBlockHash());
+            "The parent block hash %s from the bid is not present or hasn't been passed validation",
+            executionPayloadBid.getParentBlockHash());
       }
 
       /*

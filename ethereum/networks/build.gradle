@@ -9,7 +9,7 @@ dependencies {
 	implementation project(':infrastructure:time')
 	implementation 'io.consensys.tuweni:tuweni-units'
 
-	testImplementation 'tech.pegasys.discovery:discovery'
+	testImplementation 'io.consensys.protocols:discovery'
 
 	testFixturesImplementation project(':ethereum:spec')
 	testFixturesImplementation project(':infrastructure:io')
