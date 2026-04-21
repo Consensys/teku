@@ -75,18 +75,6 @@ public interface MutableStore extends ReadOnlyStore {
    */
   void putExecutionPayload(SignedExecutionPayloadEnvelope executionPayload);
 
-  default void putExecutionPayloadAndState(
-      final SignedExecutionPayloadEnvelope executionPayload, final BeaconState state) {
-    putExecutionPayloadAndState(executionPayload, state, false);
-  }
-
-  default void putExecutionPayloadAndState(
-      final SignedExecutionPayloadEnvelope executionPayload,
-      final BeaconState state,
-      final boolean isOptimistic) {
-    putExecutionPayload(executionPayload);
-  }
-
   void putStateRoot(Bytes32 stateRoot, SlotAndBlockRoot slotAndBlockRoot);
 
   void pullUpBlockCheckpoints(Bytes32 blockRoot);

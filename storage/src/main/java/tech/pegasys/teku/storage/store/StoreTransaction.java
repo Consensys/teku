@@ -112,16 +112,6 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public void putExecutionPayloadAndState(
-      final SignedExecutionPayloadEnvelope executionPayload,
-      final BeaconState state,
-      final boolean isOptimistic) {
-    executionPayloadData.put(
-        executionPayload.getBeaconBlockRoot(),
-        new ExecutionPayloadUpdate(executionPayload, isOptimistic));
-  }
-
-  @Override
   public void putExecutionPayload(final SignedExecutionPayloadEnvelope executionPayload) {
     executionPayloadData.put(
         executionPayload.getBeaconBlockRoot(), new ExecutionPayloadUpdate(executionPayload, false));
