@@ -259,7 +259,14 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                       validationResult -> {
                         if (!validationResult.isSuccessful()) {
                           if (validationResult.getStatus() == Status.DEFER_FORK_CHOICE_PROCESSING) {
-                            deferredAttestations.addAttestation(getIndexedAttestation(attestation));
+                            final IndexedAttestation indexedAttestation =
+                                getIndexedAttestation(attestation);
+                            final boolean fullPayloadHint =
+                                spec.atSlot(attestation.getData().getSlot())
+                                    .getForkChoiceUtil()
+                                    .getFullPayloadVoteHint(attestation.getData().getIndex());
+                            deferredAttestations.addAttestation(
+                                indexedAttestation, fullPayloadHint);
                           }
                           return SafeFuture.completedFuture(validationResult);
                         }

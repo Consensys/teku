@@ -66,6 +66,11 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
   }
 
   @Override
+  public boolean getFullPayloadVoteHint(final UInt64 attestationIndex) {
+    return attestationIndex.equals(UInt64.ONE);
+  }
+
+  @Override
   public int computeCommitteeIndexForAttestation(
       final UInt64 slot,
       final BeaconBlock block,

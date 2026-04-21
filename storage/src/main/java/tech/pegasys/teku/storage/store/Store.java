@@ -925,9 +925,10 @@ class Store extends CacheableStore {
     readVotesLock.lock();
     try {
       if (validatorIndex.intValue() >= votes.length) {
-        return null;
+        return VoteTracker.DEFAULT;
       }
-      return votes[validatorIndex.intValue()];
+      final VoteTracker vote = votes[validatorIndex.intValue()];
+      return vote != null ? vote : VoteTracker.DEFAULT;
     } finally {
       readVotesLock.unlock();
     }

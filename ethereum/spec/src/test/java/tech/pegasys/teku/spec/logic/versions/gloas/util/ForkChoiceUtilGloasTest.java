@@ -199,6 +199,32 @@ class ForkChoiceUtilGloasTest {
         .withMessageContaining("Parent block not found");
   }
 
+  @Test
+  void isPayloadVerified_shouldReturnTrue_whenPayloadIsAvailable() {
+    final SignedBeaconBlock currentBlock = dataStructureUtil.randomSignedBeaconBlock();
+    final ReadOnlyStore store = mock(ReadOnlyStore.class);
+    when(store.getExecutionPayloadIfAvailable(currentBlock.getRoot()))
+        .thenReturn(
+            Optional.of(
+                dataStructureUtil.randomSignedExecutionPayloadEnvelopeForBlock(currentBlock)));
+    assertThat(forkChoiceUtil.isPayloadVerified(store, currentBlock.getRoot())).isTrue();
+  }
+
+  @Test
+  void isPayloadVerified_shouldReturnFalse_whenPayloadIsNotAvailable() {
+    final SignedBeaconBlock currentBlock = dataStructureUtil.randomSignedBeaconBlock();
+    final ReadOnlyStore store = mock(ReadOnlyStore.class);
+    when(store.getExecutionPayloadIfAvailable(currentBlock.getRoot())).thenReturn(Optional.empty());
+    assertThat(forkChoiceUtil.isPayloadVerified(store, currentBlock.getRoot())).isFalse();
+  }
+
+  @Test
+  void getFullPayloadVoteHint_matchesAttestationIndex() {
+    assertThat(forkChoiceUtil.getFullPayloadVoteHint(UInt64.ZERO)).isFalse();
+    assertThat(forkChoiceUtil.getFullPayloadVoteHint(UInt64.ONE)).isTrue();
+    assertThat(forkChoiceUtil.getFullPayloadVoteHint(UInt64.valueOf(2))).isFalse();
+  }
+
   // Helper methods to create blocks with specific properties
   private BeaconBlock createBlockWithBlockHash(final Bytes32 blockHash) {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(gloasSlot);

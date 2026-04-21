@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.function.BiConsumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
@@ -49,10 +48,10 @@ public class DeferredAttestations {
   private final ConcurrentNavigableMap<UInt64, DeferredVoteUpdates> deferredVoteUpdatesBySlot =
       new ConcurrentSkipListMap<>();
 
-  public void addAttestation(final IndexedAttestation attestation) {
+  public void addAttestation(final IndexedAttestation attestation, final boolean fullPayloadHint) {
     deferredVoteUpdatesBySlot
         .computeIfAbsent(attestation.getData().getSlot(), DeferredVoteUpdates::new)
-        .addAttestation(attestation);
+        .addAttestation(attestation, fullPayloadHint);
   }
 
   public Collection<DeferredVotes> prune(final UInt64 currentSlot) {
@@ -68,10 +67,12 @@ public class DeferredAttestations {
     return Optional.ofNullable(deferredVoteUpdatesBySlot.get(slot));
   }
 
+  private record BlockRootAndFullPayloadHint(Bytes32 blockRoot, boolean fullPayloadHint) {}
+
   public static class DeferredVoteUpdates implements DeferredVotes {
     private final UInt64 slot;
-    private final Map<Bytes32, Collection<UInt64>> votingIndicesByBlockRoot =
-        new ConcurrentHashMap<>();
+    private final Map<BlockRootAndFullPayloadHint, Collection<UInt64>>
+        votingIndicesByBlockRootAndFullPayloadHint = new ConcurrentHashMap<>();
 
     private DeferredVoteUpdates(final UInt64 slot) {
       this.slot = slot;
@@ -83,22 +84,27 @@ public class DeferredAttestations {
     }
 
     @Override
-    public void forEachDeferredVote(final BiConsumer<Bytes32, UInt64> consumer) {
-      votingIndicesByBlockRoot.forEach(
-          (blockRoot, indices) ->
-              indices.forEach(validatorIndex -> consumer.accept(blockRoot, validatorIndex)));
+    public void forEachDeferredVote(final DeferredVoteConsumer consumer) {
+      votingIndicesByBlockRootAndFullPayloadHint.forEach(
+          (key, indices) ->
+              indices.forEach(
+                  validatorIndex ->
+                      consumer.accept(key.blockRoot(), validatorIndex, key.fullPayloadHint())));
     }
 
-    private void addAttestation(final IndexedAttestation attestation) {
+    private void addAttestation(
+        final IndexedAttestation attestation, final boolean fullPayloadHint) {
       checkArgument(
           attestation.getData().getSlot().equals(slot),
           "Attempting to store deferred attestation for wrong slot. Expected %s but got %s",
           slot,
           attestation.getData().getSlot());
       final Bytes32 blockRoot = attestation.getData().getBeaconBlockRoot();
+      final BlockRootAndFullPayloadHint key =
+          new BlockRootAndFullPayloadHint(blockRoot, fullPayloadHint);
       final Collection<UInt64> attestingIndices =
-          votingIndicesByBlockRoot.computeIfAbsent(
-              blockRoot, __ -> newSetFromMap(new ConcurrentHashMap<>()));
+          votingIndicesByBlockRootAndFullPayloadHint.computeIfAbsent(
+              key, __ -> newSetFromMap(new ConcurrentHashMap<>()));
       attestingIndices.addAll(attestation.getAttestingIndices().asListUnboxed());
     }
   }
