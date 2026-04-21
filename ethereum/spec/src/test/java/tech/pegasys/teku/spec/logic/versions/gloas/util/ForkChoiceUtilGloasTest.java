@@ -200,22 +200,22 @@ class ForkChoiceUtilGloasTest {
   }
 
   @Test
-  void isBlockStatusFull_shouldReturnTrue_whenBlockIsFull() {
+  void isPayloadVerified_shouldReturnTrue_whenPayloadIsAvailable() {
     final SignedBeaconBlock currentBlock = dataStructureUtil.randomSignedBeaconBlock();
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
     when(store.getExecutionPayloadIfAvailable(currentBlock.getRoot()))
         .thenReturn(
             Optional.of(
                 dataStructureUtil.randomSignedExecutionPayloadEnvelopeForBlock(currentBlock)));
-    assertThat(forkChoiceUtil.isBlockStatusFull(store, currentBlock.getMessage())).isTrue();
+    assertThat(forkChoiceUtil.isPayloadVerified(store, currentBlock.getRoot())).isTrue();
   }
 
   @Test
-  void isBlockStatusFull_shouldReturnFalse_whenBlockIsNotFull() {
+  void isPayloadVerified_shouldReturnFalse_whenPayloadIsNotAvailable() {
     final SignedBeaconBlock currentBlock = dataStructureUtil.randomSignedBeaconBlock();
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
     when(store.getExecutionPayloadIfAvailable(currentBlock.getRoot())).thenReturn(Optional.empty());
-    assertThat(forkChoiceUtil.isBlockStatusFull(store, currentBlock.getMessage())).isFalse();
+    assertThat(forkChoiceUtil.isPayloadVerified(store, currentBlock.getRoot())).isFalse();
   }
 
   @Test
