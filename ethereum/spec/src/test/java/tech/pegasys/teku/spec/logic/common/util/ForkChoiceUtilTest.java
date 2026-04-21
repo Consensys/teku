@@ -278,7 +278,7 @@ class ForkChoiceUtilTest {
 
   @ParameterizedTest
   @EnumSource(SpecMilestone.class)
-  void createAvailabilityChecker_shouldCreateExpectedCheckerForBlock(
+  void createAvailabilityCheckerOnBlock_shouldCreateExpectedAvailabilityChecker(
       final SpecMilestone milestone) {
     final Spec spec = TestSpecFactory.createMinimal(milestone);
     final ForkChoiceUtil util = spec.getGenesisSpec().getForkChoiceUtil();
@@ -296,14 +296,46 @@ class ForkChoiceUtilTest {
         dataColumnSidecarAvailabilityCheckerFactory,
         KZG.DISABLED);
 
-    final AvailabilityChecker<?> availabilityChecker = util.createAvailabilityChecker(block);
+    final AvailabilityChecker<?> availabilityChecker = util.createAvailabilityCheckerOnBlock(block);
 
     switch (milestone) {
-      case PHASE0, ALTAIR, BELLATRIX, CAPELLA ->
+      case PHASE0, ALTAIR, BELLATRIX, CAPELLA, GLOAS, HEZE ->
           assertThat(availabilityChecker).isSameAs(AvailabilityChecker.NOOP);
       case DENEB, ELECTRA ->
           verify(blobSidecarAvailabilityCheckerFactory).createAvailabilityChecker(block);
-      case FULU, GLOAS, HEZE ->
+      case FULU ->
+          verify(dataColumnSidecarAvailabilityCheckerFactory).createAvailabilityChecker(block);
+      default -> throw new IllegalStateException("Unexpected milestone " + milestone);
+    }
+  }
+
+  @ParameterizedTest
+  @EnumSource(SpecMilestone.class)
+  void createAvailabilityCheckerOnExecutionPayloadEnvelope_shouldCreateExpectedAvailabilityChecker(
+      final SpecMilestone milestone) {
+    final Spec spec = TestSpecFactory.createMinimal(milestone);
+    final ForkChoiceUtil util = spec.getGenesisSpec().getForkChoiceUtil();
+    @SuppressWarnings("unchecked")
+    final AvailabilityCheckerFactory<BlobSidecar> blobSidecarAvailabilityCheckerFactory =
+        mock(AvailabilityCheckerFactory.class);
+    @SuppressWarnings("unchecked")
+    final AvailabilityCheckerFactory<UInt64> dataColumnSidecarAvailabilityCheckerFactory =
+        mock(AvailabilityCheckerFactory.class);
+
+    final SignedBeaconBlock block = mock(SignedBeaconBlock.class);
+
+    spec.reinitializeForTesting(
+        blobSidecarAvailabilityCheckerFactory,
+        dataColumnSidecarAvailabilityCheckerFactory,
+        KZG.DISABLED);
+
+    final AvailabilityChecker<?> availabilityChecker =
+        util.createAvailabilityCheckerOnExecutionPayloadEnvelope(block);
+
+    switch (milestone) {
+      case PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA, FULU ->
+          assertThat(availabilityChecker).isSameAs(AvailabilityChecker.NOOP);
+      case GLOAS, HEZE ->
           verify(dataColumnSidecarAvailabilityCheckerFactory).createAvailabilityChecker(block);
       default -> throw new IllegalStateException("Unexpected milestone " + milestone);
     }

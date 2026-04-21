@@ -252,6 +252,7 @@ public final class DataStructureUtil {
 
   private static final int MAX_EP_RANDOM_TRANSACTIONS = 10;
   private static final int MAX_EP_RANDOM_TRANSACTIONS_SIZE = 32;
+  private static final int MAX_EP_BLOCK_ACCESS_LIST_SIZE = 32;
 
   private static final int MAX_EP_RANDOM_WITHDRAWALS = 4;
   private static final int MAX_EP_RANDOM_DEPOSIT_REQUESTS = 4;
@@ -700,7 +701,9 @@ public final class DataStructureUtil {
                     .transactionsRoot(randomBytes32())
                     .withdrawalsRoot(() -> withdrawalsRoot)
                     .blobGasUsed(this::randomUInt64)
-                    .excessBlobGas(this::randomUInt64));
+                    .excessBlobGas(this::randomUInt64)
+                    .blockAccessListRoot(this::randomBytes32)
+                    .slotNumber(this::randomSlot));
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeader(final SpecVersion specVersion) {
@@ -797,7 +800,9 @@ public final class DataStructureUtil {
                       .transactions(randomExecutionPayloadTransactions())
                       .withdrawals(this::randomExecutionPayloadWithdrawals)
                       .blobGasUsed(this::randomUInt64)
-                      .excessBlobGas(this::randomUInt64);
+                      .excessBlobGas(this::randomUInt64)
+                      .blockAccessList(() -> randomBytes(MAX_EP_BLOCK_ACCESS_LIST_SIZE))
+                      .slotNumber(() -> slot);
               builderModifier.accept(executionPayloadBuilder);
             });
   }
@@ -3353,25 +3358,23 @@ public final class DataStructureUtil {
     return getGloasSchemaDefinitions()
         .getExecutionPayloadEnvelopeSchema()
         .create(
-            randomExecutionPayload(),
+            randomExecutionPayload(block.getSlot()),
             randomExecutionRequests(),
             BeaconBlockBodyGloas.required(block.getMessage().getBody())
                 .getSignedExecutionPayloadBid()
                 .getMessage()
                 .getBuilderIndex(),
-            block.getRoot(),
-            block.getSlot());
+            block.getRoot());
   }
 
   public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope(final UInt64 slot) {
     return getGloasSchemaDefinitions()
         .getExecutionPayloadEnvelopeSchema()
         .create(
-            randomExecutionPayload(),
+            randomExecutionPayload(slot),
             randomExecutionRequests(),
             randomBuilderIndex(),
-            randomBytes32(),
-            slot);
+            randomBytes32());
   }
 
   public SignedExecutionPayloadEnvelope randomSignedExecutionPayloadEnvelope(final long slot) {

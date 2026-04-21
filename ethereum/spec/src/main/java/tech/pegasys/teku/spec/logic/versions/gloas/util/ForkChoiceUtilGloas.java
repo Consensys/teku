@@ -22,11 +22,14 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.PayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
@@ -68,6 +71,23 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
   @Override
   public boolean getFullPayloadVoteHint(final UInt64 attestationIndex) {
     return attestationIndex.equals(UInt64.ONE);
+  }
+
+  @Override
+  public AvailabilityChecker<?> createAvailabilityCheckerOnBlock(final SignedBeaconBlock block) {
+    return AvailabilityChecker.NOOP;
+  }
+
+  @Override
+  public AvailabilityChecker<?> createAvailabilityCheckerOnExecutionPayloadEnvelope(
+      final SignedBeaconBlock block) {
+    final AvailabilityCheckerFactory<UInt64> factory =
+        this.dataColumnSidecarAvailabilityCheckerFactory;
+    if (factory == null) {
+      throw new IllegalStateException(
+          "DataColumnSidecarAvailabilityCheckerFactory not initialized");
+    }
+    return factory.createAvailabilityChecker(block);
   }
 
   @Override
