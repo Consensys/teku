@@ -816,7 +816,7 @@ class ProtoArrayTest {
         UInt64.valueOf(5),
         finalized,
         finalized,
-        ForkChoiceModelDefault.INSTANCE,
+        ForkChoiceModelPhase0.INSTANCE,
         UInt64.valueOf(5),
         Optional.empty());
     protoArray.setPruneThreshold(0);
