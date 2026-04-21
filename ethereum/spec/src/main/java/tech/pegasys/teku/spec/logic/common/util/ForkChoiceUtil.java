@@ -872,11 +872,6 @@ public class ForkChoiceUtil {
         .orElse(true);
   }
 
-  @VisibleForTesting
-  protected int getProposerIndex(final BeaconState proposerPreState, final UInt64 proposalSlot) {
-    return beaconStateAccessors.getBeaconProposerIndex(proposerPreState);
-  }
-
   public AvailabilityChecker<?> createAvailabilityCheckerOnBlock(final SignedBeaconBlock block) {
     return AvailabilityChecker.NOOP;
   }
