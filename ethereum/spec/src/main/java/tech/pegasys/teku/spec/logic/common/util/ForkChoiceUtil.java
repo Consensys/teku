@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -883,6 +884,15 @@ public class ForkChoiceUtil {
   public AvailabilityChecker<?> createAvailabilityCheckerOnExecutionPayloadEnvelope(
       final SignedBeaconBlock block) {
     return AvailabilityChecker.NOOP;
+  }
+
+  // Used for computing committee indices when producing attestations.
+  public int computeCommitteeIndexForAttestation(
+      final UInt64 slot,
+      final BeaconBlock block,
+      final int committeeIndex,
+      final ReadOnlyStore store) {
+    return committeeIndex;
   }
 
   public boolean shouldNotifyForkChoiceUpdatedOnBlock() {
