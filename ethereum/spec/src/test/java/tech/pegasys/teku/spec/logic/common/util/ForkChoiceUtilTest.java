@@ -299,11 +299,11 @@ class ForkChoiceUtilTest {
     final AvailabilityChecker<?> availabilityChecker = util.createAvailabilityCheckerOnBlock(block);
 
     switch (milestone) {
-      case PHASE0, ALTAIR, BELLATRIX, CAPELLA ->
+      case PHASE0, ALTAIR, BELLATRIX, CAPELLA, GLOAS, HEZE ->
           assertThat(availabilityChecker).isSameAs(AvailabilityChecker.NOOP);
       case DENEB, ELECTRA ->
           verify(blobSidecarAvailabilityCheckerFactory).createAvailabilityChecker(block);
-      case FULU, GLOAS, HEZE ->
+      case FULU ->
           verify(dataColumnSidecarAvailabilityCheckerFactory).createAvailabilityChecker(block);
       default -> throw new IllegalStateException("Unexpected milestone " + milestone);
     }
