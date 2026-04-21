@@ -106,7 +106,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
   @Override
   public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
     return Optional.ofNullable(recentlySampledColumnsByRoot.get(blockRoot))
-            .flatMap(DataColumnSamplingTracker::getBlock);
+        .flatMap(DataColumnSamplingTracker::getBlock);
   }
 
   /**
