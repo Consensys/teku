@@ -6964,8 +6964,8 @@
 
 - name: is_head_weak#phase0
   sources:
-    - file: storage/src/main/java/tech/pegasys/teku/storage/store/Store.java
-      search: public boolean isHeadWeak(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/forkchoice/ReadOnlyStore.java
+      search: default boolean isHeadWeak(
   spec: |
     <spec fn="is_head_weak" fork="phase0" hash="3a6650d7">
     def is_head_weak(store: Store, head_root: Root) -> bool:
@@ -7100,8 +7100,8 @@
 
 - name: is_parent_strong#phase0
   sources:
-    - file: storage/src/main/java/tech/pegasys/teku/storage/store/Store.java
-      search: boolean isParentStrong(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/forkchoice/ReadOnlyStore.java
+      search: default boolean isParentStrong(
   spec: |
     <spec fn="is_parent_strong" fork="phase0" hash="02a3fd0b">
     def is_parent_strong(store: Store, root: Root) -> bool:
