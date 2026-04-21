@@ -40,7 +40,8 @@ record DataColumnSamplingTracker(
     SafeFuture<List<UInt64>> completionFuture,
     AtomicBoolean fullySampled,
     Optional<Integer> earlyCompletionRequirementCount,
-    AtomicReference<Optional<SignedBeaconBlock>> block) {
+    AtomicReference<Optional<SignedBeaconBlock>> block,
+    long createdAtNanos) {
   private static final Logger LOG = LogManager.getLogger();
 
   static DataColumnSamplingTracker create(
@@ -61,7 +62,8 @@ record DataColumnSamplingTracker(
         completionFuture,
         new AtomicBoolean(false),
         completionColumnCount,
-        new AtomicReference<>(Optional.empty()));
+        new AtomicReference<>(Optional.empty()),
+        System.nanoTime());
   }
 
   public Optional<SignedBeaconBlock> getBlock() {

@@ -100,16 +100,13 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
 
   @Override
   public boolean containsBlock(final Bytes32 blockRoot) {
-    return recentlySampledColumnsByRoot.containsKey(blockRoot);
+    return getBlock(blockRoot).isPresent();
   }
 
   @Override
   public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
-    final DataColumnSamplingTracker tracker = recentlySampledColumnsByRoot.get(blockRoot);
-    if (tracker == null) {
-      return Optional.empty();
-    }
-    return tracker.getBlock();
+    return Optional.ofNullable(recentlySampledColumnsByRoot.get(blockRoot))
+            .flatMap(DataColumnSamplingTracker::getBlock);
   }
 
   /**
@@ -239,12 +236,12 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
     if (currentSize < maxRecentlySampledBlocks) {
       return;
     }
-    // First pass: evict completed trackers, oldest slot first. Best-effort: CHM size/iteration
+    // First pass: evict completed trackers, oldest-created first. Best-effort: CHM size/iteration
     // are weakly consistent and concurrent writers may shift counts while we work.
     final int softExcess = currentSize - maxRecentlySampledBlocks + 1;
     recentlySampledColumnsByRoot.entrySet().stream()
         .filter(e -> e.getValue().completionFuture().isDone())
-        .sorted(Comparator.comparing(e -> e.getValue().slot()))
+        .sorted(Comparator.comparingLong(e -> e.getValue().createdAtNanos()))
         .limit(softExcess)
         .forEach(e -> recentlySampledColumnsByRoot.remove(e.getKey(), e.getValue()));
     // Hard cap: if we're still at 4x the limit even after evicting completed trackers,
@@ -256,7 +253,7 @@ public class DasSamplerBasicImpl implements DasSamplerBasic {
     }
     final int hardExcess = afterSoft - hardLimit + 1;
     recentlySampledColumnsByRoot.entrySet().stream()
-        .sorted(Comparator.comparing(e -> e.getValue().slot()))
+        .sorted(Comparator.comparingLong(e -> e.getValue().createdAtNanos()))
         .limit(hardExcess)
         .forEach(
             e -> {
