@@ -436,8 +436,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
       final BlockNodeVariantsIndex blockNodeIndex,
       final ReadOnlyStore store,
       final Bytes32 blockRoot) {
-    return shouldExtendPayload(
-        blockNodeIndex, blockRoot, protoArray, store.getProposerBoostRoot());
+    return shouldExtendPayload(blockNodeIndex, blockRoot, protoArray, store.getProposerBoostRoot());
   }
 
   @Override
