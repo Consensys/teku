@@ -1,5 +1,13 @@
 name: "Test Path Check"
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - '**/*.java'
+      - 'scripts/testcheck.sh'
+  pull_request:
+    paths:
+      - '**/*.java'
+      - 'scripts/testcheck.sh'
 
 permissions:
   contents: read
