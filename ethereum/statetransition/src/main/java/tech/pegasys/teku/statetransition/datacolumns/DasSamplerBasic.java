@@ -51,6 +51,9 @@ public interface DasSamplerBasic extends DataAvailabilitySampler, SlotEventsChan
         }
 
         @Override
+        public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {return Optional.empty();}
+
+        @Override
         public void onSlot(final UInt64 slot) {}
 
         @Override
@@ -68,4 +71,6 @@ public interface DasSamplerBasic extends DataAvailabilitySampler, SlotEventsChan
       };
 
   boolean containsBlock(Bytes32 blockRoot);
+
+    Optional<SignedBeaconBlock> getBlock(Bytes32 blockRoot);
 }

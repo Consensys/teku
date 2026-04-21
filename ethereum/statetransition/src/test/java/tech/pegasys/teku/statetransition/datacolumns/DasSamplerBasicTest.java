@@ -479,7 +479,7 @@ public class DasSamplerBasicTest {
 
     // DA check is completed but fetch is not yet completed for this one
     assertThat(sampler.getRecentlySampledColumnsByRoot())
-        .containsExactly(
+        .containsOnly(
             entry(
                 partiallyCompletedTrackerBeforeFinalized.blockRoot(),
                 partiallyCompletedTrackerBeforeFinalized),
