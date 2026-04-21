@@ -22,6 +22,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.storage.api.GloasForkChoiceRebuildData;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
@@ -427,6 +428,16 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
     return blockNodeIndex
         .getBaseNode(blockRoot)
         .flatMap(nodeIdentity -> getNodeData(protoArray, nodeIdentity));
+  }
+
+  @Override
+  public boolean shouldExtendPayload(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final ReadOnlyStore store,
+      final Bytes32 blockRoot) {
+    return shouldExtendPayload(
+        blockNodeIndex, blockRoot, protoArray, store.getProposerBoostRoot());
   }
 
   @Override
