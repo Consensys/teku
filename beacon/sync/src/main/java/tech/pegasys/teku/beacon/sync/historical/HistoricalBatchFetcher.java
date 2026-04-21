@@ -49,11 +49,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -76,6 +79,8 @@ public class HistoricalBatchFetcher {
   private final Deque<SignedBeaconBlock> blocksToImport = new ConcurrentLinkedDeque<>();
   private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlotToImport =
       new ConcurrentHashMap<>();
+  private final Map<Bytes32, SignedBlindedExecutionPayloadEnvelope>
+      blindedExecutionPayloadsByBlockRootToImport = new ConcurrentHashMap<>();
   private Optional<UInt64> maybeEarliestBlobSidecarSlot = Optional.empty();
   private final AtomicInteger requestCount = new AtomicInteger(0);
   private final AsyncBLSSignatureVerifier signatureVerificationService;
@@ -210,7 +215,8 @@ public class HistoricalBatchFetcher {
             lastBlockRoot,
             getLatestReceivedBlock(),
             blocksToImport::addLast,
-            this::processBlobSidecar);
+            this::processBlobSidecar,
+            this::processExecutionPayload);
 
     LOG.trace(
         "Request {} blocks from {} to {}",
@@ -244,8 +250,25 @@ public class HistoricalBatchFetcher {
       blobSidecarsRequest = SafeFuture.COMPLETE;
     }
 
-    return SafeFuture.allOfFailFast(blocksRequest, blobSidecarsRequest)
-        .thenApply(__ -> shouldRetryBlocksAndBlobSidecarsByRangeRequest());
+    final SafeFuture<Void> executionPayloadsRequest;
+    if (spec.isExecutionPayloadEnvelopeAvailableAtSlot(endSlot)
+        || spec.isExecutionPayloadEnvelopeAvailableAtSlot(requestParams.getStartSlot())) {
+      LOG.trace(
+          "Request {} execution payload envelopes from {} to {}",
+          requestParams.getCount(),
+          requestParams.getStartSlot(),
+          endSlot);
+      executionPayloadsRequest =
+          peer.requestExecutionPayloadEnvelopesByRange(
+              requestParams.getStartSlot(),
+              requestParams.getCount(),
+              requestManager::processExecutionPayload);
+    } else {
+      executionPayloadsRequest = SafeFuture.COMPLETE;
+    }
+
+    return SafeFuture.allOfFailFast(blocksRequest, blobSidecarsRequest, executionPayloadsRequest)
+        .thenApply(__ -> shouldRetryByRangeRequest());
   }
 
   private void processBlobSidecar(final BlobSidecar blobSidecar) {
@@ -254,7 +277,18 @@ public class HistoricalBatchFetcher {
         .add(blobSidecar);
   }
 
-  private boolean shouldRetryBlocksAndBlobSidecarsByRangeRequest() {
+  private void processExecutionPayload(
+      final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope) {
+    final SchemaDefinitionsGloas schemaDefinitions =
+        SchemaDefinitionsGloas.required(
+            spec.atSlot(signedExecutionPayloadEnvelope.getMessage().getSlot())
+                .getSchemaDefinitions());
+    blindedExecutionPayloadsByBlockRootToImport.put(
+        signedExecutionPayloadEnvelope.getBeaconBlockRoot(),
+        signedExecutionPayloadEnvelope.blind(schemaDefinitions));
+  }
+
+  private boolean shouldRetryByRangeRequest() {
     return !batchIsComplete() && requestCount.incrementAndGet() < maxRequests;
   }
 
@@ -272,6 +306,7 @@ public class HistoricalBatchFetcher {
 
   private SafeFuture<Void> processReceivedBlockByRoot(final SignedBeaconBlock block) {
     blocksToImport.add(block);
+    final SafeFuture<Void> blobSidecarsFetch;
     if (blobSidecarManager.isAvailabilityRequiredAtSlot(block.getSlot())) {
       final int numberOfKzgCommitments =
           block
@@ -285,11 +320,27 @@ public class HistoricalBatchFetcher {
         LOG.trace(
             "Requesting blob sidecars for block with root {} is not necessary because there are no kzg commitments in the block",
             block.getRoot());
-        return SafeFuture.COMPLETE;
+        blobSidecarsFetch = SafeFuture.COMPLETE;
+      } else {
+        blobSidecarsFetch = requestBlobSidecarsByRoot(block.getRoot(), numberOfKzgCommitments);
       }
-      return requestBlobSidecarsByRoot(block.getRoot(), numberOfKzgCommitments);
+    } else {
+      blobSidecarsFetch = SafeFuture.COMPLETE;
     }
-    return SafeFuture.COMPLETE;
+
+    final SafeFuture<Void> executionPayloadFetch;
+    if (spec.isExecutionPayloadEnvelopeAvailableAtSlot(block.getSlot())) {
+      LOG.trace(
+          "Request associated execution payload envelope for historical block with root {}",
+          block.getRoot());
+      executionPayloadFetch =
+          peer.requestExecutionPayloadEnvelopeByRoot(block.getRoot())
+              .thenAccept(maybePayload -> maybePayload.ifPresent(this::processExecutionPayload));
+    } else {
+      executionPayloadFetch = SafeFuture.COMPLETE;
+    }
+
+    return SafeFuture.allOfFailFast(blobSidecarsFetch, executionPayloadFetch);
   }
 
   private SafeFuture<Void> requestBlobSidecarsByRoot(
@@ -325,6 +376,7 @@ public class HistoricalBatchFetcher {
                   .onFinalizedBlocks(
                       blocksToImport,
                       new HashMap<>(blobSidecarsBySlotToImport),
+                      new HashMap<>(blindedExecutionPayloadsByBlockRootToImport),
                       maybeEarliestBlobSidecarSlot)
                   .thenRun(
                       () -> {
@@ -332,10 +384,11 @@ public class HistoricalBatchFetcher {
                         future.complete(newEarliestBlock);
                       });
             })
-        // always clear the blob sidecars cache
+        // always clear the blob sidecars and execution payloads caches
         .alwaysRun(
             () -> {
               blobSidecarsBySlotToImport.clear();
+              blindedExecutionPayloadsByBlockRootToImport.clear();
               maybeEarliestBlobSidecarSlot = Optional.empty();
             });
   }
@@ -469,6 +522,7 @@ public class HistoricalBatchFetcher {
     private final Optional<SignedBeaconBlock> previousBlock;
     private final Consumer<SignedBeaconBlock> blockProcessor;
     private final Consumer<BlobSidecar> blobSidecarProcessor;
+    private final Consumer<SignedExecutionPayloadEnvelope> executionPayloadProcessor;
 
     private final AtomicInteger blocksReceived = new AtomicInteger(0);
     private final AtomicBoolean foundLastBlock = new AtomicBoolean(false);
@@ -477,11 +531,13 @@ public class HistoricalBatchFetcher {
         final Bytes32 lastBlockRoot,
         final Optional<SignedBeaconBlock> previousBlock,
         final Consumer<SignedBeaconBlock> blockProcessor,
-        final Consumer<BlobSidecar> blobSidecarProcessor) {
+        final Consumer<BlobSidecar> blobSidecarProcessor,
+        final Consumer<SignedExecutionPayloadEnvelope> executionPayloadProcessor) {
       this.lastBlockRoot = lastBlockRoot;
       this.previousBlock = previousBlock;
       this.blockProcessor = blockProcessor;
       this.blobSidecarProcessor = blobSidecarProcessor;
+      this.executionPayloadProcessor = executionPayloadProcessor;
     }
 
     private SafeFuture<?> processBlock(final SignedBeaconBlock block) {
@@ -508,6 +564,12 @@ public class HistoricalBatchFetcher {
 
     private SafeFuture<?> processBlobSidecar(final BlobSidecar blobSidecar) {
       blobSidecarProcessor.accept(blobSidecar);
+      return SafeFuture.COMPLETE;
+    }
+
+    private SafeFuture<?> processExecutionPayload(
+        final SignedExecutionPayloadEnvelope executionPayload) {
+      executionPayloadProcessor.accept(executionPayload);
       return SafeFuture.COMPLETE;
     }
   }

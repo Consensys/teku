@@ -128,6 +128,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -1359,6 +1360,15 @@ public class Spec {
     return getSpecConfigDeneb()
         .map(SpecConfigDeneb::getDenebForkEpoch)
         .map(this::computeStartSlotAtEpoch);
+  }
+
+  // Gloas Utils
+  public boolean isExecutionPayloadEnvelopeAvailableAtSlot(final UInt64 slot) {
+    return atSlot(slot)
+        .miscHelpers()
+        .toVersionGloas()
+        .map(MiscHelpersGloas::isExecutionPayloadEnvelopeAvailable)
+        .orElse(false);
   }
 
   // Electra Utils
