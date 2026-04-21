@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -55,6 +56,11 @@ public class StoreTransactionGloasTest extends AbstractStoreTest {
   @Override
   protected Spec getSpec() {
     return TestSpecFactory.createMinimalGloas();
+  }
+
+  @Override
+  protected List<BLSKeyPair> getValidatorKeys() {
+    return new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 8);
   }
 
   @Test

@@ -27,9 +27,9 @@ public interface ExecutionPayloadImportResult {
       new FailedExecutionPayloadImportResult(
           FailureReason.FAILED_EXECUTION_SYNCING, Optional.empty());
 
-  static ExecutionPayloadImportResult failedStateTransition(final Exception cause) {
+  static ExecutionPayloadImportResult failedVerification(final Exception cause) {
     return new FailedExecutionPayloadImportResult(
-        FailureReason.FAILED_STATE_TRANSITION, Optional.of(cause));
+        FailureReason.FAILED_VERIFICATION, Optional.of(cause));
   }
 
   static ExecutionPayloadImportResult failedExecution(final Throwable cause) {
@@ -60,7 +60,7 @@ public interface ExecutionPayloadImportResult {
 
   enum FailureReason {
     UNKNOWN_BEACON_BLOCK_ROOT,
-    FAILED_STATE_TRANSITION,
+    FAILED_VERIFICATION,
     FAILED_EXECUTION,
     FAILED_EXECUTION_SYNCING,
     FAILED_DATA_AVAILABILITY_CHECK_INVALID,

@@ -1,5 +1,5 @@
 dependencies {
-	implementation 'tech.pegasys.discovery:discovery'
+	implementation 'io.consensys.protocols:discovery'
 	// We only use libp2p dependency for key generation, we can prob remove this dependency
 	implementation 'io.libp2p:jvm-libp2p'
 

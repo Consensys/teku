@@ -70,8 +70,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -91,13 +89,13 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -123,6 +121,8 @@ public abstract class AbstractBlockFactoryTest {
       mock(ExecutionLayerBlockProductionManager.class);
   protected final ExecutionPayloadBidManager executionPayloadBidManager =
       mock(ExecutionPayloadBidManager.class);
+  protected final ExecutionPayloadManager executionPayloadManager =
+      mock(ExecutionPayloadManager.class);
   protected final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
   protected final PayloadAttestationPool payloadAttestationPool =
@@ -209,6 +209,8 @@ public abstract class AbstractBlockFactoryTest {
     when(blsToExecutionChangePool.getItemsForBlock(any())).thenReturn(blsToExecutionChanges);
     when(payloadAttestationPool.getPayloadAttestationsForBlock(any(), any()))
         .thenReturn(payloadAttestations);
+    when(executionPayloadManager.getParentExecutionRequestsForBlock(any(), any()))
+        .thenAnswer(__ -> dataStructureUtil.emptyExecutionRequests());
     when(eth1DataCache.getEth1Vote(any())).thenReturn(ETH1_DATA);
     if (blinded) {
       when(forkChoiceNotifier.getPayloadId(any(), any()))
@@ -247,7 +249,7 @@ public abstract class AbstractBlockFactoryTest {
       blockProposerRewards = UInt64.ZERO;
     }
 
-    setupExecutionLayerBlockAndBlobsProduction(spec, blockExecutionValue);
+    setupExecutionLayerBlockAndBlobsProduction(spec, dataStructureUtil, blockExecutionValue);
 
     executionPayloadBuilder.accept(blockSlotState);
 
@@ -517,7 +519,8 @@ public abstract class AbstractBlockFactoryTest {
     return builderPayload;
   }
 
-  private void setupExecutionLayerBlockAndBlobsProduction(final Spec spec, final UInt256 value) {
+  private void setupExecutionLayerBlockAndBlobsProduction(
+      final Spec spec, final DataStructureUtil dataStructureUtil, final UInt256 value) {
     // non-blinded
     when(executionLayer.initiateBlockProduction(any(), any(), eq(false), any(), any()))
         .thenAnswer(
@@ -526,14 +529,13 @@ public abstract class AbstractBlockFactoryTest {
 
               if (blobsBundle.isPresent()) {
                 if (spec.isMilestoneSupported(SpecMilestone.ELECTRA)) {
-                  final ExecutionRequestsSchema executionRequestsSchema =
-                      SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions())
-                          .getExecutionRequestsSchema();
-                  final ExecutionRequests executionRequests =
-                      executionRequestsSchema.create(List.of(), List.of(), List.of());
                   getPayloadResponse =
                       new GetPayloadResponse(
-                          executionPayload, value, blobsBundle.get(), false, executionRequests);
+                          executionPayload,
+                          value,
+                          blobsBundle.get(),
+                          false,
+                          dataStructureUtil.emptyExecutionRequests());
                 } else {
                   getPayloadResponse =
                       new GetPayloadResponse(executionPayload, value, blobsBundle.get(), false);
@@ -562,12 +564,7 @@ public abstract class AbstractBlockFactoryTest {
                             builder.value(value);
                             builder.publicKey(BLSPublicKey.empty());
                             if (spec.isMilestoneSupported(SpecMilestone.ELECTRA)) {
-                              final ExecutionRequestsSchema executionRequestsSchema =
-                                  SchemaDefinitionsElectra.required(
-                                          spec.getGenesisSchemaDefinitions())
-                                      .getExecutionRequestsSchema();
-                              builder.executionRequests(
-                                  executionRequestsSchema.create(List.of(), List.of(), List.of()));
+                              builder.executionRequests(dataStructureUtil.emptyExecutionRequests());
                             }
                           });
               final ExecutionPayloadResult executionPayloadResult =
@@ -609,7 +606,8 @@ public abstract class AbstractBlockFactoryTest {
                           ZERO,
                           blobsBundle
                               .map(blobKzgCommitmentsSchema::createFromBlobsBundle)
-                              .orElse(blobKzgCommitmentsSchema.of()));
+                              .orElse(blobKzgCommitmentsSchema.of()),
+                          dataStructureUtil.emptyExecutionRequests().hashTreeRoot());
               return SafeFuture.completedFuture(
                   Optional.of(
                       schemaDefinitions

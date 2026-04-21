@@ -16,10 +16,11 @@ package tech.pegasys.teku.statetransition.execution;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
+import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
@@ -33,11 +34,14 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadBidGossipValidator;
+import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class DefaultExecutionPayloadBidManagerTest {
 
@@ -54,15 +58,25 @@ public class DefaultExecutionPayloadBidManagerTest {
       receivedExecutionPayloadBidEventsChannelPublisher =
           mock(ReceivedExecutionPayloadBidEventsChannel.class);
 
+  private final RecentChainData recentChainData = mock(RecentChainData.class);
+
+  private final UpdatableStore store = mock(UpdatableStore.class);
+
   private final DefaultExecutionPayloadBidManager executionPayloadBidManager =
       new DefaultExecutionPayloadBidManager(
           spec,
           executionPayloadBidGossipValidator,
-          receivedExecutionPayloadBidEventsChannelPublisher);
+          receivedExecutionPayloadBidEventsChannelPublisher,
+          recentChainData);
+
+  @BeforeEach
+  public void setUp() {
+    when(recentChainData.getStore()).thenReturn(store);
+  }
 
   @Test
   public void createsLocalBidForBlock() {
-    final BeaconState state = dataStructureUtil.randomBeaconState();
+    final BeaconStateGloas state = BeaconStateGloas.required(dataStructureUtil.randomBeaconState());
 
     final ExecutionPayload executionPayload =
         dataStructureUtil.randomExecutionPayload(state.getSlot());
@@ -71,13 +85,15 @@ public class DefaultExecutionPayloadBidManagerTest {
     final SchemaDefinitionsGloas schemaDefinitions =
         SchemaDefinitionsGloas.required(spec.atSlot(state.getSlot()).getSchemaDefinitions());
 
+    final ExecutionRequests executionRequests = dataStructureUtil.randomExecutionRequests();
+
     final GetPayloadResponse getPayloadResponse =
         new GetPayloadResponse(
             executionPayload,
             UInt256.valueOf(1000000000000L),
             blobsBundle,
             false,
-            dataStructureUtil.randomExecutionRequests());
+            executionRequests);
 
     final Optional<SignedExecutionPayloadBid> maybeSignedBid =
         SafeFutureAssert.safeJoin(
@@ -98,11 +114,13 @@ public class DefaultExecutionPayloadBidManagerTest {
         schemaDefinitions
             .getExecutionPayloadBidSchema()
             .createLocalSelfBuiltBid(
-                BUILDER_INDEX_SELF_BUILD,
+                // should_extend_payload returns false
+                state.getLatestExecutionPayloadBid().getParentBlockHash(),
+                state.getLatestBlockHeader().getRoot(),
                 state.getSlot(),
-                state,
                 executionPayload,
-                expectedBlobKzgCommitments);
+                expectedBlobKzgCommitments,
+                executionRequests.hashTreeRoot());
 
     assertThat(bid).isEqualTo(expectedBid);
 

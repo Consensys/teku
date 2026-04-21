@@ -60,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
@@ -123,6 +124,7 @@ public class ChainBuilder {
 
   private ChainBuilder(
       final Spec spec,
+      final BlockProposalTestUtil blockProposalTestUtil,
       final List<BLSKeyPair> validatorKeys,
       final Map<UInt64, SignedBlockAndState> existingBlocks,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> existingBlobSidecars,
@@ -135,7 +137,7 @@ public class ChainBuilder {
     this.attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     this.attesterSlashingGenerator = new AttesterSlashingGenerator(spec, validatorKeys);
     this.proposerSlashingGenerator = new ProposerSlashingGenerator(spec, validatorKeys);
-    this.blockProposalTestUtil = new BlockProposalTestUtil(spec);
+    this.blockProposalTestUtil = blockProposalTestUtil;
     this.executionPayloadProposalTestUtil = new ExecutionPayloadProposalTestUtil(spec);
     blocks.putAll(existingBlocks);
     existingBlocks.values().forEach(b -> blocksByHash.put(b.getRoot(), b));
@@ -171,6 +173,7 @@ public class ChainBuilder {
   public static ChainBuilder create(final Spec spec, final List<BLSKeyPair> validatorKeys) {
     return new ChainBuilder(
         spec,
+        new BlockProposalTestUtil(spec),
         validatorKeys,
         Collections.emptyMap(),
         Collections.emptyMap(),
@@ -228,6 +231,7 @@ public class ChainBuilder {
   public ChainBuilder fork() {
     return new ChainBuilder(
         spec,
+        blockProposalTestUtil,
         validatorKeys,
         blocks,
         blobSidecars,
@@ -778,6 +782,7 @@ public class ChainBuilder {
             options.getBlsToExecutionChanges(),
             options.getKzgCommitments(),
             options.getPayloadAttestations(),
+            options.getParentExecutionRequests(),
             options.isSkipStateTransitionEnabled()));
   }
 
@@ -841,6 +846,7 @@ public class ChainBuilder {
                   blobsUtil,
                   blobs,
                   options.getPayloadAttestations(),
+                  options.getParentExecutionRequests(),
                   options.isSkipStateTransitionEnabled()));
     } else {
       nextBlockAndState =
@@ -863,6 +869,7 @@ public class ChainBuilder {
                   options.getBlsToExecutionChanges(),
                   options.getKzgCommitments(),
                   options.getPayloadAttestations(),
+                  options.getParentExecutionRequests(),
                   options.isSkipStateTransitionEnabled()));
     }
 
@@ -951,6 +958,7 @@ public class ChainBuilder {
                   blobsUtil,
                   blobs,
                   options.getPayloadAttestations(),
+                  options.getParentExecutionRequests(),
                   options.isSkipStateTransitionEnabled()));
     } else {
       nextBlockAndState =
@@ -973,6 +981,7 @@ public class ChainBuilder {
                   options.getBlsToExecutionChanges(),
                   options.getKzgCommitments(),
                   options.getPayloadAttestations(),
+                  options.getParentExecutionRequests(),
                   options.isSkipStateTransitionEnabled()));
     }
 
@@ -1123,6 +1132,7 @@ public class ChainBuilder {
     private Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges = Optional.empty();
     private Optional<SszList<SszKZGCommitment>> kzgCommitments = Optional.empty();
     private Optional<SszList<PayloadAttestation>> payloadAttestations = Optional.empty();
+    private Optional<ExecutionRequests> parentExecutionRequests = Optional.empty();
     private Optional<List<Blob>> blobs = Optional.empty();
     private Optional<List<BlobSidecar>> blobSidecars = Optional.empty();
     private Optional<List<DataColumnSidecar>> dataColumnSidecars = Optional.empty();
@@ -1204,6 +1214,12 @@ public class ChainBuilder {
     public BlockOptions setPayloadAttestations(
         final SszList<PayloadAttestation> payloadAttestations) {
       this.payloadAttestations = Optional.of(payloadAttestations);
+      return this;
+    }
+
+    public BlockOptions setParentExecutionRequests(
+        final ExecutionRequests parentExecutionRequests) {
+      this.parentExecutionRequests = Optional.of(parentExecutionRequests);
       return this;
     }
 
@@ -1295,6 +1311,10 @@ public class ChainBuilder {
 
     public Optional<SszList<PayloadAttestation>> getPayloadAttestations() {
       return payloadAttestations;
+    }
+
+    public Optional<ExecutionRequests> getParentExecutionRequests() {
+      return parentExecutionRequests;
     }
 
     public Optional<List<Blob>> getBlobs() {

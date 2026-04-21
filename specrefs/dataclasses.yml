@@ -77,6 +77,20 @@
         processed_sweep_withdrawals_count: uint64
     </spec>
 
+- name: FastConfirmationStore#phase0
+  sources: []
+  spec: |
+    <spec dataclass="FastConfirmationStore" fork="phase0" hash="12be269e">
+    class FastConfirmationStore(object):
+        store: Store
+        confirmed_root: Root
+        previous_epoch_observed_justified_checkpoint: Checkpoint
+        current_epoch_observed_justified_checkpoint: Checkpoint
+        previous_epoch_greatest_unrealized_checkpoint: Checkpoint
+        previous_slot_head: Root
+        current_slot_head: Root
+    </spec>
+
 - name: GetPayloadResponse#bellatrix
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/GetPayloadResponse.java
@@ -272,6 +286,20 @@
         parent_beacon_block_root: Root
     </spec>
 
+- name: PayloadAttributes#gloas
+  sources: []
+  spec: |
+    <spec dataclass="PayloadAttributes" fork="gloas" hash="db78dd94">
+    class PayloadAttributes(object):
+        timestamp: uint64
+        prev_randao: Bytes32
+        suggested_fee_recipient: ExecutionAddress
+        withdrawals: Sequence[Withdrawal]
+        parent_beacon_block_root: Root
+        # [New in Gloas:EIP7843]
+        slot_number: uint64
+    </spec>
+
 - name: Store#phase0
   sources: []
   spec: |
@@ -296,7 +324,7 @@
 - name: Store#gloas
   sources: []
   spec: |
-    <spec dataclass="Store" fork="gloas" style="diff" hash="8f720981">
+    <spec dataclass="Store" fork="gloas" style="diff" hash="5ece7e6f">
     --- phase0
     +++ gloas
     @@ -9,7 +9,14 @@
@@ -310,7 +338,7 @@
          checkpoint_states: Dict[Checkpoint, BeaconState] = field(default_factory=dict)
          latest_messages: Dict[ValidatorIndex, LatestMessage] = field(default_factory=dict)
          unrealized_justifications: Dict[Root, Checkpoint] = field(default_factory=dict)
-    +    payload_states: Dict[Root, BeaconState] = field(default_factory=dict)
+    +    payloads: Dict[Root, ExecutionPayloadEnvelope] = field(default_factory=dict)
     +    payload_timeliness_vote: Dict[Root, Vector[boolean, PTC_SIZE]] = field(default_factory=dict)
     +    payload_data_availability_vote: Dict[Root, Vector[boolean, PTC_SIZE]] = field(
     +        default_factory=dict

@@ -17,7 +17,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYL
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQUESTS_SCHEMA;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema6;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema5;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
@@ -29,14 +29,13 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class ExecutionPayloadEnvelopeSchema
-    extends ContainerSchema6<
+    extends ContainerSchema5<
         ExecutionPayloadEnvelope,
         ExecutionPayload,
         ExecutionRequests,
         SszUInt64,
         SszBytes32,
-        SszUInt64,
-        SszBytes32> {
+        SszUInt64> {
 
   public ExecutionPayloadEnvelopeSchema(final SchemaRegistry schemaRegistry) {
     super(
@@ -47,8 +46,7 @@ public class ExecutionPayloadEnvelopeSchema
         namedSchema("execution_requests", schemaRegistry.get(EXECUTION_REQUESTS_SCHEMA)),
         namedSchema("builder_index", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("beacon_block_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
-        namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema("state_root", SszPrimitiveSchemas.BYTES32_SCHEMA));
+        namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA));
   }
 
   public ExecutionPayloadEnvelope create(
@@ -56,10 +54,9 @@ public class ExecutionPayloadEnvelopeSchema
       final ExecutionRequests executionRequests,
       final UInt64 builderIndex,
       final Bytes32 beaconBlockRoot,
-      final UInt64 slot,
-      final Bytes32 stateRoot) {
+      final UInt64 slot) {
     return new ExecutionPayloadEnvelope(
-        this, payload, executionRequests, builderIndex, beaconBlockRoot, slot, stateRoot);
+        this, payload, executionRequests, builderIndex, beaconBlockRoot, slot);
   }
 
   @Override

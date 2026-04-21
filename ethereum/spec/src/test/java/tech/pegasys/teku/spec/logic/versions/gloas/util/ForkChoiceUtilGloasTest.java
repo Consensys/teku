@@ -246,7 +246,8 @@ class ForkChoiceUtilGloasTest {
                 bid.getSlot(),
                 bid.getValue(),
                 bid.getExecutionPayment(),
-                bid.getBlobKzgCommitments());
+                bid.getBlobKzgCommitments(),
+                bid.getExecutionRequestsRoot());
 
     // Create a new signed bid with the new bid
     final SignedExecutionPayloadBid newSignedBid =
@@ -269,7 +270,8 @@ class ForkChoiceUtilGloasTest {
                       .syncAggregate(body.getSyncAggregate())
                       .blsToExecutionChanges(body.getBlsToExecutionChanges())
                       .signedExecutionPayloadBid(newSignedBid)
-                      .payloadAttestations(body.getPayloadAttestations());
+                      .payloadAttestations(body.getPayloadAttestations())
+                      .parentExecutionRequests(body.getParentExecutionRequests());
                   return SafeFuture.COMPLETE;
                 })
             .join();
@@ -306,7 +308,8 @@ class ForkChoiceUtilGloasTest {
                 bid.getSlot(),
                 bid.getValue(),
                 bid.getExecutionPayment(),
-                bid.getBlobKzgCommitments());
+                bid.getBlobKzgCommitments(),
+                bid.getExecutionRequestsRoot());
 
     // Create a new signed bid with the new bid
     final SignedExecutionPayloadBid newSignedBid =
@@ -329,7 +332,8 @@ class ForkChoiceUtilGloasTest {
                       .syncAggregate(body.getSyncAggregate())
                       .blsToExecutionChanges(body.getBlsToExecutionChanges())
                       .signedExecutionPayloadBid(newSignedBid)
-                      .payloadAttestations(body.getPayloadAttestations());
+                      .payloadAttestations(body.getPayloadAttestations())
+                      .parentExecutionRequests(body.getParentExecutionRequests());
                   return SafeFuture.COMPLETE;
                 })
             .join();

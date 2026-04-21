@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 class DefaultExecutionPayloadManagerTest {
 
@@ -49,14 +50,17 @@ class DefaultExecutionPayloadManagerTest {
   private final ReceivedExecutionPayloadEventsChannel
       receivedExecutionPayloadEventsChannelPublisher =
           mock(ReceivedExecutionPayloadEventsChannel.class);
+  private final RecentChainData recentChainData = mock(RecentChainData.class);
 
   private final DefaultExecutionPayloadManager executionPayloadManager =
       new DefaultExecutionPayloadManager(
+          spec,
           asyncRunner,
           executionPayloadGossipValidator,
           forkChoice,
           executionLayer,
-          receivedExecutionPayloadEventsChannelPublisher);
+          receivedExecutionPayloadEventsChannelPublisher,
+          recentChainData);
 
   private final SignedExecutionPayloadEnvelope signedExecutionPayload =
       dataStructureUtil.randomSignedExecutionPayloadEnvelope(42);
@@ -68,7 +72,7 @@ class DefaultExecutionPayloadManagerTest {
   public void shouldValidateAndImport() {
     when(executionPayloadGossipValidator.validate(signedExecutionPayload))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
-    when(forkChoice.onExecutionPayload(signedExecutionPayload, executionLayer))
+    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
         .thenReturn(SafeFuture.completedFuture(successfulImportResult));
 
     final SafeFuture<InternalValidationResult> resultFuture =
@@ -119,7 +123,7 @@ class DefaultExecutionPayloadManagerTest {
 
     final IllegalStateException exception = new IllegalStateException("oopsy");
 
-    when(forkChoice.onExecutionPayload(signedExecutionPayload, executionLayer))
+    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
         .thenThrow(exception);
 
     final SafeFuture<InternalValidationResult> resultFuture =
@@ -146,7 +150,7 @@ class DefaultExecutionPayloadManagerTest {
         dataStructureUtil.randomSignedExecutionPayloadEnvelopeForBlock(block);
     when(executionPayloadGossipValidator.validate(signedExecutionPayload))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
-    when(forkChoice.onExecutionPayload(signedExecutionPayload, executionLayer))
+    when(forkChoice.onExecutionPayloadEnvelope(signedExecutionPayload, executionLayer))
         .thenReturn(SafeFuture.completedFuture(successfulImportResult));
 
     // should just cache the payload for future processing

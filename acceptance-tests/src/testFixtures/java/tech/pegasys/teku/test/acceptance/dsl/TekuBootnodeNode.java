@@ -47,7 +47,8 @@ public class TekuBootnodeNode extends TekuNode {
     waitForLogMessageContaining("Bootnode service started");
   }
 
-  public void waitForNodeENR(final String enr) {
-    waitForLogMessageContaining("Bootnode ENR = " + enr);
+  public void waitForNodeENRContaining(final String enrSubstring) {
+    waitForLogMessageContaining("Bootnode ENR = ");
+    waitForLogMessageContaining(enrSubstring);
   }
 }
