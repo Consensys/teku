@@ -14,6 +14,8 @@
 package tech.pegasys.teku.statetransition.execution;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,6 +43,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadBidGossipValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class DefaultExecutionPayloadBidManagerTest {
@@ -61,6 +64,7 @@ public class DefaultExecutionPayloadBidManagerTest {
   private final RecentChainData recentChainData = mock(RecentChainData.class);
 
   private final UpdatableStore store = mock(UpdatableStore.class);
+  private final ForkChoiceStrategy forkChoiceStrategy = mock(ForkChoiceStrategy.class);
 
   private final DefaultExecutionPayloadBidManager executionPayloadBidManager =
       new DefaultExecutionPayloadBidManager(
@@ -72,6 +76,8 @@ public class DefaultExecutionPayloadBidManagerTest {
   @BeforeEach
   public void setUp() {
     when(recentChainData.getStore()).thenReturn(store);
+    when(store.getForkChoiceStrategy()).thenReturn(forkChoiceStrategy);
+    when(forkChoiceStrategy.shouldExtendPayload(eq(store), any())).thenReturn(false);
   }
 
   @Test
