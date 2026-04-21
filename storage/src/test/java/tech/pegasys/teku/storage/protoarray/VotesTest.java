@@ -647,6 +647,7 @@ public class VotesTest {
             justifiedCheckpoint,
             justifiedStateEffectiveBalances,
             ZERO)
+        .node()
         .blockRoot();
   }
 }

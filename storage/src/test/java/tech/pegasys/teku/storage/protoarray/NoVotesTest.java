@@ -221,6 +221,7 @@ public class NoVotesTest {
             justifiedCheckpoint,
             justifiedStateEffectiveBalances,
             ZERO)
+        .node()
         .blockRoot();
   }
 

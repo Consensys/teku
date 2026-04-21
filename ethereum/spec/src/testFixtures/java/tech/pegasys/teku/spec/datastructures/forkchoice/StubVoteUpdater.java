@@ -43,7 +43,7 @@ public class StubVoteUpdater implements VoteUpdater {
   }
 
   @Override
-  public ForkChoiceNode applyForkChoiceScoreChanges(
+  public SlotAndForkChoiceNode applyForkChoiceScoreChanges(
       final UInt64 currentSlot,
       final UInt64 currentEpoch,
       final Checkpoint finalizedCheckpoint,

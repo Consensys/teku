@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.SlotAndForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -64,7 +64,7 @@ public class StoreVoteUpdater implements VoteUpdater {
   }
 
   @Override
-  public ForkChoiceNode applyForkChoiceScoreChanges(
+  public SlotAndForkChoiceNode applyForkChoiceScoreChanges(
       final UInt64 currentSlot,
       final UInt64 currentEpoch,
       final Checkpoint finalizedCheckpoint,

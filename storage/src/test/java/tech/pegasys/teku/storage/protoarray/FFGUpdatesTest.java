@@ -326,6 +326,7 @@ public class FFGUpdatesTest {
             justifiedCheckpoint,
             justifiedStateEffectiveBalances,
             ZERO)
+        .node()
         .blockRoot();
   }
 }

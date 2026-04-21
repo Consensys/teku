@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.forkchoice.SlotAndForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreImpl;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -192,7 +193,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             .getBeaconStateUtil(anchor.getState().getSlot())
             .getEffectiveActiveUnslashedBalances(anchor.getState());
     final UInt64 currentSlot = spec.getCurrentSlot(store);
-    final ForkChoiceNode head =
+    final SlotAndForkChoiceNode head =
         forkChoiceStrategy.applyPendingVotes(
             store,
             Optional.empty(),
@@ -202,7 +203,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             anchor.getCheckpoint(),
             effectiveBalances,
             ZERO);
-    assertThat(head.blockRoot()).isEqualTo(anchor.getRoot());
+    assertThat(head.node().blockRoot()).isEqualTo(anchor.getRoot());
   }
 
   @Test
@@ -428,7 +429,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             .getSpec()
             .getBeaconStateUtil(block3State.getSlot())
             .getEffectiveActiveUnslashedBalances(block3State);
-    final ForkChoiceNode bestHead =
+    final SlotAndForkChoiceNode bestHead =
         strategy.applyPendingVotes(
             transaction,
             Optional.empty(),
@@ -440,7 +441,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             ZERO);
     transaction.commit();
 
-    assertThat(bestHead.blockRoot()).isEqualTo(block4.getRoot());
+    assertThat(bestHead.node().blockRoot()).isEqualTo(block4.getRoot());
   }
 
   @Test
@@ -535,7 +536,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             .getSpec()
             .getBeaconStateUtil(block2State.getSlot())
             .getEffectiveActiveUnslashedBalances(block2State);
-    final ForkChoiceNode bestHead =
+    final SlotAndForkChoiceNode bestHead =
         strategy.applyPendingVotes(
             transaction3,
             Optional.empty(),
@@ -546,7 +547,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             effectiveBalances,
             ZERO);
     transaction3.commit();
-    assertThat(bestHead.blockRoot()).isEqualTo(block2.getRoot());
+    assertThat(bestHead.node().blockRoot()).isEqualTo(block2.getRoot());
 
     assertThat(transaction3.getVote(ZERO).isCurrentEquivocating()).isTrue();
     // Not updated after equivocation
@@ -601,12 +602,12 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     protoArray.onExecutionPayloadResult(currentJustified.getRoot(), PayloadStatus.VALID, false);
 
     // Find new chain head
-    final ForkChoiceNode revertHead =
+    final SlotAndForkChoiceNode revertHead =
         protoArray.findHead(
             recentChainData.getCurrentEpoch().orElseThrow(),
             recentChainData.getJustifiedCheckpoint().orElseThrow(),
             recentChainData.getFinalizedCheckpoint().orElseThrow());
-    recentChainData.updateHead(revertHead.blockRoot(), optimisticHead.getSlot());
+    recentChainData.updateHead(revertHead.node().blockRoot(), revertHead.slot());
 
     // Advance current slot so that current head is no more viable
     chainUpdater.setCurrentSlot(UInt64.valueOf(60));

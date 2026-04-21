@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.forkchoice.SlotAndForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
@@ -89,7 +90,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     return new ForkChoiceStrategy(spec, protoArray, blockNodeIndex, new ArrayList<>());
   }
 
-  public ForkChoiceNode findHead(
+  public SlotAndForkChoiceNode findHead(
       final UInt64 currentEpoch,
       final Checkpoint justifiedCheckpoint,
       final Checkpoint finalizedCheckpoint) {
@@ -101,14 +102,14 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
-  private ForkChoiceNode findHeadImpl(
+  private SlotAndForkChoiceNode findHeadImpl(
       final UInt64 currentEpoch,
       final Checkpoint justifiedCheckpoint,
       final Checkpoint finalizedCheckpoint) {
     final ProtoNode bestNode =
         protoArray.findOptimisticHead(
             currentEpoch, justifiedCheckpoint, finalizedCheckpoint, headSelectionContext);
-    return new ForkChoiceNode(bestNode.getBlockRoot(), bestNode.getPayloadStatus());
+    return new SlotAndForkChoiceNode(bestNode.getBlockSlot(), bestNode.getForkChoiceNode());
   }
 
   /**
@@ -122,9 +123,9 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
    * @param justifiedCheckpoint the current justified checkpoint
    * @param justifiedStateEffectiveBalances the effective validator balances at the justified
    *     checkpoint
-   * @return the best chain head as a ForkChoiceNode (blockRoot + payloadStatus)
+   * @return the best chain head as a slot-bearing forkchoice node result
    */
-  public ForkChoiceNode applyPendingVotes(
+  public SlotAndForkChoiceNode applyPendingVotes(
       final VoteUpdater voteUpdater,
       final Optional<Bytes32> proposerBoostRoot,
       final UInt64 currentSlot,
