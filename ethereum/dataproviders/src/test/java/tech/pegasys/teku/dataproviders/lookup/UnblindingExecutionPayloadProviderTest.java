@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBody;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionPayloadGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -238,6 +239,9 @@ class UnblindingExecutionPayloadProviderTest {
                     new ExecutionPayloadBody.EncodedWithdrawal(
                         w.getIndex(), w.getValidatorIndex(), w.getAddress(), w.getAmount()))
             .toList();
-    return new ExecutionPayloadBody(transactions, withdrawals, Bytes.EMPTY);
+    return new ExecutionPayloadBody(
+        transactions,
+        withdrawals,
+        ExecutionPayloadGloas.required(executionPayload).getBlockAccessList().getBytes());
   }
 }
