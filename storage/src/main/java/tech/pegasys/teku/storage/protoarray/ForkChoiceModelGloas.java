@@ -107,7 +107,6 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
     protoArray.addNode(
         baseNode,
         blockSlot,
-        blockRoot,
         parentRoot,
         parentProtoNode.map(ProtoNode::getForkChoiceNode),
         stateRoot,
@@ -121,7 +120,6 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
     protoArray.addNode(
         emptyNode,
         blockSlot,
-        blockRoot,
         parentRoot,
         Optional.of(baseNode),
         stateRoot,
@@ -201,7 +199,6 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
     protoArray.addNode(
         fullNode,
         baseNode.getSlot(),
-        blockRoot,
         baseNode.getParentRoot(),
         maybeBaseNodeIdentity,
         baseNode.getStateRoot(),

@@ -872,7 +872,6 @@ public class ProtoArrayScoreCalculatorTest {
     protoArray.addNode(
         baseNode,
         blockSlot,
-        blockRoot,
         Bytes32.ZERO,
         Optional.empty(),
         Bytes32.ZERO,
@@ -887,7 +886,6 @@ public class ProtoArrayScoreCalculatorTest {
       protoArray.addNode(
           emptyNode,
           blockSlot,
-          blockRoot,
           Bytes32.ZERO,
           Optional.of(baseNode),
           Bytes32.ZERO,
@@ -903,7 +901,6 @@ public class ProtoArrayScoreCalculatorTest {
       protoArray.addNode(
           fullNode,
           blockSlot,
-          blockRoot,
           Bytes32.ZERO,
           Optional.of(baseNode),
           Bytes32.ZERO,
