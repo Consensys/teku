@@ -32,8 +32,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -107,7 +106,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
   }
 
   @Override
-  public IndexedAttestation getIndexedAttestation(
+  public IndexedAttestationLight getIndexedAttestation(
       final BeaconState state, final Attestation attestation) {
     if (attestation.isSingleAttestation()) {
       return getIndexedAttestationFromSingleAttestation(attestation.toSingleAttestationRequired());
@@ -115,15 +114,10 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
     return super.getIndexedAttestation(state, attestation);
   }
 
-  private IndexedAttestation getIndexedAttestationFromSingleAttestation(
+  private IndexedAttestationLight getIndexedAttestationFromSingleAttestation(
       final SingleAttestation attestation) {
-    final IndexedAttestationSchema indexedAttestationSchema =
-        schemaDefinitions.getIndexedAttestationSchema();
-
-    return indexedAttestationSchema.create(
-        indexedAttestationSchema
-            .getAttestingIndicesSchema()
-            .of(attestation.getValidatorIndexRequired()),
+    return new IndexedAttestationLight(
+        List.of(attestation.getValidatorIndexRequired()),
         attestation.getData(),
         attestation.getSignature());
   }
@@ -159,7 +153,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
               if (result.isSuccessful()) {
                 final SingleAttestation singleAttestation =
                     attestation.getAttestation().toSingleAttestationRequired();
-                final IndexedAttestation indexedAttestation =
+                final IndexedAttestationLight indexedAttestation =
                     getIndexedAttestationFromSingleAttestation(singleAttestation);
 
                 final Attestation convertedAttestation =

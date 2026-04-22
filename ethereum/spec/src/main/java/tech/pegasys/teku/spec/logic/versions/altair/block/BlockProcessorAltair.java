@@ -31,9 +31,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
@@ -169,10 +167,10 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     UInt64 builderPaymentWeightDelta = UInt64.ZERO;
 
     UInt64 proposerRewardNumerator = UInt64.ZERO;
-    final SszUInt64List attestingIndices =
-        indexedAttestationProvider.getIndexedAttestation(attestation).getAttestingIndices();
-    for (SszUInt64 attestingIndex : attestingIndices) {
-      final int index = attestingIndex.get().intValue();
+    final List<UInt64> attestingIndices =
+        indexedAttestationProvider.getIndexedAttestation(attestation).attestingIndices();
+    for (final UInt64 attestingIndex : attestingIndices) {
+      final int index = attestingIndex.intValue();
       final byte previousParticipationFlags = epochParticipation.get(index).get();
       byte newParticipationFlags = 0;
       final UInt64 baseReward = beaconStateAccessorsAltair.getBaseReward(state, index);

@@ -37,7 +37,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
@@ -138,26 +138,24 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
-  public void onAttestation(final VoteUpdater voteUpdater, final IndexedAttestation attestation) {
+  public void onAttestation(
+      final VoteUpdater voteUpdater, final IndexedAttestationLight attestation) {
     votesLock.writeLock().lock();
     try {
-      final UInt64 attestationSlot = attestation.getData().getSlot();
+      final UInt64 attestationSlot = attestation.data().getSlot();
       final ForkChoiceUtil forkChoiceUtil = spec.atSlot(attestationSlot).getForkChoiceUtil();
       final boolean fullPayloadHint =
-          forkChoiceUtil.getFullPayloadVoteHint(attestation.getData().getIndex());
-      attestation
-          .getAttestingIndices()
-          .streamUnboxed()
-          .forEach(
-              validatorIndex ->
-                  processAttestation(
-                      voteUpdater,
-                      validatorIndex,
-                      attestation.getData().getBeaconBlockRoot(),
-                      attestation.getData().getTarget().getEpoch(),
-                      attestationSlot,
-                      fullPayloadHint,
-                      forkChoiceUtil));
+          forkChoiceUtil.getFullPayloadVoteHint(attestation.data().getIndex());
+      for (final UInt64 validatorIndex : attestation.attestingIndices()) {
+        processAttestation(
+            voteUpdater,
+            validatorIndex,
+            attestation.data().getBeaconBlockRoot(),
+            attestation.data().getTarget().getEpoch(),
+            attestationSlot,
+            fullPayloadHint,
+            forkChoiceUtil);
+      }
     } finally {
       votesLock.writeLock().unlock();
     }

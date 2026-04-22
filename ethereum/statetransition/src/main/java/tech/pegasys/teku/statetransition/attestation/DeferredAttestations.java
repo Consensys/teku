@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationLight;
 import tech.pegasys.teku.storage.protoarray.DeferredVotes;
 
 /**
@@ -48,9 +48,10 @@ public class DeferredAttestations {
   private final ConcurrentNavigableMap<UInt64, DeferredVoteUpdates> deferredVoteUpdatesBySlot =
       new ConcurrentSkipListMap<>();
 
-  public void addAttestation(final IndexedAttestation attestation, final boolean fullPayloadHint) {
+  public void addAttestation(
+      final IndexedAttestationLight attestation, final boolean fullPayloadHint) {
     deferredVoteUpdatesBySlot
-        .computeIfAbsent(attestation.getData().getSlot(), DeferredVoteUpdates::new)
+        .computeIfAbsent(attestation.data().getSlot(), DeferredVoteUpdates::new)
         .addAttestation(attestation, fullPayloadHint);
   }
 
@@ -93,19 +94,18 @@ public class DeferredAttestations {
     }
 
     private void addAttestation(
-        final IndexedAttestation attestation, final boolean fullPayloadHint) {
+        final IndexedAttestationLight attestation, final boolean fullPayloadHint) {
       checkArgument(
-          attestation.getData().getSlot().equals(slot),
+          attestation.data().getSlot().equals(slot),
           "Attempting to store deferred attestation for wrong slot. Expected %s but got %s",
           slot,
-          attestation.getData().getSlot());
-      final Bytes32 blockRoot = attestation.getData().getBeaconBlockRoot();
+          attestation.data().getSlot());
+      final Bytes32 blockRoot = attestation.data().getBeaconBlockRoot();
       final BlockRootAndFullPayloadHint key =
           new BlockRootAndFullPayloadHint(blockRoot, fullPayloadHint);
-      final Collection<UInt64> attestingIndices =
-          votingIndicesByBlockRootAndFullPayloadHint.computeIfAbsent(
-              key, __ -> newSetFromMap(new ConcurrentHashMap<>()));
-      attestingIndices.addAll(attestation.getAttestingIndices().asListUnboxed());
+      votingIndicesByBlockRootAndFullPayloadHint
+          .computeIfAbsent(key, __ -> newSetFromMap(new ConcurrentHashMap<>()))
+          .addAll(attestation.attestingIndices());
     }
   }
 }
