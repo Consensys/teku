@@ -155,20 +155,6 @@ public interface ReadOnlyStore extends TimeProvider {
 
   UInt64 getParentThreshold();
 
-  default boolean isHeadWeak(final Bytes32 root) {
-    return getForkChoiceStrategy()
-        .getBlockData(root)
-        .map(blockData -> blockData.getWeight().isLessThan(getReorgThreshold()))
-        .orElse(false);
-  }
-
-  default boolean isParentStrong(final Bytes32 parentRoot) {
-    return getForkChoiceStrategy()
-        .getBlockData(parentRoot)
-        .map(blockData -> blockData.getWeight().isGreaterThan(getParentThreshold()))
-        .orElse(true);
-  }
-
   // implements is_ffg_competitive from Consensus Spec
   Optional<Boolean> isFfgCompetitive(Bytes32 headRoot, Bytes32 parentRoot);
 }
