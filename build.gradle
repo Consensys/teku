@@ -669,8 +669,8 @@ application {
 		"--enable-native-access=ALL-UNNAMED",
 		// avoids JDK 25+ warning due to protobuf and others
 		"--sun-misc-unsafe-memory-access=allow",
-		// avoids JDK 25+ warning due to picocli
-		"--enable-final-field-mutation=ALL-UNNAMED"
+		// avoids JDK 26+ warning due to picocli
+		// "--enable-final-field-mutation=ALL-UNNAMED"
 	]
 }
 
