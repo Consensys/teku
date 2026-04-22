@@ -15,12 +15,9 @@ package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -94,125 +91,60 @@ public class ProposerPreferencesPublisherTest {
         .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomSignature()));
     when(validatorApiChannel.sendSignedProposerPreferences(anyList()))
         .thenReturn(SafeFuture.COMPLETE);
-    when(validatorApiChannel.getProposerDuties(any(), eq(true)))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
   }
 
   @TestTemplate
-  void shouldPublishOnFirstCall() {
-    final UInt64 anySlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(5)).plus(1);
-    final UInt64 nextEpoch = spec.computeEpochAtSlot(anySlot).plus(1);
-    final UInt64 nextEpochSlot = spec.computeStartSlotAtEpoch(nextEpoch);
+  void shouldPublishWhenDutiesIncludeOurValidator() {
+    final UInt64 epoch = UInt64.valueOf(6);
+    final UInt64 slot = spec.computeStartSlotAtEpoch(epoch);
 
-    when(validatorApiChannel.getProposerDuties(eq(nextEpoch), eq(true)))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                Optional.of(
-                    new ProposerDuties(
-                        dataStructureUtil.randomBytes32(),
-                        List.of(new ProposerDuty(publicKey, 42, nextEpochSlot)),
-                        false))));
-
-    publisher.onSlot(anySlot);
+    publisher.onProposerDutiesLoaded(
+        epoch,
+        new ProposerDuties(
+            dataStructureUtil.randomBytes32(),
+            List.of(new ProposerDuty(publicKey, 42, slot)),
+            false));
 
     verify(validatorApiChannel).sendSignedProposerPreferences(anyList());
-  }
-
-  @TestTemplate
-  void shouldPublishAtThirdSlotOfEpoch() {
-    // Consume first call
-    publisher.onSlot(UInt64.ZERO);
-
-    final UInt64 thirdSlotOfEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(5)).plus(2);
-    final UInt64 nextEpoch = spec.computeEpochAtSlot(thirdSlotOfEpoch).plus(1);
-    final UInt64 nextEpochSlot = spec.computeStartSlotAtEpoch(nextEpoch);
-
-    when(validatorApiChannel.getProposerDuties(eq(nextEpoch), eq(true)))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                Optional.of(
-                    new ProposerDuties(
-                        dataStructureUtil.randomBytes32(),
-                        List.of(new ProposerDuty(publicKey, 42, nextEpochSlot)),
-                        false))));
-
-    publisher.onSlot(thirdSlotOfEpoch);
-
-    verify(validatorApiChannel).sendSignedProposerPreferences(anyList());
-  }
-
-  @TestTemplate
-  void shouldNotPublishAtNonThirdSlotOfEpoch() {
-    // Consume first call
-    publisher.onSlot(UInt64.ZERO);
-
-    final UInt64 fourthSlotOfEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(5)).plus(3);
-
-    publisher.onSlot(fourthSlotOfEpoch);
-
-    verify(validatorApiChannel, never()).sendSignedProposerPreferences(anyList());
   }
 
   @TestTemplate
   void shouldNotPublishWhenNoDutiesForOurValidators() {
-    final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(5));
-    final UInt64 nextEpoch = UInt64.valueOf(6);
-    final UInt64 nextEpochSlot = spec.computeStartSlotAtEpoch(nextEpoch);
-
+    final UInt64 epoch = UInt64.valueOf(6);
+    final UInt64 slot = spec.computeStartSlotAtEpoch(epoch);
     final BLSPublicKey otherKey = dataStructureUtil.randomPublicKey();
-    when(validatorApiChannel.getProposerDuties(eq(nextEpoch), eq(true)))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                Optional.of(
-                    new ProposerDuties(
-                        dataStructureUtil.randomBytes32(),
-                        List.of(new ProposerDuty(otherKey, 99, nextEpochSlot)),
-                        false))));
 
-    publisher.onSlot(firstSlotOfEpoch);
-
-    verify(validatorApiChannel, never()).sendSignedProposerPreferences(anyList());
-  }
-
-  @TestTemplate
-  void shouldNotPublishWhenProposerDutiesUnavailable() {
-    final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(5));
-    final UInt64 nextEpoch = UInt64.valueOf(6);
-
-    when(validatorApiChannel.getProposerDuties(eq(nextEpoch), eq(true)))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-
-    publisher.onSlot(firstSlotOfEpoch);
+    publisher.onProposerDutiesLoaded(
+        epoch,
+        new ProposerDuties(
+            dataStructureUtil.randomBytes32(),
+            List.of(new ProposerDuty(otherKey, 99, slot)),
+            false));
 
     verify(validatorApiChannel, never()).sendSignedProposerPreferences(anyList());
   }
 
   @TestTemplate
   void shouldNotPublishWhenFeeRecipientNotConfigured() {
-    final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(5));
-    final UInt64 nextEpoch = UInt64.valueOf(6);
-    final UInt64 nextEpochSlot = spec.computeStartSlotAtEpoch(nextEpoch);
+    final UInt64 epoch = UInt64.valueOf(6);
+    final UInt64 slot = spec.computeStartSlotAtEpoch(epoch);
 
     when(proposerConfigPropertiesProvider.getFeeRecipient(publicKey)).thenReturn(Optional.empty());
-    when(validatorApiChannel.getProposerDuties(eq(nextEpoch), eq(true)))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                Optional.of(
-                    new ProposerDuties(
-                        dataStructureUtil.randomBytes32(),
-                        List.of(new ProposerDuty(publicKey, 42, nextEpochSlot)),
-                        false))));
 
-    publisher.onSlot(firstSlotOfEpoch);
+    publisher.onProposerDutiesLoaded(
+        epoch,
+        new ProposerDuties(
+            dataStructureUtil.randomBytes32(),
+            List.of(new ProposerDuty(publicKey, 42, slot)),
+            false));
 
     verify(validatorApiChannel, never()).sendSignedProposerPreferences(anyList());
   }
 
   @TestTemplate
   void shouldPublishRemainingPreferencesWhenSigningFails() {
-    final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(5));
-    final UInt64 nextEpoch = UInt64.valueOf(6);
-    final UInt64 nextEpochSlot = spec.computeStartSlotAtEpoch(nextEpoch);
+    final UInt64 epoch = UInt64.valueOf(6);
+    final UInt64 slot = spec.computeStartSlotAtEpoch(epoch);
 
     final int failingValidatorIndex = 99;
     final int successfulValidatorIndex = 42;
@@ -228,19 +160,14 @@ public class ProposerPreferencesPublisherTest {
     when(failingSigner.signProposerPreferences(any(), any()))
         .thenReturn(SafeFuture.failedFuture(new UnsupportedOperationException("not supported")));
 
-    when(validatorApiChannel.getProposerDuties(eq(nextEpoch), eq(true)))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                Optional.of(
-                    new ProposerDuties(
-                        dataStructureUtil.randomBytes32(),
-                        List.of(
-                            new ProposerDuty(failingKey, failingValidatorIndex, nextEpochSlot),
-                            new ProposerDuty(
-                                publicKey, successfulValidatorIndex, nextEpochSlot.plus(1))),
-                        false))));
-
-    publisher.onSlot(firstSlotOfEpoch);
+    publisher.onProposerDutiesLoaded(
+        epoch,
+        new ProposerDuties(
+            dataStructureUtil.randomBytes32(),
+            List.of(
+                new ProposerDuty(failingKey, failingValidatorIndex, slot),
+                new ProposerDuty(publicKey, successfulValidatorIndex, slot.plus(1))),
+            false));
 
     @SuppressWarnings("unchecked")
     final ArgumentCaptor<List<SignedProposerPreferences>> captor =
@@ -250,67 +177,5 @@ public class ProposerPreferencesPublisherTest {
     assertThat(published).hasSize(1);
     assertThat(published.getFirst().getMessage().getValidatorIndex())
         .isEqualTo(UInt64.valueOf(successfulValidatorIndex));
-  }
-
-  @TestTemplate
-  void shouldRepublishOnPossibleMissedEvents() {
-    final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(5));
-    final UInt64 nextEpoch = UInt64.valueOf(6);
-    final UInt64 nextEpochSlot = spec.computeStartSlotAtEpoch(nextEpoch);
-
-    when(validatorApiChannel.getProposerDuties(eq(nextEpoch), eq(true)))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                Optional.of(
-                    new ProposerDuties(
-                        dataStructureUtil.randomBytes32(),
-                        List.of(new ProposerDuty(publicKey, 42, nextEpochSlot)),
-                        false))));
-
-    publisher.onSlot(firstSlotOfEpoch);
-    verify(validatorApiChannel).sendSignedProposerPreferences(anyList());
-
-    publisher.onPossibleMissedEvents();
-    verify(validatorApiChannel, times(2)).sendSignedProposerPreferences(anyList());
-  }
-
-  @TestTemplate
-  void shouldRepublishOnValidatorsAdded() {
-    final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(5));
-    final UInt64 nextEpoch = UInt64.valueOf(6);
-    final UInt64 nextEpochSlot = spec.computeStartSlotAtEpoch(nextEpoch);
-
-    when(validatorApiChannel.getProposerDuties(eq(nextEpoch), eq(true)))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                Optional.of(
-                    new ProposerDuties(
-                        dataStructureUtil.randomBytes32(),
-                        List.of(new ProposerDuty(publicKey, 42, nextEpochSlot)),
-                        false))));
-
-    publisher.onSlot(firstSlotOfEpoch);
-    verify(validatorApiChannel).sendSignedProposerPreferences(anyList());
-
-    publisher.onValidatorsAdded();
-    verify(validatorApiChannel, times(2)).sendSignedProposerPreferences(anyList());
-  }
-
-  @TestTemplate
-  void shouldNotRepublishOnMissedEventsBeforeFirstSlot() {
-    publisher.onPossibleMissedEvents();
-    verify(validatorApiChannel, never()).getProposerDuties(any(), anyBoolean());
-  }
-
-  @TestTemplate
-  void shouldHandleApiFailureGracefully() {
-    final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(5));
-    final UInt64 nextEpoch = UInt64.valueOf(6);
-
-    when(validatorApiChannel.getProposerDuties(eq(nextEpoch), eq(true)))
-        .thenReturn(SafeFuture.failedFuture(new RuntimeException("API error")));
-
-    // Should not throw
-    publisher.onSlot(firstSlotOfEpoch);
   }
 }

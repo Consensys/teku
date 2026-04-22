@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.logic.common.util.DataColumnSidecarUtil;
 import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
+import tech.pegasys.teku.spec.logic.common.util.ProposerPreferencesUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.common.withdrawals.WithdrawalsHelpers;
@@ -164,5 +165,10 @@ public class DelegatingSpecLogic implements SpecLogic {
   @Override
   public Optional<DataColumnSidecarUtil> getDataColumnSidecarUtil() {
     return specLogic.getDataColumnSidecarUtil();
+  }
+
+  @Override
+  public ProposerPreferencesUtil getProposerPreferencesUtil() {
+    return specLogic.getProposerPreferencesUtil();
   }
 }

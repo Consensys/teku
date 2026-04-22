@@ -351,7 +351,8 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
                             validatorDutyMetrics::performDutyWithMetrics),
                     new OwnedValidators(
                         Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
-                    validatorIndexProvider)),
+                    validatorIndexProvider,
+                    (epoch, duties) -> {})),
             spec);
   }
 
@@ -367,7 +368,8 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
                     dependentRoot -> scheduledDuties,
                     new OwnedValidators(
                         Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
-                    validatorIndexProvider)),
+                    validatorIndexProvider,
+                    (epoch, duties) -> {})),
             spec);
   }
 }

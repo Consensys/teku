@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client;
 
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
@@ -33,16 +34,19 @@ public class BlockProductionDutyLoader
   private final ValidatorApiChannel validatorApiChannel;
   private final Function<Bytes32, SlotBasedScheduledDuties<BlockProductionDuty, Duty>>
       scheduledDutiesFactory;
+  private final BiConsumer<UInt64, ProposerDuties> publishProposerPreferences;
 
   protected BlockProductionDutyLoader(
       final ValidatorApiChannel validatorApiChannel,
       final Function<Bytes32, SlotBasedScheduledDuties<BlockProductionDuty, Duty>>
           scheduledDutiesFactory,
       final OwnedValidators validators,
-      final ValidatorIndexProvider validatorIndexProvider) {
+      final ValidatorIndexProvider validatorIndexProvider,
+      final BiConsumer<UInt64, ProposerDuties> publishProposerPreferences) {
     super(validators, validatorIndexProvider);
     this.validatorApiChannel = validatorApiChannel;
     this.scheduledDutiesFactory = scheduledDutiesFactory;
+    this.publishProposerPreferences = publishProposerPreferences;
   }
 
   @Override
@@ -57,6 +61,7 @@ public class BlockProductionDutyLoader
   @Override
   protected SafeFuture<SlotBasedScheduledDuties<?, ?>> scheduleAllDuties(
       final UInt64 epoch, final ProposerDuties duties) {
+    publishProposerPreferences.accept(epoch, duties);
     final SlotBasedScheduledDuties<BlockProductionDuty, Duty> scheduledDuties =
         scheduledDutiesFactory.apply(duties.getDependentRoot());
     duties.getDuties().forEach(duty -> scheduleDuty(scheduledDuties, duty));

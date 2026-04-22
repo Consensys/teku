@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedProposerPreferences;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.signatures.SigningRootUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -102,7 +102,9 @@ public class ProposerPreferencesGossipValidator {
               final int slotsPerEpoch = spec.atSlot(proposalSlot).getConfig().getSlotsPerEpoch();
               final int lookaheadIndex = slotsPerEpoch + proposalSlot.mod(slotsPerEpoch).intValue();
               final UInt64 expectedValidatorIndex =
-                  BeaconStateFulu.required(state).getProposerLookahead().getElement(lookaheadIndex);
+                  BeaconStateGloas.required(state)
+                      .getProposerLookahead()
+                      .getElement(lookaheadIndex);
               if (!expectedValidatorIndex.equals(proposerPreferences.getValidatorIndex())) {
                 LOG.trace(
                     "Proposer preferences validator index {} does not match expected proposer {} for slot {}",
