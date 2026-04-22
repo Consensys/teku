@@ -376,11 +376,16 @@ public class HistoricalBatchFetcher {
     // store blocks, blob sidecars and execution payloads if all checks pass, or if one fails we
     // reject the entire response
     pruneExecutionPayloadsNotInBatch();
-    return batchVerifyHistoricalBlockSignatures(blocksToImport)
+    return chainDataClient
+        .getBestState()
+        .orElseThrow()
         .thenCompose(
-            __ ->
-                batchVerifyExecutionPayloadEnvelopeSignatures(
-                    blindedExecutionPayloadsByBlockRootToImport.values()))
+            bestState ->
+                batchVerifyHistoricalBlockSignature(blocksToImport, bestState)
+                    .thenCompose(
+                        __ ->
+                            batchVerifyExecutionPayloadEnvelopeSignature(
+                                blindedExecutionPayloadsByBlockRootToImport.values(), bestState)))
         .thenCompose(
             __ -> {
               final UInt64 latestSlotInBatch = blocksToImport.getLast().getSlot();
@@ -408,15 +413,6 @@ public class HistoricalBatchFetcher {
               blindedExecutionPayloadsByBlockRootToImport.clear();
               maybeEarliestBlobSidecarSlot = Optional.empty();
             });
-  }
-
-  SafeFuture<Void> batchVerifyHistoricalBlockSignatures(
-      final Collection<SignedBeaconBlock> blocks) {
-
-    return chainDataClient
-        .getBestState()
-        .orElseThrow()
-        .thenCompose(bestState -> batchVerifyHistoricalBlockSignature(blocks, bestState));
   }
 
   private SafeFuture<Void> batchVerifyHistoricalBlockSignature(
@@ -470,21 +466,12 @@ public class HistoricalBatchFetcher {
     blindedExecutionPayloadsByBlockRootToImport.keySet().retainAll(blockRoots);
   }
 
-  SafeFuture<Void> batchVerifyExecutionPayloadEnvelopeSignatures(
-      final Collection<SignedBlindedExecutionPayloadEnvelope> envelopes) {
-    if (envelopes.isEmpty()) {
-      return SafeFuture.COMPLETE;
-    }
-    return chainDataClient
-        .getBestState()
-        .orElseThrow()
-        .thenCompose(
-            bestState -> batchVerifyExecutionPayloadEnvelopeSignature(envelopes, bestState));
-  }
-
   private SafeFuture<Void> batchVerifyExecutionPayloadEnvelopeSignature(
       final Collection<SignedBlindedExecutionPayloadEnvelope> envelopes,
       final BeaconState bestState) {
+    if (envelopes.isEmpty()) {
+      return SafeFuture.COMPLETE;
+    }
     final List<BLSSignature> signatures = new ArrayList<>();
     final List<Bytes> signingRoots = new ArrayList<>();
     final List<List<BLSPublicKey>> publicKeys = new ArrayList<>();
