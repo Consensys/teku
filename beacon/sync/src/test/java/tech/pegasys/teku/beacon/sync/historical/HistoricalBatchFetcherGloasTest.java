@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -153,5 +154,22 @@ public class HistoricalBatchFetcherGloasTest {
             blockCaptor.capture(), any(), blindedExecutionPayloadsCaptor.capture(), any());
     assertThat(blockCaptor.getValue()).containsExactlyElementsOf(blockBatch);
     assertThat(blindedExecutionPayloadsCaptor.getValue()).isEqualTo(expectedBlindedPayloads);
+  }
+
+  @TestTemplate
+  public void run_failsOnInvalidExecutionPayloadEnvelopeSignature() {
+    // block signatures pass on the first verify call but envelope signatures fail on the second
+    when(signatureVerifier.verify(any(), any(), anyList()))
+        .thenReturn(SafeFuture.completedFuture(true))
+        .thenReturn(SafeFuture.completedFuture(false));
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+    peer.completePendingRequests();
+
+    assertThat(future)
+        .failsWithin(Duration.ZERO)
+        .withThrowableThat()
+        .withMessageContaining("Batch execution payload envelope signature verification failed");
   }
 }

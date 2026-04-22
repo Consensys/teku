@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.beacon.sync.historical;
 
+import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import java.util.ArrayList;
@@ -23,11 +25,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -49,6 +54,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BlindedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
@@ -57,6 +64,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
+import tech.pegasys.teku.spec.signatures.SigningRootUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -85,6 +93,7 @@ public class HistoricalBatchFetcher {
   private final AtomicInteger requestCount = new AtomicInteger(0);
   private final AsyncBLSSignatureVerifier signatureVerificationService;
   private final CombinedChainDataClient chainDataClient;
+  private final SigningRootUtil signingRootUtil;
 
   /**
    * @param storageUpdateChannel The storage channel where finalized blocks will be imported
@@ -138,6 +147,7 @@ public class HistoricalBatchFetcher {
     this.lastBlockRoot = lastBlockRoot;
     this.batchSize = batchSize;
     this.maxRequests = maxRequests;
+    this.signingRootUtil = new SigningRootUtil(spec);
   }
 
   /**
@@ -362,14 +372,21 @@ public class HistoricalBatchFetcher {
   }
 
   private SafeFuture<Void> importBatch() {
-    // send to signature verification and blob sidecars validation and only store blocks and blob
-    // sidecars if all checks pass, or if one fails we reject the entire response
+    // send to signature verification and blob sidecars / execution payload validation and only
+    // store blocks, blob sidecars and execution payloads if all checks pass, or if one fails we
+    // reject the entire response
+    pruneExecutionPayloadsNotInBatch();
     return batchVerifyHistoricalBlockSignatures(blocksToImport)
+        .thenCompose(
+            __ ->
+                batchVerifyExecutionPayloadEnvelopeSignatures(
+                    blindedExecutionPayloadsByBlockRootToImport.values()))
         .thenCompose(
             __ -> {
               final UInt64 latestSlotInBatch = blocksToImport.getLast().getSlot();
               validateBlobSidecars(
                   blocksToImport.getFirst().getSlot(), latestSlotInBatch, blocksToImport);
+              validateExecutionPayloadEnvelopes(blocksToImport);
 
               final SignedBeaconBlock newEarliestBlock = blocksToImport.getFirst();
               return storageUpdateChannel
@@ -444,6 +461,157 @@ public class HistoricalBatchFetcher {
             });
   }
 
+  private void pruneExecutionPayloadsNotInBatch() {
+    if (blindedExecutionPayloadsByBlockRootToImport.isEmpty()) {
+      return;
+    }
+    final Set<Bytes32> blockRoots =
+        blocksToImport.stream().map(SignedBeaconBlock::getRoot).collect(Collectors.toSet());
+    blindedExecutionPayloadsByBlockRootToImport.keySet().retainAll(blockRoots);
+  }
+
+  SafeFuture<Void> batchVerifyExecutionPayloadEnvelopeSignatures(
+      final Collection<SignedBlindedExecutionPayloadEnvelope> envelopes) {
+    if (envelopes.isEmpty()) {
+      return SafeFuture.COMPLETE;
+    }
+    return chainDataClient
+        .getBestState()
+        .orElseThrow()
+        .thenCompose(
+            bestState -> batchVerifyExecutionPayloadEnvelopeSignature(envelopes, bestState));
+  }
+
+  private SafeFuture<Void> batchVerifyExecutionPayloadEnvelopeSignature(
+      final Collection<SignedBlindedExecutionPayloadEnvelope> envelopes,
+      final BeaconState bestState) {
+    final List<BLSSignature> signatures = new ArrayList<>();
+    final List<Bytes> signingRoots = new ArrayList<>();
+    final List<List<BLSPublicKey>> publicKeys = new ArrayList<>();
+
+    final Map<Bytes32, SignedBeaconBlock> blocksByRoot =
+        blocksToImport.stream()
+            .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
+
+    envelopes.forEach(
+        signedEnvelope -> {
+          final BlindedExecutionPayloadEnvelope envelope = signedEnvelope.getMessage();
+          signatures.add(signedEnvelope.getSignature());
+          signingRoots.add(
+              signingRootUtil.signingRootForSignBlindedExecutionPayloadEnvelope(
+                  envelope, bestState.getForkInfo()));
+          publicKeys.add(
+              List.of(resolveExecutionPayloadEnvelopeSigner(envelope, bestState, blocksByRoot)));
+        });
+
+    return signatureVerificationService
+        .verify(publicKeys, signingRoots, signatures)
+        .thenAccept(
+            signaturesValid -> {
+              if (!signaturesValid) {
+                throw new IllegalArgumentException(
+                    "Batch execution payload envelope signature verification failed");
+              }
+            });
+  }
+
+  private BLSPublicKey resolveExecutionPayloadEnvelopeSigner(
+      final BlindedExecutionPayloadEnvelope envelope,
+      final BeaconState bestState,
+      final Map<Bytes32, SignedBeaconBlock> blocksByRoot) {
+    // For self built envelopes the signer is the block proposer, otherwise it's the builder
+    if (envelope.getBuilderIndex().equals(BUILDER_INDEX_SELF_BUILD)) {
+      final SignedBeaconBlock block =
+          Optional.ofNullable(blocksByRoot.get(envelope.getBeaconBlockRoot()))
+              .orElseThrow(
+                  () ->
+                      new IllegalArgumentException(
+                          String.format(
+                              "Self built execution payload envelope references unknown block root %s",
+                              envelope.getBeaconBlockRoot())));
+      return spec.getValidatorPubKey(bestState, block.getMessage().getProposerIndex())
+          .orElseThrow(
+              () ->
+                  new IllegalArgumentException(
+                      String.format(
+                          "Proposer at index %s for self-build execution payload envelope with block root %s is not in the state",
+                          block.getMessage().getProposerIndex(), envelope.getBeaconBlockRoot())));
+    }
+    return spec.getBuilderPubKey(bestState, envelope.getBuilderIndex())
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    String.format(
+                        "Builder at index %s for execution payload envelope with block root %s is not in the state",
+                        envelope.getBuilderIndex(), envelope.getBeaconBlockRoot())));
+  }
+
+  private void validateExecutionPayloadEnvelopes(final Collection<SignedBeaconBlock> blocks) {
+    if (blindedExecutionPayloadsByBlockRootToImport.isEmpty()) {
+      return;
+    }
+    LOG.trace("Validating execution payload envelopes for a batch");
+    final Map<Bytes32, SignedBeaconBlock> blocksByRoot =
+        blocks.stream().collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
+    blindedExecutionPayloadsByBlockRootToImport.forEach(
+        (blockRoot, signedEnvelope) ->
+            validateExecutionPayloadEnvelope(
+                signedEnvelope,
+                Optional.ofNullable(blocksByRoot.get(blockRoot))
+                    .orElseThrow(
+                        () ->
+                            new IllegalArgumentException(
+                                String.format(
+                                    "Received execution payload envelope for unknown block root %s",
+                                    blockRoot)))));
+  }
+
+  private void validateExecutionPayloadEnvelope(
+      final SignedBlindedExecutionPayloadEnvelope signedEnvelope, final SignedBeaconBlock block) {
+    final BlindedExecutionPayloadEnvelope envelope = signedEnvelope.getMessage();
+    if (!envelope.getSlot().equals(block.getSlot())) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Execution payload envelope slot %s does not match block slot %s for block root %s",
+              envelope.getSlot(), block.getSlot(), envelope.getBeaconBlockRoot()));
+    }
+    final ExecutionPayloadBid bid =
+        block
+            .getMessage()
+            .getBody()
+            .toVersionGloas()
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        String.format(
+                            "Block with root %s at slot %s does not contain a Gloas body",
+                            block.getRoot(), block.getSlot())))
+            .getSignedExecutionPayloadBid()
+            .getMessage();
+    if (!envelope.getBuilderIndex().equals(bid.getBuilderIndex())) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Execution payload envelope builder index %s does not match bid builder index %s for block root %s",
+              envelope.getBuilderIndex(), bid.getBuilderIndex(), envelope.getBeaconBlockRoot()));
+    }
+    final Bytes32 payloadBlockHash = envelope.getPayloadHeader().getBlockHash();
+    if (!payloadBlockHash.equals(bid.getBlockHash())) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Execution payload envelope block hash %s does not match bid block hash %s for block root %s",
+              payloadBlockHash, bid.getBlockHash(), envelope.getBeaconBlockRoot()));
+    }
+    final Bytes32 executionRequestsRoot = envelope.getExecutionRequests().hashTreeRoot();
+    if (!executionRequestsRoot.equals(bid.getExecutionRequestsRoot())) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Execution payload envelope execution requests root %s does not match bid execution requests root %s for block root %s",
+              executionRequestsRoot,
+              bid.getExecutionRequestsRoot(),
+              envelope.getBeaconBlockRoot()));
+    }
+  }
+
   private void validateBlobSidecars(
       final UInt64 firstSlotInBatch,
       final UInt64 latestSlotInBatch,
@@ -458,8 +626,7 @@ public class HistoricalBatchFetcher {
 
   private void validateBlobSidecars(final SignedBeaconBlock block) {
     // while we know that start or end of batch fulfills requirement, other side of the batch could
-    // be outside
-    // the requirement bounds
+    // be outside the requirement bounds
     if (!blobSidecarManager.isAvailabilityRequiredAtSlot(block.getSlot())) {
       return;
     }
