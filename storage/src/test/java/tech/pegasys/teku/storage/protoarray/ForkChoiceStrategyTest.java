@@ -171,7 +171,6 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     protoArray.addNode(
         ForkChoiceNode.createBase(anchor.getRoot()),
         anchor.getBlockSlot(),
-        anchor.getRoot(),
         anchor.getParentRoot(),
         Optional.empty(),
         anchor.getStateRoot(),
@@ -660,7 +659,6 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
         block1,
         ForkChoiceNode.createFull(block1.getRoot()),
         ForkChoiceNode.createBase(block1.getRoot()),
-        block1.getRoot(),
         block1.getExecutionBlockNumber().orElse(UInt64.ONE),
         block1.getExecutionBlockHash().orElse(dataStructureUtil.randomBytes32()));
 
@@ -698,7 +696,6 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     protoArray.addNode(
         nodeIdentity,
         blockAndState.getSlot(),
-        blockAndState.getRoot(),
         blockAndState.getParentRoot(),
         protoArray.containsNode(ForkChoiceNode.createBase(blockAndState.getParentRoot()))
             ? Optional.of(ForkChoiceNode.createBase(blockAndState.getParentRoot()))
@@ -727,7 +724,6 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     protoArray.addNode(
         nodeIdentity,
         blockAndState.getSlot(),
-        blockAndState.getRoot(),
         blockAndState.getParentRoot(),
         parentIndex.map(protoArray::getNodeByIndex).map(ProtoNode::getForkChoiceNode),
         blockAndState.getStateRoot(),
@@ -758,7 +754,6 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
         blockAndState,
         nodeIdentity,
         parentNodeIdentity,
-        blockAndState.getRoot(),
         blockAndState.getExecutionBlockNumber().orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
         blockAndState.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH));
   }
@@ -768,7 +763,6 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
       final SignedBlockAndState blockAndState,
       final ForkChoiceNode nodeIdentity,
       final ForkChoiceNode parentNodeIdentity,
-      final Bytes32 blockRoot,
       final UInt64 executionBlockNumber,
       final Bytes32 executionBlockHash) {
     addProjectedNodeToProtoArray(
@@ -777,7 +771,6 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
         blockAndState,
         nodeIdentity,
         parentNodeIdentity,
-        blockRoot,
         executionBlockNumber,
         executionBlockHash);
   }
@@ -788,13 +781,11 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
       final SignedBlockAndState blockAndState,
       final ForkChoiceNode nodeIdentity,
       final ForkChoiceNode parentNodeIdentity,
-      final Bytes32 blockRoot,
       final UInt64 executionBlockNumber,
       final Bytes32 executionBlockHash) {
     protoArray.addNode(
         nodeIdentity,
         blockAndState.getSlot(),
-        blockRoot,
         blockAndState.getParentRoot(),
         Optional.of(parentNodeIdentity),
         blockAndState.getStateRoot(),

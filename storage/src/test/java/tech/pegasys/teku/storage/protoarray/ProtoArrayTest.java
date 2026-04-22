@@ -800,7 +800,6 @@ class ProtoArrayTest {
       protoArray.addNode(
           ForkChoiceNode.createBase(blockRoot),
           blockSlot,
-          blockRoot,
           parentRoot,
           parentIndex.map(protoArray::getNodeByIndex).map(ProtoNode::getForkChoiceNode),
           stateRoot,

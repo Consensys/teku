@@ -45,7 +45,6 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
     protoArray.addNode(
         baseNode,
         blockSlot,
-        blockRoot,
         parentRoot,
         blockNodeIndex.getBaseNode(parentRoot),
         stateRoot,

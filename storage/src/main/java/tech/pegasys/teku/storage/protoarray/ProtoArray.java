@@ -131,7 +131,6 @@ public class ProtoArray {
   public void addNode(
       final ForkChoiceNode nodeIdentity,
       final UInt64 blockSlot,
-      final Bytes32 blockRoot,
       final Bytes32 parentRoot,
       final Optional<ForkChoiceNode> parentNodeIdentity,
       final Bytes32 stateRoot,
