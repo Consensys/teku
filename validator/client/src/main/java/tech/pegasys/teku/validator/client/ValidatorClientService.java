@@ -617,7 +617,7 @@ public class ValidatorClientService extends Service {
       return (epoch, duties) -> {};
     }
     // ProposerPreferencesPublisher is fork aware by using ProposerPreferencesUtil (pre Gloas util
-    // is NOOP so no publishing happens before the Gloas activates)
+    // is NOOP so no publishing happens before Gloas activates)
     return new ProposerPreferencesPublisher(
             validatorApiChannel, validators, proposerConfigManager.get(), forkProvider, spec)
         ::onProposerDutiesLoaded;
