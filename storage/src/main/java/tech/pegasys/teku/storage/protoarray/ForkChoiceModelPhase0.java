@@ -109,19 +109,14 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
   }
 
   @Override
-  public Optional<ProtoNodeData> getNodeData(
-      final ProtoArray protoArray, final ForkChoiceNode node) {
-    return protoArray.getNode(node).map(ProtoNode::getBlockData);
-  }
-
-  @Override
-  public Optional<ProtoNodeData> getBlockData(
+  public Optional<ProtoNodeData> getBaseNodeData(
       final ProtoArray protoArray,
       final BlockNodeVariantsIndex blockNodeIndex,
       final Bytes32 blockRoot) {
     return blockNodeIndex
         .getBaseNode(blockRoot)
-        .flatMap(nodeIdentity -> getNodeData(protoArray, nodeIdentity));
+        .flatMap(protoArray::getNode)
+        .map(ProtoNode::getBlockData);
   }
 
   @Override
@@ -163,11 +158,11 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
   }
 
   @Override
-  public Optional<ForkChoiceNode> resolveExecutionNode(
+  public Optional<ProtoNodeData> getExecutionNodeData(
       final ProtoArray protoArray,
       final BlockNodeVariantsIndex blockNodeIndex,
       final Bytes32 blockRoot) {
-    return resolveBaseNode(blockNodeIndex, blockRoot);
+    return getBaseNodeData(protoArray, blockNodeIndex, blockRoot);
   }
 
   @Override

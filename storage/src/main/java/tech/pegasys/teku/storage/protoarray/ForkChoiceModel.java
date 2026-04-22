@@ -84,9 +84,7 @@ interface ForkChoiceModel {
       UInt64 currentSlot,
       Optional<Bytes32> proposerBoostRoot);
 
-  Optional<ProtoNodeData> getNodeData(ProtoArray protoArray, ForkChoiceNode node);
-
-  Optional<ProtoNodeData> getBlockData(
+  Optional<ProtoNodeData> getBaseNodeData(
       ProtoArray protoArray, BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);
 
   /**
@@ -100,7 +98,7 @@ interface ForkChoiceModel {
   Optional<ForkChoiceNode> resolveBaseNode(
       BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);
 
-  Optional<ForkChoiceNode> resolveExecutionNode(
+  Optional<ProtoNodeData> getExecutionNodeData(
       ProtoArray protoArray, BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);
 
   void pullUpBlockCheckpoints(

@@ -431,7 +431,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       return getForkChoiceModelForRoot(blockRoot)
           .flatMap(
               forkChoiceModel ->
-                  forkChoiceModel.getBlockData(protoArray, blockNodeIndex, blockRoot));
+                  forkChoiceModel.getBaseNodeData(protoArray, blockNodeIndex, blockRoot));
     } finally {
       protoArrayLock.readLock().unlock();
     }
@@ -442,11 +442,10 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       final Bytes32 blockRoot, final ForkChoicePayloadStatus payloadStatus) {
     protoArrayLock.readLock().lock();
     try {
-      return getForkChoiceModelForRoot(blockRoot)
-          .flatMap(
-              forkChoiceModel ->
-                  forkChoiceModel.getNodeData(
-                      protoArray, new ForkChoiceNode(blockRoot, payloadStatus)));
+      return blockNodeIndex
+          .getNode(blockRoot, payloadStatus)
+          .flatMap(protoArray::getNode)
+          .map(ProtoNode::getBlockData);
     } finally {
       protoArrayLock.readLock().unlock();
     }
@@ -795,11 +794,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
 
   private Optional<ProtoNodeData> getExecutionNodeData(final Bytes32 blockRoot) {
     return getForkChoiceModelForRoot(blockRoot)
-        .flatMap(
-            model ->
-                model
-                    .resolveExecutionNode(protoArray, blockNodeIndex, blockRoot)
-                    .flatMap(node -> model.getNodeData(protoArray, node)));
+        .flatMap(model -> model.getExecutionNodeData(protoArray, blockNodeIndex, blockRoot));
   }
 
   private boolean isBaseNode(final ProtoNode node) {
