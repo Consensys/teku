@@ -536,6 +536,14 @@ public class HistoricalBatchFetcher {
   }
 
   private void validateExecutionPayloadEnvelopes(final Collection<SignedBeaconBlock> blocks) {
+    // We do not enforce that every Gloas block in the batch has a corresponding envelope: in
+    // Gloas a block's payload may legitimately not have been delivered (PTC vote absent), and
+    // distinguishing "builder did not deliver" from "peer withheld" requires the canonical state
+    // at the envelope's slot, which historical sync does not have. Forward sync (BatchImporter)
+    // behaves the same way, accepting missing payloads as valid. PTC attestations carried in
+    // block bodies give partial evidence, but individual votes can legitimately conflict with
+    // consensus, so any heuristic based on them is either strict enough to cause false positives
+    // or lenient enough to be easily bypassed.
     if (blindedExecutionPayloadsByBlockRootToImport.isEmpty()) {
       return;
     }
