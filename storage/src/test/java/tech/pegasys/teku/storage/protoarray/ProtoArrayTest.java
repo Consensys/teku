@@ -1396,7 +1396,6 @@ class ProtoArrayTest {
       protoArray.addNode(
           emptyNode,
           baseNode.getSlot(),
-          blockRoot,
           baseNode.getParentRoot(),
           Optional.of(ForkChoiceNode.createBase(blockRoot)),
           baseNode.getStateRoot(),
