@@ -22,7 +22,6 @@ import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
@@ -127,13 +126,6 @@ public class SigningRootUtil {
 
   public Bytes signingRootForSignExecutionPayloadEnvelope(
       final ExecutionPayloadEnvelope envelope, final ForkInfo forkInfo) {
-    final UInt64 slot = envelope.getSlot();
-    final Bytes32 domain = getDomainForSignExecutionPayload(slot, forkInfo);
-    return spec.atSlot(slot).miscHelpers().computeSigningRoot(envelope, domain);
-  }
-
-  public Bytes signingRootForSignBlindedExecutionPayloadEnvelope(
-      final BlindedExecutionPayloadEnvelope envelope, final ForkInfo forkInfo) {
     final UInt64 slot = envelope.getSlot();
     final Bytes32 domain = getDomainForSignExecutionPayload(slot, forkInfo);
     return spec.atSlot(slot).miscHelpers().computeSigningRoot(envelope, domain);

@@ -64,7 +64,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
-import tech.pegasys.teku.spec.signatures.SigningRootUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -93,7 +92,6 @@ public class HistoricalBatchFetcher {
   private final AtomicInteger requestCount = new AtomicInteger(0);
   private final AsyncBLSSignatureVerifier signatureVerificationService;
   private final CombinedChainDataClient chainDataClient;
-  private final SigningRootUtil signingRootUtil;
 
   /**
    * @param storageUpdateChannel The storage channel where finalized blocks will be imported
@@ -147,7 +145,6 @@ public class HistoricalBatchFetcher {
     this.lastBlockRoot = lastBlockRoot;
     this.batchSize = batchSize;
     this.maxRequests = maxRequests;
-    this.signingRootUtil = new SigningRootUtil(spec);
   }
 
   /**
@@ -480,13 +477,18 @@ public class HistoricalBatchFetcher {
         blocksToImport.stream()
             .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
 
+    final Bytes32 genesisValidatorsRoot = bestState.getForkInfo().getGenesisValidatorsRoot();
+
     envelopes.forEach(
         signedEnvelope -> {
           final BlindedExecutionPayloadEnvelope envelope = signedEnvelope.getMessage();
+          final UInt64 epoch = spec.computeEpochAtSlot(envelope.getSlot());
+          final Fork fork = spec.fork(epoch);
+          final Bytes32 domain =
+              spec.getDomain(Domain.BEACON_BUILDER, epoch, fork, genesisValidatorsRoot);
           signatures.add(signedEnvelope.getSignature());
           signingRoots.add(
-              signingRootUtil.signingRootForSignBlindedExecutionPayloadEnvelope(
-                  envelope, bestState.getForkInfo()));
+              spec.atSlot(envelope.getSlot()).miscHelpers().computeSigningRoot(envelope, domain));
           publicKeys.add(
               List.of(resolveExecutionPayloadEnvelopeSigner(envelope, bestState, blocksByRoot)));
         });
