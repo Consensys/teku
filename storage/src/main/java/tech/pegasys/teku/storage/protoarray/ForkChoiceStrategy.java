@@ -796,10 +796,10 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   private Optional<ProtoNodeData> getExecutionNodeData(final Bytes32 blockRoot) {
     return getForkChoiceModelForRoot(blockRoot)
         .flatMap(
-            forkChoiceModel ->
-                forkChoiceModel.getNodeData(
-                    protoArray,
-                    forkChoiceModel.resolveExecutionNode(protoArray, blockNodeIndex, blockRoot)));
+            model ->
+                model
+                    .resolveExecutionNode(protoArray, blockNodeIndex, blockRoot)
+                    .flatMap(node -> model.getNodeData(protoArray, node)));
   }
 
   private boolean isBaseNode(final ProtoNode node) {

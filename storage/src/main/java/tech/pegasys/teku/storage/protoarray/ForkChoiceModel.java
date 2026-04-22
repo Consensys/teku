@@ -97,9 +97,10 @@ interface ForkChoiceModel {
    */
   boolean isHeadCandidate(ProtoNode node);
 
-  ForkChoiceNode resolveBaseNode(BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);
+  Optional<ForkChoiceNode> resolveBaseNode(
+      BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);
 
-  ForkChoiceNode resolveExecutionNode(
+  Optional<ForkChoiceNode> resolveExecutionNode(
       ProtoArray protoArray, BlockNodeVariantsIndex blockNodeIndex, Bytes32 blockRoot);
 
   void pullUpBlockCheckpoints(

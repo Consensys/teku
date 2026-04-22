@@ -18,7 +18,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
@@ -127,7 +126,7 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
 
   @Override
   public boolean isHeadCandidate(final ProtoNode node) {
-    return node.getPayloadStatus() == ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING;
+    return true;
   }
 
   @Override
@@ -158,13 +157,13 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
   }
 
   @Override
-  public ForkChoiceNode resolveBaseNode(
+  public Optional<ForkChoiceNode> resolveBaseNode(
       final BlockNodeVariantsIndex blockNodeIndex, final Bytes32 blockRoot) {
-    return blockNodeIndex.getBaseNode(blockRoot).orElse(ForkChoiceNode.createBase(blockRoot));
+    return blockNodeIndex.getBaseNode(blockRoot);
   }
 
   @Override
-  public ForkChoiceNode resolveExecutionNode(
+  public Optional<ForkChoiceNode> resolveExecutionNode(
       final ProtoArray protoArray,
       final BlockNodeVariantsIndex blockNodeIndex,
       final Bytes32 blockRoot) {
@@ -203,6 +202,6 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
 
   @Override
   public void onPrunedBlocks(final BlockNodeVariantsIndex blockNodeIndex) {
-    // No-op
+    // not used in phase0
   }
 }
