@@ -188,9 +188,11 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
     if (blockNodeIndex.getFullNode(blockRoot).isPresent()) {
       return;
     }
+    final Optional<ForkChoiceNode> maybeBaseNodeIdentity =
+        resolveBaseNode(blockNodeIndex, blockRoot);
     final Optional<ProtoNodeData> maybeBaseNode =
-        getNodeData(protoArray, resolveBaseNode(blockNodeIndex, blockRoot));
-    if (maybeBaseNode.isEmpty()) {
+        maybeBaseNodeIdentity.flatMap(protoArray::getNode).map(ProtoNode::getBlockData);
+    if (maybeBaseNodeIdentity.isEmpty() || maybeBaseNode.isEmpty()) {
       return;
     }
 
@@ -201,7 +203,7 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
         baseNode.getSlot(),
         blockRoot,
         baseNode.getParentRoot(),
-        Optional.of(resolveBaseNode(blockNodeIndex, blockRoot)),
+        maybeBaseNodeIdentity,
         baseNode.getStateRoot(),
         baseNode.getCheckpoints(),
         executionBlockNumber,
@@ -415,19 +417,14 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   }
 
   @Override
-  public Optional<ProtoNodeData> getNodeData(
-      final ProtoArray protoArray, final ForkChoiceNode node) {
-    return protoArray.getNode(node).map(ProtoNode::getBlockData);
-  }
-
-  @Override
-  public Optional<ProtoNodeData> getBlockData(
+  public Optional<ProtoNodeData> getBaseNodeData(
       final ProtoArray protoArray,
       final BlockNodeVariantsIndex blockNodeIndex,
       final Bytes32 blockRoot) {
     return blockNodeIndex
         .getBaseNode(blockRoot)
-        .flatMap(nodeIdentity -> getNodeData(protoArray, nodeIdentity));
+        .flatMap(protoArray::getNode)
+        .map(ProtoNode::getBlockData);
   }
 
   @Override
@@ -448,20 +445,22 @@ class ForkChoiceModelGloas implements ForkChoiceModel {
   }
 
   @Override
-  public ForkChoiceNode resolveBaseNode(
+  public Optional<ForkChoiceNode> resolveBaseNode(
       final BlockNodeVariantsIndex blockNodeIndex, final Bytes32 blockRoot) {
-    return blockNodeIndex.getBaseNode(blockRoot).orElse(ForkChoiceNode.createBase(blockRoot));
+    return blockNodeIndex.getBaseNode(blockRoot);
   }
 
   @Override
-  public ForkChoiceNode resolveExecutionNode(
+  public Optional<ProtoNodeData> getExecutionNodeData(
       final ProtoArray protoArray,
       final BlockNodeVariantsIndex blockNodeIndex,
       final Bytes32 blockRoot) {
     // FULL is the execution-state node selected when the payload has been revealed.
     return blockNodeIndex
         .getFullNode(blockRoot)
-        .orElseGet(() -> resolveBaseNode(blockNodeIndex, blockRoot));
+        .or(() -> resolveBaseNode(blockNodeIndex, blockRoot))
+        .flatMap(protoArray::getNode)
+        .map(ProtoNode::getBlockData);
   }
 
   @Override
