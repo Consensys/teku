@@ -652,6 +652,7 @@ application {
 		"-XX:NativeMemoryTracking=summary",
 		// 32Mb for Netty Direct ByteBuf
 		"-Dio.netty.maxDirectMemory=33554432",
+		"-Dio.netty.ignoreExpensiveClean=true",
 		// avoids JDK 24+ warning
 		"--enable-native-access=ALL-UNNAMED"
 	]
