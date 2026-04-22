@@ -666,7 +666,11 @@ application {
 		// 32Mb for Netty Direct ByteBuf
 		"-Dio.netty.maxDirectMemory=33554432",
 		// avoids JDK 24+ warning
-		"--enable-native-access=ALL-UNNAMED"
+		"--enable-native-access=ALL-UNNAMED",
+		// avoids JDK 25+ warning due to protobuf and others
+		"--sun-misc-unsafe-memory-access=allow",
+		// avoids JDK 25+ warning due to picocli
+		"--enable-final-field-mutation=ALL-UNNAMED"
 	]
 }
 
