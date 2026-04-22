@@ -30,6 +30,15 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 
 class ProtoArrayScoreCalculator {
 
+  /**
+   * Returns one delta per protoarray index.
+   *
+   * <p>Each delta captures the net score change for that node identity after applying vote moves,
+   * balance changes, and proposer-boost updates between the old and new forkchoice views.
+   *
+   * <p>The supplied {@code getIndexByNode} function must resolve any node identity referenced by
+   * the current votes or proposer-boost nodes to a valid protoarray index.
+   */
   static LongList computeDeltas(
       final VoteUpdater store,
       final int protoArraySize,
@@ -78,16 +87,25 @@ class ProtoArrayScoreCalculator {
       final Function<ForkChoiceNode, Optional<Integer>> getIndexByNode) {
     final VoteTracker vote = store.getVote(validatorIndex);
 
+    // There is no need to create a score change if the validator has never voted
+    // or both their votes are for the zero hash (alias to the genesis block).
     if (vote.getCurrentRoot().equals(Bytes32.ZERO) && vote.getNextRoot().equals(Bytes32.ZERO)) {
       return;
     }
+    // If vote is already count as equivocated, we don't need to do anything more.
     if (vote.isCurrentEquivocating()) {
       return;
     }
 
     final int validatorIndexInt = validatorIndex.intValue();
+    // If the validator was not included in the oldBalances (i.e. it did not exist yet)
+    // then say its balance was zero.
     final UInt64 oldBalance =
         validatorIndexInt < oldBalances.size() ? oldBalances.get(validatorIndexInt) : UInt64.ZERO;
+    // If the validator vote is not known in the newBalances, then use a balance of zero.
+    // It is possible that there is a vote for an unknown validator if we change our
+    // justified state to a new state with a higher epoch that is on a different fork
+    // because that may have on-boarded fewer validators than the prior fork.
     final UInt64 newBalance =
         validatorIndexInt < newBalances.size() ? newBalances.get(validatorIndexInt) : UInt64.ZERO;
     final UInt64 effectiveNewBalance = vote.isNextEquivocating() ? UInt64.ZERO : newBalance;
@@ -107,6 +125,8 @@ class ProtoArrayScoreCalculator {
             protoArray,
             blockNodeIndex);
 
+    // A vote update matters if the validator moved roots, resolved to a different node variant,
+    // or their effective balance changed.
     if (!vote.getCurrentRoot().equals(vote.getNextRoot())
         || !currentNode.equals(nextNode)
         || !oldBalance.equals(effectiveNewBalance)) {

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.storage.protoarray;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,6 +37,8 @@ public class BlockNodeVariantsIndex {
 
   static BlockNodeVariantsIndex fromProtoArray(final ProtoArray protoArray) {
     final BlockNodeVariantsIndex blockNodeVariantsIndex = new BlockNodeVariantsIndex();
+    // Rebuilds the block-facing view from the protoarray's append order.
+    // For a given block root, the base node must appear before any EMPTY or FULL variants.
     protoArray
         .getNodes()
         .forEach(
@@ -91,13 +95,23 @@ public class BlockNodeVariantsIndex {
   }
 
   void attachEmptyNode(final Bytes32 blockRoot, final ForkChoiceNode emptyNodeIdentity) {
-    variantsByRoot.computeIfPresent(
-        blockRoot, (__, variants) -> variants.withEmptyNode(emptyNodeIdentity));
+    final BlockNodeVariants variants = variantsByRoot.get(blockRoot);
+    checkState(
+        variants != null,
+        "Cannot attach EMPTY node %s for unknown base block root %s",
+        emptyNodeIdentity,
+        blockRoot);
+    variantsByRoot.put(blockRoot, variants.withEmptyNode(emptyNodeIdentity));
   }
 
   void attachFullNode(final Bytes32 blockRoot, final ForkChoiceNode fullNodeIdentity) {
-    variantsByRoot.computeIfPresent(
-        blockRoot, (__, variants) -> variants.withFullNode(fullNodeIdentity));
+    final BlockNodeVariants variants = variantsByRoot.get(blockRoot);
+    checkState(
+        variants != null,
+        "Cannot attach FULL node %s for unknown base block root %s",
+        fullNodeIdentity,
+        blockRoot);
+    variantsByRoot.put(blockRoot, variants.withFullNode(fullNodeIdentity));
   }
 
   boolean isBaseNode(final ForkChoiceNode node) {

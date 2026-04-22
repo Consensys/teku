@@ -63,7 +63,7 @@ public record HeadSelectionContext(
       return modelComparison;
     }
     if (candidateChild.getWeight().equals(currentBestChild.getWeight())) {
-      // Tie-breaker of equal weights by root.
+      // Spec tie-breaker: when viable children have equal weight, prefer the higher root.
       return candidateChild
           .getBlockRoot()
           .toHexString()
