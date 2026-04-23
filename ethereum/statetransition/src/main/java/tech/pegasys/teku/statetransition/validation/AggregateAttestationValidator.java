@@ -20,6 +20,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
@@ -143,7 +144,7 @@ public class AggregateAttestationValidator {
               final BeaconState state = maybeState.get();
 
               // [REJECT] The aggregate attestation has participants
-              final IntList attestingIndices = spec.getAttestingIndices(state, aggregate);
+              final List<UInt64> attestingIndices = spec.getAttestingIndices(state, aggregate);
               if (attestingIndices.isEmpty()) {
                 return SafeFuture.completedFuture(
                     reject(

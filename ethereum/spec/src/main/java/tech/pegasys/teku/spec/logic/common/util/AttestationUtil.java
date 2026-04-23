@@ -103,26 +103,27 @@ public abstract class AttestationUtil {
     // signature verification (commutative). The spec's sorted-by-validator-index form is only
     // enforced for SSZ-derived IndexedAttestations reaching isValidIndexedAttestation via the
     // AttesterSlashing path.
-    final List<UInt64> indices =
-        getAttestingIndices(state, attestation).intStream().mapToObj(UInt64::valueOf).toList();
     return new IndexedAttestationLight(
-        indices, attestation.getData(), attestation.getAggregateSignature());
+        getAttestingIndices(state, attestation),
+        attestation.getData(),
+        attestation.getAggregateSignature());
   }
 
   /**
-   * Return the sorted attesting indices corresponding to ``data`` and ``bits``.
+   * Return the attesting indices corresponding to ``data`` and ``bits``, in committee-position
+   * order (i.e. the order in which aggregation bits are set over the committee). NOT sorted by
+   * validator index — committees are a pseudorandom permutation of active validators. Callers that
+   * need the spec-canonical sorted form (e.g. when serialising to an SSZ {@link IndexedAttestation}
+   * embedded in an {@code AttesterSlashing}) must sort explicitly; see {@link
+   * IndexedAttestationLight#toSsz}.
    *
-   * @param state
-   * @param attestation
-   * @return
-   * @throws IllegalArgumentException
    * @see
    *     <a>https://github.com/ethereum/consensus-specs/blob/master/specs/phase0/beacon-chain.md#get_attesting_indices</a>
    */
-  public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
-    return IntList.of(
-        streamAttestingIndices(state, attestation.getData(), attestation.getAggregationBits())
-            .toArray());
+  public List<UInt64> getAttestingIndices(final BeaconState state, final Attestation attestation) {
+    return streamAttestingIndices(state, attestation.getData(), attestation.getAggregationBits())
+        .mapToObj(UInt64::valueOf)
+        .toList();
   }
 
   public IntStream streamAttestingIndices(

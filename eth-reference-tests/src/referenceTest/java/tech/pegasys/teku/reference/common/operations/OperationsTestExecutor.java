@@ -584,12 +584,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     validatableAttestation.saveCommitteesSize(preState);
 
     var attestationIndices =
-        specVersion
-            .getAttestationUtil()
-            .getAttestingIndices(preState, attestation)
-            .intStream()
-            .mapToObj(UInt64::valueOf)
-            .toList();
+        specVersion.getAttestationUtil().getAttestingIndices(preState, attestation);
     var pooledAttestation =
         new PooledAttestationWithData(
             attestation.getData(),

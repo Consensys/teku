@@ -191,10 +191,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
                         state ->
                             spec.atSlot(attestation.getData().getSlot())
                                 .getAttestationUtil()
-                                .getAttestingIndices(state, attestation.getAttestation())
-                                .intStream()
-                                .mapToObj(UInt64::valueOf)
-                                .toList()));
+                                .getAttestingIndices(state, attestation.getAttestation())));
   }
 
   /**

@@ -16,8 +16,8 @@ package tech.pegasys.teku.spec.logic.versions.electra.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
-import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -67,16 +67,17 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
    *     <a>https://github.com/ethereum/consensus-specs/blob/master/specs/electra/beacon-chain.md#modified-get_attesting_indices</a>
    */
   @Override
-  public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
+  public List<UInt64> getAttestingIndices(final BeaconState state, final Attestation attestation) {
     final List<UInt64> committeeIndices = attestation.getCommitteeIndicesRequired();
     final SszBitlist aggregationBits = attestation.getAggregationBits();
-    final IntList attestingIndices = new IntArrayList(aggregationBits.getBitCount());
+    final List<UInt64> attestingIndices = new ArrayList<>(aggregationBits.getBitCount());
     int committeeOffset = 0;
     for (final UInt64 committeeIndex : committeeIndices) {
       final IntList committee =
           beaconStateAccessors.getBeaconCommittee(
               state, attestation.getData().getSlot(), committeeIndex);
       streamCommitteeAttesters(committee, aggregationBits, committeeOffset)
+          .mapToObj(UInt64::valueOf)
           .forEach(attestingIndices::add);
       committeeOffset += committee.size();
     }

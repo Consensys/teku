@@ -1221,7 +1221,7 @@ public class Spec {
   }
 
   // Attestation helpers
-  public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
+  public List<UInt64> getAttestingIndices(final BeaconState state, final Attestation attestation) {
     return atSlot(attestation.getData().getSlot())
         .getAttestationUtil()
         .getAttestingIndices(state, attestation);

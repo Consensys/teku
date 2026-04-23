@@ -13,6 +13,7 @@ db.version
 .gradletasknamecache
 .externalToolBuilders/
 .gradle/
+.gradle-local/*
 .idea/
 .loadpath
 .metadata
