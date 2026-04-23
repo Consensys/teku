@@ -328,7 +328,7 @@ public class ForkChoiceUtil {
     try {
       final BeaconState proposerPreState =
           context.processSlots(maybeParentState.get(), proposalSlot);
-      final int proposerIndex = getProposerIndex(proposerPreState, proposalSlot);
+      final int proposerIndex = getProposerIndex(proposerPreState);
       if (!context.isValidatorConnected(proposerIndex, proposalSlot)) {
         LOG.debug(
             "shouldOverrideForkChoiceUpdate isValidatorConnected({}) {}, ", proposerIndex, false);
@@ -384,21 +384,6 @@ public class ForkChoiceUtil {
 
   public static boolean isHeadLate(final Optional<BlockTimeliness> blockTimeliness) {
     return blockTimeliness.filter(timeliness -> !timeliness.isTimelyAttestation).isPresent();
-  }
-
-  /**
-   * Determines if the head block arrived late (after the attestation deadline).
-   *
-   * <p>Spec reference: is_head_late
-   *
-   * @param blockTimeliness the timeliness array for the block, or null if unknown
-   * @return true if the block is late, false if timely or unknown (conservative default)
-   */
-  public static boolean isHeadLate(final BlockTimeliness blockTimeliness) {
-    if (blockTimeliness == null) {
-      return false;
-    }
-    return !blockTimeliness.isTimelyAttestation;
   }
 
   private void maybeAddRoot(
@@ -867,8 +852,8 @@ public class ForkChoiceUtil {
   }
 
   @VisibleForTesting
-  protected int getProposerIndex(final BeaconState proposerPreState, final UInt64 proposalSlot) {
-    return beaconStateAccessors.getBeaconProposerIndex(proposerPreState, proposalSlot);
+  protected int getProposerIndex(final BeaconState proposerPreState) {
+    return beaconStateAccessors.getBeaconProposerIndex(proposerPreState);
   }
 
   public AvailabilityChecker<?> createAvailabilityCheckerOnBlock(final SignedBeaconBlock block) {
