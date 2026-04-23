@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beacon.sync.historical;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
@@ -154,6 +155,21 @@ public class HistoricalBatchFetcherGloasTest {
             blockCaptor.capture(), any(), blindedExecutionPayloadsCaptor.capture(), any());
     assertThat(blockCaptor.getValue()).containsExactlyElementsOf(blockBatch);
     assertThat(blindedExecutionPayloadsCaptor.getValue()).isEqualTo(expectedBlindedPayloads);
+  }
+
+  @TestTemplate
+  public void validateExecutionPayloadEnvelopesPresence_throwsWhenDeliveredEnvelopeIsMissing() {
+    final SignedBeaconBlock withheldBlock = chainBuilder.getBlockAtSlot(15);
+
+    chainBuilder
+        .streamExecutionPayloads(10, 20)
+        .filter(envelope -> !envelope.getBeaconBlockRoot().equals(withheldBlock.getRoot()))
+        .forEach(fetcher::processExecutionPayload);
+
+    assertThatThrownBy(() -> fetcher.validateExecutionPayloadEnvelopesPresence(blockBatch))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Missing execution payload envelope")
+        .hasMessageContaining(withheldBlock.getRoot().toHexString());
   }
 
   @TestTemplate

@@ -284,7 +284,8 @@ public class HistoricalBatchFetcher {
         .add(blobSidecar);
   }
 
-  private void processExecutionPayload(
+  @VisibleForTesting
+  void processExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope) {
     final SchemaDefinitionsGloas schemaDefinitions =
         SchemaDefinitionsGloas.required(
@@ -536,31 +537,77 @@ public class HistoricalBatchFetcher {
   }
 
   private void validateExecutionPayloadEnvelopes(final Collection<SignedBeaconBlock> blocks) {
-    // We do not enforce that every Gloas block in the batch has a corresponding envelope: in
-    // Gloas a block's payload may legitimately not have been delivered (PTC vote absent), and
-    // distinguishing "builder did not deliver" from "peer withheld" requires the canonical state
-    // at the envelope's slot, which historical sync does not have. Forward sync (BatchImporter)
-    // behaves the same way, accepting missing payloads as valid. PTC attestations carried in
-    // block bodies give partial evidence, but individual votes can legitimately conflict with
-    // consensus, so any heuristic based on them is either strict enough to cause false positives
-    // or lenient enough to be easily bypassed.
-    if (blindedExecutionPayloadsByBlockRootToImport.isEmpty()) {
+    if (!blindedExecutionPayloadsByBlockRootToImport.isEmpty()) {
+      LOG.trace("Validating execution payload envelopes for a batch");
+      final Map<Bytes32, SignedBeaconBlock> blocksByRoot =
+          blocks.stream()
+              .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
+      blindedExecutionPayloadsByBlockRootToImport.forEach(
+          (blockRoot, signedEnvelope) ->
+              validateExecutionPayloadEnvelope(
+                  signedEnvelope,
+                  Optional.ofNullable(blocksByRoot.get(blockRoot))
+                      .orElseThrow(
+                          () ->
+                              new IllegalArgumentException(
+                                  String.format(
+                                      "Received execution payload envelope for unknown block root %s",
+                                      blockRoot)))));
+    }
+
+    validateExecutionPayloadEnvelopesPresence(blocks);
+  }
+
+  @VisibleForTesting
+  void validateExecutionPayloadEnvelopesPresence(final Collection<SignedBeaconBlock> blocks) {
+    // For each Gloas block in the batch, verify whether its payload was delivered by comparing the
+    // next block's bid.parentBlockHash with this block's bid.blockHash
+    final List<SignedBeaconBlock> orderedBlocks = new ArrayList<>(blocks);
+    if (orderedBlocks.isEmpty()
+        || !spec.isExecutionPayloadEnvelopeAvailableAtSlot(orderedBlocks.getLast().getSlot())) {
+      // Entire batch is pre Gloas (or empty), nothing to check
       return;
     }
-    LOG.trace("Validating execution payload envelopes for a batch");
-    final Map<Bytes32, SignedBeaconBlock> blocksByRoot =
-        blocks.stream().collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
-    blindedExecutionPayloadsByBlockRootToImport.forEach(
-        (blockRoot, signedEnvelope) ->
-            validateExecutionPayloadEnvelope(
-                signedEnvelope,
-                Optional.ofNullable(blocksByRoot.get(blockRoot))
-                    .orElseThrow(
-                        () ->
-                            new IllegalArgumentException(
-                                String.format(
-                                    "Received execution payload envelope for unknown block root %s",
-                                    blockRoot)))));
+    for (int i = 1; i < orderedBlocks.size(); i++) {
+      final SignedBeaconBlock previousBlock = orderedBlocks.get(i - 1);
+      final SignedBeaconBlock currentBlock = orderedBlocks.get(i);
+      // Both blocks must be Gloas to anchor a delivery inference; otherwise skip
+      final Optional<ExecutionPayloadBid> previousBid = getExecutionPayloadBid(previousBlock);
+      final Optional<ExecutionPayloadBid> currentBid = getExecutionPayloadBid(currentBlock);
+      if (previousBid.isEmpty() || currentBid.isEmpty()) {
+        continue;
+      }
+      assertPreviousEnvelopePresentIfDelivered(previousBlock, previousBid.get(), currentBid.get());
+    }
+  }
+
+  private Optional<ExecutionPayloadBid> getExecutionPayloadBid(final SignedBeaconBlock block) {
+    return block
+        .getMessage()
+        .getBody()
+        .toVersionGloas()
+        .map(body -> body.getSignedExecutionPayloadBid().getMessage());
+  }
+
+  private void assertPreviousEnvelopePresentIfDelivered(
+      final SignedBeaconBlock previousBlock,
+      final ExecutionPayloadBid previousBid,
+      final ExecutionPayloadBid currentBid) {
+    if (previousBlock.getSlot().equals(SpecConfig.GENESIS_SLOT)) {
+      // Genesis state is bootstrapped, not delivered via an envelope
+      return;
+    }
+    if (!currentBid.getParentBlockHash().equals(previousBid.getBlockHash())) {
+      // Execution chain did not advance, so previous block's payload was not delivered
+      return;
+    }
+    if (blindedExecutionPayloadsByBlockRootToImport.containsKey(previousBlock.getRoot())) {
+      return;
+    }
+    throw new IllegalArgumentException(
+        String.format(
+            "Missing execution payload envelope for block root %s at slot %s (next block's bid.parentBlockHash indicates payload was delivered)",
+            previousBlock.getRoot(), previousBlock.getSlot()));
   }
 
   private void validateExecutionPayloadEnvelope(
