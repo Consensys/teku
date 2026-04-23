@@ -44,15 +44,6 @@ import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsG
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochProcessorGloas;
 
-/**
- * Gloas fork-choice utility layer.
- *
- * <p>This class groups the spec-facing helpers that Teku uses to implement the Gloas fork-choice
- * document: https://github.com/ethereum/consensus-specs/blob/master/specs/gloas/fork-choice.md
- *
- * <p>Where Teku collapses several Python helpers into one Java method, the method comment calls out
- * the exact spec functions involved.
- */
 public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
   public ForkChoiceUtilGloas(
       final SpecConfigGloas specConfig,
@@ -66,7 +57,6 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
   @Override
   public boolean shouldUpdateVote(
       final VoteTracker vote, final UInt64 targetEpoch, final UInt64 slot) {
-    // Spec mapping: modified update_latest_messages(store, attesting_indices, attestation)
     return slot.isGreaterThan(vote.getNextSlot()) || vote.equals(VoteTracker.DEFAULT);
   }
 
@@ -87,7 +77,6 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
 
   @Override
   public Optional<Integer> getPayloadAttestationDueMillis() {
-    // Spec mapping: get_payload_attestation_due_ms()
     final SpecConfigGloas configGloas = SpecConfigGloas.required(specConfig);
     return Optional.of(getSlotComponentDurationMillis(configGloas.getPayloadAttestationDueBps()));
   }
@@ -169,8 +158,6 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
    * If the boosted block's parent was weak and from the previous slot, boost only applies if there
    * are no timely equivocations from the same proposer.
    *
-   * <p>Spec reference: should_apply_proposer_boost
-   *
    * <p>Implementation note: the proposer-equivocation branch is intentionally not implemented yet.
    * The current code records both block timeliness flags, but it does not yet consume the PTC
    * timeliness bit here to suppress proposer boost on same-proposer equivocations. Because that
@@ -183,7 +170,6 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
    * @param justifiedState unused until the proposer-equivocation branch is implemented
    * @return true if proposer boost should be applied
    */
-  // should_apply_proposer_boost
   @Override
   public boolean shouldApplyProposerBoost(
       final Bytes32 proposerBoostRoot,
