@@ -123,6 +123,22 @@ class ForkChoiceUtilGloasTest {
   }
 
   @Test
+  void getParentPayloadStatus_shouldReturnEmpty_whenParentMessageBlockHashIsZero() {
+    final BeaconBlock parentBlock = createBlockWithBlockHash(Bytes32.ZERO);
+    final BeaconBlock currentBlock =
+        createBlockWithParentAndParentBlockHash(parentBlock.getRoot(), Bytes32.ZERO);
+
+    final ReadOnlyStore store = mock(ReadOnlyStore.class);
+    when(store.retrieveBlock(currentBlock.getParentRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(parentBlock)));
+
+    final SafeFuture<PayloadStatus> result =
+        forkChoiceUtil.getParentPayloadStatus(store, currentBlock);
+
+    assertThat(result).isCompletedWithValue(PayloadStatus.PAYLOAD_STATUS_EMPTY);
+  }
+
+  @Test
   void getParentPayloadStatus_shouldThrowException_whenParentBlockNotFound() {
     final SignedBeaconBlock currentBlock = dataStructureUtil.randomSignedBeaconBlock();
 

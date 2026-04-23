@@ -185,13 +185,16 @@ public class GenesisGenerator {
 
       final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
 
+      // Genesis payload is EMPTY: latestBlockHash stays zero while bid.blockHash tracks the
+      // eth1 block hash, so the first post-genesis block is treated as having an EMPTY parent.
+      stateGloas.setLatestBlockHash(Bytes32.ZERO);
       stateGloas.setLatestExecutionPayloadBid(
           schemaDefinitionsGloas
               .getExecutionPayloadBidSchema()
               .create(
                   Bytes32.ZERO,
                   Bytes32.ZERO,
-                  Bytes32.ZERO,
+                  eth1BlockHash,
                   Bytes32.ZERO,
                   Bytes20.ZERO,
                   UInt64.ZERO,

@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -194,5 +195,24 @@ class GenesisGeneratorTest {
     assertThat(actualState).isInstanceOf(BeaconStateBellatrix.class);
     assertThat(BeaconStateBellatrix.required(actualState).getLatestExecutionPayloadHeader())
         .hasValue(payloadHeader);
+  }
+
+  @Test
+  void shouldInitializeGloasGenesisWithEmptyLatestBlockHashAndEth1BidBlockHash() {
+    final Spec gloasSpec = TestSpecFactory.createMinimalGloas();
+    final DataStructureUtil gloasDataStructureUtil = new DataStructureUtil(gloasSpec);
+    final GenesisGenerator genesisGenerator =
+        new GenesisGenerator(gloasSpec.getGenesisSpec(), gloasSpec.fork(UInt64.ZERO));
+    final List<Deposit> deposits =
+        new MockStartDepositGenerator(gloasSpec, new DepositGenerator(gloasSpec, true))
+            .createDeposits(VALIDATOR_KEYS).stream().map(Deposit::new).toList();
+    final Bytes32 eth1BlockHash = gloasDataStructureUtil.randomBytes32();
+
+    genesisGenerator.updateCandidateState(eth1BlockHash, UInt64.ONE, deposits);
+
+    final BeaconStateGloas actualState =
+        BeaconStateGloas.required(genesisGenerator.getGenesisState());
+    assertThat(actualState.getLatestBlockHash()).isEqualTo(Bytes32.ZERO);
+    assertThat(actualState.getLatestExecutionPayloadBid().getBlockHash()).isEqualTo(eth1BlockHash);
   }
 }
