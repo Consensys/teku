@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.storage.api.FinalizedChainData;
+import tech.pegasys.teku.storage.protoarray.ExecutionPayloadUpdate;
 
 class StoreTransactionUpdatesFactory {
   private static final Logger LOG = LogManager.getLogger();
@@ -56,6 +57,7 @@ class StoreTransactionUpdatesFactory {
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final AnchorPoint latestFinalized;
   private final Map<Bytes32, UInt64> prunedHotBlockRoots = new ConcurrentHashMap<>();
+  private final Map<Bytes32, ExecutionPayloadUpdate> hotExecutionPayloadAndStates;
   private final Map<Bytes32, SignedExecutionPayloadEnvelope> hotExecutionPayloads;
 
   public StoreTransactionUpdatesFactory(
@@ -79,7 +81,12 @@ class StoreTransactionUpdatesFactory {
     maybeEarliestBlobSidecarSlot = tx.maybeEarliestBlobSidecarTransactionSlot;
     maybeLatestCanonicalBlockRoot = tx.maybeLatestCanonicalBlockRoot;
     maybeCustodyGroupCount = tx.maybeCustodyGroupCount;
-    hotExecutionPayloads = new ConcurrentHashMap<>(tx.executionPayloadData);
+    hotExecutionPayloadAndStates = new ConcurrentHashMap<>(tx.executionPayloadData);
+    hotExecutionPayloads =
+        hotExecutionPayloadAndStates.entrySet().stream()
+            .collect(
+                Collectors.toConcurrentMap(
+                    Map.Entry::getKey, entry -> entry.getValue().executionPayload()));
   }
 
   public static StoreTransactionUpdates create(
@@ -145,6 +152,7 @@ class StoreTransactionUpdatesFactory {
             blockRoot -> {
               hotBlocks.remove(blockRoot);
               hotBlockAndStates.remove(blockRoot);
+              hotExecutionPayloadAndStates.remove(blockRoot);
               hotExecutionPayloads.remove(blockRoot);
             });
 
@@ -200,7 +208,7 @@ class StoreTransactionUpdatesFactory {
     if (baseStore.getForkChoiceStrategy().contains(finalizedChainHeadRoot)) {
       baseStore
           .getForkChoiceStrategy()
-          .processHashesInChain(
+          .processBeaconBlockChain(
               finalizedChainHeadRoot,
               (blockRoot, slot, parentRoot) -> childToParent.put(blockRoot, parentRoot));
     }
@@ -239,7 +247,7 @@ class StoreTransactionUpdatesFactory {
     final BeaconBlockSummary finalizedBlock = tx.getLatestFinalized().getBlockSummary();
     baseStore
         .getForkChoiceStrategy()
-        .processAllInOrder(
+        .processAllBeaconBlocksInOrder(
             (blockRoot, slot, parentRoot) -> {
               if (shouldPrune(finalizedBlock, blockRoot, slot, parentRoot)) {
                 prunedHotBlockRoots.put(blockRoot, slot);
@@ -283,6 +291,7 @@ class StoreTransactionUpdatesFactory {
         spec.supportsBlobSidecars(),
         spec.supportsDataColumnSidecars(),
         spec.supportsExecutionPayloadEnvelopes(),
+        hotExecutionPayloadAndStates,
         hotExecutionPayloads,
         blindedExecutionPayloads);
   }

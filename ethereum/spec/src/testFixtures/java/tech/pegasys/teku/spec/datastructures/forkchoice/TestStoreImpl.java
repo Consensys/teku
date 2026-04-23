@@ -279,13 +279,23 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public boolean isHeadWeak(final Bytes32 root) {
-    return false;
+  public Optional<BeaconState> getJustifiedStateIfAvailable() {
+    return Optional.ofNullable(checkpointStates.get(justifiedCheckpoint));
   }
 
   @Override
-  public boolean isParentStrong(final Bytes32 parentRoot) {
-    return false;
+  public Optional<BeaconState> getCheckpointStateIfAvailable(final Checkpoint checkpoint) {
+    return Optional.ofNullable(checkpointStates.get(checkpoint));
+  }
+
+  @Override
+  public UInt64 getReorgThreshold() {
+    return UInt64.ZERO;
+  }
+
+  @Override
+  public UInt64 getParentThreshold() {
+    return UInt64.ZERO;
   }
 
   @Override
@@ -327,8 +337,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
 
   @Override
   public void putExecutionPayload(final SignedExecutionPayloadEnvelope executionPayload) {
-    final Bytes32 beaconBlockRoot = executionPayload.getBeaconBlockRoot();
-    executionPayloads.put(beaconBlockRoot, executionPayload);
+    executionPayloads.put(executionPayload.getBeaconBlockRoot(), executionPayload);
   }
 
   @Override
@@ -409,7 +418,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   public void commit() {}
 
   @Override
-  public Bytes32 applyForkChoiceScoreChanges(
+  public SlotAndForkChoiceNode applyForkChoiceScoreChanges(
+      final UInt64 currentSlot,
       final UInt64 currentEpoch,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,

@@ -19,19 +19,27 @@ import static tech.pegasys.teku.storage.protoarray.ProtoArrayScoreCalculator.com
 import static tech.pegasys.teku.storage.protoarray.ProtoArrayTestUtil.createStoreToManipulateVotes;
 import static tech.pegasys.teku.storage.protoarray.ProtoArrayTestUtil.getHash;
 
+import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class ProtoArrayScoreCalculatorTest {
+  private static final Spec SPEC = TestSpecFactory.createMinimalPhase0();
+  private static final Checkpoint GENESIS_CHECKPOINT = new Checkpoint(ZERO, Bytes32.ZERO);
 
   private final Object2IntMap<Bytes32> indices = new Object2IntOpenHashMap<>();
   private List<UInt64> oldBalances = new ArrayList<>();
@@ -45,6 +53,34 @@ public class ProtoArrayScoreCalculatorTest {
   private Optional<Integer> getIndex(final Bytes32 root) {
     final int index = indices.getOrDefault(root, -1);
     return index >= 0 ? Optional.of(index) : Optional.empty();
+  }
+
+  private LongList computeDeltas(
+      final VoteUpdater store,
+      final int protoArraySize,
+      final Function<Bytes32, Optional<Integer>> getBaseNodeIndexByRoot,
+      final List<UInt64> oldBalances,
+      final List<UInt64> newBalances,
+      final Optional<Bytes32> previousProposerBoostRoot,
+      final Optional<Bytes32> newProposerBoostRoot,
+      final UInt64 previousBoostAmount,
+      final UInt64 newBoostAmount) {
+    final BlockNodeVariantsIndex blockNodeIndex = new BlockNodeVariantsIndex();
+    indices.forEach(
+        (root, __) -> blockNodeIndex.putBaseNode(root, ZERO, ForkChoiceNode.createBase(root)));
+    return ProtoArrayScoreCalculator.computeDeltas(
+        store,
+        protoArraySize,
+        node -> getBaseNodeIndexByRoot.apply(node.blockRoot()),
+        previousProposerBoostRoot.map(ForkChoiceNode::createBase),
+        newProposerBoostRoot.map(ForkChoiceNode::createBase),
+        oldBalances,
+        newBalances,
+        previousBoostAmount,
+        newBoostAmount,
+        createProtoArray(),
+        blockNodeIndex,
+        ForkChoiceModelPhase0.INSTANCE);
   }
 
   @Test
@@ -156,8 +192,8 @@ public class ProtoArrayScoreCalculatorTest {
 
     for (int i = 0; i < validatorCount; i++) {
       indices.put(getHash(i), i);
-      VoteTracker newVote = new VoteTracker(getHash(0), getHash(1));
-      store.putVote(UInt64.valueOf(i), newVote);
+      store.getVote(UInt64.valueOf(i));
+      store.putVote(UInt64.valueOf(i), new VoteTracker(getHash(0), getHash(1)));
       oldBalances.add(balance);
       newBalances.add(balance);
     }
@@ -206,12 +242,12 @@ public class ProtoArrayScoreCalculatorTest {
     newBalances = Collections.nCopies(2, balance);
 
     // One validator moves their vote from the block to the zero hash.
-    VoteTracker newVote1 = new VoteTracker(getHash(1), Bytes32.ZERO);
-    store.putVote(UInt64.valueOf(0), newVote1);
+    store.getVote(UInt64.valueOf(0));
+    store.putVote(UInt64.valueOf(0), new VoteTracker(getHash(1), Bytes32.ZERO));
 
     // One validator moves their vote from the block to something outside the tree.
-    VoteTracker newVote2 = new VoteTracker(getHash(1), getHash(1337));
-    store.putVote(UInt64.valueOf(1), newVote2);
+    store.getVote(UInt64.valueOf(1));
+    store.putVote(UInt64.valueOf(1), new VoteTracker(getHash(1), getHash(1337)));
 
     List<Long> deltas =
         computeDeltas(
@@ -242,8 +278,8 @@ public class ProtoArrayScoreCalculatorTest {
 
     for (int i = 0; i < validatorCount; i++) {
       indices.put(getHash(i), i);
-      VoteTracker newVote = new VoteTracker(getHash(0), getHash(1));
-      store.putVote(UInt64.valueOf(i), newVote);
+      store.getVote(UInt64.valueOf(i));
+      store.putVote(UInt64.valueOf(i), new VoteTracker(getHash(0), getHash(1)));
       oldBalances.add(oldBalance);
       newBalances.add(newBalance);
     }
@@ -294,8 +330,8 @@ public class ProtoArrayScoreCalculatorTest {
 
     // Both validators move votes from block 1 to block 2.
     for (int i = 0; i < 2; i++) {
-      VoteTracker newVote = new VoteTracker(getHash(1), getHash(2));
-      store.putVote(UInt64.valueOf(i), newVote);
+      store.getVote(UInt64.valueOf(i));
+      store.putVote(UInt64.valueOf(i), new VoteTracker(getHash(1), getHash(2)));
     }
 
     List<Long> deltas =
@@ -336,8 +372,8 @@ public class ProtoArrayScoreCalculatorTest {
 
     // Both validators move votes from block 1 to block 2.
     for (int i = 0; i < 2; i++) {
-      VoteTracker newVote = new VoteTracker(getHash(1), getHash(2));
-      store.putVote(UInt64.valueOf(i), newVote);
+      store.getVote(UInt64.valueOf(i));
+      store.putVote(UInt64.valueOf(i), new VoteTracker(getHash(1), getHash(2)));
     }
 
     List<Long> deltas =
@@ -525,8 +561,8 @@ public class ProtoArrayScoreCalculatorTest {
 
     // Both validators moves vote to the last block.
     for (int i = 0; i < 2; i++) {
-      VoteTracker newVote = new VoteTracker(getHash(2), getHash(3));
-      store.putVote(UInt64.valueOf(i), newVote);
+      store.getVote(UInt64.valueOf(i));
+      store.putVote(UInt64.valueOf(i), new VoteTracker(getHash(2), getHash(3)));
     }
 
     // Validator #0 is set to be marked as equivocated
@@ -570,6 +606,42 @@ public class ProtoArrayScoreCalculatorTest {
     for (int i = 0; i < 3; i++) {
       assertThat(deltas2.get(i)).isEqualTo(0);
     }
+  }
+
+  @Test
+  void computeDeltas_newlyEquivocatingVoteOnSameRootRemovesBalance() {
+    final UInt64 balance = UInt64.valueOf(42);
+    final Bytes32 root = getHash(1);
+
+    indices.put(root, 0);
+    oldBalances = List.of(balance);
+    newBalances = List.of(balance);
+
+    store.putVote(ZERO, new VoteTracker(root, root, true, false));
+
+    final List<Long> deltas =
+        computeDeltas(
+            store,
+            indices.size(),
+            this::getIndex,
+            oldBalances,
+            newBalances,
+            oldProposerBoostRoot,
+            newProposerBoostRoot,
+            oldProposerBoostAmount,
+            newProposerBoostAmount);
+
+    assertThat(deltas).containsExactly(-balance.longValue());
+    assertThat(store.getVote(ZERO).isCurrentEquivocating()).isTrue();
+  }
+
+  private ProtoArray createProtoArray() {
+    return ProtoArray.builder()
+        .spec(SPEC)
+        .currentEpoch(ZERO)
+        .justifiedCheckpoint(GENESIS_CHECKPOINT)
+        .finalizedCheckpoint(GENESIS_CHECKPOINT)
+        .build();
   }
 
   private void votesShouldBeUpdated(final VoteUpdater store) {
