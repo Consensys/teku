@@ -34,11 +34,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceReorgContext;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
@@ -901,29 +899,6 @@ public class ForkChoiceUtil {
       final UInt64 reorgThreshold,
       final BeaconState justifiedState) {
     return true;
-  }
-
-  public SafeFuture<StateAndBlockSummary> retrieveNewChainHeadStateAndBlockSummary(
-      final Bytes32 root, final UInt64 chainHeadSlot, final ReadOnlyStore store) {
-    return retrieveNewChainHeadStateAndBlockSummary(
-        root, ForkChoicePayloadStatus.PAYLOAD_STATUS_PENDING, chainHeadSlot, store);
-  }
-
-  public SafeFuture<StateAndBlockSummary> retrieveNewChainHeadStateAndBlockSummary(
-      final Bytes32 root,
-      final ForkChoicePayloadStatus payloadStatus,
-      final UInt64 chainHeadSlot,
-      final ReadOnlyStore store) {
-    return store
-        .retrieveStateAndBlockSummary(root)
-        .thenApply(
-            maybeHead ->
-                maybeHead.orElseThrow(
-                    () ->
-                        new IllegalStateException(
-                            String.format(
-                                "Unable to update head block as of slot %s.  Block is unavailable: %s.",
-                                chainHeadSlot, root))));
   }
 
   public Optional<ForkChoiceUtilDeneb> toVersionDeneb() {
