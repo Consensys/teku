@@ -62,7 +62,7 @@ class BlockProcessorGloasTest {
                   builder.parentExecutionRequests(dataStructureUtil.emptyExecutionRequests());
                 }));
 
-    ((BlockProcessorGloas) spec.getBlockProcessor(gloasSlot))
+    spec.getBlockProcessor(gloasSlot)
         .processParentExecutionPayload(
             state,
             block,
