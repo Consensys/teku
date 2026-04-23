@@ -76,9 +76,10 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
+import tech.pegasys.teku.storage.protoarray.BlockNodeVariantsIndex;
+import tech.pegasys.teku.storage.protoarray.ForkChoiceModelFactory;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.protoarray.ProtoArray;
-import tech.pegasys.teku.storage.protoarray.ProtoNode;
 
 class Store extends CacheableStore {
   private static final Logger LOG = LogManager.getLogger();
@@ -369,7 +370,6 @@ class Store extends CacheableStore {
     return initialCanonicalBlockRoot;
   }
 
-  @SuppressWarnings("UnusedVariable")
   private static ProtoArray buildProtoArray(
       final Spec spec,
       final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot,
@@ -380,6 +380,8 @@ class Store extends CacheableStore {
       final Optional<Bytes32> initialCanonicalBlockRoot) {
     final List<StoredBlockMetadata> blocks = new ArrayList<>(blockInfoByRoot.values());
     blocks.sort(Comparator.comparing(StoredBlockMetadata::getBlockSlot));
+    final ForkChoiceModelFactory forkChoiceModelFactory = new ForkChoiceModelFactory(spec);
+    final BlockNodeVariantsIndex blockNodeIndex = new BlockNodeVariantsIndex();
     final ProtoArray protoArray =
         ProtoArray.builder()
             .spec(spec)
@@ -393,19 +395,16 @@ class Store extends CacheableStore {
         throw new IllegalStateException(
             "Incompatible database version detected. The data in this database is too old to be read by Teku. A re-sync will be required.");
       }
-
-      protoArray.onBlock(
-          block.getBlockSlot(),
-          block.getBlockRoot(),
-          block.getParentRoot(),
-          block.getStateRoot(),
-          block.getCheckpointEpochs().get(),
-          block.getExecutionBlockNumber().orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
-          block.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
-          spec.isBlockProcessorOptimistic(block.getBlockSlot()));
+      forkChoiceModelFactory.rebuildBlockNodesFromMetadata(
+          protoArray, blockNodeIndex, block, spec.isBlockProcessorOptimistic(block.getBlockSlot()));
     }
 
-    initialCanonicalBlockRoot.ifPresent(protoArray::setInitialCanonicalBlockRoot);
+    initialCanonicalBlockRoot.ifPresent(
+        blockRoot ->
+            protoArray.setInitialCanonicalBlockRoot(
+                blockRoot,
+                forkChoiceModelFactory.createHeadSelectionContext(
+                    spec.computeStartSlotAtEpoch(currentEpoch), blockNodeIndex, Optional.empty())));
 
     return protoArray;
   }
@@ -611,7 +610,8 @@ class Store extends CacheableStore {
     readLock.lock();
     try {
       final List<Bytes32> blockRoots = new ArrayList<>();
-      forkChoiceStrategy.processAllInOrder((root, slot, parent) -> blockRoots.add(root));
+      forkChoiceStrategy.processAllBeaconBlocksInOrder(
+          (root, slot, parent) -> blockRoots.add(root));
       return blockRoots;
     } finally {
       readLock.unlock();
@@ -645,44 +645,13 @@ class Store extends CacheableStore {
   }
 
   @Override
-  public boolean isHeadWeak(final Bytes32 root) {
-    final Optional<ProtoNodeData> maybeBlockData = getBlockDataFromForkChoiceStrategy(root);
-    return maybeBlockData
-        .map(
-            blockData -> {
-              final UInt64 headWeight = blockData.getWeight();
-
-              final boolean result = headWeight.isLessThan(reorgThreshold);
-
-              LOG.trace(
-                  "isHeadWeak {}: headWeight: {}, reorgThreshold: {}, result: {}",
-                  root,
-                  headWeight,
-                  reorgThreshold,
-                  result);
-              return result;
-            })
-        .orElse(false);
+  public UInt64 getReorgThreshold() {
+    return reorgThreshold;
   }
 
   @Override
-  public boolean isParentStrong(final Bytes32 parentRoot) {
-    final Optional<ProtoNodeData> maybeBlockData = getBlockDataFromForkChoiceStrategy(parentRoot);
-    return maybeBlockData
-        .map(
-            blockData -> {
-              final UInt64 parentWeight = blockData.getWeight();
-              final boolean result = parentWeight.isGreaterThan(parentThreshold);
-
-              LOG.debug(
-                  "isParentStrong {}: parentWeight: {}, parentThreshold: {}, result: {}",
-                  parentRoot,
-                  parentWeight,
-                  parentThreshold,
-                  result);
-              return result;
-            })
-        .orElse(true);
+  public UInt64 getParentThreshold() {
+    return parentThreshold;
   }
 
   @Override
@@ -695,6 +664,16 @@ class Store extends CacheableStore {
     parentThreshold =
         beaconStateAccessors.calculateCommitteeFraction(
             justifiedState, specVersion.getConfig().getReorgParentWeightThreshold());
+  }
+
+  @Override
+  public Optional<BeaconState> getJustifiedStateIfAvailable() {
+    return getCheckpointStateIfAvailable(getJustifiedCheckpoint());
+  }
+
+  @Override
+  public Optional<BeaconState> getCheckpointStateIfAvailable(final Checkpoint checkpoint) {
+    return checkpointStates.getIfAvailable(checkpoint.toSlotAndBlockRoot(spec));
   }
 
   @Override
@@ -921,7 +900,8 @@ class Store extends CacheableStore {
     }
   }
 
-  VoteTracker getVote(final UInt64 validatorIndex) {
+  @Override
+  public VoteTracker getVote(final UInt64 validatorIndex) {
     readVotesLock.lock();
     try {
       if (validatorIndex.intValue() >= votes.length) {
@@ -1041,7 +1021,7 @@ class Store extends CacheableStore {
     final AtomicReference<SlotAndBlockRoot> latestEpochBoundary = new AtomicReference<>();
     readLock.lock();
     try {
-      forkChoiceStrategy.processHashesInChain(
+      forkChoiceStrategy.processBeaconBlockChain(
           blockRoot,
           (root, slot, parent) -> {
             treeBuilder.childAndParentRoots(root, parent);
@@ -1083,9 +1063,9 @@ class Store extends CacheableStore {
     final AtomicReference<BeaconState> baseState = new AtomicReference<>();
     readLock.lock();
     try {
-      forkChoiceStrategy.processHashesInChainWhile(
+      forkChoiceStrategy.processBeaconBlockChainWhile(
           blockRoot,
-          (root, slot, parent, executionHash) -> {
+          (root, slot, parent) -> {
             treeBuilder.childAndParentRoots(root, parent);
             final Optional<BeaconState> blockState = getBlockStateIfAvailable(root);
             blockState.ifPresent(

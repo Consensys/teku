@@ -224,8 +224,8 @@ public class ForkChoiceUtil {
       return headRoot;
     }
 
-    final boolean isHeadWeak = isHeadWeak(store, headRoot, UInt64.ZERO);
-    final boolean isParentStrong = isParentStrong(store, head, UInt64.ZERO);
+    final boolean isHeadWeak = isHeadWeak(store, headRoot, store.getReorgThreshold());
+    final boolean isParentStrong = isParentStrong(store, head, store.getParentThreshold());
     if (isHeadWeak && isParentStrong) {
       LOG.debug("getProposerHead - return parentRoot - isHeadWeak true && isParentStrong true");
       return head.getParentRoot();
@@ -296,8 +296,8 @@ public class ForkChoiceUtil {
       return false;
     }
     if (currentSlot.isGreaterThan(head.getSlot())) {
-      final boolean isHeadWeak = isHeadWeak(store, headRoot, UInt64.ZERO);
-      final boolean isParentStrong = isParentStrong(store, head, UInt64.ZERO);
+      final boolean isHeadWeak = isHeadWeak(store, headRoot, store.getReorgThreshold());
+      final boolean isParentStrong = isParentStrong(store, head, store.getParentThreshold());
       if (!isHeadWeak || !isParentStrong) {
         LOG.debug(
             "shouldOverrideForkChoiceUpdate isHeadWeak {}, isParentStrong {}",
@@ -790,12 +790,20 @@ public class ForkChoiceUtil {
 
   public boolean isHeadWeak(
       final ReadOnlyStore store, final Bytes32 root, final UInt64 reorgThreshold) {
-    return store.isHeadWeak(root);
+    return store
+        .getForkChoiceStrategy()
+        .getBlockData(root)
+        .map(blockData -> blockData.getWeight().isLessThan(reorgThreshold))
+        .orElse(false);
   }
 
   public boolean isParentStrong(
       final ReadOnlyStore store, final SignedBeaconBlock head, final UInt64 parentThreshold) {
-    return store.isParentStrong(head.getParentRoot());
+    return store
+        .getForkChoiceStrategy()
+        .getBlockData(head.getParentRoot())
+        .map(blockData -> blockData.getWeight().isGreaterThan(parentThreshold))
+        .orElse(true);
   }
 
   @VisibleForTesting
