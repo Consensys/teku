@@ -346,9 +346,11 @@ public class ForkChoiceUtil {
     final Optional<UInt64> maybeParentSlot =
         store.getForkChoiceStrategy().blockSlot(head.getParentRoot());
     return maybeParentSlot
-            .map(parentSlot -> parentSlot.increment().equals(head.getSlot()))
-            .orElse(false)
-        && head.getSlot().increment().equals(proposalSlot);
+        .map(
+            parentSlot ->
+                parentSlot.increment().equals(head.getSlot())
+                    && proposalSlot.equals(head.getSlot().increment()))
+        .orElse(false);
   }
 
   boolean isForkChoiceStableAndFinalizationOk(final ReadOnlyStore store, final UInt64 slot) {
