@@ -353,6 +353,10 @@ public class ForkChoiceUtil {
         && head.getSlot().increment().equals(proposalSlot);
   }
 
+  boolean isForkChoiceStableAndFinalizationOk(final ReadOnlyStore store, final UInt64 slot) {
+    return isShufflingStable(slot) && isFinalizationOk(store, slot);
+  }
+
   boolean isProposerBoostActive(final ReadOnlyStore store, final Bytes32 headRoot) {
     return store.getProposerBoostRoot().map(root -> !root.equals(headRoot)).orElse(false);
   }
@@ -362,16 +366,41 @@ public class ForkChoiceUtil {
     return store.isFfgCompetitive(headRoot, parentRoot).orElse(false);
   }
 
-  boolean isForkChoiceStableAndFinalizationOk(final ReadOnlyStore store, final UInt64 slot) {
-    return isShufflingStable(slot) && isFinalizationOk(store, slot);
+  /**
+   * Computes block timeliness based on the arrival time relative to the slot start.
+   *
+   * <p>Spec reference: record_block_timeliness
+   *
+   * @param blockSlot the slot of the block
+   * @param currentSlot the current slot
+   * @param millisIntoSlot milliseconds elapsed since the slot start
+   * @return boolean array of timeliness values. Pre-Gloas: single element (attestation deadline).
+   *     Gloas: two elements (attestation deadline, PTC deadline).
+   */
+  public BlockTimeliness computeBlockTimeliness(
+      final UInt64 blockSlot, final UInt64 currentSlot, final int millisIntoSlot) {
+    final int timelinessLimit = getAttestationDueMillis();
+    final boolean isTimely = blockSlot.equals(currentSlot) && timelinessLimit > millisIntoSlot;
+    return new BlockTimeliness(isTimely, false);
   }
 
   public static boolean isHeadLate(final Optional<BlockTimeliness> blockTimeliness) {
     return blockTimeliness.filter(timeliness -> !timeliness.isTimelyAttestation).isPresent();
   }
 
-  protected int getProposerIndex(final BeaconState proposerPreState, final UInt64 proposalSlot) {
-    return beaconStateAccessors.getBeaconProposerIndex(proposerPreState, proposalSlot);
+  /**
+   * Determines if the head block arrived late (after the attestation deadline).
+   *
+   * <p>Spec reference: is_head_late
+   *
+   * @param blockTimeliness the timeliness array for the block, or null if unknown
+   * @return true if the block is late, false if timely or unknown (conservative default)
+   */
+  public static boolean isHeadLate(final BlockTimeliness blockTimeliness) {
+    if (blockTimeliness == null) {
+      return false;
+    }
+    return !blockTimeliness.isTimelyAttestation;
   }
 
   private void maybeAddRoot(
@@ -626,14 +655,14 @@ public class ForkChoiceUtil {
     return store.retrieveBlockState(slotAndBlockRoot);
   }
 
-  private UInt64 getFinalizedCheckpointStartSlot(final ReadOnlyStore store) {
-    final UInt64 finalizedEpoch = store.getFinalizedCheckpoint().getEpoch();
-    return miscHelpers.computeStartSlotAtEpoch(finalizedEpoch);
-  }
-
   public void applyExecutionPayloadToStore(
       final MutableStore store, final SignedExecutionPayloadEnvelope signedEnvelope) {
     // No-op until the runtime wiring switches to the Gloas payload path.
+  }
+
+  private UInt64 getFinalizedCheckpointStartSlot(final ReadOnlyStore store) {
+    final UInt64 finalizedEpoch = store.getFinalizedCheckpoint().getEpoch();
+    return miscHelpers.computeStartSlotAtEpoch(finalizedEpoch);
   }
 
   public BlockImportResult checkOnBlockConditions(
@@ -724,39 +753,6 @@ public class ForkChoiceUtil {
     return blockSlot
         .plus(maybeConfig.get().getSafeSlotsToImportOptimistically())
         .isLessThanOrEqualTo(getCurrentSlot(store));
-  }
-
-  /**
-   * Computes block timeliness based on the arrival time relative to the slot start.
-   *
-   * <p>Spec reference: record_block_timeliness
-   *
-   * @param blockSlot the slot of the block
-   * @param currentSlot the current slot
-   * @param millisIntoSlot milliseconds elapsed since the slot start
-   * @return boolean array of timeliness values. Pre-Gloas: single element (attestation deadline).
-   *     Gloas: two elements (attestation deadline, PTC deadline).
-   */
-  public BlockTimeliness computeBlockTimeliness(
-      final UInt64 blockSlot, final UInt64 currentSlot, final int millisIntoSlot) {
-    final int timelinessLimit = getAttestationDueMillis();
-    final boolean isTimely = blockSlot.equals(currentSlot) && timelinessLimit > millisIntoSlot;
-    return new BlockTimeliness(isTimely, false);
-  }
-
-  /**
-   * Determines if the head block arrived late (after the attestation deadline).
-   *
-   * <p>Spec reference: is_head_late
-   *
-   * @param blockTimeliness the timeliness array for the block, or null if unknown
-   * @return true if the block is late, false if timely or unknown (conservative default)
-   */
-  public static boolean isHeadLate(final BlockTimeliness blockTimeliness) {
-    if (blockTimeliness == null) {
-      return false;
-    }
-    return !blockTimeliness.isTimelyAttestation;
   }
 
   @VisibleForTesting
@@ -870,6 +866,11 @@ public class ForkChoiceUtil {
         .getBlockData(head.getParentRoot())
         .map(blockData -> blockData.getWeight().isGreaterThan(parentThreshold))
         .orElse(true);
+  }
+
+  @VisibleForTesting
+  protected int getProposerIndex(final BeaconState proposerPreState, final UInt64 proposalSlot) {
+    return beaconStateAccessors.getBeaconProposerIndex(proposerPreState, proposalSlot);
   }
 
   public AvailabilityChecker<?> createAvailabilityCheckerOnBlock(final SignedBeaconBlock block) {
