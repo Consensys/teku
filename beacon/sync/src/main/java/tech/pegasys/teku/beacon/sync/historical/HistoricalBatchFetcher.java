@@ -571,7 +571,6 @@ public class HistoricalBatchFetcher {
     for (int i = 1; i < orderedBlocks.size(); i++) {
       final SignedBeaconBlock previousBlock = orderedBlocks.get(i - 1);
       final SignedBeaconBlock currentBlock = orderedBlocks.get(i);
-      // Both blocks must be Gloas to anchor a delivery inference; otherwise skip
       final Optional<ExecutionPayloadBid> previousBid = getExecutionPayloadBid(previousBlock);
       final Optional<ExecutionPayloadBid> currentBid = getExecutionPayloadBid(currentBlock);
       if (previousBid.isEmpty() || currentBid.isEmpty()) {
@@ -594,7 +593,7 @@ public class HistoricalBatchFetcher {
       final ExecutionPayloadBid previousBid,
       final ExecutionPayloadBid currentBid) {
     if (previousBlock.getSlot().equals(SpecConfig.GENESIS_SLOT)) {
-      // Genesis state is bootstrapped, not delivered via an envelope
+      // Genesis state
       return;
     }
     if (!currentBid.getParentBlockHash().equals(previousBid.getBlockHash())) {
