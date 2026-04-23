@@ -27,6 +27,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
@@ -38,7 +39,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.InvalidResponseException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -120,6 +120,7 @@ public class HistoricalBatchFetcherTest {
             lastBlockInBatch.getSlot(),
             lastBlockInBatch.getRoot(),
             UInt64.valueOf(blockBatch.size()),
+            Optional.empty(),
             maxRequests);
 
     when(signatureVerifier.verify(any(), any(), anyList()))
@@ -132,7 +133,7 @@ public class HistoricalBatchFetcherTest {
         .thenReturn(SafeFuture.completedFuture(false));
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
-    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+    final SafeFuture<SignedBeaconBlock> future = fetcher.run();
     peer.completePendingRequests();
     assertThat(future).isCompletedExceptionally();
   }
@@ -140,7 +141,7 @@ public class HistoricalBatchFetcherTest {
   @TestTemplate
   public void run_returnAllBlocksOnFirstRequest() {
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
-    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+    final SafeFuture<SignedBeaconBlock> future = fetcher.run();
 
     assertThat(peer.getOutstandingRequests()).isPositive();
     peer.completePendingRequests();
@@ -158,7 +159,7 @@ public class HistoricalBatchFetcherTest {
         allBlocks -> allBlocks.stream().limit(limit).collect(Collectors.toList()));
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
-    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+    final SafeFuture<SignedBeaconBlock> future = fetcher.run();
 
     assertThat(peer.getOutstandingRequests()).isPositive();
     peer.completePendingRequests();
@@ -200,10 +201,11 @@ public class HistoricalBatchFetcherTest {
             latestBlock.getSlot(),
             latestBlock.getRoot(),
             UInt64.valueOf(batchSize),
+            Optional.empty(),
             maxRequests);
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
-    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+    final SafeFuture<SignedBeaconBlock> future = fetcher.run();
 
     assertThat(peer.getOutstandingRequests()).isPositive();
     peer.completePendingRequests();
@@ -228,10 +230,11 @@ public class HistoricalBatchFetcherTest {
             lastBlockInBatch.getSlot(),
             lastBlockInBatch.getRoot(),
             UInt64.valueOf(blockBatch.size()),
+            Optional.empty(),
             maxRequests);
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
-    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+    final SafeFuture<SignedBeaconBlock> future = fetcher.run();
 
     assertThat(peer.getOutstandingRequests()).isPositive();
     peer.completePendingRequests();
@@ -255,7 +258,7 @@ public class HistoricalBatchFetcherTest {
                 .collect(Collectors.toList()));
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
-    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+    final SafeFuture<SignedBeaconBlock> future = fetcher.run();
 
     for (int i = 0; i < maxRequests; i++) {
       assertThat(peer.getOutstandingRequests()).isPositive();
@@ -279,7 +282,7 @@ public class HistoricalBatchFetcherTest {
         });
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
-    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+    final SafeFuture<SignedBeaconBlock> future = fetcher.run();
 
     assertThat(peer.getOutstandingRequests()).isPositive();
     peer.completePendingRequests();
@@ -299,7 +302,7 @@ public class HistoricalBatchFetcherTest {
                 .collect(Collectors.toList()));
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
-    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+    final SafeFuture<SignedBeaconBlock> future = fetcher.run();
 
     for (int i = 0; i < maxRequests; i++) {
       assertThat(peer.getOutstandingRequests()).isPositive();
@@ -319,7 +322,7 @@ public class HistoricalBatchFetcherTest {
     peer.setBlockRequestFilter(allBlocks -> Collections.emptyList());
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
-    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+    final SafeFuture<SignedBeaconBlock> future = fetcher.run();
 
     for (int i = 0; i < maxRequests; i++) {
       assertThat(peer.getOutstandingRequests()).isPositive();
@@ -343,7 +346,7 @@ public class HistoricalBatchFetcherTest {
         allBlocks -> allBlocks.stream().limit(limit).skip(1).collect(Collectors.toList()));
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
-    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+    final SafeFuture<SignedBeaconBlock> future = fetcher.run();
 
     for (int i = 0; i < 2; i++) {
       assertThat(peer.getOutstandingRequests()).isPositive();

@@ -37,7 +37,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -136,6 +135,7 @@ public class HistoricalBatchFetcherDenebTest {
             lastBlockInBatch.getSlot(),
             lastBlockInBatch.getRoot(),
             UInt64.valueOf(blockBatch.size()),
+            Optional.empty(),
             maxRequests);
 
     when(signatureVerifier.verify(any(), any(), anyList()))
@@ -149,7 +149,7 @@ public class HistoricalBatchFetcherDenebTest {
     when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
-    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+    final SafeFuture<SignedBeaconBlock> future = fetcher.run();
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(2);
     peer.completePendingRequests();
@@ -177,7 +177,7 @@ public class HistoricalBatchFetcherDenebTest {
                     i.getArgument(1), new IllegalStateException("oopsy")));
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
-    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+    final SafeFuture<SignedBeaconBlock> future = fetcher.run();
     peer.completePendingRequests();
 
     assertThat(future)
@@ -214,10 +214,11 @@ public class HistoricalBatchFetcherDenebTest {
             maxSlot,
             lastBlockInBatch.getRoot(),
             UInt64.valueOf(batchSize),
+            Optional.empty(),
             maxRequests);
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
-    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+    final SafeFuture<SignedBeaconBlock> future = fetcher.run();
 
     for (int i = 0; i < maxRequests; i++) {
       final int outstandingRequests = blobSidecarsRequired ? 2 : 1;

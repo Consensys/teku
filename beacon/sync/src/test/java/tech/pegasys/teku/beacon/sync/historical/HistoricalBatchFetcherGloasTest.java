@@ -26,6 +26,7 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +38,6 @@ import tech.pegasys.teku.networking.eth2.peers.RespondingEth2Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
@@ -134,6 +134,7 @@ public class HistoricalBatchFetcherGloasTest {
             lastBlockInBatch.getSlot(),
             lastBlockInBatch.getRoot(),
             UInt64.valueOf(blockBatch.size()),
+            Optional.empty(),
             maxRequests);
 
     when(signatureVerifier.verify(any(), any(), anyList()))
@@ -143,7 +144,7 @@ public class HistoricalBatchFetcherGloasTest {
   @TestTemplate
   public void run_returnAllBlocksAndExecutionPayloadEnvelopesOnFirstRequest() {
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
-    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+    final SafeFuture<SignedBeaconBlock> future = fetcher.run();
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(2);
     peer.completePendingRequests();
@@ -173,6 +174,39 @@ public class HistoricalBatchFetcherGloasTest {
   }
 
   @TestTemplate
+  public void
+      validateExecutionPayloadEnvelopesPresence_throwsWhenLastBlockEnvelopeIsMissingAndNextBlockDeliveredIt() {
+    chainBuilder.generateBlockAtSlot(21);
+    final SignedBeaconBlock successor = chainBuilder.getBlockAtSlot(21);
+    final HistoricalBatchFetcher fetcherWithSuccessor =
+        new HistoricalBatchFetcher(
+            storageUpdateChannel,
+            signatureVerifier,
+            chainDataClient,
+            spec,
+            blobSidecarManager,
+            peer,
+            lastBlockInBatch.getSlot(),
+            lastBlockInBatch.getRoot(),
+            UInt64.valueOf(blockBatch.size()),
+            Optional.of(successor),
+            maxRequests);
+
+    // Withhold only the envelope for the last block in the batch, so the loop inside the batch
+    // cannot catch it
+    chainBuilder
+        .streamExecutionPayloads(10, 20)
+        .filter(envelope -> !envelope.getBeaconBlockRoot().equals(lastBlockInBatch.getRoot()))
+        .forEach(fetcherWithSuccessor::processExecutionPayload);
+
+    assertThatThrownBy(
+            () -> fetcherWithSuccessor.validateExecutionPayloadEnvelopesPresence(blockBatch))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Missing execution payload envelope")
+        .hasMessageContaining(lastBlockInBatch.getRoot().toHexString());
+  }
+
+  @TestTemplate
   public void run_failsOnInvalidExecutionPayloadEnvelopeSignature() {
     // block signatures pass on the first verify call but envelope signatures fail on the second
     when(signatureVerifier.verify(any(), any(), anyList()))
@@ -180,7 +214,7 @@ public class HistoricalBatchFetcherGloasTest {
         .thenReturn(SafeFuture.completedFuture(false));
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
-    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+    final SafeFuture<SignedBeaconBlock> future = fetcher.run();
     peer.completePendingRequests();
 
     assertThat(future)

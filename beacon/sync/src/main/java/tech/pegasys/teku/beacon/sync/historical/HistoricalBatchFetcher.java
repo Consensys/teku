@@ -51,7 +51,6 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BlindedExecutionPayloadEnvelope;
@@ -79,10 +78,11 @@ public class HistoricalBatchFetcher {
   private final Bytes32 lastBlockRoot;
   private final UInt64 batchSize;
   private final int maxRequests;
+  private final Optional<SignedBeaconBlock> nextBlock;
 
   private final Spec spec;
   private final BlobSidecarManager blobSidecarManager;
-  private final SafeFuture<BeaconBlockSummary> future = new SafeFuture<>();
+  private final SafeFuture<SignedBeaconBlock> future = new SafeFuture<>();
   private final Deque<SignedBeaconBlock> blocksToImport = new ConcurrentLinkedDeque<>();
   private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlotToImport =
       new ConcurrentHashMap<>();
@@ -99,6 +99,8 @@ public class HistoricalBatchFetcher {
    * @param maxSlot The maxSlot to pull
    * @param lastBlockRoot The block root that defines the last block in our batch
    * @param batchSize The number of blocks to sync (assuming all slots are filled)
+   * @param nextBlock The block immediately following the batch (used to validate execution payload
+   *     delivery for the last block in the batch), or empty if unavailable
    */
   public HistoricalBatchFetcher(
       final StorageUpdateChannel storageUpdateChannel,
@@ -109,7 +111,8 @@ public class HistoricalBatchFetcher {
       final Eth2Peer peer,
       final UInt64 maxSlot,
       final Bytes32 lastBlockRoot,
-      final UInt64 batchSize) {
+      final UInt64 batchSize,
+      final Optional<SignedBeaconBlock> nextBlock) {
     this(
         storageUpdateChannel,
         signatureVerifier,
@@ -120,6 +123,7 @@ public class HistoricalBatchFetcher {
         maxSlot,
         lastBlockRoot,
         batchSize,
+        nextBlock,
         MAX_REQUESTS);
   }
 
@@ -134,6 +138,7 @@ public class HistoricalBatchFetcher {
       final UInt64 maxSlot,
       final Bytes32 lastBlockRoot,
       final UInt64 batchSize,
+      final Optional<SignedBeaconBlock> nextBlock,
       final int maxRequests) {
     this.storageUpdateChannel = storageUpdateChannel;
     this.signatureVerificationService = signatureVerifier;
@@ -144,6 +149,7 @@ public class HistoricalBatchFetcher {
     this.maxSlot = maxSlot;
     this.lastBlockRoot = lastBlockRoot;
     this.batchSize = batchSize;
+    this.nextBlock = nextBlock;
     this.maxRequests = maxRequests;
   }
 
@@ -153,7 +159,7 @@ public class HistoricalBatchFetcher {
    *
    * @return A future that resolves with the earliest block pulled and saved.
    */
-  public SafeFuture<BeaconBlockSummary> run() {
+  public SafeFuture<SignedBeaconBlock> run() {
     SafeFuture.asyncDoWhile(this::requestBlocksAndBlobSidecarsByRange)
         .thenCompose(
             __ -> {
@@ -336,19 +342,19 @@ public class HistoricalBatchFetcher {
       blobSidecarsFetch = SafeFuture.COMPLETE;
     }
 
-    final SafeFuture<Void> executionPayloadFetch;
+    final SafeFuture<Void> executionPayloadEnvelopeFetch;
     if (spec.isExecutionPayloadEnvelopeAvailableAtSlot(block.getSlot())) {
       LOG.trace(
           "Request associated execution payload envelope for historical block with root {}",
           block.getRoot());
-      executionPayloadFetch =
+      executionPayloadEnvelopeFetch =
           peer.requestExecutionPayloadEnvelopeByRoot(block.getRoot())
               .thenAccept(maybePayload -> maybePayload.ifPresent(this::processExecutionPayload));
     } else {
-      executionPayloadFetch = SafeFuture.COMPLETE;
+      executionPayloadEnvelopeFetch = SafeFuture.COMPLETE;
     }
 
-    return SafeFuture.allOfFailFast(blobSidecarsFetch, executionPayloadFetch);
+    return SafeFuture.allOfFailFast(blobSidecarsFetch, executionPayloadEnvelopeFetch);
   }
 
   private SafeFuture<Void> requestBlobSidecarsByRoot(
@@ -578,6 +584,19 @@ public class HistoricalBatchFetcher {
       }
       assertPreviousEnvelopePresentIfDelivered(previousBlock, previousBid.get(), currentBid.get());
     }
+    // Check the last block in the batch against the batch's successor (if available), so it is not
+    // skipped by the pairwise loop above
+    nextBlock.ifPresent(
+        successor -> {
+          final SignedBeaconBlock lastBlockInBatch = orderedBlocks.getLast();
+          final Optional<ExecutionPayloadBid> lastBid = getExecutionPayloadBid(lastBlockInBatch);
+          final Optional<ExecutionPayloadBid> successorBid = getExecutionPayloadBid(successor);
+          if (lastBid.isEmpty() || successorBid.isEmpty()) {
+            return;
+          }
+          assertPreviousEnvelopePresentIfDelivered(
+              lastBlockInBatch, lastBid.get(), successorBid.get());
+        });
   }
 
   private Optional<ExecutionPayloadBid> getExecutionPayloadBid(final SignedBeaconBlock block) {
