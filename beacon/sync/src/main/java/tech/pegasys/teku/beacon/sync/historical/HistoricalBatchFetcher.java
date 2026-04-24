@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.beacon.sync.historical;
 
-import static tech.pegasys.teku.spec.config.SpecConfigGloas.BUILDER_INDEX_SELF_BUILD;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import java.util.ArrayList;
@@ -380,17 +378,18 @@ public class HistoricalBatchFetcher {
     // send to signature verification and blob sidecars / execution payload validation and only
     // store blocks, blob sidecars and execution payloads if all checks pass, or if one fails we
     // reject the entire response
+    //
+    // Note: execution payload envelope signatures are deliberately NOT verified here. Gloas
+    // builder indices are reusable (see apply_deposit_for_builder in the consensus spec), so the
+    // builder_index -> pubkey mapping must be resolved against the state at the envelope's slot.
+    // Non-archival nodes don't have historical states, and resolving against the current head
+    // state would use the wrong pubkey once an index has been recycled. Envelope consistency with
+    // the block's bid is still checked in validateExecutionPayloadEnvelopes.
     pruneExecutionPayloadsNotInBatch();
     return chainDataClient
         .getBestState()
         .orElseThrow()
-        .thenCompose(
-            bestState ->
-                batchVerifyHistoricalBlockSignature(blocksToImport, bestState)
-                    .thenCompose(
-                        __ ->
-                            batchVerifyExecutionPayloadEnvelopeSignature(
-                                blindedExecutionPayloadsByBlockRootToImport.values(), bestState)))
+        .thenCompose(bestState -> batchVerifyHistoricalBlockSignature(blocksToImport, bestState))
         .thenCompose(
             __ -> {
               final UInt64 latestSlotInBatch = blocksToImport.getLast().getSlot();
@@ -469,78 +468,6 @@ public class HistoricalBatchFetcher {
     final Set<Bytes32> blockRoots =
         blocksToImport.stream().map(SignedBeaconBlock::getRoot).collect(Collectors.toSet());
     blindedExecutionPayloadsByBlockRootToImport.keySet().retainAll(blockRoots);
-  }
-
-  private SafeFuture<Void> batchVerifyExecutionPayloadEnvelopeSignature(
-      final Collection<SignedBlindedExecutionPayloadEnvelope> envelopes,
-      final BeaconState bestState) {
-    if (envelopes.isEmpty()) {
-      return SafeFuture.COMPLETE;
-    }
-    final List<BLSSignature> signatures = new ArrayList<>();
-    final List<Bytes> signingRoots = new ArrayList<>();
-    final List<List<BLSPublicKey>> publicKeys = new ArrayList<>();
-
-    final Map<Bytes32, SignedBeaconBlock> blocksByRoot =
-        blocksToImport.stream()
-            .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
-
-    final Bytes32 genesisValidatorsRoot = bestState.getForkInfo().getGenesisValidatorsRoot();
-
-    envelopes.forEach(
-        signedEnvelope -> {
-          final BlindedExecutionPayloadEnvelope envelope = signedEnvelope.getMessage();
-          final UInt64 epoch = spec.computeEpochAtSlot(envelope.getSlot());
-          final Fork fork = spec.fork(epoch);
-          final Bytes32 domain =
-              spec.getDomain(Domain.BEACON_BUILDER, epoch, fork, genesisValidatorsRoot);
-          signatures.add(signedEnvelope.getSignature());
-          signingRoots.add(
-              spec.atSlot(envelope.getSlot()).miscHelpers().computeSigningRoot(envelope, domain));
-          publicKeys.add(
-              List.of(resolveExecutionPayloadEnvelopeSigner(envelope, bestState, blocksByRoot)));
-        });
-
-    return signatureVerificationService
-        .verify(publicKeys, signingRoots, signatures)
-        .thenAccept(
-            signaturesValid -> {
-              if (!signaturesValid) {
-                throw new IllegalArgumentException(
-                    "Batch execution payload envelope signature verification failed");
-              }
-            });
-  }
-
-  private BLSPublicKey resolveExecutionPayloadEnvelopeSigner(
-      final BlindedExecutionPayloadEnvelope envelope,
-      final BeaconState bestState,
-      final Map<Bytes32, SignedBeaconBlock> blocksByRoot) {
-    // For self built envelopes the signer is the block proposer, otherwise it's the builder
-    if (envelope.getBuilderIndex().equals(BUILDER_INDEX_SELF_BUILD)) {
-      final SignedBeaconBlock block =
-          Optional.ofNullable(blocksByRoot.get(envelope.getBeaconBlockRoot()))
-              .orElseThrow(
-                  () ->
-                      new IllegalArgumentException(
-                          String.format(
-                              "Self built execution payload envelope references unknown block root %s",
-                              envelope.getBeaconBlockRoot())));
-      return spec.getValidatorPubKey(bestState, block.getMessage().getProposerIndex())
-          .orElseThrow(
-              () ->
-                  new IllegalArgumentException(
-                      String.format(
-                          "Proposer at index %s for self-build execution payload envelope with block root %s is not in the state",
-                          block.getMessage().getProposerIndex(), envelope.getBeaconBlockRoot())));
-    }
-    return spec.getBuilderPubKey(bestState, envelope.getBuilderIndex())
-        .orElseThrow(
-            () ->
-                new IllegalArgumentException(
-                    String.format(
-                        "Builder at index %s for execution payload envelope with block root %s is not in the state",
-                        envelope.getBuilderIndex(), envelope.getBeaconBlockRoot())));
   }
 
   private void validateExecutionPayloadEnvelopes(final Collection<SignedBeaconBlock> blocks) {
