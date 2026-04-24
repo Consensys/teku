@@ -279,7 +279,11 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
                             block ->
                                 combinedChainDataClient.getExecutionPayloadByBlockRoot(
                                     block.getRoot()))
-                        .orElse(SafeFuture.completedFuture(Optional.empty())));
+                        .orElse(SafeFuture.completedFuture(Optional.empty())))
+            .thenApply(
+                maybeExecutionPayload ->
+                    maybeExecutionPayload.filter(
+                        executionPayload -> executionPayload.getSlot().equals(slot)));
       }
     }
   }
