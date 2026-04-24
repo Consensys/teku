@@ -371,6 +371,11 @@ public abstract class BeaconStateAccessors {
     return getDomain(Domain.VOLUNTARY_EXIT, epoch, fork, genesisValidatorsRoot);
   }
 
+  public IntList getPtc(final BeaconState state, final UInt64 slot) {
+    // NO-OP
+    return IntList.of();
+  }
+
   public Optional<BLSPublicKey> getBuilderPubKey(
       final BeaconState state, final UInt64 builderIndex) {
     // NO-OP
