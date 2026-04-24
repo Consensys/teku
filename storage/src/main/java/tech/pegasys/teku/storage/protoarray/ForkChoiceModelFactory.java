@@ -26,20 +26,24 @@ public class ForkChoiceModelFactory {
 
   private final ForkChoiceModel phase0Model = ForkChoiceModelPhase0.INSTANCE;
   private final ForkChoiceModel gloasModel;
+  private final UInt64 firstGloasSlot;
 
   public ForkChoiceModelFactory(final Spec spec) {
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
       gloasModel =
           new ForkChoiceModelGloas(
               SpecConfigGloas.required(spec.forMilestone(SpecMilestone.GLOAS).getConfig()));
+      firstGloasSlot =
+          spec.computeStartSlotAtEpoch(
+              spec.getForkSchedule().getFork(SpecMilestone.GLOAS).getEpoch());
     } else {
       gloasModel = phase0Model;
+      firstGloasSlot = UInt64.MAX_VALUE;
     }
   }
 
   ForkChoiceModel forSlot(final UInt64 slot) {
-    // Branch 06 keeps the Gloas model dormant while the storage/rebuild pieces land.
-    return phase0Model;
+    return slot.isGreaterThanOrEqualTo(firstGloasSlot) ? gloasModel : phase0Model;
   }
 
   public HeadSelectionContext createHeadSelectionContext(
