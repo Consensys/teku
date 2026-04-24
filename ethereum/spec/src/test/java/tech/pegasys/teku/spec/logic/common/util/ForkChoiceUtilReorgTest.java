@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceReorgContext;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -484,14 +485,28 @@ class ForkChoiceUtilReorgTest {
   }
 
   @Test
+  void isHeadWeakDefaultsToFalseWhenNodeMissing() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+
+    assertThat(
+            setup.baseForkChoiceUtil.isHeadWeak(
+                setup.store, setup.signedBlockAndState.getRoot(), UInt64.ONE))
+        .isFalse();
+  }
+
+  @Test
   void isHeadWeakUsesThreshold() {
     final ReorgTestSetup setup = new ReorgTestSetup();
-    when(setup.store.isHeadWeak(setup.signedBlockAndState.getRoot())).thenReturn(true);
+    setup.withNodeWeight(setup.signedBlockAndState.getRoot(), UInt64.ONE);
 
     assertThat(
             setup.baseForkChoiceUtil.isHeadWeak(
                 setup.store, setup.signedBlockAndState.getRoot(), UInt64.valueOf(2)))
         .isTrue();
+    assertThat(
+            setup.baseForkChoiceUtil.isHeadWeak(
+                setup.store, setup.signedBlockAndState.getRoot(), UInt64.ONE))
+        .isFalse();
   }
 
   @Test
@@ -502,6 +517,21 @@ class ForkChoiceUtilReorgTest {
             setup.baseForkChoiceUtil.isParentStrong(
                 setup.store, setup.signedBlockAndState.getBlock(), UInt64.ONE))
         .isTrue();
+  }
+
+  @Test
+  void isParentStrongUsesThreshold() {
+    final ReorgTestSetup setup = new ReorgTestSetup();
+    setup.withNodeWeight(setup.signedBlockAndState.getBlock().getParentRoot(), UInt64.valueOf(3));
+
+    assertThat(
+            setup.baseForkChoiceUtil.isParentStrong(
+                setup.store, setup.signedBlockAndState.getBlock(), UInt64.valueOf(2)))
+        .isTrue();
+    assertThat(
+            setup.baseForkChoiceUtil.isParentStrong(
+                setup.store, setup.signedBlockAndState.getBlock(), UInt64.valueOf(3)))
+        .isFalse();
   }
 
   private static Stream<Arguments> isProposingOnTimeCases() {
@@ -563,13 +593,17 @@ class ForkChoiceUtilReorgTest {
       when(store.getBlockIfAvailable(any())).thenReturn(Optional.empty());
       when(store.getBlockStateIfAvailable(any())).thenReturn(Optional.empty());
       when(store.isFfgCompetitive(any(), any())).thenReturn(Optional.empty());
-      when(store.isHeadWeak(any())).thenReturn(false);
-      when(store.isParentStrong(any())).thenReturn(true);
       when(forkChoiceStrategy.blockSlot(any())).thenReturn(Optional.empty());
     }
 
     private void withHeadBlock() {
       when(store.getBlockIfAvailable(any())).thenReturn(signedBlockAndState.getSignedBeaconBlock());
+    }
+
+    private void withNodeWeight(final Bytes32 root, final UInt64 weight) {
+      final ProtoNodeData blockData = mock(ProtoNodeData.class);
+      when(blockData.getWeight()).thenReturn(weight);
+      when(forkChoiceStrategy.getBlockData(root)).thenReturn(Optional.of(blockData));
     }
 
     private void withParentSlot(final Optional<UInt64> maybeSlot) {

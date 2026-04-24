@@ -60,7 +60,7 @@ public class HezeStateUpgrade implements StateUpgrade<BeaconStateGloas> {
               state.setCurrentSyncCommittee(preStateGloas.getCurrentSyncCommittee());
               state.setNextSyncCommittee(preStateGloas.getNextSyncCommittee());
 
-              state.setLatestExecutionPayloadBid(preStateGloas.getLatestExecutionPayloadBid());
+              state.setLatestBlockHash(preStateGloas.getLatestBlockHash());
               state.setNextWithdrawalIndex(preStateGloas.getNextWithdrawalIndex());
               state.setNextWithdrawalValidatorIndex(
                   preStateGloas.getNextWithdrawalValidatorIndex());
@@ -82,7 +82,7 @@ public class HezeStateUpgrade implements StateUpgrade<BeaconStateGloas> {
                   preStateGloas.getExecutionPayloadAvailability());
               state.setBuilderPendingPayments(preStateGloas.getBuilderPendingPayments());
               state.setBuilderPendingWithdrawals(preStateGloas.getBuilderPendingWithdrawals());
-              state.setLatestBlockHash(preStateGloas.getLatestBlockHash());
+              state.setLatestExecutionPayloadBid(preStateGloas.getLatestExecutionPayloadBid());
               state.setPayloadExpectedWithdrawals(preStateGloas.getPayloadExpectedWithdrawals());
               state.setPtcWindow(preStateGloas.getPtcWindow());
             });

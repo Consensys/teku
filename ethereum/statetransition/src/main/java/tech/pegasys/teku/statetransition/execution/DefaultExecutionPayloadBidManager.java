@@ -130,7 +130,9 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
     final Bytes32 parentRoot = state.getLatestBlockHeader().getRoot();
     final boolean shouldExtendPayload =
         ForkChoiceUtilGloas.required(specVersion.getForkChoiceUtil())
-            .shouldExtendPayload(recentChainData.getStore(), parentRoot);
+                .shouldExtendPayload(recentChainData.getStore(), parentRoot)
+            // handle Gloas fork boundary edge case
+            || state.getLatestExecutionPayloadBid().getParentBlockHash().equals(Bytes32.ZERO);
     final Bytes32 parentBlockHash =
         shouldExtendPayload
             ? state.getLatestExecutionPayloadBid().getBlockHash()

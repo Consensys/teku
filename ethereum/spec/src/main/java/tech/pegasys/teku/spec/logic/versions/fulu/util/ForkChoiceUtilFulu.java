@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 
 public class ForkChoiceUtilFulu extends ForkChoiceUtilDeneb {
 
-  private volatile AvailabilityCheckerFactory<UInt64> dataColumnSidecarAvailabilityCheckerFactory;
+  protected volatile AvailabilityCheckerFactory<UInt64> dataColumnSidecarAvailabilityCheckerFactory;
 
   public ForkChoiceUtilFulu(
       final SpecConfig specConfig,
@@ -44,7 +44,7 @@ public class ForkChoiceUtilFulu extends ForkChoiceUtilDeneb {
   }
 
   @Override
-  public AvailabilityChecker<?> createAvailabilityChecker(final SignedBeaconBlock block) {
+  public AvailabilityChecker<?> createAvailabilityCheckerOnBlock(final SignedBeaconBlock block) {
     final AvailabilityCheckerFactory<UInt64> factory =
         this.dataColumnSidecarAvailabilityCheckerFactory;
     if (factory == null) {

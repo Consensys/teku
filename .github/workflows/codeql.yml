@@ -14,9 +14,31 @@ name: "CodeQL"
 on:
   push:
     branches: [ master, "*-integration", "release-*" ]
+    paths-ignore:
+      - '**/*.md'
+      - 'LICENSE*'
+      - 'NOTICE*'
+      - 'CHANGELOG*'
+      - 'CODEOWNERS'
+      - '.gitignore'
+      - '.gitattributes'
+      - '.codespell/**'
+      - 'specrefs/**'
+      - 'mlc_config.json'
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ master ]
+    paths-ignore:
+      - '**/*.md'
+      - 'LICENSE*'
+      - 'NOTICE*'
+      - 'CHANGELOG*'
+      - 'CODEOWNERS'
+      - '.gitignore'
+      - '.gitattributes'
+      - '.codespell/**'
+      - 'specrefs/**'
+      - 'mlc_config.json'
   schedule:
     - cron: '39 22 * * 5'
 

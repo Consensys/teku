@@ -300,8 +300,8 @@ public class FFGUpdatesTest {
             new Checkpoint(finalizedEpoch, Bytes32.ZERO),
             new Checkpoint(justifiedEpoch, Bytes32.ZERO),
             new Checkpoint(finalizedEpoch, Bytes32.ZERO)),
-        ProtoNode.NO_EXECUTION_BLOCK_NUMBER,
-        ProtoNode.NO_EXECUTION_BLOCK_HASH);
+        Optional.empty(),
+        Optional.empty());
   }
 
   private UInt64 unsigned(final int i) {
@@ -316,13 +316,17 @@ public class FFGUpdatesTest {
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
       final List<UInt64> justifiedStateEffectiveBalances) {
-    return forkChoice.applyPendingVotes(
-        store,
-        Optional.empty(),
-        UInt64.valueOf(1000),
-        finalizedCheckpoint,
-        justifiedCheckpoint,
-        justifiedStateEffectiveBalances,
-        ZERO);
+    return forkChoice
+        .applyPendingVotes(
+            store,
+            Optional.empty(),
+            UInt64.valueOf(1000),
+            UInt64.valueOf(1000),
+            finalizedCheckpoint,
+            justifiedCheckpoint,
+            justifiedStateEffectiveBalances,
+            ZERO)
+        .node()
+        .blockRoot();
   }
 }

@@ -37,6 +37,9 @@ public enum ExecutionPayloadFields implements SszFieldName {
   BLOB_GAS_USED,
   EXCESS_BLOB_GAS,
   // Gloas
+  BLOCK_ACCESS_LIST,
+  BLOCK_ACCESS_LIST_ROOT,
+  SLOT_NUMBER,
   PARENT_BLOCK_HASH,
   PARENT_BLOCK_ROOT,
   BUILDER_INDEX,

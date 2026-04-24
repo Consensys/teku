@@ -151,7 +151,7 @@ class EngineNewPayloadV5Test {
     final List<Bytes> executionRequests = dataStructureUtil.randomEncodedExecutionRequests();
 
     final ExecutionPayloadV4 executionPayloadV4 =
-        ExecutionPayloadV4.fromInternalExecutionPayload(executionPayload, slot);
+        ExecutionPayloadV4.fromInternalExecutionPayload(executionPayload);
     assertThat(executionPayloadV4).isExactlyInstanceOf(ExecutionPayloadV4.class);
 
     jsonRpcMethod = new EngineNewPayloadV5(executionEngineClient);

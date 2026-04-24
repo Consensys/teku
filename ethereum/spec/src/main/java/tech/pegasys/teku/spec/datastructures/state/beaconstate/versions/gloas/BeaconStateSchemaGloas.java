@@ -59,7 +59,7 @@ public class BeaconStateSchemaGloas
   public static final int EXECUTION_PAYLOAD_AVAILABILITY_FIELD_INDEX = 40;
   public static final int BUILDER_PENDING_PAYMENTS_FIELD_INDEX = 41;
   public static final int BUILDER_PENDING_WITHDRAWALS_FIELD_INDEX = 42;
-  public static final int LATEST_BLOCK_HASH_FIELD_INDEX = 43;
+  public static final int LATEST_EXECUTION_PAYLOAD_BID_FIELD_INDEX = 43;
   public static final int PAYLOAD_EXPECTED_WITHDRAWALS_FIELD_INDEX = 44;
   public static final int PTC_WINDOW_INDEX = 45;
 
@@ -96,9 +96,9 @@ public class BeaconStateSchemaGloas
                 BeaconStateFields.BUILDER_PENDING_WITHDRAWALS,
                 () -> schemaRegistry.get(BUILDER_PENDING_WITHDRAWALS_SCHEMA)),
             new SszField(
-                LATEST_BLOCK_HASH_FIELD_INDEX,
-                BeaconStateFields.LATEST_BLOCK_HASH,
-                () -> SszPrimitiveSchemas.BYTES32_SCHEMA),
+                LATEST_EXECUTION_PAYLOAD_BID_FIELD_INDEX,
+                BeaconStateFields.LATEST_EXECUTION_PAYLOAD_BID,
+                () -> schemaRegistry.get(EXECUTION_PAYLOAD_BID_SCHEMA)),
             new SszField(
                 PAYLOAD_EXPECTED_WITHDRAWALS_FIELD_INDEX,
                 BeaconStateFields.PAYLOAD_EXPECTED_WITHDRAWALS,
@@ -113,12 +113,12 @@ public class BeaconStateSchemaGloas
                 .map(
                     field -> {
                       // replacing the old `latest_execution_payload_header` with the new
-                      // `latest_execution_payload_bid`
+                      // `latest_block_hash`
                       if (field.getIndex() == LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX) {
                         return new SszField(
                             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
-                            BeaconStateFields.LATEST_EXECUTION_PAYLOAD_BID,
-                            () -> schemaRegistry.get(EXECUTION_PAYLOAD_BID_SCHEMA));
+                            BeaconStateFields.LATEST_BLOCK_HASH,
+                            () -> SszPrimitiveSchemas.BYTES32_SCHEMA);
                       } else {
                         return field;
                       }

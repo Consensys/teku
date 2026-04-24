@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionPayloadGloas;
 
 public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
   @JsonSerialize(using = BytesSerializer.class)
@@ -83,6 +84,7 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
         withdrawals,
         blobGasUsed,
         excessBlobGas);
+    checkNotNull(blockAccessList, "blockAccessList");
     checkNotNull(slotNumber, "slotNumber");
     this.blockAccessList = blockAccessList;
     this.slotNumber = slotNumber;
@@ -98,7 +100,7 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
   }
 
   public static ExecutionPayloadV4 fromInternalExecutionPayload(
-      final ExecutionPayload executionPayload, final UInt64 slot) {
+      final ExecutionPayload executionPayload) {
     return new ExecutionPayloadV4(
         executionPayload.getParentHash(),
         executionPayload.getFeeRecipient(),
@@ -117,9 +119,8 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
         getWithdrawals(ExecutionPayloadCapella.required(executionPayload).getWithdrawals()),
         ExecutionPayloadDeneb.required(executionPayload).getBlobGasUsed(),
         ExecutionPayloadDeneb.required(executionPayload).getExcessBlobGas(),
-        // TODO-GLOAS: populate blockAccessList (not required for devnet-0)
-        null,
-        slot);
+        ExecutionPayloadGloas.required(executionPayload).getBlockAccessList().getBytes(),
+        ExecutionPayloadGloas.required(executionPayload).getSlotNumber());
   }
 
   @Override

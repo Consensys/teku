@@ -1,5 +1,13 @@
 name: Check Spec References
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - 'specrefs/**'
+      - 'build.gradle'
+  pull_request:
+    paths:
+      - 'specrefs/**'
+      - 'build.gradle'
 
 permissions:
   contents: read
