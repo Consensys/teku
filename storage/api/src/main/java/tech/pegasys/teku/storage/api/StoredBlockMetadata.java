@@ -82,7 +82,9 @@ public class StoredBlockMetadata {
         blockAndState.getExecutionBlockNumber(),
         blockAndState.getExecutionBlockHash(),
         Optional.of(epochs),
-        extractGloasForkChoiceRebuildData(blockAndState.getSignedBeaconBlock()));
+        blockAndState
+            .getSignedBeaconBlock()
+            .flatMap(StoredBlockMetadata::extractGloasForkChoiceRebuildData));
   }
 
   public UInt64 getBlockSlot() {
@@ -149,19 +151,16 @@ public class StoredBlockMetadata {
         gloasForkChoiceRebuildData);
   }
 
-  private static Optional<GloasForkChoiceRebuildData> extractGloasForkChoiceRebuildData(
-      final Optional<SignedBeaconBlock> maybeBlock) {
+  public static Optional<GloasForkChoiceRebuildData> extractGloasForkChoiceRebuildData(
+      final SignedBeaconBlock block) {
     // TODO-GLOAS: keep this helper bid-only. The DB rebuild path should enrich
     // payloadBlockNumber from the persisted SignedBlindedExecutionPayloadEnvelope when
     // KvStoreDatabase builds StoredBlockMetadata with synchronous DAO access.
-    return maybeBlock
-        .flatMap(
-            block ->
-                block
-                    .getMessage()
-                    .getBody()
-                    .getOptionalSignedExecutionPayloadBid()
-                    .map(SignedExecutionPayloadBid::getMessage))
+    return block
+        .getMessage()
+        .getBody()
+        .getOptionalSignedExecutionPayloadBid()
+        .map(SignedExecutionPayloadBid::getMessage)
         .map(
             bid ->
                 new GloasForkChoiceRebuildData(

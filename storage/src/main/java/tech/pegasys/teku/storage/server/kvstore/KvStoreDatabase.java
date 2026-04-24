@@ -60,7 +60,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -325,19 +324,8 @@ public class KvStoreDatabase implements Database {
                 dao.getHotBlockCheckpointEpochs(b.getRoot());
             final Optional<ExecutionPayload> executionPayload =
                 b.getMessage().getBody().getOptionalExecutionPayload();
-            // TODO-GLOAS: enrich this rebuild data from
-            // dao.getBlindedExecutionPayloadEnvelope(b.getRoot()). The blinded envelope payload
-            // header has the execution block number/hash needed to recreate FULL nodes during
-            // protoarray rebuild; validate it matches the block bid before using it.
             final Optional<GloasForkChoiceRebuildData> gloasForkChoiceRebuildData =
-                b.getMessage()
-                    .getBody()
-                    .getOptionalSignedExecutionPayloadBid()
-                    .map(SignedExecutionPayloadBid::getMessage)
-                    .map(
-                        bid ->
-                            new GloasForkChoiceRebuildData(
-                                bid.getParentBlockHash(), bid.getBlockHash(), Optional.empty()));
+                StoredBlockMetadata.extractGloasForkChoiceRebuildData(b);
             blockInformation.put(
                 b.getRoot(),
                 new StoredBlockMetadata(
