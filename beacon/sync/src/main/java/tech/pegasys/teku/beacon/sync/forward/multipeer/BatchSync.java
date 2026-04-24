@@ -35,6 +35,7 @@ import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
@@ -45,6 +46,8 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class BatchSync implements Sync {
   private static final Logger LOG = LogManager.getLogger();
   private static final Duration PAUSE_ON_SERVICE_OFFLINE_OR_DAS_CHECK = Duration.ofSeconds(5);
+
+  private final Subscribers<BlocksImportedSubscriber> subscribers = Subscribers.create(true);
 
   private final EventThread eventThread;
   private final AsyncRunner asyncRunner;
@@ -121,6 +124,11 @@ public class BatchSync implements Sync {
         commonAncestorFinder,
         timeProvider,
         syncPreImportBlockChannel);
+  }
+
+  @Override
+  public long subscribeToBlocksImportedEvent(final BlocksImportedSubscriber subscriber) {
+    return subscribers.subscribe(subscriber);
   }
 
   /**
@@ -455,6 +463,11 @@ public class BatchSync implements Sync {
       // Everything prior to this batch must already exist on our chain so we can drop them all
       activeBatches.removeUpToIncluding(importedBatch);
       commonAncestorSlot = SafeFuture.completedFuture(importedBatch.getLastSlot());
+      importedBatch
+          .getLastBlock()
+          .ifPresent(
+              lastBlock ->
+                  subscribers.deliver(subscriber -> subscriber.onBlocksImported(lastBlock)));
     }
     progressSync();
     if (activeBatches.isEmpty()) {
