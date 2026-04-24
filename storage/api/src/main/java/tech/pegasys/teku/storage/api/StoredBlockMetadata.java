@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.storage.api;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -21,7 +23,10 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedBlindedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 
 public class StoredBlockMetadata {
   private final UInt64 blockSlot;
@@ -153,9 +158,12 @@ public class StoredBlockMetadata {
 
   public static Optional<GloasForkChoiceRebuildData> extractGloasForkChoiceRebuildData(
       final SignedBeaconBlock block) {
-    // TODO-GLOAS: keep this helper bid-only. The DB rebuild path should enrich
-    // payloadBlockNumber from the persisted SignedBlindedExecutionPayloadEnvelope when
-    // KvStoreDatabase builds StoredBlockMetadata with synchronous DAO access.
+    return extractGloasForkChoiceRebuildData(block, Optional.empty());
+  }
+
+  public static Optional<GloasForkChoiceRebuildData> extractGloasForkChoiceRebuildData(
+      final SignedBeaconBlock block,
+      final Optional<SignedBlindedExecutionPayloadEnvelope> maybeBlindedEnvelope) {
     return block
         .getMessage()
         .getBody()
@@ -164,6 +172,34 @@ public class StoredBlockMetadata {
         .map(
             bid ->
                 new GloasForkChoiceRebuildData(
-                    bid.getParentBlockHash(), bid.getBlockHash(), Optional.empty()));
+                    bid.getParentBlockHash(),
+                    bid.getBlockHash(),
+                    maybeBlindedEnvelope.map(
+                        envelope -> getPayloadBlockNumber(block.getRoot(), bid, envelope))));
+  }
+
+  private static UInt64 getPayloadBlockNumber(
+      final Bytes32 blockRoot,
+      final ExecutionPayloadBid bid,
+      final SignedBlindedExecutionPayloadEnvelope envelope) {
+    checkState(
+        envelope.getBeaconBlockRoot().equals(blockRoot),
+        "Blinded execution payload envelope block root %s does not match stored block root %s",
+        envelope.getBeaconBlockRoot(),
+        blockRoot);
+    final ExecutionPayloadHeader payloadHeader = envelope.getMessage().getPayloadHeader();
+    checkState(
+        payloadHeader.getParentHash().equals(bid.getParentBlockHash()),
+        "Blinded execution payload envelope parent block hash %s does not match GLOAS block bid parent block hash %s for block root %s",
+        payloadHeader.getParentHash(),
+        bid.getParentBlockHash(),
+        blockRoot);
+    checkState(
+        payloadHeader.getBlockHash().equals(bid.getBlockHash()),
+        "Blinded execution payload envelope block hash %s does not match GLOAS block bid block hash %s for block root %s",
+        payloadHeader.getBlockHash(),
+        bid.getBlockHash(),
+        blockRoot);
+    return payloadHeader.getBlockNumber();
   }
 }

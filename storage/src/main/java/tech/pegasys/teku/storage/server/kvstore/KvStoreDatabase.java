@@ -325,7 +325,8 @@ public class KvStoreDatabase implements Database {
             final Optional<ExecutionPayload> executionPayload =
                 b.getMessage().getBody().getOptionalExecutionPayload();
             final Optional<GloasForkChoiceRebuildData> gloasForkChoiceRebuildData =
-                StoredBlockMetadata.extractGloasForkChoiceRebuildData(b);
+                StoredBlockMetadata.extractGloasForkChoiceRebuildData(
+                    b, dao.getBlindedExecutionPayloadEnvelope(b.getRoot()));
             blockInformation.put(
                 b.getRoot(),
                 new StoredBlockMetadata(
