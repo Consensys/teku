@@ -29,6 +29,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
  * The spec-form sorted+unique invariant is only enforced when an instance originates from an SSZ
  * {@link IndexedAttestation} embedded in an {@code AttesterSlashing}, via the dedicated overload of
  * {@code isValidIndexedAttestation}.
+ *
+ * <p>*NOTE*: attestingIndices are not sorted, they will be lazily sorted in {@link
+ * #toSsz(IndexedAttestationSchema)}
  */
 public record IndexedAttestationLight(
     List<UInt64> attestingIndices, AttestationData data, BLSSignature signature) {
