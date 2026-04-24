@@ -32,7 +32,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
@@ -512,11 +511,6 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     } finally {
       protoArrayLock.writeLock().unlock();
     }
-  }
-
-  public void processExecutionPayload(final SignedExecutionPayloadEnvelope signedEnvelope) {
-    // Branch 04 keeps the Phase0 model active only, so execution-payload-only node expansion
-    // remains dormant until the later Gloas-specific branches.
   }
 
   /**

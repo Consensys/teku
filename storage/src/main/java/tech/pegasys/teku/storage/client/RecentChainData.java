@@ -53,6 +53,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceReorgContext;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -350,21 +352,54 @@ public abstract class RecentChainData
   // NETWORKING RELATED INFORMATION METHODS:
 
   /**
+   * Set the block that is the current chain head according to fork-choice processing using the full
+   * node identity. In Gloas, the same block root may have PENDING, EMPTY, and FULL nodes.
+   *
+   * @param headNode The fork choice node identifying the new head
+   * @param currentSlot The current slot - the slot at which the new head was selected
+   */
+  public void updateHead(final ForkChoiceNode headNode, final UInt64 currentSlot) {
+    updateHeadInternal(headNode.blockRoot(), headNode.payloadStatus(), currentSlot);
+  }
+
+  /**
    * Set the block that is the current chain head according to fork-choice processing.
    *
    * @param root The new head block root
    * @param currentSlot The current slot - the slot at which the new head was selected
    */
   public void updateHead(final Bytes32 root, final UInt64 currentSlot) {
+    updateHeadInternal(root, Optional.empty(), currentSlot);
+  }
+
+  private void updateHeadInternal(
+      final Bytes32 root, final ForkChoicePayloadStatus payloadStatus, final UInt64 currentSlot) {
+    updateHeadInternal(root, Optional.of(payloadStatus), currentSlot);
+  }
+
+  private void updateHeadInternal(
+      final Bytes32 root,
+      final Optional<ForkChoicePayloadStatus> maybePayloadStatus,
+      final UInt64 currentSlot) {
     synchronized (this) {
-      if (chainHead.map(head -> head.getRoot().equals(root)).orElse(false)) {
+      if (chainHead
+          .map(
+              head ->
+                  head.getRoot().equals(root)
+                      && maybePayloadStatus
+                          .map(status -> head.getPayloadStatus().equals(status))
+                          .orElse(true))
+          .orElse(false)) {
         LOG.trace("Skipping head update because new head is same as previous head");
         return;
       }
       final Optional<ChainHead> originalChainHead = chainHead;
 
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy = store.getForkChoiceStrategy();
-      final Optional<ProtoNodeData> maybeBlockData = forkChoiceStrategy.getBlockData(root);
+      final Optional<ProtoNodeData> maybeBlockData =
+          maybePayloadStatus
+              .map(status -> forkChoiceStrategy.getBlockData(root, status))
+              .orElseGet(() -> forkChoiceStrategy.getBlockData(root));
       if (maybeBlockData.isEmpty()) {
         LOG.error(
             "Unable to update head block as of slot {}. Unknown block: {}", currentSlot, root);
