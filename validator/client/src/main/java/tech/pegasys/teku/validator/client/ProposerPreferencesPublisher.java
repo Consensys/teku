@@ -56,6 +56,11 @@ public class ProposerPreferencesPublisher {
   }
 
   public void onProposerDutiesLoaded(final UInt64 epoch, final ProposerDuties proposerDuties) {
+    // Defer publishing until the target epoch is at or past Gloas activation
+    if (!spec.isProposerPreferencesAvailableAtSlot(spec.computeStartSlotAtEpoch(epoch))) {
+      return;
+    }
+
     final List<ProposerDuty> ourProposerDuties =
         proposerDuties.getDuties().stream()
             .filter(duty -> ownedValidators.hasValidator(duty.getPublicKey()))
