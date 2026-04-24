@@ -26,7 +26,10 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -150,6 +153,45 @@ class ExecutionPayloadEnvelopesByRootMessageHandlerTest {
     // verify counters
     assertThat(getRequestCounterValueForLabel("ok")).isOne();
     assertThat(getExecutionPayloadEnvelopesRequestedCounterValue()).isEqualTo(5);
+  }
+
+  @Test
+  public void onIncomingMessage_respondsWithFinalizedEnvelopesViaUnblindingPath() {
+    // Simulates the finalized lookup path
+    final List<SignedExecutionPayloadEnvelope> executionPayloadEnvelopes = buildChain(3);
+    final Map<Bytes32, SignedExecutionPayloadEnvelope> envelopesByRoot =
+        executionPayloadEnvelopes.stream()
+            .collect(
+                Collectors.toMap(
+                    SignedExecutionPayloadEnvelope::getBeaconBlockRoot, Function.identity()));
+    // Replace the default stub with one that returns a future that only completes after the
+    // handler has invoked the async unblinding path to mimic the DB + EL latency
+    final List<SafeFuture<Optional<SignedExecutionPayloadEnvelope>>> pendingLookups =
+        new ArrayList<>();
+    when(recentChainData.retrieveSignedExecutionPayloadByBlockRoot(any()))
+        .thenAnswer(
+            invocationOnMock -> {
+              final SafeFuture<Optional<SignedExecutionPayloadEnvelope>> future =
+                  new SafeFuture<>();
+              pendingLookups.add(future);
+              future.complete(
+                  Optional.ofNullable(
+                      envelopesByRoot.get((Bytes32) invocationOnMock.getArgument(0))));
+              return future;
+            });
+
+    final ExecutionPayloadEnvelopesByRootRequestMessage message =
+        createRequestFromExecutionPayloadEnvelopes(executionPayloadEnvelopes);
+    handler.onIncomingMessage(V2_PROTOCOL_ID, peer, message, callback);
+
+    assertThat(pendingLookups).hasSize(3);
+    verify(callback, times(3)).respond(any());
+    for (final SignedExecutionPayloadEnvelope envelope : executionPayloadEnvelopes) {
+      verify(callback).respond(envelope);
+    }
+    verify(callback).completeSuccessfully();
+    verify(peer, never()).adjustExecutionPayloadEnvelopesRequest(any(), anyLong());
+    assertThat(getRequestCounterValueForLabel("ok")).isOne();
   }
 
   @Test
