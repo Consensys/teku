@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 
 public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceStrategy {
 
@@ -148,6 +149,11 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
     return chainBuilder
         .getBlockAndState(blockRoot)
         .map(RandomChainBuilderForkChoiceStrategy::asProtoNodeData);
+  }
+
+  @Override
+  public boolean shouldExtendPayload(final ReadOnlyStore store, final Bytes32 blockRoot) {
+    return store.getExecutionPayloadIfAvailable(blockRoot).isPresent();
   }
 
   @Override

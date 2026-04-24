@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 
@@ -116,6 +117,15 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
         .getBaseNode(blockRoot)
         .flatMap(protoArray::getNode)
         .map(ProtoNode::getBlockData);
+  }
+
+  @Override
+  public boolean shouldExtendPayload(
+      final ProtoArray protoArray,
+      final BlockNodeVariantsIndex blockNodeIndex,
+      final ReadOnlyStore store,
+      final Bytes32 blockRoot) {
+    return true;
   }
 
   @Override

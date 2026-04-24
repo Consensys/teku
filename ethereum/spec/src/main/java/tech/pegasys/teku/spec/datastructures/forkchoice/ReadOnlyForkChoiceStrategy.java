@@ -94,5 +94,15 @@ public interface ReadOnlyForkChoiceStrategy {
     return getBlockData(blockRoot);
   }
 
+  /**
+   * Returns whether block production should extend the parent execution payload branch or fall back
+   * to the EMPTY path.
+   *
+   * <p>This is a forkchoice-owned decision. Pre-Gloas follows the current master behavior based on
+   * local payload availability, while Gloas can override it with the model-specific EMPTY/FULL
+   * selection rules.
+   */
+  boolean shouldExtendPayload(ReadOnlyStore store, Bytes32 blockRoot);
+
   Optional<UInt64> getWeight(Bytes32 blockRoot);
 }
