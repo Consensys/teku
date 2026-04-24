@@ -24,6 +24,7 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
@@ -73,7 +74,7 @@ public class ExecutionPayloadVerifierGloas implements ExecutionPayloadVerifier {
     }
 
     // Verify consistency with the beacon block
-    if (!envelope.getBeaconBlockRoot().equals(state.getLatestBlockHeader().hashTreeRoot())) {
+    if (!envelope.getBeaconBlockRoot().equals(BeaconBlockHeader.fromState(state).hashTreeRoot())) {
       throw new ExecutionPayloadVerificationException(
           "Envelope beacon block root is not consistent with the latest beacon block from the state");
     }
