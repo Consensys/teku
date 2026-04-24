@@ -30,12 +30,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.SlotAndForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
@@ -83,6 +85,18 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
 
   private Optional<ForkChoiceModel> getForkChoiceModelForRoot(final Bytes32 blockRoot) {
     return blockNodeIndex.getSlot(blockRoot).map(this::getForkChoiceModel);
+  }
+
+  private ForkChoiceModel getForkChoiceModelForPayloadDecision(
+      final ReadOnlyStore store, final Bytes32 blockRoot) {
+    return getForkChoiceModelForRoot(blockRoot)
+        .or(
+            () ->
+                store
+                    .getBlockIfAvailable(blockRoot)
+                    .map(SignedBeaconBlock::getSlot)
+                    .map(this::getForkChoiceModel))
+        .orElse(ForkChoiceModelPhase0.INSTANCE);
   }
 
   public static ForkChoiceStrategy initialize(final Spec spec, final ProtoArray protoArray) {
@@ -446,6 +460,17 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
           .getNode(blockRoot, payloadStatus)
           .flatMap(protoArray::getNode)
           .map(ProtoNode::getBlockData);
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
+  @Override
+  public boolean shouldExtendPayload(final ReadOnlyStore store, final Bytes32 blockRoot) {
+    protoArrayLock.readLock().lock();
+    try {
+      return getForkChoiceModelForPayloadDecision(store, blockRoot)
+          .shouldExtendPayload(protoArray, blockNodeIndex, store, blockRoot);
     } finally {
       protoArrayLock.readLock().unlock();
     }

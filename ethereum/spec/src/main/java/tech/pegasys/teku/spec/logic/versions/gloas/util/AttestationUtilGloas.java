@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
@@ -66,7 +65,9 @@ public class AttestationUtilGloas extends AttestationUtilElectra {
             Domain.PTC_ATTESTER,
             miscHelpers.computeEpochAtSlot(attestation.getData().getSlot()));
     final Bytes signingRoot = miscHelpers.computeSigningRoot(attestation.getData(), domain);
-    return BLS.fastAggregateVerify(pubKeys, signingRoot, attestation.getSignature());
+    return specConfig
+        .getBLSSignatureVerifier()
+        .verify(pubKeys, signingRoot, attestation.getSignature());
   }
 
   @Override

@@ -35,7 +35,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
-import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -160,10 +159,8 @@ public class DefaultExecutionPayloadManager
   public ExecutionRequests getParentExecutionRequestsForBlock(
       final UInt64 slot, final Bytes32 parentRoot) {
     final SpecVersion specVersion = spec.atSlot(slot);
-    final ForkChoiceUtilGloas forkChoiceUtil =
-        ForkChoiceUtilGloas.required(specVersion.getForkChoiceUtil());
     final UpdatableStore store = recentChainData.getStore();
-    if (!forkChoiceUtil.shouldExtendPayload(store, parentRoot)) {
+    if (!store.getForkChoiceStrategy().shouldExtendPayload(store, parentRoot)) {
       return SchemaDefinitionsGloas.required(specVersion.getSchemaDefinitions())
           .getExecutionRequestsSchema()
           .getDefault();
