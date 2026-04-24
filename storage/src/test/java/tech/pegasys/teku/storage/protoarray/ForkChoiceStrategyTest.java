@@ -23,7 +23,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
@@ -42,7 +41,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoiceNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ForkChoicePayloadStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
@@ -151,30 +149,15 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   }
 
   @Test
-  void shouldExtendPayload_shouldReturnTrueWhenPayloadIsAvailable() {
+  void shouldExtendPayload_shouldReturnTrueForPreGloasBlock() {
     final ChainBuilder chainBuilder = ChainBuilder.create(spec);
     final SignedBeaconBlock genesisBlock = chainBuilder.generateGenesis().getBlock();
     final ForkChoiceStrategy forkChoiceStrategy =
         ForkChoiceStrategy.initialize(
             spec, createProtoArray(chainBuilder.getLatestBlockAndState().getState()));
     final ReadOnlyStore store = mock(ReadOnlyStore.class);
-    when(store.getExecutionPayloadIfAvailable(genesisBlock.getRoot()))
-        .thenReturn(Optional.of(mock(SignedExecutionPayloadEnvelope.class)));
 
     assertThat(forkChoiceStrategy.shouldExtendPayload(store, genesisBlock.getRoot())).isTrue();
-  }
-
-  @Test
-  void shouldExtendPayload_shouldReturnFalseWhenPayloadIsMissing() {
-    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
-    final SignedBeaconBlock genesisBlock = chainBuilder.generateGenesis().getBlock();
-    final ForkChoiceStrategy forkChoiceStrategy =
-        ForkChoiceStrategy.initialize(
-            spec, createProtoArray(chainBuilder.getLatestBlockAndState().getState()));
-    final ReadOnlyStore store = mock(ReadOnlyStore.class);
-    when(store.getExecutionPayloadIfAvailable(genesisBlock.getRoot())).thenReturn(Optional.empty());
-
-    assertThat(forkChoiceStrategy.shouldExtendPayload(store, genesisBlock.getRoot())).isFalse();
   }
 
   @Test
