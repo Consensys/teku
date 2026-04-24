@@ -93,9 +93,9 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
     final int attestationTimelinessLimit = getAttestationDueMillis();
     final int ptcTimelinessLimit = getPayloadAttestationDueMillis().orElseThrow();
     final boolean isTimelyAttestation =
-        blockSlot.equals(currentSlot) && attestationTimelinessLimit > millisIntoSlot;
+        blockSlot.equals(currentSlot) && millisIntoSlot < attestationTimelinessLimit;
     final boolean isTimelyPtc =
-        blockSlot.equals(currentSlot) && ptcTimelinessLimit > millisIntoSlot;
+        blockSlot.equals(currentSlot) && millisIntoSlot < ptcTimelinessLimit;
     return new BlockTimeliness(isTimelyAttestation, isTimelyPtc);
   }
 

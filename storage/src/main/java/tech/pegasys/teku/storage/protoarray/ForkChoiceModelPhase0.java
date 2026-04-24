@@ -125,7 +125,7 @@ class ForkChoiceModelPhase0 implements ForkChoiceModel {
       final BlockNodeVariantsIndex blockNodeIndex,
       final ReadOnlyStore store,
       final Bytes32 blockRoot) {
-    return store.getExecutionPayloadIfAvailable(blockRoot).isPresent();
+    return true;
   }
 
   @Override

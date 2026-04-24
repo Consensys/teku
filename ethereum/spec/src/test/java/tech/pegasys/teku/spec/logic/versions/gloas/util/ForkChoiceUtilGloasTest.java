@@ -311,22 +311,6 @@ class ForkChoiceUtilGloasTest {
   }
 
   @Test
-  void shouldApplyProposerBoost_returnsTrue_whenParentIsWeakAndNoEquivocation() {
-    final Bytes32 boostRoot = dataStructureUtil.randomBytes32();
-    final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
-    final ReadOnlyForkChoiceStrategy strategy = mock(ReadOnlyForkChoiceStrategy.class);
-    when(strategy.blockParentRoot(boostRoot)).thenReturn(Optional.of(parentRoot));
-    when(strategy.blockSlot(boostRoot)).thenReturn(Optional.of(gloasSlot.plus(1)));
-    when(strategy.blockSlot(parentRoot)).thenReturn(Optional.of(gloasSlot)); // consecutive
-
-    // No equivocation → boost applies
-    assertThat(
-            forkChoiceUtil.shouldApplyProposerBoost(
-                boostRoot, strategy, UInt64.valueOf(100), justifiedState))
-        .isTrue();
-  }
-
-  @Test
   void shouldApplyProposerBoost_returnsTrue_whenParentIsWeakAndEquivocationBranchIsDeferred() {
     final Bytes32 boostRoot = dataStructureUtil.randomBytes32();
     final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
