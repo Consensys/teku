@@ -81,6 +81,8 @@ public class ProposerPreferencesPublisherTest {
             proposerConfigPropertiesProvider,
             forkProvider,
             spec);
+    // Test spec is Gloas from genesis, so slot 0 is already at/past Gloas
+    publisher.onSlot(UInt64.ZERO);
 
     when(proposerConfigPropertiesProvider.getFeeRecipient(publicKey))
         .thenReturn(Optional.of(feeRecipient));

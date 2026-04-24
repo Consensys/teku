@@ -616,11 +616,15 @@ public class ValidatorClientService extends Service {
     if (proposerConfigManager.isEmpty()) {
       return (epoch, duties) -> {};
     }
-    // ProposerPreferencesPublisher is fork aware by using ProposerPreferencesUtil (pre Gloas util
-    // is NOOP so no publishing happens before Gloas activates)
-    return new ProposerPreferencesPublisher(
-            validatorApiChannel, validators, proposerConfigManager.get(), forkProvider, spec)
-        ::onProposerDutiesLoaded;
+    // ProposerPreferencesPublisher gates on the current slot being at or past Gloas.
+    // Duties are loaded speculatively for future epochs at startup, and publishing while
+    // the current head is still pre-Fulu would crash the beacon node's gossip validator
+    // when it tries to resolve the proposer lookahead
+    final ProposerPreferencesPublisher publisher =
+        new ProposerPreferencesPublisher(
+            validatorApiChannel, validators, proposerConfigManager.get(), forkProvider, spec);
+    validatorTimingChannels.add(publisher);
+    return publisher::onProposerDutiesLoaded;
   }
 
   public static Path getSlashingProtectionPath(final DataDirLayout dataDirLayout) {
